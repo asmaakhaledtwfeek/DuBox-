@@ -22,7 +22,7 @@ namespace Dubox.Domain.Entities
         public int? TeamId { get; set; }
 
         [ForeignKey(nameof(ActivityMaster))]
-        public int? ActivityMasterId { get; set; }
+        public Guid? ActivityMasterId { get; set; }
 
         [Column(TypeName = "decimal(10,2)")]
         public decimal? ManHours { get; set; }

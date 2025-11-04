@@ -12,11 +12,11 @@ namespace Dubox.Domain.Entities
 
         [Required]
         [ForeignKey(nameof(BoxActivity))]
-        public int BoxActivityId { get; set; }
+        public Guid BoxActivityId { get; set; }
 
         [Required]
         [ForeignKey(nameof(PredecessorActivity))]
-        public int PredecessorActivityId { get; set; }
+        public Guid PredecessorActivityId { get; set; }
 
         [MaxLength(20)]
         public string DependencyType { get; set; } = "FS";

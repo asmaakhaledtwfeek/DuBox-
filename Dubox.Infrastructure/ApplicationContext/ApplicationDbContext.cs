@@ -27,6 +27,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<BoxActivity> BoxActivities { get; set; } = null!;
     public DbSet<ActivityDependency> ActivityDependencies { get; set; } = null!;
     public DbSet<ProgressUpdate> ProgressUpdates { get; set; } = null!;
+    public DbSet<WIRRecord> WIRRecords { get; set; } = null!;
     public DbSet<DailyProductionLog> DailyProductionLogs { get; set; } = null!;
     public DbSet<WIRCheckpoint> WIRCheckpoints { get; set; } = null!;
     public DbSet<WIRChecklistItem> WIRChecklistItems { get; set; } = null!;
@@ -62,17 +63,18 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
 
     private void ConfigureRelationships(ModelBuilder modelBuilder)
         {
-            // Activity Dependencies - Configure self-referencing relationship
+            // ActivityDependency - Self-referencing BoxActivity
+            // Must use Restrict on both to avoid multiple cascade paths
             modelBuilder.Entity<ActivityDependency>()
-                .HasOne(d => d.BoxActivity)
-                .WithMany(a => a.Dependencies)
-                .HasForeignKey(d => d.BoxActivityId)
+                .HasOne(ad => ad.BoxActivity)
+                .WithMany()
+                .HasForeignKey(ad => ad.BoxActivityId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<ActivityDependency>()
-                .HasOne(d => d.PredecessorActivity)
-                .WithMany(a => a.DependentActivities)
-                .HasForeignKey(d => d.PredecessorActivityId)
+                .HasOne(ad => ad.PredecessorActivity)
+                .WithMany()
+                .HasForeignKey(ad => ad.PredecessorActivityId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Cost Categories - Self-referencing for parent-child
@@ -130,12 +132,119 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
                 .WithMany(r => r.GroupRoles)
                 .HasForeignKey(gr => gr.RoleId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<WIRRecord>()
+                .HasOne(w => w.BoxActivity)
+                .WithMany(ba => ba.WIRRecords)
+                .HasForeignKey(w => w.BoxActivityId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<WIRRecord>()
+                .HasOne(w => w.RequestedByUser)
+                .WithMany()
+                .HasForeignKey(w => w.RequestedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<WIRRecord>()
+                .HasOne(w => w.InspectedByUser)
+                .WithMany()
+                .HasForeignKey(w => w.InspectedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // ProgressUpdate relationships
+            modelBuilder.Entity<ProgressUpdate>()
+                .HasOne(p => p.Box)
+                .WithMany(b => b.ProgressUpdates)
+                .HasForeignKey(p => p.BoxId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ProgressUpdate>()
+                .HasOne(p => p.BoxActivity)
+                .WithMany(ba => ba.ProgressUpdates)
+                .HasForeignKey(p => p.BoxActivityId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<ProgressUpdate>()
+                .HasOne(p => p.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(p => p.UpdatedBy)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // BoxActivity relationships
+            modelBuilder.Entity<BoxActivity>()
+                .HasOne(ba => ba.Box)
+                .WithMany(b => b.BoxActivities)
+                .HasForeignKey(ba => ba.BoxId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<BoxActivity>()
+                .HasOne(ba => ba.ActivityMaster)
+                .WithMany(am => am.BoxActivities)
+                .HasForeignKey(ba => ba.ActivityMasterId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<BoxActivity>()
+                .HasOne(ba => ba.AssignedUser)
+                .WithMany()
+                .HasForeignKey(ba => ba.AssignedUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Box relationships
+            modelBuilder.Entity<Box>()
+                .HasOne(b => b.Project)
+                .WithMany(p => p.Boxes)
+                .HasForeignKey(b => b.ProjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // BoxAsset relationships
+            modelBuilder.Entity<BoxAsset>()
+                .HasOne(ba => ba.Box)
+                .WithMany(b => b.BoxAssets)
+                .HasForeignKey(ba => ba.BoxId)
+                .OnDelete(DeleteBehavior.Cascade);
     }
 
     private void ConfigureIndexes(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<BoxActivity>()
+        // Project indexes
+        modelBuilder.Entity<Project>()
+                .HasIndex(p => p.ProjectCode)
+                .IsUnique();
+
+            // Box indexes
+            modelBuilder.Entity<Box>()
+                .HasIndex(b => new { b.ProjectId, b.BoxTag })
+                .IsUnique();
+
+            modelBuilder.Entity<Box>()
+                .HasIndex(b => b.QRCodeString)
+                .IsUnique();
+
+            modelBuilder.Entity<Box>()
+                .HasIndex(b => new { b.Status, b.ProjectId });
+
+            // BoxActivity indexes
+            modelBuilder.Entity<BoxActivity>()
                 .HasIndex(ba => new { ba.BoxId, ba.Status });
+
+            modelBuilder.Entity<BoxActivity>()
+                .HasIndex(ba => new { ba.BoxId, ba.Sequence })
+                .IsUnique();
+
+            // ActivityMaster indexes
+            modelBuilder.Entity<ActivityMaster>()
+                .HasIndex(am => am.ActivityCode)
+                .IsUnique();
+
+            modelBuilder.Entity<ActivityMaster>()
+                .HasIndex(am => new { am.StageNumber, am.SequenceInStage });
+
+            // WIRRecord indexes
+            modelBuilder.Entity<WIRRecord>()
+                .HasIndex(w => new { w.BoxActivityId, w.WIRCode });
+
+            modelBuilder.Entity<WIRRecord>()
+                .HasIndex(w => new { w.Status, w.RequestedDate });
 
             modelBuilder.Entity<ProgressUpdate>()
                 .HasIndex(pu => new { pu.BoxId, pu.UpdateDate });
@@ -175,7 +284,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
                 .HasDefaultValue("Active");
 
             modelBuilder.Entity<Box>()
-                .Property(b => b.CurrentStatus)
+                .Property(b => b.Status)
                 .HasDefaultValue("Not Started");
 
             modelBuilder.Entity<Box>()

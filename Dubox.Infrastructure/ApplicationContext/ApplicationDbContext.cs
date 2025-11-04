@@ -1,65 +1,66 @@
 ﻿using Dubox.Domain.Entities;
 using Dubox.Domain.Interfaces;
-using Dubox.Infrastructure.Abstraction;
+using Dubox.Domain.Abstraction;
 using Dubox.Infrastructure.Seeding;
 using Microsoft.EntityFrameworkCore;
 
-namespace Dubox.Infrastructure.ApplicationContext
+namespace Dubox.Infrastructure.ApplicationContext;
+
+public sealed class ApplicationDbContext : DbContext, IDbContext
 {
-    public sealed class ApplicationDbContext : DbContext
+    private readonly IDateTime _dateTime;
+    private readonly ICurrentUserService _currentUserService;
+
+    public ApplicationDbContext(
+        DbContextOptions<ApplicationDbContext> options,
+        IDateTime dateTime,
+        ICurrentUserService currentUserService) : base(options)
     {
-        private readonly IDateTime _dateTime;
-        private readonly ICurrentUserService _currentUserService;
-        public ApplicationDbContext(
-            DbContextOptions<ApplicationDbContext> options,
-            IDateTime dateTime,
-            ICurrentUserService currentUserService) : base(options)
-        {
-            _dateTime = dateTime;
-            _currentUserService = currentUserService;
-        }
+        _dateTime = dateTime;
+        _currentUserService = currentUserService;
+    }
 
+    public DbSet<Project> Projects { get; set; } = null!;
+    public DbSet<Box> Boxes { get; set; } = null!;
+    public DbSet<BoxAsset> BoxAssets { get; set; } = null!;
+    public DbSet<ActivityMaster> ActivityMasters { get; set; } = null!;
+    public DbSet<BoxActivity> BoxActivities { get; set; } = null!;
+    public DbSet<ActivityDependency> ActivityDependencies { get; set; } = null!;
+    public DbSet<ProgressUpdate> ProgressUpdates { get; set; } = null!;
+    public DbSet<DailyProductionLog> DailyProductionLogs { get; set; } = null!;
+    public DbSet<WIRCheckpoint> WIRCheckpoints { get; set; } = null!;
+    public DbSet<WIRChecklistItem> WIRChecklistItems { get; set; } = null!;
+    public DbSet<QualityIssue> QualityIssues { get; set; } = null!;
+    public DbSet<Team> Teams { get; set; } = null!;
+    public DbSet<TeamMember> TeamMembers { get; set; } = null!;
+    public DbSet<Material> Materials { get; set; } = null!;
+    public DbSet<BoxMaterial> BoxMaterials { get; set; } = null!;
+    public DbSet<MaterialTransaction> MaterialTransactions { get; set; } = null!;
+    public DbSet<FactoryLocation> FactoryLocations { get; set; } = null!;
+    public DbSet<BoxLocationHistory> BoxLocationHistory { get; set; } = null!;
+    public DbSet<CostCategory> CostCategories { get; set; } = null!;
+    public DbSet<BoxCost> BoxCosts { get; set; } = null!;
+    public DbSet<Risk> Risks { get; set; } = null!;
+    public DbSet<Notification> Notifications { get; set; } = null!;
+    public DbSet<User> Users { get; set; } = null!;
+    public DbSet<AuditLog> AuditLogs { get; set; } = null!;
+    public DbSet<Role> Roles { get; set; } = null!;
+    public DbSet<Group> Groups { get; set; } = null!;
+    public DbSet<UserRole> UserRoles { get; set; } = null!;
+    public DbSet<UserGroup> UserGroups { get; set; } = null!;
+    public DbSet<GroupRole> GroupRoles { get; set; } = null!;
 
-        public DbSet<Project> Projects { get; set; } = null!;
-        public DbSet<Box> Boxes { get; set; } = null!;
-        public DbSet<BoxAsset> BoxAssets { get; set; } = null!;
-        public DbSet<ActivityMaster> ActivityMasters { get; set; } = null!;
-        public DbSet<BoxActivity> BoxActivities { get; set; } = null!;
-        public DbSet<ActivityDependency> ActivityDependencies { get; set; } = null!;
-        public DbSet<ProgressUpdate> ProgressUpdates { get; set; } = null!;
-        public DbSet<DailyProductionLog> DailyProductionLogs { get; set; } = null!;
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        ConfigureRelationships(modelBuilder);
+        ConfigureIndexes(modelBuilder);
+        ConfigureDefaultValues(modelBuilder);
+        ActivityMasterSeedData.SeedActivityMaster(modelBuilder);
+        RoleAndUserSeedData.SeedRolesGroupsAndUsers(modelBuilder);
+        base.OnModelCreating(modelBuilder);
+    }
 
-        public DbSet<WIRCheckpoint> WIRCheckpoints { get; set; } = null!;
-        public DbSet<WIRChecklistItem> WIRChecklistItems { get; set; } = null!;
-        public DbSet<QualityIssue> QualityIssues { get; set; } = null!;
-        public DbSet<Team> Teams { get; set; } = null!;
-        public DbSet<TeamMember> TeamMembers { get; set; } = null!;
-        public DbSet<Material> Materials { get; set; } = null!;
-        public DbSet<BoxMaterial> BoxMaterials { get; set; } = null!;
-        public DbSet<MaterialTransaction> MaterialTransactions { get; set; } = null!;
-        public DbSet<FactoryLocation> FactoryLocations { get; set; } = null!;
-        public DbSet<BoxLocationHistory> BoxLocationHistory { get; set; } = null!;
-        public DbSet<CostCategory> CostCategories { get; set; } = null!;
-        public DbSet<BoxCost> BoxCosts { get; set; } = null!;
-
-        public DbSet<Risk> Risks { get; set; } = null!;
-        public DbSet<Notification> Notifications { get; set; } = null!;
-        public DbSet<User> Users { get; set; } = null!;
-        public DbSet<AuditLog> AuditLogs { get; set; } = null!;
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            //// Apply all configurations from assembly
-            //modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
-
-            // Additional custom configurations
-            ConfigureRelationships(modelBuilder);
-            ConfigureIndexes(modelBuilder);
-            ConfigureDefaultValues(modelBuilder);
-            ActivityMasterSeedData.SeedActivityMaster(modelBuilder);
-            base.OnModelCreating(modelBuilder);
-        }
-        private void ConfigureRelationships(ModelBuilder modelBuilder)
+    private void ConfigureRelationships(ModelBuilder modelBuilder)
         {
             // Activity Dependencies - Configure self-referencing relationship
             modelBuilder.Entity<ActivityDependency>()
@@ -93,12 +94,47 @@ namespace Dubox.Infrastructure.ApplicationContext
                 .WithMany()
                 .HasForeignKey(h => h.MovedFromLocationId)
                 .OnDelete(DeleteBehavior.Restrict);
-        }
 
-        private void ConfigureIndexes(ModelBuilder modelBuilder)
-        {
-            // Additional composite indexes for performance
-            modelBuilder.Entity<BoxActivity>()
+            modelBuilder.Entity<UserRole>()
+                .HasOne(ur => ur.User)
+                .WithMany(u => u.UserRoles)
+                .HasForeignKey(ur => ur.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserRole>()
+                .HasOne(ur => ur.Role)
+                .WithMany(r => r.UserRoles)
+                .HasForeignKey(ur => ur.RoleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserGroup>()
+                .HasOne(ug => ug.User)
+                .WithMany(u => u.UserGroups)
+                .HasForeignKey(ug => ug.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserGroup>()
+                .HasOne(ug => ug.Group)
+                .WithMany(g => g.UserGroups)
+                .HasForeignKey(ug => ug.GroupId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<GroupRole>()
+                .HasOne(gr => gr.Group)
+                .WithMany(g => g.GroupRoles)
+                .HasForeignKey(gr => gr.GroupId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<GroupRole>()
+                .HasOne(gr => gr.Role)
+                .WithMany(r => r.GroupRoles)
+                .HasForeignKey(gr => gr.RoleId)
+                .OnDelete(DeleteBehavior.Cascade);
+    }
+
+    private void ConfigureIndexes(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<BoxActivity>()
                 .HasIndex(ba => new { ba.BoxId, ba.Status });
 
             modelBuilder.Entity<ProgressUpdate>()
@@ -106,12 +142,35 @@ namespace Dubox.Infrastructure.ApplicationContext
 
             modelBuilder.Entity<DailyProductionLog>()
                 .HasIndex(dpl => new { dpl.LogDate, dpl.TeamId });
-        }
 
-        private void ConfigureDefaultValues(ModelBuilder modelBuilder)
-        {
-            // Set default values using HasDefaultValue
-            modelBuilder.Entity<Project>()
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Email)
+                .IsUnique();
+
+            modelBuilder.Entity<Role>()
+                .HasIndex(r => r.RoleName)
+                .IsUnique();
+
+            modelBuilder.Entity<Group>()
+                .HasIndex(g => g.GroupName)
+                .IsUnique();
+
+            modelBuilder.Entity<UserRole>()
+                .HasIndex(ur => new { ur.UserId, ur.RoleId })
+                .IsUnique();
+
+            modelBuilder.Entity<UserGroup>()
+                .HasIndex(ug => new { ug.UserId, ug.GroupId })
+                .IsUnique();
+
+            modelBuilder.Entity<GroupRole>()
+                .HasIndex(gr => new { gr.GroupId, gr.RoleId })
+                .IsUnique();
+    }
+
+    private void ConfigureDefaultValues(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Project>()
                 .Property(p => p.Status)
                 .HasDefaultValue("Active");
 
@@ -130,14 +189,14 @@ namespace Dubox.Infrastructure.ApplicationContext
             modelBuilder.Entity<BoxActivity>()
                 .Property(ba => ba.ProgressPercentage)
                 .HasDefaultValue(0);
-            modelBuilder.Entity<ActivityMaster>()
-        .Property(a => a.CreatedDate)
-        .HasDefaultValueSql("GETUTCDATE()");
-        }
-        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        {
-            // Auto-populate audit fields
-            foreach (var entry in ChangeTracker.Entries<IAuditableEntity>())
+        modelBuilder.Entity<ActivityMaster>()
+            .Property(a => a.CreatedDate)
+            .HasDefaultValueSql("GETUTCDATE()");
+    }
+
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        foreach (var entry in ChangeTracker.Entries<IAuditableEntity>())
             {
                 switch (entry.State)
                 {
@@ -150,21 +209,17 @@ namespace Dubox.Infrastructure.ApplicationContext
                         entry.Entity.ModifiedBy = _currentUserService.Username;
                         entry.Entity.ModifiedDate = _dateTime.Now;
                         break;
-                }
             }
-
-            var result = await base.SaveChangesAsync(cancellationToken);
-
-            // Optional: Create audit log entries
-            await CreateAuditLog(cancellationToken);
-
-            return result;
         }
 
-        private async Task CreateAuditLog(CancellationToken cancellationToken)
-        {
-            // Get all modified entries
-            var auditEntries = ChangeTracker.Entries()
+        var result = await base.SaveChangesAsync(cancellationToken);
+        await CreateAuditLog(cancellationToken);
+        return result;
+    }
+
+    private async Task CreateAuditLog(CancellationToken cancellationToken)
+    {
+        var auditEntries = ChangeTracker.Entries()
                 .Where(e => e.State == EntityState.Added ||
                            e.State == EntityState.Modified ||
                            e.State == EntityState.Deleted)
@@ -173,16 +228,14 @@ namespace Dubox.Infrastructure.ApplicationContext
                     TableName = e.Entity.GetType().Name,
                     Action = e.State.ToString(),
                     ChangedBy = _currentUserService.Username,
-                    ChangedDate = _dateTime.Now,
-                    // Serialize old and new values as needed
+                    ChangedDate = _dateTime.Now
                 })
                 .ToList();
 
-            if (auditEntries.Any())
-            {
-                await AuditLogs.AddRangeAsync(auditEntries, cancellationToken);
-                await base.SaveChangesAsync(cancellationToken);
-            }
+        if (auditEntries.Any())
+        {
+            await AuditLogs.AddRangeAsync(auditEntries, cancellationToken);
+            await base.SaveChangesAsync(cancellationToken);
         }
     }
 }

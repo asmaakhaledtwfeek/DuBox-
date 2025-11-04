@@ -1,4 +1,4 @@
-﻿using Dubox.Infrastructure.Abstraction;
+﻿using Dubox.Domain.Abstraction;
 using Microsoft.AspNetCore.Http;
 
 namespace Dubox.Infrastructure.Services

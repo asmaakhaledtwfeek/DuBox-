@@ -17,7 +17,7 @@ internal sealed class JwtProvider : IJwtProvider
     {
         _options = options.Value;
     }
-    public string Generate(User user)
+    public string GenerateToken(User user)
     {
         var claims = new Claim[]
         {

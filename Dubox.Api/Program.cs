@@ -1,16 +1,17 @@
 
-
 using Dubox.Api.Configurations;
 using Dubox.Api.Middlewares;
 using Dubox.Application.Behaviors;
 using FluentValidation;
 using MediatR;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddAppServicesDIConfig();
 builder.Services.AddMapsterConfig();
+Dubox.Infrastructure.Bootstrap.AddPersistenceStrapping(builder.Services);
 
 builder.Services.AddMediatR(
     cfg => cfg.RegisterServicesFromAssembly(Dubox.Application.AssemblyReference.Assembly));
@@ -20,21 +21,63 @@ builder.Services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationPipeli
 builder.Services.AddValidatorsFromAssembly(
     Dubox.Application.AssemblyReference.Assembly,
     includeInternalTypes: true);
+
 builder.Services.AddDbConfig(builder.Configuration);
 
-// Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyMethod()
+              .AllowAnyHeader();
+    });
+});
+
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "DuBox API", Version = "v1" });
+    
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "JWT Authorization header using the Bearer scheme."
+    });
+    
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
 builder.Services.AddJwtConfig();
 
 builder.Services.AddExceptionHandler<GlobalExceptionHandlerMiddleware>();
+builder.Services.AddProblemDetails();
+
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+app.UseExceptionHandler();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -43,11 +86,15 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseCors("AllowAll");
+
+app.UseAuthentication();
+
 app.UseAuthorization();
 
+app.MapHealthChecks("/health");
 
 app.MapControllers();
 
 app.Run();
-
 

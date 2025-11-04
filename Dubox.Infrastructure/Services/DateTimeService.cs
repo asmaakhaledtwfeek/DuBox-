@@ -1,4 +1,4 @@
-﻿using Dubox.Infrastructure.Abstraction;
+﻿using Dubox.Domain.Abstraction;
 
 namespace Dubox.Infrastructure.Services
 {

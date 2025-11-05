@@ -133,15 +133,16 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<User>()
-            .HasOne(u => u.Department)
-            .WithMany(d => d.Employees)
-            .HasForeignKey(u => u.DepartmentId)
-            .IsRequired()
-            .OnDelete(DeleteBehavior.Restrict);
+        .HasOne(u => u.EmployeeOfDepartment)
+        .WithMany(d => d.Employees)
+        .HasForeignKey(u => u.DepartmentId)
+        .IsRequired()
+        .OnDelete(DeleteBehavior.Restrict);
+
 
         modelBuilder.Entity<Department>()
             .HasOne(d => d.Manager)
-            .WithOne(u => u.Department)
+            .WithOne(u => u.ManagedDepartment)
             .HasForeignKey<Department>(d => d.ManagerId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.SetNull);
@@ -206,6 +207,12 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasDefaultValue(0);
         modelBuilder.Entity<ActivityMaster>()
             .Property(a => a.CreatedDate)
+            .HasDefaultValueSql("GETUTCDATE()");
+        modelBuilder.Entity<Department>()
+            .Property(a => a.CreatedDate)
+            .HasDefaultValueSql("GETUTCDATE()");
+        modelBuilder.Entity<Department>()
+            .Property(a => a.UpdatedDate)
             .HasDefaultValueSql("GETUTCDATE()");
     }
 

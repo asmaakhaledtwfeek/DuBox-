@@ -15,6 +15,14 @@ Dubox.Infrastructure.Bootstrap.AddInfrastructureStrapping(builder.Services);
 Dubox.Application.Bootstrap.AddApplicationStrapping(builder.Services);
 
 
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssembly(Dubox.Application.AssemblyReference.Assembly);
+    cfg.AddOpenBehavior(typeof(ValidationPipelineBehavior<,>));
+});
+
+
+
 builder.Services.AddMediatR(
     cfg => cfg.RegisterServicesFromAssembly(Dubox.Application.AssemblyReference.Assembly));
 

@@ -7,7 +7,7 @@ namespace Dubox.Infrastructure.Seeding
     {
         public static void SeedDepartmnts(ModelBuilder modelBuilder)
         {
-            var seedDate = DateTime.UtcNow;
+            var seedDate = new DateTime(2024, 11, 1, 0, 0, 0, DateTimeKind.Utc);
 
 
             var departmentData = new List<Department>
@@ -24,7 +24,7 @@ namespace Dubox.Infrastructure.Seeding
     new Department { DepartmentId = Guid.Parse("D9000000-0000-0000-0000-000000000009"), DepartmentName = "DuPod", Code = "DPD", IsActive = true, CreatedDate = seedDate }
 };
 
-            modelBuilder.Entity<ActivityMaster>().HasData(departmentData); ;
+            modelBuilder.Entity<Department>().HasData(departmentData); ;
         }
     }
 }

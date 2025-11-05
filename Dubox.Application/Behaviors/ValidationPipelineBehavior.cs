@@ -62,8 +62,7 @@ namespace Dubox.Application.Behaviors
             object validationResult = typeof(ValidationResult<>)
                 .GetGenericTypeDefinition()
                 .MakeGenericType(typeof(TResult).GenericTypeArguments[0])
-                .GetMethod(nameof(ValidationResult.WithErrors))!
-                .Invoke(null, errorMessages)!;
+                .GetMethod(nameof(ValidationResult.WithErrors))!.Invoke(null, new object[] { errorMessages })!; ;
 
             return (TResult)validationResult;
         }

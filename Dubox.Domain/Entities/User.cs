@@ -20,9 +20,10 @@ public class User
     [MaxLength(200)]
     public string? FullName { get; set; }
 
-    public Guid DepartmentId { get; set; }
+    public Guid? DepartmentId { get; set; }
     [ForeignKey("DepartmentId")]
-    public virtual Department Department { get; set; } = null!;
+    public virtual Department? EmployeeOfDepartment { get; set; } = null!;
+    public virtual Department? ManagedDepartment { get; set; }
     public bool IsActive { get; set; } = true;
 
     public DateTime? LastLoginDate { get; set; }

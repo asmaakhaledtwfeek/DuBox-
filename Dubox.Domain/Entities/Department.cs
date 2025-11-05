@@ -26,8 +26,8 @@ namespace Dubox.Domain.Entities
         [ForeignKey("ManagerId")]
         public virtual User? Manager { get; set; }
         public virtual ICollection<User> Employees { get; set; } = new List<User>();
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
-        public DateTime UpdatedDate { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedDate { get; set; }
+        public DateTime UpdatedDate { get; set; }
 
     }
 }

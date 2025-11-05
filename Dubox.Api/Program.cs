@@ -11,7 +11,9 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddAppServicesDIConfig();
 builder.Services.AddMapsterConfig();
-Dubox.Infrastructure.Bootstrap.AddPersistenceStrapping(builder.Services);
+Dubox.Infrastructure.Bootstrap.AddInfrastructureStrapping(builder.Services);
+Dubox.Application.Bootstrap.AddApplicationStrapping(builder.Services);
+
 
 builder.Services.AddMediatR(
     cfg => cfg.RegisterServicesFromAssembly(Dubox.Application.AssemblyReference.Assembly));
@@ -40,7 +42,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "DuBox API", Version = "v1" });
-    
+
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -50,7 +52,7 @@ builder.Services.AddSwaggerGen(c =>
         In = ParameterLocation.Header,
         Description = "JWT Authorization header using the Bearer scheme."
     });
-    
+
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {

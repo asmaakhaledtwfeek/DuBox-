@@ -4,6 +4,6 @@ using MediatR;
 
 namespace Dubox.Application.Features.Users.Commands;
 
-public record UpdateUserCommand(Guid UserId, string Email, string? FullName, string? Department, bool IsActive) 
+public record UpdateUserCommand(Guid UserId, string? Email, string? FullName, Guid? DepartmentId, bool? IsActive)
     : IRequest<Result<UserDto>>;
 

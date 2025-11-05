@@ -1,7 +1,7 @@
 using Dubox.Application.DTOs;
+using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
-using Dubox.Domain.Abstraction;
 using Mapster;
 using MediatR;
 
@@ -30,10 +30,10 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
         if (emailExists)
             return Result.Failure<UserDto>("Email already in use by another user");
 
-        user.Email = request.Email;
+        user.Email = request.Email!;
         user.FullName = request.FullName;
-        user.Department = request.Department;
-        user.IsActive = request.IsActive;
+        user.DepartmentId = request.DepartmentId!.Value;
+        user.IsActive = request.IsActive!.Value;
 
         _unitOfWork.Repository<User>().Update(user);
         await _unitOfWork.CompleteAsync(cancellationToken);

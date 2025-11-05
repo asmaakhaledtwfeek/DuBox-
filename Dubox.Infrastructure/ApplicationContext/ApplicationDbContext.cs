@@ -1,6 +1,6 @@
-﻿using Dubox.Domain.Entities;
+﻿using Dubox.Domain.Abstraction;
+using Dubox.Domain.Entities;
 using Dubox.Domain.Interfaces;
-using Dubox.Domain.Abstraction;
 using Dubox.Infrastructure.Seeding;
 using Microsoft.EntityFrameworkCore;
 
@@ -49,7 +49,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<UserRole> UserRoles { get; set; } = null!;
     public DbSet<UserGroup> UserGroups { get; set; } = null!;
     public DbSet<GroupRole> GroupRoles { get; set; } = null!;
-
+    public DbSet<Department> Departments { get; set; }
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ConfigureRelationships(modelBuilder);
@@ -57,79 +57,94 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         ConfigureDefaultValues(modelBuilder);
         ActivityMasterSeedData.SeedActivityMaster(modelBuilder);
         RoleAndUserSeedData.SeedRolesGroupsAndUsers(modelBuilder);
+        DepartmentSeesData.SeedDepartmnts(modelBuilder);
         base.OnModelCreating(modelBuilder);
     }
 
     private void ConfigureRelationships(ModelBuilder modelBuilder)
-        {
-            // Activity Dependencies - Configure self-referencing relationship
-            modelBuilder.Entity<ActivityDependency>()
-                .HasOne(d => d.BoxActivity)
-                .WithMany(a => a.Dependencies)
-                .HasForeignKey(d => d.BoxActivityId)
-                .OnDelete(DeleteBehavior.Restrict);
+    {
+        // Activity Dependencies - Configure self-referencing relationship
+        modelBuilder.Entity<ActivityDependency>()
+            .HasOne(d => d.BoxActivity)
+            .WithMany(a => a.Dependencies)
+            .HasForeignKey(d => d.BoxActivityId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<ActivityDependency>()
-                .HasOne(d => d.PredecessorActivity)
-                .WithMany(a => a.DependentActivities)
-                .HasForeignKey(d => d.PredecessorActivityId)
-                .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<ActivityDependency>()
+            .HasOne(d => d.PredecessorActivity)
+            .WithMany(a => a.DependentActivities)
+            .HasForeignKey(d => d.PredecessorActivityId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-            // Cost Categories - Self-referencing for parent-child
-            modelBuilder.Entity<CostCategory>()
-                .HasOne(c => c.ParentCategory)
-                .WithMany(c => c.SubCategories)
-                .HasForeignKey(c => c.ParentCategoryId)
-                .OnDelete(DeleteBehavior.Restrict);
+        // Cost Categories - Self-referencing for parent-child
+        modelBuilder.Entity<CostCategory>()
+            .HasOne(c => c.ParentCategory)
+            .WithMany(c => c.SubCategories)
+            .HasForeignKey(c => c.ParentCategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-            // Box Location History - Multiple FKs to FactoryLocation
-            modelBuilder.Entity<BoxLocationHistory>()
-                .HasOne(h => h.Location)
-                .WithMany(l => l.BoxLocationHistory)
-                .HasForeignKey(h => h.LocationId)
-                .OnDelete(DeleteBehavior.Restrict);
+        // Box Location History - Multiple FKs to FactoryLocation
+        modelBuilder.Entity<BoxLocationHistory>()
+            .HasOne(h => h.Location)
+            .WithMany(l => l.BoxLocationHistory)
+            .HasForeignKey(h => h.LocationId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<BoxLocationHistory>()
-                .HasOne(h => h.MovedFromLocation)
-                .WithMany()
-                .HasForeignKey(h => h.MovedFromLocationId)
-                .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<BoxLocationHistory>()
+            .HasOne(h => h.MovedFromLocation)
+            .WithMany()
+            .HasForeignKey(h => h.MovedFromLocationId)
+            .OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<UserRole>()
-                .HasOne(ur => ur.User)
-                .WithMany(u => u.UserRoles)
-                .HasForeignKey(ur => ur.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<UserRole>()
+            .HasOne(ur => ur.User)
+            .WithMany(u => u.UserRoles)
+            .HasForeignKey(ur => ur.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<UserRole>()
-                .HasOne(ur => ur.Role)
-                .WithMany(r => r.UserRoles)
-                .HasForeignKey(ur => ur.RoleId)
-                .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<UserRole>()
+            .HasOne(ur => ur.Role)
+            .WithMany(r => r.UserRoles)
+            .HasForeignKey(ur => ur.RoleId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<UserGroup>()
-                .HasOne(ug => ug.User)
-                .WithMany(u => u.UserGroups)
-                .HasForeignKey(ug => ug.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<UserGroup>()
+            .HasOne(ug => ug.User)
+            .WithMany(u => u.UserGroups)
+            .HasForeignKey(ug => ug.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<UserGroup>()
-                .HasOne(ug => ug.Group)
-                .WithMany(g => g.UserGroups)
-                .HasForeignKey(ug => ug.GroupId)
-                .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<UserGroup>()
+            .HasOne(ug => ug.Group)
+            .WithMany(g => g.UserGroups)
+            .HasForeignKey(ug => ug.GroupId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<GroupRole>()
-                .HasOne(gr => gr.Group)
-                .WithMany(g => g.GroupRoles)
-                .HasForeignKey(gr => gr.GroupId)
-                .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<GroupRole>()
+            .HasOne(gr => gr.Group)
+            .WithMany(g => g.GroupRoles)
+            .HasForeignKey(gr => gr.GroupId)
+            .OnDelete(DeleteBehavior.Cascade);
 
-            modelBuilder.Entity<GroupRole>()
-                .HasOne(gr => gr.Role)
-                .WithMany(r => r.GroupRoles)
-                .HasForeignKey(gr => gr.RoleId)
-                .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<GroupRole>()
+            .HasOne(gr => gr.Role)
+            .WithMany(r => r.GroupRoles)
+            .HasForeignKey(gr => gr.RoleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<User>()
+            .HasOne(u => u.Department)
+            .WithMany(d => d.Employees)
+            .HasForeignKey(u => u.DepartmentId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<Department>()
+            .HasOne(d => d.Manager)
+            .WithOne(u => u.Department)
+            .HasForeignKey<Department>(d => d.ManagerId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 
     private void ConfigureIndexes(ModelBuilder modelBuilder)
@@ -137,35 +152,35 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         modelBuilder.Entity<BoxActivity>()
                 .HasIndex(ba => new { ba.BoxId, ba.Status });
 
-            modelBuilder.Entity<ProgressUpdate>()
-                .HasIndex(pu => new { pu.BoxId, pu.UpdateDate });
+        modelBuilder.Entity<ProgressUpdate>()
+            .HasIndex(pu => new { pu.BoxId, pu.UpdateDate });
 
-            modelBuilder.Entity<DailyProductionLog>()
-                .HasIndex(dpl => new { dpl.LogDate, dpl.TeamId });
+        modelBuilder.Entity<DailyProductionLog>()
+            .HasIndex(dpl => new { dpl.LogDate, dpl.TeamId });
 
-            modelBuilder.Entity<User>()
-                .HasIndex(u => u.Email)
-                .IsUnique();
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.Email)
+            .IsUnique();
 
-            modelBuilder.Entity<Role>()
-                .HasIndex(r => r.RoleName)
-                .IsUnique();
+        modelBuilder.Entity<Role>()
+            .HasIndex(r => r.RoleName)
+            .IsUnique();
 
-            modelBuilder.Entity<Group>()
-                .HasIndex(g => g.GroupName)
-                .IsUnique();
+        modelBuilder.Entity<Group>()
+            .HasIndex(g => g.GroupName)
+            .IsUnique();
 
-            modelBuilder.Entity<UserRole>()
-                .HasIndex(ur => new { ur.UserId, ur.RoleId })
-                .IsUnique();
+        modelBuilder.Entity<UserRole>()
+            .HasIndex(ur => new { ur.UserId, ur.RoleId })
+            .IsUnique();
 
-            modelBuilder.Entity<UserGroup>()
-                .HasIndex(ug => new { ug.UserId, ug.GroupId })
-                .IsUnique();
+        modelBuilder.Entity<UserGroup>()
+            .HasIndex(ug => new { ug.UserId, ug.GroupId })
+            .IsUnique();
 
-            modelBuilder.Entity<GroupRole>()
-                .HasIndex(gr => new { gr.GroupId, gr.RoleId })
-                .IsUnique();
+        modelBuilder.Entity<GroupRole>()
+            .HasIndex(gr => new { gr.GroupId, gr.RoleId })
+            .IsUnique();
     }
 
     private void ConfigureDefaultValues(ModelBuilder modelBuilder)
@@ -174,21 +189,21 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
                 .Property(p => p.Status)
                 .HasDefaultValue("Active");
 
-            modelBuilder.Entity<Box>()
-                .Property(b => b.CurrentStatus)
-                .HasDefaultValue("Not Started");
+        modelBuilder.Entity<Box>()
+            .Property(b => b.CurrentStatus)
+            .HasDefaultValue("Not Started");
 
-            modelBuilder.Entity<Box>()
-                .Property(b => b.ProgressPercentage)
-                .HasDefaultValue(0);
+        modelBuilder.Entity<Box>()
+            .Property(b => b.ProgressPercentage)
+            .HasDefaultValue(0);
 
-            modelBuilder.Entity<BoxActivity>()
-                .Property(ba => ba.Status)
-                .HasDefaultValue("Not Started");
+        modelBuilder.Entity<BoxActivity>()
+            .Property(ba => ba.Status)
+            .HasDefaultValue("Not Started");
 
-            modelBuilder.Entity<BoxActivity>()
-                .Property(ba => ba.ProgressPercentage)
-                .HasDefaultValue(0);
+        modelBuilder.Entity<BoxActivity>()
+            .Property(ba => ba.ProgressPercentage)
+            .HasDefaultValue(0);
         modelBuilder.Entity<ActivityMaster>()
             .Property(a => a.CreatedDate)
             .HasDefaultValueSql("GETUTCDATE()");
@@ -197,18 +212,18 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         foreach (var entry in ChangeTracker.Entries<IAuditableEntity>())
+        {
+            switch (entry.State)
             {
-                switch (entry.State)
-                {
-                    case EntityState.Added:
-                        entry.Entity.CreatedBy = _currentUserService.Username;
-                        entry.Entity.CreatedDate = _dateTime.Now;
-                        break;
+                case EntityState.Added:
+                    entry.Entity.CreatedBy = _currentUserService.Username;
+                    entry.Entity.CreatedDate = _dateTime.Now;
+                    break;
 
-                    case EntityState.Modified:
-                        entry.Entity.ModifiedBy = _currentUserService.Username;
-                        entry.Entity.ModifiedDate = _dateTime.Now;
-                        break;
+                case EntityState.Modified:
+                    entry.Entity.ModifiedBy = _currentUserService.Username;
+                    entry.Entity.ModifiedDate = _dateTime.Now;
+                    break;
             }
         }
 

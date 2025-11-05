@@ -1,8 +1,8 @@
 using Dubox.Application.DTOs;
-using Dubox.Domain.Entities;
-using Dubox.Domain.Shared;
 using Dubox.Domain.Abstraction;
+using Dubox.Domain.Entities;
 using Dubox.Domain.Services;
+using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
 
@@ -32,7 +32,7 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Us
             Email = request.Email,
             PasswordHash = _passwordHasher.HashPassword(request.Password),
             FullName = request.FullName,
-            Department = request.Department,
+            DepartmentId = request.DepartmentId!.Value,
             IsActive = true,
             CreatedDate = DateTime.UtcNow
         };

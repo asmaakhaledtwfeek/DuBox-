@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Dubox.Domain.Enums;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Dubox.Domain.Entities;
@@ -29,8 +30,7 @@ public class Project
     public DateTime? ActualEndDate { get; set; }
 
     [Required]
-    [MaxLength(50)]
-    public string Status { get; set; } = "Active"; // Active, On Hold, Completed
+    public ProjectStatusEnum Status { get; set; } = ProjectStatusEnum.Active; // Active, On Hold, Completed
 
     [MaxLength(500)]
     public string? Description { get; set; }

@@ -13,7 +13,7 @@ public record UpdateProjectCommand(
     DateTime? StartDate,
     DateTime? PlannedEndDate,
     DateTime? ActualEndDate,
-    string Status,
+    int Status,
     string? Description,
     bool IsActive
 ) : IRequest<Result<ProjectDto>>;

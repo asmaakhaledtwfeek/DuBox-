@@ -1,7 +1,8 @@
 using Dubox.Application.DTOs;
-using Dubox.Domain.Entities;
-using Dubox.Domain.Shared;
 using Dubox.Domain.Abstraction;
+using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
+using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
 
@@ -41,7 +42,7 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
         project.StartDate = request.StartDate;
         project.PlannedEndDate = request.PlannedEndDate;
         project.ActualEndDate = request.ActualEndDate;
-        project.Status = request.Status;
+        project.Status = (ProjectStatusEnum)request.Status;
         project.Description = request.Description;
         project.IsActive = request.IsActive;
         project.ModifiedDate = DateTime.UtcNow;

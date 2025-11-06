@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Dubox.Domain.Enums;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Dubox.Domain.Entities;
@@ -24,8 +25,9 @@ public class Box
     [MaxLength(100)]
     public string BoxType { get; set; } = string.Empty; // Bedroom, Living Room, Kitchen, etc.
 
+    [Required]
     [MaxLength(50)]
-    public string? Floor { get; set; }
+    public string Floor { get; set; }
 
     [MaxLength(100)]
     public string? Building { get; set; }
@@ -45,8 +47,7 @@ public class Box
     public decimal ProgressPercentage { get; set; } = 0; // 0-100%
 
     [Required]
-    [MaxLength(50)]
-    public string Status { get; set; } = "Not Started"; // Not Started, In Progress, Completed, On Hold, Delayed
+    public BoxStatusEnum Status { get; set; } = BoxStatusEnum.NotStarted; // Not Started, In Progress, Completed, On Hold, Delayed
 
     // Dimensions and specifications
     public decimal? Length { get; set; }
@@ -54,7 +55,7 @@ public class Box
     public decimal? Height { get; set; }
 
     [MaxLength(50)]
-    public string? UnitOfMeasure { get; set; } = "mm";
+    public UnitOfMeasureEnum? UnitOfMeasure { get; set; } = UnitOfMeasureEnum.m;
 
     // BIM reference
     [MaxLength(200)]

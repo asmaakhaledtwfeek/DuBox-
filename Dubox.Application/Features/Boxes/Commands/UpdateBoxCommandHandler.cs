@@ -1,7 +1,7 @@
 using Dubox.Application.DTOs;
+using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
-using Dubox.Domain.Abstraction;
 using Mapster;
 using MediatR;
 
@@ -38,19 +38,7 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
             box.QRCodeString = $"{project!.ProjectCode}_{request.BoxTag}";
         }
 
-        box.BoxTag = request.BoxTag;
-        box.BoxName = request.BoxName;
-        box.BoxType = request.BoxType;
-        box.Floor = request.Floor;
-        box.Building = request.Building;
-        box.Zone = request.Zone;
-        box.Status = request.Status;
-        box.Length = request.Length;
-        box.Width = request.Width;
-        box.Height = request.Height;
-        box.PlannedEndDate = request.PlannedEndDate;
-        box.Notes = request.Notes;
-        box.ModifiedDate = DateTime.UtcNow;
+        request.Adapt(box);
 
         _unitOfWork.Repository<Box>().Update(box);
         await _unitOfWork.CompleteAsync(cancellationToken);

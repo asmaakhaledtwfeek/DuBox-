@@ -35,12 +35,20 @@ public class BoxActivity
     [MaxLength(500)]
     public string? IssuesEncountered { get; set; }
 
-    // Team assignment
-    [MaxLength(100)]
-    public string? AssignedTeam { get; set; }
+    [ForeignKey(nameof(Team))]
+    public int? TeamId { get; set; }
+    public virtual Team? Team { get; set; }
 
-    public Guid? AssignedUserId { get; set; }
-    public User? AssignedUser { get; set; }
+    [ForeignKey(nameof(AssignedMember))]
+    public Guid? AssignedMemberId { get; set; }
+    public virtual TeamMember? AssignedMember { get; set; }
+
+    //// Team assignment
+    //[MaxLength(100)]
+    //public string? AssignedTeam { get; set; }
+
+    //public Guid? AssignedUserId { get; set; }
+    //public User? AssignedUser { get; set; }
 
     // Materials tracking
     public bool MaterialsAvailable { get; set; } = true;

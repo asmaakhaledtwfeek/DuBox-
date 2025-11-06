@@ -11,7 +11,7 @@ public class BoxAsset
     public Guid BoxAssetId { get; set; }
 
     public Guid BoxId { get; set; }
-    public Box Box { get; set; } = null!;
+    public virtual Box Box { get; set; } = null!;
 
     [Required]
     [MaxLength(100)]

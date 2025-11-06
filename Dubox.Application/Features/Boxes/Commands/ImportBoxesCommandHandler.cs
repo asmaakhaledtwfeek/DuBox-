@@ -1,7 +1,8 @@
 using Dubox.Application.DTOs;
-using Dubox.Domain.Entities;
-using Dubox.Domain.Shared;
 using Dubox.Domain.Abstraction;
+using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
+using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -64,7 +65,7 @@ public class ImportBoxesCommandHandler : IRequestHandler<ImportBoxesCommand, Res
                 Length = boxDto.Length,
                 Width = boxDto.Width,
                 Height = boxDto.Height,
-                UnitOfMeasure = "mm",
+                UnitOfMeasure = UnitOfMeasureEnum.m,
                 BIMModelReference = boxDto.BIMModelReference,
                 RevitElementId = boxDto.RevitElementId,
                 IsActive = true,

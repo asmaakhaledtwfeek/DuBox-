@@ -12,6 +12,9 @@ namespace Dubox.Domain.Entities
         [Required]
         [ForeignKey(nameof(Team))]
         public int TeamId { get; set; }
+        [Required]
+        [ForeignKey(nameof(User))]
+        public Guid UserId { get; set; }
 
         [MaxLength(50)]
         public string? EmployeeCode { get; set; }
@@ -19,8 +22,8 @@ namespace Dubox.Domain.Entities
         [MaxLength(200)]
         public string? EmployeeName { get; set; }
 
-        [MaxLength(100)]
-        public string? Role { get; set; }
+        //[MaxLength(100)]
+        //public string? Role { get; set; }
 
         [MaxLength(20)]
         public string? MobileNumber { get; set; }
@@ -32,5 +35,6 @@ namespace Dubox.Domain.Entities
 
         // Navigation properties
         public virtual Team Team { get; set; } = null!;
+        public virtual User User { get; set; } = null!;
     }
 }

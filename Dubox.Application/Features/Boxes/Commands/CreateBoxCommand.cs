@@ -9,7 +9,7 @@ public record CreateBoxCommand(
     string BoxTag,
     string? BoxName,
     string BoxType,
-    string? Floor,
+    string Floor,
     string? Building,
     string? Zone,
     decimal? Length,

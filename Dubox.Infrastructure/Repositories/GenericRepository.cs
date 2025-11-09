@@ -11,7 +11,7 @@ internal class GenericRepository<T> : IGenericRepository<T> where T : class
 {
     private readonly ApplicationDbContext _context;
     private readonly DbSet<T> _entity;
-
+   
     public GenericRepository(ApplicationDbContext context)
     {
         _context = context;
@@ -85,6 +85,16 @@ internal class GenericRepository<T> : IGenericRepository<T> where T : class
     {
         ArgumentNullException.ThrowIfNull(filter);
         return await _entity.AnyAsync(filter, cancellationToken);
+    }
+
+    public async Task<int> CountAsync(
+        Expression<Func<T, bool>>? filter = null, 
+        CancellationToken cancellationToken = default)
+    {
+        if (filter == null)
+            return await _entity.CountAsync(cancellationToken);
+        
+        return await _entity.CountAsync(filter, cancellationToken);
     }
 
     public IReadOnlyList<T> Get()

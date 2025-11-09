@@ -6,13 +6,13 @@ namespace Dubox.Application.Features.Boxes.Commands;
 
 public record UpdateBoxCommand(
     Guid BoxId,
-    string BoxTag,
+    string? BoxTag,
     string? BoxName,
-    string BoxType,
-    string Floor,
+    string? BoxType,
+    string? Floor,
     string? Building,
     string? Zone,
-    int Status,
+    int? Status,
     decimal? Length,
     decimal? Width,
     decimal? Height,

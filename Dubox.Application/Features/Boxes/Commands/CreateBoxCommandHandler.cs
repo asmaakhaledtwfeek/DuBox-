@@ -25,14 +25,12 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
 
     public async Task<Result<BoxDto>> Handle(CreateBoxCommand request, CancellationToken cancellationToken)
     {
-        // Verify project exists
         var project = await _unitOfWork.Repository<Project>()
             .GetByIdAsync(request.ProjectId, cancellationToken);
 
         if (project == null)
             return Result.Failure<BoxDto>("Project not found");
 
-        // Check if box already exists
         var boxExists = await _unitOfWork.Repository<Box>()
             .IsExistAsync(b => b.ProjectId == request.ProjectId && b.BoxTag == request.BoxTag, cancellationToken);
 
@@ -40,18 +38,28 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
             return Result.Failure<BoxDto>("Box with this tag already exists in the project");
 
         var box = _mapper.Map<Box>(request);
-        box.QRCodeString = $"{project.ProjectCode}_{request.BoxTag}"; ;
+
+        box.QRCodeString = $"{project.ProjectCode}_{request.BoxTag}";
+        if (request.Assets != null && request.Assets.Any())
+        {
+            var boxAssets = request.Assets.Adapt<List<BoxAsset>>();
+            box.BoxAssets = boxAssets;
+        }
+        else
+            box.BoxAssets = new List<BoxAsset>();
+        foreach (var asset in box.BoxAssets)
+            asset.Box = box;
+
         await _unitOfWork.Repository<Box>().AddAsync(box, cancellationToken);
 
-        // Auto-copy activities
         var boxType = request.BoxType?.Trim();
+
+        var searchPattern = $",{boxType},";
 
         var activityMasters = await _dbContext.ActivityMasters
             .Where(am => am.IsActive &&
                 (string.IsNullOrEmpty(am.ApplicableBoxTypes) ||
-                 am.ApplicableBoxTypes
-                   .Split(',', StringSplitOptions.RemoveEmptyEntries)
-                   .Any(t => t.Trim().Equals(boxType, StringComparison.OrdinalIgnoreCase))))
+                 am.ApplicableBoxTypes.Contains(searchPattern)))
             .OrderBy(am => am.OverallSequence)
             .ToListAsync(cancellationToken);
 
@@ -70,32 +78,8 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
         await _unitOfWork.Repository<BoxActivity>().AddRangeAsync(boxActivities, cancellationToken);
 
 
-
-        //// Add assets if provided
-        //if (request.Assets != null && request.Assets.Any())
-        //{
-        //    foreach (var assetDto in request.Assets)
-        //    {
-        //        var asset = new BoxAsset
-        //        {
-        //            BoxId = box.BoxId,
-        //            AssetType = assetDto.AssetType,
-        //            AssetCode = assetDto.AssetCode,
-        //            AssetName = assetDto.AssetName,
-        //            Quantity = assetDto.Quantity,
-        //            Unit = assetDto.Unit,
-        //            Specifications = assetDto.Specifications,
-        //            Notes = assetDto.Notes,
-        //            CreatedDate = DateTime.UtcNow
-        //        };
-
-        //        await _unitOfWork.Repository<BoxAsset>().AddAsync(asset, cancellationToken);
-        //    }
-        //}
-
         await _unitOfWork.CompleteAsync(cancellationToken);
 
-        // Update project total boxes
         project.TotalBoxes++;
         _unitOfWork.Repository<Project>().Update(project);
         await _unitOfWork.CompleteAsync(cancellationToken);

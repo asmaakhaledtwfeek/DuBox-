@@ -10,6 +10,9 @@ namespace Dubox.Application.Features.Boxes.MappingConfig
         public void Register(TypeAdapterConfig config)
         {
             config.NewConfig<CreateBoxCommand, Box>()
+            //.Map(dest => dest.BoxAssets, src => src.Assets == null
+            //   ? new List<BoxAsset>()
+            //   : src.Assets.Adapt<List<BoxAsset>>())
            .Map(dest => dest.ProjectId, src => src.ProjectId)
            .Map(dest => dest.BoxTag, src => src.BoxTag)
            .Map(dest => dest.BoxName, src => src.BoxName)
@@ -28,8 +31,8 @@ namespace Dubox.Application.Features.Boxes.MappingConfig
            .Map(dest => dest.QRCodeImageUrl, src => (string?)null)
            .Ignore(dest => dest.QRCodeString)
            .Map(dest => dest.IsActive, _ => true)
-           .Map(dest => dest.CreatedDate, _ => DateTime.UtcNow)
-           .Map(dest => dest.BoxAssets, src => src.Assets.Adapt<List<BoxAsset>>());
+           .Map(dest => dest.CreatedDate, _ => DateTime.UtcNow);
+
         }
     }
 }

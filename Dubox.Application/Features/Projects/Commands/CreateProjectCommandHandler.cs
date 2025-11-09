@@ -1,9 +1,9 @@
 using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
-using Dubox.Domain.Enums;
 using Dubox.Domain.Shared;
 using Mapster;
+using MapsterMapper;
 using MediatR;
 
 namespace Dubox.Application.Features.Projects.Commands;
@@ -11,10 +11,11 @@ namespace Dubox.Application.Features.Projects.Commands;
 public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand, Result<ProjectDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-
-    public CreateProjectCommandHandler(IUnitOfWork unitOfWork)
+    private readonly IMapper _mapper;
+    public CreateProjectCommandHandler(IUnitOfWork unitOfWork, IMapper mapper)
     {
         _unitOfWork = unitOfWork;
+        _mapper = mapper;
     }
 
     public async Task<Result<ProjectDto>> Handle(CreateProjectCommand request, CancellationToken cancellationToken)
@@ -25,20 +26,8 @@ public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand,
         if (projectExists)
             return Result.Failure<ProjectDto>("Project with this code already exists");
 
-        var project = new Project
-        {
-            ProjectCode = request.ProjectCode,
-            ProjectName = request.ProjectName,
-            ClientName = request.ClientName,
-            Location = request.Location,
-            StartDate = request.StartDate,
-            PlannedEndDate = request.PlannedEndDate,
-            Description = request.Description,
-            Status = ProjectStatusEnum.Active,
-            IsActive = true,
-            TotalBoxes = 0,
-            CreatedDate = DateTime.UtcNow
-        };
+        var project = _mapper.Map<Project>(request);
+
 
         await _unitOfWork.Repository<Project>().AddAsync(project, cancellationToken);
         await _unitOfWork.CompleteAsync(cancellationToken);

@@ -4,7 +4,7 @@ public record BoxDto
 {
     public Guid BoxId { get; init; }
     public Guid ProjectId { get; init; }
-    public string ProjectCode { get; init; } = string.Empty;
+    public string ProjectCode { get; set; } = string.Empty;
     public string BoxTag { get; init; } = string.Empty;
     public string? BoxName { get; init; }
     public string BoxType { get; init; } = string.Empty;

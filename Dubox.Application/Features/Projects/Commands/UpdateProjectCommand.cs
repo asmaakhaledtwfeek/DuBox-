@@ -6,15 +6,15 @@ namespace Dubox.Application.Features.Projects.Commands;
 
 public record UpdateProjectCommand(
     Guid ProjectId,
-    string ProjectCode,
-    string ProjectName,
+    string? ProjectCode,
+    string? ProjectName,
     string? ClientName,
     string? Location,
     DateTime? StartDate,
     DateTime? PlannedEndDate,
     DateTime? ActualEndDate,
-    int Status,
+    int? Status,
     string? Description,
-    bool IsActive
+    bool? IsActive
 ) : IRequest<Result<ProjectDto>>;
 

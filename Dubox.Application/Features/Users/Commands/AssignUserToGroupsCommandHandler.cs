@@ -1,6 +1,6 @@
+using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
-using Dubox.Domain.Abstraction;
 using MediatR;
 
 namespace Dubox.Application.Features.Users.Commands;
@@ -22,6 +22,13 @@ public class AssignUserToGroupsCommandHandler : IRequestHandler<AssignUserToGrou
         if (user == null)
             return Result.Failure("User not found");
 
+        var existingGroupsCount = _unitOfWork.Repository<Group>()
+       .Get().Count(r => request.GroupIds.Contains(r.GroupId));
+
+        if (existingGroupsCount != request.GroupIds.Count)
+        {
+            return Result.Failure("One or more Group were not found in the groups.");
+        }
         var existingUserGroups = _unitOfWork.Repository<UserGroup>()
             .Get()
             .Where(ug => ug.UserId == request.UserId)

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Dubox.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251104170707_SeedDataWithStaticValues")]
-    partial class SeedDataWithStaticValues
+    [Migration("20251105160901_SeedingDepartment")]
+    partial class SeedingDepartment
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1080,6 +1080,138 @@ namespace Dubox.Infrastructure.Migrations
                     b.ToTable("DailyProductionLog");
                 });
 
+            modelBuilder.Entity("Dubox.Domain.Entities.Department", b =>
+                {
+                    b.Property<Guid>("DepartmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.Property<string>("DepartmentName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid?>("ManagerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
+
+                    b.HasKey("DepartmentId");
+
+                    b.HasIndex("ManagerId")
+                        .IsUnique()
+                        .HasFilter("[ManagerId] IS NOT NULL");
+
+                    b.ToTable("Departments");
+
+                    b.HasData(
+                        new
+                        {
+                            DepartmentId = new Guid("d1000000-0000-0000-0000-000000000001"),
+                            Code = "IT",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DepartmentName = "IT",
+                            IsActive = true,
+                            UpdatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        },
+                        new
+                        {
+                            DepartmentId = new Guid("d2000000-0000-0000-0000-000000000002"),
+                            Code = "MGMT",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DepartmentName = "Management",
+                            IsActive = true,
+                            UpdatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        },
+                        new
+                        {
+                            DepartmentId = new Guid("d3000000-0000-0000-0000-000000000003"),
+                            Code = "ENG",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DepartmentName = "Engineering",
+                            IsActive = true,
+                            UpdatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        },
+                        new
+                        {
+                            DepartmentId = new Guid("d4000000-0000-0000-0000-000000000004"),
+                            Code = "CONST",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DepartmentName = "Construction",
+                            IsActive = true,
+                            UpdatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        },
+                        new
+                        {
+                            DepartmentId = new Guid("d5000000-0000-0000-0000-000000000005"),
+                            Code = "QLTY",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DepartmentName = "Quality",
+                            IsActive = true,
+                            UpdatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        },
+                        new
+                        {
+                            DepartmentId = new Guid("d6000000-0000-0000-0000-000000000006"),
+                            Code = "PROC",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DepartmentName = "Procurement",
+                            IsActive = true,
+                            UpdatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        },
+                        new
+                        {
+                            DepartmentId = new Guid("d7000000-0000-0000-0000-000000000007"),
+                            Code = "HSE",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DepartmentName = "HSE",
+                            IsActive = true,
+                            UpdatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        },
+                        new
+                        {
+                            DepartmentId = new Guid("d8000000-0000-0000-0000-000000000008"),
+                            Code = "DBX",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DepartmentName = "DuBox",
+                            IsActive = true,
+                            UpdatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        },
+                        new
+                        {
+                            DepartmentId = new Guid("d9000000-0000-0000-0000-000000000009"),
+                            Code = "DPD",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DepartmentName = "DuPod",
+                            IsActive = true,
+                            UpdatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        });
+                });
+
             modelBuilder.Entity("Dubox.Domain.Entities.FactoryLocation", b =>
                 {
                     b.Property<int>("LocationId")
@@ -1158,72 +1290,6 @@ namespace Dubox.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Groups");
-
-                    b.HasData(
-                        new
-                        {
-                            GroupId = new Guid("a1111111-1111-1111-1111-111111111111"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Senior management and administrators",
-                            GroupName = "Management",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            GroupId = new Guid("a2222222-2222-2222-2222-222222222222"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Engineering department - design and site",
-                            GroupName = "Engineering",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            GroupId = new Guid("a3333333-3333-3333-3333-333333333333"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Site construction team",
-                            GroupName = "Construction",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            GroupId = new Guid("a4444444-4444-4444-4444-444444444444"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Quality control and inspection team",
-                            GroupName = "QualityControl",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            GroupId = new Guid("a5555555-5555-5555-5555-555555555555"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Procurement and logistics team",
-                            GroupName = "Procurement",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            GroupId = new Guid("a6666666-6666-6666-6666-666666666666"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Health, Safety, and Environment team",
-                            GroupName = "HSE",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            GroupId = new Guid("a7777777-7777-7777-7777-777777777777"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Modular construction team - DuBox",
-                            GroupName = "DuBoxTeam",
-                            IsActive = true
-                        },
-                        new
-                        {
-                            GroupId = new Guid("a8888888-8888-8888-8888-888888888888"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Plug-and-play modular solutions - DuPod",
-                            GroupName = "DuPodTeam",
-                            IsActive = true
-                        });
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.GroupRole", b =>
@@ -1249,127 +1315,6 @@ namespace Dubox.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("GroupRoles");
-
-                    b.HasData(
-                        new
-                        {
-                            GroupRoleId = new Guid("b1111111-1111-1111-1111-111111111111"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            GroupId = new Guid("a1111111-1111-1111-1111-111111111111"),
-                            RoleId = new Guid("11111111-1111-1111-1111-111111111111")
-                        },
-                        new
-                        {
-                            GroupRoleId = new Guid("b2222222-2222-2222-2222-222222222222"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            GroupId = new Guid("a1111111-1111-1111-1111-111111111111"),
-                            RoleId = new Guid("22222222-2222-2222-2222-222222222222")
-                        },
-                        new
-                        {
-                            GroupRoleId = new Guid("b3333333-3333-3333-3333-333333333333"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            GroupId = new Guid("a2222222-2222-2222-2222-222222222222"),
-                            RoleId = new Guid("33333333-3333-3333-3333-333333333333")
-                        },
-                        new
-                        {
-                            GroupRoleId = new Guid("b4444444-4444-4444-4444-444444444444"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            GroupId = new Guid("a2222222-2222-2222-2222-222222222222"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
-                        },
-                        new
-                        {
-                            GroupRoleId = new Guid("b5555555-5555-5555-5555-555555555555"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            GroupId = new Guid("a2222222-2222-2222-2222-222222222222"),
-                            RoleId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
-                        },
-                        new
-                        {
-                            GroupRoleId = new Guid("b6666666-6666-6666-6666-666666666666"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            GroupId = new Guid("a3333333-3333-3333-3333-333333333333"),
-                            RoleId = new Guid("44444444-4444-4444-4444-444444444444")
-                        },
-                        new
-                        {
-                            GroupRoleId = new Guid("b7777777-7777-7777-7777-777777777777"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            GroupId = new Guid("a3333333-3333-3333-3333-333333333333"),
-                            RoleId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
-                        },
-                        new
-                        {
-                            GroupRoleId = new Guid("b8888888-8888-8888-8888-888888888888"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            GroupId = new Guid("a4444444-4444-4444-4444-444444444444"),
-                            RoleId = new Guid("55555555-5555-5555-5555-555555555555")
-                        },
-                        new
-                        {
-                            GroupRoleId = new Guid("b9999999-9999-9999-9999-999999999999"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            GroupId = new Guid("a4444444-4444-4444-4444-444444444444"),
-                            RoleId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
-                        },
-                        new
-                        {
-                            GroupRoleId = new Guid("baaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            GroupId = new Guid("a5555555-5555-5555-5555-555555555555"),
-                            RoleId = new Guid("66666666-6666-6666-6666-666666666666")
-                        },
-                        new
-                        {
-                            GroupRoleId = new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            GroupId = new Guid("a5555555-5555-5555-5555-555555555555"),
-                            RoleId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
-                        },
-                        new
-                        {
-                            GroupRoleId = new Guid("bccccccc-cccc-cccc-cccc-cccccccccccc"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            GroupId = new Guid("a6666666-6666-6666-6666-666666666666"),
-                            RoleId = new Guid("77777777-7777-7777-7777-777777777777")
-                        },
-                        new
-                        {
-                            GroupRoleId = new Guid("bddddddd-dddd-dddd-dddd-dddddddddddd"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            GroupId = new Guid("a6666666-6666-6666-6666-666666666666"),
-                            RoleId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
-                        },
-                        new
-                        {
-                            GroupRoleId = new Guid("beeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            GroupId = new Guid("a7777777-7777-7777-7777-777777777777"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
-                        },
-                        new
-                        {
-                            GroupRoleId = new Guid("bfffffff-ffff-ffff-ffff-ffffffffffff"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            GroupId = new Guid("a7777777-7777-7777-7777-777777777777"),
-                            RoleId = new Guid("22222222-2222-2222-2222-222222222222")
-                        },
-                        new
-                        {
-                            GroupRoleId = new Guid("b0000001-0000-0000-0000-000000000001"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            GroupId = new Guid("a8888888-8888-8888-8888-888888888888"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
-                        },
-                        new
-                        {
-                            GroupRoleId = new Guid("b0000002-0000-0000-0000-000000000002"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            GroupId = new Guid("a8888888-8888-8888-8888-888888888888"),
-                            RoleId = new Guid("22222222-2222-2222-2222-222222222222")
-                        });
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.Material", b =>
@@ -1813,88 +1758,6 @@ namespace Dubox.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Roles");
-
-                    b.HasData(
-                        new
-                        {
-                            RoleId = new Guid("11111111-1111-1111-1111-111111111111"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Full system administration access",
-                            IsActive = true,
-                            RoleName = "SystemAdmin"
-                        },
-                        new
-                        {
-                            RoleId = new Guid("22222222-2222-2222-2222-222222222222"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Manage projects and teams",
-                            IsActive = true,
-                            RoleName = "ProjectManager"
-                        },
-                        new
-                        {
-                            RoleId = new Guid("33333333-3333-3333-3333-333333333333"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Oversee construction site activities",
-                            IsActive = true,
-                            RoleName = "SiteEngineer"
-                        },
-                        new
-                        {
-                            RoleId = new Guid("44444444-4444-4444-4444-444444444444"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Supervise construction workers",
-                            IsActive = true,
-                            RoleName = "Foreman"
-                        },
-                        new
-                        {
-                            RoleId = new Guid("55555555-5555-5555-5555-555555555555"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Quality control and inspection",
-                            IsActive = true,
-                            RoleName = "QCInspector"
-                        },
-                        new
-                        {
-                            RoleId = new Guid("66666666-6666-6666-6666-666666666666"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Handle material procurement",
-                            IsActive = true,
-                            RoleName = "ProcurementOfficer"
-                        },
-                        new
-                        {
-                            RoleId = new Guid("77777777-7777-7777-7777-777777777777"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Health, Safety, and Environment oversight",
-                            IsActive = true,
-                            RoleName = "HSEOfficer"
-                        },
-                        new
-                        {
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Design and BIM modeling",
-                            IsActive = true,
-                            RoleName = "DesignEngineer"
-                        },
-                        new
-                        {
-                            RoleId = new Guid("99999999-9999-9999-9999-999999999999"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Cost estimation and budgeting",
-                            IsActive = true,
-                            RoleName = "CostEstimator"
-                        },
-                        new
-                        {
-                            RoleId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Read-only access to projects",
-                            IsActive = true,
-                            RoleName = "Viewer"
-                        });
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.Team", b =>
@@ -1992,9 +1855,8 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Department")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -2017,202 +1879,12 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasKey("UserId");
 
+                    b.HasIndex("DepartmentId");
+
                     b.HasIndex("Email")
                         .IsUnique();
 
                     b.ToTable("Users");
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = new Guid("f1111111-1111-1111-1111-111111111111"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "IT",
-                            Email = "admin@groupamana.com",
-                            FullName = "System Administrator",
-                            IsActive = true,
-                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEL47IPnruFDHjvgQn4gt+aHjj9Wvhi+9Lw6p4tvk8d7H"
-                        },
-                        new
-                        {
-                            UserId = new Guid("f2222222-2222-2222-2222-222222222222"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "Management",
-                            Email = "ahmed.almazrouei@groupamana.com",
-                            FullName = "Ahmed Al Mazrouei",
-                            IsActive = true,
-                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEL47IPnruFDHjvgQn4gt+aHjj9Wvhi+9Lw6p4tvk8d7H"
-                        },
-                        new
-                        {
-                            UserId = new Guid("f3333333-3333-3333-3333-333333333333"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "Management",
-                            Email = "sara.alkhan@groupamana.com",
-                            FullName = "Sara Al Khan",
-                            IsActive = true,
-                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEL47IPnruFDHjvgQn4gt+aHjj9Wvhi+9Lw6p4tvk8d7H"
-                        },
-                        new
-                        {
-                            UserId = new Guid("f4444444-4444-4444-4444-444444444444"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "Engineering",
-                            Email = "mohammed.hassan@groupamana.com",
-                            FullName = "Mohammed Hassan",
-                            IsActive = true,
-                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEL47IPnruFDHjvgQn4gt+aHjj9Wvhi+9Lw6p4tvk8d7H"
-                        },
-                        new
-                        {
-                            UserId = new Guid("f5555555-5555-5555-5555-555555555555"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "Engineering",
-                            Email = "fatima.alali@groupamana.com",
-                            FullName = "Fatima Al Ali",
-                            IsActive = true,
-                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEL47IPnruFDHjvgQn4gt+aHjj9Wvhi+9Lw6p4tvk8d7H"
-                        },
-                        new
-                        {
-                            UserId = new Guid("f6666666-6666-6666-6666-666666666666"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "Engineering",
-                            Email = "khalid.omar@groupamana.com",
-                            FullName = "Khalid Omar",
-                            IsActive = true,
-                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEL47IPnruFDHjvgQn4gt+aHjj9Wvhi+9Lw6p4tvk8d7H"
-                        },
-                        new
-                        {
-                            UserId = new Guid("f7777777-7777-7777-7777-777777777777"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "Construction",
-                            Email = "ali.mohammed@groupamana.com",
-                            FullName = "Ali Mohammed",
-                            IsActive = true,
-                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEL47IPnruFDHjvgQn4gt+aHjj9Wvhi+9Lw6p4tvk8d7H"
-                        },
-                        new
-                        {
-                            UserId = new Guid("f8888888-8888-8888-8888-888888888888"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "Construction",
-                            Email = "omar.saleh@groupamana.com",
-                            FullName = "Omar Saleh",
-                            IsActive = true,
-                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEL47IPnruFDHjvgQn4gt+aHjj9Wvhi+9Lw6p4tvk8d7H"
-                        },
-                        new
-                        {
-                            UserId = new Guid("f9999999-9999-9999-9999-999999999999"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "Construction",
-                            Email = "youssef.ahmed@groupamana.com",
-                            FullName = "Youssef Ahmed",
-                            IsActive = true,
-                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEL47IPnruFDHjvgQn4gt+aHjj9Wvhi+9Lw6p4tvk8d7H"
-                        },
-                        new
-                        {
-                            UserId = new Guid("faaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "Quality",
-                            Email = "layla.ibrahim@groupamana.com",
-                            FullName = "Layla Ibrahim",
-                            IsActive = true,
-                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEL47IPnruFDHjvgQn4gt+aHjj9Wvhi+9Lw6p4tvk8d7H"
-                        },
-                        new
-                        {
-                            UserId = new Guid("fbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "Quality",
-                            Email = "hamza.khalil@groupamana.com",
-                            FullName = "Hamza Khalil",
-                            IsActive = true,
-                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEL47IPnruFDHjvgQn4gt+aHjj9Wvhi+9Lw6p4tvk8d7H"
-                        },
-                        new
-                        {
-                            UserId = new Guid("fccccccc-cccc-cccc-cccc-cccccccccccc"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "Procurement",
-                            Email = "noor.alhassan@groupamana.com",
-                            FullName = "Noor Al Hassan",
-                            IsActive = true,
-                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEL47IPnruFDHjvgQn4gt+aHjj9Wvhi+9Lw6p4tvk8d7H"
-                        },
-                        new
-                        {
-                            UserId = new Guid("fddddddd-dddd-dddd-dddd-dddddddddddd"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "Procurement",
-                            Email = "zaid.mansour@groupamana.com",
-                            FullName = "Zaid Mansour",
-                            IsActive = true,
-                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEL47IPnruFDHjvgQn4gt+aHjj9Wvhi+9Lw6p4tvk8d7H"
-                        },
-                        new
-                        {
-                            UserId = new Guid("feeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "HSE",
-                            Email = "maryam.Said@groupamana.com",
-                            FullName = "Maryam Said",
-                            IsActive = true,
-                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEL47IPnruFDHjvgQn4gt+aHjj9Wvhi+9Lw6p4tvk8d7H"
-                        },
-                        new
-                        {
-                            UserId = new Guid("ffffffff-ffff-ffff-ffff-ffffffffffff"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "HSE",
-                            Email = "tariq.abdullah@groupamana.com",
-                            FullName = "Tariq Abdullah",
-                            IsActive = true,
-                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEL47IPnruFDHjvgQn4gt+aHjj9Wvhi+9Lw6p4tvk8d7H"
-                        },
-                        new
-                        {
-                            UserId = new Guid("f0000001-0000-0000-0000-000000000001"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "DuBox",
-                            Email = "rania.khalifa@groupamana.com",
-                            FullName = "Rania Khalifa",
-                            IsActive = true,
-                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEL47IPnruFDHjvgQn4gt+aHjj9Wvhi+9Lw6p4tvk8d7H"
-                        },
-                        new
-                        {
-                            UserId = new Guid("f0000002-0000-0000-0000-000000000002"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "DuBox",
-                            Email = "salim.rashid@groupamana.com",
-                            FullName = "Salim Rashid",
-                            IsActive = true,
-                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEL47IPnruFDHjvgQn4gt+aHjj9Wvhi+9Lw6p4tvk8d7H"
-                        },
-                        new
-                        {
-                            UserId = new Guid("f0000003-0000-0000-0000-000000000003"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "DuPod",
-                            Email = "huda.almarri@groupamana.com",
-                            FullName = "Huda Al Marri",
-                            IsActive = true,
-                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEL47IPnruFDHjvgQn4gt+aHjj9Wvhi+9Lw6p4tvk8d7H"
-                        },
-                        new
-                        {
-                            UserId = new Guid("f0000004-0000-0000-0000-000000000004"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Department = "DuPod",
-                            Email = "faisal.sultan@groupamana.com",
-                            FullName = "Faisal Sultan",
-                            IsActive = true,
-                            PasswordHash = "AQIDBAUGBwgJCgsMDQ4PEL47IPnruFDHjvgQn4gt+aHjj9Wvhi+9Lw6p4tvk8d7H"
-                        });
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.UserGroup", b =>
@@ -2238,141 +1910,6 @@ namespace Dubox.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("UserGroups");
-
-                    b.HasData(
-                        new
-                        {
-                            UserGroupId = new Guid("c1111111-1111-1111-1111-111111111111"),
-                            GroupId = new Guid("a1111111-1111-1111-1111-111111111111"),
-                            JoinedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = new Guid("f1111111-1111-1111-1111-111111111111")
-                        },
-                        new
-                        {
-                            UserGroupId = new Guid("c2222222-2222-2222-2222-222222222222"),
-                            GroupId = new Guid("a1111111-1111-1111-1111-111111111111"),
-                            JoinedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = new Guid("f2222222-2222-2222-2222-222222222222")
-                        },
-                        new
-                        {
-                            UserGroupId = new Guid("c3333333-3333-3333-3333-333333333333"),
-                            GroupId = new Guid("a1111111-1111-1111-1111-111111111111"),
-                            JoinedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = new Guid("f3333333-3333-3333-3333-333333333333")
-                        },
-                        new
-                        {
-                            UserGroupId = new Guid("c4444444-4444-4444-4444-444444444444"),
-                            GroupId = new Guid("a2222222-2222-2222-2222-222222222222"),
-                            JoinedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = new Guid("f4444444-4444-4444-4444-444444444444")
-                        },
-                        new
-                        {
-                            UserGroupId = new Guid("c5555555-5555-5555-5555-555555555555"),
-                            GroupId = new Guid("a2222222-2222-2222-2222-222222222222"),
-                            JoinedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = new Guid("f5555555-5555-5555-5555-555555555555")
-                        },
-                        new
-                        {
-                            UserGroupId = new Guid("c6666666-6666-6666-6666-666666666666"),
-                            GroupId = new Guid("a2222222-2222-2222-2222-222222222222"),
-                            JoinedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = new Guid("f6666666-6666-6666-6666-666666666666")
-                        },
-                        new
-                        {
-                            UserGroupId = new Guid("c7777777-7777-7777-7777-777777777777"),
-                            GroupId = new Guid("a3333333-3333-3333-3333-333333333333"),
-                            JoinedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = new Guid("f7777777-7777-7777-7777-777777777777")
-                        },
-                        new
-                        {
-                            UserGroupId = new Guid("c8888888-8888-8888-8888-888888888888"),
-                            GroupId = new Guid("a3333333-3333-3333-3333-333333333333"),
-                            JoinedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = new Guid("f8888888-8888-8888-8888-888888888888")
-                        },
-                        new
-                        {
-                            UserGroupId = new Guid("c9999999-9999-9999-9999-999999999999"),
-                            GroupId = new Guid("a3333333-3333-3333-3333-333333333333"),
-                            JoinedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = new Guid("f9999999-9999-9999-9999-999999999999")
-                        },
-                        new
-                        {
-                            UserGroupId = new Guid("caaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
-                            GroupId = new Guid("a4444444-4444-4444-4444-444444444444"),
-                            JoinedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = new Guid("faaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
-                        },
-                        new
-                        {
-                            UserGroupId = new Guid("cbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
-                            GroupId = new Guid("a4444444-4444-4444-4444-444444444444"),
-                            JoinedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = new Guid("fbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb")
-                        },
-                        new
-                        {
-                            UserGroupId = new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc"),
-                            GroupId = new Guid("a5555555-5555-5555-5555-555555555555"),
-                            JoinedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = new Guid("fccccccc-cccc-cccc-cccc-cccccccccccc")
-                        },
-                        new
-                        {
-                            UserGroupId = new Guid("cddddddd-dddd-dddd-dddd-dddddddddddd"),
-                            GroupId = new Guid("a5555555-5555-5555-5555-555555555555"),
-                            JoinedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = new Guid("fddddddd-dddd-dddd-dddd-dddddddddddd")
-                        },
-                        new
-                        {
-                            UserGroupId = new Guid("ceeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
-                            GroupId = new Guid("a6666666-6666-6666-6666-666666666666"),
-                            JoinedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = new Guid("feeeeeee-eeee-eeee-eeee-eeeeeeeeeeee")
-                        },
-                        new
-                        {
-                            UserGroupId = new Guid("cfffffff-ffff-ffff-ffff-ffffffffffff"),
-                            GroupId = new Guid("a6666666-6666-6666-6666-666666666666"),
-                            JoinedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = new Guid("ffffffff-ffff-ffff-ffff-ffffffffffff")
-                        },
-                        new
-                        {
-                            UserGroupId = new Guid("c0000001-0000-0000-0000-000000000001"),
-                            GroupId = new Guid("a7777777-7777-7777-7777-777777777777"),
-                            JoinedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = new Guid("f0000001-0000-0000-0000-000000000001")
-                        },
-                        new
-                        {
-                            UserGroupId = new Guid("c0000002-0000-0000-0000-000000000002"),
-                            GroupId = new Guid("a7777777-7777-7777-7777-777777777777"),
-                            JoinedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = new Guid("f0000002-0000-0000-0000-000000000002")
-                        },
-                        new
-                        {
-                            UserGroupId = new Guid("c0000003-0000-0000-0000-000000000003"),
-                            GroupId = new Guid("a8888888-8888-8888-8888-888888888888"),
-                            JoinedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = new Guid("f0000003-0000-0000-0000-000000000003")
-                        },
-                        new
-                        {
-                            UserGroupId = new Guid("c0000004-0000-0000-0000-000000000004"),
-                            GroupId = new Guid("a8888888-8888-8888-8888-888888888888"),
-                            JoinedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            UserId = new Guid("f0000004-0000-0000-0000-000000000004")
-                        });
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.UserRole", b =>
@@ -2398,22 +1935,6 @@ namespace Dubox.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("UserRoles");
-
-                    b.HasData(
-                        new
-                        {
-                            UserRoleId = new Guid("d1111111-1111-1111-1111-111111111111"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            RoleId = new Guid("99999999-9999-9999-9999-999999999999"),
-                            UserId = new Guid("f2222222-2222-2222-2222-222222222222")
-                        },
-                        new
-                        {
-                            UserRoleId = new Guid("d2222222-2222-2222-2222-222222222222"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            RoleId = new Guid("22222222-2222-2222-2222-222222222222"),
-                            UserId = new Guid("f4444444-4444-4444-4444-444444444444")
-                        });
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.WIRChecklistItem", b =>
@@ -2682,6 +2203,16 @@ namespace Dubox.Infrastructure.Migrations
                     b.Navigation("Team");
                 });
 
+            modelBuilder.Entity("Dubox.Domain.Entities.Department", b =>
+                {
+                    b.HasOne("Dubox.Domain.Entities.User", "Manager")
+                        .WithOne("ManagedDepartment")
+                        .HasForeignKey("Dubox.Domain.Entities.Department", "ManagerId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Manager");
+                });
+
             modelBuilder.Entity("Dubox.Domain.Entities.GroupRole", b =>
                 {
                     b.HasOne("Dubox.Domain.Entities.Group", "Group")
@@ -2801,6 +2332,17 @@ namespace Dubox.Infrastructure.Migrations
                     b.Navigation("Team");
                 });
 
+            modelBuilder.Entity("Dubox.Domain.Entities.User", b =>
+                {
+                    b.HasOne("Dubox.Domain.Entities.Department", "EmployeeOfDepartment")
+                        .WithMany("Employees")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("EmployeeOfDepartment");
+                });
+
             modelBuilder.Entity("Dubox.Domain.Entities.UserGroup", b =>
                 {
                     b.HasOne("Dubox.Domain.Entities.Group", "Group")
@@ -2899,6 +2441,11 @@ namespace Dubox.Infrastructure.Migrations
                     b.Navigation("SubCategories");
                 });
 
+            modelBuilder.Entity("Dubox.Domain.Entities.Department", b =>
+                {
+                    b.Navigation("Employees");
+                });
+
             modelBuilder.Entity("Dubox.Domain.Entities.FactoryLocation", b =>
                 {
                     b.Navigation("BoxLocationHistory");
@@ -2945,6 +2492,8 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.User", b =>
                 {
+                    b.Navigation("ManagedDepartment");
+
                     b.Navigation("UserGroups");
 
                     b.Navigation("UserRoles");

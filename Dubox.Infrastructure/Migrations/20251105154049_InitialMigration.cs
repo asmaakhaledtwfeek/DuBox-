@@ -3,8 +3,6 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
-
 namespace Dubox.Infrastructure.Migrations
 {
     /// <inheritdoc />
@@ -101,6 +99,21 @@ namespace Dubox.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Groups",
+                columns: table => new
+                {
+                    GroupId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    GroupName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Groups", x => x.GroupId);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Materials",
                 columns: table => new
                 {
@@ -147,6 +160,21 @@ namespace Dubox.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Roles",
+                columns: table => new
+                {
+                    RoleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RoleName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Roles", x => x.RoleId);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Teams",
                 columns: table => new
                 {
@@ -164,25 +192,6 @@ namespace Dubox.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Teams", x => x.TeamId);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Users",
-                columns: table => new
-                {
-                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    PasswordHash = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    FullName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    Role = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    Department = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    IsActive = table.Column<bool>(type: "bit", nullable: false),
-                    LastLoginDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Users", x => x.UserId);
                 });
 
             migrationBuilder.CreateTable(
@@ -221,6 +230,32 @@ namespace Dubox.Infrastructure.Migrations
                         column: x => x.ProjectId,
                         principalTable: "Projects",
                         principalColumn: "ProjectId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "GroupRoles",
+                columns: table => new
+                {
+                    GroupRoleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    GroupId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RoleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AssignedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_GroupRoles", x => x.GroupRoleId);
+                    table.ForeignKey(
+                        name: "FK_GroupRoles_Groups_GroupId",
+                        column: x => x.GroupId,
+                        principalTable: "Groups",
+                        principalColumn: "GroupId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_GroupRoles_Roles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "Roles",
+                        principalColumn: "RoleId",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -722,44 +757,99 @@ namespace Dubox.Infrastructure.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.InsertData(
-                table: "ActivityMaster",
-                columns: new[] { "ActivityMasterId", "ActivityCode", "ActivityDescription", "ActivityName", "Department", "IsActive", "IsWIRCheckpoint", "Sequence", "StandardDuration", "Trade", "WIRNumber" },
-                values: new object[,]
+            migrationBuilder.CreateTable(
+                name: "Departments",
+                columns: table => new
                 {
-                    { 1, "ACT-001", "Manufacture precast walls, slabs, and structural elements", "Fabrication of boxes", "Civil", true, false, 1, 5, "Precast", null },
-                    { 2, "ACT-002", "Transport precast elements to assembly area", "Delivery of elements", "Civil", true, false, 2, 3, "Logistics", null },
-                    { 3, "ACT-003", "Perform quality checks and store elements for assembly", "Storage and QC", "QC", true, false, 3, 1, "Quality Control", null },
-                    { 4, "ACT-004", "Assemble modules and seal structural joints", "Assembly & joints", "Civil", true, false, 4, 4, "Assembly", null },
-                    { 5, "ACT-005", "Install preassembled bathroom PODs", "PODS installation", "Civil", true, false, 5, 2, "Assembly", null },
-                    { 6, "ACT-006", "Install preassembled MEP cage", "MEP Cage installation", "MEP", true, false, 6, 2, "Assembly", null },
-                    { 7, "ACT-007", "Install electrical conduits during assembly", "Electrical Containment (Assembly)", "MEP", true, false, 7, 2, "Electrical", null },
-                    { 8, "ACT-008", "Complete box closures and initial QC inspection", "Box Closure", "Civil", true, true, 8, 1, "Assembly", "WIR-1" },
-                    { 9, "ACT-009", "Install AC units", "Fan Coil Units", "MEP", true, false, 9, 2, "Mechanical", null },
-                    { 10, "ACT-010", "Install ducts and insulation", "Ducts & Insulation", "MEP", true, false, 10, 2, "Mechanical", null },
-                    { 11, "ACT-011", "Complete drainage piping", "Drainage piping", "MEP", true, false, 11, 2, "Mechanical", null },
-                    { 12, "ACT-012", "Complete water piping", "Water Piping", "MEP", true, false, 12, 2, "Mechanical", null },
-                    { 13, "ACT-013", "Complete firefighting piping", "Fire Fighting Piping", "MEP", true, true, 13, 2, "Mechanical", "WIR-2" },
-                    { 14, "ACT-014", "Install electrical containment", "Electrical Containment", "MEP", true, false, 14, 2, "Electrical", null },
-                    { 15, "ACT-015", "Complete electrical wiring", "Electrical Wiring", "MEP", true, false, 15, 2, "Electrical", null },
-                    { 16, "ACT-016", "Install distribution board and ONU panel", "DB and ONU Panel", "MEP", true, false, 16, 2, "Electrical", null },
-                    { 17, "ACT-017", "Complete drywall framing for partitions", "Dry Wall Framing", "Civil", true, true, 17, 1, "Finishing", "WIR-3" },
-                    { 18, "ACT-018", "Install false ceilings", "False Ceiling", "Civil", true, false, 18, 1, "Finishing", null },
-                    { 19, "ACT-019", "Install floor and wall tiles", "Tile Fixing", "Civil", true, false, 19, 2, "Finishing", null },
-                    { 20, "ACT-020", "Complete painting", "Painting (Internal & External)", "Civil", true, false, 20, 2, "Finishing", null },
-                    { 21, "ACT-021", "Fix kitchenettes and counters", "Kitchenette and Counters", "Civil", true, false, 21, 2, "Finishing", null },
-                    { 22, "ACT-022", "Install doors", "Doors", "Civil", true, false, 22, 1, "Finishing", null },
-                    { 23, "ACT-023", "Install windows", "Windows", "Civil", true, true, 23, 1, "Finishing", "WIR-4" },
-                    { 24, "ACT-024", "Install switches and sockets", "Switches & Sockets", "MEP", true, false, 24, 2, "Electrical", null },
-                    { 25, "ACT-025", "Install light fittings", "Light Fittings", "MEP", true, false, 25, 2, "Electrical", null },
-                    { 26, "ACT-026", "Install chilled water piping", "Copper Piping", "MEP", true, false, 26, 2, "Mechanical", null },
-                    { 27, "ACT-027", "Install sanitary fixtures", "Sanitary Fittings - Kitchen", "MEP", true, false, 27, 2, "Mechanical", null },
-                    { 28, "ACT-028", "Install thermostats", "Thermostats", "MEP", true, false, 28, 2, "Mechanical", null },
-                    { 29, "ACT-029", "Install air outlets", "Air Outlet", "MEP", true, false, 29, 2, "Mechanical", null },
-                    { 30, "ACT-030", "Install sprinkler system", "Sprinkler", "MEP", true, false, 30, 2, "Mechanical", null },
-                    { 31, "ACT-031", "Install smoke detectors", "Smoke Detector", "MEP", true, true, 31, 2, "Mechanical", "WIR-5" },
-                    { 32, "ACT-032", "Install ironmongery (locks, handles, accessories)", "Iron Mongeries", "Civil", true, false, 32, 2, "Finishing", null },
-                    { 33, "ACT-033", "Conduct comprehensive final inspection and wrap modules for delivery", "Inspection & Wrapping", "QC", true, true, 33, 1, "Quality Control", "WIR-6" }
+                    DepartmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DepartmentName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Code = table.Column<string>(type: "nvarchar(15)", maxLength: 15, nullable: false),
+                    Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    Location = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    ManagerId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UpdatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Departments", x => x.DepartmentId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Users",
+                columns: table => new
+                {
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Email = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    PasswordHash = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    FullName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    DepartmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    IsActive = table.Column<bool>(type: "bit", nullable: false),
+                    LastLoginDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Users", x => x.UserId);
+                    table.ForeignKey(
+                        name: "FK_Users_Departments_DepartmentId",
+                        column: x => x.DepartmentId,
+                        principalTable: "Departments",
+                        principalColumn: "DepartmentId",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserGroups",
+                columns: table => new
+                {
+                    UserGroupId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    GroupId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    JoinedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserGroups", x => x.UserGroupId);
+                    table.ForeignKey(
+                        name: "FK_UserGroups_Groups_GroupId",
+                        column: x => x.GroupId,
+                        principalTable: "Groups",
+                        principalColumn: "GroupId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserGroups_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "UserId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "UserRoles",
+                columns: table => new
+                {
+                    UserRoleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    RoleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AssignedDate = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_UserRoles", x => x.UserRoleId);
+                    table.ForeignKey(
+                        name: "FK_UserRoles_Roles_RoleId",
+                        column: x => x.RoleId,
+                        principalTable: "Roles",
+                        principalColumn: "RoleId",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_UserRoles_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "UserId",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -892,9 +982,33 @@ namespace Dubox.Infrastructure.Migrations
                 column: "TeamId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Departments_ManagerId",
+                table: "Departments",
+                column: "ManagerId",
+                unique: true,
+                filter: "[ManagerId] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_FactoryLocations_LocationCode",
                 table: "FactoryLocations",
                 column: "LocationCode",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GroupRoles_GroupId_RoleId",
+                table: "GroupRoles",
+                columns: new[] { "GroupId", "RoleId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_GroupRoles_RoleId",
+                table: "GroupRoles",
+                column: "RoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Groups_GroupName",
+                table: "Groups",
+                column: "GroupName",
                 unique: true);
 
             migrationBuilder.CreateIndex(
@@ -980,6 +1094,12 @@ namespace Dubox.Infrastructure.Migrations
                 column: "ProjectId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Roles_RoleName",
+                table: "Roles",
+                column: "RoleName",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_TeamMembers_TeamId",
                 table: "TeamMembers",
                 column: "TeamId");
@@ -991,6 +1111,39 @@ namespace Dubox.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_UserGroups_GroupId",
+                table: "UserGroups",
+                column: "GroupId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserGroups_UserId_GroupId",
+                table: "UserGroups",
+                columns: new[] { "UserId", "GroupId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserRoles_RoleId",
+                table: "UserRoles",
+                column: "RoleId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_UserRoles_UserId_RoleId",
+                table: "UserRoles",
+                columns: new[] { "UserId", "RoleId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_DepartmentId",
+                table: "Users",
+                column: "DepartmentId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Users_Email",
+                table: "Users",
+                column: "Email",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_WIRChecklistItems_WIRId",
                 table: "WIRChecklistItems",
                 column: "WIRId");
@@ -999,11 +1152,23 @@ namespace Dubox.Infrastructure.Migrations
                 name: "IX_WIRCheckpoints_BoxId",
                 table: "WIRCheckpoints",
                 column: "BoxId");
+
+            migrationBuilder.AddForeignKey(
+                name: "FK_Departments_Users_ManagerId",
+                table: "Departments",
+                column: "ManagerId",
+                principalTable: "Users",
+                principalColumn: "UserId",
+                onDelete: ReferentialAction.SetNull);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropForeignKey(
+                name: "FK_Departments_Users_ManagerId",
+                table: "Departments");
+
             migrationBuilder.DropTable(
                 name: "ActivityDependencies");
 
@@ -1026,6 +1191,9 @@ namespace Dubox.Infrastructure.Migrations
                 name: "DailyProductionLog");
 
             migrationBuilder.DropTable(
+                name: "GroupRoles");
+
+            migrationBuilder.DropTable(
                 name: "MaterialTransactions");
 
             migrationBuilder.DropTable(
@@ -1044,7 +1212,10 @@ namespace Dubox.Infrastructure.Migrations
                 name: "TeamMembers");
 
             migrationBuilder.DropTable(
-                name: "Users");
+                name: "UserGroups");
+
+            migrationBuilder.DropTable(
+                name: "UserRoles");
 
             migrationBuilder.DropTable(
                 name: "WIRChecklistItems");
@@ -1062,6 +1233,12 @@ namespace Dubox.Infrastructure.Migrations
                 name: "BoxActivities");
 
             migrationBuilder.DropTable(
+                name: "Groups");
+
+            migrationBuilder.DropTable(
+                name: "Roles");
+
+            migrationBuilder.DropTable(
                 name: "WIRCheckpoints");
 
             migrationBuilder.DropTable(
@@ -1075,6 +1252,12 @@ namespace Dubox.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Projects");
+
+            migrationBuilder.DropTable(
+                name: "Users");
+
+            migrationBuilder.DropTable(
+                name: "Departments");
         }
     }
 }

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Dubox.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251104164257_usersmangement")]
-    partial class usersmangement
+    [Migration("20251105154740_SeedingActivity")]
+    partial class SeedingActivity
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -1080,6 +1080,51 @@ namespace Dubox.Infrastructure.Migrations
                     b.ToTable("DailyProductionLog");
                 });
 
+            modelBuilder.Entity("Dubox.Domain.Entities.Department", b =>
+                {
+                    b.Property<Guid>("DepartmentId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DepartmentName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Location")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid?>("ManagerId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UpdatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("DepartmentId");
+
+                    b.HasIndex("ManagerId")
+                        .IsUnique()
+                        .HasFilter("[ManagerId] IS NOT NULL");
+
+                    b.ToTable("Departments");
+                });
+
             modelBuilder.Entity("Dubox.Domain.Entities.FactoryLocation", b =>
                 {
                     b.Property<int>("LocationId")
@@ -1723,9 +1768,8 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Department")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<Guid>("DepartmentId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Email")
                         .IsRequired()
@@ -1747,6 +1791,8 @@ namespace Dubox.Infrastructure.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.HasKey("UserId");
+
+                    b.HasIndex("DepartmentId");
 
                     b.HasIndex("Email")
                         .IsUnique();
@@ -2070,6 +2116,16 @@ namespace Dubox.Infrastructure.Migrations
                     b.Navigation("Team");
                 });
 
+            modelBuilder.Entity("Dubox.Domain.Entities.Department", b =>
+                {
+                    b.HasOne("Dubox.Domain.Entities.User", "Manager")
+                        .WithOne("ManagedDepartment")
+                        .HasForeignKey("Dubox.Domain.Entities.Department", "ManagerId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Manager");
+                });
+
             modelBuilder.Entity("Dubox.Domain.Entities.GroupRole", b =>
                 {
                     b.HasOne("Dubox.Domain.Entities.Group", "Group")
@@ -2189,6 +2245,17 @@ namespace Dubox.Infrastructure.Migrations
                     b.Navigation("Team");
                 });
 
+            modelBuilder.Entity("Dubox.Domain.Entities.User", b =>
+                {
+                    b.HasOne("Dubox.Domain.Entities.Department", "EmployeeOfDepartment")
+                        .WithMany("Employees")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("EmployeeOfDepartment");
+                });
+
             modelBuilder.Entity("Dubox.Domain.Entities.UserGroup", b =>
                 {
                     b.HasOne("Dubox.Domain.Entities.Group", "Group")
@@ -2287,6 +2354,11 @@ namespace Dubox.Infrastructure.Migrations
                     b.Navigation("SubCategories");
                 });
 
+            modelBuilder.Entity("Dubox.Domain.Entities.Department", b =>
+                {
+                    b.Navigation("Employees");
+                });
+
             modelBuilder.Entity("Dubox.Domain.Entities.FactoryLocation", b =>
                 {
                     b.Navigation("BoxLocationHistory");
@@ -2333,6 +2405,8 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.User", b =>
                 {
+                    b.Navigation("ManagedDepartment");
+
                     b.Navigation("UserGroups");
 
                     b.Navigation("UserRoles");

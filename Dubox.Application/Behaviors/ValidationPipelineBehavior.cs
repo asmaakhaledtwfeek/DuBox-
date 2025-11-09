@@ -5,6 +5,7 @@ using MediatR;
 
 namespace Dubox.Application.Behaviors
 {
+
     public class ValidationPipelineBehavior<TRequest, TResponse>
     : IPipelineBehavior<TRequest, TResponse>
     where TRequest : IRequest<TResponse>
@@ -52,20 +53,22 @@ namespace Dubox.Application.Behaviors
         private static TResult CreateValidationResult<TResult>(string[] errorMessages)
             where TResult : Result
         {
-            if (typeof(TResult).IsAssignableFrom(typeof(Result)))
+            if (typeof(TResult) == typeof(Result))
             {
                 return (ValidationResult.WithErrors(errorMessages) as TResult)!;
             }
 
-            var x = typeof(TResult).GenericTypeArguments;
+            var valueType = typeof(TResult).GenericTypeArguments[0];
+            var defaultValue = valueType.IsValueType ? Activator.CreateInstance(valueType) : null;
 
             object validationResult = typeof(ValidationResult<>)
                 .GetGenericTypeDefinition()
-                .MakeGenericType(typeof(TResult).GenericTypeArguments[0])
+                .MakeGenericType(valueType)
                 .GetMethod(nameof(ValidationResult.WithErrors))!
-                .Invoke(null, errorMessages)!;
+                .Invoke(null, new object?[] { defaultValue, errorMessages })!;
 
             return (TResult)validationResult;
         }
     }
 }
+

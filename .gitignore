@@ -416,3 +416,4 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+Dubox.Infrastructure/Migrations/20251105154049_InitialMigration.Designer.cs

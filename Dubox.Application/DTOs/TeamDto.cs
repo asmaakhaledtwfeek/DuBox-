@@ -5,7 +5,7 @@ public record TeamDto
     public int TeamId { get; init; }
     public string TeamCode { get; init; } = string.Empty;
     public string TeamName { get; init; } = string.Empty;
-    public string? Department { get; init; }
+    public string DepartmentName { get; init; } = string.Empty;
     public string? Trade { get; init; }
     public string? TeamLeaderName { get; init; }
     public int? TeamSize { get; init; }

@@ -7,22 +7,28 @@ namespace Dubox.Application.Features.Users.Commands
         public UpdateUserCommandValidator()
         {
             RuleFor(x => x.UserId)
-            .NotEmpty().WithMessage("User ID is required for updating the user.");
+                .NotEmpty().WithMessage("User ID is required for updating the user.");
 
             RuleFor(x => x.Email)
-             .Must(e => e?.ToLower() != "string").WithMessage("Email cannot be the default value 'string'.")
-             .When(x => !string.IsNullOrEmpty(x.Email))
-             .NotEmpty().WithMessage("Email address cannot be empty if sent.")
-             .EmailAddress().WithMessage("A valid email address is required.")
-             .MaximumLength(100).WithMessage("Email must not exceed 100 characters.");
+                .Must(e => e?.ToLower() != "string")
+                .WithMessage("Email cannot be the default value 'string'.")
+                .When(x => !string.IsNullOrEmpty(x.Email))
+                .EmailAddress().WithMessage("A valid email address is required.")
+                .MaximumLength(100).WithMessage("Email must not exceed 100 characters.");
 
             RuleFor(x => x.FullName)
-             .Must(n => n?.ToLower() != "string").WithMessage("Full Name cannot be the default value 'string'.")
-             .When(x => !string.IsNullOrEmpty(x.FullName))
-             .MaximumLength(200).WithMessage("Full Name must not exceed 150 characters.");
+                .Must(n => n?.ToLower() != "string")
+                .WithMessage("Full Name cannot be the default value 'string'.")
+                .When(x => !string.IsNullOrEmpty(x.FullName))
+                .MaximumLength(200).WithMessage("Full Name must not exceed 200 characters.");
 
+            RuleFor(x => x.DepartmentId)
+                .Must(id => id.Value != Guid.Empty)
+                .WithMessage("Department ID cannot be an empty GUID.")
+                .When(x => x.DepartmentId.HasValue);
 
         }
-
     }
+
 }
+

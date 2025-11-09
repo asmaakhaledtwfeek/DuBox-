@@ -1,7 +1,8 @@
 using Dubox.Application.DTOs;
-using Dubox.Domain.Entities;
-using Dubox.Domain.Shared;
 using Dubox.Domain.Abstraction;
+using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
+using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -31,23 +32,23 @@ public class UpdateBoxActivityCommandHandler : IRequestHandler<UpdateBoxActivity
 
         // Track if status changed to trigger auto-actions
         var statusChanged = boxActivity.Status != request.Status;
-        var wasCompleted = boxActivity.Status == "Completed";
-        var nowCompleted = request.Status == "Completed";
+        var wasCompleted = boxActivity.Status == BoxStatusEnum.Completed;
+        var nowCompleted = request.Status == BoxStatusEnum.Completed;
 
         boxActivity.Status = request.Status;
         boxActivity.ProgressPercentage = request.ProgressPercentage;
         boxActivity.WorkDescription = request.WorkDescription;
         boxActivity.IssuesEncountered = request.IssuesEncountered;
-        boxActivity.AssignedTeam = request.AssignedTeam;
+        boxActivity.TeamId = request.AssignedTeam;
         boxActivity.MaterialsAvailable = request.MaterialsAvailable;
 
         // Update dates based on status
-        if (request.Status == "In Progress" && boxActivity.ActualStartDate == null)
+        if (request.Status == BoxStatusEnum.InProgress && boxActivity.ActualStartDate == null)
         {
             boxActivity.ActualStartDate = DateTime.UtcNow;
         }
 
-        if (request.Status == "Completed" && !wasCompleted)
+        if (request.Status == BoxStatusEnum.Completed && !wasCompleted)
         {
             boxActivity.ActualEndDate = DateTime.UtcNow;
             boxActivity.ProgressPercentage = 100;
@@ -98,21 +99,21 @@ public class UpdateBoxActivityCommandHandler : IRequestHandler<UpdateBoxActivity
             return;
 
         var averageProgress = boxActivities.Average(ba => ba.ProgressPercentage);
-        var allCompleted = boxActivities.All(ba => ba.Status == "Completed");
+        var allCompleted = boxActivities.All(ba => ba.Status == BoxStatusEnum.Completed);
 
         var box = await _unitOfWork.Repository<Box>().GetByIdAsync(boxId, cancellationToken);
         if (box != null)
         {
             box.ProgressPercentage = averageProgress;
-            
+
             if (allCompleted)
             {
-                box.Status = "Completed";
+                box.Status = BoxStatusEnum.Completed;
                 box.ActualEndDate = DateTime.UtcNow;
             }
             else if (averageProgress > 0)
             {
-                box.Status = "In Progress";
+                box.Status = BoxStatusEnum.InProgress;
                 if (box.ActualStartDate == null)
                     box.ActualStartDate = DateTime.UtcNow;
             }

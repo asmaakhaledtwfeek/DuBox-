@@ -16,25 +16,22 @@ namespace Dubox.Domain.Entities
         [ForeignKey(nameof(User))]
         public Guid UserId { get; set; }
 
+        [Required]
         [MaxLength(50)]
-        public string? EmployeeCode { get; set; }
-
+        public string EmployeeCode { get; set; } = string.Empty;
+        [Required]
         [MaxLength(200)]
-        public string? EmployeeName { get; set; }
-
-        //[MaxLength(100)]
-        //public string? Role { get; set; }
+        public string EmployeeName { get; set; } = string.Empty;
 
         [MaxLength(20)]
         public string? MobileNumber { get; set; }
-
-        [MaxLength(200)]
-        public string? Email { get; set; }
 
         public bool IsActive { get; set; } = true;
 
         // Navigation properties
         public virtual Team Team { get; set; } = null!;
         public virtual User User { get; set; } = null!;
+        public virtual ICollection<BoxActivity> BoxActivities { get; set; } = new List<BoxActivity>();
+
     }
 }

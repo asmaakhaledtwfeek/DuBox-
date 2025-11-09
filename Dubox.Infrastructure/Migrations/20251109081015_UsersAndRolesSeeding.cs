@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Dubox.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class SeedingUserAndRole : Migration
+    public partial class UsersAndRolesSeeding : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

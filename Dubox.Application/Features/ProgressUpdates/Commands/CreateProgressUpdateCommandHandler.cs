@@ -1,8 +1,8 @@
 using Dubox.Application.DTOs;
-using Dubox.Domain.Entities;
-using Dubox.Domain.Shared;
 using Dubox.Domain.Abstraction;
-using Dubox.Domain.Interfaces;
+using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
+using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -78,12 +78,12 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         boxActivity.ModifiedBy = _currentUserService.Username;
 
         // Update dates based on status
-        if (request.Status == "In Progress" && boxActivity.ActualStartDate == null)
+        if (request.Status == BoxStatusEnum.InProgress && boxActivity.ActualStartDate == null)
         {
             boxActivity.ActualStartDate = DateTime.UtcNow;
         }
 
-        if (request.Status == "Completed" && oldStatus != "Completed")
+        if (request.Status == BoxStatusEnum.Completed && oldStatus != BoxStatusEnum.Completed)
         {
             boxActivity.ActualEndDate = DateTime.UtcNow;
             boxActivity.ProgressPercentage = 100;
@@ -95,7 +95,7 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         await UpdateBoxProgress(request.BoxId, cancellationToken);
 
         // Check if WIR checkpoint should be created
-        if (request.Status == "Completed" && boxActivity.ActivityMaster.IsWIRCheckpoint)
+        if (request.Status == BoxStatusEnum.Completed && boxActivity.ActivityMaster.IsWIRCheckpoint)
         {
             var wirExists = await _dbContext.WIRRecords
                 .AnyAsync(w => w.BoxActivityId == request.BoxActivityId, cancellationToken);
@@ -140,7 +140,7 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             return;
 
         var averageProgress = boxActivities.Average(ba => ba.ProgressPercentage);
-        var allCompleted = boxActivities.All(ba => ba.Status == "Completed");
+        var allCompleted = boxActivities.All(ba => ba.Status == BoxStatusEnum.Completed);
 
         var box = await _unitOfWork.Repository<Box>().GetByIdAsync(boxId, cancellationToken);
         if (box != null)
@@ -149,12 +149,12 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
 
             if (allCompleted)
             {
-                box.Status = "Completed";
+                box.Status = BoxStatusEnum.Completed;
                 box.ActualEndDate = DateTime.UtcNow;
             }
             else if (averageProgress > 0)
             {
-                box.Status = "In Progress";
+                box.Status = BoxStatusEnum.InProgress;
                 if (box.ActualStartDate == null)
                     box.ActualStartDate = DateTime.UtcNow;
             }

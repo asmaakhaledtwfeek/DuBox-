@@ -1,5 +1,6 @@
 ﻿using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
 using Dubox.Domain.Interfaces;
 using Dubox.Infrastructure.Seeding;
 using Microsoft.EntityFrameworkCore;
@@ -214,9 +215,9 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<BoxActivity>()
-            .HasOne(ba => ba.AssignedMemberId)
+            .HasOne(ba => ba.AssignedMember)
             .WithMany()
-            .HasForeignKey(ba => ba.AssignedUserId)
+            .HasForeignKey(ba => ba.AssignedMemberId)
             .OnDelete(DeleteBehavior.SetNull);
 
         // Box relationships
@@ -232,6 +233,24 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .WithMany(b => b.BoxAssets)
             .HasForeignKey(ba => ba.BoxId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Team>()
+             .HasOne(t => t.TeamLeader)
+             .WithMany()
+             .HasForeignKey(t => t.TeamLeaderMemberId)
+             .IsRequired(false)
+             .OnDelete(DeleteBehavior.SetNull);
+        modelBuilder.Entity<Team>()
+             .HasOne(t => t.Department)
+             .WithMany()
+             .HasForeignKey(t => t.DepartmentId)
+             .IsRequired()
+             .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<TeamMember>()
+             .HasOne(tm => tm.Team)
+             .WithMany(t => t.Members)
+             .HasForeignKey(tm => tm.TeamId)
+             .OnDelete(DeleteBehavior.Restrict);
     }
 
     private void ConfigureIndexes(ModelBuilder modelBuilder)
@@ -313,11 +332,11 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     {
         modelBuilder.Entity<Project>()
                 .Property(p => p.Status)
-                .HasDefaultValue("Active");
+                .HasDefaultValue(ProjectStatusEnum.Active);
 
         modelBuilder.Entity<Box>()
             .Property(b => b.Status)
-            .HasDefaultValue("Not Started");
+            .HasDefaultValue(BoxStatusEnum.NotStarted);
 
         modelBuilder.Entity<Box>()
             .Property(b => b.ProgressPercentage)
@@ -325,7 +344,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
 
         modelBuilder.Entity<BoxActivity>()
             .Property(ba => ba.Status)
-            .HasDefaultValue("Not Started");
+            .HasDefaultValue(BoxStatusEnum.NotStarted);
 
         modelBuilder.Entity<BoxActivity>()
             .Property(ba => ba.ProgressPercentage)

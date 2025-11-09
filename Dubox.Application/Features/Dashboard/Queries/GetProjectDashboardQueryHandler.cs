@@ -1,5 +1,6 @@
 using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
+using Dubox.Domain.Enums;
 using Dubox.Domain.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -24,9 +25,9 @@ public class GetProjectDashboardQueryHandler : IRequestHandler<GetProjectDashboa
             return Result.Failure<ProjectDashboardDto>("Project not found");
 
         var totalBoxes = await _dbContext.Boxes.CountAsync(b => b.ProjectId == request.ProjectId, cancellationToken);
-        var boxesNotStarted = await _dbContext.Boxes.CountAsync(b => b.ProjectId == request.ProjectId && b.Status == "Not Started", cancellationToken);
-        var boxesInProgress = await _dbContext.Boxes.CountAsync(b => b.ProjectId == request.ProjectId && b.Status == "In Progress", cancellationToken);
-        var boxesCompleted = await _dbContext.Boxes.CountAsync(b => b.ProjectId == request.ProjectId && b.Status == "Completed", cancellationToken);
+        var boxesNotStarted = await _dbContext.Boxes.CountAsync(b => b.ProjectId == request.ProjectId && b.Status == BoxStatusEnum.NotStarted, cancellationToken);
+        var boxesInProgress = await _dbContext.Boxes.CountAsync(b => b.ProjectId == request.ProjectId && b.Status == BoxStatusEnum.InProgress, cancellationToken);
+        var boxesCompleted = await _dbContext.Boxes.CountAsync(b => b.ProjectId == request.ProjectId && b.Status == BoxStatusEnum.Completed, cancellationToken);
 
         var progressPercentage = totalBoxes > 0
             ? await _dbContext.Boxes

@@ -1,5 +1,6 @@
 using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
+using Dubox.Domain.Enums;
 using Dubox.Domain.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -18,22 +19,22 @@ public class GetDashboardStatisticsQueryHandler : IRequestHandler<GetDashboardSt
     public async Task<Result<DashboardStatisticsDto>> Handle(GetDashboardStatisticsQuery request, CancellationToken cancellationToken)
     {
         var totalProjects = await _dbContext.Projects.CountAsync(cancellationToken);
-        var activeProjects = await _dbContext.Projects.CountAsync(p => p.Status == "Active", cancellationToken);
-        
-        var totalBoxes = await _dbContext.Boxes.CountAsync(cancellationToken);
-        var boxesNotStarted = await _dbContext.Boxes.CountAsync(b => b.Status == "Not Started", cancellationToken);
-        var boxesInProgress = await _dbContext.Boxes.CountAsync(b => b.Status == "In Progress", cancellationToken);
-        var boxesCompleted = await _dbContext.Boxes.CountAsync(b => b.Status == "Completed", cancellationToken);
-        var boxesDelayed = await _dbContext.Boxes.CountAsync(b => b.Status == "Delayed", cancellationToken);
+        var activeProjects = await _dbContext.Projects.CountAsync(p => p.Status == ProjectStatusEnum.Active, cancellationToken);
 
-        var overallProgress = totalBoxes > 0 
+        var totalBoxes = await _dbContext.Boxes.CountAsync(cancellationToken);
+        var boxesNotStarted = await _dbContext.Boxes.CountAsync(b => b.Status == BoxStatusEnum.NotStarted, cancellationToken);
+        var boxesInProgress = await _dbContext.Boxes.CountAsync(b => b.Status == BoxStatusEnum.InProgress, cancellationToken);
+        var boxesCompleted = await _dbContext.Boxes.CountAsync(b => b.Status == BoxStatusEnum.Completed, cancellationToken);
+        var boxesDelayed = await _dbContext.Boxes.CountAsync(b => b.Status == BoxStatusEnum.Delayed, cancellationToken);
+
+        var overallProgress = totalBoxes > 0
             ? await _dbContext.Boxes.AverageAsync(b => (double)b.ProgressPercentage, cancellationToken)
             : 0;
 
         var pendingWIRs = await _dbContext.WIRRecords.CountAsync(w => w.Status == "Pending", cancellationToken);
-        
+
         var totalActivities = await _dbContext.BoxActivities.CountAsync(ba => ba.IsActive, cancellationToken);
-        var completedActivities = await _dbContext.BoxActivities.CountAsync(ba => ba.IsActive && ba.Status == "Completed", cancellationToken);
+        var completedActivities = await _dbContext.BoxActivities.CountAsync(ba => ba.IsActive && ba.Status == BoxStatusEnum.Completed, cancellationToken);
 
         var statistics = new DashboardStatisticsDto
         {

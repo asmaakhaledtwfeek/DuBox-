@@ -1,6 +1,7 @@
 using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
 using Dubox.Domain.Shared;
 using Mapster;
 using MapsterMapper;
@@ -59,7 +60,7 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
             BoxId = box.BoxId,
             ActivityMasterId = am.ActivityMasterId,
             Sequence = am.OverallSequence,
-            Status = "Not Started",
+            Status = BoxStatusEnum.NotStarted,
             ProgressPercentage = 0,
             MaterialsAvailable = true,
             IsActive = true,

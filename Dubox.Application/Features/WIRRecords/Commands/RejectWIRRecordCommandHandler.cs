@@ -1,8 +1,8 @@
 using Dubox.Application.DTOs;
-using Dubox.Domain.Entities;
-using Dubox.Domain.Shared;
 using Dubox.Domain.Abstraction;
-using Dubox.Domain.Interfaces;
+using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
+using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -55,7 +55,7 @@ public class RejectWIRRecordCommandHandler : IRequestHandler<RejectWIRRecordComm
 
         // Update box activity status to indicate rework needed
         var boxActivity = wirRecord.BoxActivity;
-        boxActivity.Status = "On Hold";
+        boxActivity.Status = BoxStatusEnum.OnHold;
         boxActivity.IssuesEncountered = $"WIR Rejected: {request.RejectionReason}";
         boxActivity.ModifiedDate = DateTime.UtcNow;
         _unitOfWork.Repository<BoxActivity>().Update(boxActivity);

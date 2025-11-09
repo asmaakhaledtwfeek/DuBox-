@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Dubox.Domain.Enums;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Dubox.Domain.Entities;
@@ -25,7 +26,7 @@ public class ProgressUpdate
 
     [Required]
     [MaxLength(50)]
-    public string Status { get; set; } = string.Empty;
+    public BoxStatusEnum Status { get; set; } = BoxStatusEnum.NotStarted;
 
     [MaxLength(1000)]
     public string? WorkDescription { get; set; }

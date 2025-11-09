@@ -1,3 +1,5 @@
+using Dubox.Domain.Enums;
+
 namespace Dubox.Application.DTOs;
 
 public record DashboardStatisticsDto
@@ -28,7 +30,7 @@ public record ProjectDashboardDto
     public int PendingWIRs { get; init; }
     public DateTime? StartDate { get; init; }
     public DateTime? PlannedEndDate { get; init; }
-    public string Status { get; init; } = string.Empty;
+    public ProjectStatusEnum Status { get; init; } = ProjectStatusEnum.Active;
 }
 
 public record BoxProgressSummaryDto

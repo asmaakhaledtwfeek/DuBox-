@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Dubox.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251105154740_SeedingActivity")]
-    partial class SeedingActivity
+    [Migration("20251109080713_ActivitySeeding")]
+    partial class ActivitySeeding
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -33,8 +33,14 @@ namespace Dubox.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DependencyId"));
 
-                    b.Property<int>("BoxActivityId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("BoxActivityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("BoxActivityId1")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("BoxActivityId2")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("DependencyType")
                         .IsRequired()
@@ -44,12 +50,16 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<int>("LagDays")
                         .HasColumnType("int");
 
-                    b.Property<int>("PredecessorActivityId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("PredecessorActivityId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("DependencyId");
 
                     b.HasIndex("BoxActivityId");
+
+                    b.HasIndex("BoxActivityId1");
+
+                    b.HasIndex("BoxActivityId2");
 
                     b.HasIndex("PredecessorActivityId");
 
@@ -58,34 +68,39 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.ActivityMaster", b =>
                 {
-                    b.Property<int>("ActivityMasterId")
+                    b.Property<Guid>("ActivityMasterId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ActivityMasterId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("ActivityCode")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("ActivityDescription")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ActivityName")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("ApplicableBoxTypes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<DateTime>("CreatedDate")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.Property<string>("Department")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<string>("DependsOnActivities")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("EstimatedDurationDays")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -93,495 +108,685 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<bool>("IsWIRCheckpoint")
                         .HasColumnType("bit");
 
-                    b.Property<int>("Sequence")
+                    b.Property<int>("OverallSequence")
                         .HasColumnType("int");
 
-                    b.Property<int>("StandardDuration")
+                    b.Property<int>("SequenceInStage")
                         .HasColumnType("int");
 
-                    b.Property<string>("Trade")
+                    b.Property<string>("Stage")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("WIRNumber")
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
+                    b.Property<int>("StageNumber")
+                        .HasColumnType("int");
+
+                    b.Property<string>("WIRCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.HasKey("ActivityMasterId");
 
                     b.HasIndex("ActivityCode")
                         .IsUnique();
 
+                    b.HasIndex("StageNumber", "SequenceInStage");
+
                     b.ToTable("ActivityMaster");
 
                     b.HasData(
                         new
                         {
-                            ActivityMasterId = 1,
-                            ActivityCode = "ACT-001",
-                            ActivityDescription = "Manufacture precast walls, slabs, and structural elements",
+                            ActivityMasterId = new Guid("10000001-0000-0000-0000-000000000001"),
+                            ActivityCode = "STAGE1-FAB",
                             ActivityName = "Fabrication of boxes",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "Civil",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Manufacturing and fabrication of precast box components",
+                            EstimatedDurationDays = 3,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 1,
-                            StandardDuration = 5,
-                            Trade = "Precast"
+                            OverallSequence = 1,
+                            SequenceInStage = 1,
+                            Stage = "Stage 1: Precast Production",
+                            StageNumber = 1
                         },
                         new
                         {
-                            ActivityMasterId = 2,
-                            ActivityCode = "ACT-002",
-                            ActivityDescription = "Transport precast elements to assembly area",
+                            ActivityMasterId = new Guid("10000001-0000-0000-0000-000000000002"),
+                            ActivityCode = "STAGE1-DEL",
                             ActivityName = "Delivery of elements",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "Civil",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Transportation and delivery of precast elements to site",
+                            EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 2,
-                            StandardDuration = 3,
-                            Trade = "Logistics"
+                            OverallSequence = 2,
+                            SequenceInStage = 2,
+                            Stage = "Stage 1: Precast Production",
+                            StageNumber = 1
                         },
                         new
                         {
-                            ActivityMasterId = 3,
-                            ActivityCode = "ACT-003",
-                            ActivityDescription = "Perform quality checks and store elements for assembly",
+                            ActivityMasterId = new Guid("10000001-0000-0000-0000-000000000003"),
+                            ActivityCode = "STAGE1-QC",
                             ActivityName = "Storage and QC",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "QC",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Storage of elements and quality control inspection",
+                            EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 3,
-                            StandardDuration = 1,
-                            Trade = "Quality Control"
+                            OverallSequence = 3,
+                            SequenceInStage = 3,
+                            Stage = "Stage 1: Precast Production",
+                            StageNumber = 1
                         },
                         new
                         {
-                            ActivityMasterId = 4,
-                            ActivityCode = "ACT-004",
-                            ActivityDescription = "Assemble modules and seal structural joints",
+                            ActivityMasterId = new Guid("10000002-0000-0000-0000-000000000001"),
+                            ActivityCode = "STAGE2-ASM",
                             ActivityName = "Assembly & joints",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "Civil",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Assembly of box components and joint connections",
+                            EstimatedDurationDays = 2,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 4,
-                            StandardDuration = 4,
-                            Trade = "Assembly"
+                            OverallSequence = 4,
+                            SequenceInStage = 1,
+                            Stage = "Stage 2: Module Assembly",
+                            StageNumber = 2
                         },
                         new
                         {
-                            ActivityMasterId = 5,
-                            ActivityCode = "ACT-005",
-                            ActivityDescription = "Install preassembled bathroom PODs",
+                            ActivityMasterId = new Guid("10000002-0000-0000-0000-000000000002"),
+                            ActivityCode = "STAGE2-POD",
                             ActivityName = "PODS installation",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "Civil",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of pre-assembled bathroom and kitchen PODs",
+                            EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 5,
-                            StandardDuration = 2,
-                            Trade = "Assembly"
+                            OverallSequence = 5,
+                            SequenceInStage = 2,
+                            Stage = "Stage 2: Module Assembly",
+                            StageNumber = 2
                         },
                         new
                         {
-                            ActivityMasterId = 6,
-                            ActivityCode = "ACT-006",
-                            ActivityDescription = "Install preassembled MEP cage",
+                            ActivityMasterId = new Guid("10000002-0000-0000-0000-000000000003"),
+                            ActivityCode = "STAGE2-MEP",
                             ActivityName = "MEP Cage installation",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "MEP",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of pre-assembled MEP cages",
+                            EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 6,
-                            StandardDuration = 2,
-                            Trade = "Assembly"
+                            OverallSequence = 6,
+                            SequenceInStage = 3,
+                            Stage = "Stage 2: Module Assembly",
+                            StageNumber = 2
                         },
                         new
                         {
-                            ActivityMasterId = 7,
-                            ActivityCode = "ACT-007",
-                            ActivityDescription = "Install electrical conduits during assembly",
-                            ActivityName = "Electrical Containment (Assembly)",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "MEP",
-                            IsActive = true,
-                            IsWIRCheckpoint = false,
-                            Sequence = 7,
-                            StandardDuration = 2,
-                            Trade = "Electrical"
-                        },
-                        new
-                        {
-                            ActivityMasterId = 8,
-                            ActivityCode = "ACT-008",
-                            ActivityDescription = "Complete box closures and initial QC inspection",
-                            ActivityName = "Box Closure",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "Civil",
-                            IsActive = true,
-                            IsWIRCheckpoint = true,
-                            Sequence = 8,
-                            StandardDuration = 1,
-                            Trade = "Assembly",
-                            WIRNumber = "WIR-1"
-                        },
-                        new
-                        {
-                            ActivityMasterId = 9,
-                            ActivityCode = "ACT-009",
-                            ActivityDescription = "Install AC units",
-                            ActivityName = "Fan Coil Units",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "MEP",
-                            IsActive = true,
-                            IsWIRCheckpoint = false,
-                            Sequence = 9,
-                            StandardDuration = 2,
-                            Trade = "Mechanical"
-                        },
-                        new
-                        {
-                            ActivityMasterId = 10,
-                            ActivityCode = "ACT-010",
-                            ActivityDescription = "Install ducts and insulation",
-                            ActivityName = "Ducts & Insulation",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "MEP",
-                            IsActive = true,
-                            IsWIRCheckpoint = false,
-                            Sequence = 10,
-                            StandardDuration = 2,
-                            Trade = "Mechanical"
-                        },
-                        new
-                        {
-                            ActivityMasterId = 11,
-                            ActivityCode = "ACT-011",
-                            ActivityDescription = "Complete drainage piping",
-                            ActivityName = "Drainage piping",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "MEP",
-                            IsActive = true,
-                            IsWIRCheckpoint = false,
-                            Sequence = 11,
-                            StandardDuration = 2,
-                            Trade = "Mechanical"
-                        },
-                        new
-                        {
-                            ActivityMasterId = 12,
-                            ActivityCode = "ACT-012",
-                            ActivityDescription = "Complete water piping",
-                            ActivityName = "Water Piping",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "MEP",
-                            IsActive = true,
-                            IsWIRCheckpoint = false,
-                            Sequence = 12,
-                            StandardDuration = 2,
-                            Trade = "Mechanical"
-                        },
-                        new
-                        {
-                            ActivityMasterId = 13,
-                            ActivityCode = "ACT-013",
-                            ActivityDescription = "Complete firefighting piping",
-                            ActivityName = "Fire Fighting Piping",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "MEP",
-                            IsActive = true,
-                            IsWIRCheckpoint = true,
-                            Sequence = 13,
-                            StandardDuration = 2,
-                            Trade = "Mechanical",
-                            WIRNumber = "WIR-2"
-                        },
-                        new
-                        {
-                            ActivityMasterId = 14,
-                            ActivityCode = "ACT-014",
-                            ActivityDescription = "Install electrical containment",
+                            ActivityMasterId = new Guid("10000002-0000-0000-0000-000000000004"),
+                            ActivityCode = "STAGE2-ELC",
                             ActivityName = "Electrical Containment",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "MEP",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of electrical conduits and containment systems",
+                            EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 14,
-                            StandardDuration = 2,
-                            Trade = "Electrical"
+                            OverallSequence = 7,
+                            SequenceInStage = 4,
+                            Stage = "Stage 2: Module Assembly",
+                            StageNumber = 2
                         },
                         new
                         {
-                            ActivityMasterId = 15,
-                            ActivityCode = "ACT-015",
-                            ActivityDescription = "Complete electrical wiring",
+                            ActivityMasterId = new Guid("10000002-0000-0000-0000-000000000005"),
+                            ActivityCode = "STAGE2-CLO",
+                            ActivityName = "Box Closure",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Final closure and sealing of box module",
+                            EstimatedDurationDays = 1,
+                            IsActive = true,
+                            IsWIRCheckpoint = false,
+                            OverallSequence = 8,
+                            SequenceInStage = 5,
+                            Stage = "Stage 2: Module Assembly",
+                            StageNumber = 2
+                        },
+                        new
+                        {
+                            ActivityMasterId = new Guid("10000002-0000-0000-0000-000000000006"),
+                            ActivityCode = "STAGE2-WIR1",
+                            ActivityName = "WIR-1",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Work Inspection Request - Stage 2 Completion",
+                            EstimatedDurationDays = 1,
+                            IsActive = true,
+                            IsWIRCheckpoint = true,
+                            OverallSequence = 9,
+                            SequenceInStage = 6,
+                            Stage = "Stage 2: Module Assembly",
+                            StageNumber = 2,
+                            WIRCode = "WIR-1"
+                        },
+                        new
+                        {
+                            ActivityMasterId = new Guid("10000003-0000-0000-0000-000000000001"),
+                            ActivityCode = "STAGE3-FCU",
+                            ActivityName = "Fan Coil Units",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of fan coil units for HVAC",
+                            EstimatedDurationDays = 1,
+                            IsActive = true,
+                            IsWIRCheckpoint = false,
+                            OverallSequence = 10,
+                            SequenceInStage = 1,
+                            Stage = "Stage 3: MEP Phase 1",
+                            StageNumber = 3
+                        },
+                        new
+                        {
+                            ActivityMasterId = new Guid("10000003-0000-0000-0000-000000000002"),
+                            ActivityCode = "STAGE3-DCT",
+                            ActivityName = "Ducts & Insulation",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation and insulation of HVAC ductwork",
+                            EstimatedDurationDays = 1,
+                            IsActive = true,
+                            IsWIRCheckpoint = false,
+                            OverallSequence = 11,
+                            SequenceInStage = 2,
+                            Stage = "Stage 3: MEP Phase 1",
+                            StageNumber = 3
+                        },
+                        new
+                        {
+                            ActivityMasterId = new Guid("10000003-0000-0000-0000-000000000003"),
+                            ActivityCode = "STAGE3-DRN",
+                            ActivityName = "Drainage piping",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of drainage and wastewater piping",
+                            EstimatedDurationDays = 1,
+                            IsActive = true,
+                            IsWIRCheckpoint = false,
+                            OverallSequence = 12,
+                            SequenceInStage = 3,
+                            Stage = "Stage 3: MEP Phase 1",
+                            StageNumber = 3
+                        },
+                        new
+                        {
+                            ActivityMasterId = new Guid("10000003-0000-0000-0000-000000000004"),
+                            ActivityCode = "STAGE3-WTR",
+                            ActivityName = "Water Piping",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of domestic water supply piping",
+                            EstimatedDurationDays = 1,
+                            IsActive = true,
+                            IsWIRCheckpoint = false,
+                            OverallSequence = 13,
+                            SequenceInStage = 4,
+                            Stage = "Stage 3: MEP Phase 1",
+                            StageNumber = 3
+                        },
+                        new
+                        {
+                            ActivityMasterId = new Guid("10000003-0000-0000-0000-000000000005"),
+                            ActivityCode = "STAGE3-FF",
+                            ActivityName = "Fire Fighting Piping",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of fire protection and sprinkler piping",
+                            EstimatedDurationDays = 1,
+                            IsActive = true,
+                            IsWIRCheckpoint = false,
+                            OverallSequence = 14,
+                            SequenceInStage = 5,
+                            Stage = "Stage 3: MEP Phase 1",
+                            StageNumber = 3
+                        },
+                        new
+                        {
+                            ActivityMasterId = new Guid("10000003-0000-0000-0000-000000000006"),
+                            ActivityCode = "STAGE3-WIR2",
+                            ActivityName = "WIR-2",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Work Inspection Request - Stage 3 Completion",
+                            EstimatedDurationDays = 1,
+                            IsActive = true,
+                            IsWIRCheckpoint = true,
+                            OverallSequence = 15,
+                            SequenceInStage = 6,
+                            Stage = "Stage 3: MEP Phase 1",
+                            StageNumber = 3,
+                            WIRCode = "WIR-2"
+                        },
+                        new
+                        {
+                            ActivityMasterId = new Guid("10000004-0000-0000-0000-000000000001"),
+                            ActivityCode = "STAGE4-ELCC",
+                            ActivityName = "Electrical Containment",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Final electrical conduit and containment installation",
+                            EstimatedDurationDays = 1,
+                            IsActive = true,
+                            IsWIRCheckpoint = false,
+                            OverallSequence = 16,
+                            SequenceInStage = 1,
+                            Stage = "Stage 4: Electrical & Framing",
+                            StageNumber = 4
+                        },
+                        new
+                        {
+                            ActivityMasterId = new Guid("10000004-0000-0000-0000-000000000002"),
+                            ActivityCode = "STAGE4-WIRE",
                             ActivityName = "Electrical Wiring",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "MEP",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Pulling and termination of electrical wiring",
+                            EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 15,
-                            StandardDuration = 2,
-                            Trade = "Electrical"
+                            OverallSequence = 17,
+                            SequenceInStage = 2,
+                            Stage = "Stage 4: Electrical & Framing",
+                            StageNumber = 4
                         },
                         new
                         {
-                            ActivityMasterId = 16,
-                            ActivityCode = "ACT-016",
-                            ActivityDescription = "Install distribution board and ONU panel",
+                            ActivityMasterId = new Guid("10000004-0000-0000-0000-000000000003"),
+                            ActivityCode = "STAGE4-DB",
                             ActivityName = "DB and ONU Panel",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "MEP",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of distribution board and ONU network panels",
+                            EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 16,
-                            StandardDuration = 2,
-                            Trade = "Electrical"
+                            OverallSequence = 18,
+                            SequenceInStage = 3,
+                            Stage = "Stage 4: Electrical & Framing",
+                            StageNumber = 4
                         },
                         new
                         {
-                            ActivityMasterId = 17,
-                            ActivityCode = "ACT-017",
-                            ActivityDescription = "Complete drywall framing for partitions",
+                            ActivityMasterId = new Guid("10000004-0000-0000-0000-000000000004"),
+                            ActivityCode = "STAGE4-DRYWALL",
                             ActivityName = "Dry Wall Framing",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "Civil",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of drywall framing and metal studs",
+                            EstimatedDurationDays = 2,
                             IsActive = true,
-                            IsWIRCheckpoint = true,
-                            Sequence = 17,
-                            StandardDuration = 1,
-                            Trade = "Finishing",
-                            WIRNumber = "WIR-3"
+                            IsWIRCheckpoint = false,
+                            OverallSequence = 19,
+                            SequenceInStage = 4,
+                            Stage = "Stage 4: Electrical & Framing",
+                            StageNumber = 4
                         },
                         new
                         {
-                            ActivityMasterId = 18,
-                            ActivityCode = "ACT-018",
-                            ActivityDescription = "Install false ceilings",
+                            ActivityMasterId = new Guid("10000004-0000-0000-0000-000000000005"),
+                            ActivityCode = "STAGE4-WIR3",
+                            ActivityName = "WIR-3",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Work Inspection Request - Stage 4 Completion",
+                            EstimatedDurationDays = 1,
+                            IsActive = true,
+                            IsWIRCheckpoint = true,
+                            OverallSequence = 20,
+                            SequenceInStage = 5,
+                            Stage = "Stage 4: Electrical & Framing",
+                            StageNumber = 4,
+                            WIRCode = "WIR-3"
+                        },
+                        new
+                        {
+                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000001"),
+                            ActivityCode = "STAGE5-CEILING",
                             ActivityName = "False Ceiling",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "Civil",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of suspended ceiling systems",
+                            EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 18,
-                            StandardDuration = 1,
-                            Trade = "Finishing"
+                            OverallSequence = 21,
+                            SequenceInStage = 1,
+                            Stage = "Stage 5: Interior Finishing",
+                            StageNumber = 5
                         },
                         new
                         {
-                            ActivityMasterId = 19,
-                            ActivityCode = "ACT-019",
-                            ActivityDescription = "Install floor and wall tiles",
+                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000002"),
+                            ActivityCode = "STAGE5-TILE",
                             ActivityName = "Tile Fixing",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "Civil",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of floor and wall tiles",
+                            EstimatedDurationDays = 2,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 19,
-                            StandardDuration = 2,
-                            Trade = "Finishing"
+                            OverallSequence = 22,
+                            SequenceInStage = 2,
+                            Stage = "Stage 5: Interior Finishing",
+                            StageNumber = 5
                         },
                         new
                         {
-                            ActivityMasterId = 20,
-                            ActivityCode = "ACT-020",
-                            ActivityDescription = "Complete painting",
-                            ActivityName = "Painting (Internal & External)",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "Civil",
+                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000003"),
+                            ActivityCode = "STAGE5-PAINT",
+                            ActivityName = "Painting",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Interior painting and finishing",
+                            EstimatedDurationDays = 2,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 20,
-                            StandardDuration = 2,
-                            Trade = "Finishing"
+                            OverallSequence = 23,
+                            SequenceInStage = 3,
+                            Stage = "Stage 5: Interior Finishing",
+                            StageNumber = 5
                         },
                         new
                         {
-                            ActivityMasterId = 21,
-                            ActivityCode = "ACT-021",
-                            ActivityDescription = "Fix kitchenettes and counters",
-                            ActivityName = "Kitchenette and Counters",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "Civil",
+                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000004"),
+                            ActivityCode = "STAGE5-KITCHEN",
+                            ActivityName = "Kitchenette & Counters",
+                            ApplicableBoxTypes = "Kitchen,Living Room",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of kitchen units and countertops",
+                            EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 21,
-                            StandardDuration = 2,
-                            Trade = "Finishing"
+                            OverallSequence = 24,
+                            SequenceInStage = 4,
+                            Stage = "Stage 5: Interior Finishing",
+                            StageNumber = 5
                         },
                         new
                         {
-                            ActivityMasterId = 22,
-                            ActivityCode = "ACT-022",
-                            ActivityDescription = "Install doors",
+                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000005"),
+                            ActivityCode = "STAGE5-DOORS",
                             ActivityName = "Doors",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "Civil",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of interior doors and frames",
+                            EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 22,
-                            StandardDuration = 1,
-                            Trade = "Finishing"
+                            OverallSequence = 25,
+                            SequenceInStage = 5,
+                            Stage = "Stage 5: Interior Finishing",
+                            StageNumber = 5
                         },
                         new
                         {
-                            ActivityMasterId = 23,
-                            ActivityCode = "ACT-023",
-                            ActivityDescription = "Install windows",
+                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000006"),
+                            ActivityCode = "STAGE5-WINDOWS",
                             ActivityName = "Windows",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "Civil",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of windows and glazing",
+                            EstimatedDurationDays = 1,
                             IsActive = true,
-                            IsWIRCheckpoint = true,
-                            Sequence = 23,
-                            StandardDuration = 1,
-                            Trade = "Finishing",
-                            WIRNumber = "WIR-4"
+                            IsWIRCheckpoint = false,
+                            OverallSequence = 26,
+                            SequenceInStage = 6,
+                            Stage = "Stage 5: Interior Finishing",
+                            StageNumber = 5
                         },
                         new
                         {
-                            ActivityMasterId = 24,
-                            ActivityCode = "ACT-024",
-                            ActivityDescription = "Install switches and sockets",
+                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000007"),
+                            ActivityCode = "STAGE5-WIR4",
+                            ActivityName = "WIR-4",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Work Inspection Request - Stage 5 Completion",
+                            EstimatedDurationDays = 1,
+                            IsActive = true,
+                            IsWIRCheckpoint = true,
+                            OverallSequence = 27,
+                            SequenceInStage = 7,
+                            Stage = "Stage 5: Interior Finishing",
+                            StageNumber = 5,
+                            WIRCode = "WIR-4"
+                        },
+                        new
+                        {
+                            ActivityMasterId = new Guid("10000006-0000-0000-0000-000000000001"),
+                            ActivityCode = "STAGE6-SWITCH",
                             ActivityName = "Switches & Sockets",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "MEP",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of electrical switches and power sockets",
+                            EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 24,
-                            StandardDuration = 2,
-                            Trade = "Electrical"
+                            OverallSequence = 28,
+                            SequenceInStage = 1,
+                            Stage = "Stage 6: MEP Phase 2",
+                            StageNumber = 6
                         },
                         new
                         {
-                            ActivityMasterId = 25,
-                            ActivityCode = "ACT-025",
-                            ActivityDescription = "Install light fittings",
+                            ActivityMasterId = new Guid("10000006-0000-0000-0000-000000000002"),
+                            ActivityCode = "STAGE6-LIGHTS",
                             ActivityName = "Light Fittings",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "MEP",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of light fixtures and fittings",
+                            EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 25,
-                            StandardDuration = 2,
-                            Trade = "Electrical"
+                            OverallSequence = 29,
+                            SequenceInStage = 2,
+                            Stage = "Stage 6: MEP Phase 2",
+                            StageNumber = 6
                         },
                         new
                         {
-                            ActivityMasterId = 26,
-                            ActivityCode = "ACT-026",
-                            ActivityDescription = "Install chilled water piping",
+                            ActivityMasterId = new Guid("10000006-0000-0000-0000-000000000003"),
+                            ActivityCode = "STAGE6-COPPER",
                             ActivityName = "Copper Piping",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "MEP",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of copper piping for specialized systems",
+                            EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 26,
-                            StandardDuration = 2,
-                            Trade = "Mechanical"
+                            OverallSequence = 30,
+                            SequenceInStage = 3,
+                            Stage = "Stage 6: MEP Phase 2",
+                            StageNumber = 6
                         },
                         new
                         {
-                            ActivityMasterId = 27,
-                            ActivityCode = "ACT-027",
-                            ActivityDescription = "Install sanitary fixtures",
-                            ActivityName = "Sanitary Fittings - Kitchen",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "MEP",
+                            ActivityMasterId = new Guid("10000006-0000-0000-0000-000000000004"),
+                            ActivityCode = "STAGE6-SANITARY",
+                            ActivityName = "Sanitary Fittings",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of bathroom and sanitary fixtures",
+                            EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 27,
-                            StandardDuration = 2,
-                            Trade = "Mechanical"
+                            OverallSequence = 31,
+                            SequenceInStage = 4,
+                            Stage = "Stage 6: MEP Phase 2",
+                            StageNumber = 6
                         },
                         new
                         {
-                            ActivityMasterId = 28,
-                            ActivityCode = "ACT-028",
-                            ActivityDescription = "Install thermostats",
+                            ActivityMasterId = new Guid("10000006-0000-0000-0000-000000000005"),
+                            ActivityCode = "STAGE6-THERMO",
                             ActivityName = "Thermostats",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "MEP",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of HVAC thermostats and controls",
+                            EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 28,
-                            StandardDuration = 2,
-                            Trade = "Mechanical"
+                            OverallSequence = 32,
+                            SequenceInStage = 5,
+                            Stage = "Stage 6: MEP Phase 2",
+                            StageNumber = 6
                         },
                         new
                         {
-                            ActivityMasterId = 29,
-                            ActivityCode = "ACT-029",
-                            ActivityDescription = "Install air outlets",
+                            ActivityMasterId = new Guid("10000006-0000-0000-0000-000000000006"),
+                            ActivityCode = "STAGE6-AIROUT",
                             ActivityName = "Air Outlet",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "MEP",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of HVAC air outlets and diffusers",
+                            EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 29,
-                            StandardDuration = 2,
-                            Trade = "Mechanical"
+                            OverallSequence = 33,
+                            SequenceInStage = 6,
+                            Stage = "Stage 6: MEP Phase 2",
+                            StageNumber = 6
                         },
                         new
                         {
-                            ActivityMasterId = 30,
-                            ActivityCode = "ACT-030",
-                            ActivityDescription = "Install sprinkler system",
+                            ActivityMasterId = new Guid("10000006-0000-0000-0000-000000000007"),
+                            ActivityCode = "STAGE6-SPRINKLER",
                             ActivityName = "Sprinkler",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "MEP",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of fire sprinkler heads",
+                            EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 30,
-                            StandardDuration = 2,
-                            Trade = "Mechanical"
+                            OverallSequence = 34,
+                            SequenceInStage = 7,
+                            Stage = "Stage 6: MEP Phase 2",
+                            StageNumber = 6
                         },
                         new
                         {
-                            ActivityMasterId = 31,
-                            ActivityCode = "ACT-031",
-                            ActivityDescription = "Install smoke detectors",
+                            ActivityMasterId = new Guid("10000006-0000-0000-0000-000000000008"),
+                            ActivityCode = "STAGE6-SMOKE",
                             ActivityName = "Smoke Detector",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "MEP",
-                            IsActive = true,
-                            IsWIRCheckpoint = true,
-                            Sequence = 31,
-                            StandardDuration = 2,
-                            Trade = "Mechanical",
-                            WIRNumber = "WIR-5"
-                        },
-                        new
-                        {
-                            ActivityMasterId = 32,
-                            ActivityCode = "ACT-032",
-                            ActivityDescription = "Install ironmongery (locks, handles, accessories)",
-                            ActivityName = "Iron Mongeries",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "Civil",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of smoke detectors and fire alarm devices",
+                            EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            Sequence = 32,
-                            StandardDuration = 2,
-                            Trade = "Finishing"
+                            OverallSequence = 35,
+                            SequenceInStage = 8,
+                            Stage = "Stage 6: MEP Phase 2",
+                            StageNumber = 6
                         },
                         new
                         {
-                            ActivityMasterId = 33,
-                            ActivityCode = "ACT-033",
-                            ActivityDescription = "Conduct comprehensive final inspection and wrap modules for delivery",
-                            ActivityName = "Inspection & Wrapping",
-                            CreatedDate = new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
-                            Department = "QC",
+                            ActivityMasterId = new Guid("10000006-0000-0000-0000-000000000009"),
+                            ActivityCode = "STAGE6-WIR5",
+                            ActivityName = "WIR-5",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Work Inspection Request - Final MEP Inspection",
+                            EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = true,
-                            Sequence = 33,
-                            StandardDuration = 1,
-                            Trade = "Quality Control",
-                            WIRNumber = "WIR-6"
+                            OverallSequence = 36,
+                            SequenceInStage = 9,
+                            Stage = "Stage 6: MEP Phase 2",
+                            StageNumber = 6,
+                            WIRCode = "WIR-5"
+                        },
+                        new
+                        {
+                            ActivityMasterId = new Guid("10000007-0000-0000-0000-000000000001"),
+                            ActivityCode = "STAGE7-IRON",
+                            ActivityName = "Ironmongery Installation",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Installation of door handles, locks, hinges and other hardware",
+                            EstimatedDurationDays = 1,
+                            IsActive = true,
+                            IsWIRCheckpoint = false,
+                            OverallSequence = 37,
+                            SequenceInStage = 1,
+                            Stage = "Stage 7: Final Inspection & Dispatch",
+                            StageNumber = 7
+                        },
+                        new
+                        {
+                            ActivityMasterId = new Guid("10000007-0000-0000-0000-000000000002"),
+                            ActivityCode = "STAGE7-INSP",
+                            ActivityName = "Final Inspection",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Comprehensive final quality inspection of completed module",
+                            EstimatedDurationDays = 1,
+                            IsActive = true,
+                            IsWIRCheckpoint = false,
+                            OverallSequence = 38,
+                            SequenceInStage = 2,
+                            Stage = "Stage 7: Final Inspection & Dispatch",
+                            StageNumber = 7
+                        },
+                        new
+                        {
+                            ActivityMasterId = new Guid("10000007-0000-0000-0000-000000000003"),
+                            ActivityCode = "STAGE7-WRAP",
+                            ActivityName = "Module Wrapping",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Protective wrapping of module for delivery to site",
+                            EstimatedDurationDays = 1,
+                            IsActive = true,
+                            IsWIRCheckpoint = false,
+                            OverallSequence = 39,
+                            SequenceInStage = 3,
+                            Stage = "Stage 7: Final Inspection & Dispatch",
+                            StageNumber = 7
+                        },
+                        new
+                        {
+                            ActivityMasterId = new Guid("10000007-0000-0000-0000-000000000004"),
+                            ActivityCode = "STAGE7-WIR6",
+                            ActivityName = "WIR-6",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Work Inspection Request - Final QC Clearance for Dispatch",
+                            EstimatedDurationDays = 1,
+                            IsActive = true,
+                            IsWIRCheckpoint = true,
+                            OverallSequence = 40,
+                            SequenceInStage = 4,
+                            Stage = "Stage 7: Final Inspection & Dispatch",
+                            StageNumber = 7,
+                            WIRCode = "WIR-6"
+                        },
+                        new
+                        {
+                            ActivityMasterId = new Guid("10000008-0000-0000-0000-000000000001"),
+                            ActivityCode = "STAGE8-RFID",
+                            ActivityName = "RFID Tracking to Site",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "RFID tag activation and tracking during transport to site",
+                            EstimatedDurationDays = 1,
+                            IsActive = true,
+                            IsWIRCheckpoint = false,
+                            OverallSequence = 41,
+                            SequenceInStage = 1,
+                            Stage = "Stage 8: Site Installation",
+                            StageNumber = 8
+                        },
+                        new
+                        {
+                            ActivityMasterId = new Guid("10000008-0000-0000-0000-000000000002"),
+                            ActivityCode = "STAGE8-INST",
+                            ActivityName = "Installation on Project",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Physical installation and positioning of module at project site",
+                            EstimatedDurationDays = 1,
+                            IsActive = true,
+                            IsWIRCheckpoint = false,
+                            OverallSequence = 42,
+                            SequenceInStage = 2,
+                            Stage = "Stage 8: Site Installation",
+                            StageNumber = 8
+                        },
+                        new
+                        {
+                            ActivityMasterId = new Guid("10000008-0000-0000-0000-000000000003"),
+                            ActivityCode = "STAGE8-COMP",
+                            ActivityName = "Box Completion",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Final verification and completion signoff at site",
+                            EstimatedDurationDays = 1,
+                            IsActive = true,
+                            IsWIRCheckpoint = false,
+                            OverallSequence = 43,
+                            SequenceInStage = 3,
+                            Stage = "Stage 8: Site Installation",
+                            StageNumber = 8
                         });
                 });
 
@@ -642,116 +847,119 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime?>("ActualStartDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("BIMModelReference")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
                     b.Property<string>("BoxName")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("BoxTag")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("BoxType")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Building")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("CreatedBy")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("BoxType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Building")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("CurrentLocation")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
-
-                    b.Property<string>("CurrentStatus")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasDefaultValue("Not Started");
 
                     b.Property<string>("Floor")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
+                    b.Property<decimal?>("Height")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
+                    b.Property<decimal?>("Length")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("ModifiedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("ModifiedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime?>("PlannedEndDate")
-                        .HasColumnType("datetime2");
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
-                    b.Property<DateTime?>("PlannedStartDate")
+                    b.Property<DateTime?>("PlannedEndDate")
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("ProgressPercentage")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("decimal(5,2)")
+                        .HasColumnType("decimal(18,2)")
                         .HasDefaultValue(0m);
 
                     b.Property<Guid>("ProjectId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("QRCode")
-                        .IsRequired()
+                    b.Property<string>("QRCodeImageUrl")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<byte[]>("QRCodeImage")
-                        .HasColumnType("varbinary(max)");
+                    b.Property<string>("QRCodeString")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
-                    b.Property<string>("RFIDTag")
+                    b.Property<string>("RevitElementId")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("Zone")
+                    b.Property<int>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.Property<int?>("UnitOfMeasure")
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("int");
+
+                    b.Property<decimal?>("Width")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("Zone")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("BoxId");
 
-                    b.HasIndex("BoxTag")
+                    b.HasIndex("QRCodeString")
                         .IsUnique();
 
-                    b.HasIndex("ProjectId");
-
-                    b.HasIndex("QRCode")
+                    b.HasIndex("ProjectId", "BoxTag")
                         .IsUnique();
+
+                    b.HasIndex("Status", "ProjectId");
 
                     b.ToTable("Boxes");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.BoxActivity", b =>
                 {
-                    b.Property<int>("BoxActivityId")
+                    b.Property<Guid>("BoxActivityId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("uniqueidentifier");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("BoxActivityId"));
-
-                    b.Property<int>("ActivityMasterId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ActivitySequence")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("ActualDuration")
-                        .HasColumnType("int");
+                    b.Property<Guid>("ActivityMasterId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("ActualEndDate")
                         .HasColumnType("datetime2");
@@ -759,30 +967,34 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime?>("ActualStartDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("AssignedTeamId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("AssignedTo")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                    b.Property<Guid?>("AssignedMemberId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BoxId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Comments")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("CompletedDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("IssuesEncountered")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<bool>("MaterialsAvailable")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MaterialsNeeded")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime?>("ModifiedDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<int?>("PlannedDuration")
-                        .HasColumnType("int");
 
                     b.Property<DateTime?>("PlannedEndDate")
                         .HasColumnType("datetime2");
@@ -792,25 +1004,40 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.Property<decimal>("ProgressPercentage")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("decimal(5,2)")
+                        .HasColumnType("decimal(18,2)")
                         .HasDefaultValue(0m);
 
-                    b.Property<string>("Status")
-                        .IsRequired()
+                    b.Property<int>("Sequence")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Status")
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasDefaultValue("Not Started");
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.Property<int?>("TeamId")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("TeamMemberId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("WorkDescription")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.HasKey("BoxActivityId");
 
                     b.HasIndex("ActivityMasterId");
 
-                    b.HasIndex("AssignedTeamId");
+                    b.HasIndex("AssignedMemberId");
 
-                    b.HasIndex("BoxId");
+                    b.HasIndex("TeamId");
 
-                    b.HasIndex("Status");
+                    b.HasIndex("TeamMemberId");
+
+                    b.HasIndex("BoxId", "Sequence")
+                        .IsUnique();
 
                     b.HasIndex("BoxId", "Status");
 
@@ -819,21 +1046,20 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.BoxAsset", b =>
                 {
-                    b.Property<int>("AssetId")
+                    b.Property<Guid>("BoxAssetId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AssetId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("AssetCode")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("AssetDescription")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                    b.Property<string>("AssetName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("AssetType")
+                        .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
@@ -843,18 +1069,22 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<decimal?>("Quantity")
-                        .HasColumnType("decimal(10,2)");
+                    b.Property<string>("Notes")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
-                    b.Property<string>("Status")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Specifications")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<string>("Unit")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.HasKey("AssetId");
+                    b.HasKey("BoxAssetId");
 
                     b.HasIndex("BoxId");
 
@@ -1039,8 +1269,8 @@ namespace Dubox.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LogId"));
 
-                    b.Property<int?>("ActivityMasterId")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("ActivityMasterId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BoxId")
                         .HasColumnType("uniqueidentifier");
@@ -1092,7 +1322,9 @@ namespace Dubox.Infrastructure.Migrations
                         .HasColumnType("nvarchar(15)");
 
                     b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.Property<string>("DepartmentName")
                         .IsRequired()
@@ -1114,7 +1346,9 @@ namespace Dubox.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("UpdatedDate")
-                        .HasColumnType("datetime2");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("datetime2")
+                        .HasDefaultValueSql("GETUTCDATE()");
 
                     b.HasKey("DepartmentId");
 
@@ -1358,8 +1592,8 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime?>("ReadDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("RelatedActivityId")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("RelatedActivityId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("RelatedBoxId")
                         .HasColumnType("uniqueidentifier");
@@ -1387,41 +1621,47 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.ProgressUpdate", b =>
                 {
-                    b.Property<int>("UpdateId")
+                    b.Property<Guid>("ProgressUpdateId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
+                        .HasColumnType("uniqueidentifier");
 
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UpdateId"));
-
-                    b.Property<int?>("BoxActivityId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("BoxActivityId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BoxId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("DeviceInfo")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("IssuesEncountered")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<double?>("Latitude")
+                        .HasColumnType("float");
+
+                    b.Property<string>("LocationDescription")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<string>("IssuesEncountered")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<double?>("Longitude")
+                        .HasColumnType("float");
 
-                    b.Property<decimal?>("Latitude")
-                        .HasColumnType("decimal(10,8)");
+                    b.Property<string>("PhotoUrls")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
 
-                    b.Property<decimal?>("Longitude")
-                        .HasColumnType("decimal(11,8)");
+                    b.Property<decimal>("ProgressPercentage")
+                        .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("PhotoPath")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<decimal?>("ProgressPercentage")
-                        .HasColumnType("decimal(5,2)");
-
-                    b.Property<string>("Status")
+                    b.Property<int>("Status")
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("int");
 
                     b.Property<int?>("TeamId")
                         .HasColumnType("int");
@@ -1429,22 +1669,25 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime>("UpdateDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("UpdatedBy")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                    b.Property<string>("UpdateMethod")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid>("UpdatedBy")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("WorkDescription")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
-                    b.HasKey("UpdateId");
+                    b.HasKey("ProgressUpdateId");
 
                     b.HasIndex("BoxActivityId");
 
-                    b.HasIndex("BoxId");
-
                     b.HasIndex("TeamId");
 
-                    b.HasIndex("UpdateDate");
+                    b.HasIndex("UpdatedBy");
 
                     b.HasIndex("BoxId", "UpdateDate");
 
@@ -1465,11 +1708,14 @@ namespace Dubox.Infrastructure.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("CreatedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -1479,8 +1725,7 @@ namespace Dubox.Infrastructure.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("ModifiedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("ModifiedDate")
                         .HasColumnType("datetime2");
@@ -1501,12 +1746,13 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime?>("StartDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
+                    b.Property<int>("Status")
                         .ValueGeneratedOnAdd()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)")
-                        .HasDefaultValue("Active");
+                        .HasColumnType("int")
+                        .HasDefaultValue(1);
+
+                    b.Property<int>("TotalBoxes")
+                        .HasColumnType("int");
 
                     b.HasKey("ProjectId");
 
@@ -1745,16 +1991,17 @@ namespace Dubox.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<string>("Role")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<int>("TeamId")
                         .HasColumnType("int");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("TeamMemberId");
 
                     b.HasIndex("TeamId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("TeamMembers");
                 });
@@ -1953,16 +2200,86 @@ namespace Dubox.Infrastructure.Migrations
                     b.ToTable("WIRCheckpoints");
                 });
 
+            modelBuilder.Entity("Dubox.Domain.Entities.WIRRecord", b =>
+                {
+                    b.Property<Guid>("WIRRecordId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BoxActivityId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("InspectedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("InspectionDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("InspectionNotes")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<DateTime?>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PhotoUrls")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<Guid>("RequestedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("RequestedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("WIRCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.HasKey("WIRRecordId");
+
+                    b.HasIndex("InspectedBy");
+
+                    b.HasIndex("RequestedBy");
+
+                    b.HasIndex("BoxActivityId", "WIRCode");
+
+                    b.HasIndex("Status", "RequestedDate");
+
+                    b.ToTable("WIRRecords");
+                });
+
             modelBuilder.Entity("Dubox.Domain.Entities.ActivityDependency", b =>
                 {
                     b.HasOne("Dubox.Domain.Entities.BoxActivity", "BoxActivity")
-                        .WithMany("Dependencies")
+                        .WithMany()
                         .HasForeignKey("BoxActivityId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Dubox.Domain.Entities.BoxActivity", "PredecessorActivity")
+                    b.HasOne("Dubox.Domain.Entities.BoxActivity", null)
+                        .WithMany("Dependencies")
+                        .HasForeignKey("BoxActivityId1");
+
+                    b.HasOne("Dubox.Domain.Entities.BoxActivity", null)
                         .WithMany("DependentActivities")
+                        .HasForeignKey("BoxActivityId2");
+
+                    b.HasOne("Dubox.Domain.Entities.BoxActivity", "PredecessorActivity")
+                        .WithMany()
                         .HasForeignKey("PredecessorActivityId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -1988,30 +2305,41 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasOne("Dubox.Domain.Entities.ActivityMaster", "ActivityMaster")
                         .WithMany("BoxActivities")
                         .HasForeignKey("ActivityMasterId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Dubox.Domain.Entities.Team", "AssignedTeam")
-                        .WithMany("AssignedActivities")
-                        .HasForeignKey("AssignedTeamId");
+                    b.HasOne("Dubox.Domain.Entities.TeamMember", "AssignedMember")
+                        .WithMany()
+                        .HasForeignKey("AssignedMemberId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("Dubox.Domain.Entities.Box", "Box")
-                        .WithMany("Activities")
+                        .WithMany("BoxActivities")
                         .HasForeignKey("BoxId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Dubox.Domain.Entities.Team", "Team")
+                        .WithMany("AssignedActivities")
+                        .HasForeignKey("TeamId");
+
+                    b.HasOne("Dubox.Domain.Entities.TeamMember", null)
+                        .WithMany("BoxActivities")
+                        .HasForeignKey("TeamMemberId");
+
                     b.Navigation("ActivityMaster");
 
-                    b.Navigation("AssignedTeam");
+                    b.Navigation("AssignedMember");
 
                     b.Navigation("Box");
+
+                    b.Navigation("Team");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.BoxAsset", b =>
                 {
                     b.HasOne("Dubox.Domain.Entities.Box", "Box")
-                        .WithMany("Assets")
+                        .WithMany("BoxAssets")
                         .HasForeignKey("BoxId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2041,7 +2369,7 @@ namespace Dubox.Infrastructure.Migrations
             modelBuilder.Entity("Dubox.Domain.Entities.BoxLocationHistory", b =>
                 {
                     b.HasOne("Dubox.Domain.Entities.Box", "Box")
-                        .WithMany("LocationHistory")
+                        .WithMany()
                         .HasForeignKey("BoxId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2067,7 +2395,7 @@ namespace Dubox.Infrastructure.Migrations
             modelBuilder.Entity("Dubox.Domain.Entities.BoxMaterial", b =>
                 {
                     b.HasOne("Dubox.Domain.Entities.Box", "Box")
-                        .WithMany("BoxMaterials")
+                        .WithMany()
                         .HasForeignKey("BoxId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2181,29 +2509,37 @@ namespace Dubox.Infrastructure.Migrations
                 {
                     b.HasOne("Dubox.Domain.Entities.BoxActivity", "BoxActivity")
                         .WithMany("ProgressUpdates")
-                        .HasForeignKey("BoxActivityId");
+                        .HasForeignKey("BoxActivityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("Dubox.Domain.Entities.Box", "Box")
                         .WithMany("ProgressUpdates")
                         .HasForeignKey("BoxId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Dubox.Domain.Entities.Team", "Team")
+                    b.HasOne("Dubox.Domain.Entities.Team", null)
                         .WithMany("ProgressUpdates")
                         .HasForeignKey("TeamId");
+
+                    b.HasOne("Dubox.Domain.Entities.User", "UpdatedByUser")
+                        .WithMany()
+                        .HasForeignKey("UpdatedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Box");
 
                     b.Navigation("BoxActivity");
 
-                    b.Navigation("Team");
+                    b.Navigation("UpdatedByUser");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.QualityIssue", b =>
                 {
                     b.HasOne("Dubox.Domain.Entities.Box", "Box")
-                        .WithMany("QualityIssues")
+                        .WithMany()
                         .HasForeignKey("BoxId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2224,7 +2560,7 @@ namespace Dubox.Infrastructure.Migrations
                         .HasForeignKey("BoxId");
 
                     b.HasOne("Dubox.Domain.Entities.Project", "Project")
-                        .WithMany("Risks")
+                        .WithMany()
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2242,7 +2578,15 @@ namespace Dubox.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Dubox.Domain.Entities.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Team");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.User", b =>
@@ -2308,12 +2652,38 @@ namespace Dubox.Infrastructure.Migrations
             modelBuilder.Entity("Dubox.Domain.Entities.WIRCheckpoint", b =>
                 {
                     b.HasOne("Dubox.Domain.Entities.Box", "Box")
-                        .WithMany("WIRCheckpoints")
+                        .WithMany()
                         .HasForeignKey("BoxId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Box");
+                });
+
+            modelBuilder.Entity("Dubox.Domain.Entities.WIRRecord", b =>
+                {
+                    b.HasOne("Dubox.Domain.Entities.BoxActivity", "BoxActivity")
+                        .WithMany("WIRRecords")
+                        .HasForeignKey("BoxActivityId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Dubox.Domain.Entities.User", "InspectedByUser")
+                        .WithMany()
+                        .HasForeignKey("InspectedBy")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("Dubox.Domain.Entities.User", "RequestedByUser")
+                        .WithMany()
+                        .HasForeignKey("RequestedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("BoxActivity");
+
+                    b.Navigation("InspectedByUser");
+
+                    b.Navigation("RequestedByUser");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.ActivityMaster", b =>
@@ -2323,19 +2693,11 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.Box", b =>
                 {
-                    b.Navigation("Activities");
+                    b.Navigation("BoxActivities");
 
-                    b.Navigation("Assets");
-
-                    b.Navigation("BoxMaterials");
-
-                    b.Navigation("LocationHistory");
+                    b.Navigation("BoxAssets");
 
                     b.Navigation("ProgressUpdates");
-
-                    b.Navigation("QualityIssues");
-
-                    b.Navigation("WIRCheckpoints");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.BoxActivity", b =>
@@ -2345,6 +2707,8 @@ namespace Dubox.Infrastructure.Migrations
                     b.Navigation("DependentActivities");
 
                     b.Navigation("ProgressUpdates");
+
+                    b.Navigation("WIRRecords");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.CostCategory", b =>
@@ -2381,8 +2745,6 @@ namespace Dubox.Infrastructure.Migrations
             modelBuilder.Entity("Dubox.Domain.Entities.Project", b =>
                 {
                     b.Navigation("Boxes");
-
-                    b.Navigation("Risks");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.Role", b =>
@@ -2401,6 +2763,11 @@ namespace Dubox.Infrastructure.Migrations
                     b.Navigation("ProductionLogs");
 
                     b.Navigation("ProgressUpdates");
+                });
+
+            modelBuilder.Entity("Dubox.Domain.Entities.TeamMember", b =>
+                {
+                    b.Navigation("BoxActivities");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.User", b =>

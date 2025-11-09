@@ -20,16 +20,21 @@ namespace Dubox.Domain.Entities
         [MaxLength(200)]
         public string TeamName { get; set; } = string.Empty;
 
-        [MaxLength(100)]
-        public string? Department { get; set; } // Civil, MEP, QC
+        [Required]
+        [ForeignKey(nameof(Department))]
+        public Guid DepartmentId { get; set; }
+
+        public virtual Department Department { get; set; } = null!;
 
         [MaxLength(100)]
         public string? Trade { get; set; } // Assembly, Mechanical, Electrical, Finishing
 
-        [MaxLength(200)]
-        public string? TeamLeaderName { get; set; }
+        [ForeignKey(nameof(TeamLeader))]
+        public Guid? TeamLeaderMemberId { get; set; }
+        public virtual TeamMember? TeamLeader { get; set; }
 
-        public int? TeamSize { get; set; }
+        [NotMapped]
+        public int TeamSize => Members.Count;
 
         public bool IsActive { get; set; } = true;
 

@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Dubox.Domain.Enums;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Dubox.Domain.Entities;
@@ -20,7 +21,7 @@ public class BoxActivity
 
     [Required]
     [MaxLength(50)]
-    public string Status { get; set; } = "Not Started"; // Not Started, In Progress, Completed, On Hold, Delayed
+    public BoxStatusEnum Status { get; set; } = BoxStatusEnum.NotStarted; // Not Started, In Progress, Completed, On Hold, Delayed
 
     public decimal ProgressPercentage { get; set; } = 0; // 0-100%
 
@@ -43,12 +44,6 @@ public class BoxActivity
     public Guid? AssignedMemberId { get; set; }
     public virtual TeamMember? AssignedMember { get; set; }
 
-    //// Team assignment
-    //[MaxLength(100)]
-    //public string? AssignedTeam { get; set; }
-
-    //public Guid? AssignedUserId { get; set; }
-    //public User? AssignedUser { get; set; }
 
     // Materials tracking
     public bool MaterialsAvailable { get; set; } = true;
@@ -64,4 +59,17 @@ public class BoxActivity
     // Navigation properties
     public ICollection<ProgressUpdate> ProgressUpdates { get; set; } = new List<ProgressUpdate>();
     public ICollection<WIRRecord> WIRRecords { get; set; } = new List<WIRRecord>();
+    public virtual ICollection<ActivityDependency> Dependencies { get; set; } = new List<ActivityDependency>();
+    public virtual ICollection<ActivityDependency> DependentActivities { get; set; } = new List<ActivityDependency>();
+    [NotMapped]
+    public bool IsCompleted => Status == BoxStatusEnum.Completed || ProgressPercentage >= 100;
+
+    [NotMapped]
+    public bool IsDelayed => PlannedEndDate.HasValue &&
+                             !ActualEndDate.HasValue &&
+                             PlannedEndDate < DateTime.Today;
+
+    [NotMapped]
+    public int DelayDays => IsDelayed ?
+        (DateTime.Today - PlannedEndDate!.Value).Days : 0;
 }

@@ -1,5 +1,5 @@
-﻿using Dubox.Domain.Specification;
-using Dubox.Domain.Abstraction;
+﻿using Dubox.Domain.Abstraction;
+using Dubox.Domain.Specification;
 using Dubox.Infrastructure.ApplicationContext;
 using Dubox.Infrastructure.Specification;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +11,7 @@ internal class GenericRepository<T> : IGenericRepository<T> where T : class
 {
     private readonly ApplicationDbContext _context;
     private readonly DbSet<T> _entity;
-   
+
     public GenericRepository(ApplicationDbContext context)
     {
         _context = context;
@@ -80,7 +80,7 @@ internal class GenericRepository<T> : IGenericRepository<T> where T : class
     }
 
     public async Task<bool> IsExistAsync(
-        Expression<Func<T, bool>> filter, 
+        Expression<Func<T, bool>> filter,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(filter);
@@ -88,15 +88,24 @@ internal class GenericRepository<T> : IGenericRepository<T> where T : class
     }
 
     public async Task<int> CountAsync(
-        Expression<Func<T, bool>>? filter = null, 
+        Expression<Func<T, bool>>? filter = null,
         CancellationToken cancellationToken = default)
     {
         if (filter == null)
             return await _entity.CountAsync(cancellationToken);
-        
+
         return await _entity.CountAsync(filter, cancellationToken);
     }
 
     public IReadOnlyList<T> Get()
         => _entity.AsNoTracking().ToList();
+    public async Task<IReadOnlyList<T>> FindAsync(
+    Expression<Func<T, bool>> predicate,
+    CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(predicate);
+        return await _entity.AsNoTracking()
+            .Where(predicate)
+            .ToListAsync(cancellationToken);
+    }
 }

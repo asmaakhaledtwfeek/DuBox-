@@ -46,4 +46,28 @@ public record TeamProductivityDto
     public int TotalUpdatesToday { get; init; }
     public int TotalBoxesWorkedOn { get; init; }
 }
+public record TeamMembersDto
+{
+    public int TeamId { get; init; }
+    public string TeamCode { get; init; } = string.Empty;
+    public string TeamName { get; init; } = string.Empty;
+    public int TeamSize { get; init; } = 0;
+    public List<TeamMemberDto> Members { get; init; } = new();
+
+}
+public record TeamMemberDto
+{
+    public Guid TeamMemberId { get; set; }
+    public Guid UserId { get; init; }
+    public int TeamId { get; init; }
+    public string TeamCode { get; init; } = string.Empty;
+    public string TeamName { get; init; } = string.Empty;
+    public string Email { get; init; } = string.Empty;
+    public string? FullName { get; init; }
+    public string EmployeeCode { get; set; } = string.Empty;
+    public string EmployeeName { get; set; } = string.Empty;
+    public string? MobileNumber { get; set; }
+}
+
+
 

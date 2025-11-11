@@ -18,5 +18,6 @@ public interface IGenericRepository<T> where T : class
     T? GetEntityWithSpec(Specification<T> specification);
     Task<bool> IsExistAsync(Expression<Func<T, bool>> filter, CancellationToken cancellationToken = default);
     Task<int> CountAsync(Expression<Func<T, bool>>? filter = null, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<T>> FindAsync(Expression<Func<T, bool>>? filter = null, CancellationToken cancellationToken = default);
 }
 

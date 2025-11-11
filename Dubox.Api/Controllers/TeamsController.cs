@@ -18,9 +18,7 @@ public class TeamsController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
-    /// Get all teams
-    /// </summary>
+
     [HttpGet]
     public async Task<IActionResult> GetAllTeams(CancellationToken cancellationToken)
     {
@@ -28,14 +26,30 @@ public class TeamsController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>
-    /// Create a new team
-    /// </summary>
     [HttpPost]
     public async Task<IActionResult> CreateTeam([FromBody] CreateTeamCommand command, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(command, cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+    [HttpPost("assign-members")]
+    public async Task<IActionResult> AssignTeamMembers([FromBody] AssignedTeamMembersCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+    [HttpPost("complate-member-profile")]
+    public async Task<IActionResult> ComplateMemberProfile([FromBody] ComplateTeamMemberProfileCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+    [HttpGet("team-members/{teamId}")]
+    public async Task<IActionResult> GetTeamMembers(int teamId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetTeamMembersQuery(teamId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
 }
 

@@ -76,5 +76,42 @@ public class BoxesController : ControllerBase
         var result = await _mediator.Send(new DeleteBoxCommand(boxId), cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+
+    /// <summary>
+    /// Download Excel template for boxes import
+    /// </summary>
+    [HttpGet("template")]
+    public async Task<IActionResult> DownloadTemplate(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GenerateBoxesTemplateQuery(), cancellationToken);
+        
+        if (!result.IsSuccess)
+            return BadRequest(result);
+
+        return File(result.Data!, 
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+            "BoxesImportTemplate.xlsx");
+    }
+
+    /// <summary>
+    /// Import boxes from Excel file for a specific project
+    /// </summary>
+    [HttpPost("project/{projectId}/import-excel")]
+    [RequestSizeLimit(10_485_760)] // 10 MB
+    public async Task<IActionResult> ImportFromExcel(Guid projectId, [FromForm] IFormFile file, CancellationToken cancellationToken)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("No file uploaded");
+
+        using var stream = file.OpenReadStream();
+        using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream, cancellationToken);
+        memoryStream.Position = 0;
+
+        var command = new ImportBoxesFromExcelCommand(projectId, memoryStream, file.FileName);
+        var result = await _mediator.Send(command, cancellationToken);
+        
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
 }
 

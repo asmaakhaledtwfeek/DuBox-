@@ -47,5 +47,37 @@ public class MaterialsController : ControllerBase
         var result = await _mediator.Send(command, cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+
+    [HttpGet("template")]
+    public async Task<IActionResult> DownloadTemplate(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GenerateMaterialsTemplateQuery(), cancellationToken);
+        
+        if (!result.IsSuccess)
+            return BadRequest(result);
+
+        return File(result.Data!, 
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+            "MaterialsImportTemplate.xlsx");
+    }
+
+   
+    [HttpPost("import")]
+    [RequestSizeLimit(10_485_760)] // 10 MB
+    public async Task<IActionResult> ImportFromExcel([FromForm] IFormFile file, CancellationToken cancellationToken)
+    {
+        if (file == null || file.Length == 0)
+            return BadRequest("No file uploaded");
+
+        using var stream = file.OpenReadStream();
+        using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream, cancellationToken);
+        memoryStream.Position = 0;
+
+        var command = new ImportMaterialsFromExcelCommand(memoryStream, file.FileName);
+        var result = await _mediator.Send(command, cancellationToken);
+        
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
 }
 

@@ -66,3 +66,26 @@ public record ImportBoxesDto
     public List<CreateBoxDto> Boxes { get; init; } = new();
 }
 
+public record ImportBoxFromExcelDto
+{
+    public string BoxTag { get; init; } = string.Empty;
+    public string? BoxName { get; init; }
+    public string BoxType { get; init; } = string.Empty;
+    public string Floor { get; init; } = string.Empty;
+    public string? Building { get; init; }
+    public string? Zone { get; init; }
+    public decimal? Length { get; init; }
+    public decimal? Width { get; init; }
+    public decimal? Height { get; init; }
+    public string? BIMModelReference { get; init; }
+    public string? Notes { get; init; }
+}
+
+public record BoxImportResultDto
+{
+    public int SuccessCount { get; init; }
+    public int FailureCount { get; init; }
+    public List<string> Errors { get; init; } = new();
+    public List<BoxDto> ImportedBoxes { get; init; } = new();
+}
+

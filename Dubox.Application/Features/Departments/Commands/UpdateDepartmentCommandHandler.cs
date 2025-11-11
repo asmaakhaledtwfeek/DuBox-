@@ -51,6 +51,11 @@ public class UpdateDepartmentCommandHandler
 
         _unitOfWork.Repository<Department>().Update(department);
         await _unitOfWork.CompleteAsync(cancellationToken);
+        if (department.ManagerId.HasValue)
+        {
+            department.Manager = await _unitOfWork.Repository<User>()
+                .GetByIdAsync(department.ManagerId.Value, cancellationToken);
+        }
 
         return Result.Success(department.Adapt<DepartmentDto>());
     }

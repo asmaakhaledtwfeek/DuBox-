@@ -40,6 +40,12 @@ namespace Dubox.Application.Features.Departments.Commands
             await _unitOfWork.Repository<Department>().AddAsync(department, cancellationToken);
             await _unitOfWork.CompleteAsync(cancellationToken);
 
+            if (department.ManagerId.HasValue)
+            {
+                department.Manager = await _unitOfWork.Repository<User>()
+                    .GetByIdAsync(department.ManagerId.Value, cancellationToken);
+            }
+
             var dto = _mapper.Map<DepartmentDto>(department);
 
             return Result.Success(dto);

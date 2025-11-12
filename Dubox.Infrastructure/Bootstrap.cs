@@ -23,6 +23,8 @@ public static class Bootstrap
         services.AddScoped(typeof(IDateTime), typeof(DateTimeService));
         services.AddScoped(typeof(ICurrentUserService), typeof(CurrentUserService));
         services.AddScoped<IExcelService, ExcelService>();
+        services.AddScoped<IQRCodeService, QRCodeService>();
+        services.AddScoped<IBoxActivityService, BoxActivityService>();
 
         return services;
     }

@@ -15,7 +15,8 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
     private readonly IUnitOfWork _unitOfWork;
     private readonly IExcelService _excelService;
     private readonly IDbContext _dbContext;
-
+    private readonly IQRCodeService _qrCodeService;
+    private readonly IBoxActivityService _boxActivityService;
     private static readonly string[] RequiredHeaders = new[]
     {
         "Box Tag",
@@ -23,11 +24,13 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
         "Floor",
     };
 
-    public ImportBoxesFromExcelCommandHandler(IUnitOfWork unitOfWork, IExcelService excelService, IDbContext dbContext)
+    public ImportBoxesFromExcelCommandHandler(IUnitOfWork unitOfWork, IExcelService excelService, IDbContext dbContext, IQRCodeService qrCodeService, IBoxActivityService boxActivityService)
     {
         _unitOfWork = unitOfWork;
         _excelService = excelService;
         _dbContext = dbContext;
+        _qrCodeService = qrCodeService;
+        _boxActivityService = boxActivityService;
     }
 
     public async Task<Result<BoxImportResultDto>> Handle(ImportBoxesFromExcelCommand request, CancellationToken cancellationToken)
@@ -151,39 +154,15 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                     await boxRepository.AddAsync(box, cancellationToken);
 
                     // Create associated activities based on BoxType
-                    var boxType = boxDto.BoxType.Trim();
-                    var searchPattern = $",{boxType},";
-
-                    var activityMasters = await _dbContext.ActivityMasters
-                        .Where(am => am.IsActive &&
-                            (string.IsNullOrEmpty(am.ApplicableBoxTypes) ||
-                             am.ApplicableBoxTypes.Contains(searchPattern)))
-                        .OrderBy(am => am.OverallSequence)
-                        .ToListAsync(cancellationToken);
-
-                    var boxActivities = activityMasters.Select(am => new BoxActivity
-                    {
-                        BoxId = box.BoxId,
-                        ActivityMasterId = am.ActivityMasterId,
-                        Sequence = am.OverallSequence,
-                        Status = BoxStatusEnum.NotStarted,
-                        ProgressPercentage = 0,
-                        MaterialsAvailable = true,
-                        IsActive = true,
-                        CreatedDate = DateTime.UtcNow
-                    }).ToList();
-
-                    if (boxActivities.Any())
-                    {
-                        await _unitOfWork.Repository<BoxActivity>().AddRangeAsync(boxActivities, cancellationToken);
-                    }
+                    await _boxActivityService.CopyActivitiesToBox(box, cancellationToken);
 
                     // Add to existing tags to prevent duplicates within the same import
                     existingBoxTags.Add(boxDto.BoxTag.ToLower());
 
                     var createdBoxDto = box.Adapt<BoxDto>() with
                     {
-                        ProjectCode = project.ProjectCode
+                        ProjectCode = project.ProjectCode,
+                        QRCodeImage = _qrCodeService.GenerateQRCodeBase64(box.QRCodeString)
                     };
 
                     importedBoxes.Add(createdBoxDto);
@@ -261,5 +240,6 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
         }
         return null;
     }
+
 }
 

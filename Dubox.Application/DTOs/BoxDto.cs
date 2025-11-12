@@ -4,7 +4,7 @@ public record BoxDto
 {
     public Guid BoxId { get; init; }
     public Guid ProjectId { get; init; }
-    public string ProjectCode { get; set; } = string.Empty;
+    public string ProjectCode { get; init; } = string.Empty;
     public string BoxTag { get; init; } = string.Empty;
     public string? BoxName { get; init; }
     public string BoxType { get; init; } = string.Empty;
@@ -12,7 +12,7 @@ public record BoxDto
     public string? Building { get; init; }
     public string? Zone { get; init; }
     public string QRCodeString { get; init; } = string.Empty;
-    public string? QRCodeImageUrl { get; init; }
+    public string? QRCodeImage { get; init; } = string.Empty;
     public decimal ProgressPercentage { get; init; }
     public string Status { get; init; } = string.Empty;
     public decimal? Length { get; init; }

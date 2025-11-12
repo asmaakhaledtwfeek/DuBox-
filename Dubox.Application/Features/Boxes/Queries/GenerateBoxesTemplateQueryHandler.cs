@@ -11,16 +11,15 @@ public class GenerateBoxesTemplateQueryHandler : IRequestHandler<GenerateBoxesTe
 
     private static readonly string[] Headers = new[]
     {
-        "BoxTag",
-        "BoxName",
-        "BoxType",
+        "Box Tag",
+        "Box Name",
+        "Box Type",
         "Floor",
         "Building",
         "Zone",
         "Length",
         "Width",
         "Height",
-        "BIMModelReference",
         "Notes"
     };
 

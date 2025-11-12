@@ -53,12 +53,6 @@ public class BoxesController : ControllerBase
         return result.IsSuccess ? CreatedAtAction(nameof(GetBoxById), new { boxId = result.Data!.BoxId }, result) : BadRequest(result);
     }
 
-    [HttpPost("import")]
-    public async Task<IActionResult> ImportBoxes([FromBody] ImportBoxesCommand command, CancellationToken cancellationToken)
-    {
-        var result = await _mediator.Send(command, cancellationToken);
-        return result.IsSuccess ? Ok(result) : BadRequest(result);
-    }
 
     [HttpPut("{boxId}")]
     public async Task<IActionResult> UpdateBox(Guid boxId, [FromBody] UpdateBoxCommand command, CancellationToken cancellationToken)
@@ -77,27 +71,23 @@ public class BoxesController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>
-    /// Download Excel template for boxes import
-    /// </summary>
     [HttpGet("template")]
     public async Task<IActionResult> DownloadTemplate(CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GenerateBoxesTemplateQuery(), cancellationToken);
-        
+
         if (!result.IsSuccess)
             return BadRequest(result);
 
-        return File(result.Data!, 
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+        return File(result.Data!,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             "BoxesImportTemplate.xlsx");
     }
 
-    /// <summary>
-    /// Import boxes from Excel file for a specific project
-    /// </summary>
-    [HttpPost("project/{projectId}/import-excel")]
+
+    [HttpPost("import-excel")]
     [RequestSizeLimit(10_485_760)] // 10 MB
+    [Consumes("multipart/form-data")]
     public async Task<IActionResult> ImportFromExcel(Guid projectId, [FromForm] IFormFile file, CancellationToken cancellationToken)
     {
         if (file == null || file.Length == 0)
@@ -107,10 +97,9 @@ public class BoxesController : ControllerBase
         using var memoryStream = new MemoryStream();
         await stream.CopyToAsync(memoryStream, cancellationToken);
         memoryStream.Position = 0;
-
         var command = new ImportBoxesFromExcelCommand(projectId, memoryStream, file.FileName);
         var result = await _mediator.Send(command, cancellationToken);
-        
+
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 }

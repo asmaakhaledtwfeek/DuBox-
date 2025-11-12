@@ -52,8 +52,20 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
 
         await _unitOfWork.Repository<Box>().AddAsync(box, cancellationToken);
 
-        var boxType = request.BoxType?.Trim();
+        await CopyActivitiesToBox(box, cancellationToken);
 
+
+        await _unitOfWork.CompleteAsync(cancellationToken);
+
+        project.TotalBoxes++;
+        _unitOfWork.Repository<Project>().Update(project);
+        await _unitOfWork.CompleteAsync(cancellationToken);
+
+        return Result.Success(box.Adapt<BoxDto>());
+    }
+    private async Task CopyActivitiesToBox(Box box, CancellationToken cancellationToken)
+    {
+        var boxType = box.BoxType?.Trim();
         var searchPattern = $",{boxType},";
 
         var activityMasters = await _dbContext.ActivityMasters
@@ -77,14 +89,6 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
 
         await _unitOfWork.Repository<BoxActivity>().AddRangeAsync(boxActivities, cancellationToken);
 
-
-        await _unitOfWork.CompleteAsync(cancellationToken);
-
-        project.TotalBoxes++;
-        _unitOfWork.Repository<Project>().Update(project);
-        await _unitOfWork.CompleteAsync(cancellationToken);
-
-        return Result.Success(box.Adapt<BoxDto>());
     }
 }
 

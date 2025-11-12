@@ -1,11 +1,11 @@
 using Dubox.Application.DTOs;
-using Dubox.Domain.Entities;
-using Dubox.Domain.Shared;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
-using Dubox.Domain.Interfaces;
+using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
+using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.WIRRecords.Commands;
 
@@ -27,18 +27,12 @@ public class ApproveWIRRecordCommandHandler : IRequestHandler<ApproveWIRRecordCo
 
     public async Task<Result<WIRRecordDto>> Handle(ApproveWIRRecordCommand request, CancellationToken cancellationToken)
     {
-        var wirRecord = await _dbContext.WIRRecords
-            .Include(w => w.BoxActivity)
-                .ThenInclude(ba => ba.ActivityMaster)
-            .Include(w => w.BoxActivity)
-                .ThenInclude(ba => ba.Box)
-            .Include(w => w.RequestedByUser)
-            .FirstOrDefaultAsync(w => w.WIRRecordId == request.WIRRecordId, cancellationToken);
-
+        var wirRecord = _unitOfWork.Repository<WIRRecord>().
+           GetEntityWithSpec(new GetWIRRecordWIthIncludesSpecification(request.WIRRecordId));
         if (wirRecord == null)
             return Result.Failure<WIRRecordDto>("WIR record not found");
 
-        if (wirRecord.Status == "Approved")
+        if (wirRecord.Status == WIRRecordStatusEnum.Approved)
             return Result.Failure<WIRRecordDto>("WIR record is already approved");
 
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
@@ -47,11 +41,11 @@ public class ApproveWIRRecordCommandHandler : IRequestHandler<ApproveWIRRecordCo
         if (inspector == null)
             return Result.Failure<WIRRecordDto>("Inspector user not found");
 
-        wirRecord.Status = "Approved";
+        wirRecord.Status = WIRRecordStatusEnum.Approved;
         wirRecord.InspectedBy = currentUserId;
         wirRecord.InspectionDate = DateTime.UtcNow;
         wirRecord.InspectionNotes = request.InspectionNotes;
-        
+
         if (!string.IsNullOrEmpty(request.PhotoUrls))
         {
             wirRecord.PhotoUrls = string.IsNullOrEmpty(wirRecord.PhotoUrls)

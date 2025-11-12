@@ -31,7 +31,7 @@ public class GetDashboardStatisticsQueryHandler : IRequestHandler<GetDashboardSt
             ? await _dbContext.Boxes.AverageAsync(b => (double)b.ProgressPercentage, cancellationToken)
             : 0;
 
-        var pendingWIRs = await _dbContext.WIRRecords.CountAsync(w => w.Status == "Pending", cancellationToken);
+        var pendingWIRs = await _dbContext.WIRRecords.CountAsync(w => w.Status == WIRRecordStatusEnum.Pending, cancellationToken);
 
         var totalActivities = await _dbContext.BoxActivities.CountAsync(ba => ba.IsActive, cancellationToken);
         var completedActivities = await _dbContext.BoxActivities.CountAsync(ba => ba.IsActive && ba.Status == BoxStatusEnum.Completed, cancellationToken);

@@ -1,11 +1,11 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.WIRRecords.Commands;
 
@@ -27,13 +27,8 @@ public class RejectWIRRecordCommandHandler : IRequestHandler<RejectWIRRecordComm
 
     public async Task<Result<WIRRecordDto>> Handle(RejectWIRRecordCommand request, CancellationToken cancellationToken)
     {
-        var wirRecord = await _dbContext.WIRRecords
-            .Include(w => w.BoxActivity)
-                .ThenInclude(ba => ba.ActivityMaster)
-            .Include(w => w.BoxActivity)
-                .ThenInclude(ba => ba.Box)
-            .Include(w => w.RequestedByUser)
-            .FirstOrDefaultAsync(w => w.WIRRecordId == request.WIRRecordId, cancellationToken);
+        var wirRecord = _unitOfWork.Repository<WIRRecord>().
+           GetEntityWithSpec(new GetWIRRecordWIthIncludesSpecification(request.WIRRecordId));
 
         if (wirRecord == null)
             return Result.Failure<WIRRecordDto>("WIR record not found");
@@ -44,7 +39,7 @@ public class RejectWIRRecordCommandHandler : IRequestHandler<RejectWIRRecordComm
         if (inspector == null)
             return Result.Failure<WIRRecordDto>("Inspector user not found");
 
-        wirRecord.Status = "Rejected";
+        wirRecord.Status = WIRRecordStatusEnum.Rejected;
         wirRecord.InspectedBy = currentUserId;
         wirRecord.InspectionDate = DateTime.UtcNow;
         wirRecord.InspectionNotes = request.InspectionNotes;

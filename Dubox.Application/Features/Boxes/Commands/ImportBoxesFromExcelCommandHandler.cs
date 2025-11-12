@@ -18,17 +18,9 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
 
     private static readonly string[] RequiredHeaders = new[]
     {
-        "BoxTag",
-        "BoxName",
-        "BoxType",
+        "Box Tag",
+        "Box Type",
         "Floor",
-        "Building",
-        "Zone",
-        "Length",
-        "Width",
-        "Height",
-        "BIMModelReference",
-        "Notes"
     };
 
     public ImportBoxesFromExcelCommandHandler(IUnitOfWork unitOfWork, IExcelService excelService, IDbContext dbContext)
@@ -43,12 +35,10 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
         if (request.FileStream == null)
             return Result.Failure<BoxImportResultDto>("No file stream provided");
 
-        // Validate file extension
         var fileExtension = Path.GetExtension(request.FileName).ToLower();
         if (fileExtension != ".xlsx" && fileExtension != ".xls")
             return Result.Failure<BoxImportResultDto>("Invalid file format. Please upload an Excel file (.xlsx or .xls)");
 
-        // Validate project exists
         var project = await _unitOfWork.Repository<Project>().GetByIdAsync(request.ProjectId, cancellationToken);
         if (project == null)
             return Result.Failure<BoxImportResultDto>("Project not found");
@@ -62,7 +52,6 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
         {
             var stream = request.FileStream;
 
-            // Validate Excel structure
             stream.Position = 0;
             var (isValid, validationErrors) = await _excelService.ValidateExcelStructureAsync(stream, RequiredHeaders);
             if (!isValid)
@@ -128,7 +117,7 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                     // Check for duplicates within the import file
                     var duplicateInFile = boxes.Take(i)
                         .Any(b => b.BoxTag.Equals(boxDto.BoxTag, StringComparison.OrdinalIgnoreCase));
-                    
+
                     if (duplicateInFile)
                     {
                         errors.Add($"Row {rowNumber}: Duplicate BoxTag '{boxDto.BoxTag}' found in the import file");
@@ -238,9 +227,9 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
     {
         return new ImportBoxFromExcelDto
         {
-            BoxTag = GetStringValue(row, "BoxTag"),
-            BoxName = GetStringValue(row, "BoxName"),
-            BoxType = GetStringValue(row, "BoxType"),
+            BoxTag = GetStringValue(row, "Box Tag"),
+            BoxName = GetStringValue(row, "Box Name"),
+            BoxType = GetStringValue(row, "Box Type"),
             Floor = GetStringValue(row, "Floor"),
             Building = GetStringValue(row, "Building"),
             Zone = GetStringValue(row, "Zone"),

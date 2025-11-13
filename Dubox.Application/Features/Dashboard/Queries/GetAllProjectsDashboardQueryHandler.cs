@@ -39,7 +39,7 @@ public class GetAllProjectsDashboardQueryHandler : IRequestHandler<GetAllProject
 
             var pendingWIRs = await _dbContext.WIRRecords
                 .Include(w => w.BoxActivity)
-                .Where(w => w.BoxActivity.Box.ProjectId == project.ProjectId && w.Status == "Pending")
+                .Where(w => w.BoxActivity.Box.ProjectId == project.ProjectId && w.Status == WIRRecordStatusEnum.Pending)
                 .CountAsync(cancellationToken);
 
             projectDashboards.Add(new ProjectDashboardDto

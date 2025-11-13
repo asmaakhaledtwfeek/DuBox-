@@ -1,4 +1,5 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
@@ -27,46 +28,36 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
 
     public async Task<Result<ProgressUpdateDto>> Handle(CreateProgressUpdateCommand request, CancellationToken cancellationToken)
     {
-        // Verify box and activity exist
-        var boxActivity = await _dbContext.BoxActivities
-            .Include(ba => ba.ActivityMaster)
-            .Include(ba => ba.Box)
-                .ThenInclude(b => b.Project)
-            .FirstOrDefaultAsync(ba => ba.BoxActivityId == request.BoxActivityId && ba.BoxId == request.BoxId, cancellationToken);
+
+        var boxActivity = _unitOfWork.Repository<BoxActivity>().
+            GetEntityWithSpec(new BoxActivitiesWithIncludesSpecification(request.BoxActivityId, request.BoxId));
 
         if (boxActivity == null)
             return Result.Failure<ProgressUpdateDto>("Box activity not found");
 
-        // Get current user
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
         var user = await _unitOfWork.Repository<User>().GetByIdAsync(currentUserId, cancellationToken);
 
         if (user == null)
             return Result.Failure<ProgressUpdateDto>("User not found");
 
-        // Create progress update record (audit trail)
-        var progressUpdate = new ProgressUpdate
-        {
-            BoxId = request.BoxId,
-            BoxActivityId = request.BoxActivityId,
-            UpdateDate = DateTime.UtcNow,
-            UpdatedBy = currentUserId,
-            ProgressPercentage = request.ProgressPercentage,
-            Status = request.Status,
-            WorkDescription = request.WorkDescription,
-            IssuesEncountered = request.IssuesEncountered,
-            Latitude = request.Latitude,
-            Longitude = request.Longitude,
-            LocationDescription = request.LocationDescription,
-            PhotoUrls = request.PhotoUrls != null ? string.Join(",", request.PhotoUrls) : null,
-            UpdateMethod = request.UpdateMethod,
-            DeviceInfo = request.DeviceInfo,
-            CreatedDate = DateTime.UtcNow
-        };
+        var progressUpdate = request.Adapt<ProgressUpdate>();
+        var isDuplicate = await _unitOfWork.Repository<ProgressUpdate>()
+                 .IsExistAsync(pu =>
+                   pu.BoxId == request.BoxId &&
+                   pu.BoxActivityId == request.BoxActivityId &&
+                   pu.ProgressPercentage == request.ProgressPercentage &&
+                   pu.Status == request.Status);
+
+        if (isDuplicate)
+            return Result.Failure<ProgressUpdateDto>("A progress update with the exact same details already exists for this activity.");
+
+        progressUpdate.UpdatedBy = currentUserId;
+        progressUpdate.UpdateDate = DateTime.UtcNow;
+        progressUpdate.CreatedDate = DateTime.UtcNow;
 
         await _unitOfWork.Repository<ProgressUpdate>().AddAsync(progressUpdate, cancellationToken);
 
-        // Update the BoxActivity record
         var oldStatus = boxActivity.Status;
         var oldProgress = boxActivity.ProgressPercentage;
 
@@ -77,7 +68,6 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         boxActivity.ModifiedDate = DateTime.UtcNow;
         boxActivity.ModifiedBy = _currentUserService.Username;
 
-        // Update dates based on status
         if (request.Status == BoxStatusEnum.InProgress && boxActivity.ActualStartDate == null)
         {
             boxActivity.ActualStartDate = DateTime.UtcNow;
@@ -106,7 +96,7 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
                 {
                     BoxActivityId = request.BoxActivityId,
                     WIRCode = boxActivity.ActivityMaster.WIRCode ?? "WIR",
-                    Status = "Pending",
+                    Status = WIRRecordStatusEnum.Pending,
                     RequestedDate = DateTime.UtcNow,
                     RequestedBy = currentUserId,
                     PhotoUrls = progressUpdate.PhotoUrls,

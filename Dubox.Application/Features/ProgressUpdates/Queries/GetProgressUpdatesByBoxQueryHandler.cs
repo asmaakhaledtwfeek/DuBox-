@@ -1,31 +1,28 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
+using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.ProgressUpdates.Queries;
 
 public class GetProgressUpdatesByBoxQueryHandler : IRequestHandler<GetProgressUpdatesByBoxQuery, Result<List<ProgressUpdateDto>>>
 {
     private readonly IDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public GetProgressUpdatesByBoxQueryHandler(IDbContext dbContext)
+    public GetProgressUpdatesByBoxQueryHandler(IDbContext dbContext, IUnitOfWork unitOfWork)
     {
         _dbContext = dbContext;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<List<ProgressUpdateDto>>> Handle(GetProgressUpdatesByBoxQuery request, CancellationToken cancellationToken)
     {
-        var updates = await _dbContext.ProgressUpdates
-            .Include(pu => pu.Box)
-            .Include(pu => pu.BoxActivity)
-                .ThenInclude(ba => ba.ActivityMaster)
-            .Include(pu => pu.UpdatedByUser)
-            .Where(pu => pu.BoxId == request.BoxId)
-            .OrderByDescending(pu => pu.UpdateDate)
-            .ToListAsync(cancellationToken);
+
+        var updates = _unitOfWork.Repository<ProgressUpdate>().GetWithSpec(new GetProgressUpdatesByBoxSpecification(request.BoxId)).Data.ToList();
 
         var updateDtos = updates.Select(u =>
         {

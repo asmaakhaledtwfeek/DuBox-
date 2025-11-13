@@ -1,3 +1,4 @@
+using Dubox.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -18,8 +19,7 @@ public class WIRRecord
     public string WIRCode { get; set; } = string.Empty; // WIR-1, WIR-2, etc.
 
     [Required]
-    [MaxLength(50)]
-    public string Status { get; set; } = "Pending"; // Pending, Approved, Rejected
+    public WIRRecordStatusEnum Status { get; set; } = WIRRecordStatusEnum.Pending; // Pending, Approved, Rejected
 
     public DateTime RequestedDate { get; set; }
 

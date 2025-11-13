@@ -1,8 +1,9 @@
 using Dubox.Application.DTOs;
-using Dubox.Domain.Entities;
-using Dubox.Domain.Shared;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
-using Dubox.Domain.Interfaces;
+using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
+using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -28,10 +29,8 @@ public class CreateWIRRecordCommandHandler : IRequestHandler<CreateWIRRecordComm
     public async Task<Result<WIRRecordDto>> Handle(CreateWIRRecordCommand request, CancellationToken cancellationToken)
     {
         // Verify box activity exists
-        var boxActivity = await _dbContext.BoxActivities
-            .Include(ba => ba.ActivityMaster)
-            .Include(ba => ba.Box)
-            .FirstOrDefaultAsync(ba => ba.BoxActivityId == request.BoxActivityId, cancellationToken);
+        var boxActivity = _unitOfWork.Repository<BoxActivity>()
+            .GetEntityWithSpec(new GetBoxActivityByIdSpecification(request.BoxActivityId));
 
         if (boxActivity == null)
             return Result.Failure<WIRRecordDto>("Box activity not found");
@@ -54,7 +53,7 @@ public class CreateWIRRecordCommandHandler : IRequestHandler<CreateWIRRecordComm
         {
             BoxActivityId = request.BoxActivityId,
             WIRCode = request.WIRCode,
-            Status = "Pending",
+            Status = WIRRecordStatusEnum.Pending,
             RequestedDate = DateTime.UtcNow,
             RequestedBy = currentUserId,
             PhotoUrls = request.PhotoUrls,

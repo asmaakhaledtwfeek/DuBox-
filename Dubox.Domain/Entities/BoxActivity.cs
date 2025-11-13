@@ -44,12 +44,8 @@ public class BoxActivity
     public Guid? AssignedMemberId { get; set; }
     public virtual TeamMember? AssignedMember { get; set; }
 
-
     // Materials tracking
     public bool MaterialsAvailable { get; set; } = true;
-
-    [MaxLength(500)]
-    public string? MaterialsNeeded { get; set; }
 
     public bool IsActive { get; set; } = true;
     public DateTime CreatedDate { get; set; }
@@ -61,6 +57,7 @@ public class BoxActivity
     public ICollection<WIRRecord> WIRRecords { get; set; } = new List<WIRRecord>();
     public virtual ICollection<ActivityDependency> Dependencies { get; set; } = new List<ActivityDependency>();
     public virtual ICollection<ActivityDependency> DependentActivities { get; set; } = new List<ActivityDependency>();
+    public virtual ICollection<ActivityMaterial> RequiredMaterials { get; set; } = new List<ActivityMaterial>();
     [NotMapped]
     public bool IsCompleted => Status == BoxStatusEnum.Completed || ProgressPercentage >= 100;
 

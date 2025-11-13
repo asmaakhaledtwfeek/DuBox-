@@ -51,7 +51,9 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<UserRole> UserRoles { get; set; } = null!;
     public DbSet<UserGroup> UserGroups { get; set; } = null!;
     public DbSet<GroupRole> GroupRoles { get; set; } = null!;
-    public DbSet<Department> Departments { get; set; }
+    public DbSet<Department> Departments { get; set; } = null!;
+    public DbSet<ActivityMaterial> ActivityMaterials { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ConfigureRelationships(modelBuilder);
@@ -251,6 +253,35 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
              .WithMany(t => t.Members)
              .HasForeignKey(tm => tm.TeamId)
              .OnDelete(DeleteBehavior.Restrict);
+        modelBuilder.Entity<MaterialTransaction>()
+            .HasOne(t => t.Material)
+            .WithMany(m => m.Transactions)
+            .HasForeignKey(t => t.MaterialId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<MaterialTransaction>()
+            .HasOne(t => t.BoxActivity)
+            .WithMany()
+            .HasForeignKey(t => t.BoxActivityId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<MaterialTransaction>()
+            .HasOne(t => t.PerformedBy)
+            .WithMany()
+            .HasForeignKey(t => t.PerformedById)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<ActivityMaterial>()
+            .HasOne(am => am.Material)
+            .WithMany(m => m.ActivityMaterials)
+            .HasForeignKey(am => am.MaterialId);
+
+        modelBuilder.Entity<ActivityMaterial>()
+            .HasOne(am => am.BoxActivity)
+            .WithMany(ba => ba.RequiredMaterials)
+            .HasForeignKey(am => am.BoxActivityId);
     }
 
     private void ConfigureIndexes(ModelBuilder modelBuilder)

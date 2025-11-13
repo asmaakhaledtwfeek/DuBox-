@@ -102,5 +102,11 @@ public class BoxesController : ControllerBase
 
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+    [HttpGet("generate-qrcode/{boxId}")]
+    public async Task<IActionResult> GenerateBoxQRCode(Guid boxId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GenerateBoxQRCodeByIdQuery(boxId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
 }
 

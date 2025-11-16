@@ -88,15 +88,23 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
         </svg>
-        <h3>No projects found</h3>
-        <p>{{ projects.length === 0 ? 'Create your first project to get started' : 'Try adjusting your filters' }}</p>
+        <h3>{{ projects.length === 0 ? 'No Projects Yet' : 'No projects found' }}</h3>
+        <p *ngIf="projects.length === 0">Get started by creating your first construction project. You can add boxes, track progress, and manage QA/QC activities.</p>
+        <p *ngIf="projects.length > 0">Try adjusting your search or filter criteria to find projects.</p>
         <button class="btn btn-primary" (click)="createProject()" *ngIf="canCreateProject && projects.length === 0">
-          Create Project
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Create Your First Project
+        </button>
+        <button class="btn btn-secondary" (click)="selectedStatus = 'All'; searchControl.setValue(''); applyFilters()" *ngIf="projects.length > 0">
+          Clear Filters
         </button>
       </div>
 
       <!-- Project Cards -->
-      <div class="project-card" *ngFor="let project of filteredProjects" (click)="viewProject(project.id)">
+      <div class="project-card" *ngFor="let project of filteredProjects" (click)="viewProject(project.id)" [class.no-id]="!project.id">
         <div class="card-header">
           <div class="project-info">
             <h3 class="project-name">{{ project.name }}</h3>
@@ -148,11 +156,12 @@
         </div>
 
         <div class="card-footer">
-          <button class="btn-link" (click)="viewBoxes(project.id, $event)">
+          <button class="btn-link" (click)="viewBoxes(project.id, $event)" [disabled]="!project.id">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
             </svg>
             View Boxes
+            <span *ngIf="!project.id" style="color: #ff6b6b; font-size: 11px; margin-left: 4px;">(No ID)</span>
           </button>
           <span class="project-date">
             Started: {{ project.startDate | date:'MMM d, yyyy' }}

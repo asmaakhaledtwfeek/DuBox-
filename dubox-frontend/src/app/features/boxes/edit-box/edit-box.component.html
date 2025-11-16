@@ -1,0 +1,272 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="page-content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-left">
+        <button class="btn-back" (click)="onCancel()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+          Back to Box Details
+        </button>
+        <h1 class="page-title">Edit Box</h1>
+        <p class="page-subtitle">Update box information</p>
+      </div>
+    </div>
+
+    <!-- Success Message -->
+    <div class="alert alert-success" *ngIf="successMessage">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+      {{ successMessage }}
+    </div>
+
+    <!-- Error Message -->
+    <div class="alert alert-error" *ngIf="error">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="15" y1="9" x2="9" y2="15"/>
+        <line x1="9" y1="9" x2="15" y2="15"/>
+      </svg>
+      {{ error }}
+    </div>
+
+    <!-- Form -->
+    <form [formGroup]="boxForm" (ngSubmit)="onSubmit()" class="box-form">
+      <!-- Basic Information -->
+      <div class="form-card">
+        <div class="card-header">
+          <h3>Basic Information</h3>
+          <p>Enter the basic details about the box</p>
+        </div>
+
+        <div class="card-body">
+          <div class="form-row">
+            <!-- Box Tag -->
+            <div class="form-group">
+              <label for="boxTag" class="form-label required">Box Tag</label>
+              <input
+                id="boxTag"
+                type="text"
+                formControlName="boxTag"
+                class="form-control"
+                [class.invalid]="isFieldInvalid('boxTag')"
+                placeholder="e.g., B1-GF-LIV-01"
+              />
+              <div class="error-message" *ngIf="isFieldInvalid('boxTag')">
+                {{ getFieldError('boxTag') }}
+              </div>
+            </div>
+
+            <!-- Box Name -->
+            <div class="form-group">
+              <label for="boxName" class="form-label">Box Name</label>
+              <input
+                id="boxName"
+                type="text"
+                formControlName="boxName"
+                class="form-control"
+                [class.invalid]="isFieldInvalid('boxName')"
+                placeholder="e.g., Living Room 01"
+              />
+              <div class="error-message" *ngIf="isFieldInvalid('boxName')">
+                {{ getFieldError('boxName') }}
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <!-- Box Type -->
+            <div class="form-group">
+              <label for="boxType" class="form-label required">Box Type</label>
+              <select
+                id="boxType"
+                formControlName="boxType"
+                class="form-control"
+                [class.invalid]="isFieldInvalid('boxType')"
+              >
+                <option *ngFor="let type of boxTypes" [value]="type">{{ type }}</option>
+              </select>
+              <div class="error-message" *ngIf="isFieldInvalid('boxType')">
+                {{ getFieldError('boxType') }}
+              </div>
+            </div>
+
+            <!-- Floor -->
+            <div class="form-group">
+              <label for="floor" class="form-label required">Floor</label>
+              <select
+                id="floor"
+                formControlName="floor"
+                class="form-control"
+                [class.invalid]="isFieldInvalid('floor')"
+              >
+                <option *ngFor="let floor of floors" [value]="floor">{{ floor }}</option>
+              </select>
+              <div class="error-message" *ngIf="isFieldInvalid('floor')">
+                {{ getFieldError('floor') }}
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <!-- Building -->
+            <div class="form-group">
+              <label for="building" class="form-label">Building</label>
+              <input
+                id="building"
+                type="text"
+                formControlName="building"
+                class="form-control"
+                [class.invalid]="isFieldInvalid('building')"
+                placeholder="e.g., Building 1"
+              />
+              <div class="error-message" *ngIf="isFieldInvalid('building')">
+                {{ getFieldError('building') }}
+              </div>
+            </div>
+
+            <!-- Zone -->
+            <div class="form-group">
+              <label for="zone" class="form-label">Zone</label>
+              <input
+                id="zone"
+                type="text"
+                formControlName="zone"
+                class="form-control"
+                [class.invalid]="isFieldInvalid('zone')"
+                placeholder="e.g., Zone A"
+              />
+              <div class="error-message" *ngIf="isFieldInvalid('zone')">
+                {{ getFieldError('zone') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dimensions -->
+      <div class="form-card">
+        <div class="card-header">
+          <h3>Dimensions (mm)</h3>
+          <p>Enter the physical dimensions of the box</p>
+        </div>
+
+        <div class="card-body">
+          <div class="form-row-3">
+            <!-- Length -->
+            <div class="form-group">
+              <label for="length" class="form-label">Length</label>
+              <input
+                id="length"
+                type="number"
+                formControlName="length"
+                class="form-control"
+                [class.invalid]="isFieldInvalid('length')"
+                placeholder="e.g., 6000"
+              />
+              <div class="error-message" *ngIf="isFieldInvalid('length')">
+                {{ getFieldError('length') }}
+              </div>
+            </div>
+
+            <!-- Width -->
+            <div class="form-group">
+              <label for="width" class="form-label">Width</label>
+              <input
+                id="width"
+                type="number"
+                formControlName="width"
+                class="form-control"
+                [class.invalid]="isFieldInvalid('width')"
+                placeholder="e.g., 3000"
+              />
+              <div class="error-message" *ngIf="isFieldInvalid('width')">
+                {{ getFieldError('width') }}
+              </div>
+            </div>
+
+            <!-- Height -->
+            <div class="form-group">
+              <label for="height" class="form-label">Height</label>
+              <input
+                id="height"
+                type="number"
+                formControlName="height"
+                class="form-control"
+                [class.invalid]="isFieldInvalid('height')"
+                placeholder="e.g., 2800"
+              />
+              <div class="error-message" *ngIf="isFieldInvalid('height')">
+                {{ getFieldError('height') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BIM Information -->
+      <div class="form-card">
+        <div class="card-header">
+          <h3>BIM Information</h3>
+          <p>Link to BIM model and Revit element (optional)</p>
+        </div>
+
+        <div class="card-body">
+          <div class="form-row">
+            <!-- BIM Model Reference -->
+            <div class="form-group">
+              <label for="bimModelReference" class="form-label">BIM Model Reference</label>
+              <input
+                id="bimModelReference"
+                type="text"
+                formControlName="bimModelReference"
+                class="form-control"
+                [class.invalid]="isFieldInvalid('bimModelReference')"
+                placeholder="e.g., REV-2024-001"
+              />
+              <div class="error-message" *ngIf="isFieldInvalid('bimModelReference')">
+                {{ getFieldError('bimModelReference') }}
+              </div>
+            </div>
+
+            <!-- Revit Element ID -->
+            <div class="form-group">
+              <label for="revitElementId" class="form-label">Revit Element ID</label>
+              <input
+                id="revitElementId"
+                type="text"
+                formControlName="revitElementId"
+                class="form-control"
+                [class.invalid]="isFieldInvalid('revitElementId')"
+                placeholder="e.g., 123456"
+              />
+              <div class="error-message" *ngIf="isFieldInvalid('revitElementId')">
+                {{ getFieldError('revitElementId') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="loading">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="saving || loading">
+          <span class="spinner" *ngIf="saving"></span>
+          <span *ngIf="!saving">Update Box</span>
+          <span *ngIf="saving">Updating...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+

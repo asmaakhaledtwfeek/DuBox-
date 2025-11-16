@@ -1,0 +1,161 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="page-content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-left">
+        <button class="btn-back" (click)="onCancel()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+          Back to Projects
+        </button>
+        <h1 class="page-title">Create New Project</h1>
+        <p class="page-subtitle">Add a new construction project to the system</p>
+      </div>
+    </div>
+
+    <!-- Success Message -->
+    <div class="alert alert-success" *ngIf="successMessage">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+      {{ successMessage }}
+    </div>
+
+    <!-- Error Message -->
+    <div class="alert alert-error" *ngIf="error">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="15" y1="9" x2="9" y2="15"/>
+        <line x1="9" y1="9" x2="15" y2="15"/>
+      </svg>
+      {{ error }}
+    </div>
+
+    <!-- Form -->
+    <form [formGroup]="projectForm" (ngSubmit)="onSubmit()" class="project-form">
+      <div class="form-card">
+        <div class="card-header">
+          <h3>Project Information</h3>
+          <p>Enter the basic details about the project</p>
+        </div>
+
+        <div class="card-body">
+          <!-- Project Name -->
+          <div class="form-group">
+            <label for="name" class="form-label required">Project Name</label>
+            <input
+              id="name"
+              type="text"
+              formControlName="name"
+              class="form-control"
+              [class.invalid]="isFieldInvalid('name')"
+              placeholder="e.g., Dubai Marina Tower Construction"
+            />
+            <div class="error-message" *ngIf="isFieldInvalid('name')">
+              {{ getFieldError('name') }}
+            </div>
+          </div>
+
+          <!-- Project Code -->
+          <div class="form-group">
+            <label for="code" class="form-label required">Project Code</label>
+            <input
+              id="code"
+              type="text"
+              formControlName="code"
+              class="form-control"
+              [class.invalid]="isFieldInvalid('code')"
+              placeholder="e.g., DUB-2024-001"
+            />
+            <div class="error-message" *ngIf="isFieldInvalid('code')">
+              {{ getFieldError('code') }}
+            </div>
+          </div>
+
+          <!-- Location -->
+          <div class="form-group">
+            <label for="location" class="form-label">Location</label>
+            <input
+              id="location"
+              type="text"
+              formControlName="location"
+              class="form-control"
+              [class.invalid]="isFieldInvalid('location')"
+              placeholder="e.g., Dubai, UAE"
+            />
+            <div class="error-message" *ngIf="isFieldInvalid('location')">
+              {{ getFieldError('location') }}
+            </div>
+          </div>
+
+          <!-- Description -->
+          <div class="form-group">
+            <label for="description" class="form-label">Description</label>
+            <textarea
+              id="description"
+              formControlName="description"
+              class="form-control"
+              [class.invalid]="isFieldInvalid('description')"
+              rows="4"
+              placeholder="Enter a detailed description of the project..."
+            ></textarea>
+            <div class="error-message" *ngIf="isFieldInvalid('description')">
+              {{ getFieldError('description') }}
+            </div>
+          </div>
+
+          <!-- Date Range -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="startDate" class="form-label required">Start Date</label>
+              <input
+                id="startDate"
+                type="date"
+                formControlName="startDate"
+                class="form-control"
+                [class.invalid]="isFieldInvalid('startDate')"
+              />
+              <div class="error-message" *ngIf="isFieldInvalid('startDate')">
+                {{ getFieldError('startDate') }}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="endDate" class="form-label">End Date</label>
+              <input
+                id="endDate"
+                type="date"
+                formControlName="endDate"
+                class="form-control"
+                [class.invalid]="isFieldInvalid('endDate')"
+              />
+              <div class="error-message" *ngIf="isFieldInvalid('endDate')">
+                {{ getFieldError('endDate') }}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="loading">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="loading">
+          <span class="spinner" *ngIf="loading"></span>
+          <span *ngIf="!loading">Create Project</span>
+          <span *ngIf="loading">Creating...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+

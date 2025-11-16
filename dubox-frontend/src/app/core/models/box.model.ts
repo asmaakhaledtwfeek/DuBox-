@@ -6,6 +6,14 @@ export interface Box {
   status: BoxStatus;
   type?: string;
   description?: string;
+  floor?: string;
+  building?: string;
+  zone?: string;
+  length?: number;
+  width?: number;
+  height?: number;
+  bimModelReference?: string;
+  revitElementId?: string;
   assignedTeam?: string;
   assignedTo?: string;
   plannedStartDate?: Date;
@@ -31,6 +39,21 @@ export enum BoxStatus {
   ReadyForDelivery = 'ReadyForDelivery',
   Delivered = 'Delivered',
   OnHold = 'OnHold'
+}
+
+// Map frontend status strings to backend status numbers
+export function getBoxStatusNumber(status: BoxStatus | string): number {
+  const statusMap: Record<string, number> = {
+    'NotStarted': 1,
+    'InProgress': 2,
+    'Completed': 3,
+    'OnHold': 4,
+    'Delayed': 5,
+    'QAReview': 2,  // Map to InProgress
+    'ReadyForDelivery': 3,  // Map to Completed
+    'Delivered': 3  // Map to Completed
+  };
+  return statusMap[status] || 1;  // Default to NotStarted
 }
 
 export interface BoxActivity {
@@ -66,7 +89,9 @@ export enum ActivityStatus {
 export interface ChecklistItem {
   id: string;
   activityId: string;
+  name?: string;  // Item name/title
   description: string;
+  notes?: string;  // Additional notes
   isRequired: boolean;
   isCompleted: boolean;
   completedBy?: string;

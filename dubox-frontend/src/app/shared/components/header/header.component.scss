@@ -156,6 +156,13 @@
   line-height: 1.2;
 }
 
+.user-dept {
+  font-size: 10px;
+  color: var(--primary-color);
+  line-height: 1.2;
+  font-weight: 500;
+}
+
 .user-dropdown {
   position: absolute;
   top: calc(100% + var(--spacing-sm));

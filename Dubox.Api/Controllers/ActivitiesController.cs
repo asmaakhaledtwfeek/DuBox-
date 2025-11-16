@@ -32,6 +32,13 @@ public class ActivitiesController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
+    [HttpGet("{boxActivityId}")]
+    public async Task<IActionResult> GetBoxActivityById(Guid boxActivityId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetBoxActivityByIdQuery(boxActivityId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
     [HttpGet("box/{boxId}")]
     public async Task<IActionResult> GetBoxActivities(Guid boxId, CancellationToken cancellationToken)
     {

@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
-import { User } from '../../../core/models/user.model';
+import { User, UserRole, getUserPrimaryRole } from '../../../core/models/user.model';
 
 @Component({
   selector: 'app-header',
@@ -13,6 +13,7 @@ import { User } from '../../../core/models/user.model';
 })
 export class HeaderComponent implements OnInit {
   currentUser: User | null = null;
+  primaryRole: UserRole | null = null;
   unreadNotifications = 0;
   showUserMenu = false;
 
@@ -24,6 +25,7 @@ export class HeaderComponent implements OnInit {
   ngOnInit(): void {
     this.authService.authState$.subscribe(state => {
       this.currentUser = state.user;
+      this.primaryRole = getUserPrimaryRole(state.user);
     });
   }
 
@@ -38,6 +40,36 @@ export class HeaderComponent implements OnInit {
   navigateToProfile(): void {
     // Navigate to profile page when implemented
     console.log('Navigate to profile');
+  }
+
+  getRoleDisplayName(role: UserRole | null): string {
+    if (!role) return 'User';
+    
+    const roleNames: Record<UserRole, string> = {
+      [UserRole.SystemAdmin]: 'System Admin',
+      [UserRole.ProjectManager]: 'Project Manager',
+      [UserRole.SiteEngineer]: 'Site Engineer',
+      [UserRole.Foreman]: 'Foreman',
+      [UserRole.QCInspector]: 'QC Inspector',
+      [UserRole.ProcurementOfficer]: 'Procurement Officer',
+      [UserRole.HSEOfficer]: 'HSE Officer',
+      [UserRole.DesignEngineer]: 'Design Engineer',
+      [UserRole.CostEstimator]: 'Cost Estimator',
+      [UserRole.Viewer]: 'Viewer'
+    };
+    
+    return roleNames[role] || role;
+  }
+
+  getDepartmentInfo(): string {
+    if (!this.currentUser) return '';
+    
+    const parts = [];
+    if (this.currentUser.department) {
+      parts.push(this.currentUser.department);
+    }
+    
+    return parts.join(' • ');
   }
 
   logout(): void {

@@ -35,7 +35,9 @@ export class ProjectsListComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    console.log('🚀 Projects List Component Initialized');
     this.canCreateProject = this.permissionService.canCreate('projects');
+    console.log('✅ Can create project:', this.canCreateProject);
     this.loadProjects();
     this.setupSearch();
   }
@@ -43,9 +45,37 @@ export class ProjectsListComponent implements OnInit {
   loadProjects(): void {
     this.loading = true;
     this.error = '';
+    console.log('📡 Loading projects from API...');
 
     this.projectService.getProjects().subscribe({
       next: (projects) => {
+        console.log('📦 Loaded projects:', projects);
+        console.log('📊 Total projects count:', projects.length);
+        
+        // Check if any projects have missing IDs
+        const projectsWithoutId = projects.filter(p => !p.id);
+        if (projectsWithoutId.length > 0) {
+          console.error('⚠️ Found', projectsWithoutId.length, 'projects without IDs:', projectsWithoutId);
+          console.error('⚠️ Projects without IDs:', projectsWithoutId);
+          
+          // Show which projects are missing IDs
+          projectsWithoutId.forEach((p, index) => {
+            console.error(`Project ${index + 1}:`, {
+              name: p.name,
+              code: p.code,
+              id: p.id,
+              allKeys: Object.keys(p)
+            });
+          });
+        }
+        
+        // Also log projects WITH IDs
+        const projectsWithId = projects.filter(p => p.id);
+        console.log('✅ Projects WITH IDs:', projectsWithId.length);
+        if (projectsWithId.length > 0) {
+          console.log('✅ First project with ID:', projectsWithId[0]);
+        }
+        
         this.projects = projects;
         this.filteredProjects = projects;
         this.applyFilters();
@@ -54,7 +84,7 @@ export class ProjectsListComponent implements OnInit {
       error: (error) => {
         this.error = 'Failed to load projects';
         this.loading = false;
-        console.error('Error loading projects:', error);
+        console.error('❌ Error loading projects:', error);
       }
     });
   }
@@ -97,17 +127,42 @@ export class ProjectsListComponent implements OnInit {
   }
 
   viewProject(projectId: string): void {
+    console.log('🔍 View project dashboard for ID:', projectId);
+    console.log('🔍 Type of projectId:', typeof projectId);
+    console.log('🔍 All projects:', this.projects);
+    
+    if (!projectId) {
+      console.error('❌ Project ID is undefined!');
+      
+      // Show what we have in projects
+      if (this.projects.length > 0) {
+        console.error('First project object:', this.projects[0]);
+        console.error('First project keys:', Object.keys(this.projects[0]));
+        console.error('First project.id:', this.projects[0].id);
+        console.error('First project.projectId:', (this.projects[0] as any).projectId);
+        console.error('First project.ProjectId:', (this.projects[0] as any).ProjectId);
+        
+        alert(`Error: Project ID is missing!\n\nFirst project has these keys: ${Object.keys(this.projects[0]).join(', ')}\n\nCheck console for details.`);
+      } else {
+        alert('Error: No projects loaded!');
+      }
+      return;
+    }
     this.router.navigate(['/projects', projectId, 'dashboard']);
   }
 
   viewBoxes(projectId: string, event: Event): void {
     event.stopPropagation();
+    console.log('🔍 View boxes for project ID:', projectId);
+    if (!projectId) {
+      console.error('❌ Project ID is undefined!');
+      return;
+    }
     this.router.navigate(['/projects', projectId, 'boxes']);
   }
 
   createProject(): void {
-    // Navigate to create project page (to be implemented)
-    console.log('Create project');
+    this.router.navigate(['/projects/create']);
   }
 
   getStatusClass(status: ProjectStatus): string {

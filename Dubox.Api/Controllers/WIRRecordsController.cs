@@ -49,6 +49,16 @@ public class WIRRecordsController : ControllerBase
     }
 
     /// <summary>
+    /// Get all WIR records for a specific activity
+    /// </summary>
+    [HttpGet("activity/{boxActivityId}")]
+    public async Task<IActionResult> GetWIRRecordsByActivity(Guid boxActivityId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetWIRRecordsByActivityQuery(boxActivityId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>
     /// Create a new WIR record (Work Inspection Request)
     /// </summary>
     [HttpPost]

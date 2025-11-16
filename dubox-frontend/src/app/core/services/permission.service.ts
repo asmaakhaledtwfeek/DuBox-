@@ -14,48 +14,145 @@ export interface PermissionCheck {
 })
 export class PermissionService {
   
-  // Define module permissions
+  // Define module permissions based on Group AMANA roles
   private readonly modulePermissions: Record<string, Record<UserRole, string[]>> = {
+    // Projects Module
     projects: {
-      [UserRole.Admin]: ['view', 'create', 'edit', 'delete', 'manage'],
-      [UserRole.Factory]: ['view', 'edit'],
-      [UserRole.Site]: ['view'],
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage', 'export'],
+      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'delete', 'manage', 'export'],
+      [UserRole.DesignEngineer]: ['view', 'create', 'edit', 'export'],
+      [UserRole.SiteEngineer]: ['view', 'edit', 'export'],
+      [UserRole.CostEstimator]: ['view', 'export'],
+      [UserRole.Foreman]: ['view'],
+      [UserRole.QCInspector]: ['view'],
+      [UserRole.ProcurementOfficer]: ['view'],
+      [UserRole.HSEOfficer]: ['view'],
       [UserRole.Viewer]: ['view']
     },
+    
+    // Boxes Module
     boxes: {
-      [UserRole.Admin]: ['view', 'create', 'edit', 'delete', 'manage'],
-      [UserRole.Factory]: ['view', 'create', 'edit', 'update-status'],
-      [UserRole.Site]: ['view', 'update-status'],
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'update-status', 'manage', 'export'],
+      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'delete', 'update-status', 'manage', 'export'],
+      [UserRole.DesignEngineer]: ['view', 'create', 'edit', 'update-status', 'export'],
+      [UserRole.SiteEngineer]: ['view', 'edit', 'update-status', 'export'],
+      [UserRole.Foreman]: ['view', 'update-status'],
+      [UserRole.QCInspector]: ['view', 'update-status'],
+      [UserRole.CostEstimator]: ['view', 'export'],
+      [UserRole.ProcurementOfficer]: ['view'],
+      [UserRole.HSEOfficer]: ['view'],
       [UserRole.Viewer]: ['view']
     },
+    
+    // Activities Module
     activities: {
-      [UserRole.Admin]: ['view', 'create', 'edit', 'delete', 'approve', 'reject'],
-      [UserRole.Factory]: ['view', 'create', 'edit', 'submit'],
-      [UserRole.Site]: ['view', 'approve', 'reject'],
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'approve', 'reject', 'manage'],
+      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'delete', 'approve', 'reject', 'manage'],
+      [UserRole.DesignEngineer]: ['view', 'create', 'edit', 'submit'],
+      [UserRole.SiteEngineer]: ['view', 'create', 'edit', 'approve', 'reject'],
+      [UserRole.Foreman]: ['view', 'edit', 'submit'],
+      [UserRole.QCInspector]: ['view', 'approve', 'reject'],
+      [UserRole.CostEstimator]: ['view'],
+      [UserRole.ProcurementOfficer]: ['view'],
+      [UserRole.HSEOfficer]: ['view'],
       [UserRole.Viewer]: ['view']
     },
+    
+    // QA/QC Module
     qaqc: {
-      [UserRole.Admin]: ['view', 'approve', 'reject', 'manage'],
-      [UserRole.Factory]: ['view', 'submit'],
-      [UserRole.Site]: ['view', 'approve', 'reject'],
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'approve', 'reject', 'manage'],
+      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'approve', 'reject', 'manage'],
+      [UserRole.QCInspector]: ['view', 'create', 'edit', 'approve', 'reject'],
+      [UserRole.SiteEngineer]: ['view', 'approve', 'reject'],
+      [UserRole.DesignEngineer]: ['view', 'submit'],
+      [UserRole.Foreman]: ['view', 'submit'],
+      [UserRole.CostEstimator]: ['view'],
+      [UserRole.ProcurementOfficer]: ['view'],
+      [UserRole.HSEOfficer]: ['view', 'approve'],
       [UserRole.Viewer]: ['view']
     },
+    
+    // Users & Admin Module
     users: {
-      [UserRole.Admin]: ['view', 'create', 'edit', 'delete', 'manage'],
-      [UserRole.Factory]: [],
-      [UserRole.Site]: [],
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage', 'assign-roles'],
+      [UserRole.ProjectManager]: ['view', 'create', 'edit'],
+      [UserRole.DesignEngineer]: [],
+      [UserRole.SiteEngineer]: [],
+      [UserRole.Foreman]: [],
+      [UserRole.QCInspector]: [],
+      [UserRole.ProcurementOfficer]: [],
+      [UserRole.CostEstimator]: [],
+      [UserRole.HSEOfficer]: [],
       [UserRole.Viewer]: []
     },
+    
+    // Reports Module
     reports: {
-      [UserRole.Admin]: ['view', 'export', 'manage'],
-      [UserRole.Factory]: ['view', 'export'],
-      [UserRole.Site]: ['view', 'export'],
+      [UserRole.SystemAdmin]: ['view', 'create', 'export', 'manage'],
+      [UserRole.ProjectManager]: ['view', 'create', 'export'],
+      [UserRole.CostEstimator]: ['view', 'create', 'export'],
+      [UserRole.DesignEngineer]: ['view', 'export'],
+      [UserRole.SiteEngineer]: ['view', 'export'],
+      [UserRole.QCInspector]: ['view', 'export'],
+      [UserRole.Foreman]: ['view'],
+      [UserRole.ProcurementOfficer]: ['view', 'export'],
+      [UserRole.HSEOfficer]: ['view', 'export'],
       [UserRole.Viewer]: ['view']
     },
+    
+    // Notifications Module
     notifications: {
-      [UserRole.Admin]: ['view', 'send', 'manage'],
-      [UserRole.Factory]: ['view'],
-      [UserRole.Site]: ['view'],
+      [UserRole.SystemAdmin]: ['view', 'send', 'manage'],
+      [UserRole.ProjectManager]: ['view', 'send'],
+      [UserRole.DesignEngineer]: ['view'],
+      [UserRole.SiteEngineer]: ['view'],
+      [UserRole.Foreman]: ['view'],
+      [UserRole.QCInspector]: ['view'],
+      [UserRole.ProcurementOfficer]: ['view'],
+      [UserRole.CostEstimator]: ['view'],
+      [UserRole.HSEOfficer]: ['view'],
+      [UserRole.Viewer]: ['view']
+    },
+    
+    // Procurement Module
+    procurement: {
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'approve', 'manage'],
+      [UserRole.ProjectManager]: ['view', 'create', 'approve'],
+      [UserRole.ProcurementOfficer]: ['view', 'create', 'edit', 'approve'],
+      [UserRole.CostEstimator]: ['view', 'create'],
+      [UserRole.DesignEngineer]: ['view'],
+      [UserRole.SiteEngineer]: ['view'],
+      [UserRole.Foreman]: ['view'],
+      [UserRole.QCInspector]: ['view'],
+      [UserRole.HSEOfficer]: ['view'],
+      [UserRole.Viewer]: ['view']
+    },
+    
+    // HSE (Health, Safety, Environment) Module
+    hse: {
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage'],
+      [UserRole.ProjectManager]: ['view', 'create', 'edit'],
+      [UserRole.HSEOfficer]: ['view', 'create', 'edit', 'approve'],
+      [UserRole.SiteEngineer]: ['view', 'create'],
+      [UserRole.Foreman]: ['view', 'create'],
+      [UserRole.QCInspector]: ['view'],
+      [UserRole.DesignEngineer]: ['view'],
+      [UserRole.ProcurementOfficer]: ['view'],
+      [UserRole.CostEstimator]: ['view'],
+      [UserRole.Viewer]: ['view']
+    },
+    
+    // Cost Estimation Module
+    costing: {
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'approve', 'manage'],
+      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'approve'],
+      [UserRole.CostEstimator]: ['view', 'create', 'edit', 'approve'],
+      [UserRole.DesignEngineer]: ['view', 'create'],
+      [UserRole.SiteEngineer]: ['view'],
+      [UserRole.ProcurementOfficer]: ['view'],
+      [UserRole.Foreman]: [],
+      [UserRole.QCInspector]: [],
+      [UserRole.HSEOfficer]: [],
       [UserRole.Viewer]: ['view']
     }
   };
@@ -66,28 +163,35 @@ export class PermissionService {
   ) {}
 
   /**
-   * Check if user has permission
+   * Check if user has permission for a specific module and action
    */
   hasPermission(module: string, action: string): boolean {
     const user = this.authService.getCurrentUser();
     
-    if (!user) {
+    if (!user || !user.allRoles || user.allRoles.length === 0) {
       return false;
     }
 
-    // Admin has all permissions
-    if (user.role === UserRole.Admin) {
+    // SystemAdmin has all permissions
+    if (user.allRoles.includes(UserRole.SystemAdmin)) {
       return true;
     }
 
-    // Check module permissions
+    // Check module permissions for all user roles
     const modulePerms = this.modulePermissions[module];
     if (!modulePerms) {
       return false;
     }
 
-    const rolePerms = modulePerms[user.role];
-    return rolePerms ? rolePerms.includes(action) : false;
+    // Check if any of the user's roles grants the permission
+    for (const role of user.allRoles) {
+      const rolePerms = modulePerms[role];
+      if (rolePerms && rolePerms.includes(action)) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   /**
@@ -159,12 +263,13 @@ export class PermissionService {
   getAllowedActions(module: string): string[] {
     const user = this.authService.getCurrentUser();
     
-    if (!user) {
+    if (!user || !user.allRoles || user.allRoles.length === 0) {
       return [];
     }
 
-    if (user.role === UserRole.Admin) {
-      return ['view', 'create', 'edit', 'delete', 'manage', 'approve', 'reject'];
+    // SystemAdmin has all actions
+    if (user.allRoles.includes(UserRole.SystemAdmin)) {
+      return ['view', 'create', 'edit', 'delete', 'manage', 'approve', 'reject', 'export'];
     }
 
     const modulePerms = this.modulePermissions[module];
@@ -172,34 +277,67 @@ export class PermissionService {
       return [];
     }
 
-    return modulePerms[user.role] || [];
+    // Combine all permissions from all user roles
+    const allActions = new Set<string>();
+    for (const role of user.allRoles) {
+      const rolePerms = modulePerms[role];
+      if (rolePerms) {
+        rolePerms.forEach(action => allActions.add(action));
+      }
+    }
+
+    return Array.from(allActions);
   }
 
   /**
-   * Check if user is Admin
+   * Check if user has specific role
    */
-  isAdmin(): boolean {
-    return this.authService.hasRole(UserRole.Admin);
+  hasRole(role: UserRole): boolean {
+    const user = this.authService.getCurrentUser();
+    return user?.allRoles?.includes(role) ?? false;
   }
 
   /**
-   * Check if user is Factory role
+   * Check if user has any of the specified roles
    */
-  isFactory(): boolean {
-    return this.authService.hasRole(UserRole.Factory);
+  hasAnyRole(roles: UserRole[]): boolean {
+    const user = this.authService.getCurrentUser();
+    return user ? roles.some(role => user.allRoles?.includes(role)) : false;
   }
 
   /**
-   * Check if user is Site role
+   * Check if user is System Admin
    */
-  isSite(): boolean {
-    return this.authService.hasRole(UserRole.Site);
+  isSystemAdmin(): boolean {
+    return this.hasRole(UserRole.SystemAdmin);
   }
 
   /**
-   * Check if user is Viewer role
+   * Check if user is Project Manager
    */
-  isViewer(): boolean {
-    return this.authService.hasRole(UserRole.Viewer);
+  isProjectManager(): boolean {
+    return this.hasRole(UserRole.ProjectManager);
+  }
+
+  /**
+   * Check if user is Site Engineer
+   */
+  isSiteEngineer(): boolean {
+    return this.hasRole(UserRole.SiteEngineer);
+  }
+
+  /**
+   * Check if user is QC Inspector
+   */
+  isQCInspector(): boolean {
+    return this.hasRole(UserRole.QCInspector);
+  }
+
+  /**
+   * Check if user has only Viewer role
+   */
+  isViewerOnly(): boolean {
+    const user = this.authService.getCurrentUser();
+    return user ? user.allRoles?.length === 1 && user.allRoles[0] === UserRole.Viewer : false;
   }
 }

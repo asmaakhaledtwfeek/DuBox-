@@ -34,7 +34,16 @@ builder.Services.AddValidatorsFromAssembly(
 
 builder.Services.AddDbConfig(builder.Configuration);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Use camelCase for JSON property names
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        // Preserve property names for reference types
+        options.JsonSerializerOptions.DictionaryKeyPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        // Write indented JSON for easier debugging
+        options.JsonSerializerOptions.WriteIndented = true;
+    });
 
 builder.Services.AddCors(options =>
 {

@@ -1,0 +1,85 @@
+<div class="process-flow-table-container">
+  <h2 class="table-title">Process Flow Table</h2>
+  
+  <div class="table-wrapper">
+    <table class="process-flow-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Team</th>
+          <th>Activity</th>
+          <th>Assigned to</th>
+          <th>Duration</th>
+          <th>Actual Start</th>
+          <th>Progress</th>
+          <th>Actual Finish</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr 
+          *ngFor="let activity of activities; let i = index"
+          [class.wir-checkpoint]="isWIRCheckpoint(activity)"
+          [class.wir-row]="isWIRCheckpoint(activity)"
+        >
+          <td class="text-center">{{ i + 1 }}</td>
+          <td class="text-center team-cell">{{ getTeam(activity) }}</td>
+          <td class="activity-name">
+            <strong *ngIf="isWIRCheckpoint(activity)">{{ activity.name }}</strong>
+            <span *ngIf="!isWIRCheckpoint(activity)">{{ activity.name }}</span>
+          </td>
+          <td class="assigned-to">
+            <span *ngIf="!isWIRCheckpoint(activity)">{{ activity.assignedTo || '-' }}</span>
+            <strong *ngIf="isWIRCheckpoint(activity)" class="wir-assigned">{{ activity.assignedTo || 'QC Engineer' }}</strong>
+          </td>
+          <td class="text-center">
+            <span *ngIf="!isWIRCheckpoint(activity)">{{ activity.plannedDuration || '-' }}</span>
+          </td>
+          <td class="text-center">
+            <span *ngIf="!isWIRCheckpoint(activity)">{{ formatDate(activity.actualStartDate) }}</span>
+            <strong *ngIf="isWIRCheckpoint(activity)" class="wir-message">
+              {{ activity.description || 'Release from Assembly - WIR' }}
+            </strong>
+          </td>
+          <td class="text-center">
+            <span *ngIf="!isWIRCheckpoint(activity) && getProgress(activity) > 0">
+              {{ getProgress(activity) }}%
+            </span>
+          </td>
+          <td class="text-center">
+            {{ formatDate(activity.actualEndDate) }}
+          </td>
+          <td class="text-center actions-cell">
+            <button 
+              class="btn-view-details"
+              [routerLink]="['/projects', projectId, 'boxes', boxId, 'activities', activity.id]"
+              title="View Activity Details"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+            <button 
+              *ngIf="isWIRCheckpoint(activity)"
+              class="btn-qa-qc"
+              [routerLink]="['/projects', projectId, 'boxes', boxId, 'activities', activity.id, 'qa-qc']"
+              title="QA/QC Checklist"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 11l3 3L22 4"/>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
+              QA/QC
+            </button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Empty state -->
+  <div class="empty-state" *ngIf="!activities || activities.length === 0">
+    <p>No activities found for this box</p>
+  </div>
+</div>

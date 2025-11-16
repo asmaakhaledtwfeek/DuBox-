@@ -32,9 +32,18 @@ export class ApiService {
    */
   get<T>(endpoint: string, params?: any): Observable<T> {
     const httpParams = this.buildParams(params);
-    return this.http.get<ApiResponse<T>>(`${this.baseUrl}/${endpoint}`, { params: httpParams })
+    return this.http.get<any>(`${this.baseUrl}/${endpoint}`, { params: httpParams })
       .pipe(
-        map(response => response.data),
+        map(response => {
+          console.log('🌐 GET API Response for', endpoint, ':', response);
+          console.log('🔑 Response keys:', Object.keys(response));
+          
+          // Backend returns Result<T> with 'data' property (camelCase configured in Program.cs)
+          // Try: data (camelCase) -> Data (PascalCase) -> value -> Value -> raw response
+          const data = response.data || response.Data || response.value || response.Value || response;
+          console.log('✅ Extracted data:', Array.isArray(data) ? `Array[${data.length}]` : data);
+          return data;
+        }),
         catchError(this.handleError)
       );
   }
@@ -43,9 +52,18 @@ export class ApiService {
    * POST request
    */
   post<T>(endpoint: string, body: any): Observable<T> {
-    return this.http.post<ApiResponse<T>>(`${this.baseUrl}/${endpoint}`, body)
+    return this.http.post<any>(`${this.baseUrl}/${endpoint}`, body)
       .pipe(
-        map(response => response.data),
+        map(response => {
+          console.log('🌐 POST API Response for', endpoint, ':', response);
+          console.log('🔑 Response keys:', Object.keys(response));
+          
+          // Backend returns Result<T> with 'data' property (camelCase configured in Program.cs)
+          // Try: data (camelCase) -> Data (PascalCase) -> value -> Value -> raw response
+          const data = response.data || response.Data || response.value || response.Value || response;
+          console.log('✅ Extracted data:', data);
+          return data;
+        }),
         catchError(this.handleError)
       );
   }
@@ -54,9 +72,9 @@ export class ApiService {
    * PUT request
    */
   put<T>(endpoint: string, body: any): Observable<T> {
-    return this.http.put<ApiResponse<T>>(`${this.baseUrl}/${endpoint}`, body)
+    return this.http.put<any>(`${this.baseUrl}/${endpoint}`, body)
       .pipe(
-        map(response => response.data),
+        map(response => response.data || response.Data || response),
         catchError(this.handleError)
       );
   }
@@ -65,9 +83,9 @@ export class ApiService {
    * PATCH request
    */
   patch<T>(endpoint: string, body: any): Observable<T> {
-    return this.http.patch<ApiResponse<T>>(`${this.baseUrl}/${endpoint}`, body)
+    return this.http.patch<any>(`${this.baseUrl}/${endpoint}`, body)
       .pipe(
-        map(response => response.data),
+        map(response => response.data || response.Data || response),
         catchError(this.handleError)
       );
   }
@@ -76,9 +94,9 @@ export class ApiService {
    * DELETE request
    */
   delete<T>(endpoint: string): Observable<T> {
-    return this.http.delete<ApiResponse<T>>(`${this.baseUrl}/${endpoint}`)
+    return this.http.delete<any>(`${this.baseUrl}/${endpoint}`)
       .pipe(
-        map(response => response.data),
+        map(response => response.data || response.Data || response),
         catchError(this.handleError)
       );
   }
@@ -151,7 +169,7 @@ export class ApiService {
       errorMessage = error.error?.message || `Error Code: ${error.status}\nMessage: ${error.message}`;
     }
     
-    console.error(errorMessage);
+    console.error('API Error:', errorMessage, error);
     return throwError(() => error);
   }
 }

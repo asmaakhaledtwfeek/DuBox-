@@ -11,7 +11,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   // Clone the request and add authorization header if token exists
   let authReq = req;
-  if (token) {
+  if (token && !req.url.includes('/auth/login')) {
     authReq = req.clone({
       setHeaders: {
         Authorization: `Bearer ${token}`
@@ -21,11 +21,15 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(authReq).pipe(
     catchError((error) => {
-      if (error.status === 401) {
-        // Token expired or invalid
+      console.error('HTTP Error:', error);
+      
+      if (error.status === 401 && !req.url.includes('/auth/login')) {
+        // Token expired or invalid - only logout if not on login page
+        console.warn('Unauthorized - logging out');
         authService.logout();
         router.navigate(['/login']);
       }
+      
       return throwError(() => error);
     })
   );

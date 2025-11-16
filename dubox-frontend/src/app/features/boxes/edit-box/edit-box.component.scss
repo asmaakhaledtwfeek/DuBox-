@@ -1,0 +1,13 @@
+@import '../../../features/projects/create-project/create-project.component.scss';
+
+// Additional styling specific to create box
+.form-row-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+

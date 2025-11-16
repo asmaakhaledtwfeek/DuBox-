@@ -23,6 +23,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/projects/projects-list/projects-list.component').then(m => m.ProjectsListComponent)
   },
   {
+    path: 'projects/create',
+    canActivate: [authGuard, roleGuard],
+    data: { 
+      roles: [UserRole.SystemAdmin, UserRole.ProjectManager, UserRole.DesignEngineer] 
+    },
+    loadComponent: () => import('./features/projects/create-project/create-project.component').then(m => m.CreateProjectComponent)
+  },
+  {
     path: 'projects/:id/dashboard',
     canActivate: [authGuard],
     loadComponent: () => import('./features/projects/project-dashboard/project-dashboard.component').then(m => m.ProjectDashboardComponent)
@@ -33,20 +41,51 @@ export const routes: Routes = [
     loadComponent: () => import('./features/boxes/boxes-list/boxes-list.component').then(m => m.BoxesListComponent)
   },
   {
+    path: 'boxes/create',
+    canActivate: [authGuard, roleGuard],
+    data: { 
+      roles: [UserRole.SystemAdmin, UserRole.ProjectManager, UserRole.DesignEngineer, UserRole.SiteEngineer] 
+    },
+    loadComponent: () => import('./features/boxes/create-box/create-box.component').then(m => m.CreateBoxComponent)
+  },
+  {
     path: 'projects/:projectId/boxes/:boxId',
     canActivate: [authGuard],
     loadComponent: () => import('./features/boxes/box-details/box-details.component').then(m => m.BoxDetailsComponent)
   },
   {
-    path: 'projects/:projectId/boxes/:boxId/qa-qc',
+    path: 'projects/:projectId/boxes/:boxId/edit',
     canActivate: [authGuard, roleGuard],
-    data: { roles: [UserRole.Admin, UserRole.Factory, UserRole.Site] },
+    data: { 
+      roles: [UserRole.SystemAdmin, UserRole.ProjectManager, UserRole.DesignEngineer, UserRole.SiteEngineer] 
+    },
+    loadComponent: () => import('./features/boxes/edit-box/edit-box.component').then(m => m.EditBoxComponent)
+  },
+  {
+    path: 'projects/:projectId/boxes/:boxId/activities/:activityId',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/activities/activity-details/activity-details.component').then(m => m.ActivityDetailsComponent)
+  },
+  {
+    path: 'projects/:projectId/boxes/:boxId/activities/:activityId/qa-qc',
+    canActivate: [authGuard, roleGuard],
+    data: { 
+      roles: [
+        UserRole.SystemAdmin, 
+        UserRole.ProjectManager, 
+        UserRole.QCInspector, 
+        UserRole.SiteEngineer,
+        UserRole.Foreman
+      ] 
+    },
     loadComponent: () => import('./features/boxes/qa-qc-checklist/qa-qc-checklist.component').then(m => m.QaQcChecklistComponent)
   },
   {
     path: 'admin',
     canActivate: [authGuard, roleGuard],
-    data: { roles: [UserRole.Admin] },
+    data: { 
+      roles: [UserRole.SystemAdmin, UserRole.ProjectManager] 
+    },
     children: [
       {
         path: '',
@@ -54,6 +93,8 @@ export const routes: Routes = [
       },
       {
         path: 'users',
+        canActivate: [roleGuard],
+        data: { roles: [UserRole.SystemAdmin] },
         loadComponent: () => import('./features/admin/user-management/user-management.component').then(m => m.UserManagementComponent)
       }
     ]

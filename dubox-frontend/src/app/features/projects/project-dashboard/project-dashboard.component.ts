@@ -36,13 +36,25 @@ export class ProjectDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.projectId = this.route.snapshot.params['id'];
+    console.log('🏠 Project Dashboard - Project ID from route:', this.projectId);
+    if (!this.projectId) {
+      console.error('❌ No project ID in route!');
+      this.error = 'Project ID is missing';
+      this.loading = false;
+      return;
+    }
     this.loadProject();
   }
 
   loadProject(): void {
     this.loading = true;
+    console.log('📡 Loading project data for ID:', this.projectId);
+    
     this.projectService.getProject(this.projectId).subscribe({
       next: (project) => {
+        console.log('✅ Project loaded:', project);
+        console.log('🆔 Project ID:', project.id);
+        
         this.project = project;
         this.dashboardData = {
           totalBoxes: project.totalBoxes || 0,
@@ -57,12 +69,18 @@ export class ProjectDashboardComponent implements OnInit {
       error: (error) => {
         this.error = 'Failed to load project';
         this.loading = false;
-        console.error('Error loading project:', error);
+        console.error('❌ Error loading project:', error);
       }
     });
   }
 
   viewBoxes(): void {
+    console.log('🔍 Navigate to boxes for project:', this.projectId);
+    if (!this.projectId) {
+      console.error('❌ Cannot navigate: projectId is undefined');
+      alert('Error: Project ID is missing. Cannot view boxes.');
+      return;
+    }
     this.router.navigate(['/projects', this.projectId, 'boxes']);
   }
 

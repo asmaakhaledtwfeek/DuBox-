@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { ApiService, PaginatedResponse } from './api.service';
 import { Box, BoxActivity, BoxAttachment, BoxLog, BoxFilters, ChecklistItem } from '../models/box.model';
 
@@ -12,38 +13,100 @@ export class BoxService {
   constructor(private apiService: ApiService) {}
 
   /**
+   * Transform backend box response to frontend model
+   */
+  private transformBox(backendBox: any): Box {
+    console.log('🔄 Transforming box:', backendBox.boxId || backendBox.id);
+    console.log('🔍 QR Code fields:', { 
+      qrCodeImage: backendBox.qrCodeImage ? 'EXISTS' : 'MISSING',
+      qrCode: backendBox.qrCode ? 'EXISTS' : 'MISSING',
+      qrCodeString: backendBox.qrCodeString
+    });
+    
+    // Get QR code and ensure it has the data URL prefix
+    let qrCode = backendBox.qrCodeImage || backendBox.qrCode;
+    if (qrCode && !qrCode.startsWith('data:')) {
+      qrCode = `data:image/png;base64,${qrCode}`;
+      console.log('✅ Added data URL prefix to QR code');
+    }
+    
+    return {
+      id: backendBox.boxId || backendBox.id,
+      name: backendBox.boxName || backendBox.name,
+      code: backendBox.boxTag || backendBox.boxCode || backendBox.code,
+      projectId: backendBox.projectId,
+      status: backendBox.status || backendBox.boxStatus,
+      type: backendBox.boxType || backendBox.type,
+      description: backendBox.description,
+      floor: backendBox.floor,
+      building: backendBox.building,
+      zone: backendBox.zone,
+      length: backendBox.length,
+      width: backendBox.width,
+      height: backendBox.height,
+      bimModelReference: backendBox.bimModelReference || backendBox.bimModelRef,
+      revitElementId: backendBox.revitElementId,
+      assignedTeam: backendBox.assignedTeam,
+      assignedTo: backendBox.assignedTo,
+      plannedStartDate: backendBox.plannedStartDate ? new Date(backendBox.plannedStartDate) : undefined,
+      actualStartDate: backendBox.actualStartDate ? new Date(backendBox.actualStartDate) : undefined,
+      plannedEndDate: backendBox.plannedEndDate ? new Date(backendBox.plannedEndDate) : undefined,
+      actualEndDate: backendBox.actualEndDate ? new Date(backendBox.actualEndDate) : undefined,
+      progress: backendBox.progressPercentage || backendBox.progress || 0,
+      activities: backendBox.activities || [],
+      attachments: backendBox.attachments || [],
+      logs: backendBox.logs || [],
+      qrCode: qrCode,
+      createdBy: backendBox.createdBy,
+      updatedBy: backendBox.modifiedBy || backendBox.updatedBy,
+      createdAt: backendBox.createdDate ? new Date(backendBox.createdDate) : undefined,
+      updatedAt: backendBox.modifiedDate ? new Date(backendBox.modifiedDate) : undefined
+    };
+  }
+
+  /**
    * Get all boxes
    */
   getBoxes(filters?: BoxFilters): Observable<Box[]> {
-    return this.apiService.get<Box[]>(this.endpoint, filters);
+    return this.apiService.get<any[]>(this.endpoint, filters).pipe(
+      map(boxes => boxes.map(b => this.transformBox(b)))
+    );
   }
 
   /**
    * Get boxes by project
    */
   getBoxesByProject(projectId: string, filters?: BoxFilters): Observable<Box[]> {
-    return this.apiService.get<Box[]>(`projects/${projectId}/boxes`, filters);
+    return this.apiService.get<any[]>(`${this.endpoint}/project/${projectId}`, filters).pipe(
+      map(boxes => boxes.map(b => this.transformBox(b)))
+    );
   }
 
   /**
    * Get box by ID
    */
   getBox(id: string): Observable<Box> {
-    return this.apiService.get<Box>(`${this.endpoint}/${id}`);
+    return this.apiService.get<any>(`${this.endpoint}/${id}`).pipe(
+      map(box => this.transformBox(box))
+    );
   }
 
   /**
    * Create new box
    */
   createBox(box: Partial<Box>): Observable<Box> {
-    return this.apiService.post<Box>(this.endpoint, box);
+    return this.apiService.post<any>(this.endpoint, box).pipe(
+      map(response => this.transformBox(response))
+    );
   }
 
   /**
    * Update box
    */
   updateBox(id: string, box: Partial<Box>): Observable<Box> {
-    return this.apiService.put<Box>(`${this.endpoint}/${id}`, box);
+    return this.apiService.put<any>(`${this.endpoint}/${id}`, box).pipe(
+      map(response => this.transformBox(response))
+    );
   }
 
   /**
@@ -57,14 +120,60 @@ export class BoxService {
    * Update box status
    */
   updateBoxStatus(id: string, status: string): Observable<Box> {
-    return this.apiService.patch<Box>(`${this.endpoint}/${id}/status`, { status });
+    return this.apiService.patch<any>(`${this.endpoint}/${id}/status`, { status }).pipe(
+      map(response => this.transformBox(response))
+    );
+  }
+
+  /**
+   * Transform backend activity response to frontend model
+   */
+  private transformActivity(backendActivity: any): BoxActivity {
+    return {
+      id: backendActivity.boxActivityId || backendActivity.id,
+      boxId: backendActivity.boxId,
+      name: backendActivity.activityName || backendActivity.name,
+      description: backendActivity.workDescription || backendActivity.description,
+      status: backendActivity.status as any,  // Backend uses string status
+      sequence: backendActivity.sequence,
+      assignedTo: backendActivity.assignedTeam,
+      plannedDuration: this.calculateDuration(backendActivity.plannedStartDate, backendActivity.plannedEndDate),
+      actualDuration: this.calculateDuration(backendActivity.actualStartDate, backendActivity.actualEndDate),
+      weightPercentage: backendActivity.progressPercentage || 0,
+      plannedStartDate: backendActivity.plannedStartDate ? new Date(backendActivity.plannedStartDate) : undefined,
+      actualStartDate: backendActivity.actualStartDate ? new Date(backendActivity.actualStartDate) : undefined,
+      plannedEndDate: backendActivity.plannedEndDate ? new Date(backendActivity.plannedEndDate) : undefined,
+      actualEndDate: backendActivity.actualEndDate ? new Date(backendActivity.actualEndDate) : undefined
+    };
+  }
+
+  /**
+   * Calculate duration in days between two dates
+   */
+  private calculateDuration(startDate?: string, endDate?: string): number {
+    if (!startDate || !endDate) return 0;
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const diff = end.getTime() - start.getTime();
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
   }
 
   /**
    * Get box activities
    */
   getBoxActivities(boxId: string): Observable<BoxActivity[]> {
-    return this.apiService.get<BoxActivity[]>(`${this.endpoint}/${boxId}/activities`);
+    return this.apiService.get<any[]>(`activities/box/${boxId}`).pipe(
+      map(activities => activities.map(a => this.transformActivity(a)))
+    );
+  }
+
+  /**
+   * Get activity details by ID
+   */
+  getActivityDetails(activityId: string): Observable<BoxActivity> {
+    return this.apiService.get<any>(`activities/${activityId}`).pipe(
+      map(activity => this.transformActivity(activity))
+    );
   }
 
   /**
@@ -134,10 +243,10 @@ export class BoxService {
   }
 
   /**
-   * Generate QR code for box
+   * Generate QR code for box (returns base64 string)
    */
-  generateQRCode(boxId: string): Observable<{ qrCode: string }> {
-    return this.apiService.post<{ qrCode: string }>(`${this.endpoint}/${boxId}/qr-code`, {});
+  generateQRCode(boxId: string): Observable<string> {
+    return this.apiService.get<string>(`${this.endpoint}/generate-qrcode/${boxId}`);
   }
 
   /**

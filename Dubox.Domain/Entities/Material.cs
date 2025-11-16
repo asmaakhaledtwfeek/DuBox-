@@ -10,7 +10,7 @@ namespace Dubox.Domain.Entities
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int MaterialId { get; set; }
+        public Guid MaterialId { get; set; }
 
         [Required]
         [MaxLength(50)]
@@ -31,6 +31,9 @@ namespace Dubox.Domain.Entities
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal? CurrentStock { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? AllocatedStock { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal? MinimumStock { get; set; }

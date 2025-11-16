@@ -8,8 +8,8 @@ namespace Dubox.Application.Features.Materials.Commands
         {
 
             RuleFor(x => x.MaterialId)
-                .GreaterThan(0)
-                .WithMessage("Material ID must be greater than 0.");
+                .NotEmpty()
+                .WithMessage("Material ID Requiired.");
 
             RuleFor(x => x.MaterialCode)
                 .MaximumLength(50)

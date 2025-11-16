@@ -38,8 +38,8 @@ public class MaterialsController : ControllerBase
         var result = await _mediator.Send(command, cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
-    [HttpPut("{materialId}")]
-    public async Task<IActionResult> RestockMaterial(int materialId, [FromBody] RestockMaterialCommand command, CancellationToken cancellationToken)
+    [HttpPut("restock/{materialId}")]
+    public async Task<IActionResult> RestockMaterial(Guid materialId, [FromBody] RestockMaterialCommand command, CancellationToken cancellationToken)
     {
         if (materialId != command.MaterialId)
             return BadRequest("Material ID mismatch");
@@ -48,19 +48,30 @@ public class MaterialsController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
     [HttpGet("{materialId}")]
-    public async Task<IActionResult> GetMaterialById(int materialId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetMaterialById(Guid materialId, CancellationToken cancellationToken)
     {
 
         var result = await _mediator.Send(new GetMaterialByIdQuery(materialId), cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
     [HttpGet("transactions/{materialId}")]
-    public async Task<IActionResult> GetMaterialTransactionsById(int materialId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetMaterialTransactionsById(Guid materialId, CancellationToken cancellationToken)
     {
 
         var result = await _mediator.Send(new GetAllMaterialTransactionsByMaterialIdQuery(materialId), cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+
+    [HttpPut("update/{materialId}")]
+    public async Task<IActionResult> UpdateMaterial(Guid materialId, [FromBody] UpdateMaterialCommand command, CancellationToken cancellationToken)
+    {
+        if (materialId != command.MaterialId)
+            return BadRequest("Material ID mismatch");
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
     [HttpGet("template")]
     public async Task<IActionResult> DownloadTemplate(CancellationToken cancellationToken)
     {

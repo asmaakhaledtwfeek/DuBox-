@@ -5,7 +5,7 @@ using MediatR;
 namespace Dubox.Application.Features.Materials.Commands
 {
     public record RestockMaterialCommand(
-     int MaterialId,
+     Guid MaterialId,
      decimal Quantity,
      string? Reference,
      string? Remarks

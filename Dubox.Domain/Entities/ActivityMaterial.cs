@@ -10,7 +10,7 @@ namespace Dubox.Domain.Entities
         public Guid ActivityMaterialId { get; set; }
 
         [Required]
-        public int MaterialId { get; set; }
+        public Guid MaterialId { get; set; }
         [Required]
         public Guid BoxActivityId { get; set; }
 

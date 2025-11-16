@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Dubox.Domain.Enums;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Dubox.Domain.Entities
@@ -8,7 +9,7 @@ namespace Dubox.Domain.Entities
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int BoxMaterialId { get; set; }
+        public Guid BoxMaterialId { get; set; }
 
         [Required]
         [ForeignKey(nameof(Box))]
@@ -16,7 +17,7 @@ namespace Dubox.Domain.Entities
 
         [Required]
         [ForeignKey(nameof(Material))]
-        public int MaterialId { get; set; }
+        public Guid MaterialId { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal? RequiredQuantity { get; set; }
@@ -28,7 +29,7 @@ namespace Dubox.Domain.Entities
         public decimal? ConsumedQuantity { get; set; }
 
         [MaxLength(50)]
-        public string Status { get; set; } = "Pending"; // Pending, Allocated, Consumed, Short
+        public BoxMaterialStatusEnum Status { get; set; } = BoxMaterialStatusEnum.Pending; // Pending, Allocated, Consumed, Short
 
         public DateTime? AllocatedDate { get; set; }
 

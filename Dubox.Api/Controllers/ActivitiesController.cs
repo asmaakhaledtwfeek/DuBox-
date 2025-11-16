@@ -39,13 +39,26 @@ public class ActivitiesController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    [HttpPut("{boxActivityId}")]
-    public async Task<IActionResult> UpdateBoxActivity(Guid boxActivityId, [FromBody] UpdateBoxActivityCommand command, CancellationToken cancellationToken)
+    [HttpPut("update-status/{boxActivityId}")]
+    public async Task<IActionResult> UpdateBoxActivityStatus(Guid boxActivityId, [FromBody] UpdateBoxActivityStatusCommand command, CancellationToken cancellationToken)
     {
         if (boxActivityId != command.BoxActivityId)
             return BadRequest("Box Activity ID mismatch");
 
         var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+    [HttpPut("Assign-team")]
+    public async Task<IActionResult> AssignActivityToTeam([FromBody] AssignActivityToTeamCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpPost("issue-to-activity")]
+    public async Task<IActionResult> IssueMaterialToActivity([FromBody] IssueMaterialToActivityCommand command)
+    {
+        var result = await _mediator.Send(command);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 }

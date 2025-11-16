@@ -2,6 +2,7 @@ using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
@@ -11,10 +12,15 @@ namespace Dubox.Application.Features.Boxes.Commands;
 public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<BoxDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-
-    public UpdateBoxCommandHandler(IUnitOfWork unitOfWork)
+    private readonly IQRCodeService _qrCodeService;
+    private readonly IDbContext _dbContext;
+    private readonly IBoxActivityService _boxActivityService;
+    public UpdateBoxCommandHandler(IUnitOfWork unitOfWork, IQRCodeService qrCodeService, IDbContext dbContext, IBoxActivityService boxActivityService)
     {
         _unitOfWork = unitOfWork;
+        _qrCodeService = qrCodeService;
+        _dbContext = dbContext;
+        _boxActivityService = boxActivityService;
     }
 
     public async Task<Result<BoxDto>> Handle(UpdateBoxCommand request, CancellationToken cancellationToken)
@@ -38,23 +44,40 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
         }
         var project = await _unitOfWork.Repository<Project>().GetByIdAsync(box.ProjectId, cancellationToken);
         box.QRCodeString = $"{project!.ProjectCode}_{request.BoxTag}";
-        ApplyBoxUpdates(box, request);
-
+        var boxTypeChange = ApplyBoxUpdates(box, request);
+        if (boxTypeChange)
+        {
+            var currentActivities = _unitOfWork.Repository<BoxActivity>().Get().Where(ba => ba.BoxId == request.BoxId).ToList();
+            if (currentActivities.Any())
+                _unitOfWork.Repository<BoxActivity>().DeleteRange(currentActivities);
+            await _boxActivityService.CopyActivitiesToBox(box, cancellationToken);
+        }
         box.ModifiedDate = DateTime.UtcNow;
         _unitOfWork.Repository<Box>().Update(box);
         await _unitOfWork.CompleteAsync(cancellationToken);
-        BoxDto response = box.Adapt<BoxDto>();
-        response.ProjectCode = project.ProjectCode;
+        BoxDto response = box.Adapt<BoxDto>() with
+        {
+            ProjectCode = project.ProjectCode,
+            QRCodeImage = _qrCodeService.GenerateQRCodeBase64(box.QRCodeString)
+        };
+
         return Result.Success(response);
     }
 
-    private void ApplyBoxUpdates(Box box, UpdateBoxCommand request)
+    private bool ApplyBoxUpdates(Box box, UpdateBoxCommand request)
     {
+        bool boxTypeChanged = false;
         if (!string.IsNullOrEmpty(request.BoxName))
             box.BoxName = request.BoxName;
 
         if (!string.IsNullOrEmpty(request.BoxType))
+        {
+            if (box.BoxType != request.BoxType)
+                boxTypeChanged = true;
+
             box.BoxType = request.BoxType;
+        }
+
 
         if (!string.IsNullOrEmpty(request.Floor))
             box.Floor = request.Floor;
@@ -82,6 +105,8 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
 
         if (request.PlannedEndDate.HasValue)
             box.PlannedEndDate = request.PlannedEndDate.Value;
+        return boxTypeChanged;
     }
+
 }
 

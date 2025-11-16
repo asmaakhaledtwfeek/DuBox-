@@ -1,32 +1,28 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
+using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.WIRRecords.Queries;
 
 public class GetAllWIRRecordsQueryHandler : IRequestHandler<GetAllWIRRecordsQuery, Result<List<WIRRecordDto>>>
 {
     private readonly IDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public GetAllWIRRecordsQueryHandler(IDbContext dbContext)
+    public GetAllWIRRecordsQueryHandler(IDbContext dbContext, IUnitOfWork unitOfWork)
     {
         _dbContext = dbContext;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<List<WIRRecordDto>>> Handle(GetAllWIRRecordsQuery request, CancellationToken cancellationToken)
     {
-        var wirRecords = await _dbContext.WIRRecords
-            .Include(w => w.BoxActivity)
-                .ThenInclude(ba => ba.ActivityMaster)
-            .Include(w => w.BoxActivity)
-                .ThenInclude(ba => ba.Box)
-            .Include(w => w.RequestedByUser)
-            .Include(w => w.InspectedByUser)
-            .OrderByDescending(w => w.RequestedDate)
-            .ToListAsync(cancellationToken);
+        var wirRecords = _unitOfWork.Repository<WIRRecord>()
+            .GetWithSpec(new GetAllWIRRecordWithIncludesSpecification()).Data.ToList();
 
         var wirDtos = wirRecords.Select(w =>
         {

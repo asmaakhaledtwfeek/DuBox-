@@ -1,7 +1,7 @@
 using Dubox.Application.DTOs;
+using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
-using Dubox.Domain.Abstraction;
 using Mapster;
 using MediatR;
 
@@ -24,20 +24,8 @@ public class CreateMaterialCommandHandler : IRequestHandler<CreateMaterialComman
         if (materialExists)
             return Result.Failure<MaterialDto>("Material with this code already exists");
 
-        var material = new Material
-        {
-            MaterialCode = request.MaterialCode,
-            MaterialName = request.MaterialName,
-            MaterialCategory = request.MaterialCategory,
-            Unit = request.Unit,
-            UnitCost = request.UnitCost,
-            CurrentStock = request.CurrentStock,
-            MinimumStock = request.MinimumStock,
-            ReorderLevel = request.ReorderLevel,
-            SupplierName = request.SupplierName,
-            IsActive = true
-        };
-
+        var material = request.Adapt<Material>();
+        material.IsActive = true;
         await _unitOfWork.Repository<Material>().AddAsync(material, cancellationToken);
         await _unitOfWork.CompleteAsync(cancellationToken);
 

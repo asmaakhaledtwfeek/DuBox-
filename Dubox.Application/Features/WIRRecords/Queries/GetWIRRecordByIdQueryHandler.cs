@@ -1,31 +1,28 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
+using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.WIRRecords.Queries;
 
 public class GetWIRRecordByIdQueryHandler : IRequestHandler<GetWIRRecordByIdQuery, Result<WIRRecordDto>>
 {
     private readonly IDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public GetWIRRecordByIdQueryHandler(IDbContext dbContext)
+    public GetWIRRecordByIdQueryHandler(IDbContext dbContext, IUnitOfWork unitOfWork)
     {
         _dbContext = dbContext;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<WIRRecordDto>> Handle(GetWIRRecordByIdQuery request, CancellationToken cancellationToken)
     {
-        var wirRecord = await _dbContext.WIRRecords
-            .Include(w => w.BoxActivity)
-                .ThenInclude(ba => ba.ActivityMaster)
-            .Include(w => w.BoxActivity)
-                .ThenInclude(ba => ba.Box)
-            .Include(w => w.RequestedByUser)
-            .Include(w => w.InspectedByUser)
-            .FirstOrDefaultAsync(w => w.WIRRecordId == request.WIRRecordId, cancellationToken);
+        var wirRecord = _unitOfWork.Repository<WIRRecord>().
+           GetEntityWithSpec(new GetWIRRecordWIthIncludesSpecification(request.WIRRecordId));
 
         if (wirRecord == null)
             return Result.Failure<WIRRecordDto>("WIR record not found");

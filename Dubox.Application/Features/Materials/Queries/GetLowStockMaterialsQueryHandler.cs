@@ -1,7 +1,8 @@
 using Dubox.Application.DTOs;
+using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
-using Dubox.Domain.Abstraction;
+using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,17 +23,7 @@ public class GetLowStockMaterialsQueryHandler : IRequestHandler<GetLowStockMater
             .Where(m => m.IsActive && m.CurrentStock.HasValue && m.MinimumStock.HasValue && m.CurrentStock <= m.MinimumStock)
             .ToListAsync(cancellationToken);
 
-        var lowStockMaterials = materials.Select(m => new LowStockMaterialDto
-        {
-            MaterialId = m.MaterialId,
-            MaterialCode = m.MaterialCode,
-            MaterialName = m.MaterialName,
-            CurrentStock = m.CurrentStock,
-            MinimumStock = m.MinimumStock,
-            ReorderLevel = m.ReorderLevel,
-            Shortage = (m.MinimumStock ?? 0) - (m.CurrentStock ?? 0),
-            NeedsReorder = m.NeedsReorder
-        }).ToList();
+        var lowStockMaterials = materials.Adapt<List<LowStockMaterialDto>>();
 
         return Result.Success(lowStockMaterials);
     }

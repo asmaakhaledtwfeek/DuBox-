@@ -5,7 +5,7 @@ using MediatR;
 namespace Dubox.Application.Features.Materials.Commands
 {
     public record UpdateMaterialCommand(
-      int MaterialId,
+      Guid MaterialId,
       string? MaterialCode,
       string? MaterialName,
       string? MaterialCategory,

@@ -4,5 +4,5 @@ using MediatR;
 
 namespace Dubox.Application.Features.Materials.Queries
 {
-    public record GetMaterialByIdQuery(int materialId) : IRequest<Result<MaterialDto>>;
+    public record GetMaterialByIdQuery(Guid materialId) : IRequest<Result<MaterialDto>>;
 }

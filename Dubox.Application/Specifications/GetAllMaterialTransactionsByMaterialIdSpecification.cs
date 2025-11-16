@@ -5,7 +5,7 @@ namespace Dubox.Application.Specifications
 {
     public class GetAllMaterialTransactionsByMaterialIdSpecification : Specification<MaterialTransaction>
     {
-        public GetAllMaterialTransactionsByMaterialIdSpecification(int materialId)
+        public GetAllMaterialTransactionsByMaterialIdSpecification(Guid materialId)
         {
             AddCriteria(t => t.MaterialId == materialId);
             AddInclude(nameof(MaterialTransaction.PerformedBy));

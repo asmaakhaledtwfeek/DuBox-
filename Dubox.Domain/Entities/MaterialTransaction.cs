@@ -13,7 +13,7 @@ namespace Dubox.Domain.Entities
 
         [Required]
         [ForeignKey(nameof(Material))]
-        public int MaterialId { get; set; }
+        public Guid MaterialId { get; set; }
 
         [ForeignKey(nameof(Box))]
         public Guid? BoxId { get; set; }

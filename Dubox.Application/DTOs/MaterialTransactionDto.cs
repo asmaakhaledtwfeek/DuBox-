@@ -8,7 +8,7 @@
         public string? TransactionType { get; set; }
         public string? Reference { get; set; }
         public string? Remarks { get; set; }
-        public int MaterialId { get; set; }
+        public Guid MaterialId { get; set; }
         public string MaterialCode { get; set; } = string.Empty;
         public string MaterialName { get; set; } = string.Empty;
         public Guid? PerformedById { get; set; }

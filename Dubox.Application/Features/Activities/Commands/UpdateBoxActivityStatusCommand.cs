@@ -5,13 +5,10 @@ using MediatR;
 
 namespace Dubox.Application.Features.Activities.Commands;
 
-public record UpdateBoxActivityCommand(
+public record UpdateBoxActivityStatusCommand(
     Guid BoxActivityId,
     BoxStatusEnum Status,
-    decimal ProgressPercentage,
     string? WorkDescription,
-    string? IssuesEncountered,
-    int? AssignedTeam,
-    bool MaterialsAvailable
+    string? IssuesEncountered
 ) : IRequest<Result<BoxActivityDto>>;
 

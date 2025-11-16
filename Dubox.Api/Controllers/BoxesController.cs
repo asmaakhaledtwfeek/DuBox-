@@ -108,5 +108,19 @@ public class BoxesController : ControllerBase
         var result = await _mediator.Send(new GenerateBoxQRCodeByIdQuery(boxId), cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+    [HttpPut("define-box-material{boxId}")]
+    public async Task<IActionResult> DefineBoxMaterialRequired(Guid boxId, [FromBody] DefineBoxMaterialRequirementCommand command, CancellationToken cancellationToken)
+    {
+        if (boxId != command.BoxId)
+            return BadRequest("Box ID mismatch");
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+    [HttpPut("allocate-box-material")]
+    public async Task<IActionResult> AllocateBoxMaterial([FromBody] AllocateBoxMaterialCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
 }
 

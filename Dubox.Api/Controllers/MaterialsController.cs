@@ -18,9 +18,6 @@ public class MaterialsController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
-    /// Get all materials
-    /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetAllMaterials(CancellationToken cancellationToken)
     {
@@ -28,9 +25,6 @@ public class MaterialsController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>
-    /// Get low stock materials (for alerts)
-    /// </summary>
     [HttpGet("low-stock")]
     public async Task<IActionResult> GetLowStockMaterials(CancellationToken cancellationToken)
     {
@@ -38,30 +32,49 @@ public class MaterialsController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>
-    /// Create a new material
-    /// </summary>
     [HttpPost]
     public async Task<IActionResult> CreateMaterial([FromBody] CreateMaterialCommand command, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(command, cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+    [HttpPut("{materialId}")]
+    public async Task<IActionResult> RestockMaterial(int materialId, [FromBody] RestockMaterialCommand command, CancellationToken cancellationToken)
+    {
+        if (materialId != command.MaterialId)
+            return BadRequest("Material ID mismatch");
 
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+    [HttpGet("{materialId}")]
+    public async Task<IActionResult> GetMaterialById(int materialId, CancellationToken cancellationToken)
+    {
+
+        var result = await _mediator.Send(new GetMaterialByIdQuery(materialId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+    [HttpGet("transactions/{materialId}")]
+    public async Task<IActionResult> GetMaterialTransactionsById(int materialId, CancellationToken cancellationToken)
+    {
+
+        var result = await _mediator.Send(new GetAllMaterialTransactionsByMaterialIdQuery(materialId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
     [HttpGet("template")]
     public async Task<IActionResult> DownloadTemplate(CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GenerateMaterialsTemplateQuery(), cancellationToken);
-        
+
         if (!result.IsSuccess)
             return BadRequest(result);
 
-        return File(result.Data!, 
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", 
+        return File(result.Data!,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             "MaterialsImportTemplate.xlsx");
     }
 
-   
+
     [HttpPost("import")]
     [RequestSizeLimit(10_485_760)] // 10 MB
     public async Task<IActionResult> ImportFromExcel([FromForm] IFormFile file, CancellationToken cancellationToken)
@@ -76,7 +89,7 @@ public class MaterialsController : ControllerBase
 
         var command = new ImportMaterialsFromExcelCommand(memoryStream, file.FileName);
         var result = await _mediator.Send(command, cancellationToken);
-        
+
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 }

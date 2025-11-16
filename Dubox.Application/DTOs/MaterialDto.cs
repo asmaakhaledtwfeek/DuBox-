@@ -1,3 +1,5 @@
+using Dubox.Domain.Enums;
+
 namespace Dubox.Application.DTOs;
 
 public record MaterialDto
@@ -44,11 +46,12 @@ public record UpdateMaterialDto
     public bool IsActive { get; init; }
 }
 
-public record MaterialStockUpdateDto
+public record RestockMaterialDto
 {
     public int MaterialId { get; init; }
-    public decimal Quantity { get; init; }
-    public string TransactionType { get; init; } = string.Empty; // Add, Remove, Adjust
+    public decimal RestockQuantity { get; init; }
+    public decimal CurrentStock { get; init; }
+    public MaterialTransactionTypeEnum TransactionType { get; init; }
     public string? Reason { get; init; }
 }
 
@@ -83,5 +86,13 @@ public record MaterialImportResultDto
     public int FailureCount { get; init; }
     public List<string> Errors { get; init; } = new();
     public List<MaterialDto> ImportedMaterials { get; init; } = new();
+}
+public record GetAllMaterialTransactionsDto
+{
+    public int MaterialId { get; init; }
+    public string MaterialName { get; init; } = string.Empty;
+    public string MaterialCode { get; init; } = string.Empty;
+    public decimal? CurrentStock { get; init; }
+    public List<MaterialTransactionDto> Transactions { get; init; } = new();
 }
 

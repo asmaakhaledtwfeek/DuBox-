@@ -82,4 +82,6 @@ public class Box
     public ICollection<BoxAsset> BoxAssets { get; set; } = new List<BoxAsset>();
     public ICollection<BoxActivity> BoxActivities { get; set; } = new List<BoxActivity>();
     public ICollection<ProgressUpdate> ProgressUpdates { get; set; } = new List<ProgressUpdate>();
+    public ICollection<MaterialTransaction> MaterialTransactions { get; set; } = new List<MaterialTransaction>();
+
 }

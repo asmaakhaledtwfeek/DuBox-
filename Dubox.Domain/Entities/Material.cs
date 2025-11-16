@@ -44,6 +44,7 @@ namespace Dubox.Domain.Entities
         public bool IsActive { get; set; } = true;
 
         // Navigation properties
+        public virtual ICollection<ActivityMaterial> ActivityMaterials { get; set; } = new List<ActivityMaterial>();
         public virtual ICollection<BoxMaterial> BoxMaterials { get; set; } = new List<BoxMaterial>();
         public virtual ICollection<MaterialTransaction> Transactions { get; set; } = new List<MaterialTransaction>();
 

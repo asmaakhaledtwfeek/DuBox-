@@ -1,0 +1,164 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="page-content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-left">
+        <h1 class="page-title">Projects</h1>
+        <p class="page-subtitle">Manage and track all your construction projects</p>
+      </div>
+      <div class="header-right" *ngIf="canCreateProject">
+        <button class="btn btn-primary" (click)="createProject()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          New Project
+        </button>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-section">
+      <!-- Search -->
+      <div class="search-box">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input 
+          type="text" 
+          placeholder="Search projects by name, code, or location..." 
+          [formControl]="searchControl"
+          class="search-input"
+        />
+      </div>
+
+      <!-- Status Filter -->
+      <div class="filter-buttons">
+        <button 
+          class="filter-btn" 
+          [class.active]="selectedStatus === 'All'"
+          (click)="filterByStatus('All')"
+        >
+          All
+        </button>
+        <button 
+          class="filter-btn" 
+          [class.active]="selectedStatus === ProjectStatus.Active"
+          (click)="filterByStatus(ProjectStatus.Active)"
+        >
+          Active
+        </button>
+        <button 
+          class="filter-btn" 
+          [class.active]="selectedStatus === ProjectStatus.Planning"
+          (click)="filterByStatus(ProjectStatus.Planning)"
+        >
+          Planning
+        </button>
+        <button 
+          class="filter-btn" 
+          [class.active]="selectedStatus === ProjectStatus.Completed"
+          (click)="filterByStatus(ProjectStatus.Completed)"
+        >
+          Completed
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="loading">
+      <div class="spinner"></div>
+      <p>Loading projects...</p>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-container" *ngIf="error && !loading">
+      <p class="error-message">{{ error }}</p>
+      <button class="btn btn-primary" (click)="loadProjects()">Retry</button>
+    </div>
+
+    <!-- Projects Grid -->
+    <div class="projects-grid" *ngIf="!loading && !error">
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="filteredProjects.length === 0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
+        </svg>
+        <h3>No projects found</h3>
+        <p>{{ projects.length === 0 ? 'Create your first project to get started' : 'Try adjusting your filters' }}</p>
+        <button class="btn btn-primary" (click)="createProject()" *ngIf="canCreateProject && projects.length === 0">
+          Create Project
+        </button>
+      </div>
+
+      <!-- Project Cards -->
+      <div class="project-card" *ngFor="let project of filteredProjects" (click)="viewProject(project.id)">
+        <div class="card-header">
+          <div class="project-info">
+            <h3 class="project-name">{{ project.name }}</h3>
+            <span class="project-code">{{ project.code }}</span>
+          </div>
+          <span class="badge" [ngClass]="getStatusClass(project.status)">
+            {{ project.status }}
+          </span>
+        </div>
+
+        <div class="card-body">
+          <div class="project-location">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            {{ project.location }}
+          </div>
+
+          <div class="project-stats">
+            <div class="stat-item">
+              <span class="stat-value">{{ project.totalBoxes }}</span>
+              <span class="stat-label">Total Boxes</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ project.completedBoxes }}</span>
+              <span class="stat-label">Completed</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value">{{ project.inProgressBoxes }}</span>
+              <span class="stat-label">In Progress</span>
+            </div>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="progress-section">
+            <div class="progress-header">
+              <span class="progress-label">Overall Progress</span>
+              <span class="progress-value">{{ project.progress }}%</span>
+            </div>
+            <div class="progress-bar">
+              <div 
+                class="progress-fill" 
+                [style.width.%]="project.progress"
+                [style.backgroundColor]="getProgressColor(project.progress)"
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <button class="btn-link" (click)="viewBoxes(project.id, $event)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            </svg>
+            View Boxes
+          </button>
+          <span class="project-date">
+            Started: {{ project.startDate | date:'MMM d, yyyy' }}
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

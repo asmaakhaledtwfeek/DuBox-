@@ -23,7 +23,6 @@ namespace Dubox.Domain.Entities
 
         public int LagDays { get; set; } = 0;
 
-        // Navigation properties
         public virtual BoxActivity BoxActivity { get; set; } = null!;
         public virtual BoxActivity PredecessorActivity { get; set; } = null!;
     }

@@ -36,11 +36,10 @@ public class ActivityMaster
     public bool IsWIRCheckpoint { get; set; } = false; // Work Inspection Request checkpoint
 
     [MaxLength(50)]
-    public string? WIRCode { get; set; } // WIR-1, WIR-2, etc.
+    public string? WIRCode { get; set; } 
 
-    // Applicable box types (JSON or comma-separated)
     [MaxLength(500)]
-    public string? ApplicableBoxTypes { get; set; } // null = all types, or "Bedroom,Kitchen"
+    public string? ApplicableBoxTypes { get; set; } 
 
     // Dependencies (comma-separated ActivityMasterId GUIDs or codes)
     [MaxLength(500)]

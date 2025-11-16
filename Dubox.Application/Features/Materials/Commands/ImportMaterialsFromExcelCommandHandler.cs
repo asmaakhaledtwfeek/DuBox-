@@ -37,7 +37,6 @@ public class ImportMaterialsFromExcelCommandHandler : IRequestHandler<ImportMate
         if (request.FileStream == null)
             return Result.Failure<MaterialImportResultDto>("No file stream provided");
 
-        // Validate file extension
         var fileExtension = Path.GetExtension(request.FileName).ToLower();
         if (fileExtension != ".xlsx" && fileExtension != ".xls")
             return Result.Failure<MaterialImportResultDto>("Invalid file format. Please upload an Excel file (.xlsx or .xls)");
@@ -51,7 +50,6 @@ public class ImportMaterialsFromExcelCommandHandler : IRequestHandler<ImportMate
         {
             var stream = request.FileStream;
 
-            // Validate Excel structure
             stream.Position = 0;
             var (isValid, validationErrors) = await _excelService.ValidateExcelStructureAsync(stream, RequiredHeaders);
             if (!isValid)
@@ -59,7 +57,6 @@ public class ImportMaterialsFromExcelCommandHandler : IRequestHandler<ImportMate
                 return Result.Failure<MaterialImportResultDto>($"Excel validation failed: {string.Join(", ", validationErrors)}");
             }
 
-            // Read materials from Excel
             stream.Position = 0;
             var materials = await _excelService.ReadFromExcelAsync<ImportMaterialDto>(stream, MapRowToMaterial);
 
@@ -70,15 +67,13 @@ public class ImportMaterialsFromExcelCommandHandler : IRequestHandler<ImportMate
 
             var materialRepository = _unitOfWork.Repository<Material>();
 
-            // Process each material
             for (int i = 0; i < materials.Count; i++)
             {
                 var materialDto = materials[i];
-                var rowNumber = i + 2; // +2 because of header and 0-based index
+                var rowNumber = i + 2; 
 
                 try
                 {
-                    // Validate required fields
                     if (string.IsNullOrWhiteSpace(materialDto.MaterialCode))
                     {
                         errors.Add($"Row {rowNumber}: MaterialCode is required");
@@ -93,7 +88,6 @@ public class ImportMaterialsFromExcelCommandHandler : IRequestHandler<ImportMate
                         continue;
                     }
 
-                    // Check if material already exists
                     var existingMaterial = await materialRepository
                         .IsExistAsync(m => m.MaterialCode == materialDto.MaterialCode, cancellationToken);
 
@@ -104,7 +98,6 @@ public class ImportMaterialsFromExcelCommandHandler : IRequestHandler<ImportMate
                         continue;
                     }
 
-                    // Create new material
                     var material = new Material
                     {
                         MaterialCode = materialDto.MaterialCode,
@@ -137,7 +130,6 @@ public class ImportMaterialsFromExcelCommandHandler : IRequestHandler<ImportMate
                 }
             }
 
-            // Save all changes if any materials were successfully imported
             if (successCount > 0)
             {
                 await _unitOfWork.CompleteAsync(cancellationToken);

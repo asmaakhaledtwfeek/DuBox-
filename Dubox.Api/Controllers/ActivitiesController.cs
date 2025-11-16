@@ -18,9 +18,6 @@ public class ActivitiesController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
-    /// Get all activity master templates (seeded data)
-    /// </summary>
     [HttpGet("masters")]
     public async Task<IActionResult> GetAllActivityMasters(CancellationToken cancellationToken)
     {
@@ -28,9 +25,6 @@ public class ActivitiesController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>
-    /// Get activity masters by stage number (1-6)
-    /// </summary>
     [HttpGet("masters/stage/{stageNumber}")]
     public async Task<IActionResult> GetActivitiesByStage(int stageNumber, CancellationToken cancellationToken)
     {
@@ -38,9 +32,6 @@ public class ActivitiesController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>
-    /// Get all activities for a specific box
-    /// </summary>
     [HttpGet("box/{boxId}")]
     public async Task<IActionResult> GetBoxActivities(Guid boxId, CancellationToken cancellationToken)
     {
@@ -48,9 +39,6 @@ public class ActivitiesController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>
-    /// Update box activity progress and status
-    /// </summary>
     [HttpPut("{boxActivityId}")]
     public async Task<IActionResult> UpdateBoxActivity(Guid boxActivityId, [FromBody] UpdateBoxActivityCommand command, CancellationToken cancellationToken)
     {

@@ -33,12 +33,6 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<Guid>("BoxActivityId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("BoxActivityId1")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("BoxActivityId2")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("DependencyType")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -53,10 +47,6 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasKey("DependencyId");
 
                     b.HasIndex("BoxActivityId");
-
-                    b.HasIndex("BoxActivityId1");
-
-                    b.HasIndex("BoxActivityId2");
 
                     b.HasIndex("PredecessorActivityId");
 
@@ -817,22 +807,23 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.AuditLog", b =>
                 {
-                    b.Property<int>("AuditId")
+                    b.Property<Guid>("AuditId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("AuditId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Action")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("ChangedBy")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<Guid?>("ChangedBy")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("ChangedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<string>("DeviceInfo")
                         .HasMaxLength(200)
@@ -848,8 +839,8 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<string>("OldValues")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("RecordId")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("RecordId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("TableName")
                         .HasMaxLength(100)
@@ -894,11 +885,14 @@ namespace Dubox.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<int?>("Duration")
+                        .HasColumnType("int");
 
                     b.Property<string>("Floor")
                         .IsRequired()
@@ -914,8 +908,8 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<decimal?>("Length")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<Guid?>("ModifiedBy")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("ModifiedDate")
                         .HasColumnType("datetime2");
@@ -925,6 +919,9 @@ namespace Dubox.Infrastructure.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<DateTime?>("PlannedEndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("PlannedStartDate")
                         .HasColumnType("datetime2");
 
                     b.Property<decimal>("ProgressPercentage")
@@ -1001,6 +998,9 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("Duration")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -1011,8 +1011,8 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<bool>("MaterialsAvailable")
                         .HasColumnType("bit");
 
-                    b.Property<string>("ModifiedBy")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<Guid?>("ModifiedBy")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("ModifiedDate")
                         .HasColumnType("datetime2");
@@ -1996,6 +1996,9 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime?>("ActualEndDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("ActualStartDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("ClientName")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -2009,6 +2012,9 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<string>("Description")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<int?>("Duration")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -2026,6 +2032,12 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime?>("PlannedEndDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("PlannedStartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("ProgressPercentage")
+                        .HasColumnType("decimal(18,2)");
+
                     b.Property<string>("ProjectCode")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -2035,9 +2047,6 @@ namespace Dubox.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime?>("StartDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<int>("Status")
                         .ValueGeneratedOnAdd()
@@ -2978,21 +2987,13 @@ namespace Dubox.Infrastructure.Migrations
             modelBuilder.Entity("Dubox.Domain.Entities.ActivityDependency", b =>
                 {
                     b.HasOne("Dubox.Domain.Entities.BoxActivity", "BoxActivity")
-                        .WithMany()
+                        .WithMany("Dependencies")
                         .HasForeignKey("BoxActivityId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Dubox.Domain.Entities.BoxActivity", null)
-                        .WithMany("Dependencies")
-                        .HasForeignKey("BoxActivityId1");
-
-                    b.HasOne("Dubox.Domain.Entities.BoxActivity", null)
-                        .WithMany("DependentActivities")
-                        .HasForeignKey("BoxActivityId2");
-
                     b.HasOne("Dubox.Domain.Entities.BoxActivity", "PredecessorActivity")
-                        .WithMany()
+                        .WithMany("DependentActivities")
                         .HasForeignKey("PredecessorActivityId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -3026,7 +3027,7 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasOne("Dubox.Domain.Entities.Project", "Project")
                         .WithMany("Boxes")
                         .HasForeignKey("ProjectId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Project");
@@ -3256,7 +3257,7 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasOne("Dubox.Domain.Entities.BoxActivity", "BoxActivity")
                         .WithMany("ProgressUpdates")
                         .HasForeignKey("BoxActivityId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Dubox.Domain.Entities.Box", "Box")
@@ -3429,7 +3430,7 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasOne("Dubox.Domain.Entities.BoxActivity", "BoxActivity")
                         .WithMany("WIRRecords")
                         .HasForeignKey("BoxActivityId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("Dubox.Domain.Entities.User", "InspectedByUser")

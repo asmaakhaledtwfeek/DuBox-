@@ -1,66 +1,149 @@
 using Dubox.Application.DTOs;
-using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
 using Dubox.Domain.Shared;
 using Mapster;
-using MediatR;
 
 namespace Dubox.Application.Features.Activities.Commands;
+
+using Dubox.Application.Specifications;
+using MediatR;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 public class UpdateBoxActivityStatusCommandHandler : IRequestHandler<UpdateBoxActivityStatusCommand, Result<BoxActivityDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IDbContext _dbContext;
-
-    public UpdateBoxActivityStatusCommandHandler(IUnitOfWork unitOfWork, IDbContext dbContext)
+    private readonly ICurrentUserService _currentUserService;
+    public UpdateBoxActivityStatusCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
     {
         _unitOfWork = unitOfWork;
-        _dbContext = dbContext;
+        _currentUserService = currentUserService;
     }
 
     public async Task<Result<BoxActivityDto>> Handle(UpdateBoxActivityStatusCommand request, CancellationToken cancellationToken)
     {
-        var boxActivity = _unitOfWork.Repository<BoxActivity>().GetEntityWithSpec(new GetBoxActivityByIdSpecification(request.BoxActivityId));
+        var activity = _unitOfWork.Repository<BoxActivity>()
+             .GetEntityWithSpec(new GetBoxActivityByIdSpecification(request.BoxActivityId));
 
+        if (activity == null)
+            return Result.Failure<BoxActivityDto>("Box Activity not found.");
 
-        if (boxActivity == null)
-            return Result.Failure<BoxActivityDto>("Box activity not found");
+        var oldStatus = activity.Status;
+        var newStatus = request.Status;
+        if (newStatus == oldStatus)
+            return Result.Failure<BoxActivityDto>($"Box Activity is already in status: {oldStatus}. No status update needed.");
 
-        var wasCompleted = boxActivity.Status == BoxStatusEnum.Completed;
+        var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
+        const string dateFormat = "yyyy-MM-dd HH:mm:ss";
+        var oldStatusString = oldStatus.ToString();
+        var oldActualStartDateString = activity.ActualStartDate?.ToString(dateFormat) ?? "N/A";
+        var oldActualEndDateString = activity.ActualEndDate?.ToString(dateFormat) ?? "N/A";
 
-        boxActivity.Status = request.Status;
-        boxActivity.WorkDescription = request.WorkDescription;
-        boxActivity.IssuesEncountered = request.IssuesEncountered;
+        activity.WorkDescription = request.WorkDescription;
+        activity.IssuesEncountered = request.IssuesEncountered;
 
-        // Update dates based on status
-        if (request.Status == BoxStatusEnum.InProgress && boxActivity.ActualStartDate == null)
-            boxActivity.ActualStartDate = DateTime.UtcNow;
-
-        if (request.Status == BoxStatusEnum.Completed && !wasCompleted)
+        if (newStatus != oldStatus)
         {
-            boxActivity.ActualEndDate = DateTime.UtcNow;
-            boxActivity.ProgressPercentage = 100;
+            if (newStatus == BoxStatusEnum.InProgress && !activity.ActualStartDate.HasValue)
+            {
+                activity.ActualStartDate = DateTime.UtcNow;
+                await UpdateParentBoxAndProjectStatusIfNecessary(activity, cancellationToken);
+            }
+            else if (newStatus != BoxStatusEnum.InProgress && activity.ActualEndDate.HasValue)
+            {
+                activity.ActualEndDate = null;
+            }
         }
 
-        boxActivity.ModifiedDate = DateTime.UtcNow;
+        activity.Status = newStatus;
+        activity.ModifiedDate = DateTime.UtcNow;
+        activity.ModifiedBy = currentUserId;
 
-        _unitOfWork.Repository<BoxActivity>().Update(boxActivity);
+        var newActualStartDateString = activity.ActualStartDate?.ToString(dateFormat) ?? "N/A";
+        var newActualEndDateString = activity.ActualEndDate?.ToString(dateFormat) ?? "N/A";
+
+        _unitOfWork.Repository<BoxActivity>().Update(activity);
+        var log = new AuditLog
+        {
+            TableName = nameof(BoxActivity),
+            RecordId = activity.BoxActivityId,
+            Action = "StatusChange",
+            OldValues = $"Status: {oldStatusString}, Start: {oldActualStartDateString}, End: {oldActualEndDateString}",
+            NewValues = $"Status: {newStatus.ToString()}, Start: {newActualStartDateString}, End: {newActualEndDateString}",
+            ChangedBy = currentUserId,
+            ChangedDate = DateTime.UtcNow,
+            Description = $"Activity status manually updated from {oldStatusString} to {newStatus.ToString()}."
+        };
+        await _unitOfWork.Repository<AuditLog>().AddAsync(log, cancellationToken);
+
         await _unitOfWork.CompleteAsync(cancellationToken);
 
-
-        var dto = boxActivity.Adapt<BoxActivityDto>() with
-        {
-            BoxTag = boxActivity.Box.BoxTag,
-            ActivityCode = boxActivity.ActivityMaster.ActivityCode,
-            ActivityName = boxActivity.ActivityMaster.ActivityName,
-            Stage = boxActivity.ActivityMaster.Stage,
-            Status = boxActivity.Status.ToString(),
-        };
-
-        return Result.Success(dto);
+        return Result.Success(activity.Adapt<BoxActivityDto>());
     }
 
+    private async Task UpdateParentBoxAndProjectStatusIfNecessary(BoxActivity activity, CancellationToken cancellationToken)
+    {
+        var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
+        const string dateFormat = "yyyy-MM-dd HH:mm:ss";
+
+        var box = await _unitOfWork.Repository<Box>().GetByIdAsync(activity.BoxId, cancellationToken);
+
+        if (box != null && box.Status == BoxStatusEnum.NotStarted)
+        {
+            var boxOldStatus = box.Status.ToString();
+            var boxOldActualStartDateString = box.ActualStartDate?.ToString(dateFormat) ?? "N/A";
+
+            box.Status = BoxStatusEnum.InProgress;
+            box.ActualStartDate = DateTime.UtcNow;
+            _unitOfWork.Repository<Box>().Update(box);
+
+            var boxNewActualStartDateString = box.ActualStartDate?.ToString(dateFormat) ?? "N/A";
+
+            var boxLog = new AuditLog
+            {
+                TableName = nameof(Box),
+                RecordId = box.BoxId,
+                Action = "StatusAutoChange",
+                OldValues = $"Status: {boxOldStatus}, Start: {boxOldActualStartDateString}",
+                NewValues = $"Status: {BoxStatusEnum.InProgress.ToString()}, Start: {boxNewActualStartDateString}",
+                ChangedBy = currentUserId,
+                ChangedDate = DateTime.UtcNow,
+                Description = $"Box status automatically moved to InProgress due to activity {activity.BoxActivityId} start."
+            };
+            await _unitOfWork.Repository<AuditLog>().AddAsync(boxLog, cancellationToken);
+
+            var project = await _unitOfWork.Repository<Project>().GetByIdAsync(box.ProjectId, cancellationToken);
+
+            if (project != null)
+            {
+
+                var projectOldActualStartDateString = project.ActualStartDate?.ToString(dateFormat) ?? "N/A";
+                if (!project.ActualStartDate.HasValue)
+                {
+                    project.ActualStartDate = DateTime.UtcNow;
+
+                    _unitOfWork.Repository<Project>().Update(project);
+
+                    var projectNewActualStartDateString = project.ActualStartDate?.ToString(dateFormat) ?? "N/A";
+
+                    var projectLog = new AuditLog
+                    {
+                        TableName = nameof(Project),
+                        RecordId = project.ProjectId,
+                        Action = "ActualStartSet",
+                        OldValues = $"Start: {projectOldActualStartDateString}",
+                        NewValues = $"Start: {projectNewActualStartDateString}",
+                        ChangedBy = currentUserId,
+                        ChangedDate = DateTime.UtcNow,
+                        Description = $"Project start date automatically initialized due to Box {box.BoxId} start."
+                    };
+                    await _unitOfWork.Repository<AuditLog>().AddAsync(projectLog, cancellationToken);
+                }
+            }
+        }
+    }
 }
 

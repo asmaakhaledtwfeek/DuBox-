@@ -10,11 +10,9 @@ public record UpdateProjectCommand(
     string? ProjectName,
     string? ClientName,
     string? Location,
-    DateTime? StartDate,
-    DateTime? PlannedEndDate,
-    DateTime? ActualEndDate,
-    int? Status,
     string? Description,
-    bool? IsActive
+    bool? IsActive,
+    DateTime? PlannedStartDate,
+    int? Duration
 ) : IRequest<Result<ProjectDto>>;
 

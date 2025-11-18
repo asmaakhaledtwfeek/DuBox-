@@ -1,7 +1,8 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
+using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
-using Dubox.Domain.Abstraction;
 using Mapster;
 using MediatR;
 
@@ -18,12 +19,10 @@ public class GetAllProjectsQueryHandler : IRequestHandler<GetAllProjectsQuery, R
 
     public async Task<Result<List<ProjectDto>>> Handle(GetAllProjectsQuery request, CancellationToken cancellationToken)
     {
-        var projects = await _unitOfWork.Repository<Project>()
-            .GetAllAsync(cancellationToken);
+        var projects = _unitOfWork.Repository<Project>()
+            .GetWithSpec(new GetProjectsSpecification(request)).Data.ToList();
 
-        var projectDtos = projects
-            .OrderByDescending(p => p.CreatedDate)
-            .Adapt<List<ProjectDto>>();
+        var projectDtos = projects.Adapt<List<ProjectDto>>();
 
         return Result.Success(projectDtos);
     }

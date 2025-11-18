@@ -29,6 +29,8 @@ public class BoxActivity
     public DateTime? PlannedEndDate { get; set; }
     public DateTime? ActualStartDate { get; set; }
     public DateTime? ActualEndDate { get; set; }
+    public int? Duration { get; set; }
+
 
     [MaxLength(500)]
     public string? WorkDescription { get; set; }
@@ -50,7 +52,7 @@ public class BoxActivity
     public bool IsActive { get; set; } = true;
     public DateTime CreatedDate { get; set; }
     public DateTime? ModifiedDate { get; set; }
-    public string? ModifiedBy { get; set; }
+    public Guid? ModifiedBy { get; set; }
 
     // Navigation properties
     public ICollection<ProgressUpdate> ProgressUpdates { get; set; } = new List<ProgressUpdate>();

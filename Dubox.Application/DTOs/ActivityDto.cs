@@ -29,6 +29,7 @@ public record BoxActivityDto
     public int Sequence { get; init; }
     public string Status { get; init; } = string.Empty;
     public decimal ProgressPercentage { get; init; }
+    public int? Duration { get; init; }
     public DateTime? PlannedStartDate { get; init; }
     public DateTime? PlannedEndDate { get; init; }
     public DateTime? ActualStartDate { get; init; }
@@ -59,5 +60,7 @@ public record AssignBoxActivityTeamDto
     public int TeamId { get; init; }
     public string? TeamCode { get; init; }
     public string? TeamName { get; init; }
+    public Guid AssigneeToId { get; init; }
+    public string? AssigneeTo { get; init; }
 
 }

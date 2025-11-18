@@ -12,11 +12,11 @@ public record UpdateBoxCommand(
     string? Floor,
     string? Building,
     string? Zone,
-    int? Status,
     decimal? Length,
     decimal? Width,
     decimal? Height,
-    DateTime? PlannedEndDate,
+    DateTime? PlannedStartDate,
+    int? Duration,
     string? Notes
 ) : IRequest<Result<BoxDto>>;
 

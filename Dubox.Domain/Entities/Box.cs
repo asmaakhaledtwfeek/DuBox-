@@ -65,6 +65,8 @@ public class Box
     public string? RevitElementId { get; set; }
 
     // Tracking
+    public int? Duration { get; set; }
+    public DateTime? PlannedStartDate { get; set; }
     public DateTime? ActualStartDate { get; set; }
     public DateTime? PlannedEndDate { get; set; }
     public DateTime? ActualEndDate { get; set; }
@@ -75,8 +77,8 @@ public class Box
     public bool IsActive { get; set; } = true;
     public DateTime CreatedDate { get; set; }
     public DateTime? ModifiedDate { get; set; }
-    public string? CreatedBy { get; set; }
-    public string? ModifiedBy { get; set; }
+    public Guid? CreatedBy { get; set; }
+    public Guid? ModifiedBy { get; set; }
 
     // Navigation properties
     public ICollection<BoxAsset> BoxAssets { get; set; } = new List<BoxAsset>();

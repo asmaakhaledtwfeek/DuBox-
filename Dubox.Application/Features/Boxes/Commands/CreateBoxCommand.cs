@@ -17,6 +17,8 @@ public record CreateBoxCommand(
     decimal? Height,
     string? BIMModelReference,
     string? RevitElementId,
+    DateTime? BoxPlannedStartDate,
+    int? BoxDuration,
     List<CreateBoxAssetDto>? Assets
 ) : IRequest<Result<BoxDto>>;
 

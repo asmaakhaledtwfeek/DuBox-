@@ -67,7 +67,6 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
 
     private void ConfigureRelationships(ModelBuilder modelBuilder)
     {
-        // Activity Dependencies - Configure self-referencing relationship
         modelBuilder.Entity<ActivityDependency>()
             .HasOne(d => d.BoxActivity)
             .WithMany(a => a.Dependencies)
@@ -80,24 +79,14 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(d => d.PredecessorActivityId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<ActivityDependency>()
-            .HasOne(ad => ad.BoxActivity)
-            .WithMany()
-            .HasForeignKey(ad => ad.BoxActivityId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder.Entity<ActivityDependency>()
-            .HasOne(ad => ad.PredecessorActivity)
-            .WithMany()
-            .HasForeignKey(ad => ad.PredecessorActivityId)
-            .OnDelete(DeleteBehavior.Restrict);
-
+        // 2. Cost Category (Self-Referencing)
         modelBuilder.Entity<CostCategory>()
             .HasOne(c => c.ParentCategory)
             .WithMany(c => c.SubCategories)
             .HasForeignKey(c => c.ParentCategoryId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // 3. Box Location History
         modelBuilder.Entity<BoxLocationHistory>()
             .HasOne(h => h.Location)
             .WithMany(l => l.BoxLocationHistory)
@@ -110,6 +99,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(h => h.MovedFromLocationId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // 4. User and Role Management (Cascade for join tables)
         modelBuilder.Entity<UserRole>()
             .HasOne(ur => ur.User)
             .WithMany(u => u.UserRoles)
@@ -146,6 +136,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(gr => gr.RoleId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // 5. Department and User
         modelBuilder.Entity<User>()
         .HasOne(u => u.EmployeeOfDepartment)
         .WithMany(d => d.Employees)
@@ -153,24 +144,19 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         .IsRequired()
         .OnDelete(DeleteBehavior.Restrict);
 
-
         modelBuilder.Entity<Department>()
             .HasOne(d => d.Manager)
             .WithOne(u => u.ManagedDepartment)
             .HasForeignKey<Department>(d => d.ManagerId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.SetNull);
-        modelBuilder.Entity<GroupRole>()
-            .HasOne(gr => gr.Role)
-            .WithMany(r => r.GroupRoles)
-            .HasForeignKey(gr => gr.RoleId)
-            .OnDelete(DeleteBehavior.Cascade);
 
+        // 6. WIRRecord relationships
         modelBuilder.Entity<WIRRecord>()
             .HasOne(w => w.BoxActivity)
             .WithMany(ba => ba.WIRRecords)
             .HasForeignKey(w => w.BoxActivityId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<WIRRecord>()
             .HasOne(w => w.RequestedByUser)
@@ -184,7 +170,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(w => w.InspectedBy)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // ProgressUpdate relationships
+        // 7. ProgressUpdate relationships
         modelBuilder.Entity<ProgressUpdate>()
             .HasOne(p => p.Box)
             .WithMany(b => b.ProgressUpdates)
@@ -195,7 +181,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasOne(p => p.BoxActivity)
             .WithMany(ba => ba.ProgressUpdates)
             .HasForeignKey(p => p.BoxActivityId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<ProgressUpdate>()
             .HasOne(p => p.UpdatedByUser)
@@ -203,7 +189,6 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(p => p.UpdatedBy)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // BoxActivity relationships
         modelBuilder.Entity<BoxActivity>()
             .HasOne(ba => ba.Box)
             .WithMany(b => b.BoxActivities)
@@ -222,37 +207,40 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(ba => ba.AssignedMemberId)
             .OnDelete(DeleteBehavior.SetNull);
 
-        // Box relationships
         modelBuilder.Entity<Box>()
             .HasOne(b => b.Project)
             .WithMany(p => p.Boxes)
             .HasForeignKey(b => b.ProjectId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
 
-        // BoxAsset relationships
+        // 10. BoxAsset relationships
         modelBuilder.Entity<BoxAsset>()
             .HasOne(ba => ba.Box)
             .WithMany(b => b.BoxAssets)
             .HasForeignKey(ba => ba.BoxId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // 11. Team and Material Management
         modelBuilder.Entity<Team>()
-             .HasOne(t => t.TeamLeader)
-             .WithMany()
-             .HasForeignKey(t => t.TeamLeaderMemberId)
-             .IsRequired(false)
-             .OnDelete(DeleteBehavior.SetNull);
+            .HasOne(t => t.TeamLeader)
+            .WithMany()
+            .HasForeignKey(t => t.TeamLeaderMemberId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
         modelBuilder.Entity<Team>()
-             .HasOne(t => t.Department)
-             .WithMany()
-             .HasForeignKey(t => t.DepartmentId)
-             .IsRequired()
-             .OnDelete(DeleteBehavior.Restrict);
+            .HasOne(t => t.Department)
+            .WithMany()
+            .HasForeignKey(t => t.DepartmentId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Restrict);
+
         modelBuilder.Entity<TeamMember>()
-             .HasOne(tm => tm.Team)
-             .WithMany(t => t.Members)
-             .HasForeignKey(tm => tm.TeamId)
-             .OnDelete(DeleteBehavior.Restrict);
+            .HasOne(tm => tm.Team)
+            .WithMany(t => t.Members)
+            .HasForeignKey(tm => tm.TeamId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         modelBuilder.Entity<MaterialTransaction>()
             .HasOne(t => t.Material)
             .WithMany(m => m.Transactions)
@@ -416,6 +404,8 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
 
     private async Task CreateAuditLog(CancellationToken cancellationToken)
     {
+        var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
+
         var auditEntries = ChangeTracker.Entries()
                 .Where(e => e.State == EntityState.Added ||
                            e.State == EntityState.Modified ||
@@ -424,7 +414,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
                 {
                     TableName = e.Entity.GetType().Name,
                     Action = e.State.ToString(),
-                    ChangedBy = _currentUserService.Username,
+                    ChangedBy = currentUserId,
                     ChangedDate = _dateTime.Now
                 })
                 .ToList();

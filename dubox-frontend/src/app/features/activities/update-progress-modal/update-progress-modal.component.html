@@ -1,0 +1,142 @@
+<div class="modal-overlay" *ngIf="isOpen" (click)="close()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Update Activity Progress</h2>
+      <button class="close-btn" (click)="close()" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Activity Info -->
+      <div class="activity-info">
+        <h3>{{ activity?.activityName }}</h3>
+        <p class="activity-sequence">Activity #{{ activity?.sequence }}</p>
+        
+        <!-- WIR Checkpoint Badge -->
+        <div *ngIf="isWIRCheckpoint" class="wir-badge">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 11l3 3L22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+          <span>WIR Checkpoint - {{ wirCode }}</span>
+        </div>
+      </div>
+
+      <!-- Alert Messages -->
+      <div class="alert alert-danger" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+      <div class="alert alert-success" *ngIf="successMessage">
+        {{ successMessage }}
+      </div>
+
+      <!-- WIR Warning for Checkpoint Activities -->
+      <div *ngIf="isWIRCheckpoint && progressForm.get('progressPercentage')?.value === 100" class="alert alert-info">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <div>
+          <strong>QC Inspection Required</strong>
+          <p>Completing this activity will automatically create {{ wirCode }} for QC Engineer inspection.</p>
+        </div>
+      </div>
+
+      <!-- Progress Form -->
+      <form [formGroup]="progressForm" (ngSubmit)="onSubmit()">
+        <!-- Progress Percentage -->
+        <div class="form-group">
+          <label for="progressPercentage">Progress Percentage *</label>
+          <div class="progress-input-group">
+            <button type="button" class="btn-adjust" (click)="incrementProgress(-10)">-10%</button>
+            <button type="button" class="btn-adjust" (click)="incrementProgress(-5)">-5%</button>
+            <input 
+              type="number" 
+              id="progressPercentage" 
+              formControlName="progressPercentage"
+              min="0"
+              max="100"
+              class="form-control"
+            />
+            <span class="percentage-label">%</span>
+            <button type="button" class="btn-adjust" (click)="incrementProgress(5)">+5%</button>
+            <button type="button" class="btn-adjust" (click)="incrementProgress(10)">+10%</button>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" [style.width.%]="progressForm.get('progressPercentage')?.value"></div>
+          </div>
+        </div>
+
+        <!-- Status Info (Read-only) -->
+        <div class="form-group">
+          <label>Status</label>
+          <div class="status-info">
+            <span *ngIf="progressForm.get('progressPercentage')?.value === 0" class="status-badge status-not-started">Not Started</span>
+            <span *ngIf="progressForm.get('progressPercentage')?.value > 0 && progressForm.get('progressPercentage')?.value < 100" class="status-badge status-in-progress">In Progress</span>
+            <span *ngIf="progressForm.get('progressPercentage')?.value === 100" class="status-badge status-completed">Completed</span>
+          </div>
+          <small class="form-text">Status is automatically determined by progress percentage</small>
+        </div>
+
+        <!-- Work Description -->
+        <div class="form-group">
+          <label for="workDescription">Work Description</label>
+          <textarea 
+            id="workDescription" 
+            formControlName="workDescription"
+            class="form-control"
+            rows="3"
+            placeholder="Describe the work completed..."
+          ></textarea>
+        </div>
+
+        <!-- Issues Encountered -->
+        <div class="form-group">
+          <label for="issuesEncountered">Issues Encountered</label>
+          <textarea 
+            id="issuesEncountered" 
+            formControlName="issuesEncountered"
+            class="form-control"
+            rows="3"
+            placeholder="Describe any issues or challenges..."
+          ></textarea>
+        </div>
+
+
+        <!-- Photo Upload -->
+        <div class="form-group">
+          <label for="photoUpload">Progress Photos</label>
+          <input 
+            type="file" 
+            id="photoUpload"
+            (change)="onFileSelected($event)"
+            accept="image/*"
+            multiple
+            class="form-control"
+          />
+          <small class="form-text">Upload photos of completed work (optional)</small>
+          <div *ngIf="selectedFiles.length > 0" class="selected-files">
+            <p>{{ selectedFiles.length }} file(s) selected</p>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="close()" [disabled]="isSubmitting">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="progressForm.invalid || isSubmitting">
+            <span *ngIf="!isSubmitting">Update Progress</span>
+            <span *ngIf="isSubmitting">Updating...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+

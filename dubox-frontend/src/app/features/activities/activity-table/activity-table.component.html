@@ -1,7 +1,12 @@
 <div class="process-flow-table-container">
   <h2 class="table-title">Process Flow Table</h2>
   
-  <div class="table-wrapper">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-state">
+    <p>Loading activities...</p>
+  </div>
+
+  <div class="table-wrapper" *ngIf="!isLoading">
     <table class="process-flow-table">
       <thead>
         <tr>
@@ -17,69 +22,131 @@
         </tr>
       </thead>
       <tbody>
-        <tr 
-          *ngFor="let activity of activities; let i = index"
-          [class.wir-checkpoint]="isWIRCheckpoint(activity)"
-          [class.wir-row]="isWIRCheckpoint(activity)"
-        >
-          <td class="text-center">{{ i + 1 }}</td>
-          <td class="text-center team-cell">{{ getTeam(activity) }}</td>
-          <td class="activity-name">
-            <strong *ngIf="isWIRCheckpoint(activity)">{{ activity.name }}</strong>
-            <span *ngIf="!isWIRCheckpoint(activity)">{{ activity.name }}</span>
-          </td>
-          <td class="assigned-to">
-            <span *ngIf="!isWIRCheckpoint(activity)">{{ activity.assignedTo || '-' }}</span>
-            <strong *ngIf="isWIRCheckpoint(activity)" class="wir-assigned">{{ activity.assignedTo || 'QC Engineer' }}</strong>
-          </td>
-          <td class="text-center">
-            <span *ngIf="!isWIRCheckpoint(activity)">{{ activity.plannedDuration || '-' }}</span>
-          </td>
-          <td class="text-center">
-            <span *ngIf="!isWIRCheckpoint(activity)">{{ formatDate(activity.actualStartDate) }}</span>
-            <strong *ngIf="isWIRCheckpoint(activity)" class="wir-message">
-              {{ activity.description || 'Release from Assembly - WIR' }}
-            </strong>
-          </td>
-          <td class="text-center">
-            <span *ngIf="!isWIRCheckpoint(activity) && getProgress(activity) > 0">
-              {{ getProgress(activity) }}%
-            </span>
-          </td>
-          <td class="text-center">
-            {{ formatDate(activity.actualEndDate) }}
-          </td>
-          <td class="text-center actions-cell">
-            <button 
-              class="btn-view-details"
-              [routerLink]="['/projects', projectId, 'boxes', boxId, 'activities', activity.id]"
-              title="View Activity Details"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                <circle cx="12" cy="12" r="3"/>
-              </svg>
-            </button>
-            <button 
-              *ngIf="isWIRCheckpoint(activity)"
-              class="btn-qa-qc"
-              [routerLink]="['/projects', projectId, 'boxes', boxId, 'activities', activity.id, 'qa-qc']"
-              title="QA/QC Checklist"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 11l3 3L22 4"/>
-                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-              </svg>
-              QA/QC
-            </button>
-          </td>
-        </tr>
+        <ng-container *ngFor="let row of tableRows; let i = index">
+          <!-- Regular Activity Row -->
+          <tr 
+            *ngIf="isActivityRow(row)"
+            class="activity-row"
+          >
+            <td class="text-center">{{ row.sequence }}</td>
+            <td class="text-center team-cell">{{ getTeam(getActivity(row)) }}</td>
+            <td class="activity-name">
+              <span>{{ getActivityName(getActivity(row)) }}</span>
+            </td>
+            <td class="assigned-to">
+              <span>{{ getAssignedTo(getActivity(row)) }}</span>
+            </td>
+            <td class="text-center">
+              <span>{{ getActivity(row)?.duration || '-' }}</span>
+            </td>
+            <td class="text-center">
+              <span>{{ formatDate(getActivity(row)?.actualStartDate) }}</span>
+            </td>
+            <td class="text-center">
+              <span *ngIf="getProgress(getActivity(row)) > 0" class="progress-badge">
+                {{ getProgress(getActivity(row)) }}%
+              </span>
+            </td>
+            <td class="text-center">
+              {{ formatDate(getActivity(row)?.actualEndDate) }}
+            </td>
+            <td class="text-center actions-cell">
+              <!-- Update Progress Button -->
+              <button 
+                *ngIf="getActivity(row)"
+                class="btn-update-progress"
+                (click)="openProgressModal(getActivity(row)!)"
+                title="Update Progress"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                </svg>
+              </button>
+
+              <!-- View Details Button -->
+              <button 
+                class="btn-view-details"
+                [routerLink]="['/projects', projectId, 'boxes', boxId, 'activities', getActivity(row)?.boxActivityId]"
+                title="View Activity Details"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
+
+          <!-- WIR Inspection Row -->
+          <tr 
+            *ngIf="isWIRRow(row)"
+            class="wir-row wir-checkpoint"
+          >
+            <td class="text-center wir-code-cell"><strong>{{ getWIR(row)?.wirCode }}</strong></td>
+            <td class="text-center team-cell wir-team-cell"><strong>QA/QC</strong></td>
+            <td class="activity-name wir-activity-cell">
+              <strong>⚠️ Clearance/WIR</strong>
+            </td>
+            <td class="assigned-to">
+              <strong class="wir-assigned">{{ getWIR(row)?.inspectedByName || 'QC Engineer' }}</strong>
+            </td>
+            <td class="text-center">
+              <!-- Empty for WIR -->
+            </td>
+            <td class="text-center" colspan="2">
+              <strong class="wir-message">
+                {{ getWIRDescription(getWIR(row)) }}
+              </strong>
+            </td>
+            <td class="text-center">
+              <span [class]="getWIRStatusClass(getWIR(row)?.status || 'Pending')">
+                {{ getWIRStatusLabel(getWIR(row)?.status || 'Pending') }}
+              </span>
+            </td>
+            <td class="text-center actions-cell">
+              <!-- View WIR Details Button -->
+              <button 
+                class="btn-view-details"
+                [routerLink]="['/projects', projectId, 'boxes', boxId, 'wir', getWIR(row)?.wirRecordId]"
+                title="View WIR Details"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+
+              <!-- QA/QC Checklist Button -->
+              <button 
+                class="btn-qa-qc"
+                [routerLink]="['/projects', projectId, 'boxes', boxId, 'wir', getWIR(row)?.wirRecordId, 'checklist']"
+                title="QA/QC Checklist"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 11l3 3L22 4"/>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+                QA/QC
+              </button>
+            </td>
+          </tr>
+        </ng-container>
       </tbody>
     </table>
   </div>
 
   <!-- Empty state -->
-  <div class="empty-state" *ngIf="!activities || activities.length === 0">
+  <div class="empty-state" *ngIf="!isLoading && tableRows.length === 0">
     <p>No activities found for this box</p>
   </div>
 </div>
+
+<!-- Progress Update Modal -->
+<app-update-progress-modal
+  *ngIf="selectedActivity"
+  [activity]="selectedActivity"
+  [isOpen]="isModalOpen"
+  (closeModal)="closeProgressModal()"
+  (progressUpdated)="onProgressUpdated($event)"
+></app-update-progress-modal>

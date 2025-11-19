@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Dubox.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251118132943_InitialMigration")]
-    partial class InitialMigration
+    [Migration("20251119114218_init")]
+    partial class init
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -129,66 +129,21 @@ namespace Dubox.Infrastructure.Migrations
                         new
                         {
                             ActivityMasterId = new Guid("10000001-0000-0000-0000-000000000001"),
-                            ActivityCode = "STAGE1-FAB",
-                            ActivityName = "Fabrication of boxes",
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Manufacturing and fabrication of precast box components",
-                            EstimatedDurationDays = 3,
-                            IsActive = true,
-                            IsWIRCheckpoint = false,
-                            OverallSequence = 1,
-                            SequenceInStage = 1,
-                            Stage = "Stage 1: Precast Production",
-                            StageNumber = 1
-                        },
-                        new
-                        {
-                            ActivityMasterId = new Guid("10000001-0000-0000-0000-000000000002"),
-                            ActivityCode = "STAGE1-DEL",
-                            ActivityName = "Delivery of elements",
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Transportation and delivery of precast elements to site",
-                            EstimatedDurationDays = 1,
-                            IsActive = true,
-                            IsWIRCheckpoint = false,
-                            OverallSequence = 2,
-                            SequenceInStage = 2,
-                            Stage = "Stage 1: Precast Production",
-                            StageNumber = 1
-                        },
-                        new
-                        {
-                            ActivityMasterId = new Guid("10000001-0000-0000-0000-000000000003"),
-                            ActivityCode = "STAGE1-QC",
-                            ActivityName = "Storage and QC",
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Storage of elements and quality control inspection",
-                            EstimatedDurationDays = 1,
-                            IsActive = true,
-                            IsWIRCheckpoint = false,
-                            OverallSequence = 3,
-                            SequenceInStage = 3,
-                            Stage = "Stage 1: Precast Production",
-                            StageNumber = 1
-                        },
-                        new
-                        {
-                            ActivityMasterId = new Guid("10000002-0000-0000-0000-000000000001"),
                             ActivityCode = "STAGE2-ASM",
                             ActivityName = "Assembly & joints",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Assembly of box components and joint connections",
-                            EstimatedDurationDays = 2,
+                            EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 4,
+                            OverallSequence = 1,
                             SequenceInStage = 1,
                             Stage = "Stage 2: Module Assembly",
                             StageNumber = 2
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000002-0000-0000-0000-000000000002"),
+                            ActivityMasterId = new Guid("10000001-0000-0000-0000-000000000002"),
                             ActivityCode = "STAGE2-POD",
                             ActivityName = "PODS installation",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -196,14 +151,14 @@ namespace Dubox.Infrastructure.Migrations
                             EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 5,
+                            OverallSequence = 2,
                             SequenceInStage = 2,
                             Stage = "Stage 2: Module Assembly",
                             StageNumber = 2
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000002-0000-0000-0000-000000000003"),
+                            ActivityMasterId = new Guid("10000001-0000-0000-0000-000000000003"),
                             ActivityCode = "STAGE2-MEP",
                             ActivityName = "MEP Cage installation",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -211,196 +166,121 @@ namespace Dubox.Infrastructure.Migrations
                             EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 6,
+                            OverallSequence = 3,
                             SequenceInStage = 3,
                             Stage = "Stage 2: Module Assembly",
                             StageNumber = 2
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000002-0000-0000-0000-000000000004"),
-                            ActivityCode = "STAGE2-ELC",
-                            ActivityName = "Electrical Containment",
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Installation of electrical conduits and containment systems",
-                            EstimatedDurationDays = 1,
-                            IsActive = true,
-                            IsWIRCheckpoint = false,
-                            OverallSequence = 7,
-                            SequenceInStage = 4,
-                            Stage = "Stage 2: Module Assembly",
-                            StageNumber = 2
-                        },
-                        new
-                        {
-                            ActivityMasterId = new Guid("10000002-0000-0000-0000-000000000005"),
+                            ActivityMasterId = new Guid("10000001-0000-0000-0000-000000000004"),
                             ActivityCode = "STAGE2-CLO",
                             ActivityName = "Box Closure",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Final closure and sealing of box module",
-                            EstimatedDurationDays = 1,
-                            IsActive = true,
-                            IsWIRCheckpoint = false,
-                            OverallSequence = 8,
-                            SequenceInStage = 5,
-                            Stage = "Stage 2: Module Assembly",
-                            StageNumber = 2
-                        },
-                        new
-                        {
-                            ActivityMasterId = new Guid("10000002-0000-0000-0000-000000000006"),
-                            ActivityCode = "STAGE2-WIR1",
-                            ActivityName = "WIR-1",
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Work Inspection Request - Stage 2 Completion",
+                            Description = "Final closure and sealing of box module - triggers WIR-1",
                             EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = true,
-                            OverallSequence = 9,
-                            SequenceInStage = 6,
+                            OverallSequence = 4,
+                            SequenceInStage = 4,
                             Stage = "Stage 2: Module Assembly",
                             StageNumber = 2,
                             WIRCode = "WIR-1"
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000003-0000-0000-0000-000000000001"),
-                            ActivityCode = "STAGE3-FCU",
-                            ActivityName = "Fan Coil Units",
+                            ActivityMasterId = new Guid("10000002-0000-0000-0000-000000000001"),
+                            ActivityCode = "STAGE3-DCT",
+                            ActivityName = "Ducts & Insulation",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Installation of fan coil units for HVAC",
-                            EstimatedDurationDays = 1,
+                            Description = "Installation and insulation of HVAC ductwork",
+                            EstimatedDurationDays = 2,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 10,
+                            OverallSequence = 5,
                             SequenceInStage = 1,
                             Stage = "Stage 3: MEP Phase 1",
                             StageNumber = 3
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000003-0000-0000-0000-000000000002"),
-                            ActivityCode = "STAGE3-DCT",
-                            ActivityName = "Ducts & Insulation",
+                            ActivityMasterId = new Guid("10000002-0000-0000-0000-000000000002"),
+                            ActivityCode = "STAGE3-DRN",
+                            ActivityName = "Drainage piping",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Installation and insulation of HVAC ductwork",
-                            EstimatedDurationDays = 1,
+                            Description = "Installation of drainage and wastewater piping",
+                            EstimatedDurationDays = 2,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 11,
+                            OverallSequence = 6,
                             SequenceInStage = 2,
                             Stage = "Stage 3: MEP Phase 1",
                             StageNumber = 3
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000003-0000-0000-0000-000000000003"),
-                            ActivityCode = "STAGE3-DRN",
-                            ActivityName = "Drainage piping",
+                            ActivityMasterId = new Guid("10000002-0000-0000-0000-000000000003"),
+                            ActivityCode = "STAGE3-WTR",
+                            ActivityName = "Water Piping",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Installation of drainage and wastewater piping",
-                            EstimatedDurationDays = 1,
+                            Description = "Installation of domestic water supply piping",
+                            EstimatedDurationDays = 2,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 12,
+                            OverallSequence = 7,
                             SequenceInStage = 3,
                             Stage = "Stage 3: MEP Phase 1",
                             StageNumber = 3
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000003-0000-0000-0000-000000000004"),
-                            ActivityCode = "STAGE3-WTR",
-                            ActivityName = "Water Piping",
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Installation of domestic water supply piping",
-                            EstimatedDurationDays = 1,
-                            IsActive = true,
-                            IsWIRCheckpoint = false,
-                            OverallSequence = 13,
-                            SequenceInStage = 4,
-                            Stage = "Stage 3: MEP Phase 1",
-                            StageNumber = 3
-                        },
-                        new
-                        {
-                            ActivityMasterId = new Guid("10000003-0000-0000-0000-000000000005"),
+                            ActivityMasterId = new Guid("10000002-0000-0000-0000-000000000004"),
                             ActivityCode = "STAGE3-FF",
                             ActivityName = "Fire Fighting Piping",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Installation of fire protection and sprinkler piping",
-                            EstimatedDurationDays = 1,
-                            IsActive = true,
-                            IsWIRCheckpoint = false,
-                            OverallSequence = 14,
-                            SequenceInStage = 5,
-                            Stage = "Stage 3: MEP Phase 1",
-                            StageNumber = 3
-                        },
-                        new
-                        {
-                            ActivityMasterId = new Guid("10000003-0000-0000-0000-000000000006"),
-                            ActivityCode = "STAGE3-WIR2",
-                            ActivityName = "WIR-2",
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Work Inspection Request - Stage 3 Completion",
-                            EstimatedDurationDays = 1,
+                            Description = "Installation of fire protection and sprinkler piping - triggers WIR-2",
+                            EstimatedDurationDays = 2,
                             IsActive = true,
                             IsWIRCheckpoint = true,
-                            OverallSequence = 15,
-                            SequenceInStage = 6,
+                            OverallSequence = 8,
+                            SequenceInStage = 4,
                             Stage = "Stage 3: MEP Phase 1",
                             StageNumber = 3,
                             WIRCode = "WIR-2"
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000004-0000-0000-0000-000000000001"),
+                            ActivityMasterId = new Guid("10000003-0000-0000-0000-000000000001"),
                             ActivityCode = "STAGE4-ELCC",
                             ActivityName = "Electrical Containment",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Final electrical conduit and containment installation",
-                            EstimatedDurationDays = 1,
+                            EstimatedDurationDays = 2,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 16,
+                            OverallSequence = 9,
                             SequenceInStage = 1,
                             Stage = "Stage 4: Electrical & Framing",
                             StageNumber = 4
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000004-0000-0000-0000-000000000002"),
+                            ActivityMasterId = new Guid("10000003-0000-0000-0000-000000000002"),
                             ActivityCode = "STAGE4-WIRE",
                             ActivityName = "Electrical Wiring",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Pulling and termination of electrical wiring",
-                            EstimatedDurationDays = 1,
+                            EstimatedDurationDays = 2,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 17,
+                            OverallSequence = 10,
                             SequenceInStage = 2,
                             Stage = "Stage 4: Electrical & Framing",
                             StageNumber = 4
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000004-0000-0000-0000-000000000003"),
-                            ActivityCode = "STAGE4-DB",
-                            ActivityName = "DB and ONU Panel",
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Installation of distribution board and ONU network panels",
-                            EstimatedDurationDays = 1,
-                            IsActive = true,
-                            IsWIRCheckpoint = false,
-                            OverallSequence = 18,
-                            SequenceInStage = 3,
-                            Stage = "Stage 4: Electrical & Framing",
-                            StageNumber = 4
-                        },
-                        new
-                        {
-                            ActivityMasterId = new Guid("10000004-0000-0000-0000-000000000004"),
+                            ActivityMasterId = new Guid("10000003-0000-0000-0000-000000000003"),
                             ActivityCode = "STAGE4-DRYWALL",
                             ActivityName = "Dry Wall Framing",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -408,30 +288,30 @@ namespace Dubox.Infrastructure.Migrations
                             EstimatedDurationDays = 2,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 19,
-                            SequenceInStage = 4,
+                            OverallSequence = 11,
+                            SequenceInStage = 3,
                             Stage = "Stage 4: Electrical & Framing",
                             StageNumber = 4
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000004-0000-0000-0000-000000000005"),
-                            ActivityCode = "STAGE4-WIR3",
-                            ActivityName = "WIR-3",
+                            ActivityMasterId = new Guid("10000003-0000-0000-0000-000000000004"),
+                            ActivityCode = "STAGE4-DB",
+                            ActivityName = "DB and ONU Panel",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Work Inspection Request - Stage 4 Completion",
-                            EstimatedDurationDays = 1,
+                            Description = "Installation of distribution board and ONU network panels - triggers WIR-3",
+                            EstimatedDurationDays = 2,
                             IsActive = true,
                             IsWIRCheckpoint = true,
-                            OverallSequence = 20,
-                            SequenceInStage = 5,
+                            OverallSequence = 12,
+                            SequenceInStage = 4,
                             Stage = "Stage 4: Electrical & Framing",
                             StageNumber = 4,
                             WIRCode = "WIR-3"
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000001"),
+                            ActivityMasterId = new Guid("10000004-0000-0000-0000-000000000001"),
                             ActivityCode = "STAGE5-CEILING",
                             ActivityName = "False Ceiling",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -439,14 +319,14 @@ namespace Dubox.Infrastructure.Migrations
                             EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 21,
+                            OverallSequence = 13,
                             SequenceInStage = 1,
                             Stage = "Stage 5: Interior Finishing",
                             StageNumber = 5
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000002"),
+                            ActivityMasterId = new Guid("10000004-0000-0000-0000-000000000002"),
                             ActivityCode = "STAGE5-TILE",
                             ActivityName = "Tile Fixing",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -454,45 +334,45 @@ namespace Dubox.Infrastructure.Migrations
                             EstimatedDurationDays = 2,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 22,
+                            OverallSequence = 14,
                             SequenceInStage = 2,
                             Stage = "Stage 5: Interior Finishing",
                             StageNumber = 5
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000003"),
+                            ActivityMasterId = new Guid("10000004-0000-0000-0000-000000000003"),
                             ActivityCode = "STAGE5-PAINT",
-                            ActivityName = "Painting",
+                            ActivityName = "Painting (Internal & External)",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Interior painting and finishing",
+                            Description = "Interior and exterior painting and finishing",
                             EstimatedDurationDays = 2,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 23,
+                            OverallSequence = 15,
                             SequenceInStage = 3,
                             Stage = "Stage 5: Interior Finishing",
                             StageNumber = 5
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000004"),
+                            ActivityMasterId = new Guid("10000004-0000-0000-0000-000000000004"),
                             ActivityCode = "STAGE5-KITCHEN",
-                            ActivityName = "Kitchenette & Counters",
+                            ActivityName = "Kitchenette and Counters",
                             ApplicableBoxTypes = "Kitchen,Living Room",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of kitchen units and countertops",
                             EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 24,
+                            OverallSequence = 16,
                             SequenceInStage = 4,
                             Stage = "Stage 5: Interior Finishing",
                             StageNumber = 5
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000005"),
+                            ActivityMasterId = new Guid("10000004-0000-0000-0000-000000000005"),
                             ActivityCode = "STAGE5-DOORS",
                             ActivityName = "Doors",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -500,283 +380,178 @@ namespace Dubox.Infrastructure.Migrations
                             EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 25,
+                            OverallSequence = 17,
                             SequenceInStage = 5,
                             Stage = "Stage 5: Interior Finishing",
                             StageNumber = 5
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000006"),
+                            ActivityMasterId = new Guid("10000004-0000-0000-0000-000000000006"),
                             ActivityCode = "STAGE5-WINDOWS",
                             ActivityName = "Windows",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Installation of windows and glazing",
-                            EstimatedDurationDays = 1,
-                            IsActive = true,
-                            IsWIRCheckpoint = false,
-                            OverallSequence = 26,
-                            SequenceInStage = 6,
-                            Stage = "Stage 5: Interior Finishing",
-                            StageNumber = 5
-                        },
-                        new
-                        {
-                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000007"),
-                            ActivityCode = "STAGE5-WIR4",
-                            ActivityName = "WIR-4",
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Work Inspection Request - Stage 5 Completion",
+                            Description = "Installation of windows and glazing - triggers WIR-4",
                             EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = true,
-                            OverallSequence = 27,
-                            SequenceInStage = 7,
+                            OverallSequence = 18,
+                            SequenceInStage = 6,
                             Stage = "Stage 5: Interior Finishing",
                             StageNumber = 5,
                             WIRCode = "WIR-4"
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000006-0000-0000-0000-000000000001"),
+                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000001"),
                             ActivityCode = "STAGE6-SWITCH",
                             ActivityName = "Switches & Sockets",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of electrical switches and power sockets",
-                            EstimatedDurationDays = 1,
+                            EstimatedDurationDays = 2,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 28,
+                            OverallSequence = 19,
                             SequenceInStage = 1,
                             Stage = "Stage 6: MEP Phase 2",
                             StageNumber = 6
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000006-0000-0000-0000-000000000002"),
+                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000002"),
                             ActivityCode = "STAGE6-LIGHTS",
                             ActivityName = "Light Fittings",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of light fixtures and fittings",
-                            EstimatedDurationDays = 1,
+                            EstimatedDurationDays = 2,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 29,
+                            OverallSequence = 20,
                             SequenceInStage = 2,
                             Stage = "Stage 6: MEP Phase 2",
                             StageNumber = 6
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000006-0000-0000-0000-000000000003"),
+                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000003"),
                             ActivityCode = "STAGE6-COPPER",
                             ActivityName = "Copper Piping",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of copper piping for specialized systems",
-                            EstimatedDurationDays = 1,
+                            EstimatedDurationDays = 2,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 30,
+                            OverallSequence = 21,
                             SequenceInStage = 3,
                             Stage = "Stage 6: MEP Phase 2",
                             StageNumber = 6
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000006-0000-0000-0000-000000000004"),
+                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000004"),
                             ActivityCode = "STAGE6-SANITARY",
-                            ActivityName = "Sanitary Fittings",
+                            ActivityName = "Sanitary Fittings - Kitchen",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Installation of bathroom and sanitary fixtures",
-                            EstimatedDurationDays = 1,
+                            Description = "Installation of kitchen and sanitary fixtures",
+                            EstimatedDurationDays = 2,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 31,
+                            OverallSequence = 22,
                             SequenceInStage = 4,
                             Stage = "Stage 6: MEP Phase 2",
                             StageNumber = 6
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000006-0000-0000-0000-000000000005"),
+                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000005"),
                             ActivityCode = "STAGE6-THERMO",
                             ActivityName = "Thermostats",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of HVAC thermostats and controls",
-                            EstimatedDurationDays = 1,
+                            EstimatedDurationDays = 2,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 32,
+                            OverallSequence = 23,
                             SequenceInStage = 5,
                             Stage = "Stage 6: MEP Phase 2",
                             StageNumber = 6
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000006-0000-0000-0000-000000000006"),
+                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000006"),
                             ActivityCode = "STAGE6-AIROUT",
                             ActivityName = "Air Outlet",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of HVAC air outlets and diffusers",
-                            EstimatedDurationDays = 1,
+                            EstimatedDurationDays = 2,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 33,
+                            OverallSequence = 24,
                             SequenceInStage = 6,
                             Stage = "Stage 6: MEP Phase 2",
                             StageNumber = 6
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000006-0000-0000-0000-000000000007"),
+                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000007"),
                             ActivityCode = "STAGE6-SPRINKLER",
                             ActivityName = "Sprinkler",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of fire sprinkler heads",
-                            EstimatedDurationDays = 1,
+                            EstimatedDurationDays = 2,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 34,
+                            OverallSequence = 25,
                             SequenceInStage = 7,
                             Stage = "Stage 6: MEP Phase 2",
                             StageNumber = 6
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000006-0000-0000-0000-000000000008"),
+                            ActivityMasterId = new Guid("10000005-0000-0000-0000-000000000008"),
                             ActivityCode = "STAGE6-SMOKE",
                             ActivityName = "Smoke Detector",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Installation of smoke detectors and fire alarm devices",
-                            EstimatedDurationDays = 1,
-                            IsActive = true,
-                            IsWIRCheckpoint = false,
-                            OverallSequence = 35,
-                            SequenceInStage = 8,
-                            Stage = "Stage 6: MEP Phase 2",
-                            StageNumber = 6
-                        },
-                        new
-                        {
-                            ActivityMasterId = new Guid("10000006-0000-0000-0000-000000000009"),
-                            ActivityCode = "STAGE6-WIR5",
-                            ActivityName = "WIR-5",
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Work Inspection Request - Final MEP Inspection",
-                            EstimatedDurationDays = 1,
+                            Description = "Installation of smoke detectors and fire alarm devices - triggers WIR-5",
+                            EstimatedDurationDays = 2,
                             IsActive = true,
                             IsWIRCheckpoint = true,
-                            OverallSequence = 36,
-                            SequenceInStage = 9,
+                            OverallSequence = 26,
+                            SequenceInStage = 8,
                             Stage = "Stage 6: MEP Phase 2",
                             StageNumber = 6,
                             WIRCode = "WIR-5"
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000007-0000-0000-0000-000000000001"),
+                            ActivityMasterId = new Guid("10000006-0000-0000-0000-000000000001"),
                             ActivityCode = "STAGE7-IRON",
-                            ActivityName = "Ironmongery Installation",
+                            ActivityName = "Iron Mongeries",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of door handles, locks, hinges and other hardware",
                             EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = false,
-                            OverallSequence = 37,
+                            OverallSequence = 27,
                             SequenceInStage = 1,
                             Stage = "Stage 7: Final Inspection & Dispatch",
                             StageNumber = 7
                         },
                         new
                         {
-                            ActivityMasterId = new Guid("10000007-0000-0000-0000-000000000002"),
-                            ActivityCode = "STAGE7-INSP",
-                            ActivityName = "Final Inspection",
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Comprehensive final quality inspection of completed module",
-                            EstimatedDurationDays = 1,
-                            IsActive = true,
-                            IsWIRCheckpoint = false,
-                            OverallSequence = 38,
-                            SequenceInStage = 2,
-                            Stage = "Stage 7: Final Inspection & Dispatch",
-                            StageNumber = 7
-                        },
-                        new
-                        {
-                            ActivityMasterId = new Guid("10000007-0000-0000-0000-000000000003"),
+                            ActivityMasterId = new Guid("10000006-0000-0000-0000-000000000002"),
                             ActivityCode = "STAGE7-WRAP",
-                            ActivityName = "Module Wrapping",
+                            ActivityName = "Inspection & Wrapping",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Protective wrapping of module for delivery to site",
-                            EstimatedDurationDays = 1,
-                            IsActive = true,
-                            IsWIRCheckpoint = false,
-                            OverallSequence = 39,
-                            SequenceInStage = 3,
-                            Stage = "Stage 7: Final Inspection & Dispatch",
-                            StageNumber = 7
-                        },
-                        new
-                        {
-                            ActivityMasterId = new Guid("10000007-0000-0000-0000-000000000004"),
-                            ActivityCode = "STAGE7-WIR6",
-                            ActivityName = "WIR-6",
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Work Inspection Request - Final QC Clearance for Dispatch",
+                            Description = "Comprehensive final quality inspection and protective wrapping - triggers WIR-6",
                             EstimatedDurationDays = 1,
                             IsActive = true,
                             IsWIRCheckpoint = true,
-                            OverallSequence = 40,
-                            SequenceInStage = 4,
+                            OverallSequence = 28,
+                            SequenceInStage = 2,
                             Stage = "Stage 7: Final Inspection & Dispatch",
                             StageNumber = 7,
                             WIRCode = "WIR-6"
-                        },
-                        new
-                        {
-                            ActivityMasterId = new Guid("10000008-0000-0000-0000-000000000001"),
-                            ActivityCode = "STAGE8-RFID",
-                            ActivityName = "RFID Tracking to Site",
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "RFID tag activation and tracking during transport to site",
-                            EstimatedDurationDays = 1,
-                            IsActive = true,
-                            IsWIRCheckpoint = false,
-                            OverallSequence = 41,
-                            SequenceInStage = 1,
-                            Stage = "Stage 8: Site Installation",
-                            StageNumber = 8
-                        },
-                        new
-                        {
-                            ActivityMasterId = new Guid("10000008-0000-0000-0000-000000000002"),
-                            ActivityCode = "STAGE8-INST",
-                            ActivityName = "Installation on Project",
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Physical installation and positioning of module at project site",
-                            EstimatedDurationDays = 1,
-                            IsActive = true,
-                            IsWIRCheckpoint = false,
-                            OverallSequence = 42,
-                            SequenceInStage = 2,
-                            Stage = "Stage 8: Site Installation",
-                            StageNumber = 8
-                        },
-                        new
-                        {
-                            ActivityMasterId = new Guid("10000008-0000-0000-0000-000000000003"),
-                            ActivityCode = "STAGE8-COMP",
-                            ActivityName = "Box Completion",
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Final verification and completion signoff at site",
-                            EstimatedDurationDays = 1,
-                            IsActive = true,
-                            IsWIRCheckpoint = false,
-                            OverallSequence = 43,
-                            SequenceInStage = 3,
-                            Stage = "Stage 8: Site Installation",
-                            StageNumber = 8
                         });
                 });
 
@@ -888,8 +663,8 @@ namespace Dubox.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");

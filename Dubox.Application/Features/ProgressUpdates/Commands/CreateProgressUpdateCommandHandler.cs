@@ -66,6 +66,12 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         progressUpdate.UpdatedBy = currentUserId;
         progressUpdate.UpdateDate = DateTime.UtcNow;
         progressUpdate.CreatedDate = DateTime.UtcNow;
+        
+        // Truncate DeviceInfo to max 100 characters to prevent database truncation error
+        if (!string.IsNullOrEmpty(progressUpdate.DeviceInfo) && progressUpdate.DeviceInfo.Length > 100)
+        {
+            progressUpdate.DeviceInfo = progressUpdate.DeviceInfo.Substring(0, 100);
+        }
 
         await _unitOfWork.Repository<ProgressUpdate>().AddAsync(progressUpdate, cancellationToken);
 

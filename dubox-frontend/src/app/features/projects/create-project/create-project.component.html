@@ -127,7 +127,7 @@
             </div>
 
             <div class="form-group">
-              <label for="endDate" class="form-label">End Date</label>
+              <label for="endDate" class="form-label required">End Date</label>
               <input
                 id="endDate"
                 type="date"
@@ -139,6 +139,21 @@
                 {{ getFieldError('endDate') }}
               </div>
             </div>
+          </div>
+
+          <!-- Duration Display -->
+          <div class="duration-info" *ngIf="calculatedDuration !== null">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            <span class="duration-text">
+              <strong>Project Duration:</strong> 
+              <span [class.duration-warning]="calculatedDuration <= 0">
+                {{ calculatedDuration > 0 ? calculatedDuration : 'Invalid' }} 
+                {{ calculatedDuration === 1 ? 'day' : 'days' }}
+              </span>
+            </span>
           </div>
 
         </div>

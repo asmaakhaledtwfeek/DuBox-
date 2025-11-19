@@ -18,6 +18,7 @@ export class CreateProjectComponent implements OnInit {
   loading = false;
   error = '';
   successMessage = '';
+  calculatedDuration: number | null = null;
 
   constructor(
     private fb: FormBuilder,
@@ -27,6 +28,7 @@ export class CreateProjectComponent implements OnInit {
 
   ngOnInit(): void {
     this.initForm();
+    this.setupDateChangeListener();
   }
 
   private initForm(): void {
@@ -36,13 +38,40 @@ export class CreateProjectComponent implements OnInit {
       location: ['', Validators.maxLength(200)],
       description: ['', Validators.maxLength(500)],
       startDate: ['', Validators.required],
-      endDate: ['']
+      endDate: ['', Validators.required] // Make end date required
     });
+  }
+
+  private setupDateChangeListener(): void {
+    // Listen for date changes to calculate duration
+    this.projectForm.get('startDate')?.valueChanges.subscribe(() => this.updateCalculatedDuration());
+    this.projectForm.get('endDate')?.valueChanges.subscribe(() => this.updateCalculatedDuration());
+  }
+
+  private updateCalculatedDuration(): void {
+    const startDate = this.projectForm.get('startDate')?.value;
+    const endDate = this.projectForm.get('endDate')?.value;
+    
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const diffTime = end.getTime() - start.getTime();
+      const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      this.calculatedDuration = days > 0 ? days : null;
+    } else {
+      this.calculatedDuration = null;
+    }
   }
 
   onSubmit(): void {
     if (this.projectForm.invalid) {
       this.markFormGroupTouched(this.projectForm);
+      return;
+    }
+
+    // Validate duration
+    if (!this.calculatedDuration || this.calculatedDuration <= 0) {
+      this.error = 'End date must be after start date';
       return;
     }
 
@@ -56,11 +85,11 @@ export class CreateProjectComponent implements OnInit {
     const projectData: any = {
       projectCode: formValue.code,
       projectName: formValue.name,
+      clientName: undefined,
       location: formValue.location || undefined,
-      description: formValue.description || undefined,
-      startDate: formValue.startDate ? new Date(formValue.startDate).toISOString() : undefined,
-      plannedEndDate: formValue.endDate ? new Date(formValue.endDate).toISOString() : undefined,
-      clientName: undefined
+      duration: this.calculatedDuration, // ✅ Duration in days (required)
+      plannedStartDate: formValue.startDate ? new Date(formValue.startDate).toISOString() : undefined,
+      description: formValue.description || undefined
     };
 
     console.log('🚀 Submitting project data:', projectData);

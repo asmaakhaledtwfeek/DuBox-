@@ -57,23 +57,35 @@
 
       // WIR Checkpoint rows - Yellow/Orange background
       &.wir-checkpoint {
-        background-color: #FFE082; // Light yellow/orange
-        font-weight: 600;
+        background: #FFEB3B !important; // Bright yellow to match Process Flow Table
+        font-weight: 700;
+        border-left: 6px solid #FFA000 !important; // Thicker orange left border
+        box-shadow: 0 2px 6px rgba(255, 152, 0, 0.3); // More prominent shadow
+
+        &:hover {
+          background: #FFD54F !important; // Darker yellow on hover
+          box-shadow: 0 4px 10px rgba(255, 152, 0, 0.4);
+        }
 
         td {
-          border-color: #999;
-          font-weight: 600;
+          background-color: transparent !important;
+          border-color: #FFA726 !important;
+          font-weight: 700;
+          color: #000 !important; // Ensure text is dark for contrast
         }
 
         .wir-assigned {
-          color: #d32f2f; // Red color for QC Engineer
-          font-weight: 700;
+          color: #1565C0 !important; // Blue color for QC Engineer
+          font-weight: 800;
+          font-size: 14px;
         }
 
         .wir-message {
-          color: #c62828; // Darker red for WIR messages
-          font-weight: 600;
-          font-size: 13px;
+          color: #E65100 !important; // Dark orange for WIR messages
+          font-weight: 800;
+          font-size: 14px;
+          text-transform: uppercase;
+          letter-spacing: 0.8px;
         }
       }
 
@@ -121,6 +133,36 @@
   }
 }
 
+.btn-update-progress {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  margin-right: 6px;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
 .btn-view-details {
   display: inline-flex;
   align-items: center;
@@ -155,31 +197,63 @@
   align-items: center;
   justify-content: center;
   gap: 4px;
-  padding: 6px 12px;
-  background: #4caf50;
+  padding: 7px 14px;
+  background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   margin-left: 6px;
   white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
 
   svg {
-    width: 14px;
-    height: 14px;
+    width: 15px;
+    height: 15px;
   }
 
   &:hover {
-    background: #388e3c;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+    background: linear-gradient(135deg, #388e3c 0%, #4caf50 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
   }
 
   &:active {
     transform: translateY(0);
+  }
+}
+
+.loading-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+  font-size: 16px;
+
+  p {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+
+    &::before {
+      content: '';
+      width: 20px;
+      height: 20px;
+      border: 3px solid #e0e0e0;
+      border-top-color: #007bff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 }
 
@@ -188,6 +262,83 @@
   padding: 60px 20px;
   color: var(--text-secondary);
   font-size: 16px;
+}
+
+.progress-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background: #e3f2fd;
+  color: #1976d2;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+// WIR-specific cell styling
+.wir-code-cell {
+  font-size: 17px !important;
+  font-weight: 900 !important;
+  color: #D84315 !important; // Deep orange-red
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  background-color: #FFF9C4 !important; // Light yellow background for code cell
+  border-radius: 4px;
+}
+
+.wir-team-cell {
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  color: #0D47A1 !important; // Deep blue
+  background-color: #E3F2FD !important; // Light blue background
+}
+
+.wir-activity-cell {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #BF360C !important; // Dark orange
+  background-color: #FFF3E0 !important; // Light orange background
+}
+
+// WIR Status Badges
+.wir-status-pending {
+  display: inline-block;
+  padding: 8px 16px;
+  background: #FFF59D !important; // Brighter yellow
+  color: #F57F17 !important; // Dark yellow
+  border: 3px solid #FBC02D !important; // Bright yellow border
+  border-radius: 20px;
+  font-weight: 800;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  box-shadow: 0 3px 6px rgba(251, 192, 45, 0.4);
+}
+
+.wir-status-approved {
+  display: inline-block;
+  padding: 8px 16px;
+  background: #A5D6A7 !important; // Brighter green
+  color: #1B5E20 !important; // Dark green
+  border: 3px solid #4CAF50 !important; // Bright green border
+  border-radius: 20px;
+  font-weight: 800;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  box-shadow: 0 3px 6px rgba(76, 175, 80, 0.4);
+}
+
+.wir-status-rejected {
+  display: inline-block;
+  padding: 8px 16px;
+  background: #EF9A9A !important; // Brighter red
+  color: #B71C1C !important; // Dark red
+  border: 3px solid #F44336 !important; // Bright red border
+  border-radius: 20px;
+  font-weight: 800;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  box-shadow: 0 3px 6px rgba(244, 67, 54, 0.4);
 }
 
 // Status badges

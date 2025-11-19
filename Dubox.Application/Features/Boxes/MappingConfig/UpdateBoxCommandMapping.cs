@@ -1,6 +1,5 @@
 ﻿using Dubox.Application.Features.Boxes.Commands;
 using Dubox.Domain.Entities;
-using Dubox.Domain.Enums;
 using Mapster;
 
 namespace Dubox.Application.Features.Boxes.MappingConfig
@@ -16,11 +15,9 @@ namespace Dubox.Application.Features.Boxes.MappingConfig
              .Map(dest => dest.Floor, src => src.Floor)
              .Map(dest => dest.Building, src => src.Building)
              .Map(dest => dest.Zone, src => src.Zone)
-             .Map(dest => dest.Status, src => (BoxStatusEnum)src.Status)
              .Map(dest => dest.Length, src => src.Length)
              .Map(dest => dest.Width, src => src.Width)
              .Map(dest => dest.Height, src => src.Height)
-             .Map(dest => dest.PlannedEndDate, src => src.PlannedEndDate)
              .Map(dest => dest.Notes, src => src.Notes)
              .Map(dest => dest.ModifiedDate, _ => DateTime.UtcNow)
 

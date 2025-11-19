@@ -19,9 +19,9 @@ public class ProjectsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAllProjects(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAllProjects([FromQuery] GetAllProjectsQuery query, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetAllProjectsQuery(), cancellationToken);
+        var result = await _mediator.Send(query, cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 

@@ -1,60 +1,92 @@
-﻿using Dubox.Domain.Enums;
+﻿using Dubox.Domain.Abstraction;
+using Dubox.Domain.Entities;
 using FluentValidation;
 
 namespace Dubox.Application.Features.Boxes.Commands
 {
+
     public class UpdateBoxCommandValidator : AbstractValidator<UpdateBoxCommand>
     {
-        public UpdateBoxCommandValidator()
+        private readonly IUnitOfWork _unitOfWork;
+
+        public UpdateBoxCommandValidator(IUnitOfWork unitOfWork)
         {
+            _unitOfWork = unitOfWork;
+
             RuleFor(x => x.BoxId)
-                .NotEmpty().WithMessage("Box ID is required for updating the box.");
+                .NotEmpty().WithMessage("Box ID is required for updating.");
 
             RuleFor(x => x.BoxTag)
-                .MaximumLength(100).WithMessage("Box tag cannot exceed 100 characters")
-                .Must(tag => tag?.ToLower() != "string").WithMessage("Box tag cannot be the default value 'string'.")
+                .MaximumLength(50).WithMessage("Box tag cannot exceed 50 characters.")
+                .Must(t => t?.ToLower() != "string").WithMessage("Box Tag cannot be the default value 'string'.")
                 .When(x => !string.IsNullOrEmpty(x.BoxTag));
 
-            RuleFor(x => x.BoxName)
-                .MaximumLength(200).WithMessage("Box name cannot exceed 200 characters")
-                .Must(name => name?.ToLower() != "string").WithMessage("Box name cannot be the default value 'string'.")
-                .When(x => !string.IsNullOrEmpty(x.BoxName));
+            RuleFor(x => x)
+                .CustomAsync(PreCheckAndRunScheduleValidations)
+                .When(x => x.PlannedStartDate.HasValue || x.Duration.HasValue);
+        }
 
-            RuleFor(x => x.BoxType)
-                .MaximumLength(100).WithMessage("Box type cannot exceed 100 characters")
-                .Must(type => type?.ToLower() != "string").WithMessage("Box type cannot be the default value 'string'.")
-                .When(x => !string.IsNullOrEmpty(x.BoxType));
+        private async Task PreCheckAndRunScheduleValidations(UpdateBoxCommand command, ValidationContext<UpdateBoxCommand> context, CancellationToken cancellationToken)
+        {
+            var box = await _unitOfWork.Repository<Box>().GetByIdAsync(command.BoxId, cancellationToken);
 
-            RuleFor(x => x.Floor)
-                .MaximumLength(50).WithMessage("Floor cannot exceed 50 characters")
-                .Must(floor => floor?.ToLower() != "string").WithMessage("Floor cannot be the default value 'string'.")
-                .When(x => !string.IsNullOrEmpty(x.Floor));
+            if (box == null)
+            {
+                context.AddFailure("BoxId", "The specified box was not found.");
+                return;
+            }
 
-            RuleFor(x => x.Building)
-                .MaximumLength(100).WithMessage("Building cannot exceed 100 characters")
-                .Must(b => b?.ToLower() != "string").WithMessage("Building cannot be the default value 'string'.")
-                .When(x => !string.IsNullOrEmpty(x.Building));
 
-            RuleFor(x => x.Zone)
-                .MaximumLength(100).WithMessage("Zone cannot exceed 100 characters")
-                .Must(z => z?.ToLower() != "string").WithMessage("Zone cannot be the default value 'string'.")
-                .When(x => !string.IsNullOrEmpty(x.Zone));
+            if (!CannotUpdatePlannedStartDateIfActualExists(command, box))
+            {
+                context.AddFailure("PlannedStartDate", "Cannot modify the planned start date because the box has an actual start date and work has commenced.");
+                return;
+            }
 
-            RuleFor(x => x.Length)
-                .GreaterThan(0).WithMessage("Length must be greater than 0").When(x => x.Length.HasValue);
-            RuleFor(x => x.Width)
-                .GreaterThan(0).WithMessage("Width must be greater than 0").When(x => x.Width.HasValue);
-            RuleFor(x => x.Height)
-                .GreaterThan(0).WithMessage("Height must be greater than 0").When(x => x.Height.HasValue);
+            await IsScheduleValidAsync(command, box, context, cancellationToken);
 
-            RuleFor(x => x.Status)
-                .Must(status => status.HasValue && Enum.IsDefined(typeof(BoxStatusEnum), status.Value))
-                .WithMessage("Invalid status value.")
-                .When(x => x.Status.HasValue);
+        }
 
-            RuleFor(x => x.PlannedEndDate)
-                .LessThanOrEqualTo(DateTime.Now.AddYears(1)).WithMessage("Planned end date cannot be more than 1 year in the future")
-                .When(x => x.PlannedEndDate.HasValue);
+        private bool CannotUpdatePlannedStartDateIfActualExists(UpdateBoxCommand command, Box box)
+        {
+            if (box.ActualStartDate.HasValue && command.PlannedStartDate.HasValue)
+                return false;
+            return true;
+        }
+
+        private async Task IsScheduleValidAsync(UpdateBoxCommand command, Box box, ValidationContext<UpdateBoxCommand> context, CancellationToken cancellationToken)
+        {
+            var newStartDate = command.PlannedStartDate ?? box.PlannedStartDate;
+            var newDuration = command.Duration ?? box.Duration;
+
+            if (!newStartDate.HasValue || !newDuration.HasValue || newDuration.Value <= 0)
+                return;
+
+            var newPlannedEndDate = newStartDate.Value.AddDays(newDuration.Value);
+
+            var project = await _unitOfWork.Repository<Project>().GetByIdAsync(box.ProjectId, cancellationToken);
+
+            if (project == null || !project.PlannedStartDate.HasValue || !project.PlannedEndDate.HasValue)
+                return;
+
+            if (newStartDate.Value < project.PlannedStartDate.Value || newPlannedEndDate > project.PlannedEndDate.Value)
+                context.AddFailure("PlannedStartDate", $"Box schedule must fall within the project's planned dates ({project.PlannedStartDate.Value:d} to {project.PlannedEndDate.Value:d}).");
+
+            var activities = await _unitOfWork.Repository<BoxActivity>().FindAsync(
+                a => a.BoxId == command.BoxId && a.PlannedStartDate.HasValue && a.PlannedEndDate.HasValue,
+                cancellationToken
+            );
+
+            if (activities.Any())
+            {
+                var minActivityStartDate = activities.Min(a => a.PlannedStartDate.Value);
+                var maxActivityEndDate = activities.Max(a => a.PlannedEndDate.Value);
+
+                if (minActivityStartDate < newStartDate.Value || maxActivityEndDate > newPlannedEndDate)
+                    context.AddFailure("Duration", "The new box schedule conflicts with the planned dates of its activities. Adjust activities first.");
+
+            }
+
         }
     }
 }

@@ -12,14 +12,19 @@ public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand,
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
-    public CreateProjectCommandHandler(IUnitOfWork unitOfWork, IMapper mapper)
+    private readonly ICurrentUserService _currentUserService;
+
+    public CreateProjectCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserService currentUserService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
+        _currentUserService = currentUserService;
     }
 
     public async Task<Result<ProjectDto>> Handle(CreateProjectCommand request, CancellationToken cancellationToken)
     {
+        var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
+
         var projectExists = await _unitOfWork.Repository<Project>()
             .IsExistAsync(p => p.ProjectCode == request.ProjectCode, cancellationToken);
 
@@ -28,11 +33,31 @@ public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand,
 
         var project = _mapper.Map<Project>(request);
 
+        project.PlannedEndDate = request.PlannedStartDate.AddDays(request.Duration);
+
+        project.ActualStartDate = null;
+        project.ActualEndDate = null;
 
         await _unitOfWork.Repository<Project>().AddAsync(project, cancellationToken);
+
+        var projectLog = new AuditLog
+        {
+            TableName = nameof(Project),
+            Action = "Creation",
+            OldValues = "N/A",
+            NewValues = $"Code: {request.ProjectCode}, Name: {request.ProjectName}, Duration: {request.Duration} days, Start: {request.PlannedStartDate:yyyy-MM-dd}",
+            ChangedBy = currentUserId,
+            ChangedDate = DateTime.UtcNow,
+            Description = $"New Project '{request.ProjectName}' created with code {request.ProjectCode}."
+        };
+        await _unitOfWork.Repository<AuditLog>().AddAsync(projectLog, cancellationToken);
+
         await _unitOfWork.CompleteAsync(cancellationToken);
 
+        projectLog.RecordId = project.ProjectId;
+        _unitOfWork.Repository<AuditLog>().Update(projectLog);
+
+        await _unitOfWork.CompleteAsync(cancellationToken);
         return Result.Success(project.Adapt<ProjectDto>());
     }
 }
-

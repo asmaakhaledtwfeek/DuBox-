@@ -45,7 +45,15 @@ public class ActivitiesController : ControllerBase
         var result = await _mediator.Send(new GetBoxActivitiesByBoxQuery(boxId), cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+    [HttpPut("set-activity-schedule/{boxActivityId}")]
+    public async Task<IActionResult> SetBoxActivitySchedule(Guid boxActivityId, [FromBody] SetBoxActivityScheduleCommand command, CancellationToken cancellationToken)
+    {
+        if (boxActivityId != command.ActivityId)
+            return BadRequest("Box Activity ID mismatch");
 
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
     [HttpPut("update-status/{boxActivityId}")]
     public async Task<IActionResult> UpdateBoxActivityStatus(Guid boxActivityId, [FromBody] UpdateBoxActivityStatusCommand command, CancellationToken cancellationToken)
     {

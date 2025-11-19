@@ -30,7 +30,9 @@ namespace Dubox.Application.Features.Boxes.MappingConfig
            .Map(dest => dest.Status, _ => BoxStatusEnum.NotStarted)
            .Ignore(dest => dest.QRCodeString)
            .Map(dest => dest.IsActive, _ => true)
-           .Map(dest => dest.CreatedDate, _ => DateTime.UtcNow);
+           .Map(dest => dest.CreatedDate, _ => DateTime.UtcNow)
+           .Map(dest => dest.Duration, src => src.BoxDuration)
+           .Map(dest => dest.PlannedStartDate, src => src.BoxPlannedStartDate);
 
         }
     }

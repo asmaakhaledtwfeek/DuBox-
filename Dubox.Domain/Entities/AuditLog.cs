@@ -9,12 +9,12 @@ namespace Dubox.Domain.Entities
 
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int AuditId { get; set; }
+        public Guid AuditId { get; set; }
 
         [MaxLength(100)]
         public string? TableName { get; set; }
 
-        public int? RecordId { get; set; }
+        public Guid? RecordId { get; set; }
 
         [MaxLength(50)]
         public string? Action { get; set; } // INSERT, UPDATE, DELETE
@@ -23,8 +23,7 @@ namespace Dubox.Domain.Entities
 
         public string? NewValues { get; set; }
 
-        [MaxLength(100)]
-        public string? ChangedBy { get; set; }
+        public Guid? ChangedBy { get; set; }
 
         public DateTime ChangedDate { get; set; } = DateTime.UtcNow;
 
@@ -33,5 +32,8 @@ namespace Dubox.Domain.Entities
 
         [MaxLength(200)]
         public string? DeviceInfo { get; set; }
+
+        [MaxLength(200)]
+        public string? Description { get; set; }
     }
 }

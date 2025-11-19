@@ -9,8 +9,8 @@ public record CreateProjectCommand(
     string ProjectName,
     string? ClientName,
     string? Location,
-    DateTime? StartDate,
-    DateTime? PlannedEndDate,
+    int Duration,
+    DateTime PlannedStartDate,
     string? Description
 ) : IRequest<Result<ProjectDto>>;
 

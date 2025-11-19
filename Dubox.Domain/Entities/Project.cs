@@ -24,19 +24,20 @@ public class Project
 
     [MaxLength(200)]
     public string? Location { get; set; }
-
-    public DateTime? StartDate { get; set; }
+    public DateTime? PlannedStartDate { get; set; }
+    public DateTime? ActualStartDate { get; set; }
+    public int? Duration { get; set; }
     public DateTime? PlannedEndDate { get; set; }
     public DateTime? ActualEndDate { get; set; }
 
     [Required]
-    public ProjectStatusEnum Status { get; set; } = ProjectStatusEnum.Active; // Active, On Hold, Completed
+    public ProjectStatusEnum Status { get; set; } = ProjectStatusEnum.Active;
 
     [MaxLength(500)]
     public string? Description { get; set; }
 
     public int TotalBoxes { get; set; }
-
+    public decimal ProgressPercentage { get; set; } = 0;
     public bool IsActive { get; set; } = true;
     public DateTime CreatedDate { get; set; }
     public DateTime? ModifiedDate { get; set; }

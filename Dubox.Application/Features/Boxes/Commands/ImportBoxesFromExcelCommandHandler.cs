@@ -1,4 +1,4 @@
-using Dubox.Application.DTOs;
+﻿using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
@@ -17,6 +17,8 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
     private readonly IDbContext _dbContext;
     private readonly IQRCodeService _qrCodeService;
     private readonly IBoxActivityService _boxActivityService;
+    private readonly ICurrentUserService _currentUserService;
+
     private static readonly string[] RequiredHeaders = new[]
     {
         "Box Tag",
@@ -24,13 +26,14 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
         "Floor",
     };
 
-    public ImportBoxesFromExcelCommandHandler(IUnitOfWork unitOfWork, IExcelService excelService, IDbContext dbContext, IQRCodeService qrCodeService, IBoxActivityService boxActivityService)
+    public ImportBoxesFromExcelCommandHandler(IUnitOfWork unitOfWork, IExcelService excelService, IDbContext dbContext, IQRCodeService qrCodeService, IBoxActivityService boxActivityService, ICurrentUserService currentUserService)
     {
         _unitOfWork = unitOfWork;
         _excelService = excelService;
         _dbContext = dbContext;
         _qrCodeService = qrCodeService;
         _boxActivityService = boxActivityService;
+        _currentUserService = currentUserService;
     }
 
     public async Task<Result<BoxImportResultDto>> Handle(ImportBoxesFromExcelCommand request, CancellationToken cancellationToken)
@@ -46,81 +49,71 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
         if (project == null)
             return Result.Failure<BoxImportResultDto>("Project not found");
 
+        var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
         var errors = new List<string>();
-        var importedBoxes = new List<BoxDto>();
         var successCount = 0;
         var failureCount = 0;
+        var boxLogs = new List<AuditLog>();
+        var boxesToCreate = new List<Box>();
 
         try
         {
             var stream = request.FileStream;
-
             stream.Position = 0;
+
             var (isValid, validationErrors) = await _excelService.ValidateExcelStructureAsync(stream, RequiredHeaders);
             if (!isValid)
             {
                 return Result.Failure<BoxImportResultDto>($"Excel validation failed: {string.Join(", ", validationErrors)}");
             }
 
-            // Read boxes from Excel
             stream.Position = 0;
-            var boxes = await _excelService.ReadFromExcelAsync<ImportBoxFromExcelDto>(stream, MapRowToBox);
+            var importedDtos = await _excelService.ReadFromExcelAsync<ImportBoxFromExcelDto>(stream, MapRowToBox);
 
-            if (boxes == null || boxes.Count == 0)
+            if (importedDtos == null || importedDtos.Count == 0)
             {
                 return Result.Failure<BoxImportResultDto>("No valid data found in the Excel file");
             }
 
             var boxRepository = _unitOfWork.Repository<Box>();
 
-            // Get existing box tags for this project to check duplicates
             var existingBoxTags = await _dbContext.Boxes
                 .Where(b => b.ProjectId == request.ProjectId)
                 .Select(b => b.BoxTag.ToLower())
                 .ToListAsync(cancellationToken);
 
-            // Process each box
-            for (int i = 0; i < boxes.Count; i++)
+            for (int i = 0; i < importedDtos.Count; i++)
             {
-                var boxDto = boxes[i];
-                var rowNumber = i + 2; // +2 because of header and 0-based index
+                var boxDto = importedDtos[i];
+                var rowNumber = i + 2;
 
                 try
                 {
-                    // Validate required fields
                     if (string.IsNullOrWhiteSpace(boxDto.BoxTag))
                     {
                         errors.Add($"Row {rowNumber}: BoxTag is required");
                         failureCount++;
                         continue;
                     }
-
                     if (string.IsNullOrWhiteSpace(boxDto.BoxType))
                     {
                         errors.Add($"Row {rowNumber}: BoxType (Type) is required");
                         failureCount++;
                         continue;
                     }
-
                     if (string.IsNullOrWhiteSpace(boxDto.Floor))
                     {
                         errors.Add($"Row {rowNumber}: Floor (Level) is required");
                         failureCount++;
                         continue;
                     }
-
-                    // Check if box already exists in this project
                     if (existingBoxTags.Contains(boxDto.BoxTag.ToLower()))
                     {
                         errors.Add($"Row {rowNumber}: Box with tag '{boxDto.BoxTag}' already exists in this project");
                         failureCount++;
                         continue;
                     }
-
-                    // Check for duplicates within the import file
-                    var duplicateInFile = boxes.Take(i)
-                        .Any(b => b.BoxTag.Equals(boxDto.BoxTag, StringComparison.OrdinalIgnoreCase));
-
+                    var duplicateInFile = importedDtos.Take(i).Any(b => b.BoxTag.Equals(boxDto.BoxTag, StringComparison.OrdinalIgnoreCase));
                     if (duplicateInFile)
                     {
                         errors.Add($"Row {rowNumber}: Duplicate BoxTag '{boxDto.BoxTag}' found in the import file");
@@ -128,8 +121,7 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                         continue;
                     }
 
-                    // Create new box
-                    var box = new Box
+                    var newBox = new Box
                     {
                         ProjectId = request.ProjectId,
                         BoxTag = boxDto.BoxTag.Trim(),
@@ -151,21 +143,20 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                         CreatedDate = DateTime.UtcNow
                     };
 
-                    await boxRepository.AddAsync(box, cancellationToken);
-
-                    // Create associated activities based on BoxType
-                    await _boxActivityService.CopyActivitiesToBox(box, cancellationToken);
-
-                    // Add to existing tags to prevent duplicates within the same import
-                    existingBoxTags.Add(boxDto.BoxTag.ToLower());
-
-                    var createdBoxDto = box.Adapt<BoxDto>() with
+                    var logEntry = new AuditLog
                     {
-                        ProjectCode = project.ProjectCode,
-                        QRCodeImage = _qrCodeService.GenerateQRCodeBase64(box.QRCodeString)
+                        TableName = nameof(Box),
+                        Action = "Creation (Import)",
+                        OldValues = "N/A",
+                        NewValues = $"Tag: {newBox.BoxTag}, Type: {newBox.BoxType}, Floor: {newBox.Floor}, Name: {newBox.BoxName}",
+                        ChangedBy = currentUserId,
+                        ChangedDate = DateTime.UtcNow,
+                        Description = $"Box '{newBox.BoxTag}' created via Excel import (Row {rowNumber})."
                     };
+                    boxLogs.Add(logEntry);
 
-                    importedBoxes.Add(createdBoxDto);
+                    boxesToCreate.Add(newBox);
+                    existingBoxTags.Add(boxDto.BoxTag.ToLower());
                     successCount++;
                 }
                 catch (Exception ex)
@@ -175,23 +166,69 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                 }
             }
 
-            // Save all changes if any boxes were successfully imported
             if (successCount > 0)
             {
+                await boxRepository.AddRangeAsync(boxesToCreate, cancellationToken);
+                await _unitOfWork.Repository<AuditLog>().AddRangeAsync(boxLogs, cancellationToken);
+
                 await _unitOfWork.CompleteAsync(cancellationToken);
 
-                // Update project's total boxes count
+                for (int i = 0; i < boxesToCreate.Count; i++)
+                {
+                    boxLogs[i].RecordId = boxesToCreate[i].BoxId;
+                }
+
+                var projectLogs = new List<AuditLog>();
+                var oldTotalBoxes = project.TotalBoxes;
+
+                foreach (var box in boxesToCreate)
+                {
+                    await _boxActivityService.CopyActivitiesToBox(box, cancellationToken);
+                }
+
                 project.TotalBoxes += successCount;
                 _unitOfWork.Repository<Project>().Update(project);
+
+                projectLogs.Add(new AuditLog
+                {
+                    TableName = nameof(Project),
+                    RecordId = project.ProjectId,
+                    Action = "TotalBoxesUpdate",
+                    OldValues = $"TotalBoxes: {oldTotalBoxes}",
+                    NewValues = $"TotalBoxes: {project.TotalBoxes}",
+                    ChangedBy = currentUserId,
+                    ChangedDate = DateTime.UtcNow,
+                    Description = $"Total box count increased by {successCount} due to Excel import."
+                });
+
+                projectLogs.Add(new AuditLog
+                {
+                    TableName = nameof(Project),
+                    RecordId = project.ProjectId,
+                    Action = "BulkImport",
+                    OldValues = $"File: {request.FileName}",
+                    NewValues = $"Success: {successCount}, Failed: {failureCount}",
+                    ChangedBy = currentUserId,
+                    ChangedDate = DateTime.UtcNow,
+                    Description = $"Completed box import from file '{request.FileName}'. Imported {successCount} boxes."
+                });
+
+                await _unitOfWork.Repository<AuditLog>().AddRangeAsync(projectLogs, cancellationToken);
                 await _unitOfWork.CompleteAsync(cancellationToken);
             }
+
+            var importedBoxesDtos = boxesToCreate.Adapt<List<BoxDto>>().Select(dto => dto with
+            {
+                ProjectCode = project.ProjectCode,
+                QRCodeImage = _qrCodeService.GenerateQRCodeBase64(dto.QRCodeString)
+            }).ToList();
 
             var result = new BoxImportResultDto
             {
                 SuccessCount = successCount,
                 FailureCount = failureCount,
                 Errors = errors,
-                ImportedBoxes = importedBoxes
+                ImportedBoxes = importedBoxesDtos
             };
 
             return Result.Success(result);
@@ -201,7 +238,6 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
             return Result.Failure<BoxImportResultDto>($"Error processing Excel file: {ex.Message}");
         }
     }
-
     private ImportBoxFromExcelDto MapRowToBox(Dictionary<string, object?> row)
     {
         return new ImportBoxFromExcelDto

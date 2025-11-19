@@ -32,15 +32,17 @@ namespace Dubox.Application.Features.Projects.Commands
             .WithMessage("Location cannot exceed 200 characters")
             .When(x => !string.IsNullOrEmpty(x.Location));
 
-            RuleFor(x => x.StartDate)
-             .LessThanOrEqualTo(DateTime.Now.AddYears(1))
-             .WithMessage("Start date cannot be more than 1 year in the future")
-             .When(x => x.StartDate.HasValue);
+            RuleFor(x => x.Duration)
+            .GreaterThan(0)
+            .WithMessage("Duration must be a positive number")
+            .NotEqual(0)
+            .WithMessage("Duration is required and must be greater than zero");
 
-            RuleFor(x => x.PlannedEndDate)
-            .GreaterThan(x => x.StartDate)
-            .WithMessage("Planned end date must be after start date")
-            .When(x => x.PlannedEndDate.HasValue && x.StartDate.HasValue);
+            RuleFor(x => x.PlannedStartDate)
+            .LessThanOrEqualTo(DateTime.Now.AddYears(1))
+            .WithMessage("Planned start date cannot be more than 1 year in the future")
+            .GreaterThanOrEqualTo(DateTime.Today)
+            .WithMessage("Planned start date cannot be in the past");
 
             RuleFor(x => x.Description)
             .MaximumLength(500)

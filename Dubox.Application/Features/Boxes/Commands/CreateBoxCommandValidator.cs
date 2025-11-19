@@ -1,11 +1,16 @@
-﻿using FluentValidation;
+﻿using Dubox.Domain.Abstraction;
+using Dubox.Domain.Entities;
+using FluentValidation;
 
 namespace Dubox.Application.Features.Boxes.Commands
 {
     public class CreateBoxCommandValidator : AbstractValidator<CreateBoxCommand>
     {
-        public CreateBoxCommandValidator()
+        private readonly IUnitOfWork _unitOfWork;
+        public CreateBoxCommandValidator(IUnitOfWork unitOfWork)
         {
+            _unitOfWork = unitOfWork;
+
             RuleFor(x => x.ProjectId)
             .NotEmpty()
             .WithMessage("Project ID is required");
@@ -71,6 +76,28 @@ namespace Dubox.Application.Features.Boxes.Commands
             RuleForEach(x => x.Assets)
                 .SetValidator(new CreateBoxAssetDtoValidator())
                 .When(x => x.Assets != null && x.Assets.Any());
+
+            RuleFor(x => x)
+            .MustAsync(BeWithinProjectSchedule)
+            .WithMessage("Box schedule must fall within the project's planned start and end dates.")
+            .When(x => x.BoxPlannedStartDate.HasValue && x.BoxDuration.HasValue);
+        }
+
+        private async Task<bool> BeWithinProjectSchedule(CreateBoxCommand command, CancellationToken cancellationToken)
+        {
+            var project = await _unitOfWork.Repository<Project>().GetByIdAsync(command.ProjectId, cancellationToken);
+
+            if (project == null) return false;
+
+            if (!project.PlannedStartDate.HasValue || !project.PlannedEndDate.HasValue)
+                return true;
+
+            var boxPlannedEndDate = command.BoxPlannedStartDate!.Value.AddDays(command.BoxDuration!.Value);
+
+            bool startsAfterProjectStart = command.BoxPlannedStartDate.Value >= project.PlannedStartDate.Value;
+            bool endsBeforeProjectEnd = boxPlannedEndDate <= project.PlannedEndDate.Value;
+
+            return startsAfterProjectStart && endsBeforeProjectEnd;
         }
     }
 }

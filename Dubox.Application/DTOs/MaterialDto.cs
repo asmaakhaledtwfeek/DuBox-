@@ -57,7 +57,7 @@ public record RestockMaterialDto
 
 public record LowStockMaterialDto
 {
-    public int MaterialId { get; init; }
+    public Guid MaterialId { get; init; }
     public string MaterialCode { get; init; } = string.Empty;
     public string MaterialName { get; init; } = string.Empty;
     public decimal? CurrentStock { get; init; }

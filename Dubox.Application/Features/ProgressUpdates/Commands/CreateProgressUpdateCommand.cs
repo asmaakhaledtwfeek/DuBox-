@@ -1,5 +1,4 @@
 using Dubox.Application.DTOs;
-using Dubox.Domain.Enums;
 using Dubox.Domain.Shared;
 using MediatR;
 
@@ -9,7 +8,6 @@ public record CreateProgressUpdateCommand(
     Guid BoxId,
     Guid BoxActivityId,
     decimal ProgressPercentage,
-    BoxStatusEnum Status,
     string? WorkDescription,
     string? IssuesEncountered,
     double? Latitude,

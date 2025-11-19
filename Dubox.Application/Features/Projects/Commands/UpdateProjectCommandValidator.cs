@@ -1,12 +1,17 @@
-﻿using Dubox.Domain.Enums;
+﻿using Dubox.Domain.Abstraction;
+using Dubox.Domain.Entities;
 using FluentValidation;
 
 namespace Dubox.Application.Features.Projects.Commands
 {
     public class UpdateProjectCommandValidator : AbstractValidator<UpdateProjectCommand>
     {
-        public UpdateProjectCommandValidator()
+        private readonly IUnitOfWork _unitOfWork;
+
+        public UpdateProjectCommandValidator(IUnitOfWork unitOfWork)
         {
+            _unitOfWork = unitOfWork;
+
             RuleFor(x => x.ProjectId)
                 .NotEmpty().WithMessage("Project ID is required for updating the project.");
 
@@ -38,29 +43,58 @@ namespace Dubox.Application.Features.Projects.Commands
                 .Must(d => d?.ToLower() != "string").WithMessage("Description cannot be the default value 'string'.")
                 .When(x => !string.IsNullOrEmpty(x.Description));
 
-            RuleFor(x => x.Status)
-                .Must(status => status.HasValue && Enum.IsDefined(typeof(ProjectStatusEnum), status.Value))
-                .WithMessage("Invalid project status value.")
-                .When(x => x.Status.HasValue);
+            RuleFor(x => x)
+                .MustAsync(PreCheckAndRunTimeValidation)
+                .WithMessage(" project was not found or a severe scheduling conflict occurred.")
+                .When(x => x.PlannedStartDate.HasValue || x.Duration.HasValue);
+        }
 
-            RuleFor(x => x.ActualEndDate)
-                .NotEmpty()
-                .WithMessage("Actual end date is required when project status is Completed")
-                .When(x => x.Status.HasValue && (ProjectStatusEnum)x.Status.Value == ProjectStatusEnum.Completed);
+        private async Task<bool> PreCheckAndRunTimeValidation(UpdateProjectCommand command, CancellationToken cancellationToken)
+        {
+            var project = await _unitOfWork.Repository<Project>().GetByIdAsync(command.ProjectId, cancellationToken);
+            if (project == null) return false;
 
-            RuleFor(x => x.StartDate)
-                .LessThanOrEqualTo(DateTime.Now.AddYears(1)).WithMessage("Start date cannot be more than 1 year in the future")
-                .When(x => x.StartDate.HasValue);
+            if (!CannotUpdatePlannedStartDateIfActualExists(command, project))
+                return false;
 
-            RuleFor(x => x.PlannedEndDate)
-                .GreaterThan(x => x.StartDate)
-                .WithMessage("Planned end date must be after start date")
-                .When(x => x.PlannedEndDate.HasValue && x.StartDate.HasValue);
+            if (!await BeValidProjectSchedule(command, project, cancellationToken))
+                return false;
 
-            RuleFor(x => x.ActualEndDate)
-                .GreaterThan(x => x.StartDate)
-                .WithMessage("Actual end date must be after start date")
-                .When(x => x.ActualEndDate.HasValue && x.StartDate.HasValue);
+            return true;
+        }
+
+        private bool CannotUpdatePlannedStartDateIfActualExists(UpdateProjectCommand command, Project project)
+        {
+            if (project.ActualStartDate.HasValue && command.PlannedStartDate.HasValue)
+                return false;
+            return true;
+        }
+
+        private async Task<bool> BeValidProjectSchedule(UpdateProjectCommand command, Project project, CancellationToken cancellationToken)
+        {
+            var newStartDate = command.PlannedStartDate ?? project.PlannedStartDate;
+            var newDuration = command.Duration ?? project.Duration;
+
+            if (!newStartDate.HasValue || !newDuration.HasValue || newDuration.Value <= 0)
+                return true;
+
+            var newPlannedEndDate = newStartDate.Value.AddDays(newDuration.Value);
+
+            var relevantBoxes = await _unitOfWork.Repository<Box>().FindAsync(
+                   b => b.ProjectId == command.ProjectId && b.PlannedStartDate.HasValue && b.PlannedEndDate.HasValue,
+                   cancellationToken
+                   );
+
+            if (!relevantBoxes.Any())
+                return true;
+
+            var minBoxStartDate = relevantBoxes.Min(b => b.PlannedStartDate.Value);
+            var maxBoxEndDate = relevantBoxes.Max(b => b.PlannedEndDate.Value);
+
+            if (minBoxStartDate < newStartDate.Value || maxBoxEndDate > newPlannedEndDate)
+                return false;
+
+            return true;
         }
     }
 }

@@ -4,5 +4,8 @@ using MediatR;
 
 namespace Dubox.Application.Features.Projects.Queries;
 
-public record GetAllProjectsQuery : IRequest<Result<List<ProjectDto>>>;
+public record GetAllProjectsQuery(
+    string? SearchTerm,
+    int? StatusFilter
+) : IRequest<Result<List<ProjectDto>>>;
 

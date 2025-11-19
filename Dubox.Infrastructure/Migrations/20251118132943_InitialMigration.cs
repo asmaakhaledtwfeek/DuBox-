@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Dubox.Infrastructure.Migrations
 {
     /// <inheritdoc />
-    public partial class init : Migration
+    public partial class InitialMigration : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -42,17 +42,17 @@ namespace Dubox.Infrastructure.Migrations
                 name: "AuditLog",
                 columns: table => new
                 {
-                    AuditId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    AuditId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     TableName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    RecordId = table.Column<int>(type: "int", nullable: true),
+                    RecordId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     Action = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     OldValues = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     NewValues = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ChangedBy = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    ChangedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ChangedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IPAddress = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
-                    DeviceInfo = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true)
+                    DeviceInfo = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -148,12 +148,15 @@ namespace Dubox.Infrastructure.Migrations
                     ProjectName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     ClientName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     Location = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
-                    StartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PlannedStartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ActualStartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Duration = table.Column<int>(type: "int", nullable: true),
                     PlannedEndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ActualEndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Status = table.Column<int>(type: "int", nullable: false, defaultValue: 1),
                     Description = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     TotalBoxes = table.Column<int>(type: "int", nullable: false),
+                    ProgressPercentage = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -202,6 +205,8 @@ namespace Dubox.Infrastructure.Migrations
                     UnitOfMeasure = table.Column<int>(type: "int", maxLength: 50, nullable: true),
                     BIMModelReference = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     RevitElementId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    Duration = table.Column<int>(type: "int", nullable: true),
+                    PlannedStartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ActualStartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     PlannedEndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ActualEndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
@@ -210,7 +215,7 @@ namespace Dubox.Infrastructure.Migrations
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CreatedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    ModifiedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -220,7 +225,7 @@ namespace Dubox.Infrastructure.Migrations
                         column: x => x.ProjectId,
                         principalTable: "Projects",
                         principalColumn: "ProjectId",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateTable(
@@ -514,9 +519,7 @@ namespace Dubox.Infrastructure.Migrations
                     BoxActivityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PredecessorActivityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     DependencyType = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
-                    LagDays = table.Column<int>(type: "int", nullable: false),
-                    BoxActivityId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    BoxActivityId2 = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    LagDays = table.Column<int>(type: "int", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -558,6 +561,7 @@ namespace Dubox.Infrastructure.Migrations
                     PlannedEndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ActualStartDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     ActualEndDate = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Duration = table.Column<int>(type: "int", nullable: true),
                     WorkDescription = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     IssuesEncountered = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     TeamId = table.Column<int>(type: "int", nullable: true),
@@ -566,7 +570,7 @@ namespace Dubox.Infrastructure.Migrations
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ModifiedDate = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    ModifiedBy = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ModifiedBy = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     TeamMemberId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
@@ -816,7 +820,7 @@ namespace Dubox.Infrastructure.Migrations
                         column: x => x.BoxActivityId,
                         principalTable: "BoxActivities",
                         principalColumn: "BoxActivityId",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_WIRRecords_Users_InspectedBy",
                         column: x => x.InspectedBy,
@@ -861,7 +865,7 @@ namespace Dubox.Infrastructure.Migrations
                         column: x => x.BoxActivityId,
                         principalTable: "BoxActivities",
                         principalColumn: "BoxActivityId",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_ProgressUpdates_Boxes_BoxId",
                         column: x => x.BoxId,
@@ -1117,16 +1121,6 @@ namespace Dubox.Infrastructure.Migrations
                 name: "IX_ActivityDependencies_BoxActivityId",
                 table: "ActivityDependencies",
                 column: "BoxActivityId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ActivityDependencies_BoxActivityId1",
-                table: "ActivityDependencies",
-                column: "BoxActivityId1");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ActivityDependencies_BoxActivityId2",
-                table: "ActivityDependencies",
-                column: "BoxActivityId2");
 
             migrationBuilder.CreateIndex(
                 name: "IX_ActivityDependencies_PredecessorActivityId",
@@ -1492,20 +1486,6 @@ namespace Dubox.Infrastructure.Migrations
                 principalTable: "BoxActivities",
                 principalColumn: "BoxActivityId",
                 onDelete: ReferentialAction.Restrict);
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_ActivityDependencies_BoxActivities_BoxActivityId1",
-                table: "ActivityDependencies",
-                column: "BoxActivityId1",
-                principalTable: "BoxActivities",
-                principalColumn: "BoxActivityId");
-
-            migrationBuilder.AddForeignKey(
-                name: "FK_ActivityDependencies_BoxActivities_BoxActivityId2",
-                table: "ActivityDependencies",
-                column: "BoxActivityId2",
-                principalTable: "BoxActivities",
-                principalColumn: "BoxActivityId");
 
             migrationBuilder.AddForeignKey(
                 name: "FK_ActivityDependencies_BoxActivities_PredecessorActivityId",

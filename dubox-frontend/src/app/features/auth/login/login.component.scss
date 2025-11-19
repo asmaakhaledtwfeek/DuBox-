@@ -25,18 +25,22 @@
   margin-bottom: var(--spacing-2xl);
 }
 
-.login-logo {
-  font-size: var(--font-size-4xl);
-  font-weight: 700;
-  background: var(--primary-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: var(--spacing-sm);
+.login-logo-image {
+  height: 48px;
+  width: auto;
+  margin: 0 auto var(--spacing-md);
+  display: block;
 }
 
 .login-subtitle {
   color: var(--gray-600);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  margin: 0 0 var(--spacing-xs) 0;
+}
+
+.login-company {
+  color: var(--gray-500);
   font-size: var(--font-size-sm);
   margin: 0;
 }
@@ -84,7 +88,7 @@
   &:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+    box-shadow: 0 0 0 3px rgba(255, 203, 27, 0.2);
   }
 
   &.error {
@@ -241,8 +245,8 @@
     padding: var(--spacing-xl);
   }
 
-  .login-logo {
-    font-size: var(--font-size-3xl);
+  .login-logo-image {
+    height: 40px;
   }
 }
 

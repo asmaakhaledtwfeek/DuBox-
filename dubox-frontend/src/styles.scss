@@ -1,15 +1,15 @@
 /* DuBox Color Palette - Based on https://www.dubox.me/ */
 :root {
-  /* Primary Colors - DuBox Orange/Coral */
-  --primary-color: #ff6b35;
-  --primary-light: #ff8c5f;
-  --primary-dark: #e6501a;
-  --primary-gradient: linear-gradient(135deg, #ff6b35 0%, #ff8c5f 100%);
+  /* Primary Colors - DuBox Gold/Yellow */
+  --primary-color: #ffcb1b;
+  --primary-light: #ffd94d;
+  --primary-dark: #d9a800;
+  --primary-gradient: linear-gradient(135deg, #ffcb1b 0%, #ffd94d 100%);
 
-  /* Secondary Colors */
-  --secondary-color: #2c3e50;
-  --secondary-light: #34495e;
-  --secondary-dark: #1a252f;
+  /* Secondary Colors - Dark Gray/Charcoal */
+  --secondary-color: #1f2937;
+  --secondary-light: #374151;
+  --secondary-dark: #111827;
 
   /* Neutral Colors */
   --white: #ffffff;
@@ -212,13 +212,15 @@ a:hover {
 
 .btn-primary {
   background: var(--primary-color);
-  color: var(--white);
+  color: var(--secondary-color);
+  font-weight: 600;
 }
 
 .btn-primary:hover {
   background: var(--primary-dark);
   transform: translateY(-1px);
   box-shadow: var(--shadow-md);
+  color: var(--secondary-dark);
 }
 
 .btn-secondary {
@@ -232,13 +234,13 @@ a:hover {
 
 .btn-outline {
   background: transparent;
-  color: var(--primary-color);
+  color: var(--primary-dark);
   border: 2px solid var(--primary-color);
 }
 
 .btn-outline:hover {
   background: var(--primary-color);
-  color: var(--white);
+  color: var(--secondary-color);
 }
 
 /* Status Badge Styles */

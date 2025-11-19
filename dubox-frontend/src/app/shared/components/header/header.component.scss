@@ -27,16 +27,18 @@
 
 .logo-link {
   text-decoration: none;
+  display: flex;
+  align-items: center;
 }
 
-.logo-text {
-  font-size: var(--font-size-2xl);
-  font-weight: 700;
-  background: var(--primary-gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 0;
+.logo-image {
+  height: 32px;
+  width: auto;
+  transition: opacity var(--transition-fast);
+
+  &:hover {
+    opacity: 0.8;
+  }
 }
 
 .header-search {

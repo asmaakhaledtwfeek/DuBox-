@@ -39,7 +39,7 @@ public class BoxActivity
     public string? IssuesEncountered { get; set; }
 
     [ForeignKey(nameof(Team))]
-    public int? TeamId { get; set; }
+    public Guid? TeamId { get; set; }
     public virtual Team? Team { get; set; }
 
     [ForeignKey(nameof(AssignedMember))]

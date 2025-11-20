@@ -71,7 +71,7 @@ public class WIRRecordsController : ControllerBase
     /// <summary>
     /// Approve a WIR record (QC Inspector)
     /// </summary>
-    [HttpPost("{wirRecordId}/approve")]
+    [HttpPut("{wirRecordId}/approve")]
     public async Task<IActionResult> ApproveWIRRecord(Guid wirRecordId, [FromBody] ApproveWIRRecordCommand command, CancellationToken cancellationToken)
     {
         if (wirRecordId != command.WIRRecordId)
@@ -84,7 +84,7 @@ public class WIRRecordsController : ControllerBase
     /// <summary>
     /// Reject a WIR record (QC Inspector)
     /// </summary>
-    [HttpPost("{wirRecordId}/reject")]
+    [HttpPut("{wirRecordId}/reject")]
     public async Task<IActionResult> RejectWIRRecord(Guid wirRecordId, [FromBody] RejectWIRRecordCommand command, CancellationToken cancellationToken)
     {
         if (wirRecordId != command.WIRRecordId)

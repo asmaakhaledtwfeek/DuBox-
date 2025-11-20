@@ -8,7 +8,7 @@ namespace Dubox.Domain.Entities
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int DependencyId { get; set; }
+        public Guid DependencyId { get; set; }
 
         [Required]
         [ForeignKey(nameof(BoxActivity))]

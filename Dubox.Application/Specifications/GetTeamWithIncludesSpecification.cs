@@ -5,7 +5,7 @@ namespace Dubox.Application.Specifications
 {
     public class GetTeamWithIncludesSpecification : Specification<Team>
     {
-        public GetTeamWithIncludesSpecification(int teamId)
+        public GetTeamWithIncludesSpecification(Guid teamId)
         {
             AddCriteria(team => team.TeamId == teamId);
 

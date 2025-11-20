@@ -11,7 +11,7 @@ namespace Dubox.Domain.Entities
 
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int HistoryId { get; set; }
+        public Guid HistoryId { get; set; }
 
         [Required]
         [ForeignKey(nameof(Box))]
@@ -19,10 +19,10 @@ namespace Dubox.Domain.Entities
 
         [Required]
         [ForeignKey(nameof(Location))]
-        public int LocationId { get; set; }
+        public Guid LocationId { get; set; }
 
         [ForeignKey(nameof(MovedFromLocation))]
-        public int? MovedFromLocationId { get; set; }
+        public Guid? MovedFromLocationId { get; set; }
 
         public DateTime MovedDate { get; set; } = DateTime.UtcNow;
 

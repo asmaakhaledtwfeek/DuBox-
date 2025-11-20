@@ -7,7 +7,7 @@ namespace Dubox.Application.Features.Activities.Commands
     public record AssignActivityToTeamCommand
     (
        Guid BoxActivityId,
-       int TeamId,
+       Guid TeamId,
        Guid TeamMemberId
     ) : IRequest<Result<AssignBoxActivityTeamDto>>;
 

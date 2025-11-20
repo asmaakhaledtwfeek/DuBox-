@@ -6,7 +6,7 @@ namespace Dubox.Application.Features.Teams.Commands
 {
 
     public record AssignedTeamMembersCommand(
-    int TeamId,
+    Guid TeamId,
     List<Guid>? UserIds
 ) : IRequest<Result<TeamMembersDto>>;
 }

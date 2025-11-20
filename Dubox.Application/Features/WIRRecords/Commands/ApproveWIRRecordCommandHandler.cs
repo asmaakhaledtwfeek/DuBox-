@@ -60,6 +60,7 @@ public class ApproveWIRRecordCommandHandler : IRequestHandler<ApproveWIRRecordCo
 
         var dto = wirRecord.Adapt<WIRRecordDto>() with
         {
+            BoxId = wirRecord.BoxActivity.Box.BoxId,
             BoxTag = wirRecord.BoxActivity.Box.BoxTag,
             ActivityName = wirRecord.BoxActivity.ActivityMaster.ActivityName,
             RequestedByName = wirRecord.RequestedByUser.FullName ?? wirRecord.RequestedByUser.Email,

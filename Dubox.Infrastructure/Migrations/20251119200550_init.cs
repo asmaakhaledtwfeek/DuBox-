@@ -63,11 +63,10 @@ namespace Dubox.Infrastructure.Migrations
                 name: "CostCategories",
                 columns: table => new
                 {
-                    CategoryId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CategoryCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     CategoryName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
-                    ParentCategoryId = table.Column<int>(type: "int", nullable: true),
+                    ParentCategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IsActive = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
@@ -85,8 +84,7 @@ namespace Dubox.Infrastructure.Migrations
                 name: "FactoryLocations",
                 columns: table => new
                 {
-                    LocationId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    LocationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     LocationCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     LocationName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     LocationType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -284,10 +282,9 @@ namespace Dubox.Infrastructure.Migrations
                 name: "BoxCosts",
                 columns: table => new
                 {
-                    CostId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    CostId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     BoxId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CategoryId = table.Column<int>(type: "int", nullable: false),
+                    CategoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CostType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     BudgetedCost = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
                     ActualCost = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
@@ -318,11 +315,10 @@ namespace Dubox.Infrastructure.Migrations
                 name: "BoxLocationHistory",
                 columns: table => new
                 {
-                    HistoryId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    HistoryId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     BoxId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    LocationId = table.Column<int>(type: "int", nullable: false),
-                    MovedFromLocationId = table.Column<int>(type: "int", nullable: true),
+                    LocationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    MovedFromLocationId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     MovedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     MovedBy = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     Reason = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
@@ -386,8 +382,7 @@ namespace Dubox.Infrastructure.Migrations
                 name: "Risks",
                 columns: table => new
                 {
-                    RiskId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    RiskId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ProjectId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     BoxId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     RiskCategory = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
@@ -422,8 +417,7 @@ namespace Dubox.Infrastructure.Migrations
                 name: "WIRCheckpoints",
                 columns: table => new
                 {
-                    WIRId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    WIRId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     BoxId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     WIRNumber = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     WIRName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
@@ -433,7 +427,7 @@ namespace Dubox.Infrastructure.Migrations
                     InspectionDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     InspectorName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     InspectorRole = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    Status = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    Status = table.Column<int>(type: "int", maxLength: 50, nullable: false),
                     ApprovalDate = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Comments = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     AttachmentPath = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
@@ -454,10 +448,9 @@ namespace Dubox.Infrastructure.Migrations
                 name: "QualityIssues",
                 columns: table => new
                 {
-                    IssueId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    IssueId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     BoxId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    WIRId = table.Column<int>(type: "int", nullable: true),
+                    WIRId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     IssueDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IssueType = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     Severity = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
@@ -490,9 +483,8 @@ namespace Dubox.Infrastructure.Migrations
                 name: "WIRChecklistItems",
                 columns: table => new
                 {
-                    ChecklistItemId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    WIRId = table.Column<int>(type: "int", nullable: false),
+                    ChecklistItemId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    WIRId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     CheckpointDescription = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     ReferenceDocument = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
                     Status = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
@@ -514,8 +506,7 @@ namespace Dubox.Infrastructure.Migrations
                 name: "ActivityDependencies",
                 columns: table => new
                 {
-                    DependencyId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    DependencyId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     BoxActivityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PredecessorActivityId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     DependencyType = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
@@ -564,7 +555,7 @@ namespace Dubox.Infrastructure.Migrations
                     Duration = table.Column<int>(type: "int", nullable: true),
                     WorkDescription = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     IssuesEncountered = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
-                    TeamId = table.Column<int>(type: "int", nullable: true),
+                    TeamId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     AssignedMemberId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     MaterialsAvailable = table.Column<bool>(type: "bit", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
@@ -594,8 +585,7 @@ namespace Dubox.Infrastructure.Migrations
                 name: "Notifications",
                 columns: table => new
                 {
-                    NotificationId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    NotificationId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     NotificationType = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
                     Priority = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
                     Title = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: true),
@@ -628,11 +618,10 @@ namespace Dubox.Infrastructure.Migrations
                 name: "DailyProductionLog",
                 columns: table => new
                 {
-                    LogId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    LogId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     LogDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     BoxId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TeamId = table.Column<int>(type: "int", nullable: true),
+                    TeamId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ActivityMasterId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     ManHours = table.Column<decimal>(type: "decimal(10,2)", nullable: true),
                     ProgressAchieved = table.Column<decimal>(type: "decimal(5,2)", nullable: true),
@@ -855,7 +844,7 @@ namespace Dubox.Infrastructure.Migrations
                     UpdateMethod = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     DeviceInfo = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
                     CreatedDate = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    TeamId = table.Column<int>(type: "int", nullable: true)
+                    TeamId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -885,7 +874,7 @@ namespace Dubox.Infrastructure.Migrations
                 columns: table => new
                 {
                     TeamMemberId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    TeamId = table.Column<int>(type: "int", nullable: false),
+                    TeamId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     EmployeeCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     EmployeeName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
@@ -907,8 +896,7 @@ namespace Dubox.Infrastructure.Migrations
                 name: "Teams",
                 columns: table => new
                 {
-                    TeamId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    TeamId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     TeamCode = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
                     TeamName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     DepartmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),

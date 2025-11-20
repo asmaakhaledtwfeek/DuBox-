@@ -9,7 +9,7 @@ namespace Dubox.Domain.Entities
 
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int NotificationId { get; set; }
+        public Guid NotificationId { get; set; }
 
         [MaxLength(50)]
         public string? NotificationType { get; set; } // Alert, Warning, Info, Breakdown

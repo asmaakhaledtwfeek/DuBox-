@@ -10,7 +10,7 @@ namespace Dubox.Domain.Entities
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int TeamId { get; set; }
+        public Guid TeamId { get; set; }
 
         [Required]
         [MaxLength(50)]

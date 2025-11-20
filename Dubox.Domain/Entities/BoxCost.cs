@@ -9,7 +9,7 @@ namespace Dubox.Domain.Entities
 
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int CostId { get; set; }
+        public Guid CostId { get; set; }
 
         [Required]
         [ForeignKey(nameof(Box))]
@@ -17,7 +17,7 @@ namespace Dubox.Domain.Entities
 
         [Required]
         [ForeignKey(nameof(Category))]
-        public int CategoryId { get; set; }
+        public Guid CategoryId { get; set; }
 
         [MaxLength(50)]
         public string? CostType { get; set; } // Labor, Material, Equipment, Subcontract, Overhead

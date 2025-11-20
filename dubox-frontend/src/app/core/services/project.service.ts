@@ -34,7 +34,7 @@ export class ProjectService {
       code: code,
       location: backendProject.location || backendProject.Location || '',
       description: backendProject.description || backendProject.Description,
-      startDate: backendProject.startDate || backendProject.StartDate ? new Date(backendProject.startDate || backendProject.StartDate) : new Date(),
+      startDate:( backendProject.startDate || backendProject.StartDate) ? new Date(backendProject.startDate || backendProject.StartDate) : undefined,
       endDate: (backendProject.plannedEndDate || backendProject.PlannedEndDate) ? new Date(backendProject.plannedEndDate || backendProject.PlannedEndDate) : undefined,
       status: backendProject.status || backendProject.Status,
       totalBoxes: backendProject.totalBoxes || backendProject.TotalBoxes || 0,

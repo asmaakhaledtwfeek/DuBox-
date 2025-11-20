@@ -11,7 +11,7 @@ namespace Dubox.Domain.Entities
 
         [Required]
         [ForeignKey(nameof(Team))]
-        public int TeamId { get; set; }
+        public Guid TeamId { get; set; }
         [Required]
         [ForeignKey(nameof(User))]
         public Guid UserId { get; set; }

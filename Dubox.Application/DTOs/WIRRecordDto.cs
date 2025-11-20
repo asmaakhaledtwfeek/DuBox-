@@ -4,6 +4,7 @@ public record WIRRecordDto
 {
     public Guid WIRRecordId { get; init; }
     public Guid BoxActivityId { get; init; }
+    public Guid BoxId { get; init; }
     public string BoxTag { get; init; } = string.Empty;
     public string ActivityName { get; init; } = string.Empty;
     public string WIRCode { get; init; } = string.Empty;

@@ -11,7 +11,7 @@ namespace Dubox.Domain.Entities
 
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int LocationId { get; set; }
+        public Guid LocationId { get; set; }
 
         [Required]
         [MaxLength(50)]

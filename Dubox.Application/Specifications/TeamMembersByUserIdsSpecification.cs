@@ -4,7 +4,7 @@ using Dubox.Domain.Specification;
 
 public class TeamMembersByUserIdsSpecification : Specification<TeamMember>
 {
-    public TeamMembersByUserIdsSpecification(int teamId)
+    public TeamMembersByUserIdsSpecification(Guid teamId)
     {
         AddCriteria(tm => tm.TeamId == teamId);
 

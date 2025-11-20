@@ -24,11 +24,9 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.ActivityDependency", b =>
                 {
-                    b.Property<int>("DependencyId")
+                    b.Property<Guid>("DependencyId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("DependencyId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BoxActivityId")
                         .HasColumnType("uniqueidentifier");
@@ -812,8 +810,8 @@ namespace Dubox.Infrastructure.Migrations
                         .HasColumnType("int")
                         .HasDefaultValue(1);
 
-                    b.Property<int?>("TeamId")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("TeamId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("TeamMemberId")
                         .HasColumnType("uniqueidentifier");
@@ -889,11 +887,9 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.BoxCost", b =>
                 {
-                    b.Property<int>("CostId")
+                    b.Property<Guid>("CostId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CostId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<decimal?>("ActualCost")
                         .HasColumnType("decimal(18,2)");
@@ -904,8 +900,8 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<decimal?>("BudgetedCost")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<int>("CategoryId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("CategoryId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("CostDate")
                         .HasColumnType("datetime2");
@@ -940,17 +936,15 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.BoxLocationHistory", b =>
                 {
-                    b.Property<int>("HistoryId")
+                    b.Property<Guid>("HistoryId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("HistoryId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BoxId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("LocationId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("LocationId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("MovedBy")
                         .HasMaxLength(200)
@@ -959,8 +953,8 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime>("MovedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("MovedFromLocationId")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("MovedFromLocationId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("RFIDReadTime")
                         .HasColumnType("datetime2");
@@ -1022,11 +1016,9 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.CostCategory", b =>
                 {
-                    b.Property<int>("CategoryId")
+                    b.Property<Guid>("CategoryId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CategoryId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("CategoryCode")
                         .IsRequired()
@@ -1041,8 +1033,8 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
-                    b.Property<int?>("ParentCategoryId")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("ParentCategoryId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("CategoryId");
 
@@ -1056,11 +1048,9 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.DailyProductionLog", b =>
                 {
-                    b.Property<int>("LogId")
+                    b.Property<Guid>("LogId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LogId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("ActivityMasterId")
                         .HasColumnType("uniqueidentifier");
@@ -1087,8 +1077,8 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<string>("Remarks")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int?>("TeamId")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("TeamId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("LogId");
 
@@ -1237,11 +1227,9 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.FactoryLocation", b =>
                 {
-                    b.Property<int>("LocationId")
+                    b.Property<Guid>("LocationId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LocationId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Bay")
                         .HasMaxLength(50)
@@ -1631,11 +1619,9 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.Notification", b =>
                 {
-                    b.Property<int>("NotificationId")
+                    b.Property<Guid>("NotificationId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("NotificationId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
@@ -1731,8 +1717,8 @@ namespace Dubox.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("int");
 
-                    b.Property<int?>("TeamId")
-                        .HasColumnType("int");
+                    b.Property<Guid?>("TeamId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("UpdateDate")
                         .HasColumnType("datetime2");
@@ -1841,11 +1827,9 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.QualityIssue", b =>
                 {
-                    b.Property<int>("IssueId")
+                    b.Property<Guid>("IssueId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IssueId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("AssignedTo")
                         .HasMaxLength(200)
@@ -1863,9 +1847,8 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<string>("IssueDescription")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("IssueType")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
+                    b.Property<int?>("IssueType")
+                        .HasColumnType("int");
 
                     b.Property<string>("PhotoPath")
                         .HasMaxLength(500)
@@ -1881,17 +1864,14 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<string>("ResolutionDescription")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Severity")
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<int?>("WIRId")
+                    b.Property<int?>("Severity")
                         .HasColumnType("int");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("WIRId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("IssueId");
 
@@ -1906,11 +1886,9 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.Risk", b =>
                 {
-                    b.Property<int>("RiskId")
+                    b.Property<Guid>("RiskId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RiskId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("BoxId")
                         .HasColumnType("uniqueidentifier");
@@ -2080,11 +2058,9 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.Team", b =>
                 {
-                    b.Property<int>("TeamId")
+                    b.Property<Guid>("TeamId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TeamId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
@@ -2147,8 +2123,8 @@ namespace Dubox.Infrastructure.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<int>("TeamId")
-                        .HasColumnType("int");
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -2598,13 +2574,12 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.WIRChecklistItem", b =>
                 {
-                    b.Property<int>("ChecklistItemId")
+                    b.Property<Guid>("ChecklistItemId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ChecklistItemId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("CheckpointDescription")
+                        .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
@@ -2618,12 +2593,12 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<int>("Sequence")
                         .HasColumnType("int");
 
-                    b.Property<string>("Status")
+                    b.Property<int>("Status")
                         .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
-                    b.Property<int>("WIRId")
                         .HasColumnType("int");
+
+                    b.Property<Guid>("WIRId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.HasKey("ChecklistItemId");
 
@@ -2634,11 +2609,9 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.WIRCheckpoint", b =>
                 {
-                    b.Property<int>("WIRId")
+                    b.Property<Guid>("WIRId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("WIRId"));
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime?>("ApprovalDate")
                         .HasColumnType("datetime2");
@@ -2674,10 +2647,9 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime?>("RequestedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
+                    b.Property<int>("Status")
                         .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("int");
 
                     b.Property<string>("WIRDescription")
                         .HasMaxLength(500)

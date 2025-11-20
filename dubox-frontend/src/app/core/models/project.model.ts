@@ -4,7 +4,7 @@ export interface Project {
   code: string;
   location: string;
   description?: string;
-  startDate: Date;
+  startDate?: Date;
   endDate?: Date;
   status: ProjectStatus;
   totalBoxes: number;

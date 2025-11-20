@@ -9,7 +9,7 @@ namespace Dubox.Domain.Entities
 
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int LogId { get; set; }
+        public Guid LogId { get; set; }
 
         [Required]
         public DateTime LogDate { get; set; }
@@ -19,7 +19,7 @@ namespace Dubox.Domain.Entities
         public Guid BoxId { get; set; }
 
         [ForeignKey(nameof(Team))]
-        public int? TeamId { get; set; }
+        public Guid? TeamId { get; set; }
 
         [ForeignKey(nameof(ActivityMaster))]
         public Guid? ActivityMasterId { get; set; }

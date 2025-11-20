@@ -1,28 +1,25 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
+using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.Boxes.Queries;
 
 public class GetBoxesByProjectQueryHandler : IRequestHandler<GetBoxesByProjectQuery, Result<List<BoxDto>>>
 {
-    private readonly IDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public GetBoxesByProjectQueryHandler(IDbContext dbContext)
+    public GetBoxesByProjectQueryHandler(IUnitOfWork unitOfWork)
     {
-        _dbContext = dbContext;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Result<List<BoxDto>>> Handle(GetBoxesByProjectQuery request, CancellationToken cancellationToken)
     {
-        var boxes = await _dbContext.Boxes
-            .Include(b => b.Project)
-            .Where(b => b.ProjectId == request.ProjectId)
-            .OrderBy(b => b.BoxTag)
-            .ToListAsync(cancellationToken);
+        var boxes = _unitOfWork.Repository<Box>().GetWithSpec(new GetBoxesByProjectIdSpecification(request.ProjectId)).Data.ToList();
 
         var boxDtos = boxes.Select(b =>
         {

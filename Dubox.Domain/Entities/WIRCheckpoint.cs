@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Dubox.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -11,7 +12,7 @@ namespace Dubox.Domain.Entities
 
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int WIRId { get; set; }
+        public Guid WIRId { get; set; }
 
         [Required]
         [ForeignKey(nameof(Box))]
@@ -41,7 +42,7 @@ namespace Dubox.Domain.Entities
         public string? InspectorRole { get; set; } // QC Engineer-Civil, QC Engineer-MEP, etc.
 
         [MaxLength(50)]
-        public string Status { get; set; } = "Pending"; // Pending, Approved, Rejected, Conditional Approval
+        public WIRCheckpointStatusEnum Status { get; set; } = WIRCheckpointStatusEnum.Pending; // Pending, Approved, Rejected, Conditional Approval
 
         public DateTime? ApprovalDate { get; set; }
 

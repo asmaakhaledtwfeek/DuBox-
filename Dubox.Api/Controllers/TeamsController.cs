@@ -45,7 +45,7 @@ public class TeamsController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
     [HttpGet("team-members/{teamId}")]
-    public async Task<IActionResult> GetTeamMembers(int teamId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetTeamMembers(Guid teamId, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetTeamMembersQuery(teamId), cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);

@@ -1,5 +1,3 @@
-using Dubox.Domain.Enums;
-
 namespace Dubox.Application.DTOs;
 
 public record BoxDto
@@ -16,7 +14,7 @@ public record BoxDto
     public string QRCodeString { get; init; } = string.Empty;
     public string? QRCodeImage { get; init; } = string.Empty;
     public decimal ProgressPercentage { get; init; }
-    public BoxStatusEnum Status { get; init; }
+    public string Status { get; init; } = string.Empty;
     public decimal? Length { get; init; }
     public decimal? Width { get; init; }
     public decimal? Height { get; init; }
@@ -26,6 +24,7 @@ public record BoxDto
     public DateTime? PlannedEndDate { get; init; }
     public DateTime? ActualEndDate { get; init; }
     public DateTime CreatedDate { get; init; }
+    public int ActivitiesCount { get; init; }
 }
 
 public record CreateBoxDto

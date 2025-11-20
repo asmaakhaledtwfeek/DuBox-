@@ -22,6 +22,7 @@ export interface Box {
   actualEndDate?: Date;
   progress: number;
   activities: BoxActivity[];
+  activitiesCount?: number;
   attachments: BoxAttachment[];
   logs: BoxLog[];
   qrCode?: string;
@@ -29,6 +30,7 @@ export interface Box {
   updatedBy?: string;
   createdAt?: Date;
   updatedAt?: Date;
+
 }
 
 export enum BoxStatus {

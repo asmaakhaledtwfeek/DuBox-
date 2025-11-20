@@ -60,7 +60,8 @@ export class BoxService {
       createdBy: backendBox.createdBy,
       updatedBy: backendBox.modifiedBy || backendBox.updatedBy,
       createdAt: backendBox.createdDate ? new Date(backendBox.createdDate) : undefined,
-      updatedAt: backendBox.modifiedDate ? new Date(backendBox.modifiedDate) : undefined
+      updatedAt: backendBox.modifiedDate ? new Date(backendBox.modifiedDate) : undefined,
+      activitiesCount:backendBox.activitiesCount || backendBox.ActivitiesCount||0
     };
   }
 

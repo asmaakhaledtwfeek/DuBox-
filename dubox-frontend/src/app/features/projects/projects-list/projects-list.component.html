@@ -163,9 +163,10 @@
             View Boxes
             <span *ngIf="!project.id" style="color: #ff6b6b; font-size: 11px; margin-left: 4px;">(No ID)</span>
           </button>
-          <span class="project-date">
-            Started: {{ project.startDate | date:'MMM d, yyyy' }}
-          </span>
+        <span class="project-date">
+             Started:
+           {{ project.startDate ? (project.startDate | date: 'MMM d, yyyy') : 'Not Started Yet' }}
+      </span>
         </div>
       </div>
     </div>

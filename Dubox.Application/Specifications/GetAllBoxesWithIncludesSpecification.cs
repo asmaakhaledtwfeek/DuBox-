@@ -3,15 +3,15 @@ using Dubox.Domain.Specification;
 
 namespace Dubox.Application.Specifications
 {
-    public class DeleteBoxWithIncludesSpecification : Specification<Box>
+    public class GetAllBoxesWithIncludesSpecification : Specification<Box>
     {
-        public DeleteBoxWithIncludesSpecification(Guid boxId)
+        public GetAllBoxesWithIncludesSpecification()
         {
-            AddCriteria(box => box.BoxId == boxId);
-
+            AddInclude(nameof(Box.Project));
             AddInclude(nameof(Box.BoxAssets));
             AddInclude(nameof(Box.BoxActivities));
             AddInclude(nameof(Box.ProgressUpdates));
+            AddOrderByDescending(x => x.CreatedDate);
         }
     }
 }

@@ -13,6 +13,31 @@ export class BoxService {
   constructor(private apiService: ApiService) {}
 
   /**
+   * Map backend numeric status to frontend string status
+   */
+  private mapStatus(status: any): string {
+    // If already a string, check if it's valid
+    if (typeof status === 'string') {
+      const validStatuses = ['NotStarted', 'InProgress', 'Completed', 'OnHold', 'Delayed', 'QAReview', 'ReadyForDelivery', 'Delivered'];
+      if (validStatuses.includes(status)) {
+        return status;
+      }
+    }
+
+    // Map numeric status to string
+    const statusMap: Record<number, string> = {
+      1: 'NotStarted',
+      2: 'InProgress',
+      3: 'Completed',
+      4: 'OnHold',
+      5: 'Delayed'
+    };
+
+    const numericStatus = typeof status === 'number' ? status : parseInt(status, 10);
+    return statusMap[numericStatus] || 'NotStarted';
+  }
+
+  /**
    * Transform backend box response to frontend model
    */
   private transformBox(backendBox: any): Box {
@@ -29,13 +54,17 @@ export class BoxService {
       qrCode = `data:image/png;base64,${qrCode}`;
       console.log('✅ Added data URL prefix to QR code');
     }
+
+    // Map status from backend format to frontend format
+    const rawStatus = backendBox.status || backendBox.boxStatus || backendBox.Status;
+    const mappedStatus = this.mapStatus(rawStatus);
     
     return {
       id: backendBox.boxId || backendBox.id,
       name: backendBox.boxName || backendBox.name,
       code: backendBox.boxTag || backendBox.boxCode || backendBox.code,
       projectId: backendBox.projectId,
-      status: backendBox.status || backendBox.boxStatus,
+      status: mappedStatus as any,
       type: backendBox.boxType || backendBox.type,
       description: backendBox.description,
       floor: backendBox.floor,

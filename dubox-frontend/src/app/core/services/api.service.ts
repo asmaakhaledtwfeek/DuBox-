@@ -74,7 +74,16 @@ export class ApiService {
   put<T>(endpoint: string, body: any): Observable<T> {
     return this.http.put<any>(`${this.baseUrl}/${endpoint}`, body)
       .pipe(
-        map(response => response.data || response.Data || response),
+        map(response => {
+          console.log('🌐 PUT API Response for', endpoint, ':', response);
+          console.log('🔑 Response keys:', Object.keys(response));
+          
+          // Backend returns Result<T> with 'data' property (camelCase configured in Program.cs)
+          // Try: data (camelCase) -> Data (PascalCase) -> value -> Value -> raw response
+          const data = response.data || response.Data || response.value || response.Value || response;
+          console.log('✅ Extracted data:', data);
+          return data;
+        }),
         catchError(this.handleError)
       );
   }
@@ -96,7 +105,16 @@ export class ApiService {
   delete<T>(endpoint: string): Observable<T> {
     return this.http.delete<any>(`${this.baseUrl}/${endpoint}`)
       .pipe(
-        map(response => response.data || response.Data || response),
+        map(response => {
+          console.log('🌐 DELETE API Response for', endpoint, ':', response);
+          console.log('🔑 Response keys:', Object.keys(response));
+          
+          // Backend returns Result<T> with 'data' property (camelCase configured in Program.cs)
+          // Try: data (camelCase) -> Data (PascalCase) -> value -> Value -> raw response
+          const data = response.data || response.Data || response.value || response.Value || response;
+          console.log('✅ Extracted data:', data);
+          return data;
+        }),
         catchError(this.handleError)
       );
   }

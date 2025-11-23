@@ -23,6 +23,12 @@ export class ProjectService {
     const id = backendProject.projectId || backendProject.ProjectId || backendProject.id || backendProject.Id;
     const name = backendProject.projectName || backendProject.ProjectName || backendProject.name || backendProject.Name;
     const code = backendProject.projectCode || backendProject.ProjectCode || backendProject.code || backendProject.Code;
+    const clientName = backendProject.clientName || backendProject.ClientName;
+    const durationValue = backendProject.duration || backendProject.Duration || backendProject.projectDuration || backendProject.ProjectDuration;
+    const plannedStartValue = backendProject.plannedStartDate || backendProject.PlannedStartDate || backendProject.startDate || backendProject.StartDate;
+    const startDateValue = backendProject.startDate || backendProject.StartDate || plannedStartValue;
+    const plannedEndValue = backendProject.plannedEndDate || backendProject.PlannedEndDate || backendProject.endDate || backendProject.EndDate;
+    const endDateValue = backendProject.endDate || backendProject.EndDate || plannedEndValue;
     
     if (!id) {
       console.error('❌ No project ID found! Backend project:', backendProject);
@@ -33,15 +39,23 @@ export class ProjectService {
       name: name,
       code: code,
       location: backendProject.location || backendProject.Location || '',
+      clientName: clientName,
       description: backendProject.description || backendProject.Description,
-      startDate:( backendProject.startDate || backendProject.StartDate) ? new Date(backendProject.startDate || backendProject.StartDate) : undefined,
-      endDate: (backendProject.plannedEndDate || backendProject.PlannedEndDate) ? new Date(backendProject.plannedEndDate || backendProject.PlannedEndDate) : undefined,
+      startDate: startDateValue ? new Date(startDateValue) : undefined,
+      endDate: endDateValue ? new Date(endDateValue) : undefined,
+      plannedStartDate: plannedStartValue ? new Date(plannedStartValue) : undefined,
+      plannedEndDate: plannedEndValue ? new Date(plannedEndValue) : undefined,
+      duration: durationValue ? Number(durationValue) : undefined,
       status: backendProject.status || backendProject.Status,
       totalBoxes: backendProject.totalBoxes || backendProject.TotalBoxes || 0,
       completedBoxes: backendProject.completedBoxes || backendProject.CompletedBoxes || 0,
       inProgressBoxes: backendProject.inProgressBoxes || backendProject.InProgressBoxes || 0,
       readyForDeliveryBoxes: backendProject.readyForDeliveryBoxes || backendProject.ReadyForDeliveryBoxes || 0,
-      progress: backendProject.progress || backendProject.Progress || 0,
+      progress: backendProject.ProgressPercentage ?? 
+                backendProject.progressPercentage ?? 
+                backendProject.progress ?? 
+                backendProject.Progress ?? 
+                0,
       createdBy: backendProject.createdBy || backendProject.CreatedBy,
       updatedBy: backendProject.modifiedBy || backendProject.ModifiedBy || backendProject.updatedBy || backendProject.UpdatedBy,
       createdAt: (backendProject.createdDate || backendProject.CreatedDate) ? new Date(backendProject.createdDate || backendProject.CreatedDate) : undefined,

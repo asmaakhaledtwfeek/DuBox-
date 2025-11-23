@@ -1,0 +1,343 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="page-content">
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading team details...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error && !loading" class="error-state">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 8v4M12 16h.01"/>
+      </svg>
+      <p>{{ error }}</p>
+      <button class="btn btn-secondary" (click)="goBack()">Back to Teams</button>
+    </div>
+
+    <!-- Team Details -->
+    <div *ngIf="team && !loading">
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="header-left">
+          <button class="btn-back" (click)="goBack()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="19" y1="12" x2="5" y2="12"/>
+              <polyline points="12 19 5 12 12 5"/>
+            </svg>
+            Back to Teams
+          </button>
+          <div class="title-section">
+            <h1 class="page-title">{{ team.teamName }}</h1>
+            <span class="badge" [class.active]="team.isActive" [class.inactive]="!team.isActive">
+              {{ team.isActive ? 'Active' : 'Inactive' }}
+            </span>
+          </div>
+          <p class="page-subtitle">{{ team.teamCode }} • {{ team.departmentName || 'No Department' }} • {{ team.trade || 'No Trade' }}</p>
+        </div>
+        <div class="header-right">
+          <button class="btn btn-secondary" (click)="addMembers()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75M12 5v14M5 12h14"/>
+            </svg>
+            Add Members
+          </button>
+          <button class="btn btn-primary" (click)="editTeam()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Edit
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button 
+          class="tab" 
+          [class.active]="activeTab === 'overview'"
+          (click)="setActiveTab('overview')"
+        >
+          Overview
+        </button>
+        <button 
+          class="tab" 
+          [class.active]="activeTab === 'members'"
+          (click)="setActiveTab('members')"
+        >
+          Members ({{ teamMembers?.members?.length || 0 }})
+        </button>
+      </div>
+
+      <!-- Tab Content -->
+      <div class="tab-content">
+        <!-- Overview Tab -->
+        <div *ngIf="activeTab === 'overview'" class="overview-tab">
+          <div class="content-grid">
+            <!-- Team Information Card -->
+            <div class="info-card">
+              <h3 class="card-title">Team Information</h3>
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="label">Team Code</span>
+                  <span class="value">{{ team.teamCode }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">Team Name</span>
+                  <span class="value">{{ team.teamName }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">Department</span>
+                  <span class="value">{{ team.departmentName || '-' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">Trade</span>
+                  <span class="value">{{ team.trade || '-' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">Team Leader</span>
+                  <span class="value">{{ team.teamLeaderName || '-' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">Team Size</span>
+                  <span class="value badge-primary">{{ team.teamSize || 0 }} members</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">Status</span>
+                  <span class="value">
+                    <span class="badge" [class.active]="team.isActive" [class.inactive]="!team.isActive">
+                      {{ team.isActive ? 'Active' : 'Inactive' }}
+                    </span>
+                  </span>
+                </div>
+                <div class="info-item">
+                  <span class="label">Created Date</span>
+                  <span class="value">{{ formatDate(team.createdDate) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Members Tab -->
+        <div *ngIf="activeTab === 'members'" class="members-tab">
+          <div class="members-container">
+            <div *ngIf="!teamMembers || teamMembers.members.length === 0" class="empty-state">
+              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              <h3>No Members</h3>
+              <p>No members assigned to this team yet.</p>
+            </div>
+            <div *ngIf="teamMembers && teamMembers.members.length > 0" class="members-grid">
+              <div *ngFor="let member of teamMembers.members" class="member-card">
+                <button 
+                  class="btn-remove-icon"
+                  (click)="openRemoveMemberModal(member)"
+                  title="Remove Member"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+                <div class="member-header">
+                  <div class="member-avatar">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                      <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                  </div>
+                  <div class="member-name">{{ member.employeeName || member.fullName || member.email }}</div>
+                </div>
+                <div class="member-details">
+                  <div class="detail-item" *ngIf="member.employeeCode">
+                    <span class="detail-label">Code</span>
+                    <span class="detail-value">{{ member.employeeCode }}</span>
+                  </div>
+                  <div class="detail-item" *ngIf="member.email">
+                    <span class="detail-label">Email</span>
+                    <span class="detail-value">{{ member.email }}</span>
+                  </div>
+                  <div class="detail-item" *ngIf="member.mobileNumber">
+                    <span class="detail-label">Mobile</span>
+                    <span class="detail-value">{{ member.mobileNumber }}</span>
+                  </div>
+                  <div class="detail-item" *ngIf="!member.employeeCode || !member.employeeName || !member.mobileNumber">
+                    <span class="detail-label status-incomplete">Status</span>
+                    <span class="detail-value status-incomplete">Profile Incomplete</span>
+                  </div>
+                </div>
+                <div class="member-actions">
+                  <button 
+                    class="btn-complete-profile"
+                    (click)="openCompleteProfileModal(member)"
+                    [title]="needsProfileCompletion(member) ? 'Complete Profile' : 'Update Profile'"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    {{ needsProfileCompletion(member) ? 'Complete Profile' : 'Update Profile' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Complete Profile Modal -->
+<div *ngIf="showCompleteProfileModal" class="modal-overlay" (click)="closeCompleteProfileModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Complete Member Profile</h2>
+      <button class="modal-close" (click)="closeCompleteProfileModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <form [formGroup]="completeProfileForm" (ngSubmit)="onCompleteProfile()">
+      <div class="modal-body">
+        <!-- Success Message -->
+        <div *ngIf="completeProfileSuccess" class="success-message">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <span>{{ completeProfileSuccess }}</span>
+        </div>
+
+        <!-- Error Message -->
+        <div *ngIf="completeProfileError" class="error-message">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>{{ completeProfileError }}</span>
+        </div>
+
+        <div class="form-group">
+          <label for="employeeCode">Employee Code <span class="required">*</span></label>
+          <input 
+            type="text" 
+            id="employeeCode"
+            formControlName="employeeCode"
+            class="form-control"
+            placeholder="Enter employee code"
+            [class.invalid]="completeProfileForm.get('employeeCode')?.invalid && completeProfileForm.get('employeeCode')?.touched"
+          />
+          <div *ngIf="completeProfileForm.get('employeeCode')?.invalid && completeProfileForm.get('employeeCode')?.touched" class="error-text">
+            Employee code is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="employeeName">Employee Name <span class="required">*</span></label>
+          <input 
+            type="text" 
+            id="employeeName"
+            formControlName="employeeName"
+            class="form-control"
+            placeholder="Enter employee name"
+            [class.invalid]="completeProfileForm.get('employeeName')?.invalid && completeProfileForm.get('employeeName')?.touched"
+          />
+          <div *ngIf="completeProfileForm.get('employeeName')?.invalid && completeProfileForm.get('employeeName')?.touched" class="error-text">
+            Employee name is required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="mobileNumber">Mobile Number</label>
+          <input 
+            type="text" 
+            id="mobileNumber"
+            formControlName="mobileNumber"
+            class="form-control"
+            placeholder="Enter mobile number (optional)"
+            [class.invalid]="completeProfileForm.get('mobileNumber')?.invalid && completeProfileForm.get('mobileNumber')?.touched"
+          />
+          <div *ngIf="completeProfileForm.get('mobileNumber')?.invalid && completeProfileForm.get('mobileNumber')?.touched" class="error-text">
+            Invalid mobile number
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeCompleteProfileModal()" [disabled]="completingProfile">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="completingProfile || completeProfileForm.invalid">
+          <span *ngIf="completingProfile">Completing...</span>
+          <span *ngIf="!completingProfile">Complete Profile</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Remove Member Confirmation Modal -->
+<div *ngIf="showRemoveConfirmModal" class="modal-overlay" (click)="closeRemoveMemberModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Remove Team Member</h2>
+      <button class="modal-close" (click)="closeRemoveMemberModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Error Message -->
+      <div *ngIf="removeMemberError" class="error-message">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>{{ removeMemberError }}</span>
+      </div>
+
+      <div class="confirm-message">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="warning-icon">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <p class="confirm-text">
+          Are you sure you want to remove <strong>{{ memberToRemove?.employeeName || memberToRemove?.fullName || memberToRemove?.email }}</strong> from this team?
+        </p>
+        <p class="confirm-subtext">
+          This action cannot be undone. The member will be removed from the team immediately.
+        </p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button type="button" class="btn btn-secondary" (click)="closeRemoveMemberModal()" [disabled]="removingMember">
+        Cancel
+      </button>
+      <button type="button" class="btn btn-danger" (click)="confirmRemoveMember()" [disabled]="removingMember">
+        <span *ngIf="removingMember">Removing...</span>
+        <span *ngIf="!removingMember">Remove Member</span>
+      </button>
+    </div>
+  </div>
+</div>
+

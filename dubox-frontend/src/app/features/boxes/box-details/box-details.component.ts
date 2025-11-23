@@ -21,12 +21,16 @@ export class BoxDetailsComponent implements OnInit {
   projectId!: string;
   loading = true;
   error = '';
+  deleting = false;
+  showDeleteConfirm = false;
   
   activeTab: 'overview' | 'activities' | 'logs' | 'attachments' = 'overview';
   
   canEdit = false;
   canDelete = false;
   BoxStatus = BoxStatus;
+  
+  actualActivityCount: number = 0; // Actual count from activity table (excluding WIR rows)
 
   constructor(
     private route: ActivatedRoute,
@@ -127,18 +131,34 @@ export class BoxDetailsComponent implements OnInit {
     this.router.navigate(['/projects', this.projectId, 'boxes', this.boxId, 'edit']);
   }
 
+  openDeleteConfirm(): void {
+    this.showDeleteConfirm = true;
+  }
+
+  cancelDelete(): void {
+    this.showDeleteConfirm = false;
+  }
+
   deleteBox(): void {
-    if (confirm('Are you sure you want to delete this box?')) {
-      this.boxService.deleteBox(this.boxId).subscribe({
-        next: () => {
-          this.router.navigate(['/projects', this.projectId, 'boxes']);
-        },
-        error: (err) => {
-          this.error = err.message || 'Failed to delete box';
-          console.error('Error deleting box:', err);
-        }
-      });
+    if (this.deleting) {
+      return;
     }
+
+    this.deleting = true;
+    this.error = '';
+    this.boxService.deleteBox(this.boxId).subscribe({
+      next: () => {
+        this.showDeleteConfirm = false;
+        this.deleting = false;
+        this.router.navigate(['/projects', this.projectId, 'boxes']);
+      },
+      error: (err) => {
+        this.deleting = false;
+        this.error = err.message || 'Failed to delete box';
+        this.showDeleteConfirm = false;
+        console.error('Error deleting box:', err);
+      }
+    });
   }
 
   downloadQRCode(): void {
@@ -178,5 +198,10 @@ export class BoxDetailsComponent implements OnInit {
       [BoxStatus.OnHold]: 'On Hold'
     };
     return labels[status] || status;
+  }
+
+  onActivityCountChanged(count: number): void {
+    this.actualActivityCount = count;
+    console.log(`📊 Activity count updated: ${count}`);
   }
 }

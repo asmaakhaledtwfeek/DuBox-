@@ -64,6 +64,85 @@ export interface RejectWIRRequest {
   signature?: string;
 }
 
+// WIR Checkpoint Models
+export interface WIRCheckpoint {
+  wirId: string;
+  boxId: string;
+  boxActivityId?: string;
+  wirNumber: string;
+  wirName?: string;
+  wirDescription?: string;
+  requestedDate?: Date;
+  requestedBy?: string;
+  inspectionDate?: Date;
+  inspectorName?: string;
+  inspectorRole?: string;
+  status: WIRCheckpointStatus;
+  approvalDate?: Date;
+  comments?: string;
+  attachmentPath?: string;
+  createdDate: Date;
+  checklistItems?: WIRCheckpointChecklistItem[];
+  qualityIssues?: any[];
+}
+
+export interface WIRCheckpointChecklistItem {
+  checklistItemId: string;
+  wirId: string;
+  checkpointDescription: string;
+  referenceDocument?: string;
+  status: CheckListItemStatus;
+  remarks?: string;
+  sequence: number;
+}
+
+export enum WIRCheckpointStatus {
+  Pending = 'Pending',
+  Approved = 'Approved',
+  Rejected = 'Rejected',
+  ConditionalApproval = 'ConditionalApproval'
+}
+
+export enum CheckListItemStatus {
+  Pending = 'Pending',
+  Pass = 'Pass',
+  Fail = 'Fail',
+  NA = 'NA'
+}
+
+export interface CreateWIRCheckpointRequest {
+  boxActivityId: string; // Auto-filled from route
+  wirNumber: string; // Auto-filled from WIRRecord
+  wirName?: string; // User input
+  wirDescription?: string; // User input
+  attachmentPath?: string; // User input
+  comments?: string; // User input
+}
+
+export interface AddChecklistItemsRequest {
+  wirId: string;
+  items: ChecklistItemForCreate[];
+}
+
+export interface ChecklistItemForCreate {
+  checkpointDescription: string;
+  referenceDocument?: string;
+  sequence: number;
+}
+
+export interface ReviewWIRCheckpointRequest {
+  wirId: string;
+  status: WIRCheckpointStatus;
+  comment?: string;
+  items: ChecklistItemForReview[];
+}
+
+export interface ChecklistItemForReview {
+  checklistItemId: string;
+  remarks?: string;
+  status: CheckListItemStatus;
+}
+
 // Predefined Checklist Templates for each WIR Code
 export const WIR_CHECKLIST_TEMPLATES: Record<string, WIRChecklistItem[]> = {
   'WIR-1': [ // Assembly Clearance

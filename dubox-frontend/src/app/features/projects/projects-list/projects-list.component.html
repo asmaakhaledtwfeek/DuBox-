@@ -143,12 +143,12 @@
           <div class="progress-section">
             <div class="progress-header">
               <span class="progress-label">Overall Progress</span>
-              <span class="progress-value">{{ project.progress }}%</span>
+              <span class="progress-value">{{ formatProgress(project.progress) }}%</span>
             </div>
             <div class="progress-bar">
               <div 
                 class="progress-fill" 
-                [style.width.%]="project.progress"
+                [style.width.%]="getProgressForBar(project.progress)"
                 [style.backgroundColor]="getProgressColor(project.progress)"
               ></div>
             </div>

@@ -1,24 +1,26 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { BoxActivity } from '../../../core/models/box.model';
 import { UpdateProgressModalComponent } from '../update-progress-modal/update-progress-modal.component';
+import { WIRApprovalModalComponent } from '../wir-approval-modal/wir-approval-modal.component';
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
 import { BoxActivityDetail } from '../../../core/models/progress-update.model';
 import { WIRService } from '../../../core/services/wir.service';
-import { WIRRecord } from '../../../core/models/wir.model';
+import { WIRRecord, WIRStatus } from '../../../core/models/wir.model';
 
 // Combined type for activities and WIR rows
 export interface TableRow {
   type: 'activity' | 'wir';
   sequence: number;
   data: BoxActivityDetail | WIRRecord;
+  isPlaceholder?: boolean;
 }
 
 @Component({
   selector: 'app-activity-table',
   standalone: true,
-  imports: [CommonModule, RouterModule, UpdateProgressModalComponent],
+  imports: [CommonModule, RouterModule, UpdateProgressModalComponent, WIRApprovalModalComponent],
   templateUrl: './activity-table.component.html',
   styleUrls: ['./activity-table.component.scss']
 })
@@ -26,12 +28,16 @@ export class ActivityTableComponent implements OnInit {
   @Input() activities: BoxActivity[] = [];
   @Input() projectId: string = '';
   @Input() boxId: string = '';
+  @Output() boxDataChanged = new EventEmitter<void>();
+  @Output() activityCountChanged = new EventEmitter<number>();
 
   activitiesWithDetails: BoxActivityDetail[] = [];
   wirRecords: WIRRecord[] = [];
   tableRows: TableRow[] = [];
   isModalOpen = false;
   selectedActivity: BoxActivityDetail | null = null;
+  isWIRModalOpen = false;
+  selectedWIR: WIRRecord | null = null;
   isLoading = false;
 
   constructor(
@@ -49,7 +55,46 @@ export class ActivityTableComponent implements OnInit {
     this.isLoading = true;
     this.progressUpdateService.getBoxActivitiesWithProgress(this.boxId).subscribe({
       next: (activities) => {
-        this.activitiesWithDetails = activities;
+        console.log(`📊 Loaded ${activities ? activities.length : 0} activities from API`);
+        console.log('📊 Raw activities:', activities);
+        
+        // Ensure activities is an array
+        const activitiesArray = Array.isArray(activities) ? activities : [];
+        
+        // Map the API response to match BoxActivityDetail interface
+        // API returns: { seq, name, id, ... } but component expects: { sequence, activityName, boxActivityId, ... }
+        this.activitiesWithDetails = activitiesArray.map((a: any) => ({
+          boxActivityId: a.boxActivityId || a.id,
+          boxId: a.boxId || this.boxId,
+          activityMasterId: a.activityMasterId,
+          activityName: a.activityName || a.name,
+          activityCode: a.activityCode,
+          sequence: a.sequence || a.seq,
+          status: a.status || 'NotStarted',
+          progressPercentage: a.progressPercentage || 0,
+          plannedStartDate: a.plannedStartDate,
+          plannedEndDate: a.plannedEndDate,
+          actualStartDate: a.actualStartDate,
+          actualEndDate: a.actualEndDate,
+          duration: a.duration,
+          workDescription: a.workDescription,
+          issuesEncountered: a.issuesEncountered,
+          teamId: a.teamId,
+          teamName: a.teamName || a.assignedTeam,
+          assignedMemberId: a.assignedMemberId,
+          assignedMemberName: a.assignedMemberName || a.assignedTo,
+          materialsAvailable: a.materialsAvailable !== undefined ? a.materialsAvailable : true,
+          isActive: a.isActive !== undefined ? a.isActive : true,
+          createdDate: a.createdDate,
+          modifiedDate: a.modifiedDate,
+          activityMaster: a.activityMaster,
+          isWIRCheckpoint: a.isWIRCheckpoint,
+          wirCode: a.wirCode,
+          stage: a.stage
+        }));
+        
+        console.log('📊 Mapped activities:', this.activitiesWithDetails.length);
+        console.log('📊 Activity sequences:', this.activitiesWithDetails.map(a => ({ seq: a.sequence, name: a.activityName, id: a.boxActivityId })));
         this.loadWIRRecords();
       },
       error: (error) => {
@@ -84,8 +129,56 @@ export class ActivityTableComponent implements OnInit {
       wirMap.set(wir.boxActivityId, wir);
     });
 
-    // Sort activities by sequence
-    const sortedActivities = [...this.activitiesWithDetails].sort((a, b) => a.sequence - b.sequence);
+    // Use all activities (no filtering by isActive)
+    console.log(`📊 Total activities: ${this.activitiesWithDetails.length}`);
+    
+    // Sort activities by sequence and remove duplicates by boxActivityId
+    const uniqueActivities = new Map<string, BoxActivityDetail>();
+    const duplicateSequences = new Map<number, number>();
+    const seenBoxActivityIds = new Set<string>();
+    
+    this.activitiesWithDetails.forEach(activity => {
+      // Use boxActivityId as the unique key (it's always present and unique)
+      const key = activity.boxActivityId;
+      
+      if (!key) {
+        console.warn(`⚠️ Activity missing boxActivityId:`, activity);
+        return;
+      }
+      
+      // Check for duplicate boxActivityId
+      if (seenBoxActivityIds.has(key)) {
+        console.warn(`⚠️ Duplicate boxActivityId detected: ${key}`, activity);
+        return; // Skip duplicates
+      }
+      
+      seenBoxActivityIds.add(key);
+      uniqueActivities.set(key, activity);
+      
+      // Track sequence numbers to detect duplicates
+      if (activity.sequence) {
+        duplicateSequences.set(activity.sequence, (duplicateSequences.get(activity.sequence) || 0) + 1);
+      }
+    });
+    
+    // Check for duplicate sequence numbers
+    const duplicateSeqs = Array.from(duplicateSequences.entries()).filter(([seq, count]) => count > 1);
+    if (duplicateSeqs.length > 0) {
+      console.warn(`⚠️ Found duplicate sequence numbers:`, duplicateSeqs);
+      console.warn(`⚠️ Activities with duplicate sequences:`, 
+        this.activitiesWithDetails.filter((a: BoxActivityDetail) => duplicateSeqs.some(([seq]) => a.sequence === seq))
+      );
+    }
+    
+    const sortedActivities = Array.from(uniqueActivities.values()).sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
+    
+    console.log(`📊 After deduplication: ${sortedActivities.length} unique activities`);
+    console.log('📊 Sorted sequences:', sortedActivities.map(a => ({ seq: a.sequence, name: a.activityName })));
+    
+    // Final validation: should match expected count
+    if (sortedActivities.length !== this.activitiesWithDetails.length) {
+      console.warn(`⚠️ Count mismatch: ${sortedActivities.length} unique vs ${this.activitiesWithDetails.length} total`);
+    }
 
     // Build combined rows: activity followed by its WIR (if exists)
     sortedActivities.forEach(activity => {
@@ -98,17 +191,40 @@ export class ActivityTableComponent implements OnInit {
 
       // If this activity has a WIR record, add WIR row after it
       const wirRecord = wirMap.get(activity.boxActivityId);
-      if (wirRecord) {
+      if (this.isWIRCheckpoint(activity) || wirRecord) {
+        const wirData = wirRecord || this.createPlaceholderWIR(activity);
         rows.push({
           type: 'wir',
           sequence: activity.sequence,
-          data: wirRecord
+          data: wirData,
+          isPlaceholder: !wirRecord
         });
       }
     });
 
     this.tableRows = rows;
-    console.log('✅ Built table with', rows.length, 'rows (activities + WIRs)');
+    
+    // Log for debugging - separate activity and WIR counts
+    const activityCount = rows.filter(r => r.type === 'activity').length;
+    const wirCount = rows.filter(r => r.type === 'wir').length;
+    console.log(`📊 Activity Table: ${this.activitiesWithDetails.length} activities loaded, ${activityCount} activity rows displayed, ${wirCount} WIR rows, ${rows.length} total rows`);
+    
+    // Emit the actual activity count to parent component
+    this.activityCountChanged.emit(activityCount);
+  }
+
+  /**
+   * Get count of activity rows only (excluding WIR rows)
+   */
+  get activityCount(): number {
+    return this.tableRows.filter(row => row.type === 'activity').length;
+  }
+
+  /**
+   * Get count of WIR rows only
+   */
+  get wirRowCount(): number {
+    return this.tableRows.filter(row => row.type === 'wir').length;
   }
 
   /**
@@ -136,6 +252,9 @@ export class ActivityTableComponent implements OnInit {
     // Reload activities to get updated data
     this.loadActivitiesWithDetails();
     
+    // Notify parent component that box data may have changed (status, progress, etc.)
+    this.boxDataChanged.emit();
+    
     // Show WIR notification if created
     if (response.wirCreated) {
       alert(`✅ Progress updated! WIR ${response.wirCode} has been created for QC inspection.`);
@@ -161,7 +280,11 @@ export class ActivityTableComponent implements OnInit {
    * Get team name from assigned team
    */
   getTeam(activity: any): string {
-    const team = activity.assignedTo || activity.teamName || 'N/A';
+    const team = activity.assignedTo || activity.teamName;
+    
+    if (!team || team === 'N/A') {
+      return '';
+    }
     
     // Extract team name (e.g., "QC Engineer-Civil" -> "QA/QC")
     if (team.toLowerCase().includes('qc') || team.toLowerCase().includes('qa')) {
@@ -172,7 +295,7 @@ export class ActivityTableComponent implements OnInit {
       return 'Civil';
     }
     
-    return 'General';
+    return '';
   }
 
   /**
@@ -224,12 +347,12 @@ export class ActivityTableComponent implements OnInit {
   }
 
   /**
-   * Get assigned to name
+   * Get assigned to name for regular activities
+   * Note: WIR rows have their own getWIRInspectorName() method
    */
   getAssignedTo(activity: any): string {
-    if (this.isWIRCheckpoint(activity)) {
-      return activity.assignedTo || activity.assignedMemberName || 'QC Engineer';
-    }
+    // Regular activities should never default to "QC Engineer"
+    // Only show assigned person or "-" if not assigned
     return activity.assignedTo || activity.assignedMemberName || '-';
   }
 
@@ -287,6 +410,14 @@ export class ActivityTableComponent implements OnInit {
     return row.type === 'wir' ? (row.data as WIRRecord) : null;
   }
 
+  hasRealWIR(row: TableRow): boolean {
+    return this.isWIRRow(row) && !row.isPlaceholder && !!(row.data as WIRRecord)?.wirRecordId;
+  }
+
+  isPlaceholderWIR(row: TableRow): boolean {
+    return this.isWIRRow(row) && !!row.isPlaceholder;
+  }
+
   /**
    * Get WIR status class
    */
@@ -306,5 +437,99 @@ export class ActivityTableComponent implements OnInit {
    */
   getWIRStatusLabel(status: any): string {
     return status ? String(status) : 'Pending';
+  }
+
+  private createPlaceholderWIR(activity: BoxActivityDetail): WIRRecord {
+    const wirCode = activity.wirCode || activity.activityMaster?.wirCode || this.generateWirCode(activity.sequence);
+    return {
+      wirRecordId: '',
+      boxActivityId: activity.boxActivityId,
+      boxTag: '',
+      activityName: activity.activityName,
+      wirCode,
+      status: WIRStatus.Pending,
+      requestedDate: new Date(),
+      requestedBy: '',
+      requestedByName: '',
+      inspectedBy: activity.assignedMemberId,
+      inspectedByName: activity.assignedMemberName || 'QC Engineer',
+      inspectionDate: undefined,
+      inspectionNotes: '',
+      photoUrls: '',
+      rejectionReason: '',
+      checklistItems: []
+    };
+  }
+
+  private generateWirCode(sequence: number): string {
+    if (!sequence) return 'WIR';
+    return `WIR-${sequence}`;
+  }
+
+  /**
+   * Check if WIR has assigned inspector (or should show default)
+   * Returns true if WIR exists (even if not assigned, we'll show "QC Engineer" by default)
+   */
+  hasWIRInspector(row: TableRow): boolean {
+    const wir = this.getWIR(row);
+    return !!wir; // Return true if WIR exists, regardless of assignment
+  }
+
+  /**
+   * Get WIR inspector name, defaulting to "QC Engineer" if not assigned
+   */
+  getWIRInspectorName(row: TableRow): string {
+    const wir = this.getWIR(row);
+    return wir?.inspectedByName || 'QC Engineer';
+  }
+
+  /**
+   * Check if WIR has actions
+   */
+  hasWIRActions(row: TableRow): boolean {
+    return this.hasRealWIR(row);
+  }
+
+  /**
+   * Get colspan for Activity cell (merge with Assigned to if empty)
+   */
+  getActivityColspan(row: TableRow): number {
+    return this.hasWIRInspector(row) ? 1 : 2;
+  }
+
+  /**
+   * Get colspan for Status cell (merge with Actions if empty)
+   */
+  getStatusColspan(row: TableRow): number {
+    return this.hasWIRActions(row) ? 1 : 2;
+  }
+
+  /**
+   * Open WIR approval modal
+   */
+  openWIRApprovalModal(wirRecord: WIRRecord): void {
+    this.selectedWIR = wirRecord;
+    this.isWIRModalOpen = true;
+  }
+
+  /**
+   * Close WIR approval modal
+   */
+  closeWIRApprovalModal(): void {
+    this.isWIRModalOpen = false;
+    this.selectedWIR = null;
+  }
+
+  /**
+   * Handle WIR update (approve/reject)
+   */
+  onWIRUpdated(updatedWIR: WIRRecord): void {
+    console.log('WIR updated:', updatedWIR);
+    
+    // Reload WIR records to get updated data
+    this.loadWIRRecords();
+    
+    // Notify parent component
+    this.boxDataChanged.emit();
   }
 }

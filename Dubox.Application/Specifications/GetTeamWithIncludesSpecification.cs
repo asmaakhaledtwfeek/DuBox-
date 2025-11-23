@@ -14,5 +14,12 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(Team.Members));
         }
 
+        public GetTeamWithIncludesSpecification()
+        {
+            AddInclude(nameof(Team.Department));
+            AddInclude(nameof(Team.TeamLeader));
+            AddInclude(nameof(Team.Members));
+        }
+
     }
 }

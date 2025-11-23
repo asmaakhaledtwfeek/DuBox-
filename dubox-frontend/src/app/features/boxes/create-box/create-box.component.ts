@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormArray } from '@angular/forms';
 import { BoxService } from '../../../core/services/box.service';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
@@ -63,7 +63,34 @@ export class CreateBoxComponent implements OnInit {
       width: ['', [Validators.min(0), Validators.max(99999)]],
       height: ['', [Validators.min(0), Validators.max(99999)]],
       bimModelReference: ['', Validators.maxLength(100)],
-      revitElementId: ['', Validators.maxLength(100)]
+      revitElementId: ['', Validators.maxLength(100)],
+      boxPlannedStartDate: [''],
+      boxDuration: [null, [Validators.min(1)]],
+      assets: this.fb.array([])
+    });
+  }
+
+  get assets(): FormArray {
+    return this.boxForm.get('assets') as FormArray;
+  }
+
+  addAsset(): void {
+    this.assets.push(this.createAssetGroup());
+  }
+
+  removeAsset(index: number): void {
+    this.assets.removeAt(index);
+  }
+
+  private createAssetGroup(): FormGroup {
+    return this.fb.group({
+      assetType: ['', Validators.required],
+      assetCode: [''],
+      assetName: [''],
+      quantity: [1, [Validators.required, Validators.min(1)]],
+      unit: [''],
+      specifications: [''],
+      notes: ['']
     });
   }
 
@@ -98,7 +125,9 @@ export class CreateBoxComponent implements OnInit {
       height: formValue.height ? parseFloat(formValue.height) : undefined,
       bimModelReference: formValue.bimModelReference || undefined,
       revitElementId: formValue.revitElementId || undefined,
-      assets: undefined
+      boxPlannedStartDate: formValue.boxPlannedStartDate ? new Date(formValue.boxPlannedStartDate).toISOString() : undefined,
+      boxDuration: formValue.boxDuration ? parseInt(formValue.boxDuration, 10) : undefined,
+      assets: this.getAssetsPayload()
     };
 
     console.log('🚀 Submitting box data:', boxData);
@@ -163,9 +192,35 @@ export class CreateBoxComponent implements OnInit {
       width: 'Width',
       height: 'Height',
       bimModelReference: 'BIM model reference',
-      revitElementId: 'Revit element ID'
+      revitElementId: 'Revit element ID',
+      boxPlannedStartDate: 'Box planned start date',
+      boxDuration: 'Box duration'
     };
     return labels[fieldName] || fieldName;
+  }
+
+  private getAssetsPayload() {
+    if (!this.assets.length) {
+      return undefined;
+    }
+
+    const assets = this.assets.controls
+      .map(control => control.value)
+      .filter(asset => asset.assetType?.trim());
+
+    if (!assets.length) {
+      return undefined;
+    }
+
+    return assets.map(asset => ({
+      assetType: asset.assetType,
+      assetCode: asset.assetCode || undefined,
+      assetName: asset.assetName || undefined,
+      quantity: asset.quantity ? Number(asset.quantity) : 1,
+      unit: asset.unit || undefined,
+      specifications: asset.specifications || undefined,
+      notes: asset.notes || undefined
+    }));
   }
 }
 

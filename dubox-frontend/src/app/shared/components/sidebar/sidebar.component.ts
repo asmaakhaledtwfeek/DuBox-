@@ -52,6 +52,18 @@ export class SidebarComponent implements OnInit {
         permission: { module: 'projects', action: 'view' }
       },
       {
+        label: 'Materials',
+        icon: 'materials',
+        route: '/materials',
+        permission: { module: 'materials', action: 'view' }
+      },
+      {
+        label: 'Teams',
+        icon: 'teams',
+        route: '/teams',
+        permission: { module: 'teams', action: 'view' }
+      },
+      {
         label: 'Quality Control',
         icon: 'qc',
         route: '/qc',
@@ -129,6 +141,8 @@ export class SidebarComponent implements OnInit {
     const icons: Record<string, string> = {
       dashboard: '<path d="M3 3h7v7H3z"/><path d="M14 3h7v7h-7z"/><path d="M14 14h7v7h-7z"/><path d="M3 14h7v7H3z"/>',
       projects: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
+      materials: '<path d="M20 7h-4M4 7h4m0 0V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-6 0h6m-6 0v10m6-10v10"/>',
+      teams: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/>',
       qc: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
       procurement: '<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>',
       hse: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',

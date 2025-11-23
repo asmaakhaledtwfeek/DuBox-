@@ -1,8 +1,18 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, forkJoin, of } from 'rxjs';
+import { map, switchMap, catchError } from 'rxjs/operators';
 import { ApiService } from './api.service';
-import { WIRRecord, CreateWIRRequest, ApproveWIRRequest, RejectWIRRequest, WIR_CHECKLIST_TEMPLATES } from '../models/wir.model';
+import { 
+  WIRRecord, 
+  CreateWIRRequest, 
+  ApproveWIRRequest, 
+  RejectWIRRequest, 
+  WIR_CHECKLIST_TEMPLATES,
+  WIRCheckpoint,
+  CreateWIRCheckpointRequest,
+  AddChecklistItemsRequest,
+  ReviewWIRCheckpointRequest
+} from '../models/wir.model';
 
 @Injectable({
   providedIn: 'root'
@@ -84,7 +94,7 @@ export class WIRService {
    * Approve WIR record
    */
   approveWIRRecord(request: ApproveWIRRequest): Observable<WIRRecord> {
-    return this.apiService.post<any>(`${this.endpoint}/${request.wirRecordId}/approve`, request).pipe(
+    return this.apiService.put<any>(`${this.endpoint}/${request.wirRecordId}/approve`, request).pipe(
       map(wir => this.transformWIR(wir))
     );
   }
@@ -93,7 +103,7 @@ export class WIRService {
    * Reject WIR record
    */
   rejectWIRRecord(request: RejectWIRRequest): Observable<WIRRecord> {
-    return this.apiService.post<any>(`${this.endpoint}/${request.wirRecordId}/reject`, request).pipe(
+    return this.apiService.put<any>(`${this.endpoint}/${request.wirRecordId}/reject`, request).pipe(
       map(wir => this.transformWIR(wir))
     );
   }
@@ -115,6 +125,104 @@ export class WIRService {
     });
     
     return this.apiService.post<string[]>(`${this.endpoint}/${wirRecordId}/photos`, formData);
+  }
+
+  // ========== WIR Checkpoint Methods ==========
+
+  /**
+   * Get WIR checkpoint by ID
+   */
+  getWIRCheckpointById(wirId: string): Observable<WIRCheckpoint> {
+    return this.apiService.get<any>(`wircheckpoints/${wirId}`).pipe(
+      map(data => this.transformWIRCheckpoint(data))
+    );
+  }
+
+  /**
+   * Get WIR checkpoints by box ID
+   */
+  getWIRCheckpointsByBox(boxId: string): Observable<WIRCheckpoint[]> {
+    return this.apiService.get<any[]>(`wircheckpoints/box/${boxId}`).pipe(
+      map(checkpoints => checkpoints.map(c => this.transformWIRCheckpoint(c)))
+    );
+  }
+
+  /**
+   * Get WIR checkpoint by box activity ID (searches through box checkpoints by WIRNumber)
+   */
+  getWIRCheckpointByActivity(boxId: string, wirCode: string): Observable<WIRCheckpoint | null> {
+    return this.getWIRCheckpointsByBox(boxId).pipe(
+      map(checkpoints => {
+        // Find checkpoint that matches the WIR code/number
+        return checkpoints.find(c => 
+          c.wirNumber === wirCode || 
+          c.wirNumber?.toLowerCase() === wirCode?.toLowerCase() ||
+          c.status === 'Pending'
+        ) || null;
+      }),
+      catchError(() => of(null))
+    );
+  }
+
+  /**
+   * Create WIR checkpoint
+   */
+  createWIRCheckpoint(request: CreateWIRCheckpointRequest): Observable<WIRCheckpoint> {
+    return this.apiService.post<any>('wircheckpoints', request).pipe(
+      map(data => this.transformWIRCheckpoint(data))
+    );
+  }
+
+  /**
+   * Add checklist items to WIR checkpoint
+   */
+  addChecklistItems(request: AddChecklistItemsRequest): Observable<WIRCheckpoint> {
+    return this.apiService.post<any>(`wircheckpoints/${request.wirId}/checklist-items`, request).pipe(
+      map(data => this.transformWIRCheckpoint(data))
+    );
+  }
+
+  /**
+   * Review WIR checkpoint (approve/reject)
+   */
+  reviewWIRCheckpoint(request: ReviewWIRCheckpointRequest): Observable<WIRCheckpoint> {
+    return this.apiService.put<any>(`wircheckpoints/${request.wirId}/review`, request).pipe(
+      map(data => this.transformWIRCheckpoint(data))
+    );
+  }
+
+  /**
+   * Transform backend WIR checkpoint to frontend model
+   */
+  private transformWIRCheckpoint(backendCheckpoint: any): WIRCheckpoint {
+    return {
+      wirId: backendCheckpoint.wirId || backendCheckpoint.WIRId,
+      boxId: backendCheckpoint.boxId || backendCheckpoint.BoxId,
+      boxActivityId: backendCheckpoint.boxActivityId || backendCheckpoint.BoxActivityId,
+      wirNumber: backendCheckpoint.wirNumber || backendCheckpoint.WIRNumber || '',
+      wirName: backendCheckpoint.wirName || backendCheckpoint.WIRName,
+      wirDescription: backendCheckpoint.wirDescription || backendCheckpoint.WIRDescription,
+      requestedDate: backendCheckpoint.requestedDate ? new Date(backendCheckpoint.requestedDate) : undefined,
+      requestedBy: backendCheckpoint.requestedBy || backendCheckpoint.RequestedBy,
+      inspectionDate: backendCheckpoint.inspectionDate ? new Date(backendCheckpoint.inspectionDate) : undefined,
+      inspectorName: backendCheckpoint.inspectorName || backendCheckpoint.InspectorName,
+      inspectorRole: backendCheckpoint.inspectorRole || backendCheckpoint.InspectorRole,
+      status: backendCheckpoint.status || backendCheckpoint.Status || 'Pending',
+      approvalDate: backendCheckpoint.approvalDate ? new Date(backendCheckpoint.approvalDate) : undefined,
+      comments: backendCheckpoint.comments || backendCheckpoint.Comments,
+      attachmentPath: backendCheckpoint.attachmentPath || backendCheckpoint.AttachmentPath,
+      createdDate: backendCheckpoint.createdDate ? new Date(backendCheckpoint.createdDate) : new Date(),
+      checklistItems: (backendCheckpoint.checklistItems || backendCheckpoint.ChecklistItems || []).map((item: any) => ({
+        checklistItemId: item.checklistItemId || item.ChecklistItemId,
+        wirId: item.wirId || item.WIRId,
+        checkpointDescription: item.checkpointDescription || item.CheckpointDescription || item.itemName || item.ItemName,
+        referenceDocument: item.referenceDocument || item.ReferenceDocument,
+        status: item.status || item.Status || 'Pending',
+        remarks: item.remarks || item.Remarks || item.comments || item.Comments,
+        sequence: item.sequence || item.Sequence || 0
+      })),
+      qualityIssues: backendCheckpoint.qualityIssues || backendCheckpoint.QualityIssues || []
+    };
   }
 }
 

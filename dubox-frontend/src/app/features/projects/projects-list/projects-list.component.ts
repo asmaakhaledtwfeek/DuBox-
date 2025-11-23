@@ -2,10 +2,13 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, map } from 'rxjs/operators';
+import { forkJoin } from 'rxjs';
 import { ProjectService } from '../../../core/services/project.service';
+import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { Project, ProjectStatus } from '../../../core/models/project.model';
+import { BoxStatus } from '../../../core/models/box.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 
@@ -30,6 +33,7 @@ export class ProjectsListComponent implements OnInit {
 
   constructor(
     private projectService: ProjectService,
+    private boxService: BoxService,
     private permissionService: PermissionService,
     private router: Router
   ) {}
@@ -76,10 +80,16 @@ export class ProjectsListComponent implements OnInit {
           console.log('✅ First project with ID:', projectsWithId[0]);
         }
         
+        // Log progress values to debug
+        projects.forEach(p => {
+          console.log(`📊 Project ${p.name || p.code} progress value:`, p.progress, typeof p.progress);
+        });
+        
         this.projects = projects;
         this.filteredProjects = projects;
-        this.applyFilters();
-        this.loading = false;
+        
+        // Load boxes for each project to calculate accurate counts
+        this.loadBoxesForProjects(projects);
       },
       error: (error) => {
         this.error = 'Failed to load projects';
@@ -87,6 +97,92 @@ export class ProjectsListComponent implements OnInit {
         console.error('❌ Error loading projects:', error);
       }
     });
+  }
+
+  loadBoxesForProjects(projects: Project[]): void {
+    const projectsWithId = projects.filter(p => p.id);
+    
+    if (projectsWithId.length === 0) {
+      this.applyFilters();
+      this.loading = false;
+      return;
+    }
+
+    // Create observables to load boxes for each project
+    const boxObservables = projectsWithId.map(project => 
+      this.boxService.getBoxesByProject(project.id).pipe(
+        // Map to include project ID for reference
+        map(boxes => ({ projectId: project.id, boxes }))
+      )
+    );
+
+    // Load all boxes in parallel
+    forkJoin(boxObservables).subscribe({
+      next: (results) => {
+        console.log('✅ Loaded boxes for all projects');
+        
+        // Calculate counts and progress for each project from boxes (like box progress is calculated from activities)
+        results.forEach(({ projectId, boxes }) => {
+          const project = this.projects.find(p => p.id === projectId);
+          if (project && boxes.length > 0) {
+            const result = this.calculateBoxCounts(boxes);
+            project.totalBoxes = result.totalBoxes;
+            project.completedBoxes = result.completedBoxes;
+            project.inProgressBoxes = result.inProgressBoxes;
+            project.readyForDeliveryBoxes = result.readyForDelivery;
+            
+            // Calculate project progress from boxes (average of box progress) - same way box progress is calculated from activities
+            const averageProgress = boxes.reduce((sum, box) => sum + (box.progress || 0), 0) / boxes.length;
+            project.progress = averageProgress;
+            console.log(`📊 Calculated project progress from boxes: ${averageProgress}% for project ${project.name}`);
+          }
+        });
+
+        // Update filtered projects
+        this.filteredProjects = [...this.projects];
+        this.applyFilters();
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('❌ Error loading boxes for projects:', err);
+        // Continue with project data even if boxes fail to load
+        this.applyFilters();
+        this.loading = false;
+      }
+    });
+  }
+
+  calculateBoxCounts(boxes: any[]): { 
+    totalBoxes: number; 
+    completedBoxes: number; 
+    inProgressBoxes: number; 
+    readyForDelivery: number;
+  } {
+    const counts = {
+      totalBoxes: boxes.length,
+      completedBoxes: 0,
+      inProgressBoxes: 0,
+      readyForDelivery: 0
+    };
+
+    boxes.forEach(box => {
+      const status = box.status as BoxStatus;
+      switch (status) {
+        case BoxStatus.InProgress:
+        case BoxStatus.QAReview:
+          counts.inProgressBoxes++;
+          break;
+        case BoxStatus.Completed:
+        case BoxStatus.Delivered:
+          counts.completedBoxes++;
+          break;
+        case BoxStatus.ReadyForDelivery:
+          counts.readyForDelivery++;
+          break;
+      }
+    });
+
+    return counts;
   }
 
   setupSearch(): void {
@@ -177,9 +273,35 @@ export class ProjectsListComponent implements OnInit {
   }
 
   getProgressColor(progress: number): string {
-    if (progress >= 75) return 'var(--success-color)';
-    if (progress >= 50) return 'var(--info-color)';
-    if (progress >= 25) return 'var(--warning-color)';
+    // Normalize progress to 0-100 scale for color calculation
+    const normalizedProgress = progress > 1 ? progress : progress * 100;
+    if (normalizedProgress >= 75) return 'var(--success-color)';
+    if (normalizedProgress >= 50) return 'var(--info-color)';
+    if (normalizedProgress >= 25) return 'var(--warning-color)';
     return 'var(--error-color)';
+  }
+
+  formatProgress(progress: number): string {
+    // Handle null, undefined, or falsy values (but allow 0)
+    if (progress === null || progress === undefined) return '0.00';
+    
+    // Convert to number if it's a string
+    const numProgress = typeof progress === 'string' ? parseFloat(progress) : Number(progress);
+    
+    // Handle NaN or invalid numbers
+    if (isNaN(numProgress) || !isFinite(numProgress)) return '0.00';
+    
+    // Progress is calculated from boxes (average of box.progress)
+    // Box progress is in percentage format (0-100), so project progress is also in percentage format
+    // Display directly with 2 decimal places
+    return numProgress.toFixed(2);
+  }
+
+  getProgressForBar(progress: number): number {
+    // Progress is calculated from boxes (average of box.progress)
+    // Box progress is in percentage format (0-100), so project progress is also in percentage format
+    // Use the value directly for the bar width (no conversion needed)
+    // Ensure it doesn't exceed 100%
+    return Math.min(progress, 100);
   }
 }

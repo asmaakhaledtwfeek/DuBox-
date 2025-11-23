@@ -1,0 +1,117 @@
+<div class="add-checklist-items-page">
+  <app-header></app-header>
+  <div class="page-container">
+    <app-sidebar></app-sidebar>
+    
+    <main class="main-content">
+      <div class="page-header">
+        <h1 class="page-title">Add Checklist Items</h1>
+        <p class="page-subtitle" *ngIf="wirCheckpoint">WIR Checkpoint: {{ wirCheckpoint.wirNumber }}</p>
+      </div>
+
+      <!-- Loading State -->
+      <div class="loading-container" *ngIf="loading">
+        <div class="spinner"></div>
+        <p>Loading WIR checkpoint...</p>
+      </div>
+
+      <!-- Error State -->
+      <div class="error-container" *ngIf="error && !loading">
+        <p class="error-message">{{ error }}</p>
+        <button class="btn btn-primary" (click)="loadWIRCheckpoint()">Retry</button>
+      </div>
+
+      <!-- Add Checklist Items Form -->
+      <div class="form-container" *ngIf="wirCheckpoint && !loading && !error">
+        <form [formGroup]="checklistForm" (ngSubmit)="onSubmit()">
+          <!-- Error Message -->
+          <div *ngIf="error" class="alert alert-error">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 8v4M12 16h.01"/>
+            </svg>
+            {{ error }}
+          </div>
+
+          <!-- Checklist Items Header -->
+          <div class="checklist-header">
+            <div>
+              <h3>Checklist Items</h3>
+              <p>Add checklist items for this WIR checkpoint</p>
+            </div>
+            <button type="button" class="btn btn-link" (click)="addChecklistItem()">
+              + Add Item
+            </button>
+          </div>
+
+          <!-- Checklist Items -->
+          <div class="checklist-items-container" formArrayName="checklistItems">
+            <div class="empty-checklist" *ngIf="checklistItems.length === 0">
+              No checklist items added yet. Click "Add Item" to include checklist items for this checkpoint.
+            </div>
+
+            <div *ngFor="let item of checklistItems.controls; let i = index" [formGroupName]="i" class="checklist-item-form">
+              <div class="item-header">
+                <span class="item-sequence">Item {{ i + 1 }}</span>
+                <button type="button" class="btn btn-icon" (click)="removeChecklistItem(i)">
+                  Remove
+                </button>
+              </div>
+              
+              <div class="form-grid">
+                <div class="form-group full-width">
+                  <label>Checkpoint Description <span class="required">*</span></label>
+                  <textarea 
+                    formControlName="checkpointDescription" 
+                    class="form-control"
+                    [class.invalid]="item.get('checkpointDescription')?.invalid && item.get('checkpointDescription')?.touched"
+                    rows="2"
+                    placeholder="Enter checkpoint description"
+                  ></textarea>
+                  <div *ngIf="item.get('checkpointDescription')?.invalid && item.get('checkpointDescription')?.touched" class="error-text">
+                    Checkpoint description is required.
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>Reference Document</label>
+                  <input 
+                    type="text" 
+                    formControlName="referenceDocument" 
+                    class="form-control"
+                    placeholder="e.g., Drawing No., Specification"
+                  >
+                </div>
+
+                <div class="form-group">
+                  <label>Sequence <span class="required">*</span></label>
+                  <input 
+                    type="number" 
+                    formControlName="sequence" 
+                    class="form-control"
+                    [class.invalid]="item.get('sequence')?.invalid && item.get('sequence')?.touched"
+                    min="1"
+                  >
+                  <div *ngIf="item.get('sequence')?.invalid && item.get('sequence')?.touched" class="error-text">
+                    Sequence is required.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" (click)="goBack()" [disabled]="submitting">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="submitting || checklistForm.invalid">
+              <span *ngIf="submitting">Adding Items...</span>
+              <span *ngIf="!submitting">Add Checklist Items</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+</div>
+

@@ -5,7 +5,20 @@ import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } fr
 import { WIRService } from '../../../core/services/wir.service';
 import { BoxService } from '../../../core/services/box.service';
 import { AuthService } from '../../../core/services/auth.service';
-import { WIRRecord, WIRChecklistItem, CheckpointStatus, ApproveWIRRequest, RejectWIRRequest } from '../../../core/models/wir.model';
+import { 
+  WIRRecord, 
+  WIRChecklistItem, 
+  CheckpointStatus, 
+  ApproveWIRRequest, 
+  RejectWIRRequest,
+  WIRCheckpoint,
+  CreateWIRCheckpointRequest,
+  AddChecklistItemsRequest,
+  ReviewWIRCheckpointRequest,
+  WIRCheckpointStatus,
+  CheckListItemStatus,
+  WIR_CHECKLIST_TEMPLATES
+} from '../../../core/models/wir.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 
@@ -18,23 +31,35 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
 })
 export class QaQcChecklistComponent implements OnInit {
   wirRecord: WIRRecord | null = null;
+  wirCheckpoint: WIRCheckpoint | null = null;
   projectId!: string;
   boxId!: string;
   activityId!: string;
   
+  // Forms
   checklistForm!: FormGroup;
+  createCheckpointForm!: FormGroup;
+  addChecklistItemsForm!: FormGroup;
+  
   loading = true;
   error = '';
   submitting = false;
+  creatingCheckpoint = false;
+  addingChecklistItems = false;
   
   signatureDataUrl: string = '';
   uploadedPhotos: File[] = [];
   photoPreviewUrls: string[] = [];
   
   CheckpointStatus = CheckpointStatus;
+  WIRCheckpointStatus = WIRCheckpointStatus;
+  CheckListItemStatus = CheckListItemStatus;
   isDrawing = false;
   signatureCanvas!: HTMLCanvasElement;
   signatureContext!: CanvasRenderingContext2D;
+  
+  // Step tracking: 'create-checkpoint' | 'add-items' | 'review'
+  currentStep: 'create-checkpoint' | 'add-items' | 'review' = 'create-checkpoint';
 
   constructor(
     private route: ActivatedRoute,
@@ -55,11 +80,25 @@ export class QaQcChecklistComponent implements OnInit {
   }
 
   private initForm(): void {
+    // Review form (for final review)
     this.checklistForm = this.fb.group({
       checklistItems: this.fb.array([]),
       inspectionNotes: ['', [Validators.maxLength(1000)]],
       rejectionReason: [''],
       signature: ['', Validators.required]
+    });
+
+    // Create checkpoint form (only user-filled fields)
+    this.createCheckpointForm = this.fb.group({
+      wirName: ['', [Validators.maxLength(200)]],
+      wirDescription: ['', [Validators.maxLength(500)]],
+      attachmentPath: ['', [Validators.maxLength(500)]],
+      comments: ['', [Validators.maxLength(1000)]]
+    });
+
+    // Add checklist items form
+    this.addChecklistItemsForm = this.fb.group({
+      checklistItems: this.fb.array([])
     });
   }
 
@@ -75,14 +114,23 @@ export class QaQcChecklistComponent implements OnInit {
     this.wirService.getWIRRecordsByActivity(this.activityId).subscribe({
       next: (wirs) => {
         if (wirs && wirs.length > 0) {
-          // Get the pending WIR record
-          this.wirRecord = wirs.find(w => w.status === 'Pending') || wirs[0];
-          this.loadChecklistItems();
+          // Get the rejected WIR record (since we're coming from rejection)
+          this.wirRecord = wirs.find(w => w.status === 'Rejected') || wirs.find(w => w.status === 'Pending') || wirs[0];
+          
+          // Pre-fill create checkpoint form with suggested values
+          if (this.wirRecord && this.createCheckpointForm) {
+            this.createCheckpointForm.patchValue({
+              wirName: `${this.wirRecord.wirCode} - ${this.wirRecord.activityName}`,
+              wirDescription: `WIR checkpoint for ${this.wirRecord.activityName}`
+            });
+          }
+          
+          // Check if WIR checkpoint exists for this activity
+          this.checkWIRCheckpoint();
         } else {
-          // Create new WIR record if none exists
-          this.error = 'No WIR record found for this activity. Please create one first.';
+          this.error = 'No WIR record found for this activity.';
+          this.loading = false;
         }
-        this.loading = false;
       },
       error: (err) => {
         this.error = 'Failed to load WIR record';
@@ -92,25 +140,165 @@ export class QaQcChecklistComponent implements OnInit {
     });
   }
 
-  private loadChecklistItems(): void {
+  checkWIRCheckpoint(): void {
+    if (!this.wirRecord) {
+      this.loading = false;
+      return;
+    }
+
+    // Check if WIR checkpoint exists for this box/activity by WIR code
+    this.wirService.getWIRCheckpointByActivity(this.boxId, this.wirRecord.wirCode).subscribe({
+      next: (checkpoint) => {
+        if (checkpoint) {
+          // Checkpoint exists, check if it has checklist items
+          this.wirCheckpoint = checkpoint;
+          if (checkpoint.checklistItems && checkpoint.checklistItems.length > 0) {
+            // Has items, go to review step
+            this.currentStep = 'review';
+            this.loadChecklistItems();
+          } else {
+            // No items, go to add items step
+            this.currentStep = 'add-items';
+            this.loadChecklistTemplate();
+          }
+        } else {
+          // No checkpoint exists, stay on create step
+          this.currentStep = 'create-checkpoint';
+        }
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error checking WIR checkpoint:', err);
+        // Stay on create step
+        this.currentStep = 'create-checkpoint';
+        this.loading = false;
+      }
+    });
+  }
+
+  onCreateCheckpoint(): void {
+    if (this.createCheckpointForm.invalid || !this.wirRecord) {
+      this.markFormGroupTouched(this.createCheckpointForm);
+      return;
+    }
+
+    this.creatingCheckpoint = true;
+    this.error = '';
+    
+    const formValue = this.createCheckpointForm.value;
+    const request: CreateWIRCheckpointRequest = {
+      boxActivityId: this.activityId, // Get from route param
+      wirNumber: this.wirRecord.wirCode || '', // Get from WIRRecord
+      wirName: formValue.wirName?.trim() || undefined,
+      wirDescription: formValue.wirDescription?.trim() || undefined,
+      attachmentPath: formValue.attachmentPath?.trim() || undefined,
+      comments: formValue.comments?.trim() || undefined
+    };
+
+    this.wirService.createWIRCheckpoint(request).subscribe({
+      next: (checkpoint) => {
+        this.wirCheckpoint = checkpoint;
+        this.creatingCheckpoint = false;
+        // Move to add checklist items step
+        this.currentStep = 'add-items';
+        this.loadChecklistTemplate();
+      },
+      error: (err) => {
+        this.creatingCheckpoint = false;
+        this.error = err.error?.message || err.message || 'Failed to create WIR checkpoint';
+        console.error('Error creating WIR checkpoint:', err);
+      }
+    });
+  }
+
+  loadChecklistTemplate(): void {
     if (!this.wirRecord) return;
+
+    // Get checklist template based on WIR code
+    const template = WIR_CHECKLIST_TEMPLATES[this.wirRecord.wirCode] || [];
     
-    // Get predefined checklist template based on WIR code
-    const template = this.wirService.getChecklistTemplate(this.wirRecord.wirCode);
+    // Clear existing items
+    const itemsArray = this.addChecklistItemsForm.get('checklistItems') as FormArray;
+    itemsArray.clear();
     
+    // Add checklist items to form from template
+    template.forEach(item => {
+      itemsArray.push(this.fb.group({
+        checkpointDescription: [item.checkpointDescription, Validators.required],
+        referenceDocument: [item.referenceDocument || ''],
+        sequence: [item.sequence, Validators.required]
+      }));
+    });
+  }
+
+  onAddChecklistItems(): void {
+    if (this.addChecklistItemsForm.invalid || !this.wirCheckpoint) {
+      this.markFormGroupTouched(this.addChecklistItemsForm);
+      return;
+    }
+
+    this.addingChecklistItems = true;
+    this.error = '';
+
+    const itemsArray = this.addChecklistItemsForm.get('checklistItems') as FormArray;
+    const request: AddChecklistItemsRequest = {
+      wirId: this.wirCheckpoint.wirId,
+      items: itemsArray.value.map((item: any) => ({
+        checkpointDescription: item.checkpointDescription.trim(),
+        referenceDocument: item.referenceDocument?.trim() || undefined,
+        sequence: item.sequence
+      }))
+    };
+
+    this.wirService.addChecklistItems(request).subscribe({
+      next: (updatedCheckpoint) => {
+        this.wirCheckpoint = updatedCheckpoint;
+        this.addingChecklistItems = false;
+        // Move to review step
+        this.currentStep = 'review';
+        this.loadChecklistItems();
+      },
+      error: (err) => {
+        this.addingChecklistItems = false;
+        this.error = err.error?.message || err.message || 'Failed to add checklist items';
+        console.error('Error adding checklist items:', err);
+      }
+    });
+  }
+
+  private loadChecklistItems(): void {
+    if (!this.wirCheckpoint) return;
+
     // Clear existing items
     this.checklistItems.clear();
     
-    // Add checklist items to form
-    template.forEach(item => {
-      this.checklistItems.push(this.fb.group({
-        sequence: [item.sequence],
-        checkpointDescription: [item.checkpointDescription],
-        referenceDocument: [item.referenceDocument],
-        status: [CheckpointStatus.Pending, Validators.required],
-        remarks: ['']
-      }));
-    });
+    if (this.wirCheckpoint.checklistItems && this.wirCheckpoint.checklistItems.length > 0) {
+      // Load existing checklist items from checkpoint
+      this.wirCheckpoint.checklistItems.forEach(item => {
+        this.checklistItems.push(this.fb.group({
+          checklistItemId: [item.checklistItemId],
+          sequence: [item.sequence],
+          checkpointDescription: [item.checkpointDescription],
+          referenceDocument: [item.referenceDocument],
+          status: [this.mapCheckListItemStatus(item.status), Validators.required],
+          remarks: [item.remarks || '']
+        }));
+      });
+    }
+  }
+
+  get addChecklistItemsArray(): FormArray {
+    return this.addChecklistItemsForm.get('checklistItems') as FormArray;
+  }
+
+  private mapCheckListItemStatus(status: string): CheckpointStatus {
+    const statusMap: Record<string, CheckpointStatus> = {
+      'Pending': CheckpointStatus.Pending,
+      'Pass': CheckpointStatus.Pass,
+      'Fail': CheckpointStatus.Fail,
+      'NA': CheckpointStatus.NA
+    };
+    return statusMap[status] || CheckpointStatus.Pending;
   }
 
   onCheckpointStatusChange(index: number, status: CheckpointStatus): void {
@@ -203,6 +391,7 @@ export class QaQcChecklistComponent implements OnInit {
 
   // Validation
   canApprove(): boolean {
+    if (!this.wirCheckpoint) return false;
     const items = this.checklistItems.value;
     const allChecked = items.every((item: any) => item.status !== CheckpointStatus.Pending);
     const noFailures = items.every((item: any) => item.status !== CheckpointStatus.Fail);
@@ -212,6 +401,7 @@ export class QaQcChecklistComponent implements OnInit {
   }
 
   canReject(): boolean {
+    if (!this.wirCheckpoint) return false;
     const hasRejectionReason = !!this.checklistForm.value.rejectionReason;
     const hasSignature = !!this.checklistForm.value.signature;
     
@@ -225,76 +415,85 @@ export class QaQcChecklistComponent implements OnInit {
 
   // Submit Methods
   onApprove(): void {
-    if (!this.canApprove() || !this.wirRecord) return;
+    if (!this.canApprove() || !this.wirCheckpoint) return;
     
-    this.submitting = true;
-    
-    const request: ApproveWIRRequest = {
-      wirRecordId: this.wirRecord.wirRecordId,
-      inspectionNotes: this.checklistForm.value.inspectionNotes,
-      signature: this.checklistForm.value.signature,
-      checklistItems: this.checklistItems.value
-    };
-    
-    // Upload photos first if any
-    if (this.uploadedPhotos.length > 0) {
-      this.wirService.uploadInspectionPhotos(this.wirRecord.wirRecordId, this.uploadedPhotos).subscribe({
-        next: (photoUrls) => {
-          request.photoUrls = photoUrls.join(',');
-          this.submitApproval(request);
-        },
-        error: (err) => {
-          console.error('Photo upload failed:', err);
-          // Continue with approval even if photos fail
-          this.submitApproval(request);
-        }
-      });
-    } else {
-      this.submitApproval(request);
-    }
+    this.submitReview(WIRCheckpointStatus.Approved);
   }
 
-  private submitApproval(request: ApproveWIRRequest): void {
-    this.wirService.approveWIRRecord(request).subscribe({
-      next: () => {
+  onReject(): void {
+    if (!this.canReject() || !this.wirCheckpoint) return;
+    
+    if (!confirm('Are you sure you want to reject this WIR checkpoint? This will require rework.')) {
+      return;
+    }
+    
+    this.submitReview(WIRCheckpointStatus.Rejected);
+  }
+
+  private submitReview(status: WIRCheckpointStatus): void {
+    if (!this.wirCheckpoint) return;
+
+    this.submitting = true;
+    this.error = '';
+
+    // Map form items to review items
+    const reviewItems = this.checklistItems.value.map((item: any) => ({
+      checklistItemId: item.checklistItemId || '',
+      remarks: item.remarks?.trim() || undefined,
+      status: this.mapToCheckListItemStatus(item.status)
+    }));
+
+    const request: ReviewWIRCheckpointRequest = {
+      wirId: this.wirCheckpoint.wirId,
+      status: status,
+      comment: this.checklistForm.value.inspectionNotes?.trim() || undefined,
+      items: reviewItems
+    };
+
+    this.wirService.reviewWIRCheckpoint(request).subscribe({
+      next: (updatedCheckpoint) => {
         this.submitting = false;
-        alert('WIR Record Approved Successfully!');
+        this.wirCheckpoint = updatedCheckpoint;
+        const message = status === WIRCheckpointStatus.Approved 
+          ? 'WIR Checkpoint Approved Successfully!' 
+          : 'WIR Checkpoint Rejected. Notification sent for rework.';
+        alert(message);
         this.goBack();
       },
       error: (err) => {
         this.submitting = false;
-        this.error = err.error?.message || 'Failed to approve WIR record';
-        console.error('Approval error:', err);
+        this.error = err.error?.message || err.message || `Failed to ${status === WIRCheckpointStatus.Approved ? 'approve' : 'reject'} WIR checkpoint`;
+        console.error('Review error:', err);
       }
     });
   }
 
-  onReject(): void {
-    if (!this.canReject() || !this.wirRecord) return;
-    
-    if (!confirm('Are you sure you want to reject this WIR? This will require rework.')) {
-      return;
-    }
-    
-    this.submitting = true;
-    
-    const request: RejectWIRRequest = {
-      wirRecordId: this.wirRecord.wirRecordId,
-      rejectionReason: this.checklistForm.value.rejectionReason,
-      inspectionNotes: this.checklistForm.value.inspectionNotes,
-      signature: this.checklistForm.value.signature
+  private mapToCheckListItemStatus(status: CheckpointStatus): CheckListItemStatus {
+    const statusMap: Record<string, CheckListItemStatus> = {
+      'Pending': CheckListItemStatus.Pending,
+      'Pass': CheckListItemStatus.Pass,
+      'Fail': CheckListItemStatus.Fail,
+      'N/A': CheckListItemStatus.NA,
+      'NA': CheckListItemStatus.NA
     };
-    
-    this.wirService.rejectWIRRecord(request).subscribe({
-      next: () => {
-        this.submitting = false;
-        alert('WIR Record Rejected. Notification sent for rework.');
-        this.goBack();
-      },
-      error: (err) => {
-        this.submitting = false;
-        this.error = err.error?.message || 'Failed to reject WIR record';
-        console.error('Rejection error:', err);
+    return statusMap[status] || CheckListItemStatus.Pending;
+  }
+
+  private markFormGroupTouched(formGroup: FormGroup): void {
+    Object.keys(formGroup.controls).forEach(key => {
+      const control = formGroup.get(key);
+      if (control instanceof FormArray) {
+        control.controls.forEach(item => {
+          if (item instanceof FormGroup) {
+            this.markFormGroupTouched(item);
+          } else {
+            item.markAsTouched();
+          }
+        });
+      } else if (control instanceof FormGroup) {
+        this.markFormGroupTouched(control);
+      } else {
+        control?.markAsTouched();
       }
     });
   }

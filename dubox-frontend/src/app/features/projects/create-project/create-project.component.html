@@ -13,8 +13,12 @@
           </svg>
           Back to Projects
         </button>
-        <h1 class="page-title">Create New Project</h1>
-        <p class="page-subtitle">Add a new construction project to the system</p>
+        <h1 class="page-title">
+          {{ isEdit ? 'Update Project' : 'Create New Project' }}
+        </h1>
+        <p class="page-subtitle">
+          {{ isEdit ? 'Modify the project details and save your changes' : 'Add a new construction project to the system' }}
+        </p>
       </div>
     </div>
 
@@ -28,6 +32,15 @@
     </div>
 
     <!-- Error Message -->
+    <!-- Loading Project Message -->
+    <div class="alert alert-info" *ngIf="initializing">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12 6 12 12 16 14"/>
+      </svg>
+      Loading project details...
+    </div>
+
     <div class="alert alert-error" *ngIf="error">
       <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="10"/>
@@ -48,33 +61,49 @@
         <div class="card-body">
           <!-- Project Name -->
           <div class="form-group">
-            <label for="name" class="form-label required">Project Name</label>
+            <label for="projectName" class="form-label required">Project Name</label>
             <input
-              id="name"
+              id="projectName"
               type="text"
-              formControlName="name"
+              formControlName="projectName"
               class="form-control"
-              [class.invalid]="isFieldInvalid('name')"
+              [class.invalid]="isFieldInvalid('projectName')"
               placeholder="e.g., Dubai Marina Tower Construction"
             />
-            <div class="error-message" *ngIf="isFieldInvalid('name')">
-              {{ getFieldError('name') }}
+            <div class="error-message" *ngIf="isFieldInvalid('projectName')">
+              {{ getFieldError('projectName') }}
             </div>
           </div>
 
           <!-- Project Code -->
           <div class="form-group">
-            <label for="code" class="form-label required">Project Code</label>
+            <label for="projectCode" class="form-label required">Project Code</label>
             <input
-              id="code"
+              id="projectCode"
               type="text"
-              formControlName="code"
+              formControlName="projectCode"
               class="form-control"
-              [class.invalid]="isFieldInvalid('code')"
+              [class.invalid]="isFieldInvalid('projectCode')"
               placeholder="e.g., DUB-2024-001"
             />
-            <div class="error-message" *ngIf="isFieldInvalid('code')">
-              {{ getFieldError('code') }}
+            <div class="error-message" *ngIf="isFieldInvalid('projectCode')">
+              {{ getFieldError('projectCode') }}
+            </div>
+          </div>
+
+          <!-- Client Name -->
+          <div class="form-group">
+            <label for="clientName" class="form-label">Client Name</label>
+            <input
+              id="clientName"
+              type="text"
+              formControlName="clientName"
+              class="form-control"
+              [class.invalid]="isFieldInvalid('clientName')"
+              placeholder="e.g., Amana Contracting"
+            />
+            <div class="error-message" *ngIf="isFieldInvalid('clientName')">
+              {{ getFieldError('clientName') }}
             </div>
           </div>
 
@@ -94,6 +123,41 @@
             </div>
           </div>
 
+          <!-- Planned Start Date & Duration -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="plannedStartDate" class="form-label required">Planned Start Date</label>
+              <input
+                id="plannedStartDate"
+                type="date"
+                formControlName="plannedStartDate"
+                class="form-control"
+                [class.invalid]="isFieldInvalid('plannedStartDate')"
+              />
+              <div class="error-message" *ngIf="isFieldInvalid('plannedStartDate')">
+                {{ getFieldError('plannedStartDate') }}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="duration" class="form-label required">Duration (days)</label>
+              <div class="duration-input">
+                <input
+                  id="duration"
+                  type="number"
+                  formControlName="duration"
+                  class="form-control"
+                  [class.invalid]="isFieldInvalid('duration')"
+                  min="1"
+                  placeholder="e.g., 120"
+                />
+              </div>
+              <div class="error-message" *ngIf="isFieldInvalid('duration')">
+                {{ getFieldError('duration') }}
+              </div>
+            </div>
+          </div>
+
           <!-- Description -->
           <div class="form-group">
             <label for="description" class="form-label">Description</label>
@@ -110,64 +174,22 @@
             </div>
           </div>
 
-          <!-- Date Range -->
-          <div class="form-row">
-            <div class="form-group">
-              <label for="startDate" class="form-label required">Start Date</label>
-              <input
-                id="startDate"
-                type="date"
-                formControlName="startDate"
-                class="form-control"
-                [class.invalid]="isFieldInvalid('startDate')"
-              />
-              <div class="error-message" *ngIf="isFieldInvalid('startDate')">
-                {{ getFieldError('startDate') }}
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="endDate" class="form-label required">End Date</label>
-              <input
-                id="endDate"
-                type="date"
-                formControlName="endDate"
-                class="form-control"
-                [class.invalid]="isFieldInvalid('endDate')"
-              />
-              <div class="error-message" *ngIf="isFieldInvalid('endDate')">
-                {{ getFieldError('endDate') }}
-              </div>
-            </div>
-          </div>
-
-          <!-- Duration Display -->
-          <div class="duration-info" *ngIf="calculatedDuration !== null">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <polyline points="12 6 12 12 16 14"/>
-            </svg>
-            <span class="duration-text">
-              <strong>Project Duration:</strong> 
-              <span [class.duration-warning]="calculatedDuration <= 0">
-                {{ calculatedDuration > 0 ? calculatedDuration : 'Invalid' }} 
-                {{ calculatedDuration === 1 ? 'day' : 'days' }}
-              </span>
-            </span>
-          </div>
-
         </div>
       </div>
 
       <!-- Form Actions -->
       <div class="form-actions">
-        <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="loading">
+        <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="loading || initializing">
           Cancel
         </button>
-        <button type="submit" class="btn btn-primary" [disabled]="loading">
+        <button type="submit" class="btn btn-primary" [disabled]="loading || initializing">
           <span class="spinner" *ngIf="loading"></span>
-          <span *ngIf="!loading">Create Project</span>
-          <span *ngIf="loading">Creating...</span>
+          <span *ngIf="!loading">
+            {{ isEdit ? 'Update Project' : 'Create Project' }}
+          </span>
+          <span *ngIf="loading">
+            {{ isEdit ? 'Updating...' : 'Creating...' }}
+          </span>
         </button>
       </div>
     </form>

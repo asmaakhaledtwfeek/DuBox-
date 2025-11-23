@@ -1,10 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ProjectService } from '../../../core/services/project.service';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
+import { Project } from '../../../core/models/project.model';
 
 @Component({
   selector: 'app-create-project',
@@ -18,60 +19,107 @@ export class CreateProjectComponent implements OnInit {
   loading = false;
   error = '';
   successMessage = '';
-  calculatedDuration: number | null = null;
+  initializing = false;
+  isEdit = false;
+  projectId: string | null = null;
 
   constructor(
     private fb: FormBuilder,
     private projectService: ProjectService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
     this.initForm();
-    this.setupDateChangeListener();
+    this.detectModeAndLoadProject();
   }
 
   private initForm(): void {
     this.projectForm = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(200)]],
-      code: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
+      projectName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(200)]],
+      projectCode: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
+      clientName: ['', Validators.maxLength(200)],
       location: ['', Validators.maxLength(200)],
-      description: ['', Validators.maxLength(500)],
-      startDate: ['', Validators.required],
-      endDate: ['', Validators.required] // Make end date required
+      duration: [null, [Validators.required, Validators.min(1)]],
+      plannedStartDate: ['', Validators.required],
+      description: ['', Validators.maxLength(500)]
     });
   }
 
-  private setupDateChangeListener(): void {
-    // Listen for date changes to calculate duration
-    this.projectForm.get('startDate')?.valueChanges.subscribe(() => this.updateCalculatedDuration());
-    this.projectForm.get('endDate')?.valueChanges.subscribe(() => this.updateCalculatedDuration());
+  private detectModeAndLoadProject(): void {
+    const mode = this.route.snapshot.queryParamMap.get('mode');
+    const projectId = this.route.snapshot.queryParamMap.get('projectId');
+
+    this.isEdit = mode === 'edit';
+    this.projectId = projectId;
+
+    if (this.isEdit) {
+      if (!this.projectId) {
+        this.error = 'Invalid project selection. Please go back and choose a project again.';
+        return;
+      }
+
+      this.initializing = true;
+      this.projectForm.disable();
+      this.loadProject(this.projectId);
+    }
   }
 
-  private updateCalculatedDuration(): void {
-    const startDate = this.projectForm.get('startDate')?.value;
-    const endDate = this.projectForm.get('endDate')?.value;
-    
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      const diffTime = end.getTime() - start.getTime();
-      const days = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      this.calculatedDuration = days > 0 ? days : null;
-    } else {
-      this.calculatedDuration = null;
+  private loadProject(id: string): void {
+    this.projectService.getProject(id).subscribe({
+      next: (project) => {
+        this.patchForm(project);
+        this.initializing = false;
+        this.projectForm.enable();
+      },
+      error: (err) => {
+        this.error = err.message || 'Failed to load project details. Please try again.';
+        this.initializing = false;
+        this.projectForm.enable();
+        console.error('❌ Error loading project for edit:', err);
+      }
+    });
+  }
+
+  private patchForm(project: Project): void {
+    const plannedStart = project.plannedStartDate || project.startDate;
+    const duration = this.getDurationValue(project);
+
+    this.projectForm.patchValue({
+      projectName: project.name || '',
+      projectCode: project.code || '',
+      clientName: project.clientName || '',
+      location: project.location || '',
+      duration: duration,
+      plannedStartDate: this.formatDateForInput(plannedStart),
+      description: project.description || ''
+    });
+  }
+
+  private getDurationValue(project: Project): number | null {
+    if (project.duration) {
+      return project.duration;
     }
+
+    if (project.startDate && project.endDate) {
+      const diff = project.endDate.getTime() - project.startDate.getTime();
+      const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+      return days > 0 ? days : null;
+    }
+
+    return null;
+  }
+
+  private formatDateForInput(date?: Date): string {
+    if (!date) return '';
+    const iso = date.toISOString();
+    return iso.split('T')[0];
   }
 
   onSubmit(): void {
-    if (this.projectForm.invalid) {
+    if (this.initializing || this.projectForm.invalid) {
       this.markFormGroupTouched(this.projectForm);
-      return;
-    }
-
-    // Validate duration
-    if (!this.calculatedDuration || this.calculatedDuration <= 0) {
-      this.error = 'End date must be after start date';
       return;
     }
 
@@ -83,54 +131,57 @@ export class CreateProjectComponent implements OnInit {
     
     // Map frontend fields to backend expected format
     const projectData: any = {
-      projectCode: formValue.code,
-      projectName: formValue.name,
-      clientName: undefined,
+      projectCode: formValue.projectCode,
+      projectName: formValue.projectName,
+      clientName: formValue.clientName || undefined,
       location: formValue.location || undefined,
-      duration: this.calculatedDuration, // ✅ Duration in days (required)
-      plannedStartDate: formValue.startDate ? new Date(formValue.startDate).toISOString() : undefined,
+      duration: formValue.duration,
+      plannedStartDate: formValue.plannedStartDate ? new Date(formValue.plannedStartDate).toISOString() : undefined,
       description: formValue.description || undefined
     };
 
     console.log('🚀 Submitting project data:', projectData);
 
-        this.projectService.createProject(projectData).subscribe({
-          next: (project: any) => {
-            this.loading = false;
-            this.successMessage = 'Project created successfully!';
-            console.log('✅ Project created:', project);
-            console.log('🔑 Project keys:', Object.keys(project));
-            console.log('🆔 Project ID:', project.id);
-            console.log('🆔 Project projectId:', project.projectId);
-            console.log('🆔 Project ProjectId:', project.ProjectId);
-            
-            const projectId = project.id || project.projectId || project.ProjectId;
-            
-            if (!projectId) {
-              console.error('⚠️ WARNING: Created project has NO ID!');
-              console.error('📦 Full project object:', JSON.stringify(project, null, 2));
-              alert('Warning: Project created but has no ID. Please check console.');
-            }
-            
-            setTimeout(() => {
-              if (projectId) {
-                this.router.navigate(['/projects', projectId, 'dashboard']);
-              } else {
-                this.router.navigate(['/projects']);
-              }
-            }, 1500);
-          },
-          error: (err) => {
-            this.loading = false;
-            this.error = err.error?.message || err.message || 'Failed to create project. Please try again.';
-            console.error('❌ Error creating project:', err);
-            console.error('📦 Full error:', err);
+    const request$ = this.isEdit && this.projectId
+      ? this.projectService.updateProject(this.projectId, projectData)
+      : this.projectService.createProject(projectData);
+
+    request$.subscribe({
+      next: (project: any) => {
+        this.loading = false;
+        this.successMessage = this.isEdit ? 'Project updated successfully!' : 'Project created successfully!';
+        console.log('✅ Project saved:', project);
+
+        const projectId = project.id || project.projectId || project.ProjectId || this.projectId;
+
+        if (!projectId) {
+          console.error('⚠️ WARNING: Saved project has no ID!');
+          console.error('📦 Full project object:', JSON.stringify(project, null, 2));
+          alert('Warning: Project saved but has no ID. Please check console.');
+        }
+
+        setTimeout(() => {
+          if (projectId) {
+            this.router.navigate(['/projects', projectId, 'dashboard']);
+          } else {
+            this.router.navigate(['/projects']);
           }
-        });
+        }, 1200);
+      },
+      error: (err) => {
+        this.loading = false;
+        this.error = err.error?.message || err.message || `Failed to ${this.isEdit ? 'update' : 'create'} project. Please try again.`;
+        console.error('❌ Error saving project:', err);
+      }
+    });
   }
 
   onCancel(): void {
-    this.router.navigate(['/projects']);
+    if (this.isEdit && this.projectId) {
+      this.router.navigate(['/projects', this.projectId, 'dashboard']);
+    } else {
+      this.router.navigate(['/projects']);
+    }
   }
 
   private markFormGroupTouched(formGroup: FormGroup): void {
@@ -161,12 +212,13 @@ export class CreateProjectComponent implements OnInit {
 
   private getFieldLabel(fieldName: string): string {
     const labels: Record<string, string> = {
-      name: 'Project name',
-      code: 'Project code',
+      projectName: 'Project name',
+      projectCode: 'Project code',
+      clientName: 'Client name',
       location: 'Location',
-      description: 'Description',
-      startDate: 'Start date',
-      endDate: 'End date'
+      duration: 'Duration',
+      plannedStartDate: 'Planned start date',
+      description: 'Description'
     };
     return labels[fieldName] || fieldName;
   }

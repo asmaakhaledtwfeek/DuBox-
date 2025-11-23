@@ -30,37 +30,232 @@
       <button class="btn btn-primary" (click)="loadWIRRecord()">Retry</button>
     </div>
 
-    <!-- Checklist Form -->
-    <form [formGroup]="checklistForm" *ngIf="wirRecord && !loading && !error">
+    <!-- Step 1: Create WIR Checkpoint -->
+    <div *ngIf="currentStep === 'create-checkpoint' && wirRecord && !loading && !error" class="step-container">
+      <div class="step-header">
+        <h2>Step 1: Create WIR Checkpoint</h2>
+        <p class="step-description">Create a new WIR checkpoint for this activity</p>
+      </div>
+
+      <form [formGroup]="createCheckpointForm" (ngSubmit)="onCreateCheckpoint()">
+        <div class="form-card">
+          <div *ngIf="error" class="alert alert-error">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>{{ error }}</span>
+          </div>
+
+          <!-- Auto-filled information (read-only) -->
+          <div class="info-section" *ngIf="wirRecord">
+            <h3 class="info-section-title">Checkpoint Information</h3>
+            <div class="info-grid-readonly">
+              <div class="info-item">
+                <span class="label">WIR Number</span>
+                <span class="value">{{ wirRecord.wirCode }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Box Activity ID</span>
+                <span class="value">{{ activityId }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Activity Name</span>
+                <span class="value">{{ wirRecord.activityName }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="wirName">WIR Name</label>
+            <input 
+              id="wirName" 
+              type="text" 
+              formControlName="wirName" 
+              class="form-control"
+              [class.invalid]="createCheckpointForm.get('wirName')?.invalid && createCheckpointForm.get('wirName')?.touched"
+              placeholder="e.g., Release from Assembly - WIR-1"
+            >
+            <div *ngIf="createCheckpointForm.get('wirName')?.invalid && createCheckpointForm.get('wirName')?.touched" class="error-text">
+              WIR Name max 200 characters.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="wirDescription">WIR Description</label>
+            <textarea 
+              id="wirDescription" 
+              formControlName="wirDescription" 
+              class="form-control"
+              [class.invalid]="createCheckpointForm.get('wirDescription')?.invalid && createCheckpointForm.get('wirDescription')?.touched"
+              rows="3"
+              placeholder="Description of the WIR checkpoint"
+            ></textarea>
+            <div *ngIf="createCheckpointForm.get('wirDescription')?.invalid && createCheckpointForm.get('wirDescription')?.touched" class="error-text">
+              WIR Description max 500 characters.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="attachmentPath">Attachment Path</label>
+            <input 
+              id="attachmentPath" 
+              type="text" 
+              formControlName="attachmentPath" 
+              class="form-control"
+              [class.invalid]="createCheckpointForm.get('attachmentPath')?.invalid && createCheckpointForm.get('attachmentPath')?.touched"
+              placeholder="e.g., /attachments/wir-1-drawing.pdf"
+            >
+            <div *ngIf="createCheckpointForm.get('attachmentPath')?.invalid && createCheckpointForm.get('attachmentPath')?.touched" class="error-text">
+              Attachment Path max 500 characters.
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="comments">Comments</label>
+            <textarea 
+              id="comments" 
+              formControlName="comments" 
+              class="form-control"
+              [class.invalid]="createCheckpointForm.get('comments')?.invalid && createCheckpointForm.get('comments')?.touched"
+              rows="3"
+              placeholder="Additional comments"
+            ></textarea>
+            <div *ngIf="createCheckpointForm.get('comments')?.invalid && createCheckpointForm.get('comments')?.touched" class="error-text">
+              Comments max 1000 characters.
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" (click)="goBack()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="creatingCheckpoint || createCheckpointForm.invalid">
+              <span *ngIf="creatingCheckpoint">Creating...</span>
+              <span *ngIf="!creatingCheckpoint">Create Checkpoint</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Step 2: Add Checklist Items -->
+    <div *ngIf="currentStep === 'add-items' && wirCheckpoint && !loading && !error" class="step-container">
+      <div class="step-header">
+        <h2>Step 2: Add Checklist Items</h2>
+        <p class="step-description">Add checklist items to the WIR checkpoint</p>
+      </div>
+
+      <form [formGroup]="addChecklistItemsForm" (ngSubmit)="onAddChecklistItems()">
+        <div class="form-card">
+          <div *ngIf="error" class="alert alert-error">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>{{ error }}</span>
+          </div>
+
+          <div class="checklist-items-container">
+            <div *ngFor="let item of addChecklistItemsArray.controls; let i = index" [formGroupName]="i" class="checklist-item-form">
+              <div class="item-header">
+                <span class="item-sequence">Item {{ i + 1 }}</span>
+              </div>
+              
+              <div class="form-group">
+                <label>Checkpoint Description <span class="required">*</span></label>
+                <textarea 
+                  formControlName="checkpointDescription" 
+                  class="form-control"
+                  [class.invalid]="item.get('checkpointDescription')?.invalid && item.get('checkpointDescription')?.touched"
+                  rows="2"
+                  placeholder="Enter checkpoint description"
+                ></textarea>
+                <div *ngIf="item.get('checkpointDescription')?.invalid && item.get('checkpointDescription')?.touched" class="error-text">
+                  Checkpoint description is required.
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Reference Document</label>
+                <input 
+                  type="text" 
+                  formControlName="referenceDocument" 
+                  class="form-control"
+                  placeholder="e.g., Drawing No., Specification"
+                >
+              </div>
+
+              <div class="form-group">
+                <label>Sequence <span class="required">*</span></label>
+                <input 
+                  type="number" 
+                  formControlName="sequence" 
+                  class="form-control"
+                  [class.invalid]="item.get('sequence')?.invalid && item.get('sequence')?.touched"
+                  min="1"
+                >
+                <div *ngIf="item.get('sequence')?.invalid && item.get('sequence')?.touched" class="error-text">
+                  Sequence is required.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" (click)="goBack()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="addingChecklistItems || addChecklistItemsForm.invalid">
+              <span *ngIf="addingChecklistItems">Adding Items...</span>
+              <span *ngIf="!addingChecklistItems">Add Checklist Items</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Step 3: Review Checklist -->
+    <form [formGroup]="checklistForm" *ngIf="currentStep === 'review' && wirCheckpoint && !loading && !error">
       <!-- WIR Information Card -->
       <div class="info-card">
         <h2 class="card-title">Inspection Request Information</h2>
         <div class="info-grid">
           <div class="info-item">
             <span class="label">WIR Code</span>
-            <span class="value">{{ wirRecord.wirCode }}</span>
+            <span class="value">{{ wirRecord?.wirCode || '-' }}</span>
+          </div>
+          <div class="info-item" *ngIf="wirCheckpoint">
+            <span class="label">WIR Checkpoint ID</span>
+            <span class="value">{{ wirCheckpoint.wirId }}</span>
           </div>
           <div class="info-item">
             <span class="label">Box Tag</span>
-            <span class="value">{{ wirRecord.boxTag }}</span>
+            <span class="value">{{ wirRecord?.boxTag || '-' }}</span>
           </div>
           <div class="info-item">
             <span class="label">Activity</span>
-            <span class="value">{{ wirRecord.activityName }}</span>
+            <span class="value">{{ wirRecord?.activityName || '-' }}</span>
+          </div>
+          <div class="info-item" *ngIf="wirCheckpoint">
+            <span class="label">Checkpoint Status</span>
+            <span class="value badge" [class.pending]="wirCheckpoint.status === 'Pending'" 
+                  [class.approved]="wirCheckpoint.status === 'Approved'" 
+                  [class.rejected]="wirCheckpoint.status === 'Rejected'">
+              {{ wirCheckpoint.status }}
+            </span>
           </div>
           <div class="info-item">
             <span class="label">Status</span>
-            <span class="badge" [class.badge-warning]="wirRecord.status === 'Pending'" [class.badge-success]="wirRecord.status === 'Approved'" [class.badge-danger]="wirRecord.status === 'Rejected'">
-              {{ wirRecord.status }}
+            <span class="badge" [class.badge-warning]="wirRecord?.status === 'Pending'" [class.badge-success]="wirRecord?.status === 'Approved'" [class.badge-danger]="wirRecord?.status === 'Rejected'">
+              {{ wirRecord?.status || '-' }}
             </span>
           </div>
           <div class="info-item">
             <span class="label">Requested By</span>
-            <span class="value">{{ wirRecord.requestedByName }}</span>
+            <span class="value">{{ wirRecord?.requestedByName || '-' }}</span>
           </div>
           <div class="info-item">
             <span class="label">Requested Date</span>
-            <span class="value">{{ wirRecord.requestedDate | date:'MMM d, yyyy h:mm a' }}</span>
+            <span class="value">{{ wirRecord?.requestedDate ? (wirRecord?.requestedDate | date:'MMM d, yyyy h:mm a') : '-' }}</span>
           </div>
         </div>
       </div>

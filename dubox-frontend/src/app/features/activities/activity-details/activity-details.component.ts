@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { BoxService } from '../../../core/services/box.service';
 import { BoxActivity } from '../../../core/models/box.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
@@ -12,7 +13,7 @@ import { BoxActivityDetail, ProgressUpdate } from '../../../core/models/progress
 @Component({
   selector: 'app-activity-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, HeaderComponent, SidebarComponent, UpdateProgressModalComponent],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, HeaderComponent, SidebarComponent, UpdateProgressModalComponent],
   templateUrl: './activity-details.component.html',
   styleUrls: ['./activity-details.component.scss']
 })
@@ -27,9 +28,33 @@ export class ActivityDetailsComponent implements OnInit {
   error = '';
   isModalOpen = false;
 
+  // Modal states
+  isUpdateStatusModalOpen = false;
+  isAssignTeamModalOpen = false;
+  isIssueMaterialModalOpen = false;
+  isSetScheduleModalOpen = false;
+
+  // Form groups
+  statusForm!: FormGroup;
+  assignTeamForm!: FormGroup;
+  issueMaterialForm!: FormGroup;
+  scheduleForm!: FormGroup;
+
+  // Loading states
+  isUpdatingStatus = false;
+  isAssigningTeam = false;
+  isIssuingMaterial = false;
+  isSettingSchedule = false;
+
+  // Data for dropdowns
+  availableTeams: any[] = [];
+  availableMembers: any[] = [];
+  availableMaterials: any[] = [];
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
+    private fb: FormBuilder,
     private boxService: BoxService,
     private progressUpdateService: ProgressUpdateService
   ) {}
@@ -45,7 +70,56 @@ export class ActivityDetailsComponent implements OnInit {
       return;
     }
     
+    this.initForms();
     this.loadActivity();
+    this.loadDropdownData();
+  }
+
+  initForms(): void {
+    this.statusForm = this.fb.group({
+      status: ['', Validators.required],
+      notes: ['']
+    });
+
+    this.assignTeamForm = this.fb.group({
+      teamId: ['', Validators.required],
+      memberId: ['']
+    });
+
+    this.issueMaterialForm = this.fb.group({
+      materialId: ['', Validators.required],
+      quantity: ['', [Validators.required, Validators.min(0.01)]],
+      notes: ['']
+    });
+
+    this.scheduleForm = this.fb.group({
+      plannedStartDate: ['', Validators.required],
+      plannedEndDate: ['', Validators.required],
+      duration: ['', [Validators.required, Validators.min(1)]],
+      notes: ['']
+    });
+  }
+
+  loadDropdownData(): void {
+    // TODO: Load teams, members, and materials from services
+    // For now, using mock data
+    this.availableTeams = [
+      { id: '1', name: 'Civil Team' },
+      { id: '2', name: 'MEP Team' },
+      { id: '3', name: 'QA/QC Team' }
+    ];
+
+    this.availableMembers = [
+      { id: '1', name: 'John Doe' },
+      { id: '2', name: 'Jane Smith' },
+      { id: '3', name: 'Mike Johnson' }
+    ];
+
+    this.availableMaterials = [
+      { id: '1', name: 'Cement', unit: 'bags' },
+      { id: '2', name: 'Steel Bars', unit: 'tons' },
+      { id: '3', name: 'Concrete', unit: 'm³' }
+    ];
   }
 
   loadActivity(): void {
@@ -196,5 +270,144 @@ export class ActivityDetailsComponent implements OnInit {
 
   isWIRCheckpoint(): boolean {
     return this.activityDetail?.isWIRCheckpoint || false;
+  }
+
+  // Update Status Modal
+  openUpdateStatusModal(): void {
+    if (this.activity) {
+      this.statusForm.patchValue({
+        status: this.activity.status,
+        notes: ''
+      });
+    }
+    this.isUpdateStatusModalOpen = true;
+  }
+
+  closeUpdateStatusModal(): void {
+    this.isUpdateStatusModalOpen = false;
+    this.statusForm.reset();
+  }
+
+  onUpdateStatus(): void {
+    if (this.statusForm.invalid || !this.activityDetail) return;
+
+    this.isUpdatingStatus = true;
+    const formValue = this.statusForm.value;
+
+    // TODO: Call API to update activity status
+    console.log('Updating status:', formValue);
+    
+    // Simulate API call
+    setTimeout(() => {
+      this.isUpdatingStatus = false;
+      this.closeUpdateStatusModal();
+      this.loadActivity();
+      alert('Status updated successfully!');
+    }, 1000);
+  }
+
+  // Assign Team Modal
+  openAssignTeamModal(): void {
+    if (this.activityDetail) {
+      this.assignTeamForm.patchValue({
+        teamId: this.activityDetail.teamId?.toString() || '',
+        memberId: this.activityDetail.assignedMemberId || ''
+      });
+    }
+    this.isAssignTeamModalOpen = true;
+  }
+
+  closeAssignTeamModal(): void {
+    this.isAssignTeamModalOpen = false;
+    this.assignTeamForm.reset();
+  }
+
+  onAssignTeam(): void {
+    if (this.assignTeamForm.invalid || !this.activityDetail) return;
+
+    this.isAssigningTeam = true;
+    const formValue = this.assignTeamForm.value;
+
+    // TODO: Call API to assign team
+    console.log('Assigning team:', formValue);
+    
+    // Simulate API call
+    setTimeout(() => {
+      this.isAssigningTeam = false;
+      this.closeAssignTeamModal();
+      this.loadActivity();
+      alert('Team assigned successfully!');
+    }, 1000);
+  }
+
+  // Issue Material Modal
+  openIssueMaterialModal(): void {
+    this.issueMaterialForm.reset();
+    this.isIssueMaterialModalOpen = true;
+  }
+
+  closeIssueMaterialModal(): void {
+    this.isIssueMaterialModalOpen = false;
+    this.issueMaterialForm.reset();
+  }
+
+  onIssueMaterial(): void {
+    if (this.issueMaterialForm.invalid || !this.activityDetail) return;
+
+    this.isIssuingMaterial = true;
+    const formValue = this.issueMaterialForm.value;
+
+    // TODO: Call API to issue material
+    console.log('Issuing material:', formValue);
+    
+    // Simulate API call
+    setTimeout(() => {
+      this.isIssuingMaterial = false;
+      this.closeIssueMaterialModal();
+      alert('Material issued successfully!');
+    }, 1000);
+  }
+
+  // Set Schedule Modal
+  openSetScheduleModal(): void {
+    if (this.activityDetail) {
+      const plannedStart = this.activityDetail.plannedStartDate 
+        ? new Date(this.activityDetail.plannedStartDate).toISOString().split('T')[0]
+        : '';
+      const plannedEnd = this.activityDetail.plannedEndDate 
+        ? new Date(this.activityDetail.plannedEndDate).toISOString().split('T')[0]
+        : '';
+
+      this.scheduleForm.patchValue({
+        plannedStartDate: plannedStart,
+        plannedEndDate: plannedEnd,
+        duration: this.activityDetail.duration || '',
+        notes: ''
+      });
+    }
+    this.isSetScheduleModalOpen = true;
+  }
+
+  closeSetScheduleModal(): void {
+    this.isSetScheduleModalOpen = false;
+    this.scheduleForm.reset();
+  }
+
+  onSetSchedule(): void {
+    if (this.scheduleForm.invalid || !this.activityDetail) return;
+
+    this.isSettingSchedule = true;
+    const formValue = this.scheduleForm.value;
+
+    // TODO: Call API to set schedule
+    console.log('Setting schedule:', formValue);
+    
+    // Simulate API call
+    setTimeout(() => {
+      this.isSettingSchedule = false;
+      this.closeSetScheduleModal();
+      this.loadActivity();
+      alert('Schedule updated successfully!');
+    }, 1000);
   }
 }

@@ -1,6 +1,4 @@
 <div class="process-flow-table-container">
-  <h2 class="table-title">Process Flow Table</h2>
-  
   <!-- Loading State -->
   <div *ngIf="isLoading" class="loading-state">
     <p>Loading activities...</p>
@@ -83,29 +81,33 @@
             *ngIf="isWIRRow(row)"
             class="wir-row wir-checkpoint"
           >
-            <td class="text-center wir-code-cell"><strong>{{ getWIR(row)?.wirCode }}</strong></td>
+            <td class="text-center wir-code-cell">
+              <strong>{{ getWIR(row)?.wirCode || 'WIR' }}</strong>
+            </td>
             <td class="text-center team-cell wir-team-cell"><strong>QA/QC</strong></td>
-            <td class="activity-name wir-activity-cell">
-              <strong>⚠️ Clearance/WIR</strong>
+            <!-- Activity cell: merge with Assigned to if empty -->
+            <td class="activity-name wir-activity-cell" [attr.colspan]="hasWIRInspector(row) ? 1 : 2">
+              <span class="stage-label">Clearance / WIR</span>
             </td>
-            <td class="assigned-to">
-              <strong class="wir-assigned">{{ getWIR(row)?.inspectedByName || 'QC Engineer' }}</strong>
+            <!-- Assigned to cell: show for all WIRs, default to "QC Engineer" if not assigned -->
+            <td class="assigned-to" *ngIf="hasWIRInspector(row)">
+              <strong class="wir-assigned">{{ getWIRInspectorName(row) }}</strong>
             </td>
-            <td class="text-center">
-              <!-- Empty for WIR -->
-            </td>
-            <td class="text-center" colspan="2">
-              <strong class="wir-message">
+            <!-- Merge empty Duration and Actual Start cells -->
+            <td class="text-center" colspan="2"></td>
+            <td class="text-center wir-progress-cell">
+              <span class="wir-progress-label">
                 {{ getWIRDescription(getWIR(row)) }}
-              </strong>
+              </span>
             </td>
-            <td class="text-center">
-              <span [class]="getWIRStatusClass(getWIR(row)?.status || 'Pending')">
+            <!-- Status cell: merge with Actions if empty -->
+            <td class="text-center wir-status-cell" [attr.colspan]="hasWIRActions(row) ? 1 : 2">
+              <span class="wir-status-card" [ngClass]="getWIR(row)?.status || 'Pending'">
                 {{ getWIRStatusLabel(getWIR(row)?.status || 'Pending') }}
               </span>
             </td>
-            <td class="text-center actions-cell">
-              <!-- View WIR Details Button -->
+            <!-- Actions cell: only show if has data -->
+            <td class="text-center actions-cell" *ngIf="hasWIRActions(row)">
               <button 
                 class="btn-view-details"
                 [routerLink]="['/projects', projectId, 'boxes', boxId, 'wir', getWIR(row)?.wirRecordId]"
@@ -116,12 +118,10 @@
                   <circle cx="12" cy="12" r="3"/>
                 </svg>
               </button>
-
-              <!-- QA/QC Checklist Button -->
               <button 
                 class="btn-qa-qc"
-                [routerLink]="['/projects', projectId, 'boxes', boxId, 'wir', getWIR(row)?.wirRecordId, 'checklist']"
-                title="QA/QC Checklist"
+                (click)="openWIRApprovalModal(getWIR(row)!)"
+                title="Approve/Reject WIR"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M9 11l3 3L22 4"/>
@@ -150,3 +150,14 @@
   (closeModal)="closeProgressModal()"
   (progressUpdated)="onProgressUpdated($event)"
 ></app-update-progress-modal>
+
+<!-- WIR Approval Modal -->
+<app-wir-approval-modal
+  *ngIf="selectedWIR"
+  [wirRecord]="selectedWIR"
+  [isOpen]="isWIRModalOpen"
+  [projectId]="projectId"
+  [boxId]="boxId"
+  (closeModal)="closeWIRApprovalModal()"
+  (wirUpdated)="onWIRUpdated($event)"
+></app-wir-approval-modal>

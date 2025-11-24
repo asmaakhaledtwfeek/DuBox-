@@ -11,7 +11,10 @@ import {
   WIRCheckpoint,
   CreateWIRCheckpointRequest,
   AddChecklistItemsRequest,
-  ReviewWIRCheckpointRequest
+  ReviewWIRCheckpointRequest,
+  AddQualityIssuesRequest,
+  QualityIssueItem,
+  QualityIssueDetails
 } from '../models/wir.model';
 
 @Injectable({
@@ -183,11 +186,32 @@ export class WIRService {
   }
 
   /**
+   * Add quality issues to WIR checkpoint
+   */
+  addQualityIssues(request: AddQualityIssuesRequest): Observable<WIRCheckpoint> {
+    return this.apiService.post<any>(`wircheckpoints/${request.wirId}/quality-issues`, request).pipe(
+      map(data => this.transformWIRCheckpoint(data))
+    );
+  }
+
+  /**
    * Review WIR checkpoint (approve/reject)
    */
   reviewWIRCheckpoint(request: ReviewWIRCheckpointRequest): Observable<WIRCheckpoint> {
     return this.apiService.put<any>(`wircheckpoints/${request.wirId}/review`, request).pipe(
       map(data => this.transformWIRCheckpoint(data))
+    );
+  }
+
+  /**
+   * Get quality issues for a box
+   */
+  getQualityIssuesByBox(boxId: string): Observable<QualityIssueDetails[]> {
+    return this.apiService.get<any>(`qualityissues/box/${boxId}`).pipe(
+      map(response => {
+        const issues = response?.data || response || [];
+        return issues.map((issue: any) => this.transformQualityIssueDetails(issue));
+      })
     );
   }
 
@@ -221,7 +245,40 @@ export class WIRService {
         remarks: item.remarks || item.Remarks || item.comments || item.Comments,
         sequence: item.sequence || item.Sequence || 0
       })),
-      qualityIssues: backendCheckpoint.qualityIssues || backendCheckpoint.QualityIssues || []
+      qualityIssues: (backendCheckpoint.qualityIssues || backendCheckpoint.QualityIssues || []).map((issue: any) => ({
+        issueType: issue.issueType || issue.IssueType || 'Defect',
+        severity: issue.severity || issue.Severity || 'Minor',
+        issueDescription: issue.issueDescription || issue.IssueDescription || '',
+        assignedTo: issue.assignedTo || issue.AssignedTo,
+        dueDate: issue.dueDate ? new Date(issue.dueDate) : undefined,
+        photoPath: issue.photoPath || issue.PhotoPath,
+        reportedBy: issue.reportedBy || issue.ReportedBy,
+        issueDate: issue.issueDate ? new Date(issue.issueDate) : undefined
+      }) as QualityIssueItem)
+    };
+  }
+
+  private transformQualityIssueDetails(issue: any): QualityIssueDetails {
+    return {
+      issueId: issue.issueId || issue.IssueId,
+      issueType: issue.issueType || issue.IssueType,
+      severity: issue.severity || issue.Severity,
+      issueDescription: issue.issueDescription || issue.IssueDescription,
+      reportedBy: issue.reportedBy || issue.ReportedBy,
+      assignedTo: issue.assignedTo || issue.AssignedTo,
+      dueDate: issue.dueDate ? new Date(issue.dueDate) : undefined,
+      photoPath: issue.photoPath || issue.PhotoPath,
+      issueDate: issue.issueDate ? new Date(issue.issueDate) : undefined,
+      status: issue.status || issue.Status,
+      resolutionDate: issue.resolutionDate ? new Date(issue.resolutionDate) : undefined,
+      resolutionDescription: issue.resolutionDescription || issue.ResolutionDescription,
+      boxId: issue.boxId || issue.BoxId,
+      boxName: issue.boxName || issue.BoxName,
+      boxTag: issue.boxTag || issue.BoxTag,
+      wirId: issue.wirId || issue.WIRId,
+      wirNumber: issue.wirNumber || issue.WIRNumber,
+      wirName: issue.wirName || issue.WIRName,
+      inspectorName: issue.inspectorName || issue.InspectorName
     };
   }
 }

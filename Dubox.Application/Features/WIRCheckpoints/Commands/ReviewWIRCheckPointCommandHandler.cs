@@ -46,6 +46,25 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                 checklistItem.Remarks = item.Remarks;
             }
 
+            wir.InspectionDate = DateTime.UtcNow;
+
+            var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId)
+                ? parsedUserId
+                : Guid.Empty;
+            if (currentUserId != Guid.Empty)
+            {
+                var user = await _unitOfWork.Repository<User>().GetByIdAsync(currentUserId);
+                if (user != null)
+                {
+                    wir.InspectorName = user.FullName;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.InspectorRole))
+            {
+                wir.InspectorRole = request.InspectorRole.Trim();
+            }
+
             wir.Status = request.Status;
             if (request.Status == WIRCheckpointStatusEnum.Approved || request.Status == WIRCheckpointStatusEnum.ConditionalApproval)
                 wir.ApprovalDate = DateTime.UtcNow;

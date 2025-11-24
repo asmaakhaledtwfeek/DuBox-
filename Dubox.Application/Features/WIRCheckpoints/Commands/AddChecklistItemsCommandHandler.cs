@@ -21,12 +21,18 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
 
         public async Task<Result<CreateWIRCheckpointDto>> Handle(AddChecklistItemsCommand request, CancellationToken cancellationToken)
         {
-            var wir = await _unitOfWork.Repository<WIRCheckpoint>().GetByIdAsync(request.WIRId);
+            var wirRepository = _unitOfWork.Repository<WIRCheckpoint>();
+            var wirChecklistRepository = _unitOfWork.Repository<WIRChecklistItem>();
+
+            var wir = await wirRepository.GetByIdAsync(request.WIRId);
 
             if (wir is null)
                 return Result.Failure<CreateWIRCheckpointDto>("WIR Checkpoint not found");
 
-            var currentUser = _currentUserService.Username;
+
+            var existingItems = await wirChecklistRepository.FindAsync(x => x.WIRId == request.WIRId);
+            if (existingItems.Any())
+                wirChecklistRepository.DeleteRange(existingItems);
 
             var newItems = request.Items.Select(item => new WIRChecklistItem
             {
@@ -38,8 +44,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                 Remarks = null,
             }).ToList();
 
-            await _unitOfWork.Repository<WIRChecklistItem>()
-                .AddRangeAsync(newItems, cancellationToken);
+            await wirChecklistRepository.AddRangeAsync(newItems, cancellationToken);
 
             await _unitOfWork.CompleteAsync(cancellationToken);
 

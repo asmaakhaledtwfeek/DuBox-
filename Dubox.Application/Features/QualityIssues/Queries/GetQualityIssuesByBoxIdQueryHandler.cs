@@ -19,11 +19,13 @@ namespace Dubox.Application.Features.QualityIssues.Queries
 
         public async Task<Result<List<QualityIssueDetailsDto>>> Handle(GetQualityIssuesByBoxIdQuery request, CancellationToken cancellationToken)
         {
-            var box = _unitOfWork.Repository<Box>().GetByIdAsync(request.BoxId);
+            var box = await _unitOfWork.Repository<Box>().GetByIdAsync(request.BoxId, cancellationToken);
             if (box == null)
                 return Result.Failure<List<QualityIssueDetailsDto>>("Box not found");
 
-            var issues = _unitOfWork.Repository<QualityIssue>().GetWithSpec(new GetQualityIssuesByBoxIdSpecification(request.BoxId)).Data.ToList();
+            var specificationResult = _unitOfWork.Repository<QualityIssue>()
+                .GetWithSpec(new GetQualityIssuesByBoxIdSpecification(request.BoxId));
+            var issues = specificationResult.Data.ToList();
 
             var dtos = issues.Adapt<List<QualityIssueDetailsDto>>();
 

@@ -20,6 +20,11 @@
                 .NotEmpty()
                 .WithMessage("Checklist items cannot be empty.");
 
+            RuleFor(x => x.InspectorRole)
+                .MaximumLength(100)
+                .When(x => !string.IsNullOrWhiteSpace(x.InspectorRole))
+                .WithMessage("Inspector role cannot exceed 100 characters.");
+
             RuleForEach(x => x.Items)
                 .SetValidator(new ChecklistItemForReviewValidator());
         }

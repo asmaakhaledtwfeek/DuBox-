@@ -109,16 +109,6 @@
             <!-- Actions cell: only show if has data -->
             <td class="text-center actions-cell" *ngIf="hasWIRActions(row)">
               <button 
-                class="btn-view-details"
-                [routerLink]="['/projects', projectId, 'boxes', boxId, 'wir', getWIR(row)?.wirRecordId]"
-                title="View WIR Details"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                  <circle cx="12" cy="12" r="3"/>
-                </svg>
-              </button>
-              <button 
                 class="btn-qa-qc"
                 (click)="openWIRApprovalModal(getWIR(row)!)"
                 title="Approve/Reject WIR"

@@ -128,8 +128,6 @@ export class AddChecklistItemsComponent implements OnInit {
     this.wirService.addChecklistItems(request).subscribe({
       next: (updatedCheckpoint) => {
         this.submitting = false;
-        alert('Checklist items added successfully!');
-        // Navigate to review page (qa-qc-checklist with review step)
         this.router.navigate([
           '/projects',
           this.projectId,
@@ -138,7 +136,7 @@ export class AddChecklistItemsComponent implements OnInit {
           'activities',
           this.activityId,
           'qa-qc'
-        ]);
+        ], { queryParams: { checklistAdded: 'true' } });
       },
       error: (err) => {
         this.submitting = false;

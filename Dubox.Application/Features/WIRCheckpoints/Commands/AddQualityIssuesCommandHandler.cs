@@ -28,7 +28,21 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
 
             if (wir is null)
                 return Result.Failure<WIRCheckpointDto>("WIRCheckpoint not found.");
-
+            var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId)
+              ? parsedUserId
+              : Guid.Empty;
+            var reportedBy = string.Empty;
+            if (currentUserId != Guid.Empty)
+            {
+                var user = await _unitOfWork.Repository<User>().GetByIdAsync(currentUserId);
+                if (user != null)
+                {
+                    reportedBy = user.FullName;
+                }
+            }
+            var existingIssues = await _unitOfWork.Repository<QualityIssue>().FindAsync(x => x.WIRId == request.WIRId);
+            if (existingIssues.Any())
+                _unitOfWork.Repository<QualityIssue>().DeleteRange(existingIssues);
             var newIssues = request.Issues.Select(i => new QualityIssue
             {
                 WIRId = wir.WIRId,
@@ -41,7 +55,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                 PhotoPath = i.PhotoPath,
                 Status = QualityIssueStatusEnum.Open,
                 IssueDate = DateTime.UtcNow,
-                ReportedBy = _currentUserService.Username
+                ReportedBy = reportedBy
             }).ToList();
 
             await _unitOfWork.Repository<QualityIssue>().AddRangeAsync(newIssues, cancellationToken);

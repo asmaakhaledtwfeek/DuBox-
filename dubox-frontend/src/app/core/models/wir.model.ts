@@ -83,7 +83,7 @@ export interface WIRCheckpoint {
   attachmentPath?: string;
   createdDate: Date;
   checklistItems?: WIRCheckpointChecklistItem[];
-  qualityIssues?: any[];
+  qualityIssues?: QualityIssueItem[];
 }
 
 export interface WIRCheckpointChecklistItem {
@@ -134,6 +134,7 @@ export interface ReviewWIRCheckpointRequest {
   wirId: string;
   status: WIRCheckpointStatus;
   comment?: string;
+  inspectorRole?: string;
   items: ChecklistItemForReview[];
 }
 
@@ -141,6 +142,40 @@ export interface ChecklistItemForReview {
   checklistItemId: string;
   remarks?: string;
   status: CheckListItemStatus;
+}
+
+export type IssueType = 'Defect' | 'NonConformance' | 'Observation';
+export type SeverityType = 'Critical' | 'Major' | 'Minor';
+
+export interface QualityIssueItem {
+  issueType: IssueType;
+  severity: SeverityType;
+  issueDescription: string;
+  assignedTo?: string;
+  dueDate?: string | Date;
+  photoPath?: string;
+  reportedBy?: string;
+  issueDate?: string | Date;
+}
+
+export interface QualityIssueDetails extends QualityIssueItem {
+  issueId: string;
+  status?: string;
+  resolutionDate?: string | Date;
+  resolutionDescription?: string;
+  boxId?: string;
+  boxName?: string;
+  boxTag?: string;
+  wirId?: string;
+  wirNumber?: string;
+  wirName?: string;
+  wirStatus?: WIRCheckpointStatus;
+  inspectorName?: string;
+}
+
+export interface AddQualityIssuesRequest {
+  wirId: string;
+  issues: QualityIssueItem[];
 }
 
 // Predefined Checklist Templates for each WIR Code

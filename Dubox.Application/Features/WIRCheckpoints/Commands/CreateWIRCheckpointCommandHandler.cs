@@ -27,8 +27,9 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             if (boxActicity == null)
                 return Result.Failure<CreateWIRCheckpointDto>("Box Activity not fount");
 
-            var currentUserName = _currentUserService.Username;
-
+            var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
+            var user = await _unitOfWork.Repository<User>().GetByIdAsync(currentUserId);
+            var currentUserName = user != null ? user.FullName : string.Empty;
             var checkpoint = request.Adapt<WIRCheckpoint>();
             checkpoint.BoxId = boxActicity.BoxId;
             checkpoint.Status = WIRCheckpointStatusEnum.Pending;

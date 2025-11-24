@@ -9,6 +9,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
       Guid WIRId,
       WIRCheckpointStatusEnum Status,
       string? Comment,
+      string? InspectorRole,
       List<ChecklistItemForReview> Items
  ) : IRequest<Result<WIRCheckpointDto>>;
 

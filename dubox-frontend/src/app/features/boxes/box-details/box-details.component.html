@@ -67,21 +67,35 @@
           [class.active]="activeTab === 'activities'"
           (click)="setActiveTab('activities')"
         >
-          Activities ({{ actualActivityCount || box.activities?.length || 0 }})
+          Activities ({{ actualActivityCount || box.activities.length || 0 }})
+        </button>
+        <button 
+          class="tab"
+          [class.active]="activeTab === 'wir'"
+          (click)="setActiveTab('wir')"
+        >
+          WIR Checkpoints ({{ wirCheckpoints.length }})
+        </button>
+        <button 
+          class="tab"
+          [class.active]="activeTab === 'quality-issues'"
+          (click)="setActiveTab('quality-issues')"
+        >
+          Quality Issues ({{ qualityIssueCount }})
         </button>
         <button 
           class="tab" 
           [class.active]="activeTab === 'logs'"
           (click)="setActiveTab('logs')"
         >
-          Logs ({{ box.logs?.length || 0 }})
+          Logs ({{ box.logs.length || 0 }})
         </button>
         <button 
           class="tab" 
           [class.active]="activeTab === 'attachments'"
           (click)="setActiveTab('attachments')"
         >
-          Attachments ({{ box.attachments?.length || 0 }})
+          Attachments ({{ box.attachments.length || 0 }})
         </button>
       </div>
 
@@ -174,6 +188,7 @@
               </div>
             </div>
           </div>
+
         </div>
 
         <!-- Activities Tab -->
@@ -185,6 +200,206 @@
             (boxDataChanged)="loadBox()"
             (activityCountChanged)="onActivityCountChanged($event)"
           ></app-activity-table>
+        </div>
+
+        <!-- WIR Tab -->
+        <div *ngIf="activeTab === 'wir'" class="wir-tab">
+          <div class="wir-card-header">
+            <div>
+              <h2 class="card-title">WIR Checkpoints</h2>
+              <p class="card-subtitle">Inspection milestones generated whenever a checkpoint activity is completed.</p>
+            </div>
+            <div class="wir-card-actions">
+              <span class="badge badge-info" *ngIf="!wirLoading && !wirError">
+                {{ wirCheckpoints.length }} total
+              </span>
+              <button 
+                class="btn btn-secondary btn-sm" 
+                (click)="refreshWIRCheckpoints()" 
+                [disabled]="wirLoading"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 4 23 10 17 10"/>
+                  <polyline points="1 20 1 14 7 14"/>
+                  <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"/>
+                  <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"/>
+                </svg>
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <div class="wir-card-body">
+            <div class="wir-loading-state" *ngIf="wirLoading">
+              <div class="spinner small"></div>
+              <p>Loading WIR checkpoints...</p>
+            </div>
+
+            <div class="wir-error-state" *ngIf="!wirLoading && wirError">
+              <p>{{ wirError }}</p>
+              <button class="btn btn-primary btn-sm" (click)="refreshWIRCheckpoints()">Retry</button>
+            </div>
+
+            <div class="wir-empty-state" *ngIf="!wirLoading && !wirError && wirCheckpoints.length === 0">
+              <p>No WIR checkpoints created for this box yet.</p>
+              <small>Complete a checkpoint activity to generate its WIR.</small>
+            </div>
+
+            <div class="wir-checkpoints-list" *ngIf="!wirLoading && !wirError && wirCheckpoints.length > 0">
+              <div class="wir-checkpoint-card" *ngFor="let checkpoint of wirCheckpoints">
+                <div class="card-top">
+                  <div class="card-headline">
+                    <span class="code-pill">{{ checkpoint.wirNumber }}</span>
+                    <div class="title-stack">
+                      <h4>{{ checkpoint.wirName || 'Inspection checkpoint' }}</h4>
+                      <p>{{ checkpoint.wirDescription || 'Auto-generated once the triggering activity is complete.' }}</p>
+                    </div>
+                  </div>
+                  <span class="status-chip" [ngClass]="getWIRCheckpointStatusClass(checkpoint.status)">
+                    {{ getWIRCheckpointStatusLabel(checkpoint.status) }}
+                  </span>
+                </div>
+
+                <div class="meta-grid">
+                  <div class="meta-block">
+                    <span class="label">Requested</span>
+                    <strong>{{ formatWIRDate(checkpoint.requestedDate) }}</strong>
+                    <small>{{ checkpoint.requestedBy || 'System' }}</small>
+                  </div>
+                  <div class="meta-block">
+                    <span class="label">Inspector</span>
+                    <strong>{{ checkpoint.inspectorName || 'QC Engineer' }}</strong>
+                    <small>{{ checkpoint.inspectorRole || 'Pending assignment' }}</small>
+                  </div>
+                  <div class="meta-block">
+                    <span class="label">Checklist Items</span>
+                    <strong>{{ checkpoint.checklistItems?.length || 0 }}</strong>
+                    <small>items to review</small>
+                  </div>
+                  <div class="meta-block">
+                    <span class="label">Last update</span>
+                    <strong>{{ formatWIRDate(checkpoint.approvalDate || checkpoint.inspectionDate || checkpoint.createdDate) }}</strong>
+                    <small>{{ checkpoint.approvalDate ? 'Approval recorded' : 'Awaiting approval' }}</small>
+                  </div>
+                </div>
+
+                <div class="card-footer">
+                  <div class="status-note">
+                    <span class="status-dot" [ngClass]="getWIRCheckpointStatusClass(checkpoint.status)"></span>
+                    {{ getWIRCheckpointStatusLabel(checkpoint.status) }}
+                  </div>
+                  <div class="wir-actions">
+                    <button 
+                      class="btn btn-secondary btn-sm" 
+                      (click)="navigateToAddChecklist(checkpoint)"
+                      [disabled]="!canNavigateToAddChecklist(checkpoint)"
+                      title="Add or edit checklist items"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14"/>
+                        <path d="M5 12h14"/>
+                      </svg>
+                      Add Checklist
+                    </button>
+                    <button 
+                      class="btn btn-primary btn-sm" 
+                      (click)="navigateToReview(checkpoint)"
+                      [disabled]="!canNavigateToReview(checkpoint)"
+                      title="Open QA/QC review workflow"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      Review
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quality Issues Tab -->
+        <div *ngIf="activeTab === 'quality-issues'" class="quality-tab">
+          <div class="quality-card-header">
+            <div>
+              <h2 class="card-title">Quality Issues</h2>
+              <p class="card-subtitle">List of every quality issue logged for this box.</p>
+            </div>
+            <div class="quality-card-actions">
+              <span class="badge badge-info" *ngIf="!qualityIssuesLoading && !qualityIssuesError">
+                {{ qualityIssueCount }} total
+              </span>
+              <button 
+                class="btn btn-secondary btn-sm" 
+                (click)="refreshQualityIssues()" 
+                [disabled]="qualityIssuesLoading"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 4 23 10 17 10"/>
+                  <polyline points="1 20 1 14 7 14"/>
+                  <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"/>
+                  <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"/>
+                </svg>
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <div class="quality-card-body">
+            <div class="quality-loading-state" *ngIf="qualityIssuesLoading">
+              <div class="spinner small"></div>
+              <p>Loading quality issues...</p>
+            </div>
+
+            <div class="quality-error-state" *ngIf="!qualityIssuesLoading && qualityIssuesError">
+              <p>{{ qualityIssuesError }}</p>
+              <button class="btn btn-primary btn-sm" (click)="refreshQualityIssues()">Retry</button>
+            </div>
+
+            <div class="quality-empty-state" *ngIf="!qualityIssuesLoading && !qualityIssuesError && qualityIssues.length === 0">
+              <p>No quality issues logged for this box.</p>
+              <small>Quality issues will appear here once created.</small>
+            </div>
+
+            <div class="quality-table-wrapper" *ngIf="!qualityIssuesLoading && !qualityIssuesError && qualityIssues.length > 0">
+              <table class="designer-table">
+                <thead>
+                  <tr>
+                    <th class="col-seq">Seq</th>
+                    <th class="col-extra">Issue Type</th>
+                    <th class="col-extra">Severity</th>
+                    <th class="col-extra">Assigned To</th>
+                    <th class="col-extra">Due Date</th>
+                    <th class="col-extra">Reported By</th>
+                    <th class="col-extra">Issue Date</th>
+                    <th class="col-extra">Status</th>
+                    <th class="col-extra">WIR</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let issue of qualityIssues; let i = index">
+                    <td class="text-center">{{ i + 1 }}</td>
+                    <td>{{ issue.issueType || '—' }}</td>
+                    <td>{{ issue.severity || '—' }}</td>
+                    <td>{{ issue.assignedTo || '—' }}</td>
+                    <td>{{ formatIssueDate(issue.dueDate) }}</td>
+                    <td>{{ issue.reportedBy || '—' }}</td>
+                    <td>{{ formatIssueDate(issue.issueDate) }}</td>
+                    <td>
+                      <span class="badge"
+                        [class.badge-warning]="issue.status === 'Open'"
+                        [class.badge-success]="issue.status === 'Resolved'"
+                        [class.badge-danger]="issue.status === 'Closed'">
+                        {{ issue.status || 'Open' }}
+                      </span>
+                    </td>
+                    <td>{{ issue.wirNumber || issue.wirName || '—' }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
         <!-- Logs Tab -->

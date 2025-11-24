@@ -13,13 +13,16 @@
             TypeAdapterConfig<WIRChecklistItem, WIRChecklistItemDto>.NewConfig()
                 .Map(dest => dest.ItemName, src => src.CheckpointDescription)
                 .Map(dest => dest.IsChecked, src => src.Status != CheckListItemStatusEnum.Pending && src.Status == CheckListItemStatusEnum.Pass)
-                .Map(dest => dest.Comments, src => src.Remarks);
+                .Map(dest => dest.ReferenceDocument, src => src.ReferenceDocument)
+                .Map(dest => dest.Remarks, src => src.Remarks)
+                .Map(dest => dest.Status, src => src.Status);
 
             TypeAdapterConfig<QualityIssue, QualityIssueDto>.NewConfig()
-                .Map(dest => dest.IssueTitle, src => src.IssueType.ToString())
+                .Map(dest => dest.IssueType, src => src.IssueType.ToString())
                 .Map(dest => dest.IssueDescription, src => src.IssueDescription)
                 .Map(dest => dest.Severity, src => src.Severity)
-                .Map(dest => dest.CreatedDate, src => src.IssueDate);
+                .Map(dest => dest.DueDate, src => src.DueDate)
+                .Map(dest => dest.IssueDate, src => src.IssueDate);
 
             TypeAdapterConfig<WIRCheckpoint, WIRCheckpointDto>.NewConfig()
                 .Map(dest => dest.ChecklistItems, src => src.ChecklistItems)

@@ -44,6 +44,7 @@ public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Applicati
     {
         public string? Username => "System";
         public string? UserId => "00000000-0000-0000-0000-000000000000";
+            public string? Role => "System";
         public bool IsAuthenticated => false;
     }
 }

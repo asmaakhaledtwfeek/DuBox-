@@ -43,15 +43,20 @@ namespace Dubox.Application.DTOs
         public Guid ChecklistItemId { get; set; }
         public string ItemName { get; set; } = string.Empty;
         public bool IsChecked { get; set; }
-        public string? Comments { get; set; }
+        public string? ReferenceDocument { get; set; }
+        public string? Remarks { get; set; }
+        public CheckListItemStatusEnum Status { get; set; }
+
     }
     public class QualityIssueDto
     {
         public Guid IssueId { get; set; }
-        public string IssueTitle { get; set; } = string.Empty;
+        public string IssueType { get; set; } = string.Empty;
         public string? IssueDescription { get; set; }
         public string? Severity { get; set; }
-        public DateTime CreatedDate { get; set; }
+        public DateTime IssueDate { get; set; }
+        public DateTime DueDate { get; set; }
+        public string? ReportedBy { get; set; }
     }
     public class CreateWIRCheckpointDto
     {

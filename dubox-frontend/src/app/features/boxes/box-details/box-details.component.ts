@@ -4,6 +4,8 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { Box, BoxStatus } from '../../../core/models/box.model';
+import { WIRService } from '../../../core/services/wir.service';
+import { QualityIssueDetails, WIRCheckpoint, WIRCheckpointStatus, WIRRecord } from '../../../core/models/wir.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { ActivityTableComponent } from '../../activities/activity-table/activity-table.component';
@@ -24,19 +26,27 @@ export class BoxDetailsComponent implements OnInit {
   deleting = false;
   showDeleteConfirm = false;
   
-  activeTab: 'overview' | 'activities' | 'logs' | 'attachments' = 'overview';
+  activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' = 'overview';
   
   canEdit = false;
   canDelete = false;
   BoxStatus = BoxStatus;
   
   actualActivityCount: number = 0; // Actual count from activity table (excluding WIR rows)
+  wirCheckpoints: WIRCheckpoint[] = [];
+  wirLoading = false;
+  wirError = '';
+  qualityIssueCount = 0;
+  qualityIssues: QualityIssueDetails[] = [];
+  qualityIssuesLoading = false;
+  qualityIssuesError = '';
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private boxService: BoxService,
-    private permissionService: PermissionService
+    private permissionService: PermissionService,
+    private wirService: WIRService
   ) {}
 
   ngOnInit(): void {
@@ -65,6 +75,8 @@ export class BoxDetailsComponent implements OnInit {
         
         // Load activities separately
         this.loadActivities();
+        this.loadWIRCheckpoints();
+        this.loadQualityIssues();
         
         this.loading = false;
       },
@@ -103,6 +115,31 @@ export class BoxDetailsComponent implements OnInit {
         console.error('❌ Error loading activities:', err);
         console.error('❌ Full error:', JSON.stringify(err, null, 2));
         // Don't show error to user, just log it
+      }
+    });
+  }
+
+  loadWIRCheckpoints(): void {
+    if (!this.boxId) {
+      return;
+    }
+
+    this.wirLoading = true;
+    this.wirError = '';
+
+        this.wirService.getWIRCheckpointsByBox(this.boxId).subscribe({
+      next: (checkpoints) => {
+        this.wirCheckpoints = checkpoints || [];
+        if (!this.wirCheckpoints.length) {
+          this.wirLoading = false;
+          return;
+        }
+        this.attachActivitiesToWIRCheckpoints();
+      },
+      error: (err) => {
+        console.error('❌ Error loading WIR checkpoints:', err);
+        this.wirError = err?.error?.message || err?.message || 'Failed to load WIR checkpoints';
+        this.wirLoading = false;
       }
     });
   }
@@ -170,7 +207,7 @@ export class BoxDetailsComponent implements OnInit {
     }
   }
 
-  setActiveTab(tab: 'overview' | 'activities' | 'logs' | 'attachments'): void {
+  setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments'): void {
     this.activeTab = tab;
   }
 
@@ -203,5 +240,166 @@ export class BoxDetailsComponent implements OnInit {
   onActivityCountChanged(count: number): void {
     this.actualActivityCount = count;
     console.log(`📊 Activity count updated: ${count}`);
+  }
+
+  refreshWIRCheckpoints(): void {
+    this.loadWIRCheckpoints();
+  }
+
+  private attachActivitiesToWIRCheckpoints(): void {
+    this.wirService.getWIRRecordsByBox(this.boxId).subscribe({
+      next: (wirRecords) => {
+        const wirMap = new Map<string, WIRRecord>();
+        (wirRecords || []).forEach(record => {
+          const key = (record?.wirCode || '').toLowerCase();
+          if (key) {
+            wirMap.set(key, record);
+          }
+        });
+
+        this.wirCheckpoints = this.wirCheckpoints.map(checkpoint => {
+          if (checkpoint.boxActivityId) {
+            return checkpoint;
+          }
+
+          const mapKey = (checkpoint.wirNumber || '').toLowerCase();
+          const matchedRecord = mapKey ? wirMap.get(mapKey) : undefined;
+          if (matchedRecord?.boxActivityId) {
+            return {
+              ...checkpoint,
+              boxActivityId: matchedRecord.boxActivityId
+            };
+          }
+
+          return checkpoint;
+        });
+
+        this.wirLoading = false;
+      },
+      error: (err) => {
+        console.error('❌ Error loading WIR records for checkpoint mapping:', err);
+        this.wirLoading = false;
+      }
+    });
+  }
+
+  getWIRCheckpointStatusClass(status?: WIRCheckpointStatus | string): string {
+    const normalized = (status || WIRCheckpointStatus.Pending).toString();
+    const statusMap: Record<string, string> = {
+      [WIRCheckpointStatus.Pending]: 'wir-status-pending',
+      [WIRCheckpointStatus.Approved]: 'wir-status-approved',
+      [WIRCheckpointStatus.Rejected]: 'wir-status-rejected',
+      [WIRCheckpointStatus.ConditionalApproval]: 'wir-status-conditional'
+    };
+
+    return `wir-status-badge ${statusMap[normalized] || 'wir-status-pending'}`;
+  }
+
+  getWIRCheckpointStatusLabel(status?: WIRCheckpointStatus | string): string {
+    const normalized = (status || WIRCheckpointStatus.Pending).toString();
+    const labelMap: Record<string, string> = {
+      [WIRCheckpointStatus.Pending]: 'Pending Review',
+      [WIRCheckpointStatus.Approved]: 'Approved',
+      [WIRCheckpointStatus.Rejected]: 'Rejected',
+      [WIRCheckpointStatus.ConditionalApproval]: 'Conditional'
+    };
+
+    return labelMap[normalized] || 'Pending Review';
+  }
+
+  formatWIRDate(date?: Date): string {
+    if (!date) {
+      return '—';
+    }
+
+    const parsed = date instanceof Date ? date : new Date(date);
+    if (isNaN(parsed.getTime())) {
+      return '—';
+    }
+
+    return parsed.toLocaleDateString('en-US', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric'
+    });
+  }
+
+  canNavigateToAddChecklist(checkpoint: WIRCheckpoint | null): boolean {
+    return !!checkpoint?.wirId && !!checkpoint.boxActivityId;
+  }
+
+  canNavigateToReview(checkpoint: WIRCheckpoint | null): boolean {
+    return !!checkpoint?.boxActivityId;
+  }
+
+  navigateToAddChecklist(checkpoint: WIRCheckpoint): void {
+    if (!this.canNavigateToAddChecklist(checkpoint)) {
+      return;
+    }
+
+    this.router.navigate([
+      '/projects',
+      this.projectId,
+      'boxes',
+      this.boxId,
+      'activities',
+      checkpoint.boxActivityId,
+      'qa-qc'
+    ]);
+  }
+
+  navigateToReview(checkpoint: WIRCheckpoint): void {
+    if (!this.canNavigateToReview(checkpoint)) {
+      return;
+    }
+
+    this.router.navigate([
+      '/projects',
+      this.projectId,
+      'boxes',
+      this.boxId,
+      'activities',
+      checkpoint.boxActivityId,
+      'qa-qc'
+    ]);
+  }
+
+  loadQualityIssues(): void {
+    if (!this.boxId) {
+      return;
+    }
+
+    this.qualityIssuesLoading = true;
+    this.qualityIssuesError = '';
+
+    this.wirService.getQualityIssuesByBox(this.boxId).subscribe({
+      next: (issues) => {
+        this.qualityIssues = issues || [];
+        this.qualityIssueCount = this.qualityIssues.length;
+        this.qualityIssuesLoading = false;
+      },
+      error: (err) => {
+        console.error('❌ Error loading quality issues for box:', err);
+        this.qualityIssuesError = err?.error?.message || err?.message || 'Failed to load quality issues';
+        this.qualityIssuesLoading = false;
+      }
+    });
+  }
+
+  refreshQualityIssues(): void {
+    this.loadQualityIssues();
+  }
+
+  formatIssueDate(date?: string | Date): string {
+    if (!date) {
+      return '—';
+    }
+
+    const parsed = date instanceof Date ? date : new Date(date);
+    if (isNaN(parsed.getTime())) {
+      return '—';
+    }
+
+    return parsed.toISOString().split('T')[0];
   }
 }

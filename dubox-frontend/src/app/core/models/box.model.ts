@@ -134,3 +134,23 @@ export interface BoxFilters {
   dateTo?: Date;
 }
 
+export interface BoxImportResult {
+  successCount: number;
+  failureCount: number;
+  errors: string[];
+  importedBoxes: ImportedBoxPreview[];
+}
+
+export interface ImportedBoxPreview {
+  boxId: string;
+  projectId: string;
+  projectCode: string;
+  boxTag: string;
+  boxName?: string;
+  boxType?: string;
+  floor?: string;
+  building?: string;
+  zone?: string;
+  status?: string;
+}
+

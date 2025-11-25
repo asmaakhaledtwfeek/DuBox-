@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiService, PaginatedResponse } from './api.service';
-import { Box, BoxActivity, BoxAttachment, BoxLog, BoxFilters, ChecklistItem } from '../models/box.model';
+import { Box, BoxActivity, BoxAttachment, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview } from '../models/box.model';
 
 @Injectable({
   providedIn: 'root'
@@ -91,6 +91,28 @@ export class BoxService {
       createdAt: backendBox.createdDate ? new Date(backendBox.createdDate) : undefined,
       updatedAt: backendBox.modifiedDate ? new Date(backendBox.modifiedDate) : undefined,
       activitiesCount:backendBox.activitiesCount || backendBox.ActivitiesCount||0
+    };
+  }
+
+  private transformImportResult(result: any): BoxImportResult {
+    const importedBoxes = (result?.importedBoxes || result?.ImportedBoxes || []).map((box: any) => ({
+      boxId: box.boxId || box.BoxId,
+      projectId: box.projectId || box.ProjectId,
+      projectCode: box.projectCode || box.ProjectCode,
+      boxTag: box.boxTag || box.BoxTag,
+      boxName: box.boxName || box.BoxName,
+      boxType: box.boxType || box.BoxType,
+      floor: box.floor || box.Floor,
+      building: box.building || box.Building,
+      zone: box.zone || box.Zone,
+      status: this.mapStatus(box.status || box.Status)
+    })) as ImportedBoxPreview[];
+
+    return {
+      successCount: result?.successCount ?? result?.SuccessCount ?? 0,
+      failureCount: result?.failureCount ?? result?.FailureCount ?? 0,
+      errors: result?.errors ?? result?.Errors ?? [],
+      importedBoxes
     };
   }
 
@@ -284,5 +306,22 @@ export class BoxService {
    */
   downloadQRCode(boxId: string): Observable<Blob> {
     return this.apiService.download(`${this.endpoint}/${boxId}/qr-code/download`);
+  }
+
+  /**
+   * Download Excel template for bulk box import
+   */
+  downloadBoxesTemplate(): Observable<Blob> {
+    return this.apiService.download(`${this.endpoint}/template`);
+  }
+
+  /**
+   * Import boxes from Excel file
+   */
+  importBoxesFromExcel(projectId: string, file: File): Observable<BoxImportResult> {
+    const endpoint = `${this.endpoint}/import-excel?projectId=${projectId}`;
+    return this.apiService.upload<any>(endpoint, file).pipe(
+      map(result => this.transformImportResult(result))
+    );
   }
 }

@@ -1,11 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ProjectService } from '../../../core/services/project.service';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { Project } from '../../../core/models/project.model';
-import { Box, BoxStatus } from '../../../core/models/box.model';
+import { Box, BoxImportResult, BoxStatus } from '../../../core/models/box.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 
@@ -17,6 +17,9 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
   styleUrl: './project-dashboard.component.scss'
 })
 export class ProjectDashboardComponent implements OnInit {
+  @ViewChild('fileInput') fileInputRef?: ElementRef<HTMLInputElement>;
+  @ViewChild('excelSection') excelSectionRef?: ElementRef<HTMLDivElement>;
+
   project: Project | null = null;
   projectId: string = '';
   loading = true;
@@ -25,6 +28,13 @@ export class ProjectDashboardComponent implements OnInit {
   deleting = false;
   canEdit = false;
   canDelete = false;
+  templateDownloading = false;
+  isDraggingFile = false;
+  selectedFile: File | null = null;
+  importingExcel = false;
+  importSuccessMessage = '';
+  importErrorMessage = '';
+  importResult: BoxImportResult | null = null;
 
 
   dashboardData = {
@@ -166,6 +176,142 @@ export class ProjectDashboardComponent implements OnInit {
       return;
     }
     this.router.navigate(['/projects', this.projectId, 'boxes']);
+  }
+
+  openImportExcel(): void {
+    this.excelSectionRef?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => {
+      if (this.fileInputRef) {
+        this.fileInputRef.nativeElement.focus();
+      }
+    }, 350);
+  }
+
+  downloadTemplate(): void {
+    if (this.templateDownloading) {
+      return;
+    }
+
+    this.templateDownloading = true;
+    this.boxService.downloadBoxesTemplate().subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'BoxesImportTemplate.xlsx';
+        link.click();
+        window.URL.revokeObjectURL(url);
+        this.templateDownloading = false;
+      },
+      error: (error) => {
+        console.error('❌ Error downloading template:', error);
+        this.templateDownloading = false;
+        this.importErrorMessage = error?.error?.message || 'Unable to download template right now.';
+      }
+    });
+  }
+
+  onBrowseClick(): void {
+    if (!this.fileInputRef) {
+      return;
+    }
+
+    this.fileInputRef.nativeElement.value = '';
+    this.fileInputRef.nativeElement.click();
+  }
+
+  onFileChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.setSelectedFile(input.files[0]);
+    }
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDraggingFile = true;
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDraggingFile = false;
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDraggingFile = false;
+
+    if (event.dataTransfer && event.dataTransfer.files.length > 0) {
+      this.setSelectedFile(event.dataTransfer.files[0]);
+      event.dataTransfer.clearData();
+    }
+  }
+
+  private setSelectedFile(file: File): void {
+    if (!this.isValidExcelFile(file)) {
+      this.importErrorMessage = 'Please upload a valid Excel file (.xlsx or .xls).';
+      this.selectedFile = null;
+      return;
+    }
+
+    this.importErrorMessage = '';
+    this.importSuccessMessage = '';
+    this.importResult = null;
+    this.selectedFile = file;
+  }
+
+  removeSelectedFile(): void {
+    this.selectedFile = null;
+    if (this.fileInputRef) {
+      this.fileInputRef.nativeElement.value = '';
+    }
+  }
+
+  uploadSelectedFile(): void {
+    if (!this.selectedFile || !this.projectId) {
+      this.importErrorMessage = 'Please select a project and choose an Excel file to upload.';
+      return;
+    }
+
+    this.importingExcel = true;
+    this.importErrorMessage = '';
+    this.importSuccessMessage = '';
+    this.importResult = null;
+
+    this.boxService.importBoxesFromExcel(this.projectId, this.selectedFile).subscribe({
+      next: (result) => {
+        this.importingExcel = false;
+        this.importResult = result;
+        this.importSuccessMessage = `Import completed. ${result.successCount} boxes added, ${result.failureCount} failed.`;
+        if (result.successCount > 0) {
+          this.loadBoxesAndCalculateCounts();
+        }
+      },
+      error: (error) => {
+        this.importingExcel = false;
+        console.error('❌ Excel import failed:', error);
+        this.importErrorMessage = error?.error?.message || 'Failed to import Excel file. Please try again.';
+      }
+    });
+  }
+
+  private isValidExcelFile(file: File): boolean {
+    const allowedExtensions = ['.xlsx', '.xls'];
+    const fileExtension = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+    return allowedExtensions.includes(fileExtension);
+  }
+
+  formatFileSize(bytes: number): string {
+    if (!bytes) {
+      return '0 KB';
+    }
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(1024));
+    const size = bytes / Math.pow(1024, i);
+    return `${size.toFixed(1)} ${sizes[i]}`;
   }
 
   goBack(): void {

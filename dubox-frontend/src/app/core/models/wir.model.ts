@@ -69,6 +69,15 @@ export interface WIRCheckpoint {
   wirId: string;
   boxId: string;
   boxActivityId?: string;
+  projectId?: string;
+  projectCode?: string;
+  box?: {
+    boxId: string;
+    projectId?: string;
+    projectCode?: string;
+    boxTag?: string;
+    boxName?: string;
+  };
   wirNumber: string;
   wirName?: string;
   wirDescription?: string;
@@ -84,6 +93,15 @@ export interface WIRCheckpoint {
   createdDate: Date;
   checklistItems?: WIRCheckpointChecklistItem[];
   qualityIssues?: QualityIssueItem[];
+}
+
+export interface WIRCheckpointFilter {
+  projectCode?: string;
+  boxTag?: string;
+  status?: WIRCheckpointStatus | string;
+  wirNumber?: string;
+  from?: string;
+  to?: string;
 }
 
 export interface WIRCheckpointChecklistItem {
@@ -147,6 +165,8 @@ export interface ChecklistItemForReview {
 export type IssueType = 'Defect' | 'NonConformance' | 'Observation';
 export type SeverityType = 'Critical' | 'Major' | 'Minor';
 
+export type QualityIssueStatus = 'Open' | 'InProgress' | 'Resolved' | 'Closed';
+
 export interface QualityIssueItem {
   issueType: IssueType;
   severity: SeverityType;
@@ -156,11 +176,12 @@ export interface QualityIssueItem {
   photoPath?: string;
   reportedBy?: string;
   issueDate?: string | Date;
+  status?: QualityIssueStatus | string;
 }
 
 export interface QualityIssueDetails extends QualityIssueItem {
   issueId: string;
-  status?: string;
+  status?: QualityIssueStatus;
   resolutionDate?: string | Date;
   resolutionDescription?: string;
   boxId?: string;
@@ -170,12 +191,22 @@ export interface QualityIssueDetails extends QualityIssueItem {
   wirNumber?: string;
   wirName?: string;
   wirStatus?: WIRCheckpointStatus;
+  wirRequestedDate?: string | Date;
   inspectorName?: string;
+  isOverdue?: boolean;
+  overdueDays?: number;
 }
 
 export interface AddQualityIssuesRequest {
   wirId: string;
   issues: QualityIssueItem[];
+}
+
+export interface UpdateQualityIssueStatusRequest {
+  issueId: string;
+  status: QualityIssueStatus;
+  resolutionDescription?: string | null;
+  photoPath?: string | null;
 }
 
 // Predefined Checklist Templates for each WIR Code

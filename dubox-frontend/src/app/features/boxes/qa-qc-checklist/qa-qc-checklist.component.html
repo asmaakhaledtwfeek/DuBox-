@@ -11,7 +11,7 @@
             <line x1="19" y1="12" x2="5" y2="12"/>
             <polyline points="12 19 5 12 12 5"/>
           </svg>
-          Back to Box Details
+          {{ fromContext === 'quality-control' ? 'Back to Quality Control' : 'Back to Box Details' }}
         </button>
         <h1 class="page-title" *ngIf="!qualityIssuesOnlyView">QA/QC Activity Approval Checklist</h1>
         <h1 class="page-title" *ngIf="qualityIssuesOnlyView">All Quality Issues</h1>

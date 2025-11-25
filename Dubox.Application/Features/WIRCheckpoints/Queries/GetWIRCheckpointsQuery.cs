@@ -6,8 +6,8 @@ using MediatR;
 namespace Dubox.Application.Features.WIRCheckpoints.Queries
 {
     public record GetWIRCheckpointsQuery(
-     Guid? ProjectId,
-     Guid? BoxId,
+     string? ProjectCode,
+     string? BoxTag,
      WIRCheckpointStatusEnum? Status,
      string? WIRNumber,
      DateTime? From,

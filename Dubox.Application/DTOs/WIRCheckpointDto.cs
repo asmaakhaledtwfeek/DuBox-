@@ -7,6 +7,9 @@ namespace Dubox.Application.DTOs
     {
         public Guid WIRId { get; set; }
         public Guid BoxId { get; set; }
+        public Guid? ProjectId { get; set; }
+        public string? ProjectCode { get; set; }
+        public Guid? BoxActivityId { get; set; }
         public string BoxName { get; set; } = string.Empty;
         public string BoxTag { get; set; } = string.Empty;
 
@@ -57,6 +60,7 @@ namespace Dubox.Application.DTOs
         public DateTime IssueDate { get; set; }
         public DateTime DueDate { get; set; }
         public string? ReportedBy { get; set; }
+        public QualityIssueStatusEnum Status { get; set; }
     }
     public class CreateWIRCheckpointDto
     {

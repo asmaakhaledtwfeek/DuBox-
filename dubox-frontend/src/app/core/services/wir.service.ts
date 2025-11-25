@@ -14,7 +14,9 @@ import {
   ReviewWIRCheckpointRequest,
   AddQualityIssuesRequest,
   QualityIssueItem,
-  QualityIssueDetails
+  QualityIssueDetails,
+  UpdateQualityIssueStatusRequest,
+  WIRCheckpointFilter
 } from '../models/wir.model';
 
 @Injectable({
@@ -150,6 +152,15 @@ export class WIRService {
     );
   }
 
+  getWIRCheckpoints(params?: WIRCheckpointFilter): Observable<WIRCheckpoint[]> {
+    return this.apiService.get<any>(`wircheckpoints`, params).pipe(
+      map(response => {
+        const checkpoints = response || [];
+        return (checkpoints as any[]).map(c => this.transformWIRCheckpoint(c));
+      })
+    );
+  }
+
   /**
    * Get WIR checkpoint by box activity ID (searches through box checkpoints by WIRNumber)
    */
@@ -215,14 +226,44 @@ export class WIRService {
     );
   }
 
+  updateQualityIssueStatus(issueId: string, payload: UpdateQualityIssueStatusRequest): Observable<QualityIssueDetails> {
+    return this.apiService.put<any>(`qualityissues/${issueId}/status`, payload).pipe(
+      map(response => {
+        const issue = response?.data || response;
+        return this.transformQualityIssueDetails(issue);
+      })
+    );
+  }
+
   /**
    * Transform backend WIR checkpoint to frontend model
    */
   private transformWIRCheckpoint(backendCheckpoint: any): WIRCheckpoint {
+    const rawBox = backendCheckpoint.box || backendCheckpoint.Box;
+
     return {
       wirId: backendCheckpoint.wirId || backendCheckpoint.WIRId,
       boxId: backendCheckpoint.boxId || backendCheckpoint.BoxId,
       boxActivityId: backendCheckpoint.boxActivityId || backendCheckpoint.BoxActivityId,
+      projectId:
+        rawBox?.projectId ||
+        rawBox?.ProjectId ||
+        backendCheckpoint.projectId ||
+        backendCheckpoint.ProjectId,
+      projectCode:
+        rawBox?.projectCode ||
+        rawBox?.ProjectCode ||
+        backendCheckpoint.projectCode ||
+        backendCheckpoint.ProjectCode,
+      box: rawBox
+        ? {
+            boxId: rawBox.boxId || rawBox.BoxId || backendCheckpoint.boxId || backendCheckpoint.BoxId,
+            projectId: rawBox.projectId || rawBox.ProjectId,
+            projectCode: rawBox.projectCode || rawBox.ProjectCode,
+            boxTag: rawBox.boxTag || rawBox.BoxTag,
+            boxName: rawBox.boxName || rawBox.BoxName
+          }
+        : undefined,
       wirNumber: backendCheckpoint.wirNumber || backendCheckpoint.WIRNumber || '',
       wirName: backendCheckpoint.wirName || backendCheckpoint.WIRName,
       wirDescription: backendCheckpoint.wirDescription || backendCheckpoint.WIRDescription,
@@ -245,16 +286,33 @@ export class WIRService {
         remarks: item.remarks || item.Remarks || item.comments || item.Comments,
         sequence: item.sequence || item.Sequence || 0
       })),
-      qualityIssues: (backendCheckpoint.qualityIssues || backendCheckpoint.QualityIssues || []).map((issue: any) => ({
-        issueType: issue.issueType || issue.IssueType || 'Defect',
-        severity: issue.severity || issue.Severity || 'Minor',
-        issueDescription: issue.issueDescription || issue.IssueDescription || '',
-        assignedTo: issue.assignedTo || issue.AssignedTo,
-        dueDate: issue.dueDate ? new Date(issue.dueDate) : undefined,
-        photoPath: issue.photoPath || issue.PhotoPath,
-        reportedBy: issue.reportedBy || issue.ReportedBy,
-        issueDate: issue.issueDate ? new Date(issue.issueDate) : undefined
-      }) as QualityIssueItem)
+      qualityIssues: (backendCheckpoint.qualityIssues || backendCheckpoint.QualityIssues || []).map((issue: any) => {
+        // Normalize status: backend might return enum name or number, normalize to frontend type
+        let normalizedStatus = issue.status || issue.Status || 'Open';
+        if (typeof normalizedStatus === 'number') {
+          const statusMap: Record<number, string> = { 1: 'Open', 2: 'InProgress', 3: 'Resolved', 4: 'Closed' };
+          normalizedStatus = statusMap[normalizedStatus] || 'Open';
+        }
+        // Ensure status matches frontend type
+        const validStatuses = ['Open', 'InProgress', 'Resolved', 'Closed'];
+        if (!validStatuses.includes(normalizedStatus)) {
+          normalizedStatus = 'Open';
+        }
+        
+        const transformed: QualityIssueItem & { issueId?: string } = {
+          issueId: issue.issueId || issue.IssueId || '',
+          issueType: issue.issueType || issue.IssueType || 'Defect',
+          severity: issue.severity || issue.Severity || 'Minor',
+          issueDescription: issue.issueDescription || issue.IssueDescription || '',
+          assignedTo: issue.assignedTo || issue.AssignedTo,
+          dueDate: issue.dueDate ? new Date(issue.dueDate) : undefined,
+          photoPath: issue.photoPath || issue.PhotoPath,
+          reportedBy: issue.reportedBy || issue.ReportedBy,
+          issueDate: issue.issueDate ? new Date(issue.issueDate) : undefined,
+          status: normalizedStatus
+        };
+        return transformed;
+      })
     };
   }
 
@@ -278,7 +336,11 @@ export class WIRService {
       wirId: issue.wirId || issue.WIRId,
       wirNumber: issue.wirNumber || issue.WIRNumber,
       wirName: issue.wirName || issue.WIRName,
-      inspectorName: issue.inspectorName || issue.InspectorName
+      wirStatus: issue.wirStatus || issue.WIRStatus,
+      wirRequestedDate: issue.wirRequestedDate ? new Date(issue.wirRequestedDate) : undefined,
+      inspectorName: issue.inspectorName || issue.InspectorName,
+      isOverdue: issue.isOverdue ?? issue.IsOverdue,
+      overdueDays: issue.overdueDays ?? issue.OverdueDays
     };
   }
 }

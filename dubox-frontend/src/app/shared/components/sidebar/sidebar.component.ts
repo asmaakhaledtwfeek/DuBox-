@@ -10,6 +10,7 @@ interface MenuItem {
   label: string;
   icon: string;
   route: string;
+  aliases?: string[];
   permission?: { module: string; action: string };
   requiredRoles?: UserRole[];
   children?: MenuItem[];
@@ -67,6 +68,7 @@ export class SidebarComponent implements OnInit {
         label: 'Quality Control',
         icon: 'qc',
         route: '/qc',
+        aliases: ['/quality'],
         permission: { module: 'qaqc', action: 'view' },
         requiredRoles: [UserRole.QCInspector, UserRole.SystemAdmin, UserRole.ProjectManager]
       },
@@ -133,8 +135,18 @@ export class SidebarComponent implements OnInit {
     this.isCollapsed = !this.isCollapsed;
   }
 
-  isActive(route: string): boolean {
-    return this.activeRoute.startsWith(route);
+  isActive(route: string, aliases?: string[]): boolean {
+    const match = (path: string) => this.activeRoute === path || this.activeRoute.startsWith(`${path}/`);
+
+    if (match(route)) {
+      return true;
+    }
+
+    if (aliases?.length) {
+      return aliases.some((alias: string) => match(alias));
+    }
+
+    return false;
   }
 
   getIconSvg(icon: string): string {

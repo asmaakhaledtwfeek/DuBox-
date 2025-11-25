@@ -13,11 +13,11 @@
             AddInclude(nameof(WIRCheckpoint.ChecklistItems));
             AddInclude(nameof(WIRCheckpoint.QualityIssues));
 
-            if (query.ProjectId.HasValue)
-                AddCriteria(x => x.Box.ProjectId == query.ProjectId.Value);
+            if (!string.IsNullOrWhiteSpace(query.ProjectCode))
+                AddCriteria(x => x.Box.Project.ProjectCode == query.ProjectCode);
 
-            if (query.BoxId.HasValue)
-                AddCriteria(x => x.BoxId == query.BoxId.Value);
+            if (!string.IsNullOrWhiteSpace(query.BoxTag))
+                AddCriteria(x => x.Box.BoxTag == query.BoxTag);
 
             if (query.Status.HasValue)
                 AddCriteria(x => x.Status == query.Status.Value);

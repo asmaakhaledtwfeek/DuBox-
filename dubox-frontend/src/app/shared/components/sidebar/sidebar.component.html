@@ -15,7 +15,7 @@
         *ngFor="let item of menuItems"
         [routerLink]="item.route"
         class="nav-item"
-        [class.active]="isActive(item.route)"
+        [class.active]="isActive(item.route, item.aliases)"
         [title]="item.label"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [innerHTML]="getIconSvg(item.icon)">

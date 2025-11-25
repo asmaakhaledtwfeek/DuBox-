@@ -50,6 +50,8 @@ export class QaQcChecklistComponent implements OnInit {
   projectId!: string;
   boxId!: string;
   activityId!: string;
+  fromContext: 'quality-control' | 'box-details' = 'box-details';
+  readonly highlightSection = 'quality-control';
   
   // Forms
   checklistForm!: FormGroup;
@@ -115,6 +117,10 @@ export class QaQcChecklistComponent implements OnInit {
     this.projectId = this.route.snapshot.params['projectId'];
     this.boxId = this.route.snapshot.params['boxId'];
     this.activityId = this.route.snapshot.params['activityId'];
+    const fromParam = this.route.snapshot.queryParamMap.get('from');
+    if (fromParam === 'quality-control') {
+      this.fromContext = 'quality-control';
+    }
     const checklistAdded = this.route.snapshot.queryParamMap.get('checklistAdded');
     if (checklistAdded === 'true') {
       setTimeout(() => {
@@ -1007,6 +1013,11 @@ export class QaQcChecklistComponent implements OnInit {
   }
 
   goBack(): void {
+    if (this.fromContext === 'quality-control') {
+      this.router.navigate(['/qc']);
+      return;
+    }
+
     this.router.navigate(['/projects', this.projectId, 'boxes', this.boxId]);
   }
 

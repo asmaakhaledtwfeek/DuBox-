@@ -375,6 +375,7 @@
                     <th class="col-extra">Issue Date</th>
                     <th class="col-extra">Status</th>
                     <th class="col-extra">WIR</th>
+                    <th class="col-actions">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -387,20 +388,193 @@
                     <td>{{ issue.reportedBy || '—' }}</td>
                     <td>{{ formatIssueDate(issue.issueDate) }}</td>
                     <td>
-                      <span class="badge"
-                        [class.badge-warning]="issue.status === 'Open'"
-                        [class.badge-success]="issue.status === 'Resolved'"
-                        [class.badge-danger]="issue.status === 'Closed'">
-                        {{ issue.status || 'Open' }}
+                      <span class="status-pill" [ngClass]="getQualityIssueStatusClass(issue.status)">
+                        {{ getQualityIssueStatusLabel(issue.status) }}
                       </span>
                     </td>
-                    <td>{{ issue.wirNumber || issue.wirName || '—' }}</td>
+                    <td>{{ getQualityIssueWir(issue) }}</td>
+                    <td class="col-actions">
+                      <div class="action-stack">
+                        <button 
+                          class="action-btn ghost" 
+                          title="View details" 
+                          aria-label="View details"
+                          (click)="openIssueDetails(issue)"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                          </svg>
+                        </button>
+                        <button 
+                          class="action-btn primary" 
+                          title="Update status" 
+                          aria-label="Update status"
+                          (click)="openStatusModal(issue)"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/>
+                            <path d="M14.06 4.94l3.75 3.75"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
                   </tr>
                 </tbody>
               </table>
             </div>
           </div>
         </div>
+
+      <div class="status-modal-backdrop" *ngIf="isStatusModalOpen || isDetailsModalOpen">
+        <div class="status-modal" *ngIf="isStatusModalOpen">
+          <div class="modal-header">
+            <div>
+              <h3>Update Issue Status</h3>
+              <p class="modal-subtitle">{{ selectedIssueForStatus?.issueType }} • {{ selectedIssueForStatus?.severity }}</p>
+            </div>
+            <button class="icon-button" (click)="closeStatusModal()" [disabled]="statusUpdateLoading">
+              &times;
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <label class="modal-label" for="statusSelect">Status</label>
+            <select id="statusSelect" class="modal-input" [(ngModel)]="statusUpdateForm.status" name="statusSelect">
+              <option *ngFor="let status of qualityIssueStatuses" [value]="status">
+                {{ status === 'InProgress' ? 'In Progress' : status }}
+              </option>
+            </select>
+
+            <label class="modal-label" for="resolutionDescription" *ngIf="requiresResolutionDescription(statusUpdateForm.status)">
+              Resolution Notes <span class="required">*</span>
+            </label>
+            <textarea
+              *ngIf="requiresResolutionDescription(statusUpdateForm.status)"
+              id="resolutionDescription"
+              class="modal-input"
+              rows="3"
+              placeholder="Add resolution details"
+              [(ngModel)]="statusUpdateForm.resolutionDescription"
+              name="resolutionDescription"
+            ></textarea>
+
+            <label class="modal-label" for="photoPath">Photo URL</label>
+            <input
+              id="photoPath"
+              class="modal-input"
+              type="text"
+              placeholder="Optional photo/document link"
+              [(ngModel)]="statusUpdateForm.photoPath"
+              name="photoPath"
+            />
+
+            <p class="modal-error" *ngIf="statusUpdateError">{{ statusUpdateError }}</p>
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn btn-secondary" (click)="closeStatusModal()" [disabled]="statusUpdateLoading">
+              Cancel
+            </button>
+            <button 
+              class="btn btn-primary" 
+              (click)="submitStatusUpdate()" 
+              [disabled]="!canSubmitStatusUpdate() || statusUpdateLoading"
+            >
+              <span *ngIf="statusUpdateLoading">Updating...</span>
+              <span *ngIf="!statusUpdateLoading">Update Status</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="details-modal" *ngIf="isDetailsModalOpen && selectedIssueDetails">
+          <div class="modal-header">
+            <div>
+              <h3>Quality Issue Details</h3>
+              <p class="modal-subtitle">{{ selectedIssueDetails.issueType || 'Issue' }} • {{ selectedIssueDetails.severity || '—' }}</p>
+            </div>
+            <button class="icon-button" (click)="closeIssueDetails()">&times;</button>
+          </div>
+
+          <div class="details-grid">
+            <div class="details-row">
+              <span class="label">Status</span>
+              <span class="value">
+                <span class="status-pill" [ngClass]="getQualityIssueStatusClass(selectedIssueDetails.status)">
+                  {{ getQualityIssueStatusLabel(selectedIssueDetails.status) }}
+                </span>
+              </span>
+            </div>
+            <div class="details-row">
+              <span class="label">Reported By</span>
+              <span class="value">{{ selectedIssueDetails.reportedBy || '—' }}</span>
+            </div>
+            <div class="details-row">
+              <span class="label">Issue Date</span>
+              <span class="value">{{ formatIssueDate(selectedIssueDetails.issueDate) }}</span>
+            </div>
+            <div class="details-row">
+              <span class="label">Assigned To</span>
+              <span class="value">{{ selectedIssueDetails.assignedTo || '—' }}</span>
+            </div>
+            <div class="details-row">
+              <span class="label">Due Date</span>
+              <span class="value">{{ formatIssueDate(selectedIssueDetails.dueDate) }}</span>
+            </div>
+            <div class="details-row" *ngIf="selectedIssueDetails.isOverdue">
+              <span class="label text-danger">Overdue</span>
+              <span class="value text-danger">{{ selectedIssueDetails.overdueDays || 0 }} days</span>
+            </div>
+            <div class="details-row">
+              <span class="label">Description</span>
+              <span class="value multiline">{{ selectedIssueDetails.issueDescription || '—' }}</span>
+            </div>
+            <div class="details-row">
+              <span class="label">Resolution Notes</span>
+              <span class="value multiline">{{ selectedIssueDetails.resolutionDescription || '—' }}</span>
+            </div>
+            <div class="details-row">
+              <span class="label">Resolution Date</span>
+              <span class="value">{{ formatIssueDate(selectedIssueDetails.resolutionDate) }}</span>
+            </div>
+            <div class="details-row">
+              <span class="label">Photo</span>
+              <span class="value">
+                <a *ngIf="selectedIssueDetails.photoPath" [href]="selectedIssueDetails.photoPath" target="_blank" rel="noopener">
+                  View attachment
+                </a>
+                <span *ngIf="!selectedIssueDetails.photoPath">—</span>
+              </span>
+            </div>
+            <div class="details-row">
+              <span class="label">Inspector</span>
+              <span class="value">{{ selectedIssueDetails.inspectorName || '—' }}</span>
+            </div>
+            <div class="details-row">
+              <span class="label">Box</span>
+              <span class="value">{{ selectedIssueDetails.boxName || selectedIssueDetails.boxTag || '—' }}</span>
+            </div>
+            <div class="details-row">
+              <span class="label">WIR</span>
+              <span class="value">
+                {{ getQualityIssueWir(selectedIssueDetails) }}
+                <small *ngIf="selectedIssueDetails.wirStatus">
+                  • {{ getWIRCheckpointStatusLabel(selectedIssueDetails.wirStatus) }}
+                </small>
+              </span>
+            </div>
+            <div class="details-row">
+              <span class="label">WIR Requested</span>
+              <span class="value">{{ formatIssueDate(selectedIssueDetails.wirRequestedDate) }}</span>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn btn-secondary" (click)="closeIssueDetails()">Close</button>
+            <button class="btn btn-primary" (click)="openStatusModal(selectedIssueDetails)">Update Status</button>
+          </div>
+        </div>
+      </div>
 
         <!-- Logs Tab -->
         <div *ngIf="activeTab === 'logs'" class="logs-tab">

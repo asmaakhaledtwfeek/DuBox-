@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { Box, BoxStatus } from '../../../core/models/box.model';
 import { WIRService } from '../../../core/services/wir.service';
-import { QualityIssueDetails, WIRCheckpoint, WIRCheckpointStatus, WIRRecord } from '../../../core/models/wir.model';
+import { QualityIssueDetails, QualityIssueStatus, UpdateQualityIssueStatusRequest, WIRCheckpoint, WIRCheckpointStatus, WIRRecord } from '../../../core/models/wir.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { ActivityTableComponent } from '../../activities/activity-table/activity-table.component';
@@ -13,7 +14,7 @@ import { ActivityTableComponent } from '../../activities/activity-table/activity
 @Component({
   selector: 'app-box-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, HeaderComponent, SidebarComponent, ActivityTableComponent],
+  imports: [CommonModule, RouterModule, FormsModule, HeaderComponent, SidebarComponent, ActivityTableComponent],
   templateUrl: './box-details.component.html',
   styleUrls: ['./box-details.component.scss']
 })
@@ -40,6 +41,28 @@ export class BoxDetailsComponent implements OnInit {
   qualityIssues: QualityIssueDetails[] = [];
   qualityIssuesLoading = false;
   qualityIssuesError = '';
+  qualityIssueStatuses: QualityIssueStatus[] = ['Open', 'InProgress', 'Resolved', 'Closed'];
+  qualityIssueStatusMeta: Record<QualityIssueStatus, { label: string; class: string }> = {
+    Open: { label: 'Open', class: 'status-open' },
+    InProgress: { label: 'In Progress', class: 'status-inprogress' },
+    Resolved: { label: 'Resolved', class: 'status-resolved' },
+    Closed: { label: 'Closed', class: 'status-closed' }
+  };
+  isStatusModalOpen = false;
+  selectedIssueForStatus: QualityIssueDetails | null = null;
+  statusUpdateLoading = false;
+  statusUpdateError = '';
+  statusUpdateForm: {
+    status: QualityIssueStatus;
+    resolutionDescription: string;
+    photoPath: string;
+  } = {
+    status: 'Open',
+    resolutionDescription: '',
+    photoPath: ''
+  };
+  isDetailsModalOpen = false;
+  selectedIssueDetails: QualityIssueDetails | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -401,5 +424,121 @@ export class BoxDetailsComponent implements OnInit {
     }
 
     return parsed.toISOString().split('T')[0];
+  }
+
+  getQualityIssueWir(issue: QualityIssueDetails): string {
+    if (issue.wirNumber) {
+      return issue.wirNumber;
+    }
+
+    if (issue.wirId) {
+      const matchedCheckpoint = this.wirCheckpoints.find(cp => cp.wirId === issue.wirId);
+      if (matchedCheckpoint?.wirNumber) {
+        return matchedCheckpoint.wirNumber;
+      }
+    }
+
+    return issue.wirName || '—';
+  }
+
+  getQualityIssueStatusLabel(status?: QualityIssueStatus | string): string {
+    const normalized = (status || 'Open') as QualityIssueStatus;
+    return this.qualityIssueStatusMeta[normalized]?.label || 'Open';
+  }
+
+  getQualityIssueStatusClass(status?: QualityIssueStatus | string): string {
+    const normalized = (status || 'Open') as QualityIssueStatus;
+    return this.qualityIssueStatusMeta[normalized]?.class || 'status-open';
+  }
+
+  openIssueDetails(issue: QualityIssueDetails): void {
+    this.selectedIssueDetails = issue;
+    this.isDetailsModalOpen = true;
+  }
+
+  closeIssueDetails(): void {
+    this.isDetailsModalOpen = false;
+    this.selectedIssueDetails = null;
+  }
+
+  openStatusModal(issue: QualityIssueDetails): void {
+    if (this.isDetailsModalOpen) {
+      this.closeIssueDetails();
+    }
+
+    this.selectedIssueForStatus = issue;
+    this.statusUpdateForm = {
+      status: issue.status || 'Open',
+      resolutionDescription: issue.resolutionDescription || '',
+      photoPath: issue.photoPath || ''
+    };
+    this.statusUpdateError = '';
+    this.isStatusModalOpen = true;
+  }
+
+  closeStatusModal(): void {
+    this.isStatusModalOpen = false;
+    this.selectedIssueForStatus = null;
+    this.statusUpdateLoading = false;
+    this.statusUpdateError = '';
+  }
+
+  requiresResolutionDescription(status: QualityIssueStatus | string | undefined): boolean {
+    return status === 'Resolved' || status === 'Closed';
+  }
+
+  canSubmitStatusUpdate(): boolean {
+    if (!this.selectedIssueForStatus) {
+      return false;
+    }
+
+    if (!this.statusUpdateForm.status) {
+      return false;
+    }
+
+    if (this.requiresResolutionDescription(this.statusUpdateForm.status)) {
+      return !!this.statusUpdateForm.resolutionDescription?.trim();
+    }
+
+    return true;
+  }
+
+  submitStatusUpdate(): void {
+    if (!this.selectedIssueForStatus || !this.canSubmitStatusUpdate() || this.statusUpdateLoading) {
+      return;
+    }
+
+    const payload: UpdateQualityIssueStatusRequest = {
+      issueId: this.selectedIssueForStatus.issueId,
+      status: this.statusUpdateForm.status,
+      resolutionDescription: this.requiresResolutionDescription(this.statusUpdateForm.status)
+        ? this.statusUpdateForm.resolutionDescription?.trim()
+        : null,
+      photoPath: this.statusUpdateForm.photoPath?.trim() || null
+    };
+
+    this.statusUpdateLoading = true;
+    this.statusUpdateError = '';
+
+    this.wirService.updateQualityIssueStatus(payload.issueId, payload).subscribe({
+      next: (updatedIssue) => {
+        this.statusUpdateLoading = false;
+        this.applyUpdatedQualityIssue(updatedIssue);
+        this.closeStatusModal();
+      },
+      error: (err) => {
+        console.error('❌ Failed to update quality issue status:', err);
+        this.statusUpdateLoading = false;
+        this.statusUpdateError = err?.error?.message || err?.message || 'Failed to update issue status';
+      }
+    });
+  }
+
+  private applyUpdatedQualityIssue(updated: QualityIssueDetails): void {
+    this.qualityIssues = this.qualityIssues.map(issue =>
+      issue.issueId === updated.issueId ? { ...issue, ...updated } : issue
+    );
+    const count = this.qualityIssues.length;
+    this.qualityIssueCount = count;
   }
 }

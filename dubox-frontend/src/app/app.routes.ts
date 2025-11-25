@@ -67,7 +67,35 @@ export const routes: Routes = [
     loadComponent: () => import('./features/activities/activity-details/activity-details.component').then(m => m.ActivityDetailsComponent)
   },
   {
+    path: 'qc',
+    canActivate: [authGuard, roleGuard],
+    data: {
+      roles: [
+        UserRole.SystemAdmin,
+        UserRole.ProjectManager,
+        UserRole.QCInspector,
+        UserRole.SiteEngineer,
+        UserRole.Foreman
+      ]
+    },
+    loadComponent: () => import('./features/qc/quality-control-dashboard/quality-control-dashboard.component').then(m => m.QualityControlDashboardComponent)
+  },
+  {
     path: 'projects/:projectId/boxes/:boxId/activities/:activityId/qa-qc',
+    canActivate: [authGuard, roleGuard],
+    data: { 
+      roles: [
+        UserRole.SystemAdmin, 
+        UserRole.ProjectManager, 
+        UserRole.QCInspector, 
+        UserRole.SiteEngineer,
+        UserRole.Foreman
+      ] 
+    },
+    loadComponent: () => import('./features/boxes/qa-qc-checklist/qa-qc-checklist.component').then(m => m.QaQcChecklistComponent)
+  },
+  {
+    path: 'quality/projects/:projectId/boxes/:boxId/activities/:activityId/qa-qc',
     canActivate: [authGuard, roleGuard],
     data: { 
       roles: [

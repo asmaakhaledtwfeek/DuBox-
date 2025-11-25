@@ -51,6 +51,13 @@ export interface LoginResponse {
   expiresIn: number;
 }
 
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  fullName: string;
+  departmentId: string;
+}
+
 export interface AuthState {
   user: User | null;
   token: string | null;

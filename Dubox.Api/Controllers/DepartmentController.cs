@@ -8,7 +8,6 @@ namespace Dubox.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize]
 public class DepartmentController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -19,6 +18,7 @@ public class DepartmentController : ControllerBase
     }
 
     [HttpGet]
+    [AllowAnonymous]
     public async Task<IActionResult> GetAllDepartments(CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetAllDepartmentsQuery(), cancellationToken);
@@ -26,6 +26,7 @@ public class DepartmentController : ControllerBase
     }
 
     [HttpGet("{DepartmentId}")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetDepartmentById(Guid departmentId, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetDepartmentByIdQuery(departmentId), cancellationToken);
@@ -33,6 +34,7 @@ public class DepartmentController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize]
     public async Task<IActionResult> CreateDepartment([FromBody] CreateDepartmentCommand command, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(command, cancellationToken);
@@ -40,6 +42,7 @@ public class DepartmentController : ControllerBase
     }
 
     [HttpPut("{departmentId}")]
+    [Authorize]
     public async Task<IActionResult> UpdateDepartment(Guid departmentId, [FromBody] UpdateDepartmentCommand command, CancellationToken cancellationToken)
     {
         if (departmentId != command.DepartmentId)
@@ -50,6 +53,7 @@ public class DepartmentController : ControllerBase
     }
 
     [HttpDelete("{departmentId}")]
+    [Authorize]
     public async Task<IActionResult> DeleteDepartment(Guid departmentId, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new DeleteDepartmentCommand(departmentId), cancellationToken);

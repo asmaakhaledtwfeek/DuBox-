@@ -294,7 +294,7 @@ export class QaQcChecklistComponent implements OnInit {
   private buildAddChecklistItemsForm(sourceItems?: WIRCheckpointChecklistItem[]): void {
     const itemsArray = this.addChecklistItemsArray;
     itemsArray.clear();
-
+    
     if (sourceItems && sourceItems.length > 0) {
       sourceItems
         .sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
@@ -303,8 +303,8 @@ export class QaQcChecklistComponent implements OnInit {
             checkpointDescription: item.checkpointDescription,
             referenceDocument: item.referenceDocument,
             sequence: item.sequence
-          }));
-        });
+      }));
+    });
     }
 
     this.updateAddChecklistSequences();
@@ -838,7 +838,7 @@ export class QaQcChecklistComponent implements OnInit {
       this.markFormGroupTouched(this.checklistForm);
       return;
     }
-
+    
     const status = this.finalStatusControl.value as WIRCheckpointStatus;
     this.submitting = true;
     this.error = '';
@@ -880,8 +880,8 @@ export class QaQcChecklistComponent implements OnInit {
   }
 
   private handleReviewSuccess(updatedCheckpoint: WIRCheckpoint, status: WIRCheckpointStatus): void {
-    this.submitting = false;
-    this.wirCheckpoint = updatedCheckpoint;
+        this.submitting = false;
+        this.wirCheckpoint = updatedCheckpoint;
     this.syncReviewFormFromCheckpoint();
     this.pendingAction = null;
     this.currentStep = null;
@@ -899,11 +899,11 @@ export class QaQcChecklistComponent implements OnInit {
         type: 'success'
       }
     }));
-    this.goBack();
+        this.goBack();
   }
 
   private handleReviewError(err: any): void {
-    this.submitting = false;
+        this.submitting = false;
     this.error = err.error?.message || err.message || 'Failed to update WIR checkpoint';
     console.error('Review error:', err);
   }

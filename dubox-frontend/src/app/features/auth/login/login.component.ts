@@ -49,6 +49,11 @@ export class LoginComponent implements OnInit {
     this.showPassword = !this.showPassword;
   }
 
+  goToRegister(event: Event): void {
+    event.preventDefault();
+    this.router.navigate(['/register']);
+  }
+
   onSubmit(): void {
     if (this.loginForm.invalid) {
       return;

@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable, tap, map } from 'rxjs';
 import { Router } from '@angular/router';
 import { ApiService } from './api.service';
-import { User, LoginRequest, LoginResponse, AuthState, UserRole } from '../models/user.model';
+import { User, LoginRequest, LoginResponse, AuthState, UserRole, RegisterRequest } from '../models/user.model';
 
 @Injectable({
   providedIn: 'root'
@@ -134,6 +134,13 @@ export class AuthService {
           });
         })
       );
+  }
+
+  /**
+   * Register a new user
+   */
+  register(payload: RegisterRequest): Observable<any> {
+    return this.apiService.post<any>('auth/register', payload);
   }
 
   /**

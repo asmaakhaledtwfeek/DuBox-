@@ -7,7 +7,11 @@
     <div class="page-header">
       <div class="header-left">
         <h1 class="page-title">Boxes</h1>
-        <p class="page-subtitle">Manage all boxes for this project</p>
+        <p class="page-subtitle" *ngIf="projectName || projectCode">
+          <span *ngIf="projectCode" class="project-code">{{ projectCode }}</span>
+          <span *ngIf="projectName" class="project-name">{{ projectName }}</span>
+        </p>
+        <p class="page-helper">Manage all boxes for this project</p>
       </div>
       <div class="header-right" *ngIf="canCreate">
         <button class="btn btn-primary" (click)="createBox()">
@@ -22,7 +26,6 @@
 
     <!-- Filters -->
     <div class="filters-section">
-      <!-- Search -->
       <div class="search-box">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="8"/>
@@ -36,7 +39,6 @@
         />
       </div>
 
-      <!-- Status Filter -->
       <div class="filter-buttons">
         <button 
           class="filter-btn" 

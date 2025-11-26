@@ -171,9 +171,7 @@ export class ProjectDashboardComponent implements OnInit {
 
           if (earliestActualStart) {
             this.project.actualStartDate = earliestActualStart;
-          } else if (!this.project.actualStartDate && this.project.startDate) {
-            this.project.actualStartDate = this.project.startDate;
-          }
+          } 
         }
         console.log('📊 Calculated box counts:', this.dashboardData);
         console.log('📊 Project progress (from ProgressPercentage):', this.project?.progress + '%');

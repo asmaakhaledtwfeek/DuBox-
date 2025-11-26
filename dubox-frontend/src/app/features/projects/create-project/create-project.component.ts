@@ -22,6 +22,8 @@ export class CreateProjectComponent implements OnInit {
   initializing = false;
   isEdit = false;
   projectId: string | null = null;
+  originalProject: Project | null = null;
+  canEditPlannedStartDate = true;
 
   constructor(
     private fb: FormBuilder,
@@ -69,9 +71,15 @@ export class CreateProjectComponent implements OnInit {
   private loadProject(id: string): void {
     this.projectService.getProject(id).subscribe({
       next: (project) => {
+        this.originalProject = project;
         this.patchForm(project);
         this.initializing = false;
         this.projectForm.enable();
+
+        this.canEditPlannedStartDate = !project.startDate;
+        if (!this.canEditPlannedStartDate) {
+          this.projectForm.get('plannedStartDate')?.disable({ emitEvent: false });
+        }
       },
       error: (err) => {
         this.error = err.message || 'Failed to load project details. Please try again.';
@@ -129,16 +137,53 @@ export class CreateProjectComponent implements OnInit {
 
     const formValue = this.projectForm.value;
     
-    // Map frontend fields to backend expected format
-    const projectData: any = {
-      projectCode: formValue.projectCode,
-      projectName: formValue.projectName,
-      clientName: formValue.clientName || undefined,
-      location: formValue.location || undefined,
-      duration: formValue.duration,
-      plannedStartDate: formValue.plannedStartDate ? new Date(formValue.plannedStartDate).toISOString() : undefined,
-      description: formValue.description || undefined
-    };
+    let projectData: any;
+
+    if (!this.isEdit) {
+      projectData = {
+        projectCode: formValue.projectCode,
+        projectName: formValue.projectName,
+        clientName: formValue.clientName || undefined,
+        location: formValue.location || undefined,
+        duration: formValue.duration,
+        plannedStartDate: formValue.plannedStartDate ? new Date(formValue.plannedStartDate).toISOString() : undefined,
+        description: formValue.description || undefined
+      };
+    } else {
+      projectData = {};
+      const compare = (newVal: any, oldVal: any) => newVal !== oldVal && !(newVal === undefined && oldVal === undefined);
+
+      if (this.originalProject) {
+        if (compare(formValue.projectCode, this.originalProject.code)) {
+          projectData.projectCode = formValue.projectCode;
+        }
+        if (compare(formValue.projectName, this.originalProject.name)) {
+          projectData.projectName = formValue.projectName;
+        }
+        if (compare(formValue.clientName, this.originalProject.clientName)) {
+          projectData.clientName = formValue.clientName || undefined;
+        }
+        if (compare(formValue.location, this.originalProject.location)) {
+          projectData.location = formValue.location || undefined;
+        }
+        if (compare(formValue.description, this.originalProject.description)) {
+          projectData.description = formValue.description || undefined;
+        }
+        if (compare(formValue.duration, this.getDurationValue(this.originalProject))) {
+          projectData.duration = formValue.duration;
+        }
+        if (this.canEditPlannedStartDate && formValue.plannedStartDate) {
+          const originalPlanned = this.originalProject.plannedStartDate ? this.formatDateForInput(this.originalProject.plannedStartDate) : '';
+          if (compare(this.formatDateForInput(formValue.plannedStartDate ? new Date(formValue.plannedStartDate) : undefined), originalPlanned)) {
+            projectData.plannedStartDate = new Date(formValue.plannedStartDate).toISOString();
+          }
+        }
+      }
+
+      if (this.projectId) {
+        projectData.projectId = this.projectId;
+      }
+    }
 
     console.log('🚀 Submitting project data:', projectData);
 

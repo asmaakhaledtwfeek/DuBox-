@@ -16,7 +16,8 @@
                 .Map(dest => dest.IsChecked, src => src.Status != CheckListItemStatusEnum.Pending && src.Status == CheckListItemStatusEnum.Pass)
                 .Map(dest => dest.ReferenceDocument, src => src.ReferenceDocument)
                 .Map(dest => dest.Remarks, src => src.Remarks)
-                .Map(dest => dest.Status, src => src.Status);
+                .Map(dest => dest.Status, src => src.Status)
+                .Map(dest => dest.Sequence, src => src.Sequence);
 
             TypeAdapterConfig<QualityIssue, QualityIssueDto>.NewConfig()
                 .Map(dest => dest.IssueId, src => src.IssueId)

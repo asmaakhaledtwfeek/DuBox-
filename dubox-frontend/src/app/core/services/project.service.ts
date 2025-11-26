@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiService } from './api.service';
-import { Project, ProjectStats } from '../models/project.model';
+import { Project, ProjectStats, ProjectStatus } from '../models/project.model';
 
 @Injectable({
   providedIn: 'root'
@@ -25,8 +25,9 @@ export class ProjectService {
     const code = backendProject.projectCode || backendProject.ProjectCode || backendProject.code || backendProject.Code;
     const clientName = backendProject.clientName || backendProject.ClientName;
     const durationValue = backendProject.duration || backendProject.Duration || backendProject.projectDuration || backendProject.ProjectDuration;
-    const plannedStartValue = backendProject.plannedStartDate || backendProject.PlannedStartDate || backendProject.startDate || backendProject.StartDate;
-    const startDateValue = backendProject.startDate || backendProject.StartDate || plannedStartValue;
+    const actualStartValue = backendProject.actualStartDate || backendProject.ActualStartDate;
+    const plannedStartValue = backendProject.plannedStartDate || backendProject.PlannedStartDate;
+    const startDateValue = actualStartValue || plannedStartValue;
     const plannedEndValue = backendProject.plannedEndDate || backendProject.PlannedEndDate || backendProject.endDate || backendProject.EndDate;
     const endDateValue = backendProject.endDate || backendProject.EndDate || plannedEndValue;
     
@@ -44,6 +45,7 @@ export class ProjectService {
       startDate: startDateValue ? new Date(startDateValue) : undefined,
       endDate: endDateValue ? new Date(endDateValue) : undefined,
       plannedStartDate: plannedStartValue ? new Date(plannedStartValue) : undefined,
+      actualStartDate: actualStartValue ? new Date(actualStartValue) : undefined,
       plannedEndDate: plannedEndValue ? new Date(plannedEndValue) : undefined,
       duration: durationValue ? Number(durationValue) : undefined,
       status: backendProject.status || backendProject.Status,
@@ -137,6 +139,13 @@ export class ProjectService {
     return this.apiService.put<any>(`${this.endpoint}/${id}`, project).pipe(
       map(response => this.transformProject(response))
     );
+  }
+
+  updateProjectStatus(id: string, status: ProjectStatus): Observable<Project> {
+    return this.apiService.patch<any>(`${this.endpoint}/${id}/status`, {
+      projectId: id,
+      status
+    }).pipe(map(response => this.transformProject(response)));
   }
 
   /**

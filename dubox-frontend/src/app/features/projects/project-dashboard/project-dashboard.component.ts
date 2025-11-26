@@ -1,20 +1,33 @@
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ProjectService } from '../../../core/services/project.service';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
-import { Project } from '../../../core/models/project.model';
+import { Project, ProjectStatus } from '../../../core/models/project.model';
 import { Box, BoxImportResult, BoxStatus } from '../../../core/models/box.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
+import { trigger, style, animate, transition } from '@angular/animations';
 
 @Component({
   selector: 'app-project-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, HeaderComponent, SidebarComponent],
+  imports: [CommonModule, FormsModule, RouterModule, HeaderComponent, SidebarComponent],
   templateUrl: './project-dashboard.component.html',
-  styleUrl: './project-dashboard.component.scss'
+  styleUrl: './project-dashboard.component.scss',
+  animations: [
+    trigger('fadeOut', [
+      transition(':enter', [
+        style({ opacity: 0, transform: 'translateY(-6px)' }),
+        animate('200ms ease-out', style({ opacity: 1, transform: 'translateY(0)' }))
+      ]),
+      transition(':leave', [
+        animate('400ms ease-in', style({ opacity: 0, transform: 'translateY(-6px)' }))
+      ])
+    ])
+  ]
 })
 export class ProjectDashboardComponent implements OnInit {
   @ViewChild('fileInput') fileInputRef?: ElementRef<HTMLInputElement>;
@@ -24,6 +37,8 @@ export class ProjectDashboardComponent implements OnInit {
   projectId: string = '';
   loading = true;
   error = '';
+  banner: { message: string; type: 'success' | 'error' } | null = null;
+  bannerTimeoutId: any = null;
   showDeleteConfirm = false;
   deleting = false;
   canEdit = false;
@@ -35,6 +50,13 @@ export class ProjectDashboardComponent implements OnInit {
   importSuccessMessage = '';
   importErrorMessage = '';
   importResult: BoxImportResult | null = null;
+  showStatusModal = false;
+  statusOptions = Object.values(ProjectStatus).filter(
+    (status) => status !== ProjectStatus.Completed
+  ) as ProjectStatus[];
+  selectedStatus: ProjectStatus | '' = '';
+  statusUpdating = false;
+  statusError = '';
 
 
   dashboardData = {
@@ -76,9 +98,14 @@ export class ProjectDashboardComponent implements OnInit {
       next: (project) => {
         console.log('✅ Project loaded:', project);
         console.log('🆔 Project ID:', project.id);
-        
-        this.project = project;
-        
+
+        this.project = {
+          ...project,
+          startDate: project.startDate ? new Date(project.startDate) : undefined,
+          plannedStartDate: project.plannedStartDate ? new Date(project.plannedStartDate) : undefined,
+          actualStartDate: project.actualStartDate ? new Date(project.actualStartDate) : undefined
+        };
+
         // Load boxes to calculate accurate counts
         this.loadBoxesAndCalculateCounts();
       },
@@ -134,19 +161,22 @@ export class ProjectDashboardComponent implements OnInit {
           }
         });
 
-        // Calculate project progress from boxes (average of box progress) - same way box progress is calculated from activities
-        if (boxes.length > 0 && this.project) {
-          const averageProgress = boxes.reduce((sum, box) => sum + (box.progress || 0), 0) / boxes.length;
-          this.project.progress = averageProgress;
-          console.log(`📊 Calculated project progress from boxes: ${averageProgress}%`);
-          console.log(`📊 Box progress values:`, boxes.map(b => b.progress));
-          console.log(`📊 Display value: ${this.formatProgress(averageProgress)}%`);
-          console.log(`📊 Bar width: ${this.getProgressForBar(averageProgress)}%`);
-        }
-
         this.dashboardData = counts;
+
+        if (this.project) {
+          const earliestActualStart = boxes
+            .map(b => b.actualStartDate)
+            .filter((date): date is Date => !!date)
+            .sort((a, b) => a.getTime() - b.getTime())[0];
+
+          if (earliestActualStart) {
+            this.project.actualStartDate = earliestActualStart;
+          } else if (!this.project.actualStartDate && this.project.startDate) {
+            this.project.actualStartDate = this.project.startDate;
+          }
+        }
         console.log('📊 Calculated box counts:', this.dashboardData);
-        console.log('📊 Project progress (calculated from boxes):', this.project?.progress + '%');
+        console.log('📊 Project progress (from ProgressPercentage):', this.project?.progress + '%');
         this.loading = false;
       },
       error: (err) => {
@@ -163,6 +193,52 @@ export class ProjectDashboardComponent implements OnInit {
           };
         }
         this.loading = false;
+      }
+    });
+  }
+
+  openStatusModal(): void {
+    if (!this.project) {
+      return;
+    }
+    this.selectedStatus = (this.project.status as ProjectStatus) || ProjectStatus.Active;
+    this.statusError = '';
+    this.showStatusModal = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeStatusModal(): void {
+    this.showStatusModal = false;
+    this.statusUpdating = false;
+    this.statusError = '';
+    document.body.style.overflow = '';
+  }
+
+  updateStatus(): void {
+    if (!this.project || !this.selectedStatus || this.statusUpdating) {
+      return;
+    }
+    this.statusUpdating = true;
+    this.statusError = '';
+
+    this.projectService.updateProjectStatus(this.project.id, this.selectedStatus).subscribe({
+      next: (updatedProject) => {
+        this.project = {
+          ...updatedProject,
+          startDate: updatedProject.startDate ? new Date(updatedProject.startDate) : undefined,
+          plannedStartDate: updatedProject.plannedStartDate ? new Date(updatedProject.plannedStartDate) : undefined,
+          actualStartDate: updatedProject.actualStartDate ? new Date(updatedProject.actualStartDate) : undefined
+        };
+        this.statusUpdating = false;
+        this.closeStatusModal();
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { message: 'Project status updated successfully', type: 'success' }
+        }));
+      },
+      error: (error) => {
+        console.error('Failed to update project status', error);
+        this.statusUpdating = false;
+        this.statusError = error?.error?.message || 'Failed to update project status';
       }
     });
   }
@@ -318,6 +394,23 @@ export class ProjectDashboardComponent implements OnInit {
     this.router.navigate(['/projects']);
   }
 
+  getProjectStatusClass(status: ProjectStatus | string | undefined): string {
+    switch (status) {
+      case ProjectStatus.Active:
+        return 'badge badge-success';
+      case ProjectStatus.OnHold:
+        return 'badge badge-warning';
+      case ProjectStatus.Completed:
+        return 'badge badge-success';
+      case ProjectStatus.Archived:
+        return 'badge badge-neutral';
+      case ProjectStatus.Closed:
+        return 'badge badge-danger';
+      default:
+        return 'badge badge-neutral';
+    }
+  }
+
   editProject(): void {
     if (!this.projectId) {
       return;
@@ -348,50 +441,91 @@ export class ProjectDashboardComponent implements OnInit {
       next: () => {
         this.deleting = false;
         this.showDeleteConfirm = false;
-        this.router.navigate(['/projects']);
+        this.showBanner('Project deleted successfully.', 'success');
+        setTimeout(() => {
+          this.router.navigate(['/projects']);
+        }, 1200);
       },
       error: (err) => {
         this.deleting = false;
         this.showDeleteConfirm = false;
-        this.error = err.message || 'Failed to delete project';
+        const message = err?.error?.message || err.message || 'Failed to delete project';
+        this.showBanner(message, 'error');
         console.error('❌ Error deleting project:', err);
       }
     });
   }
 
   formatProgress(progress: number | undefined): string {
-    // Handle null, undefined, or falsy values (but allow 0)
-    if (progress === null || progress === undefined) return '0.00';
-    
-    // Convert to number if it's a string
-    const numProgress = typeof progress === 'string' ? parseFloat(progress) : Number(progress);
-    
-    // Handle NaN or invalid numbers
-    if (isNaN(numProgress) || !isFinite(numProgress)) return '0.00';
-    
-    // Progress is calculated from boxes (average of box.progress)
-    // Box progress is in percentage format (0-100), so project progress is also in percentage format
-    // Display directly with 2 decimal places
-    return numProgress.toFixed(2);
+    const value = typeof progress === 'number' && isFinite(progress) ? progress : 0;
+    return value.toFixed(2);
   }
 
   getProgressForBar(progress: number | undefined): number {
-    if (progress === undefined || progress === null) return 0;
-    
-    // Progress is calculated from boxes (average of box.progress)
-    // Box progress is in percentage format (0-100), so project progress is also in percentage format
-    // Use the value directly for the bar width (no conversion needed)
-    // Ensure it doesn't exceed 100%
-    return Math.min(progress, 100);
+    const value = typeof progress === 'number' && isFinite(progress) ? progress : 0;
+    return Math.min(value, 100);
   }
 
   getProgressColor(progress: number | undefined): string {
-    if (progress === undefined || progress === null) return 'var(--error-color)';
-    // Normalize progress to 0-100 scale for color calculation
-    const normalizedProgress = progress >= 1 && progress <= 100 ? progress : progress * 100;
+    const value = typeof progress === 'number' && isFinite(progress) ? progress : 0;
+    const normalizedProgress = Math.max(0, Math.min(value, 100));
     if (normalizedProgress >= 75) return 'var(--success-color)';
     if (normalizedProgress >= 50) return 'var(--info-color)';
     if (normalizedProgress >= 25) return 'var(--warning-color)';
     return 'var(--error-color)';
+  }
+
+  private showBanner(message: string, type: 'success' | 'error'): void {
+    this.banner = { message, type };
+    if (this.bannerTimeoutId) {
+      clearTimeout(this.bannerTimeoutId);
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    this.bannerTimeoutId = setTimeout(() => {
+      this.banner = null;
+      this.bannerTimeoutId = null;
+    }, 5000);
+  }
+
+  dismissBanner(): void {
+    if (this.bannerTimeoutId) {
+      clearTimeout(this.bannerTimeoutId);
+      this.bannerTimeoutId = null;
+    }
+    this.banner = null;
+  }
+
+  get startDateLabel(): string {
+    return this.hasActualStartDate() ? 'Started' : 'Planned Start';
+  }
+
+  get startDateValue(): Date | undefined {
+    if (this.hasActualStartDate()) {
+      return this.normalizeDate(this.project?.actualStartDate);
+    }
+    return this.normalizeDate(this.project?.plannedStartDate);
+  }
+
+  private hasActualStartDate(): boolean {
+    const value = this.project?.actualStartDate;
+    const normalized = this.normalizeDate(value);
+    return !!normalized;
+  }
+
+  private normalizeDate(value: Date | string | undefined | null): Date | undefined {
+    if (!value) {
+      return undefined;
+    }
+
+    const dateValue = value instanceof Date ? value : new Date(value);
+    if (isNaN(dateValue.getTime())) {
+      return undefined;
+    }
+
+    if (dateValue.getUTCFullYear() <= 1900) {
+      return undefined;
+    }
+
+    return dateValue;
   }
 }

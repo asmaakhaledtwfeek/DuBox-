@@ -1,4 +1,5 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Services;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Services;
@@ -17,8 +18,16 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
     private readonly IQRCodeService _qrCodeService;
     private readonly IBoxActivityService _boxActivityService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IProjectProgressService _projectProgressService;
 
-    public CreateBoxCommandHandler(IUnitOfWork unitOfWork, IDbContext dbContext, IMapper Mapper, IQRCodeService qrCodeService, IBoxActivityService boxActivityService, ICurrentUserService currentUserService)
+    public CreateBoxCommandHandler(
+        IUnitOfWork unitOfWork,
+        IDbContext dbContext,
+        IMapper Mapper,
+        IQRCodeService qrCodeService,
+        IBoxActivityService boxActivityService,
+        ICurrentUserService currentUserService,
+        IProjectProgressService projectProgressService)
     {
         _unitOfWork = unitOfWork;
         _dbContext = dbContext;
@@ -26,6 +35,7 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
         _qrCodeService = qrCodeService;
         _boxActivityService = boxActivityService;
         _currentUserService = currentUserService;
+        _projectProgressService = projectProgressService;
     }
 
     public async Task<Result<BoxDto>> Handle(CreateBoxCommand request, CancellationToken cancellationToken)
@@ -89,6 +99,12 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
         };
         await _unitOfWork.Repository<AuditLog>().AddAsync(projectLog, cancellationToken);
         await _unitOfWork.CompleteAsync(cancellationToken);
+
+        await _projectProgressService.UpdateProjectProgressAsync(
+            project.ProjectId,
+            currentUserId,
+            $"Project progress recalculated due to new box '{box.BoxTag}' creation.",
+            cancellationToken);
 
         var boxDto = box.Adapt<BoxDto>() with
         { QRCodeImage = _qrCodeService.GenerateQRCodeBase64(box.QRCodeString) };

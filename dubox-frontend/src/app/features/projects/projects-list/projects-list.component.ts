@@ -124,17 +124,28 @@ export class ProjectsListComponent implements OnInit {
         // Calculate counts and progress for each project from boxes (like box progress is calculated from activities)
         results.forEach(({ projectId, boxes }) => {
           const project = this.projects.find(p => p.id === projectId);
-          if (project && boxes.length > 0) {
+          if (!project) {
+            return;
+          }
+
+          if (boxes.length > 0) {
             const result = this.calculateBoxCounts(boxes);
             project.totalBoxes = result.totalBoxes;
             project.completedBoxes = result.completedBoxes;
             project.inProgressBoxes = result.inProgressBoxes;
             project.readyForDeliveryBoxes = result.readyForDelivery;
             
-            // Calculate project progress from boxes (average of box progress) - same way box progress is calculated from activities
-            const averageProgress = boxes.reduce((sum, box) => sum + (box.progress || 0), 0) / boxes.length;
-            project.progress = averageProgress;
-            console.log(`📊 Calculated project progress from boxes: ${averageProgress}% for project ${project.name}`);
+            // Keep ProgressPercentage from database response - don't override with calculated value
+            // project.progress is already set from ProgressPercentage in transformProject
+            
+            const earliestActualStart = boxes
+              .map(box => box.actualStartDate)
+              .filter((date): date is Date => !!date)
+              .sort((a, b) => a.getTime() - b.getTime())[0];
+            if (!project.actualStartDate && earliestActualStart) {
+              project.actualStartDate = earliestActualStart;
+            }
+            console.log(`📊 Using ProgressPercentage from database: ${project.progress}% for project ${project.name}`);
           }
         });
 
@@ -263,11 +274,11 @@ export class ProjectsListComponent implements OnInit {
 
   getStatusClass(status: ProjectStatus): string {
     const statusMap: Record<ProjectStatus, string> = {
-      [ProjectStatus.Planning]: 'badge-info',
       [ProjectStatus.Active]: 'badge-success',
       [ProjectStatus.OnHold]: 'badge-warning',
       [ProjectStatus.Completed]: 'badge-success',
-      [ProjectStatus.Cancelled]: 'badge-error'
+      [ProjectStatus.Archived]: 'badge-neutral',
+      [ProjectStatus.Closed]: 'badge-error'
     };
     return statusMap[status] || 'badge-info';
   }

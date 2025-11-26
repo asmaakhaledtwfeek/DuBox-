@@ -73,23 +73,30 @@ export class BoxService {
       length: backendBox.length,
       width: backendBox.width,
       height: backendBox.height,
+      duration: backendBox.duration ?? backendBox.Duration,
       bimModelReference: backendBox.bimModelReference || backendBox.bimModelRef,
       revitElementId: backendBox.revitElementId,
       assignedTeam: backendBox.assignedTeam,
       assignedTo: backendBox.assignedTo,
-      plannedStartDate: backendBox.plannedStartDate ? new Date(backendBox.plannedStartDate) : undefined,
-      actualStartDate: backendBox.actualStartDate ? new Date(backendBox.actualStartDate) : undefined,
-      plannedEndDate: backendBox.plannedEndDate ? new Date(backendBox.plannedEndDate) : undefined,
-      actualEndDate: backendBox.actualEndDate ? new Date(backendBox.actualEndDate) : undefined,
+      plannedStartDate: this.parseDate(
+        backendBox.plannedStartDate ??
+        backendBox.plannedStartdDate ??
+        backendBox.PlannedStartDate ??
+        backendBox.PlannedStartdDate
+      ),
+      actualStartDate: this.parseDate(backendBox.actualStartDate ?? backendBox.ActualStartDate),
+      plannedEndDate: this.parseDate(backendBox.plannedEndDate ?? backendBox.PlannedEndDate),
+      actualEndDate: this.parseDate(backendBox.actualEndDate ?? backendBox.ActualEndDate),
       progress: backendBox.progressPercentage || backendBox.progress || 0,
       activities: backendBox.activities || [],
       attachments: backendBox.attachments || [],
       logs: backendBox.logs || [],
+      notes: backendBox.notes ?? backendBox.Notes,
       qrCode: qrCode,
       createdBy: backendBox.createdBy,
       updatedBy: backendBox.modifiedBy || backendBox.updatedBy,
-      createdAt: backendBox.createdDate ? new Date(backendBox.createdDate) : undefined,
-      updatedAt: backendBox.modifiedDate ? new Date(backendBox.modifiedDate) : undefined,
+      createdAt: this.parseDate(backendBox.createdDate ?? backendBox.CreatedDate),
+      updatedAt: this.parseDate(backendBox.modifiedDate ?? backendBox.ModifiedDate),
       activitiesCount:backendBox.activitiesCount || backendBox.ActivitiesCount||0
     };
   }
@@ -114,6 +121,19 @@ export class BoxService {
       errors: result?.errors ?? result?.Errors ?? [],
       importedBoxes
     };
+  }
+
+  private parseDate(value?: string | Date | null): Date | undefined {
+    if (!value) {
+      return undefined;
+    }
+
+    if (value instanceof Date) {
+      return value;
+    }
+
+    const parsed = new Date(value);
+    return isNaN(parsed.getTime()) ? undefined : parsed;
   }
 
   /**
@@ -235,6 +255,49 @@ export class BoxService {
     return this.apiService.patch<BoxActivity>(
       `${this.endpoint}/${boxId}/activities/${activityId}/status`,
       { status }
+    );
+  }
+
+  /**
+   * Update box activity status using the activities endpoint
+   */
+  updateBoxActivityStatus(activityId: string, status: number, workDescription?: string, issuesEncountered?: string): Observable<any> {
+    return this.apiService.put<any>(
+      `activities/update-status/${activityId}`,
+      {
+        boxActivityId: activityId,
+        status: status,
+        workDescription: workDescription || null,
+        issuesEncountered: issuesEncountered || null
+      }
+    );
+  }
+
+  /**
+   * Set activity schedule
+   */
+  setActivitySchedule(activityId: string, plannedStartDate: Date, duration: number): Observable<any> {
+    return this.apiService.put<any>(
+      `activities/set-activity-schedule/${activityId}`,
+      {
+        activityId: activityId,
+        plannedStartDate: plannedStartDate.toISOString(),
+        duration: duration
+      }
+    );
+  }
+
+  /**
+   * Assign activity to team
+   */
+  assignActivityToTeam(activityId: string, teamId: string, teamMemberId: string): Observable<any> {
+    return this.apiService.put<any>(
+      'activities/Assign-team',
+      {
+        boxActivityId: activityId,
+        teamId: teamId,
+        teamMemberId: teamMemberId
+      }
     );
   }
 

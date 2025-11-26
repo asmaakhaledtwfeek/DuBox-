@@ -20,6 +20,8 @@ export interface Box {
   actualStartDate?: Date;
   plannedEndDate?: Date;
   actualEndDate?: Date;
+  duration?: number;
+  notes?: string;
   progress: number;
   activities: BoxActivity[];
   activitiesCount?: number;

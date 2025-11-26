@@ -20,11 +20,15 @@ public record BoxDto
     public decimal? Height { get; init; }
     public string? UnitOfMeasure { get; init; }
     public string? BIMModelReference { get; init; }
+    public string? RevitElementId { get; init; }
+    public int? Duration { get; init; }
+    public DateTime? PlannedStartDate { get; init; }
     public DateTime? ActualStartDate { get; init; }
     public DateTime? PlannedEndDate { get; init; }
     public DateTime? ActualEndDate { get; init; }
     public DateTime CreatedDate { get; init; }
     public int ActivitiesCount { get; init; }
+    public string? Notes { get; init; }
 }
 
 public record CreateBoxDto

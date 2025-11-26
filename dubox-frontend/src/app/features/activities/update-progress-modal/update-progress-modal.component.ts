@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
@@ -11,7 +11,7 @@ import { ActivityProgressStatus, BoxActivityDetail } from '../../../core/models/
   templateUrl: './update-progress-modal.component.html',
   styleUrls: ['./update-progress-modal.component.scss']
 })
-export class UpdateProgressModalComponent implements OnInit {
+export class UpdateProgressModalComponent implements OnInit, OnChanges {
   @Input() activity!: BoxActivityDetail;
   @Input() isOpen: boolean = false;
   @Output() closeModal = new EventEmitter<void>();
@@ -33,10 +33,25 @@ export class UpdateProgressModalComponent implements OnInit {
     this.initializeForm();
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    // Reinitialize form when activity changes or modal opens
+    if (changes['activity'] || (changes['isOpen'] && this.isOpen && this.activity)) {
+      this.initializeForm();
+      // Clear previous errors and messages when opening
+      if (this.isOpen) {
+        this.errorMessage = '';
+        this.successMessage = '';
+        this.selectedFiles = [];
+      }
+    }
+  }
+
   initializeForm(): void {
+    if (!this.activity) return;
+    
     this.progressForm = this.fb.group({
       progressPercentage: [
-        this.activity?.progressPercentage || 0, 
+        this.activity.progressPercentage || 0, 
         [Validators.required, Validators.min(0), Validators.max(100)]
       ],
       workDescription: [''],

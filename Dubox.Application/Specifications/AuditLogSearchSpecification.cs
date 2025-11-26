@@ -17,12 +17,6 @@ namespace Dubox.Application.Specifications
             if (!string.IsNullOrEmpty(parameters.Action))
                 AddCriteria(log => log.Action == parameters.Action);
 
-            if (!string.IsNullOrEmpty(parameters.SearchTerm))
-                AddCriteria(log =>
-                    log.Description.Contains(parameters.SearchTerm) ||
-                    log.OldValues.Contains(parameters.SearchTerm) ||
-                    log.NewValues.Contains(parameters.SearchTerm));
-
             if (parameters.FromDate.HasValue)
                 AddCriteria(log => log.ChangedDate >= parameters.FromDate.Value);
             if (parameters.ToDate.HasValue)

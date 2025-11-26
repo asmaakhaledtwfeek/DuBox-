@@ -77,9 +77,20 @@
       outline-offset: 2px;
     }
 
-    &:disabled {
+    &:disabled,
+    &.disabled {
       cursor: not-allowed;
       opacity: 0.5;
+      pointer-events: none;
+      
+      .step-index {
+        background: #d1d5db !important;
+      }
+      
+      .step-title,
+      .step-subtitle {
+        color: #9ca3af;
+      }
     }
 
     &.completed {
@@ -90,6 +101,11 @@
     &.active {
       border-color: var(--primary-color);
       background: rgba(232, 119, 34, 0.08);
+    }
+    
+    &.disabled {
+      border-color: #e5e7eb;
+      background: #f9fafb;
     }
 
     .step-index {

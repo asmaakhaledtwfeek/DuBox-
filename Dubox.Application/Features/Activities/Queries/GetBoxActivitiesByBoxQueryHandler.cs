@@ -21,6 +21,9 @@ public class GetBoxActivitiesByBoxQueryHandler : IRequestHandler<GetBoxActivitie
         var boxActivities = await _dbContext.BoxActivities
             .Include(ba => ba.ActivityMaster)
             .Include(ba => ba.Box)
+            .Include(ba => ba.Team)
+            .Include(ba => ba.AssignedMember)
+                .ThenInclude(tm => tm.User)
             .Where(ba => ba.BoxId == request.BoxId)
             .OrderBy(ba => ba.Sequence)
             .ToListAsync(cancellationToken);
@@ -35,7 +38,13 @@ public class GetBoxActivitiesByBoxQueryHandler : IRequestHandler<GetBoxActivitie
                 ActivityName = ba.ActivityMaster.ActivityName,
                 Stage = ba.ActivityMaster.Stage,
                 IsWIRCheckpoint = ba.ActivityMaster.IsWIRCheckpoint,
-                WIRCode = ba.ActivityMaster.WIRCode
+                WIRCode = ba.ActivityMaster.WIRCode,
+                TeamName = ba.Team?.TeamName,
+                AssignedMemberName = ba.AssignedMember != null 
+                    ? (!string.IsNullOrEmpty(ba.AssignedMember.EmployeeName) 
+                        ? ba.AssignedMember.EmployeeName 
+                        : ba.AssignedMember.User?.FullName ?? string.Empty)
+                    : null
             };
         }).ToList();
 

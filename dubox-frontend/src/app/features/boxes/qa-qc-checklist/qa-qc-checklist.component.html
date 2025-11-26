@@ -90,8 +90,10 @@
         *ngFor="let step of stepMeta"
         [class.completed]="isStepCompleted(step.id)"
         [class.active]="isStepActive(step.id)"
+        [class.disabled]="!canNavigateToStep(step.id)"
         [disabled]="!canNavigateToStep(step.id)"
         (click)="handleStepClick(step.id)"
+        [title]="!canNavigateToStep(step.id) ? 'Please complete previous steps first' : ''"
       >
         <div class="step-index">{{ getStepNumber(step.id) }}</div>
         <div class="step-meta">
@@ -221,10 +223,11 @@
     </div>
 
     <!-- Step 1: Create WIR Checkpoint -->
-    <div *ngIf="currentStep === 'create-checkpoint' && !wirCheckpoint && wirRecord && !loading && !error" class="step-container">
+    <div *ngIf="currentStep === 'create-checkpoint' && wirRecord && !loading && !error" class="step-container">
       <div class="step-header">
         <h2>Step 1: Create WIR Checkpoint</h2>
-        <p class="step-description">Create a new WIR checkpoint for this activity</p>
+        <p class="step-description" *ngIf="!wirCheckpoint">Create a new WIR checkpoint for this activity</p>
+        <p class="step-description" *ngIf="wirCheckpoint">Update WIR checkpoint information for this activity</p>
       </div>
 
       <form [formGroup]="createCheckpointForm" (ngSubmit)="onCreateCheckpoint()">
@@ -243,12 +246,12 @@
             <h3 class="info-section-title">Checkpoint Information</h3>
             <div class="info-grid-readonly">
               <div class="info-item">
-                <span class="label">WIR Number</span>
-                <span class="value">{{ wirRecord.wirCode }}</span>
+                <span class="label">Box Tag</span>
+                <span class="value">{{ wirRecord.boxTag }}</span>
               </div>
               <div class="info-item">
-                <span class="label">Box Activity ID</span>
-                <span class="value">{{ activityId }}</span>
+                <span class="label">WIR Number</span>
+                <span class="value">{{ wirRecord.wirCode }}</span>
               </div>
               <div class="info-item">
                 <span class="label">Activity Name</span>

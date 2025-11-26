@@ -15,7 +15,7 @@ namespace Dubox.Application.Features.Projects.Commands
                 .NotEmpty().WithMessage("Project status is required.")
                 .Must(status => Enum.IsDefined(typeof(ProjectStatusEnum), status))
                 .WithMessage("Invalid project status value.")
-                .Must(status => status != (int)ProjectStatusEnum.Completed)
+                .Must(status => status != ProjectStatusEnum.Completed)
                 .WithMessage("Project status cannot be manually set to 'Completed'. It is set automatically when progress reaches 100%.");
 
         }

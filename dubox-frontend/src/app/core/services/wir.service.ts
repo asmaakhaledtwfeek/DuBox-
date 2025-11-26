@@ -167,12 +167,16 @@ export class WIRService {
   getWIRCheckpointByActivity(boxId: string, wirCode: string): Observable<WIRCheckpoint | null> {
     return this.getWIRCheckpointsByBox(boxId).pipe(
       map(checkpoints => {
-        // Find checkpoint that matches the WIR code/number
-        return checkpoints.find(c => 
+        // Find checkpoint that matches the WIR code/number exactly
+        // Remove the fallback to 'Pending' status as it could match wrong checkpoint
+        const matched = checkpoints.find(c => 
           c.wirNumber === wirCode || 
-          c.wirNumber?.toLowerCase() === wirCode?.toLowerCase() ||
-          c.status === 'Pending'
-        ) || null;
+          c.wirNumber?.toLowerCase() === wirCode?.toLowerCase()
+        );
+        console.log('getWIRCheckpointByActivity - searching for WIR code:', wirCode);
+        console.log('getWIRCheckpointByActivity - available checkpoints:', checkpoints.map(c => ({ wirNumber: c.wirNumber, wirId: c.wirId })));
+        console.log('getWIRCheckpointByActivity - matched checkpoint:', matched);
+        return matched || null;
       }),
       catchError(() => of(null))
     );
@@ -240,6 +244,11 @@ export class WIRService {
    */
   private transformWIRCheckpoint(backendCheckpoint: any): WIRCheckpoint {
     const rawBox = backendCheckpoint.box || backendCheckpoint.Box;
+    
+    // Debug: Log raw backend response
+    console.log('transformWIRCheckpoint - raw backend data:', backendCheckpoint);
+    console.log('transformWIRCheckpoint - checklistItems in response:', backendCheckpoint.checklistItems || backendCheckpoint.ChecklistItems);
+    console.log('transformWIRCheckpoint - checklistItems count:', (backendCheckpoint.checklistItems || backendCheckpoint.ChecklistItems || []).length);
 
     return {
       wirId: backendCheckpoint.wirId || backendCheckpoint.WIRId,
@@ -277,15 +286,25 @@ export class WIRService {
       comments: backendCheckpoint.comments || backendCheckpoint.Comments,
       attachmentPath: backendCheckpoint.attachmentPath || backendCheckpoint.AttachmentPath,
       createdDate: backendCheckpoint.createdDate ? new Date(backendCheckpoint.createdDate) : new Date(),
-      checklistItems: (backendCheckpoint.checklistItems || backendCheckpoint.ChecklistItems || []).map((item: any) => ({
-        checklistItemId: item.checklistItemId || item.ChecklistItemId,
-        wirId: item.wirId || item.WIRId,
-        checkpointDescription: item.checkpointDescription || item.CheckpointDescription || item.itemName || item.ItemName,
-        referenceDocument: item.referenceDocument || item.ReferenceDocument,
-        status: item.status || item.Status || 'Pending',
-        remarks: item.remarks || item.Remarks || item.comments || item.Comments,
-        sequence: item.sequence || item.Sequence || 0
-      })),
+      checklistItems: (() => {
+        const rawItems = backendCheckpoint.checklistItems || backendCheckpoint.ChecklistItems || [];
+        console.log('Transforming checklist items, raw count:', rawItems.length);
+        const transformed = rawItems.map((item: any, index: number) => {
+          const transformedItem = {
+            checklistItemId: item.checklistItemId || item.ChecklistItemId,
+            wirId: item.wirId || item.WIRId,
+            checkpointDescription: item.checkpointDescription || item.CheckpointDescription || item.itemName || item.ItemName,
+            referenceDocument: item.referenceDocument || item.ReferenceDocument,
+            status: item.status || item.Status || 'Pending',
+            remarks: item.remarks || item.Remarks || item.comments || item.Comments,
+            sequence: item.sequence || item.Sequence || 0
+          };
+          console.log(`Transformed item ${index + 1}:`, transformedItem);
+          return transformedItem;
+        });
+        console.log('Final transformed checklist items count:', transformed.length);
+        return transformed;
+      })(),
       qualityIssues: (backendCheckpoint.qualityIssues || backendCheckpoint.QualityIssues || []).map((issue: any) => {
         // Normalize status: backend might return enum name or number, normalize to frontend type
         let normalizedStatus = issue.status || issue.Status || 'Open';

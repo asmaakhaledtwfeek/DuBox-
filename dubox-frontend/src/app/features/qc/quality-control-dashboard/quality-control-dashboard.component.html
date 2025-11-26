@@ -43,6 +43,7 @@
       </div>
     </div>
 
+    <!-- WIR Checkpoints Filter -->
     <form 
       class="filter-row" 
       [formGroup]="filterForm" 
@@ -80,6 +81,53 @@
       </div>
       <div class="filter-actions">
         <button class="btn btn-secondary" type="button" (click)="resetFilters()">Reset</button>
+        <button class="btn btn-primary" type="submit">Apply</button>
+      </div>
+    </form>
+
+    <!-- Quality Issues Filter -->
+    <form 
+      class="filter-row" 
+      [formGroup]="qualityIssuesFilterForm" 
+      (ngSubmit)="applyQualityIssuesFilters()"
+      *ngIf="activeTab === 'quality-issues'"
+    >
+      <div class="field">
+        <label for="qiWirNumber">WIR Number</label>
+        <input id="qiWirNumber" type="text" formControlName="wirNumber" placeholder="e.g. WIR-12" />
+      </div>
+      <div class="field">
+        <label for="qiProjectCode">Project Code</label>
+        <input id="qiProjectCode" type="text" formControlName="projectCode" placeholder="e.g. PJ-01" />
+      </div>
+      <div class="field">
+        <label for="qiBoxTag">Box Tag</label>
+        <input id="qiBoxTag" type="text" formControlName="boxTag" placeholder="e.g. B-12" />
+      </div>
+      <div class="field">
+        <label for="qiStatus">Status</label>
+        <select id="qiStatus" formControlName="status">
+          <option value="">All</option>
+          <option *ngFor="let status of qualityIssueStatuses" [value]="status">
+            {{ status === 'InProgress' ? 'In Progress' : status }}
+          </option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="qiIssueType">Issue Type</label>
+        <input id="qiIssueType" type="text" formControlName="issueType" placeholder="e.g. Defect" />
+      </div>
+      <div class="field">
+        <label for="qiSeverity">Severity</label>
+        <select id="qiSeverity" formControlName="severity">
+          <option value="">All</option>
+          <option value="Critical">Critical</option>
+          <option value="Major">Major</option>
+          <option value="Minor">Minor</option>
+        </select>
+      </div>
+      <div class="filter-actions">
+        <button class="btn btn-secondary" type="button" (click)="resetQualityIssuesFilters()">Reset</button>
         <button class="btn btn-primary" type="submit">Apply</button>
       </div>
     </form>
@@ -131,7 +179,7 @@
               </div>
               <div class="meta-block">
                 <small>Inspector</small>
-                <strong>{{ checkpoint.inspectorName || '—' }}</strong>
+                <strong class="inspector-name">{{ checkpoint.inspectorName || '—' }}</strong>
                 <span>{{ checkpoint.inspectorRole || 'Pending assignment' }}</span>
               </div>
               <div class="meta-block">
@@ -190,7 +238,7 @@
         <div class="table-state error" *ngIf="!qualityIssuesLoading && qualityIssuesError">
           <p>{{ qualityIssuesError }}</p>
         </div>
-        <div class="quality-table-wrapper" *ngIf="!qualityIssuesLoading && !qualityIssuesError && qualityIssues.length > 0">
+        <div class="quality-table-wrapper" *ngIf="!qualityIssuesLoading && !qualityIssuesError && filteredQualityIssues.length > 0">
           <table class="designer-table">
             <thead>
               <tr>
@@ -205,7 +253,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let issue of qualityIssues; let i = index">
+              <tr *ngFor="let issue of filteredQualityIssues; let i = index">
                 <td>{{ issue.wirNumber || issue.wirName || '—' }}</td>
                 <td>{{ issue.boxTag || '—' }}</td>
                 <td>{{ issue.projectCode || '—' }}</td>
@@ -246,6 +294,10 @@
               </tr>
             </tbody>
           </table>
+        </div>
+        <div class="empty-state" *ngIf="!qualityIssuesLoading && !qualityIssuesError && filteredQualityIssues.length === 0 && qualityIssues.length > 0">
+          <h3>No quality issues match your filters</h3>
+          <p>Try adjusting your search criteria or <button class="btn-link" (click)="resetQualityIssuesFilters()">reset filters</button>.</p>
         </div>
         <div class="empty-state" *ngIf="!qualityIssuesLoading && !qualityIssuesError && qualityIssues.length === 0">
           <h3>No quality issues to show</h3>

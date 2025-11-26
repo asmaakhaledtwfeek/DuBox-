@@ -73,33 +73,6 @@ export class SidebarComponent implements OnInit {
         requiredRoles: [UserRole.QCInspector, UserRole.SystemAdmin, UserRole.ProjectManager]
       },
       {
-        label: 'Procurement',
-        icon: 'procurement',
-        route: '/procurement',
-        permission: { module: 'procurement', action: 'view' },
-        requiredRoles: [UserRole.ProcurementOfficer, UserRole.SystemAdmin, UserRole.ProjectManager]
-      },
-      {
-        label: 'HSE',
-        icon: 'hse',
-        route: '/hse',
-        permission: { module: 'hse', action: 'view' },
-        requiredRoles: [UserRole.HSEOfficer, UserRole.SystemAdmin, UserRole.ProjectManager]
-      },
-      {
-        label: 'Cost Estimation',
-        icon: 'costing',
-        route: '/costing',
-        permission: { module: 'costing', action: 'view' },
-        requiredRoles: [UserRole.CostEstimator, UserRole.SystemAdmin, UserRole.ProjectManager]
-      },
-      {
-        label: 'Reports',
-        icon: 'reports',
-        route: '/reports',
-        permission: { module: 'reports', action: 'view' }
-      },
-      {
         label: 'Notifications',
         icon: 'notifications',
         route: '/notifications',

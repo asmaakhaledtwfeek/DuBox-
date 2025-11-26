@@ -6,6 +6,7 @@ import { BoxService } from '../../../core/services/box.service';
 import { Box, getBoxStatusNumber } from '../../../core/models/box.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
+import { ProjectService } from '../../../core/services/project.service';
 
 @Component({
   selector: 'app-edit-box',
@@ -23,6 +24,9 @@ export class EditBoxComponent implements OnInit {
   projectId!: string;
   boxId!: string;
   box: Box | null = null;
+  projectPlannedStartDate?: Date;
+  projectPlannedEndDate?: Date;
+  scheduleErrorMessage: string | null = null;
 
   boxTypes = [
     'Living Room',
@@ -44,7 +48,8 @@ export class EditBoxComponent implements OnInit {
     private fb: FormBuilder,
     private boxService: BoxService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private projectService: ProjectService
   ) {}
 
   ngOnInit(): void {
@@ -59,6 +64,7 @@ export class EditBoxComponent implements OnInit {
     
     this.initForm();
     this.loadBox();
+    this.loadProjectSchedule();
   }
 
   private initForm(): void {
@@ -73,8 +79,14 @@ export class EditBoxComponent implements OnInit {
       width: ['', [Validators.min(0), Validators.max(99999)]],
       height: ['', [Validators.min(0), Validators.max(99999)]],
       bimModelReference: ['', Validators.maxLength(100)],
-      revitElementId: ['', Validators.maxLength(100)]
+      revitElementId: ['', Validators.maxLength(100)],
+      plannedStartDate: [''],
+      duration: [null, [Validators.min(1)]],
+      notes: ['', Validators.maxLength(1000)]
     });
+
+    this.boxForm.get('plannedStartDate')?.valueChanges.subscribe(() => this.validateSchedule());
+    this.boxForm.get('duration')?.valueChanges.subscribe(() => this.validateSchedule());
   }
 
   private loadBox(): void {
@@ -86,11 +98,29 @@ export class EditBoxComponent implements OnInit {
         this.box = box;
         this.populateForm(box);
         this.loading = false;
+        this.validateSchedule();
       },
       error: (err) => {
         this.error = err.message || 'Failed to load box details';
         this.loading = false;
         console.error('Error loading box:', err);
+      }
+    });
+  }
+
+  private loadProjectSchedule(): void {
+    if (!this.projectId) {
+      return;
+    }
+
+    this.projectService.getProject(this.projectId).subscribe({
+      next: (project) => {
+        this.projectPlannedStartDate = project.plannedStartDate;
+        this.projectPlannedEndDate = project.plannedEndDate;
+        this.validateSchedule();
+      },
+      error: (err) => {
+        console.error('Error loading project schedule', err);
       }
     });
   }
@@ -118,13 +148,17 @@ export class EditBoxComponent implements OnInit {
       width: box.width || '',
       height: box.height || '',
       bimModelReference: box.bimModelReference || '',
-      revitElementId: box.revitElementId || ''
+      revitElementId: box.revitElementId || '',
+      plannedStartDate: box.plannedStartDate ? box.plannedStartDate.toISOString().split('T')[0] : '',
+      duration: box.duration ?? '',
+      notes: box.notes || ''
     });
     
     console.log('✅ Form populated, current values:', this.boxForm.value);
   }
 
   onSubmit(): void {
+    this.validateSchedule();
     if (this.boxForm.invalid) {
       this.markFormGroupTouched(this.boxForm);
       return;
@@ -146,6 +180,14 @@ export class EditBoxComponent implements OnInit {
     console.log(`🔄 Status conversion: "${this.box.status}" → ${statusNumber}`);
 
     // Map frontend fields to backend expected format (UpdateBoxDto)
+    const plannedStartDate = formValue.plannedStartDate
+      ? new Date(formValue.plannedStartDate)
+      : null;
+    const duration = formValue.duration !== null && formValue.duration !== ''
+      ? Number(formValue.duration)
+      : null;
+    const notes = formValue.notes ? formValue.notes.trim() : '';
+
     const boxData: any = {
       boxId: this.boxId,  // REQUIRED (Guid)
       boxTag: formValue.boxTag || null,
@@ -158,8 +200,9 @@ export class EditBoxComponent implements OnInit {
       length: formValue.length ? parseFloat(formValue.length) : null,
       width: formValue.width ? parseFloat(formValue.width) : null,
       height: formValue.height ? parseFloat(formValue.height) : null,
-      plannedEndDate: this.box.plannedEndDate ? this.box.plannedEndDate.toISOString() : null,
-      notes: null
+      plannedStartDate: plannedStartDate ? plannedStartDate.toISOString() : null,
+      duration,
+      notes: notes || null
     };
 
     console.log('🚀 Updating box with payload:', boxData);
@@ -238,8 +281,53 @@ export class EditBoxComponent implements OnInit {
       width: 'Width',
       height: 'Height',
       bimModelReference: 'BIM model reference',
-      revitElementId: 'Revit element ID'
+      revitElementId: 'Revit element ID',
+      plannedStartDate: 'Planned start date',
+      duration: 'Duration',
+      notes: 'Notes'
     };
     return labels[fieldName] || fieldName;
+  }
+
+  private validateSchedule(): void {
+    if (!this.boxForm) {
+      return;
+    }
+
+    const startControl = this.boxForm.get('plannedStartDate');
+    const durationControl = this.boxForm.get('duration');
+    if (!startControl) {
+      return;
+    }
+
+    const existingErrors = { ...(startControl.errors || {}) };
+    delete existingErrors['projectSchedule'];
+
+    this.scheduleErrorMessage = null;
+
+    const rawStart = startControl.value;
+    const rawDuration = durationControl?.value;
+
+    const startDate = rawStart ? new Date(rawStart) : null;
+    const duration = rawDuration !== null && rawDuration !== '' ? Number(rawDuration) : null;
+
+    if (startDate && this.projectPlannedStartDate && startDate < this.projectPlannedStartDate) {
+      this.scheduleErrorMessage = `Planned start date must be on or after ${this.projectPlannedStartDate.toLocaleDateString()}.`;
+      startControl.setErrors({ ...existingErrors, projectSchedule: true });
+      return;
+    }
+
+    if (startDate && duration && duration > 0 && this.projectPlannedEndDate) {
+      const boxPlannedEnd = new Date(startDate);
+      boxPlannedEnd.setDate(boxPlannedEnd.getDate() + duration);
+
+      if (boxPlannedEnd > this.projectPlannedEndDate) {
+        this.scheduleErrorMessage = `Box schedule must finish on or before ${this.projectPlannedEndDate.toLocaleDateString()}.`;
+        startControl.setErrors({ ...existingErrors, projectSchedule: true });
+        return;
+      }
+    }
+
+    startControl.setErrors(Object.keys(existingErrors).length ? existingErrors : null);
   }
 }

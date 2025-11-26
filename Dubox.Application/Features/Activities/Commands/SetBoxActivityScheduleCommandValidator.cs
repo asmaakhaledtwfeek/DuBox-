@@ -50,11 +50,11 @@ namespace Dubox.Application.Features.Activities.Commands
                 return;
             }
 
-            if (activity.ActualStartDate.HasValue && activity.PlannedStartDate != command.PlannedStartDate)
-            {
-                context.AddFailure("PlannedStartDate", "Cannot modify planned start date because actual start date has already been recorded.");
-                return;
-            }
+            //if (activity.ActualStartDate.HasValue && activity.PlannedStartDate != command.PlannedStartDate)
+            //{
+            //    context.AddFailure("PlannedStartDate", "Cannot modify planned start date because actual start date has already been recorded.");
+            //    return;
+            //}
 
             if (!box.PlannedStartDate.HasValue || !box.PlannedEndDate.HasValue)
                 return;

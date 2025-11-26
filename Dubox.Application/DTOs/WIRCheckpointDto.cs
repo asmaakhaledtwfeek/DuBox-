@@ -49,6 +49,7 @@ namespace Dubox.Application.DTOs
         public string? ReferenceDocument { get; set; }
         public string? Remarks { get; set; }
         public CheckListItemStatusEnum Status { get; set; }
+        public int Sequence { get; set; }
 
     }
     public class QualityIssueDto

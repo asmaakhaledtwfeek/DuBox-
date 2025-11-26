@@ -33,6 +33,9 @@ public class RejectWIRRecordCommandHandler : IRequestHandler<RejectWIRRecordComm
         if (wirRecord == null)
             return Result.Failure<WIRRecordDto>("WIR record not found");
 
+        if (wirRecord.Status == WIRRecordStatusEnum.Rejected)
+            return Result.Failure<WIRRecordDto>("WIR record is already rejected");
+
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
         var inspector = await _unitOfWork.Repository<User>().GetByIdAsync(currentUserId, cancellationToken);
 

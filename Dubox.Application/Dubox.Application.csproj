@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Features\AuditLogs\MappingConfig\" />
     <Folder Include="Helpers\" />
   </ItemGroup>
 

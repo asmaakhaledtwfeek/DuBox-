@@ -211,6 +211,48 @@
         </div>
       </div>
 
+      <!-- Schedule -->
+      <div class="form-card">
+        <div class="card-header">
+          <h3>Schedule</h3>
+          <p>Plan when the box work will start and how long it lasts</p>
+        </div>
+
+        <div class="card-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="boxPlannedStartDate" class="form-label">Box Planned Start Date</label>
+              <input
+                id="boxPlannedStartDate"
+                type="date"
+                formControlName="boxPlannedStartDate"
+                class="form-control"
+                [class.invalid]="isFieldInvalid('boxPlannedStartDate')"
+              />
+              <div class="error-message" *ngIf="isFieldInvalid('boxPlannedStartDate')">
+                {{ getFieldError('boxPlannedStartDate') }}
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="boxDuration" class="form-label">Box Duration (days)</label>
+              <input
+                id="boxDuration"
+                type="number"
+                formControlName="boxDuration"
+                class="form-control"
+                [class.invalid]="isFieldInvalid('boxDuration')"
+                min="1"
+                placeholder="e.g., 45"
+              />
+              <div class="error-message" *ngIf="isFieldInvalid('boxDuration')">
+                {{ getFieldError('boxDuration') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- BIM Information -->
       <div class="form-card">
         <div class="card-header">
@@ -249,6 +291,119 @@
               />
               <div class="error-message" *ngIf="isFieldInvalid('revitElementId')">
                 {{ getFieldError('revitElementId') }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Assets -->
+      <div class="form-card">
+        <div class="card-header assets-header">
+          <div>
+            <h3>Assets</h3>
+            <p>Add assets that belong to this box (optional)</p>
+          </div>
+          <button type="button" class="btn btn-link" (click)="addAsset()">
+            + Add Asset
+          </button>
+        </div>
+
+        <div class="card-body" formArrayName="assets">
+          <div class="empty-assets" *ngIf="assets.length === 0">
+            No assets added yet. Click "Add Asset" to include equipment or materials for this box.
+          </div>
+
+          <div
+            class="asset-item"
+            *ngFor="let assetGroup of assets.controls; let i = index"
+            [formGroupName]="i"
+          >
+            <div class="asset-header">
+              <h4>Asset {{ i + 1 }}</h4>
+              <button type="button" class="btn btn-icon" (click)="removeAsset(i)">
+                Remove
+              </button>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label required">Asset Type</label>
+                <input
+                  type="text"
+                  formControlName="assetType"
+                  class="form-control"
+                  [class.invalid]="assetGroup.get('assetType')?.invalid && (assetGroup.get('assetType')?.dirty || assetGroup.get('assetType')?.touched)"
+                  placeholder="e.g., MEP, Furniture"
+                />
+                <div class="error-message" *ngIf="assetGroup.get('assetType')?.invalid && (assetGroup.get('assetType')?.dirty || assetGroup.get('assetType')?.touched)">
+                  Asset type is required
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Asset Code</label>
+                <input
+                  type="text"
+                  formControlName="assetCode"
+                  class="form-control"
+                  placeholder="e.g., AST-001"
+                />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Asset Name</label>
+                <input
+                  type="text"
+                  formControlName="assetName"
+                  class="form-control"
+                  placeholder="e.g., HVAC Unit"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Quantity</label>
+                <input
+                  type="number"
+                  formControlName="quantity"
+                  class="form-control"
+                  min="1"
+                  placeholder="1"
+                />
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Unit</label>
+                <input
+                  type="text"
+                  formControlName="unit"
+                  class="form-control"
+                  placeholder="e.g., pcs"
+                />
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Specifications</label>
+                <textarea
+                  formControlName="specifications"
+                  class="form-control"
+                  rows="2"
+                  placeholder="Add specs or technical details"
+                ></textarea>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Notes</label>
+                <textarea
+                  formControlName="notes"
+                  class="form-control"
+                  rows="2"
+                  placeholder="Add any additional notes"
+                ></textarea>
               </div>
             </div>
           </div>

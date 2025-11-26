@@ -57,7 +57,7 @@ public record AssignBoxActivityTeamDto
     public Guid BoxActivityId { get; init; }
     public string ActivityCode { get; init; } = string.Empty;
     public string ActivityName { get; init; } = string.Empty;
-    public int TeamId { get; init; }
+    public Guid TeamId { get; init; }
     public string? TeamCode { get; init; }
     public string? TeamName { get; init; }
     public Guid AssigneeToId { get; init; }

@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Dubox.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -11,22 +12,22 @@ namespace Dubox.Domain.Entities
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int IssueId { get; set; }
+        public Guid IssueId { get; set; }
 
         [Required]
         [ForeignKey(nameof(Box))]
         public Guid BoxId { get; set; }
 
         [ForeignKey(nameof(WIRCheckpoint))]
-        public int? WIRId { get; set; }
+        public Guid? WIRId { get; set; }
 
         public DateTime IssueDate { get; set; } = DateTime.UtcNow;
 
-        [MaxLength(100)]
-        public string? IssueType { get; set; } // Defect, Non-Conformance, Observation
 
-        [MaxLength(50)]
-        public string? Severity { get; set; } // Critical, Major, Minor
+        public IssueTypeEnum? IssueType { get; set; } // Defect, Non-Conformance, Observation
+
+
+        public SeverityEnum? Severity { get; set; } // Critical, Major, Minor
 
         public string? IssueDescription { get; set; }
 
@@ -38,8 +39,7 @@ namespace Dubox.Domain.Entities
 
         public DateTime? DueDate { get; set; }
 
-        [MaxLength(50)]
-        public string Status { get; set; } = "Open"; // Open, In Progress, Resolved, Closed
+        public QualityIssueStatusEnum Status { get; set; } = QualityIssueStatusEnum.Open; // Open, In Progress, Resolved, Closed
 
         public DateTime? ResolutionDate { get; set; }
 
@@ -55,8 +55,8 @@ namespace Dubox.Domain.Entities
         // Calculated properties
         [NotMapped]
         public bool IsOverdue => DueDate.HasValue &&
-                                 Status != "Resolved" &&
-                                 Status != "Closed" &&
+                                 Status != QualityIssueStatusEnum.Resolved &&
+                                 Status != QualityIssueStatusEnum.Closed &&
                                  DueDate < DateTime.Today;
 
         [NotMapped]

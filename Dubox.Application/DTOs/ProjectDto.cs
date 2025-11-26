@@ -15,6 +15,7 @@ public record ProjectDto
     public string Status { get; init; } = string.Empty;
     public string? Description { get; init; }
     public int TotalBoxes { get; init; }
+    public decimal ProgressPercentage { get; init; }
     public bool IsActive { get; init; }
     public DateTime CreatedDate { get; init; }
     public string? CreatedBy { get; init; }

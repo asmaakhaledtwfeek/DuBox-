@@ -25,7 +25,7 @@ public class DeleteBoxCommandHandler : IRequestHandler<DeleteBoxCommand, Result<
 
         try
         {
-            var box = _unitOfWork.Repository<Box>().GetEntityWithSpec(new DeleteBoxWithIncludesSpecification(request.BoxId));
+            var box = _unitOfWork.Repository<Box>().GetEntityWithSpec(new GetBoxByIdWithIncludesSpecification(request.BoxId));
             if (box == null)
                 return Result.Failure<bool>("Box not found");
 

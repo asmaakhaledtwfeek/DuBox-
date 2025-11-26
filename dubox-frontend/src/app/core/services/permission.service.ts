@@ -154,6 +154,20 @@ export class PermissionService {
       [UserRole.QCInspector]: [],
       [UserRole.HSEOfficer]: [],
       [UserRole.Viewer]: ['view']
+    },
+    
+    // Teams Module
+    teams: {
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage'],
+      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'manage'],
+      [UserRole.SiteEngineer]: ['view', 'edit'],
+      [UserRole.Foreman]: ['view'],
+      [UserRole.DesignEngineer]: ['view'],
+      [UserRole.QCInspector]: ['view'],
+      [UserRole.ProcurementOfficer]: ['view'],
+      [UserRole.HSEOfficer]: ['view'],
+      [UserRole.CostEstimator]: ['view'],
+      [UserRole.Viewer]: ['view']
     }
   };
 

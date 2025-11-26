@@ -43,7 +43,7 @@
             </svg>
             Edit
           </button>
-          <button class="btn btn-danger" (click)="deleteBox()" *ngIf="canDelete">
+          <button class="btn btn-danger" (click)="openDeleteConfirm()" *ngIf="canDelete">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"/>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -67,21 +67,35 @@
           [class.active]="activeTab === 'activities'"
           (click)="setActiveTab('activities')"
         >
-          Activities ({{ box.activities?.length || 0 }})
+          Activities ({{ actualActivityCount || box.activities.length || 0 }})
+        </button>
+        <button 
+          class="tab"
+          [class.active]="activeTab === 'wir'"
+          (click)="setActiveTab('wir')"
+        >
+          WIR Checkpoints ({{ wirCheckpoints.length }})
+        </button>
+        <button 
+          class="tab"
+          [class.active]="activeTab === 'quality-issues'"
+          (click)="setActiveTab('quality-issues')"
+        >
+          Quality Issues ({{ qualityIssueCount }})
         </button>
         <button 
           class="tab" 
           [class.active]="activeTab === 'logs'"
           (click)="setActiveTab('logs')"
         >
-          Logs ({{ box.logs?.length || 0 }})
+          Logs ({{ box.logs.length || 0 }})
         </button>
         <button 
           class="tab" 
           [class.active]="activeTab === 'attachments'"
           (click)="setActiveTab('attachments')"
         >
-          Attachments ({{ box.attachments?.length || 0 }})
+          Attachments ({{ box.attachments.length || 0 }})
         </button>
       </div>
 
@@ -113,14 +127,6 @@
                       {{ getStatusLabel(box.status) }}
                     </span>
                   </span>
-                </div>
-                <div class="info-item">
-                  <span class="label">Assigned Team</span>
-                  <span class="value">{{ box.assignedTeam || 'Not assigned' }}</span>
-                </div>
-                <div class="info-item">
-                  <span class="label">Assigned To</span>
-                  <span class="value">{{ box.assignedTo || 'Not assigned' }}</span>
                 </div>
                 <div class="info-item" *ngIf="box.description">
                   <span class="label">Description</span>
@@ -182,6 +188,7 @@
               </div>
             </div>
           </div>
+
         </div>
 
         <!-- Activities Tab -->
@@ -190,7 +197,383 @@
             [activities]="box.activities || []" 
             [projectId]="projectId"
             [boxId]="boxId"
+            (boxDataChanged)="loadBox()"
+            (activityCountChanged)="onActivityCountChanged($event)"
           ></app-activity-table>
+        </div>
+
+        <!-- WIR Tab -->
+        <div *ngIf="activeTab === 'wir'" class="wir-tab">
+          <div class="wir-card-header">
+            <div>
+              <h2 class="card-title">WIR Checkpoints</h2>
+              <p class="card-subtitle">Inspection milestones generated whenever a checkpoint activity is completed.</p>
+            </div>
+            <div class="wir-card-actions">
+              <span class="badge badge-info" *ngIf="!wirLoading && !wirError">
+                {{ wirCheckpoints.length }} total
+              </span>
+              <button 
+                class="btn btn-secondary btn-sm" 
+                (click)="refreshWIRCheckpoints()" 
+                [disabled]="wirLoading"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 4 23 10 17 10"/>
+                  <polyline points="1 20 1 14 7 14"/>
+                  <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"/>
+                  <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"/>
+                </svg>
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <div class="wir-card-body">
+            <div class="wir-loading-state" *ngIf="wirLoading">
+              <div class="spinner small"></div>
+              <p>Loading WIR checkpoints...</p>
+            </div>
+
+            <div class="wir-error-state" *ngIf="!wirLoading && wirError">
+              <p>{{ wirError }}</p>
+              <button class="btn btn-primary btn-sm" (click)="refreshWIRCheckpoints()">Retry</button>
+            </div>
+
+            <div class="wir-empty-state" *ngIf="!wirLoading && !wirError && wirCheckpoints.length === 0">
+              <p>No WIR checkpoints created for this box yet.</p>
+              <small>Complete a checkpoint activity to generate its WIR.</small>
+            </div>
+
+            <div class="wir-checkpoints-list" *ngIf="!wirLoading && !wirError && wirCheckpoints.length > 0">
+              <div class="wir-checkpoint-card" *ngFor="let checkpoint of wirCheckpoints">
+                <div class="card-top">
+                  <div class="card-headline">
+                    <span class="code-pill">{{ checkpoint.wirNumber }}</span>
+                    <div class="title-stack">
+                      <h4>{{ checkpoint.wirName || 'Inspection checkpoint' }}</h4>
+                      <p>{{ checkpoint.wirDescription || 'Auto-generated once the triggering activity is complete.' }}</p>
+                    </div>
+                  </div>
+                  <span class="status-chip" [ngClass]="getWIRCheckpointStatusClass(checkpoint.status)">
+                    {{ getWIRCheckpointStatusLabel(checkpoint.status) }}
+                  </span>
+                </div>
+
+                <div class="meta-grid">
+                  <div class="meta-block">
+                    <span class="label">Requested</span>
+                    <strong>{{ formatWIRDate(checkpoint.requestedDate) }}</strong>
+                    <small>{{ checkpoint.requestedBy || 'System' }}</small>
+                  </div>
+                  <div class="meta-block">
+                    <span class="label">Inspector</span>
+                    <strong>{{ checkpoint.inspectorName || 'QC Engineer' }}</strong>
+                    <small>{{ checkpoint.inspectorRole || 'Pending assignment' }}</small>
+                  </div>
+                  <div class="meta-block">
+                    <span class="label">Checklist Items</span>
+                    <strong>{{ checkpoint.checklistItems?.length || 0 }}</strong>
+                    <small>items to review</small>
+                  </div>
+                  <div class="meta-block">
+                    <span class="label">Last update</span>
+                    <strong>{{ formatWIRDate(checkpoint.approvalDate || checkpoint.inspectionDate || checkpoint.createdDate) }}</strong>
+                    <small>{{ checkpoint.approvalDate ? 'Approval recorded' : 'Awaiting approval' }}</small>
+                  </div>
+                </div>
+
+                <div class="card-footer">
+                  <div class="status-note">
+                    <span class="status-dot" [ngClass]="getWIRCheckpointStatusClass(checkpoint.status)"></span>
+                    {{ getWIRCheckpointStatusLabel(checkpoint.status) }}
+                  </div>
+                  <div class="wir-actions">
+                    <button 
+                      class="btn btn-secondary btn-sm" 
+                      (click)="navigateToAddChecklist(checkpoint)"
+                      [disabled]="!canNavigateToAddChecklist(checkpoint)"
+                      title="Add or edit checklist items"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 5v14"/>
+                        <path d="M5 12h14"/>
+                      </svg>
+                      Add Checklist
+                    </button>
+                    <button 
+                      class="btn btn-primary btn-sm" 
+                      (click)="navigateToReview(checkpoint)"
+                      [disabled]="!canNavigateToReview(checkpoint)"
+                      title="Open QA/QC review workflow"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      Review
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quality Issues Tab -->
+        <div *ngIf="activeTab === 'quality-issues'" class="quality-tab">
+          <div class="quality-card-header">
+            <div>
+              <h2 class="card-title">Quality Issues</h2>
+              <p class="card-subtitle">List of every quality issue logged for this box.</p>
+            </div>
+            <div class="quality-card-actions">
+              <span class="badge badge-info" *ngIf="!qualityIssuesLoading && !qualityIssuesError">
+                {{ qualityIssueCount }} total
+              </span>
+              <button 
+                class="btn btn-secondary btn-sm" 
+                (click)="refreshQualityIssues()" 
+                [disabled]="qualityIssuesLoading"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="23 4 23 10 17 10"/>
+                  <polyline points="1 20 1 14 7 14"/>
+                  <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"/>
+                  <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"/>
+                </svg>
+                Refresh
+              </button>
+            </div>
+          </div>
+
+          <div class="quality-card-body">
+            <div class="quality-loading-state" *ngIf="qualityIssuesLoading">
+              <div class="spinner small"></div>
+              <p>Loading quality issues...</p>
+            </div>
+
+            <div class="quality-error-state" *ngIf="!qualityIssuesLoading && qualityIssuesError">
+              <p>{{ qualityIssuesError }}</p>
+              <button class="btn btn-primary btn-sm" (click)="refreshQualityIssues()">Retry</button>
+            </div>
+
+            <div class="quality-empty-state" *ngIf="!qualityIssuesLoading && !qualityIssuesError && qualityIssues.length === 0">
+              <p>No quality issues logged for this box.</p>
+              <small>Quality issues will appear here once created.</small>
+            </div>
+
+            <div class="quality-table-wrapper" *ngIf="!qualityIssuesLoading && !qualityIssuesError && qualityIssues.length > 0">
+              <table class="designer-table">
+                <thead>
+                  <tr>
+                    <th class="col-seq">Seq</th>
+                    <th class="col-extra">Issue Type</th>
+                    <th class="col-extra">Severity</th>
+                    <th class="col-extra">Assigned To</th>
+                    <th class="col-extra">Due Date</th>
+                    <th class="col-extra">Reported By</th>
+                    <th class="col-extra">Issue Date</th>
+                    <th class="col-extra">Status</th>
+                    <th class="col-extra">WIR</th>
+                    <th class="col-actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let issue of qualityIssues; let i = index">
+                    <td class="text-center">{{ i + 1 }}</td>
+                    <td>{{ issue.issueType || '—' }}</td>
+                    <td>{{ issue.severity || '—' }}</td>
+                    <td>{{ issue.assignedTo || '—' }}</td>
+                    <td>{{ formatIssueDate(issue.dueDate) }}</td>
+                    <td>{{ issue.reportedBy || '—' }}</td>
+                    <td>{{ formatIssueDate(issue.issueDate) }}</td>
+                    <td>
+                      <span class="status-pill" [ngClass]="getQualityIssueStatusClass(issue.status)">
+                        {{ getQualityIssueStatusLabel(issue.status) }}
+                      </span>
+                    </td>
+                    <td>{{ getQualityIssueWir(issue) }}</td>
+                    <td class="col-actions">
+                      <div class="action-stack">
+                        <button 
+                          class="action-btn ghost" 
+                          title="View details" 
+                          aria-label="View details"
+                          (click)="openIssueDetails(issue)"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                          </svg>
+                        </button>
+                        <button 
+                          class="action-btn primary" 
+                          title="Update status" 
+                          aria-label="Update status"
+                          (click)="openStatusModal(issue)"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/>
+                            <path d="M14.06 4.94l3.75 3.75"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      <div class="status-modal-backdrop" *ngIf="isStatusModalOpen || isDetailsModalOpen">
+        <div class="status-modal" *ngIf="isStatusModalOpen">
+          <div class="modal-header">
+            <div>
+              <h3>Update Issue Status</h3>
+              <p class="modal-subtitle">{{ selectedIssueForStatus?.issueType }} • {{ selectedIssueForStatus?.severity }}</p>
+            </div>
+            <button class="icon-button" (click)="closeStatusModal()" [disabled]="statusUpdateLoading">
+              &times;
+            </button>
+          </div>
+
+          <div class="modal-body">
+            <label class="modal-label" for="statusSelect">Status</label>
+            <select id="statusSelect" class="modal-input" [(ngModel)]="statusUpdateForm.status" name="statusSelect">
+              <option *ngFor="let status of qualityIssueStatuses" [value]="status">
+                {{ status === 'InProgress' ? 'In Progress' : status }}
+              </option>
+            </select>
+
+            <label class="modal-label" for="resolutionDescription" *ngIf="requiresResolutionDescription(statusUpdateForm.status)">
+              Resolution Notes <span class="required">*</span>
+            </label>
+            <textarea
+              *ngIf="requiresResolutionDescription(statusUpdateForm.status)"
+              id="resolutionDescription"
+              class="modal-input"
+              rows="3"
+              placeholder="Add resolution details"
+              [(ngModel)]="statusUpdateForm.resolutionDescription"
+              name="resolutionDescription"
+            ></textarea>
+
+            <label class="modal-label" for="photoPath">Photo URL</label>
+            <input
+              id="photoPath"
+              class="modal-input"
+              type="text"
+              placeholder="Optional photo/document link"
+              [(ngModel)]="statusUpdateForm.photoPath"
+              name="photoPath"
+            />
+
+            <p class="modal-error" *ngIf="statusUpdateError">{{ statusUpdateError }}</p>
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn btn-secondary" (click)="closeStatusModal()" [disabled]="statusUpdateLoading">
+              Cancel
+            </button>
+            <button 
+              class="btn btn-primary" 
+              (click)="submitStatusUpdate()" 
+              [disabled]="!canSubmitStatusUpdate() || statusUpdateLoading"
+            >
+              <span *ngIf="statusUpdateLoading">Updating...</span>
+              <span *ngIf="!statusUpdateLoading">Update Status</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="details-modal" *ngIf="isDetailsModalOpen && selectedIssueDetails">
+          <div class="modal-header">
+            <div>
+              <h3>Quality Issue Details</h3>
+              <p class="modal-subtitle">{{ selectedIssueDetails.issueType || 'Issue' }} • {{ selectedIssueDetails.severity || '—' }}</p>
+            </div>
+            <button class="icon-button" (click)="closeIssueDetails()">&times;</button>
+          </div>
+
+          <div class="details-grid">
+            <div class="details-row">
+              <span class="label">Status</span>
+              <span class="value">
+                <span class="status-pill" [ngClass]="getQualityIssueStatusClass(selectedIssueDetails.status)">
+                  {{ getQualityIssueStatusLabel(selectedIssueDetails.status) }}
+                </span>
+              </span>
+            </div>
+            <div class="details-row">
+              <span class="label">Reported By</span>
+              <span class="value">{{ selectedIssueDetails.reportedBy || '—' }}</span>
+            </div>
+            <div class="details-row">
+              <span class="label">Issue Date</span>
+              <span class="value">{{ formatIssueDate(selectedIssueDetails.issueDate) }}</span>
+            </div>
+            <div class="details-row">
+              <span class="label">Assigned To</span>
+              <span class="value">{{ selectedIssueDetails.assignedTo || '—' }}</span>
+            </div>
+            <div class="details-row">
+              <span class="label">Due Date</span>
+              <span class="value">{{ formatIssueDate(selectedIssueDetails.dueDate) }}</span>
+            </div>
+            <div class="details-row" *ngIf="selectedIssueDetails.isOverdue">
+              <span class="label text-danger">Overdue</span>
+              <span class="value text-danger">{{ selectedIssueDetails.overdueDays || 0 }} days</span>
+            </div>
+            <div class="details-row">
+              <span class="label">Description</span>
+              <span class="value multiline">{{ selectedIssueDetails.issueDescription || '—' }}</span>
+            </div>
+            <div class="details-row">
+              <span class="label">Resolution Notes</span>
+              <span class="value multiline">{{ selectedIssueDetails.resolutionDescription || '—' }}</span>
+            </div>
+            <div class="details-row">
+              <span class="label">Resolution Date</span>
+              <span class="value">{{ formatIssueDate(selectedIssueDetails.resolutionDate) }}</span>
+            </div>
+            <div class="details-row">
+              <span class="label">Photo</span>
+              <span class="value">
+                <a *ngIf="selectedIssueDetails.photoPath" [href]="selectedIssueDetails.photoPath" target="_blank" rel="noopener">
+                  View attachment
+                </a>
+                <span *ngIf="!selectedIssueDetails.photoPath">—</span>
+              </span>
+            </div>
+            <div class="details-row">
+              <span class="label">Inspector</span>
+              <span class="value">{{ selectedIssueDetails.inspectorName || '—' }}</span>
+            </div>
+            <div class="details-row">
+              <span class="label">Box</span>
+              <span class="value">{{ selectedIssueDetails.boxName || selectedIssueDetails.boxTag || '—' }}</span>
+            </div>
+            <div class="details-row">
+              <span class="label">WIR</span>
+              <span class="value">
+                {{ getQualityIssueWir(selectedIssueDetails) }}
+                <small *ngIf="selectedIssueDetails.wirStatus">
+                  • {{ getWIRCheckpointStatusLabel(selectedIssueDetails.wirStatus) }}
+                </small>
+              </span>
+            </div>
+            <div class="details-row">
+              <span class="label">WIR Requested</span>
+              <span class="value">{{ formatIssueDate(selectedIssueDetails.wirRequestedDate) }}</span>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button class="btn btn-secondary" (click)="closeIssueDetails()">Close</button>
+            <button class="btn btn-primary" (click)="openStatusModal(selectedIssueDetails)">Update Status</button>
+          </div>
+        </div>
         </div>
 
         <!-- Logs Tab -->
@@ -253,6 +636,32 @@
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-backdrop" *ngIf="showDeleteConfirm">
+  <div class="confirm-modal">
+    <div class="modal-icon">
+      <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="3 6 5 6 21 6"/>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        <line x1="10" y1="11" x2="10" y2="17"/>
+        <line x1="14" y1="11" x2="14" y2="17"/>
+      </svg>
+    </div>
+    <h3>Delete this box?</h3>
+    <p>This action cannot be undone. Are you sure you want to remove this box from the project?</p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" (click)="cancelDelete()" [disabled]="deleting">
+        Cancel
+      </button>
+      <button class="btn btn-danger" (click)="deleteBox()" [disabled]="deleting">
+        <span class="spinner" *ngIf="deleting"></span>
+        <span *ngIf="!deleting">Delete</span>
+        <span *ngIf="deleting">Deleting...</span>
+      </button>
     </div>
   </div>
 </div>

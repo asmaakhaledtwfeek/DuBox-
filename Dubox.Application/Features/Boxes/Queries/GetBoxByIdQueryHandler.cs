@@ -1,29 +1,28 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
+using Dubox.Domain.Entities;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.Boxes.Queries;
 
 public class GetBoxByIdQueryHandler : IRequestHandler<GetBoxByIdQuery, Result<BoxDto>>
 {
-    private readonly IDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IQRCodeService _qrCodeService;
 
-    public GetBoxByIdQueryHandler(IDbContext dbContext, IQRCodeService qRCodeService)
+    public GetBoxByIdQueryHandler(IUnitOfWork unitOfWork, IQRCodeService qRCodeService)
     {
-        _dbContext = dbContext;
+        _unitOfWork = unitOfWork;
         _qrCodeService = qRCodeService;
     }
 
     public async Task<Result<BoxDto>> Handle(GetBoxByIdQuery request, CancellationToken cancellationToken)
     {
-        var box = await _dbContext.Boxes
-            .Include(b => b.Project)
-            .FirstOrDefaultAsync(b => b.BoxId == request.BoxId, cancellationToken);
+        var box = _unitOfWork.Repository<Box>().GetEntityWithSpec(new GetBoxByIdWithIncludesSpecification(request.BoxId));
 
         if (box == null)
             return Result.Failure<BoxDto>("Box not found");

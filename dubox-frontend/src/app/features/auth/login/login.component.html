@@ -74,14 +74,17 @@
         <a routerLink="/forgot-password" class="forgot-password-link">Forgot password?</a>
       </div>
 
-      <!-- Submit Button -->
-      <button type="submit" class="btn btn-primary btn-block" [disabled]="loading || loginForm.invalid">
-        <span *ngIf="!loading">Sign In</span>
-        <span *ngIf="loading" class="spinner-wrapper">
-          <span class="spinner"></span>
-          Signing in...
-        </span>
-      </button>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary btn-block" [disabled]="loading || loginForm.invalid">
+          <span *ngIf="!loading">Sign In</span>
+          <span *ngIf="loading" class="spinner-wrapper">
+            <span class="spinner"></span>
+            Signing in...
+          </span>
+        </button>
+      </div>
+
+      <a href="#" class="signup-link" (click)="goToRegister($event)">Create a new account</a>
     </form>
 
     <!-- Footer -->

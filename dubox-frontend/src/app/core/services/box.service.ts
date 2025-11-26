@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiService, PaginatedResponse } from './api.service';
-import { Box, BoxActivity, BoxAttachment, BoxLog, BoxFilters, ChecklistItem } from '../models/box.model';
+import { Box, BoxActivity, BoxAttachment, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview } from '../models/box.model';
 
 @Injectable({
   providedIn: 'root'
@@ -11,6 +11,31 @@ export class BoxService {
   private readonly endpoint = 'boxes';
 
   constructor(private apiService: ApiService) {}
+
+  /**
+   * Map backend numeric status to frontend string status
+   */
+  private mapStatus(status: any): string {
+    // If already a string, check if it's valid
+    if (typeof status === 'string') {
+      const validStatuses = ['NotStarted', 'InProgress', 'Completed', 'OnHold', 'Delayed', 'QAReview', 'ReadyForDelivery', 'Delivered'];
+      if (validStatuses.includes(status)) {
+        return status;
+      }
+    }
+
+    // Map numeric status to string
+    const statusMap: Record<number, string> = {
+      1: 'NotStarted',
+      2: 'InProgress',
+      3: 'Completed',
+      4: 'OnHold',
+      5: 'Delayed'
+    };
+
+    const numericStatus = typeof status === 'number' ? status : parseInt(status, 10);
+    return statusMap[numericStatus] || 'NotStarted';
+  }
 
   /**
    * Transform backend box response to frontend model
@@ -29,13 +54,17 @@ export class BoxService {
       qrCode = `data:image/png;base64,${qrCode}`;
       console.log('✅ Added data URL prefix to QR code');
     }
+
+    // Map status from backend format to frontend format
+    const rawStatus = backendBox.status || backendBox.boxStatus || backendBox.Status;
+    const mappedStatus = this.mapStatus(rawStatus);
     
     return {
       id: backendBox.boxId || backendBox.id,
       name: backendBox.boxName || backendBox.name,
       code: backendBox.boxTag || backendBox.boxCode || backendBox.code,
       projectId: backendBox.projectId,
-      status: backendBox.status || backendBox.boxStatus,
+      status: mappedStatus as any,
       type: backendBox.boxType || backendBox.type,
       description: backendBox.description,
       floor: backendBox.floor,
@@ -60,7 +89,30 @@ export class BoxService {
       createdBy: backendBox.createdBy,
       updatedBy: backendBox.modifiedBy || backendBox.updatedBy,
       createdAt: backendBox.createdDate ? new Date(backendBox.createdDate) : undefined,
-      updatedAt: backendBox.modifiedDate ? new Date(backendBox.modifiedDate) : undefined
+      updatedAt: backendBox.modifiedDate ? new Date(backendBox.modifiedDate) : undefined,
+      activitiesCount:backendBox.activitiesCount || backendBox.ActivitiesCount||0
+    };
+  }
+
+  private transformImportResult(result: any): BoxImportResult {
+    const importedBoxes = (result?.importedBoxes || result?.ImportedBoxes || []).map((box: any) => ({
+      boxId: box.boxId || box.BoxId,
+      projectId: box.projectId || box.ProjectId,
+      projectCode: box.projectCode || box.ProjectCode,
+      boxTag: box.boxTag || box.BoxTag,
+      boxName: box.boxName || box.BoxName,
+      boxType: box.boxType || box.BoxType,
+      floor: box.floor || box.Floor,
+      building: box.building || box.Building,
+      zone: box.zone || box.Zone,
+      status: this.mapStatus(box.status || box.Status)
+    })) as ImportedBoxPreview[];
+
+    return {
+      successCount: result?.successCount ?? result?.SuccessCount ?? 0,
+      failureCount: result?.failureCount ?? result?.FailureCount ?? 0,
+      errors: result?.errors ?? result?.Errors ?? [],
+      importedBoxes
     };
   }
 
@@ -254,5 +306,22 @@ export class BoxService {
    */
   downloadQRCode(boxId: string): Observable<Blob> {
     return this.apiService.download(`${this.endpoint}/${boxId}/qr-code/download`);
+  }
+
+  /**
+   * Download Excel template for bulk box import
+   */
+  downloadBoxesTemplate(): Observable<Blob> {
+    return this.apiService.download(`${this.endpoint}/template`);
+  }
+
+  /**
+   * Import boxes from Excel file
+   */
+  importBoxesFromExcel(projectId: string, file: File): Observable<BoxImportResult> {
+    const endpoint = `${this.endpoint}/import-excel?projectId=${projectId}`;
+    return this.apiService.upload<any>(endpoint, file).pipe(
+      map(result => this.transformImportResult(result))
+    );
   }
 }

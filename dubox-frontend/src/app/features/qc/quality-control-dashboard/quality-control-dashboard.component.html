@@ -1,0 +1,405 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container qc-page">
+  <div class="page-content">
+    <div class="page-header">
+      <div class="header-left">
+        <button class="btn-back" [routerLink]="['/projects']">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+          Back to Projects
+        </button>
+        <div class="title-section">
+          <h1 class="page-title">QA/QC Workspace</h1>
+          <p class="page-subtitle">Monitor checkpoints and track quality issues for all boxes in a single view.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button 
+        class="tab" 
+        [class.active]="activeTab === 'checkpoints'"
+        (click)="setTab('checkpoints')"
+      >
+        WIR Checkpoints
+      </button>
+      <button 
+        class="tab" 
+        [class.active]="activeTab === 'quality-issues'"
+        (click)="setTab('quality-issues')"
+      >
+        Quality Issues
+      </button>
+    </div>
+
+    <div class="qc-summary-grid">
+      <div class="summary-card" *ngFor="let card of summaryCards" [class]="'tone-' + card.tone">
+        <p>{{ card.label }}</p>
+        <strong>{{ card.value }}</strong>
+      </div>
+    </div>
+
+    <form 
+      class="filter-row" 
+      [formGroup]="filterForm" 
+      (ngSubmit)="applyFilters()" 
+      *ngIf="activeTab === 'checkpoints'"
+    >
+      <div class="field">
+        <label for="wirNumber">WIR Number</label>
+        <input id="wirNumber" type="text" formControlName="wirNumber" placeholder="e.g. WIR-12" />
+      </div>
+      <div class="field">
+        <label for="projectCode">Project Code</label>
+        <input id="projectCode" type="text" formControlName="projectCode" placeholder="e.g. PJ-01" />
+      </div>
+      <div class="field">
+        <label for="boxTag">Box Tag</label>
+        <input id="boxTag" type="text" formControlName="boxTag" placeholder="e.g. B-12" />
+      </div>
+      <div class="field">
+        <label for="statusSelect">Status</label>
+        <select id="statusSelect" formControlName="status">
+          <option value="">All</option>
+          <option *ngFor="let status of statusOptions" [value]="status">
+            {{ getStatusLabel(status) }}
+          </option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fromDate">From</label>
+        <input id="fromDate" type="date" formControlName="from" />
+      </div>
+      <div class="field">
+        <label for="toDate">To</label>
+        <input id="toDate" type="date" formControlName="to" />
+      </div>
+      <div class="filter-actions">
+        <button class="btn btn-secondary" type="button" (click)="resetFilters()">Reset</button>
+        <button class="btn btn-primary" type="submit">Apply</button>
+      </div>
+    </form>
+
+    <div class="tab-content">
+      <section class="qc-panel" *ngIf="activeTab === 'checkpoints'">
+        <div class="panel-header">
+          <div>
+            <h2>WIR Checkpoints Overview</h2>
+            <p>Latest inspection checkpoints awaiting review or completion.</p>
+          </div>
+        </div>
+        <div class="table-state" *ngIf="checkpointsLoading">
+          <div class="spinner small"></div>
+          <p>Loading WIR checkpoints...</p>
+        </div>
+        <div class="table-state error" *ngIf="!checkpointsLoading && checkpointsError">
+          <p>{{ checkpointsError }}</p>
+          <button class="btn btn-primary btn-sm" (click)="applyFilters()">Retry</button>
+        </div>
+        <div class="wir-checkpoints-grid" *ngIf="!checkpointsLoading && !checkpointsError && checkpoints.length > 0">
+          <div class="wir-card" *ngFor="let checkpoint of checkpoints">
+            <div class="card-head">
+              <span class="code-pill">{{ checkpoint.wirNumber }}</span>
+              <div class="card-titles">
+                <h3>{{ checkpoint.wirName || 'Inspection checkpoint' }}</h3>
+                <p>{{ checkpoint.wirDescription || 'Auto-generated once the triggering activity is complete.' }}</p>
+              </div>
+              <span class="status-chip" [ngClass]="getCheckpointStatusClass(checkpoint.status)">
+                {{ getStatusLabel(checkpoint.status) }}
+              </span>
+            </div>
+
+            <div class="card-body">
+              <div class="meta-block">
+                <small>Box Tag</small>
+                <strong>{{ checkpoint.box?.boxTag || '—' }}</strong>
+                <span>{{ checkpoint.box?.boxName || 'Box' }}</span>
+              </div>
+              <div class="meta-block">
+                <small>Project Code</small>
+                <strong>{{ checkpoint.projectCode || checkpoint.box?.projectCode || '—' }}</strong>
+                <span>Project</span>
+              </div>
+              <div class="meta-block">
+                <small>Requested</small>
+                <strong>{{ formatDate(checkpoint.requestedDate || checkpoint.createdDate) }}</strong>
+                <span>{{ checkpoint.requestedBy || 'System' }}</span>
+              </div>
+              <div class="meta-block">
+                <small>Inspector</small>
+                <strong>{{ checkpoint.inspectorName || '—' }}</strong>
+                <span>{{ checkpoint.inspectorRole || 'Pending assignment' }}</span>
+              </div>
+              <div class="meta-block">
+                <small>Checklist Items</small>
+                <strong>{{ checkpoint.checklistItems?.length || 0 }}</strong>
+                <span>items to review</span>
+              </div>
+              <div class="meta-block">
+                <small>Last Update</small>
+                <strong>{{ formatDate(checkpoint.approvalDate || checkpoint.createdDate) }}</strong>
+                <span>Awaiting approval</span>
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <div class="status-note">
+                <span class="dot" [ngClass]="getCheckpointStatusClass(checkpoint.status)"></span>
+                {{ getStatusLabel(checkpoint.status) }}
+              </div>
+              <div class="card-actions">
+                <button 
+                  class="btn btn-secondary btn-sm"
+                  (click)="onAddChecklist(checkpoint)"
+                  [disabled]="!canNavigateToAddChecklist(checkpoint)"
+                >
+                  Add Checklist
+                </button>
+                <button 
+                  class="btn btn-primary btn-sm"
+                  (click)="onReviewCheckpoint(checkpoint)"
+                  [disabled]="!canNavigateToReview(checkpoint)"
+                >
+                  Review
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="empty-state" *ngIf="!checkpointsLoading && !checkpointsError && checkpoints.length === 0">
+          <h3>No checkpoints found</h3>
+          <p>Adjust filters or create a new WIR checkpoint to see it here.</p>
+        </div>
+      </section>
+
+      <section class="qc-panel" *ngIf="activeTab === 'quality-issues'">
+        <div class="panel-header">
+          <div>
+            <h2>Quality Issues</h2>
+            <p>Aggregate view of all reported quality issues across boxes.</p>
+          </div>
+        </div>
+        <div class="table-state" *ngIf="qualityIssuesLoading">
+          <div class="spinner small"></div>
+          <p>Loading quality issues...</p>
+        </div>
+        <div class="table-state error" *ngIf="!qualityIssuesLoading && qualityIssuesError">
+          <p>{{ qualityIssuesError }}</p>
+        </div>
+        <div class="quality-table-wrapper" *ngIf="!qualityIssuesLoading && !qualityIssuesError && qualityIssues.length > 0">
+          <table class="designer-table">
+            <thead>
+              <tr>
+                <th class="col-extra">WIR</th>
+                <th class="col-extra">Box Tag</th>
+                <th class="col-extra">Project Code</th>
+                <th class="col-extra">Status</th>
+                <th class="col-extra">Issue Type</th>
+                <th class="col-extra">Severity</th>
+                <th class="col-extra">Due Date</th>
+                <th class="col-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let issue of qualityIssues; let i = index">
+                <td>{{ issue.wirNumber || issue.wirName || '—' }}</td>
+                <td>{{ issue.boxTag || '—' }}</td>
+                <td>{{ issue.projectCode || '—' }}</td>
+                <td>
+                  <span class="status-pill" [ngClass]="getQualityIssueStatusClass(issue.issueStatus || issue.status)">
+                    {{ getQualityIssueStatusLabel(issue.issueStatus || issue.status) }}
+                  </span>
+                </td>
+                <td>{{ issue.issueType || '—' }}</td>
+                <td>{{ issue.severity || '—' }}</td>
+                <td>{{ formatDate(issue.dueDate) }}</td>
+                <td class="col-actions">
+                  <div class="action-stack">
+                    <button 
+                      class="action-btn ghost" 
+                      title="View details" 
+                      aria-label="View details"
+                      (click)="openIssueDetails(issue)"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    </button>
+                    <button 
+                      class="action-btn primary" 
+                      title="Update status" 
+                      aria-label="Update status"
+                      (click)="openStatusModal(issue)"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="empty-state" *ngIf="!qualityIssuesLoading && !qualityIssuesError && qualityIssues.length === 0">
+          <h3>No quality issues to show</h3>
+          <p>Navigate to a box checklist to add new issues or import from a report.</p>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<!-- Status Update Modal -->
+<div class="status-modal-backdrop" *ngIf="isStatusModalOpen || isDetailsModalOpen">
+  <div class="status-modal" *ngIf="isStatusModalOpen">
+    <div class="modal-header">
+      <div>
+        <h3>Update Issue Status</h3>
+        <p class="modal-subtitle">{{ selectedIssueForStatus?.issueType }} • {{ selectedIssueForStatus?.severity }}</p>
+      </div>
+      <button class="icon-button" (click)="closeStatusModal()" [disabled]="statusUpdateLoading">
+        &times;
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <label class="modal-label" for="statusSelect">Status</label>
+      <select id="statusSelect" class="modal-input" [(ngModel)]="statusUpdateForm.status" name="statusSelect">
+        <option *ngFor="let status of qualityIssueStatuses" [value]="status">
+          {{ status === 'InProgress' ? 'In Progress' : status }}
+        </option>
+      </select>
+
+      <label class="modal-label" for="resolutionDescription" *ngIf="requiresResolutionDescription(statusUpdateForm.status)">
+        Resolution Notes <span class="required">*</span>
+      </label>
+      <textarea
+        *ngIf="requiresResolutionDescription(statusUpdateForm.status)"
+        id="resolutionDescription"
+        class="modal-input"
+        rows="3"
+        placeholder="Add resolution details"
+        [(ngModel)]="statusUpdateForm.resolutionDescription"
+        name="resolutionDescription"
+      ></textarea>
+
+      <label class="modal-label" for="photoPath">Photo URL</label>
+      <input
+        id="photoPath"
+        class="modal-input"
+        type="text"
+        placeholder="Optional photo/document link"
+        [(ngModel)]="statusUpdateForm.photoPath"
+        name="photoPath"
+      />
+
+      <p class="modal-error" *ngIf="statusUpdateError">{{ statusUpdateError }}</p>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" (click)="closeStatusModal()" [disabled]="statusUpdateLoading">
+        Cancel
+      </button>
+      <button 
+        class="btn btn-primary" 
+        (click)="submitStatusUpdate()" 
+        [disabled]="!canSubmitStatusUpdate() || statusUpdateLoading"
+      >
+        <span *ngIf="statusUpdateLoading">Updating...</span>
+        <span *ngIf="!statusUpdateLoading">Update Status</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Issue Details Modal -->
+  <div class="details-modal" *ngIf="isDetailsModalOpen && selectedIssueDetails">
+    <div class="modal-header">
+      <div>
+        <h3>Quality Issue Details</h3>
+        <p class="modal-subtitle">{{ selectedIssueDetails.issueType || 'Issue' }} • {{ selectedIssueDetails.severity || '—' }}</p>
+      </div>
+      <button class="icon-button" (click)="closeIssueDetails()">&times;</button>
+    </div>
+
+    <div class="details-grid">
+      <div class="details-row">
+        <span class="label">Status</span>
+        <span class="value">
+          <span class="status-pill" [ngClass]="getQualityIssueStatusClass(selectedIssueDetails.status)">
+            {{ getQualityIssueStatusLabel(selectedIssueDetails.status) }}
+          </span>
+        </span>
+      </div>
+      <div class="details-row">
+        <span class="label">Reported By</span>
+        <span class="value">{{ selectedIssueDetails.reportedBy || '—' }}</span>
+      </div>
+      <div class="details-row">
+        <span class="label">Issue Date</span>
+        <span class="value">{{ formatIssueDate(selectedIssueDetails.issueDate) }}</span>
+      </div>
+      <div class="details-row">
+        <span class="label">Assigned To</span>
+        <span class="value">{{ selectedIssueDetails.assignedTo || '—' }}</span>
+      </div>
+      <div class="details-row">
+        <span class="label">Due Date</span>
+        <span class="value">{{ formatIssueDate(selectedIssueDetails.dueDate) }}</span>
+      </div>
+      <div class="details-row" *ngIf="selectedIssueDetails.isOverdue">
+        <span class="label text-danger">Overdue</span>
+        <span class="value text-danger">{{ selectedIssueDetails.overdueDays || 0 }} days</span>
+      </div>
+      <div class="details-row">
+        <span class="label">Description</span>
+        <span class="value multiline">{{ selectedIssueDetails.issueDescription || '—' }}</span>
+      </div>
+      <div class="details-row">
+        <span class="label">Resolution Notes</span>
+        <span class="value multiline">{{ selectedIssueDetails.resolutionDescription || '—' }}</span>
+      </div>
+      <div class="details-row">
+        <span class="label">Resolution Date</span>
+        <span class="value">{{ formatIssueDate(selectedIssueDetails.resolutionDate) }}</span>
+      </div>
+      <div class="details-row">
+        <span class="label">Photo</span>
+        <span class="value">
+          <a *ngIf="selectedIssueDetails.photoPath" [href]="selectedIssueDetails.photoPath" target="_blank" rel="noopener">
+            View attachment
+          </a>
+          <span *ngIf="!selectedIssueDetails.photoPath">—</span>
+        </span>
+      </div>
+      <div class="details-row">
+        <span class="label">Inspector</span>
+        <span class="value">{{ selectedIssueDetails.inspectorName || '—' }}</span>
+      </div>
+      <div class="details-row">
+        <span class="label">Box</span>
+        <span class="value">{{ selectedIssueDetails.boxName || selectedIssueDetails.boxTag || '—' }}</span>
+      </div>
+      <div class="details-row">
+        <span class="label">WIR</span>
+        <span class="value">
+          {{ selectedIssueDetails.wirNumber || '—' }}
+          <small *ngIf="selectedIssueDetails.wirStatus">
+            • {{ selectedIssueDetails.wirStatus }}
+          </small>
+        </span>
+      </div>
+      <div class="details-row">
+        <span class="label">WIR Requested</span>
+        <span class="value">{{ formatIssueDate(selectedIssueDetails.wirRequestedDate) }}</span>
+      </div>
+    </div>
+  </div>
+</div>
+

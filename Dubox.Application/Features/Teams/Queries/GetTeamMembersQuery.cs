@@ -4,6 +4,6 @@ using MediatR;
 
 namespace Dubox.Application.Features.Teams.Queries
 {
-    public record GetTeamMembersQuery(int TeamId) : IRequest<Result<TeamMembersDto>>;
+    public record GetTeamMembersQuery(Guid TeamId) : IRequest<Result<TeamMembersDto>>;
 
 }

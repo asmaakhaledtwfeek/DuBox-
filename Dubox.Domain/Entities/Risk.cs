@@ -9,7 +9,7 @@ namespace Dubox.Domain.Entities
 
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int RiskId { get; set; }
+        public Guid RiskId { get; set; }
 
         [Required]
         [ForeignKey(nameof(Project))]

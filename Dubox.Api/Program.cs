@@ -5,6 +5,7 @@ using Dubox.Application.Behaviors;
 using FluentValidation;
 using MediatR;
 using Microsoft.OpenApi.Models;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -43,6 +44,8 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DictionaryKeyPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
         // Write indented JSON for easier debugging
         options.JsonSerializerOptions.WriteIndented = true;
+        // Serialize and deserialize enums using their string names
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     });
 
 builder.Services.AddCors(options =>

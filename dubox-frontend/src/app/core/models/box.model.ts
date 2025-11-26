@@ -22,6 +22,7 @@ export interface Box {
   actualEndDate?: Date;
   progress: number;
   activities: BoxActivity[];
+  activitiesCount?: number;
   attachments: BoxAttachment[];
   logs: BoxLog[];
   qrCode?: string;
@@ -29,6 +30,7 @@ export interface Box {
   updatedBy?: string;
   createdAt?: Date;
   updatedAt?: Date;
+
 }
 
 export enum BoxStatus {
@@ -130,5 +132,25 @@ export interface BoxFilters {
   search?: string;
   dateFrom?: Date;
   dateTo?: Date;
+}
+
+export interface BoxImportResult {
+  successCount: number;
+  failureCount: number;
+  errors: string[];
+  importedBoxes: ImportedBoxPreview[];
+}
+
+export interface ImportedBoxPreview {
+  boxId: string;
+  projectId: string;
+  projectCode: string;
+  boxTag: string;
+  boxName?: string;
+  boxType?: string;
+  floor?: string;
+  building?: string;
+  zone?: string;
+  status?: string;
 }
 

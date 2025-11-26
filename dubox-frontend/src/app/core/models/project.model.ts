@@ -3,9 +3,13 @@ export interface Project {
   name: string;
   code: string;
   location: string;
+  clientName?: string;
   description?: string;
-  startDate: Date;
+  startDate?: Date;
   endDate?: Date;
+  plannedStartDate?: Date;
+  plannedEndDate?: Date;
+  duration?: number;
   status: ProjectStatus;
   totalBoxes: number;
   completedBoxes: number;

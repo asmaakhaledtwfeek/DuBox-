@@ -6,6 +6,7 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { Box, BoxStatus } from '../../../core/models/box.model';
+import { ProjectService } from '../../../core/services/project.service';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 
@@ -18,6 +19,8 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
 })
 export class BoxesListComponent implements OnInit {
   projectId: string = '';
+  projectName = '';
+  projectCode = '';
   boxes: Box[] = [];
   filteredBoxes: Box[] = [];
   loading = true;
@@ -32,15 +35,32 @@ export class BoxesListComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private boxService: BoxService,
-    private permissionService: PermissionService
+    private permissionService: PermissionService,
+    private projectService: ProjectService
   ) {}
 
   ngOnInit(): void {
     this.projectId = this.route.snapshot.params['id'];
     this.canCreate = this.permissionService.canCreate('boxes');
-    
+    this.loadProjectDetails();
     this.loadBoxes();
     this.setupSearch();
+  }
+
+  loadProjectDetails(): void {
+    if (!this.projectId) {
+      return;
+    }
+
+    this.projectService.getProject(this.projectId).subscribe({
+      next: (project) => {
+        this.projectName = project.name || '';
+        this.projectCode = project.code || '';
+      },
+      error: (err) => {
+        console.error('Error loading project details:', err);
+      }
+    });
   }
 
   private setupSearch(): void {

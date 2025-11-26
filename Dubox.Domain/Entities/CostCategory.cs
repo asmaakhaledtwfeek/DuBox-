@@ -11,7 +11,7 @@ namespace Dubox.Domain.Entities
 
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int CategoryId { get; set; }
+        public Guid CategoryId { get; set; }
 
         [Required]
         [MaxLength(50)]
@@ -22,7 +22,7 @@ namespace Dubox.Domain.Entities
         public string CategoryName { get; set; } = string.Empty;
 
         [ForeignKey(nameof(ParentCategory))]
-        public int? ParentCategoryId { get; set; }
+        public Guid? ParentCategoryId { get; set; }
 
         public bool IsActive { get; set; } = true;
 

@@ -66,7 +66,7 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         progressUpdate.UpdatedBy = currentUserId;
         progressUpdate.UpdateDate = DateTime.UtcNow;
         progressUpdate.CreatedDate = DateTime.UtcNow;
-        
+
         // Truncate DeviceInfo to max 100 characters to prevent database truncation error
         if (!string.IsNullOrEmpty(progressUpdate.DeviceInfo) && progressUpdate.DeviceInfo.Length > 100)
         {
@@ -249,13 +249,8 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
                 project.ActualEndDate = DateTime.UtcNow;
                 isStatusChanged = true;
             }
-            else if (averageProgress > 0 && oldStatus != ProjectStatusEnum.Completed && oldStatus != ProjectStatusEnum.OnHold && oldStatus != ProjectStatusEnum.Active)
-            {
-                project.Status = ProjectStatusEnum.Active;
-                if (project.ActualStartDate == null)
-                    project.ActualStartDate = DateTime.UtcNow;
-                isStatusChanged = true;
-            }
+            else if (averageProgress > 0 && oldStatus != ProjectStatusEnum.Completed && oldStatus != ProjectStatusEnum.OnHold && project.ActualStartDate == null)
+                project.ActualStartDate = DateTime.UtcNow;
 
             if (isProgressChanged || isStatusChanged)
             {

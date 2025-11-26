@@ -64,6 +64,151 @@ export interface RejectWIRRequest {
   signature?: string;
 }
 
+// WIR Checkpoint Models
+export interface WIRCheckpoint {
+  wirId: string;
+  boxId: string;
+  boxActivityId?: string;
+  projectId?: string;
+  projectCode?: string;
+  box?: {
+    boxId: string;
+    projectId?: string;
+    projectCode?: string;
+    boxTag?: string;
+    boxName?: string;
+  };
+  wirNumber: string;
+  wirName?: string;
+  wirDescription?: string;
+  requestedDate?: Date;
+  requestedBy?: string;
+  inspectionDate?: Date;
+  inspectorName?: string;
+  inspectorRole?: string;
+  status: WIRCheckpointStatus;
+  approvalDate?: Date;
+  comments?: string;
+  attachmentPath?: string;
+  createdDate: Date;
+  checklistItems?: WIRCheckpointChecklistItem[];
+  qualityIssues?: QualityIssueItem[];
+}
+
+export interface WIRCheckpointFilter {
+  projectCode?: string;
+  boxTag?: string;
+  status?: WIRCheckpointStatus | string;
+  wirNumber?: string;
+  from?: string;
+  to?: string;
+}
+
+export interface WIRCheckpointChecklistItem {
+  checklistItemId: string;
+  wirId: string;
+  checkpointDescription: string;
+  referenceDocument?: string;
+  status: CheckListItemStatus;
+  remarks?: string;
+  sequence: number;
+}
+
+export enum WIRCheckpointStatus {
+  Pending = 'Pending',
+  Approved = 'Approved',
+  Rejected = 'Rejected',
+  ConditionalApproval = 'ConditionalApproval'
+}
+
+export enum CheckListItemStatus {
+  Pending = 'Pending',
+  Pass = 'Pass',
+  Fail = 'Fail',
+  NA = 'NA'
+}
+
+export interface CreateWIRCheckpointRequest {
+  boxActivityId: string; // Auto-filled from route
+  wirNumber: string; // Auto-filled from WIRRecord
+  wirName?: string; // User input
+  wirDescription?: string; // User input
+  attachmentPath?: string; // User input
+  comments?: string; // User input
+}
+
+export interface AddChecklistItemsRequest {
+  wirId: string;
+  items: ChecklistItemForCreate[];
+}
+
+export interface ChecklistItemForCreate {
+  checkpointDescription: string;
+  referenceDocument?: string;
+  sequence: number;
+}
+
+export interface ReviewWIRCheckpointRequest {
+  wirId: string;
+  status: WIRCheckpointStatus;
+  comment?: string;
+  inspectorRole?: string;
+  items: ChecklistItemForReview[];
+}
+
+export interface ChecklistItemForReview {
+  checklistItemId: string;
+  remarks?: string;
+  status: CheckListItemStatus;
+}
+
+export type IssueType = 'Defect' | 'NonConformance' | 'Observation';
+export type SeverityType = 'Critical' | 'Major' | 'Minor';
+
+export type QualityIssueStatus = 'Open' | 'InProgress' | 'Resolved' | 'Closed';
+
+export interface QualityIssueItem {
+  issueType: IssueType;
+  severity: SeverityType;
+  issueDescription: string;
+  assignedTo?: string;
+  dueDate?: string | Date;
+  photoPath?: string;
+  reportedBy?: string;
+  issueDate?: string | Date;
+  status?: QualityIssueStatus | string;
+}
+
+export interface QualityIssueDetails extends QualityIssueItem {
+  issueId: string;
+  status?: QualityIssueStatus;
+  resolutionDate?: string | Date;
+  resolutionDescription?: string;
+  boxId?: string;
+  boxName?: string;
+  boxTag?: string;
+  wirId?: string;
+  wirNumber?: string;
+  wirName?: string;
+  wirStatus?: WIRCheckpointStatus;
+  wirRequestedDate?: string | Date;
+  inspectorName?: string;
+  isOverdue?: boolean;
+  overdueDays?: number;
+}
+
+export interface AddQualityIssuesRequest {
+  wirId: string;
+  issues: QualityIssueItem[];
+}
+
+export interface UpdateQualityIssueStatusRequest {
+  issueId: string;
+  status: QualityIssueStatus;
+  resolutionDescription?: string | null;
+  photoPath?: string | null;
+}
+
 // Predefined Checklist Templates for each WIR Code
 export const WIR_CHECKLIST_TEMPLATES: Record<string, WIRChecklistItem[]> = {
   'WIR-1': [ // Assembly Clearance

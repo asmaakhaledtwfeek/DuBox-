@@ -21,7 +21,7 @@ public class GetBoxActivitiesByBoxQueryHandler : IRequestHandler<GetBoxActivitie
         var boxActivities = await _dbContext.BoxActivities
             .Include(ba => ba.ActivityMaster)
             .Include(ba => ba.Box)
-            .Where(ba => ba.BoxId == request.BoxId && ba.IsActive)
+            .Where(ba => ba.BoxId == request.BoxId)
             .OrderBy(ba => ba.Sequence)
             .ToListAsync(cancellationToken);
 

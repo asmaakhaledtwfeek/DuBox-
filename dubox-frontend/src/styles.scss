@@ -263,7 +263,17 @@ a:hover {
   color: var(--warning-dark);
 }
 
+.badge-neutral {
+  background: var(--gray-200);
+  color: var(--gray-700);
+}
+
 .badge-error {
+  background: var(--error-light);
+  color: var(--error-dark);
+}
+
+.badge-danger {
   background: var(--error-light);
   color: var(--error-dark);
 }

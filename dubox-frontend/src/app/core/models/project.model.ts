@@ -9,6 +9,7 @@ export interface Project {
   endDate?: Date;
   plannedStartDate?: Date;
   plannedEndDate?: Date;
+  actualStartDate?: Date;
   duration?: number;
   status: ProjectStatus;
   totalBoxes: number;
@@ -23,11 +24,11 @@ export interface Project {
 }
 
 export enum ProjectStatus {
-  Planning = 'Planning',
   Active = 'Active',
   OnHold = 'OnHold',
   Completed = 'Completed',
-  Cancelled = 'Cancelled'
+  Archived = 'Archived',
+  Closed = 'Closed'
 }
 
 export interface ProjectStats {

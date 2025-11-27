@@ -84,73 +84,137 @@
       </div>
 
       <!-- Approve Form -->
-      <form *ngIf="activeTab === 'approve'" [formGroup]="approvalForm" (ngSubmit)="onApprove()">
-        <div class="form-group">
-          <label for="inspectionNotes">Inspection Notes (Optional)</label>
-          <textarea
-            id="inspectionNotes"
-            formControlName="inspectionNotes"
-            class="form-control"
-            rows="4"
-            placeholder="Enter inspection notes, observations, or comments..."
-          ></textarea>
-          <div *ngIf="approvalForm.get('inspectionNotes')?.invalid && approvalForm.get('inspectionNotes')?.touched" class="error-text">
-            Maximum 1000 characters
+      <div *ngIf="activeTab === 'approve'">
+        <!-- Show existing data if available (from previous review) -->
+        <div *ngIf="wirRecord?.rejectionReason || wirRecord?.inspectionNotes" class="existing-data-section">
+          <div class="form-group" *ngIf="wirRecord?.rejectionReason">
+            <label>Previous Rejection Reason</label>
+            <div class="read-only-text">
+              {{ wirRecord?.rejectionReason }}
+            </div>
+          </div>
+
+          <div class="form-group" *ngIf="wirRecord?.inspectionNotes">
+            <label>Previous Inspection Notes</label>
+            <div class="read-only-text">
+              {{ wirRecord?.inspectionNotes }}
+            </div>
           </div>
         </div>
 
-        <div class="form-actions">
-          <button type="button" class="btn btn-secondary" (click)="close()" [disabled]="processing">
-            Cancel
-          </button>
-          <button type="submit" class="btn btn-success" [disabled]="processing || approvalForm.invalid || !canApprove()">
-            <span *ngIf="processing">Processing...</span>
-            <span *ngIf="!processing">Approve WIR</span>
-          </button>
-        </div>
-      </form>
+        <!-- Editable form - always show, but disable if already approved -->
+        <form [formGroup]="approvalForm" (ngSubmit)="onApprove()">
+          <div class="form-group">
+            <label for="inspectionNotes">
+              Inspection Notes (Optional)
+              <span *ngIf="wirRecord?.status === WIRStatus.Approved" class="info-text"> - Update to change existing notes</span>
+            </label>
+            <textarea
+              id="inspectionNotes"
+              formControlName="inspectionNotes"
+              class="form-control"
+              rows="4"
+              placeholder="Enter inspection notes, observations, or comments..."
+              [disabled]="!canApprove()"
+            ></textarea>
+            <div *ngIf="approvalForm.get('inspectionNotes')?.invalid && approvalForm.get('inspectionNotes')?.touched" class="error-text">
+              Maximum 1000 characters
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" (click)="close()" [disabled]="processing">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-success" [disabled]="processing || approvalForm.invalid || !canApprove()">
+              <span *ngIf="processing">Processing...</span>
+              <span *ngIf="!processing">
+                <span *ngIf="wirRecord?.status === WIRStatus.Approved">Already Approved</span>
+                <span *ngIf="wirRecord?.status !== WIRStatus.Approved">Approve WIR</span>
+              </span>
+            </button>
+          </div>
+          <div *ngIf="!canApprove()" class="status-message">
+            <span class="badge badge-info">This WIR is already approved. Switch to Reject tab to change status.</span>
+          </div>
+        </form>
+      </div>
 
       <!-- Reject Form -->
-      <form *ngIf="activeTab === 'reject'" [formGroup]="rejectionForm" (ngSubmit)="onReject()">
-        <div class="form-group">
-          <label for="rejectionReason">Rejection Reason <span class="required">*</span></label>
-          <textarea
-            id="rejectionReason"
-            formControlName="rejectionReason"
-            class="form-control"
-            rows="3"
-            placeholder="Enter the reason for rejection. This will be sent to the team for rework."
-            [class.invalid]="rejectionForm.get('rejectionReason')?.invalid && rejectionForm.get('rejectionReason')?.touched"
-          ></textarea>
-          <div *ngIf="rejectionForm.get('rejectionReason')?.invalid && rejectionForm.get('rejectionReason')?.touched" class="error-text">
-            Rejection reason is required (max 500 characters)
+      <div *ngIf="activeTab === 'reject'">
+        <!-- Show existing rejection reason and inspection notes if available (from previous review) -->
+        <div *ngIf="wirRecord?.rejectionReason || wirRecord?.inspectionNotes" class="existing-data-section">
+          <div class="form-group" *ngIf="wirRecord?.rejectionReason">
+            <label>Previous Rejection Reason</label>
+            <div class="read-only-text">
+              {{ wirRecord?.rejectionReason }}
+            </div>
+          </div>
+
+          <div class="form-group" *ngIf="wirRecord?.inspectionNotes">
+            <label>Previous Inspection Notes</label>
+            <div class="read-only-text">
+              {{ wirRecord?.inspectionNotes }}
+            </div>
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="rejectionInspectionNotes">Inspection Notes (Optional)</label>
-          <textarea
-            id="rejectionInspectionNotes"
-            formControlName="inspectionNotes"
-            class="form-control"
-            rows="3"
-            placeholder="Additional inspection notes or observations..."
-          ></textarea>
-          <div *ngIf="rejectionForm.get('inspectionNotes')?.invalid && rejectionForm.get('inspectionNotes')?.touched" class="error-text">
-            Maximum 1000 characters
+        <!-- Editable form - always show, but disable if already rejected -->
+        <form [formGroup]="rejectionForm" (ngSubmit)="onReject()">
+          <div class="form-group">
+            <label for="rejectionReason">
+              Rejection Reason <span class="required">*</span>
+              <span *ngIf="wirRecord?.status === WIRStatus.Rejected" class="info-text"> - Update to change existing reason</span>
+            </label>
+            <textarea
+              id="rejectionReason"
+              formControlName="rejectionReason"
+              class="form-control"
+              rows="3"
+              placeholder="Enter the reason for rejection. This will be sent to the team for rework."
+              [class.invalid]="rejectionForm.get('rejectionReason')?.invalid && rejectionForm.get('rejectionReason')?.touched"
+              [disabled]="!canReject()"
+            ></textarea>
+            <div *ngIf="rejectionForm.get('rejectionReason')?.invalid && rejectionForm.get('rejectionReason')?.touched" class="error-text">
+              Rejection reason is required (max 500 characters)
+            </div>
           </div>
-        </div>
 
-        <div class="form-actions">
-          <button type="button" class="btn btn-secondary" (click)="close()" [disabled]="processing">
-            Cancel
-          </button>
-          <button type="submit" class="btn btn-danger" [disabled]="processing || rejectionForm.invalid || !canReject()">
-            <span *ngIf="processing">Processing...</span>
-            <span *ngIf="!processing">Reject WIR</span>
-          </button>
-        </div>
-      </form>
+          <div class="form-group">
+            <label for="rejectionInspectionNotes">
+              Inspection Notes (Optional)
+              <span *ngIf="wirRecord?.status === WIRStatus.Rejected && wirRecord?.inspectionNotes" class="info-text"> - Update to change existing notes</span>
+            </label>
+            <textarea
+              id="rejectionInspectionNotes"
+              formControlName="inspectionNotes"
+              class="form-control"
+              rows="3"
+              placeholder="Additional inspection notes or observations..."
+              [disabled]="!canReject()"
+            ></textarea>
+            <div *ngIf="rejectionForm.get('inspectionNotes')?.invalid && rejectionForm.get('inspectionNotes')?.touched" class="error-text">
+              Maximum 1000 characters
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" (click)="close()" [disabled]="processing">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-danger" [disabled]="processing || rejectionForm.invalid || !canReject()">
+              <span *ngIf="processing">Processing...</span>
+              <span *ngIf="!processing">
+                <span *ngIf="wirRecord?.status === WIRStatus.Rejected">Already Rejected</span>
+                <span *ngIf="wirRecord?.status !== WIRStatus.Rejected">Reject WIR</span>
+              </span>
+            </button>
+          </div>
+          <div *ngIf="!canReject()" class="status-message">
+            <span class="badge badge-info">This WIR is already rejected. Switch to Approve tab to change status.</span>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 </div>

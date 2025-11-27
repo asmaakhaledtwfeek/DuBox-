@@ -1,12 +1,10 @@
-﻿using Dubox.Application.Features.Activities.Queries;
-using Dubox.Application.Features.AuditLogs;
+﻿using Dubox.Application.Features.AuditLogs.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Dubox.Api.Controllers
 {
-
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
@@ -19,10 +17,10 @@ namespace Dubox.Api.Controllers
             _mediator = mediator;
         }
 
-        [HttpGet("masters")]
+        [HttpGet]
         public async Task<IActionResult> GetAuditLogs([FromQuery] GetAuditLogsQuery query, CancellationToken cancellationToken)
         {
-            var result = await _mediator.Send(new GetAllActivityMastersQuery(), cancellationToken);
+            var result = await _mediator.Send(query, cancellationToken);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
     }

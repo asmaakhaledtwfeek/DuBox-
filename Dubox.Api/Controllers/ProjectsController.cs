@@ -49,6 +49,16 @@ public class ProjectsController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
+    [HttpPatch("{projectId}/status")]
+    public async Task<IActionResult> UpdateProjectStatus(Guid projectId, [FromBody] UpdateProjectStatusCommand command, CancellationToken cancellationToken)
+    {
+        if (projectId != command.ProjectId)
+            return BadRequest("Project ID mismatch");
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
     [HttpDelete("{projectId}")]
     public async Task<IActionResult> DeleteProject(Guid projectId, CancellationToken cancellationToken)
     {

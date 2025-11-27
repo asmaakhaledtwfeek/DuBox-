@@ -236,6 +236,68 @@
               </div>
             </div>
 
+    <!-- Schedule & Notes -->
+    <div class="form-card">
+      <div class="card-header">
+        <h3>Schedule & Notes</h3>
+        <p>Set the planned start and duration for this box and capture any notes.</p>
+      </div>
+
+      <div class="card-body">
+        <div class="form-row">
+          <!-- Planned Start Date -->
+          <div class="form-group">
+            <label for="plannedStartDate" class="form-label">Planned Start Date</label>
+            <input
+              id="plannedStartDate"
+              type="date"
+              formControlName="plannedStartDate"
+              class="form-control"
+              [class.invalid]="isFieldInvalid('plannedStartDate')"
+            />
+            <div class="error-message" *ngIf="isFieldInvalid('plannedStartDate')">
+              {{ getFieldError('plannedStartDate') }}
+            </div>
+            <div class="error-message" *ngIf="boxForm.get('plannedStartDate')?.errors?.['projectSchedule'] && scheduleErrorMessage">
+              {{ scheduleErrorMessage }}
+            </div>
+          </div>
+
+          <!-- Duration -->
+          <div class="form-group">
+            <label for="duration" class="form-label">Duration (days)</label>
+            <input
+              id="duration"
+              type="number"
+              formControlName="duration"
+              class="form-control"
+              min="1"
+              [class.invalid]="isFieldInvalid('duration')"
+              placeholder="e.g., 14"
+            />
+            <div class="error-message" *ngIf="isFieldInvalid('duration')">
+              {{ getFieldError('duration') }}
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="notes" class="form-label">Notes</label>
+          <textarea
+            id="notes"
+            formControlName="notes"
+            class="form-control"
+            rows="4"
+            [class.invalid]="isFieldInvalid('notes')"
+            placeholder="Add any planning notes for this box"
+          ></textarea>
+          <div class="error-message" *ngIf="isFieldInvalid('notes')">
+            {{ getFieldError('notes') }}
+          </div>
+        </div>
+      </div>
+    </div>
+
             <!-- Revit Element ID -->
             <div class="form-group">
               <label for="revitElementId" class="form-label">Revit Element ID</label>

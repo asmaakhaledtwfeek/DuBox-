@@ -1,13 +1,15 @@
-import { Component, Input, OnInit, Output, EventEmitter } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule, NavigationEnd } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 import { BoxActivity } from '../../../core/models/box.model';
 import { UpdateProgressModalComponent } from '../update-progress-modal/update-progress-modal.component';
 import { WIRApprovalModalComponent } from '../wir-approval-modal/wir-approval-modal.component';
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
 import { BoxActivityDetail } from '../../../core/models/progress-update.model';
 import { WIRService } from '../../../core/services/wir.service';
-import { WIRRecord, WIRStatus } from '../../../core/models/wir.model';
+import { WIRRecord, WIRStatus, WIRCheckpoint } from '../../../core/models/wir.model';
 
 // Combined type for activities and WIR rows
 export interface TableRow {
@@ -24,7 +26,7 @@ export interface TableRow {
   templateUrl: './activity-table.component.html',
   styleUrls: ['./activity-table.component.scss']
 })
-export class ActivityTableComponent implements OnInit {
+export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   @Input() activities: BoxActivity[] = [];
   @Input() projectId: string = '';
   @Input() boxId: string = '';
@@ -33,20 +35,47 @@ export class ActivityTableComponent implements OnInit {
 
   activitiesWithDetails: BoxActivityDetail[] = [];
   wirRecords: WIRRecord[] = [];
+  wirCheckpoints: Map<string, WIRCheckpoint> = new Map(); // Map WIR code to checkpoint
   tableRows: TableRow[] = [];
   isModalOpen = false;
   selectedActivity: BoxActivityDetail | null = null;
   isWIRModalOpen = false;
   selectedWIR: WIRRecord | null = null;
   isLoading = false;
+  private routerSubscription?: Subscription;
 
   constructor(
     private progressUpdateService: ProgressUpdateService,
-    private wirService: WIRService
+    private wirService: WIRService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
     this.loadActivitiesWithDetails();
+    
+    // Subscribe to router events to reload checkpoints when returning to the page
+    this.routerSubscription = this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe(() => {
+        // Reload checkpoints when navigation ends (user might have created a checkpoint)
+        if (this.boxId) {
+          this.loadWIRCheckpoints();
+        }
+      });
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    // Reload data when boxId changes
+    if (changes['boxId'] && !changes['boxId'].firstChange && changes['boxId'].currentValue) {
+      this.loadActivitiesWithDetails();
+    }
+  }
+
+  ngOnDestroy(): void {
+    // Clean up router subscription
+    if (this.routerSubscription) {
+      this.routerSubscription.unsubscribe();
+    }
   }
 
   loadActivitiesWithDetails(): void {
@@ -108,12 +137,40 @@ export class ActivityTableComponent implements OnInit {
     this.wirService.getWIRRecordsByBox(this.boxId).subscribe({
       next: (wirRecords) => {
         this.wirRecords = wirRecords;
-        this.buildTableRows();
-        this.isLoading = false;
+        // Load checkpoints for all WIR records
+        this.loadWIRCheckpoints();
       },
       error: (error) => {
         console.error('Error loading WIR records:', error);
         // Continue without WIR records
+        this.buildTableRows();
+        this.isLoading = false;
+      }
+    });
+  }
+
+  loadWIRCheckpoints(): void {
+    if (!this.boxId) {
+      this.buildTableRows();
+      this.isLoading = false;
+      return;
+    }
+
+    this.wirService.getWIRCheckpointsByBox(this.boxId).subscribe({
+      next: (checkpoints) => {
+        // Map checkpoints by WIR number/code
+        this.wirCheckpoints.clear();
+        checkpoints.forEach(checkpoint => {
+          if (checkpoint.wirNumber) {
+            this.wirCheckpoints.set(checkpoint.wirNumber.toUpperCase(), checkpoint);
+          }
+        });
+        this.buildTableRows();
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading WIR checkpoints:', error);
+        // Continue without checkpoints
         this.buildTableRows();
         this.isLoading = false;
       }
@@ -277,25 +334,17 @@ export class ActivityTableComponent implements OnInit {
   }
 
   /**
-   * Get team name from assigned team
+   * Get team name from activity
    */
   getTeam(activity: any): string {
-    const team = activity.assignedTo || activity.teamName;
+    // Use teamName directly from the activity
+    const teamName = activity?.teamName;
     
-    if (!team || team === 'N/A') {
+    if (!teamName || teamName === 'N/A' || teamName === '-') {
       return '';
     }
     
-    // Extract team name (e.g., "QC Engineer-Civil" -> "QA/QC")
-    if (team.toLowerCase().includes('qc') || team.toLowerCase().includes('qa')) {
-      return 'QA/QC';
-    } else if (team.toLowerCase().includes('mep') || team.toLowerCase().includes('mechanical') || team.toLowerCase().includes('electrical')) {
-      return 'MEP';
-    } else if (team.toLowerCase().includes('civil') || team.toLowerCase().includes('finishing')) {
-      return 'Civil';
-    }
-    
-    return '';
+    return teamName;
   }
 
   /**
@@ -351,9 +400,14 @@ export class ActivityTableComponent implements OnInit {
    * Note: WIR rows have their own getWIRInspectorName() method
    */
   getAssignedTo(activity: any): string {
-    // Regular activities should never default to "QC Engineer"
-    // Only show assigned person or "-" if not assigned
-    return activity.assignedTo || activity.assignedMemberName || '-';
+    // Use assignedMemberName which contains the full name of the assigned person
+    const assignedName = activity?.assignedMemberName;
+    
+    if (!assignedName || assignedName === 'N/A' || assignedName === '') {
+      return '-';
+    }
+    
+    return assignedName;
   }
 
   /**
@@ -526,10 +580,115 @@ export class ActivityTableComponent implements OnInit {
   onWIRUpdated(updatedWIR: WIRRecord): void {
     console.log('WIR updated:', updatedWIR);
     
-    // Reload WIR records to get updated data
+    // Reload WIR records and checkpoints to get updated data
     this.loadWIRRecords();
     
     // Notify parent component
     this.boxDataChanged.emit();
+  }
+
+  /**
+   * Check if WIR has been reviewed (status is not Pending)
+   */
+  isWIRReviewed(row: TableRow): boolean {
+    const wir = this.getWIR(row);
+    if (!wir) return false;
+    
+    const status = wir.status;
+    return status !== WIRStatus.Pending && status !== null && status !== undefined;
+  }
+
+  /**
+   * Check if a checkpoint exists for a WIR record
+   */
+  hasCheckpoint(wirRecord: WIRRecord): boolean {
+    if (!wirRecord?.wirCode) return false;
+    return this.wirCheckpoints.has(wirRecord.wirCode.toUpperCase());
+  }
+
+  /**
+   * Get checkpoint for a WIR record
+   */
+  getCheckpoint(wirRecord: WIRRecord): WIRCheckpoint | null {
+    if (!wirRecord?.wirCode) return null;
+    return this.wirCheckpoints.get(wirRecord.wirCode.toUpperCase()) || null;
+  }
+
+  /**
+   * Determine the appropriate step to navigate to based on checkpoint status
+   */
+  getCheckpointStep(checkpoint: WIRCheckpoint): 'add-items' | 'review' | 'quality-issues' {
+    // Step 1 (Create Checkpoint) is always completed if checkpoint exists
+    
+    // Check if Step 2 (Add Checklist Items) is completed
+    const hasChecklistItems = checkpoint.checklistItems && checkpoint.checklistItems.length > 0;
+    if (!hasChecklistItems) {
+      return 'add-items'; // Navigate to Step 2 to add checklist items
+    }
+    
+    // Check if Step 3 (Review & Sign-off) is completed
+    const status = checkpoint.status as any;
+    const isReviewed = status && status !== 'Pending' && status !== 'pending';
+    if (!isReviewed) {
+      return 'review'; // Navigate to Step 3 to review and sign off
+    }
+    
+    // Step 3 is completed, navigate to Step 4 (Quality Issues)
+    return 'quality-issues';
+  }
+
+  /**
+   * Navigate to create or view WIR checkpoint page
+   */
+  navigateToCreateWIRCheckpoint(wirRecord: WIRRecord): void {
+    if (!this.projectId || !this.boxId || !wirRecord.boxActivityId) {
+      console.error('Missing required IDs for navigation');
+      return;
+    }
+    
+    const checkpoint = this.getCheckpoint(wirRecord);
+    
+    if (checkpoint) {
+      // Checkpoint exists - navigate to the appropriate step based on checkpoint status
+      const targetStep = this.getCheckpointStep(checkpoint);
+      
+      this.router.navigate([
+        '/projects',
+        this.projectId,
+        'boxes',
+        this.boxId,
+        'activities',
+        wirRecord.boxActivityId,
+        'qa-qc'
+      ], {
+        queryParams: { step: targetStep }
+      }).then(() => {
+        // Reload checkpoints after navigation to ensure button text is updated
+        this.loadWIRCheckpoints();
+      });
+    } else {
+      // No checkpoint exists - navigate to create (Step 1 of multi-step flow)
+      this.router.navigate([
+        '/projects',
+        this.projectId,
+        'boxes',
+        this.boxId,
+        'activities',
+        wirRecord.boxActivityId,
+        'qa-qc'
+      ], {
+        queryParams: { step: 'create-checkpoint' }
+      }).then(() => {
+        // Reload checkpoints after navigation to ensure button text is updated
+        this.loadWIRCheckpoints();
+      });
+    }
+  }
+
+  /**
+   * Public method to refresh checkpoints (can be called from parent component)
+   */
+  refreshCheckpoints(): void {
+    this.loadWIRCheckpoints();
   }
 }

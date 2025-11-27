@@ -9,6 +9,8 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
 import { UpdateProgressModalComponent } from '../update-progress-modal/update-progress-modal.component';
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
 import { BoxActivityDetail, ProgressUpdate } from '../../../core/models/progress-update.model';
+import { TeamService } from '../../../core/services/team.service';
+import { Team, TeamMember } from '../../../core/models/team.model';
 
 @Component({
   selector: 'app-activity-details',
@@ -46,9 +48,14 @@ export class ActivityDetailsComponent implements OnInit {
   isIssuingMaterial = false;
   isSettingSchedule = false;
 
+  // Error messages
+  scheduleError = '';
+  scheduleSuccess = false;
+  assignTeamSuccess = false;
+
   // Data for dropdowns
-  availableTeams: any[] = [];
-  availableMembers: any[] = [];
+  availableTeams: Team[] = [];
+  availableMembers: TeamMember[] = [];
   availableMaterials: any[] = [];
 
   constructor(
@@ -56,7 +63,8 @@ export class ActivityDetailsComponent implements OnInit {
     private router: Router,
     private fb: FormBuilder,
     private boxService: BoxService,
-    private progressUpdateService: ProgressUpdateService
+    private progressUpdateService: ProgressUpdateService,
+    private teamService: TeamService
   ) {}
 
   ngOnInit(): void {
@@ -94,32 +102,51 @@ export class ActivityDetailsComponent implements OnInit {
 
     this.scheduleForm = this.fb.group({
       plannedStartDate: ['', Validators.required],
-      plannedEndDate: ['', Validators.required],
       duration: ['', [Validators.required, Validators.min(1)]],
       notes: ['']
     });
   }
 
   loadDropdownData(): void {
-    // TODO: Load teams, members, and materials from services
-    // For now, using mock data
-    this.availableTeams = [
-      { id: '1', name: 'Civil Team' },
-      { id: '2', name: 'MEP Team' },
-      { id: '3', name: 'QA/QC Team' }
-    ];
+    // Load teams from database
+    this.teamService.getTeams().subscribe({
+      next: (teams) => {
+        this.availableTeams = teams.filter(team => team.isActive);
+        console.log('✅ Teams loaded:', this.availableTeams);
+      },
+      error: (err) => {
+        console.error('❌ Error loading teams:', err);
+        this.availableTeams = [];
+      }
+    });
 
-    this.availableMembers = [
-      { id: '1', name: 'John Doe' },
-      { id: '2', name: 'Jane Smith' },
-      { id: '3', name: 'Mike Johnson' }
-    ];
-
+    // TODO: Load materials from services
     this.availableMaterials = [
       { id: '1', name: 'Cement', unit: 'bags' },
       { id: '2', name: 'Steel Bars', unit: 'tons' },
       { id: '3', name: 'Concrete', unit: 'm³' }
     ];
+  }
+
+  /**
+   * Load team members when a team is selected
+   */
+  loadTeamMembers(teamId: string): void {
+    if (!teamId) {
+      this.availableMembers = [];
+      return;
+    }
+
+    this.teamService.getTeamMembers(teamId).subscribe({
+      next: (teamMembersData) => {
+        this.availableMembers = teamMembersData.members.filter(member => member.isActive !== false);
+        console.log('✅ Team members loaded:', this.availableMembers);
+      },
+      error: (err) => {
+        console.error('❌ Error loading team members:', err);
+        this.availableMembers = [];
+      }
+    });
   }
 
   loadActivity(): void {
@@ -200,15 +227,18 @@ export class ActivityDetailsComponent implements OnInit {
   }
 
   onProgressUpdated(response: any): void {
-    console.log('Progress updated:', response);
-    
-    // Reload activity details
+    // Reload activity data to reflect the updated progress
     this.loadActivity();
     
-    // Show WIR notification if created
-    if (response.wirCreated) {
-      alert(`✅ Progress updated! WIR ${response.wirCode} has been created for QC inspection.`);
-    }
+    // Show success message
+    document.dispatchEvent(new CustomEvent('app-toast', {
+      detail: { 
+        message: response.wirCreated 
+          ? `Progress updated successfully! WIR ${response.wirCode} has been automatically created for QC inspection.`
+          : 'Progress updated successfully!', 
+        type: 'success' 
+      }
+    }));
   }
 
   goBack(): void {
@@ -288,38 +318,103 @@ export class ActivityDetailsComponent implements OnInit {
     this.statusForm.reset();
   }
 
+  /**
+   * Map string status to numeric enum value
+   */
+  private mapStatusToEnum(status: string): number {
+    const statusMap: Record<string, number> = {
+      'NotStarted': 1,
+      'InProgress': 2,
+      'Completed': 3,
+      'OnHold': 4,
+      'Delayed': 5
+    };
+    return statusMap[status] || 1;
+  }
+
   onUpdateStatus(): void {
     if (this.statusForm.invalid || !this.activityDetail) return;
 
     this.isUpdatingStatus = true;
     const formValue = this.statusForm.value;
 
-    // TODO: Call API to update activity status
-    console.log('Updating status:', formValue);
-    
-    // Simulate API call
-    setTimeout(() => {
-      this.isUpdatingStatus = false;
-      this.closeUpdateStatusModal();
-      this.loadActivity();
-      alert('Status updated successfully!');
-    }, 1000);
+    const statusEnum = this.mapStatusToEnum(formValue.status);
+    const workDescription = formValue.notes || undefined;
+
+    this.boxService.updateBoxActivityStatus(
+      this.activityId,
+      statusEnum,
+      workDescription,
+      undefined
+    ).subscribe({
+      next: () => {
+        this.isUpdatingStatus = false;
+        this.closeUpdateStatusModal();
+        this.loadActivity();
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { message: 'Status updated successfully!', type: 'success' }
+        }));
+      },
+      error: (err) => {
+        this.isUpdatingStatus = false;
+        
+        // Extract validation error message from backend response
+        let errorMessage = 'Failed to update status';
+        if (err?.error) {
+          // Check for FluentValidation error format
+          if (err.error.errors && typeof err.error.errors === 'object') {
+            const errors = Object.values(err.error.errors).flat() as string[];
+            errorMessage = errors.length > 0 ? errors[0] : errorMessage;
+          } else if (err.error.message) {
+            errorMessage = err.error.message;
+          } else if (typeof err.error === 'string') {
+            errorMessage = err.error;
+          }
+        } else if (err?.message) {
+          errorMessage = err.message;
+        }
+        
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { message: errorMessage, type: 'error' }
+        }));
+        console.error('Error updating status:', err);
+      }
+    });
   }
 
   // Assign Team Modal
   openAssignTeamModal(): void {
+    this.assignTeamSuccess = false; // Reset success state
+    
+    // Load team members if team is already assigned
+    if (this.activityDetail?.teamId) {
+      this.loadTeamMembers(this.activityDetail.teamId.toString());
+    } else {
+      this.availableMembers = [];
+    }
+
     if (this.activityDetail) {
       this.assignTeamForm.patchValue({
         teamId: this.activityDetail.teamId?.toString() || '',
         memberId: this.activityDetail.assignedMemberId || ''
       });
     }
+
+    // Listen to team selection changes to load members
+    this.assignTeamForm.get('teamId')?.valueChanges.subscribe(teamId => {
+      this.loadTeamMembers(teamId);
+      // Clear member selection when team changes
+      this.assignTeamForm.patchValue({ memberId: '' }, { emitEvent: false });
+    });
+
     this.isAssignTeamModalOpen = true;
   }
 
   closeAssignTeamModal(): void {
     this.isAssignTeamModalOpen = false;
     this.assignTeamForm.reset();
+    this.availableMembers = [];
+    this.assignTeamSuccess = false; // Reset success state
   }
 
   onAssignTeam(): void {
@@ -328,16 +423,65 @@ export class ActivityDetailsComponent implements OnInit {
     this.isAssigningTeam = true;
     const formValue = this.assignTeamForm.value;
 
-    // TODO: Call API to assign team
-    console.log('Assigning team:', formValue);
-    
-    // Simulate API call
-    setTimeout(() => {
-      this.isAssigningTeam = false;
-      this.closeAssignTeamModal();
-      this.loadActivity();
-      alert('Team assigned successfully!');
-    }, 1000);
+    console.log('🔄 Assigning team:', {
+      activityId: this.activityId,
+      teamId: formValue.teamId,
+      memberId: formValue.memberId
+    });
+
+    // Call API to assign team
+    this.boxService.assignActivityToTeam(
+      this.activityId,
+      formValue.teamId,
+      formValue.memberId
+    ).subscribe({
+      next: (response) => {
+        console.log('✅ Team assigned successfully:', response);
+        this.isAssigningTeam = false;
+        this.assignTeamSuccess = true; // Show success message in modal
+        
+        // Show success message
+        const successMessage = 'Team assigned successfully!';
+        console.log('📢 Dispatching toast:', successMessage);
+        
+        // Dispatch toast notification
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { message: successMessage, type: 'success' }
+        }));
+        
+        // Reload activity data
+        this.loadActivity();
+        
+        // Close modal after showing success message for 1.5 seconds
+        setTimeout(() => {
+          this.closeAssignTeamModal();
+        }, 1500);
+      },
+      error: (err) => {
+        console.error('❌ Error assigning team:', err);
+        this.isAssigningTeam = false;
+        
+        // Extract error message from backend response
+        let errorMessage = 'Failed to assign team';
+        if (err?.error) {
+          if (err.error.errors && typeof err.error.errors === 'object') {
+            const errors = Object.values(err.error.errors).flat() as string[];
+            errorMessage = errors.length > 0 ? errors[0] : errorMessage;
+          } else if (err.error.message) {
+            errorMessage = err.error.message;
+          } else if (typeof err.error === 'string') {
+            errorMessage = err.error;
+          }
+        } else if (err?.message) {
+          errorMessage = err.message;
+        }
+        
+        console.log('📢 Dispatching error toast:', errorMessage);
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { message: errorMessage, type: 'error' }
+        }));
+      }
+    });
   }
 
   // Issue Material Modal
@@ -370,17 +514,29 @@ export class ActivityDetailsComponent implements OnInit {
 
   // Set Schedule Modal
   openSetScheduleModal(): void {
+    this.scheduleError = ''; // Clear any previous errors
+    this.scheduleSuccess = false; // Reset success state
     if (this.activityDetail) {
-      const plannedStart = this.activityDetail.plannedStartDate 
-        ? new Date(this.activityDetail.plannedStartDate).toISOString().split('T')[0]
-        : '';
-      const plannedEnd = this.activityDetail.plannedEndDate 
-        ? new Date(this.activityDetail.plannedEndDate).toISOString().split('T')[0]
-        : '';
+      // Extract date in YYYY-MM-DD format without timezone conversion
+      let plannedStart = '';
+      if (this.activityDetail.plannedStartDate) {
+        // Handle both string and Date object inputs
+        const date = this.activityDetail.plannedStartDate instanceof Date 
+          ? this.activityDetail.plannedStartDate 
+          : new Date(this.activityDetail.plannedStartDate);
+        
+        // Check if date is valid
+        if (!isNaN(date.getTime())) {
+          // Use local date components to avoid timezone shifts
+          const year = date.getFullYear();
+          const month = String(date.getMonth() + 1).padStart(2, '0');
+          const day = String(date.getDate()).padStart(2, '0');
+          plannedStart = `${year}-${month}-${day}`;
+        }
+      }
 
       this.scheduleForm.patchValue({
         plannedStartDate: plannedStart,
-        plannedEndDate: plannedEnd,
         duration: this.activityDetail.duration || '',
         notes: ''
       });
@@ -391,6 +547,8 @@ export class ActivityDetailsComponent implements OnInit {
   closeSetScheduleModal(): void {
     this.isSetScheduleModalOpen = false;
     this.scheduleForm.reset();
+    this.scheduleError = ''; // Clear error when closing
+    this.scheduleSuccess = false; // Reset success state
   }
 
   onSetSchedule(): void {
@@ -399,15 +557,72 @@ export class ActivityDetailsComponent implements OnInit {
     this.isSettingSchedule = true;
     const formValue = this.scheduleForm.value;
 
-    // TODO: Call API to set schedule
-    console.log('Setting schedule:', formValue);
-    
-    // Simulate API call
-    setTimeout(() => {
-      this.isSettingSchedule = false;
-      this.closeSetScheduleModal();
-      this.loadActivity();
-      alert('Schedule updated successfully!');
-    }, 1000);
+    // Parse date string (YYYY-MM-DD) and create date at UTC midnight to avoid timezone shifts
+    // This ensures the date sent to backend matches the date selected by the user
+    const dateParts = formValue.plannedStartDate.split('-');
+    const plannedStartDate = new Date(Date.UTC(
+      parseInt(dateParts[0], 10),
+      parseInt(dateParts[1], 10) - 1, // Month is 0-indexed
+      parseInt(dateParts[2], 10),
+      0, 0, 0, 0 // UTC midnight
+    ));
+    const duration = parseInt(formValue.duration, 10);
+
+    this.boxService.setActivitySchedule(this.activityId, plannedStartDate, duration).subscribe({
+      next: () => {
+        console.log('✅ Schedule updated successfully');
+        this.isSettingSchedule = false;
+        this.scheduleSuccess = true; // Show success message in modal
+        
+        // Reload activity data
+        this.loadActivity();
+        
+        // Dispatch toast notification
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { message: 'Schedule updated successfully!', type: 'success' }
+        }));
+        
+        // Close modal after showing success message for 1.5 seconds
+        setTimeout(() => {
+          this.closeSetScheduleModal();
+        }, 1500);
+      },
+      error: (err) => {
+        this.isSettingSchedule = false;
+        
+        // Extract validation error message from backend response
+        let errorMessage = 'Failed to update schedule';
+        if (err?.error) {
+          // Check for FluentValidation error format (errors object)
+          if (err.error.errors && typeof err.error.errors === 'object') {
+            const errors = Object.values(err.error.errors).flat() as string[];
+            errorMessage = errors.length > 0 ? errors[0] : errorMessage;
+          } 
+          // Check for direct message property (may contain field name prefix like "PlannedStartDate ...")
+          else if (err.error.message) {
+            // Remove field name prefix if present (e.g., "PlannedStartDate Cannot modify..." -> "Cannot modify...")
+            const message = err.error.message;
+            errorMessage = message.includes(' ') && /^[A-Za-z]+ /.test(message) 
+              ? message.substring(message.indexOf(' ') + 1) 
+              : message;
+          } 
+          // Check if error itself is a string
+          else if (typeof err.error === 'string') {
+            errorMessage = err.error;
+          }
+        } else if (err?.message) {
+          errorMessage = err.message;
+        }
+        
+        // Set error message to display in modal
+        this.scheduleError = errorMessage;
+        
+        // Also show toast notification
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { message: errorMessage, type: 'error' }
+        }));
+        console.error('Error setting schedule:', err);
+      }
+    });
   }
 }

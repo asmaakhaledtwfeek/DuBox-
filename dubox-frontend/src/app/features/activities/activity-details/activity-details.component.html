@@ -282,7 +282,6 @@
           <select formControlName="status" class="form-control">
             <option value="NotStarted">Not Started</option>
             <option value="InProgress">In Progress</option>
-            <option value="Completed">Completed</option>
             <option value="OnHold">On Hold</option>
             <option value="Delayed">Delayed</option>
           </select>
@@ -311,19 +310,26 @@
       <button class="btn-close" (click)="closeAssignTeamModal()">×</button>
     </div>
     <div class="modal-body">
-      <form [formGroup]="assignTeamForm" (ngSubmit)="onAssignTeam()">
+      <!-- Success message -->
+      <div class="alert alert-success" *ngIf="assignTeamSuccess">
+        <span>✓ Team assigned successfully!</span>
+      </div>
+      
+      <form [formGroup]="assignTeamForm" (ngSubmit)="onAssignTeam()" *ngIf="!assignTeamSuccess">
         <div class="form-group">
           <label class="form-label">Team</label>
           <select formControlName="teamId" class="form-control">
             <option value="">Select a team</option>
-            <option *ngFor="let team of availableTeams" [value]="team.id">{{ team.name }}</option>
+            <option *ngFor="let team of availableTeams" [value]="team.teamId">{{ team.teamName }}</option>
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">Team Member (Optional)</label>
-          <select formControlName="memberId" class="form-control">
+          <select formControlName="memberId" class="form-control" [disabled]="!assignTeamForm.get('teamId')?.value">
             <option value="">Select a team member</option>
-            <option *ngFor="let member of availableMembers" [value]="member.id">{{ member.name }}</option>
+            <option *ngFor="let member of availableMembers" [value]="member.teamMemberId">
+              {{ member.employeeName || member.fullName || member.email }}
+            </option>
           </select>
         </div>
         <div class="modal-actions">
@@ -382,16 +388,20 @@
       <button class="btn-close" (click)="closeSetScheduleModal()">×</button>
     </div>
     <div class="modal-body">
-      <form [formGroup]="scheduleForm" (ngSubmit)="onSetSchedule()">
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Planned Start Date</label>
-            <input type="date" formControlName="plannedStartDate" class="form-control">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Planned End Date</label>
-            <input type="date" formControlName="plannedEndDate" class="form-control">
-          </div>
+      <!-- Success message -->
+      <div class="alert alert-success" *ngIf="scheduleSuccess">
+        <span>✓ Schedule updated successfully!</span>
+      </div>
+      
+      <form [formGroup]="scheduleForm" (ngSubmit)="onSetSchedule()" *ngIf="!scheduleSuccess">
+        <!-- Error message display -->
+        <div class="alert alert-error" *ngIf="scheduleError">
+          <span>{{ scheduleError }}</span>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Planned Start Date</label>
+          <input type="date" formControlName="plannedStartDate" class="form-control" [class.invalid]="scheduleError">
         </div>
         <div class="form-group">
           <label class="form-label">Duration (days)</label>
@@ -412,3 +422,12 @@
     </div>
   </div>
 </div>
+
+<!-- Update Progress Modal -->
+<app-update-progress-modal
+  *ngIf="activityDetail"
+  [activity]="activityDetail"
+  [isOpen]="isModalOpen"
+  (closeModal)="closeProgressModal()"
+  (progressUpdated)="onProgressUpdated($event)">
+</app-update-progress-modal>

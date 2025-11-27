@@ -166,6 +166,8 @@
             </div>
           </div>
 
+        
+
           <!-- Dates Card -->
           <div class="info-card">
             <h3 class="card-title">Schedule</h3>
@@ -367,6 +369,7 @@
                 <thead>
                   <tr>
                     <th class="col-seq">Seq</th>
+                    <th class="col-wir">WIR</th>
                     <th class="col-extra">Issue Type</th>
                     <th class="col-extra">Severity</th>
                     <th class="col-extra">Assigned To</th>
@@ -374,13 +377,15 @@
                     <th class="col-extra">Reported By</th>
                     <th class="col-extra">Issue Date</th>
                     <th class="col-extra">Status</th>
-                    <th class="col-extra">WIR</th>
                     <th class="col-actions">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr *ngFor="let issue of qualityIssues; let i = index">
                     <td class="text-center">{{ i + 1 }}</td>
+                    <td class="wir-cell">
+                      <span class="wir-badge">{{ getQualityIssueWir(issue) }}</span>
+                    </td>
                     <td>{{ issue.issueType || '—' }}</td>
                     <td>{{ issue.severity || '—' }}</td>
                     <td>{{ issue.assignedTo || '—' }}</td>
@@ -392,7 +397,6 @@
                         {{ getQualityIssueStatusLabel(issue.status) }}
                       </span>
                     </td>
-                    <td>{{ getQualityIssueWir(issue) }}</td>
                     <td class="col-actions">
                       <div class="action-stack">
                         <button 
@@ -569,9 +573,8 @@
             </div>
           </div>
 
-          <div class="modal-actions">
+          <div class="modal-actions single">
             <button class="btn btn-secondary" (click)="closeIssueDetails()">Close</button>
-            <button class="btn btn-primary" (click)="openStatusModal(selectedIssueDetails)">Update Status</button>
           </div>
         </div>
         </div>
@@ -640,24 +643,83 @@
   </div>
 </div>
 
+<div class="progress-modal-backdrop" *ngIf="isProgressModalOpen && selectedProgressUpdate">
+  <div class="progress-modal">
+    <div class="modal-header">
+      <div>
+        <h2>Progress Update</h2>
+        <p>{{ selectedProgressUpdate.updateDate | date: 'MMM d, y, h:mm a' }}</p>
+      </div>
+      <button class="icon-button" (click)="closeProgressDetails()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-grid">
+        <div>
+          <label>Updated By</label>
+          <p>{{ selectedProgressUpdate.updatedByName || selectedProgressUpdate.updatedBy || '—' }}</p>
+        </div>
+        <div>
+          <label>Progress</label>
+          <p>{{ selectedProgressUpdate.progressPercentage | number:'1.0-2' }}%</p>
+        </div>
+      </div>
+      <div>
+        <label>Notes</label>
+        <p>{{ selectedProgressUpdate.workDescription || 'No notes provided.' }}</p>
+      </div>
+      <div *ngIf="selectedProgressUpdate.issuesEncountered">
+        <label>Issues Encountered</label>
+        <p>{{ selectedProgressUpdate.issuesEncountered }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Delete Confirmation Modal -->
 <div class="modal-backdrop" *ngIf="showDeleteConfirm">
   <div class="confirm-modal">
-    <div class="modal-icon">
-      <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <polyline points="3 6 5 6 21 6"/>
-        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-        <line x1="10" y1="11" x2="10" y2="17"/>
-        <line x1="14" y1="11" x2="14" y2="17"/>
+    <!-- Success Message -->
+    <div class="alert alert-success" *ngIf="deleteSuccess">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20 6L9 17l-5-5"/>
       </svg>
+      <span>Box deleted successfully!</span>
     </div>
-    <h3>Delete this box?</h3>
-    <p>This action cannot be undone. Are you sure you want to remove this box from the project?</p>
+    
+    <!-- Error Message -->
+    <div class="alert alert-error" *ngIf="error && !deleteSuccess">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <span>{{ error }}</span>
+    </div>
+
+    <!-- Default Delete Confirmation -->
+    <div *ngIf="!deleteSuccess && !error">
+      <div class="modal-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          <line x1="10" y1="11" x2="10" y2="17"/>
+          <line x1="14" y1="11" x2="14" y2="17"/>
+        </svg>
+      </div>
+      <h3>Delete this box?</h3>
+      <p>This action cannot be undone. Are you sure you want to remove this box from the project?</p>
+    </div>
+    
     <div class="modal-actions">
-      <button class="btn btn-secondary" (click)="cancelDelete()" [disabled]="deleting">
-        Cancel
+      <button class="btn btn-secondary" (click)="cancelDelete()" [disabled]="deleting || deleteSuccess">
+        {{ deleteSuccess ? 'Close' : 'Cancel' }}
       </button>
-      <button class="btn btn-danger" (click)="deleteBox()" [disabled]="deleting">
+      <button class="btn btn-danger" (click)="deleteBox()" [disabled]="deleting || deleteSuccess" *ngIf="!deleteSuccess">
         <span class="spinner" *ngIf="deleting"></span>
         <span *ngIf="!deleting">Delete</span>
         <span *ngIf="deleting">Deleting...</span>

@@ -61,17 +61,18 @@
         background-color: rgba(0, 0, 0, 0.02);
       }
 
-      // WIR Checkpoint rows - Yellow/Orange background
+      // WIR Checkpoint rows - Yellow/Orange background (reduced saturation)
       &.wir-checkpoint {
-        background: #ffe082 !important;
+        background: #fff9e6 !important; // Lighter, less saturated yellow
         border-left: 4px solid #ffb300;
 
         td {
-          border-color: #ffc046;
+          border-color: #ffe082;
+          padding: 8px 8px; // Reduced vertical padding to match normal rows
         }
 
         &:hover {
-          background: #ffca28 !important;
+          background: #fff4cc !important;
         }
       }
 
@@ -113,6 +114,11 @@
 
         &.actions-cell {
           padding: 8px;
+          white-space: nowrap;
+        }
+        
+        &.wir-actions-cell {
+          padding: 6px 8px;
         }
       }
     }
@@ -178,6 +184,70 @@
   }
 }
 
+// WIR Actions Group - Compact badge-style buttons
+.wir-actions-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.btn-wir-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+
+  svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  span {
+    line-height: 1;
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.btn-wir-qa-qc {
+  background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+  color: white;
+
+  &:hover {
+    background: linear-gradient(135deg, #388e3c 0%, #4caf50 100%);
+    box-shadow: 0 2px 6px rgba(76, 175, 80, 0.35);
+  }
+}
+
+.btn-wir-add-checkpoint {
+  background: linear-gradient(135deg, #ff9800 0%, #ffb74d 100%);
+  color: white;
+
+  &:hover {
+    background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%);
+    box-shadow: 0 2px 6px rgba(255, 152, 0, 0.35);
+  }
+}
+
+// Legacy button styles (kept for backward compatibility if needed elsewhere)
 .btn-qa-qc {
   display: inline-flex;
   align-items: center;
@@ -207,6 +277,42 @@
     background: linear-gradient(135deg, #388e3c 0%, #4caf50 100%);
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.btn-add-checkpoint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 7px 14px;
+  background: linear-gradient(135deg, #ff9800 0%, #ffb74d 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: 6px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(255, 152, 0, 0.3);
+
+  svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  &:hover {
+    background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
   }
 
   &:active {

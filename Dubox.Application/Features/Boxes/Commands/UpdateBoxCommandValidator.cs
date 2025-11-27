@@ -37,11 +37,11 @@ namespace Dubox.Application.Features.Boxes.Commands
             }
 
 
-            if (!CannotUpdatePlannedStartDateIfActualExists(command, box))
-            {
-                context.AddFailure("PlannedStartDate", "Cannot modify the planned start date because the box has an actual start date and work has commenced.");
-                return;
-            }
+            //if (!CannotUpdatePlannedStartDateIfActualExists(command, box))
+            //{
+            //    context.AddFailure("PlannedStartDate", "Cannot modify the planned start date because the box has an actual start date and work has commenced.");
+            //    return;
+            //}
 
             await IsScheduleValidAsync(command, box, context, cancellationToken);
 
@@ -49,7 +49,7 @@ namespace Dubox.Application.Features.Boxes.Commands
 
         private bool CannotUpdatePlannedStartDateIfActualExists(UpdateBoxCommand command, Box box)
         {
-            if (box.ActualStartDate.HasValue && command.PlannedStartDate.HasValue)
+            if (box.ActualStartDate.HasValue && command.PlannedStartDate.HasValue && box.PlannedStartDate.HasValue)
                 return false;
             return true;
         }

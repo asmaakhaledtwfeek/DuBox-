@@ -6,6 +6,9 @@ import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { Box, BoxStatus } from '../../../core/models/box.model';
 import { WIRService } from '../../../core/services/wir.service';
+import { ProgressUpdate } from '../../../core/models/progress-update.model';
+import { ProgressUpdateService } from '../../../core/services/progress-update.service';
+import { ProgressUpdatesTableComponent } from '../../../shared/components/progress-updates-table/progress-updates-table.component';
 import { QualityIssueDetails, QualityIssueStatus, UpdateQualityIssueStatusRequest, WIRCheckpoint, WIRCheckpointStatus, WIRRecord } from '../../../core/models/wir.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
@@ -14,7 +17,7 @@ import { ActivityTableComponent } from '../../activities/activity-table/activity
 @Component({
   selector: 'app-box-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, HeaderComponent, SidebarComponent, ActivityTableComponent],
+  imports: [CommonModule, RouterModule, FormsModule, HeaderComponent, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent],
   templateUrl: './box-details.component.html',
   styleUrls: ['./box-details.component.scss']
 })
@@ -26,6 +29,7 @@ export class BoxDetailsComponent implements OnInit {
   error = '';
   deleting = false;
   showDeleteConfirm = false;
+  deleteSuccess = false;
   
   activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' = 'overview';
   
@@ -64,12 +68,19 @@ export class BoxDetailsComponent implements OnInit {
   isDetailsModalOpen = false;
   selectedIssueDetails: QualityIssueDetails | null = null;
 
+  progressUpdates: ProgressUpdate[] = [];
+  progressUpdatesLoading = false;
+  progressUpdatesError = '';
+  selectedProgressUpdate: ProgressUpdate | null = null;
+  isProgressModalOpen = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private boxService: BoxService,
     private permissionService: PermissionService,
-    private wirService: WIRService
+    private wirService: WIRService,
+    private progressUpdateService: ProgressUpdateService
   ) {}
 
   ngOnInit(): void {
@@ -100,6 +111,7 @@ export class BoxDetailsComponent implements OnInit {
         this.loadActivities();
         this.loadWIRCheckpoints();
         this.loadQualityIssues();
+        this.loadProgressUpdates();
         
         this.loading = false;
       },
@@ -193,10 +205,14 @@ export class BoxDetailsComponent implements OnInit {
 
   openDeleteConfirm(): void {
     this.showDeleteConfirm = true;
+    this.error = '';
+    this.deleteSuccess = false;
   }
 
   cancelDelete(): void {
     this.showDeleteConfirm = false;
+    this.error = '';
+    this.deleteSuccess = false;
   }
 
   deleteBox(): void {
@@ -206,16 +222,41 @@ export class BoxDetailsComponent implements OnInit {
 
     this.deleting = true;
     this.error = '';
+    this.deleteSuccess = false;
     this.boxService.deleteBox(this.boxId).subscribe({
       next: () => {
-        this.showDeleteConfirm = false;
         this.deleting = false;
-        this.router.navigate(['/projects', this.projectId, 'boxes']);
+        this.deleteSuccess = true;
+        // Show success message and navigate after a delay
+        setTimeout(() => {
+          this.showDeleteConfirm = false;
+          this.router.navigate(['/projects', this.projectId, 'boxes']);
+        }, 1500);
       },
       error: (err) => {
         this.deleting = false;
-        this.error = err.message || 'Failed to delete box';
-        this.showDeleteConfirm = false;
+        this.deleteSuccess = false;
+        
+        // Extract error message from backend response
+        let errorMessage = 'Failed to delete box';
+        if (err?.error) {
+          if (err.error.errors && typeof err.error.errors === 'object') {
+            const errors = Object.values(err.error.errors).flat() as string[];
+            errorMessage = errors.length > 0 ? errors[0] : errorMessage;
+          } else if (err.error.message) {
+            const message = err.error.message;
+            // Remove property name prefix if present (e.g., "BoxTag: Error message" -> "Error message")
+            errorMessage = message.includes(': ') && /^[A-Za-z]+: /.test(message)
+              ? message.substring(message.indexOf(': ') + 2)
+              : message;
+          } else if (typeof err.error === 'string') {
+            errorMessage = err.error;
+          }
+        } else if (err?.message) {
+          errorMessage = err.message;
+        }
+        
+        this.error = errorMessage;
         console.error('Error deleting box:', err);
       }
     });
@@ -360,6 +401,7 @@ export class BoxDetailsComponent implements OnInit {
       return;
     }
 
+    // Navigate to add-items step (Step 2) since checkpoint already exists
     this.router.navigate([
       '/projects',
       this.projectId,
@@ -368,12 +410,21 @@ export class BoxDetailsComponent implements OnInit {
       'activities',
       checkpoint.boxActivityId,
       'qa-qc'
-    ]);
+    ], {
+      queryParams: { step: 'add-items' }
+    });
   }
 
   navigateToReview(checkpoint: WIRCheckpoint): void {
     if (!this.canNavigateToReview(checkpoint)) {
       return;
+    }
+
+    // Determine the appropriate step based on checkpoint status
+    // If checklist items exist, go to review step, otherwise go to add-items
+    let targetStep: string = 'review';
+    if (!checkpoint.checklistItems || checkpoint.checklistItems.length === 0) {
+      targetStep = 'add-items'; // Need to add checklist items first
     }
 
     this.router.navigate([
@@ -384,7 +435,9 @@ export class BoxDetailsComponent implements OnInit {
       'activities',
       checkpoint.boxActivityId,
       'qa-qc'
-    ]);
+    ], {
+      queryParams: { step: targetStep }
+    });
   }
 
   loadQualityIssues(): void {
@@ -481,6 +534,46 @@ export class BoxDetailsComponent implements OnInit {
     this.selectedIssueForStatus = null;
     this.statusUpdateLoading = false;
     this.statusUpdateError = '';
+  }
+
+  openProgressDetails(update: ProgressUpdate): void {
+    this.selectedProgressUpdate = update;
+    this.isProgressModalOpen = true;
+  }
+
+  closeProgressDetails(): void {
+    this.isProgressModalOpen = false;
+    this.selectedProgressUpdate = null;
+  }
+
+  loadProgressUpdates(): void {
+    if (!this.boxId) {
+      return;
+    }
+
+    this.progressUpdatesLoading = true;
+    this.progressUpdatesError = '';
+
+    this.progressUpdateService.getProgressUpdatesByBox(this.boxId).subscribe({
+      next: (updates) => {
+        this.progressUpdates = (updates || [])
+          .map(update => ({
+            ...update,
+            updateDate: update.updateDate ? new Date(update.updateDate) : undefined
+          }))
+          .sort((a, b) => {
+            const aTime = a.updateDate ? new Date(a.updateDate).getTime() : 0;
+            const bTime = b.updateDate ? new Date(b.updateDate).getTime() : 0;
+            return bTime - aTime;
+          });
+        this.progressUpdatesLoading = false;
+      },
+      error: (err) => {
+        console.error('❌ Error loading progress updates:', err);
+        this.progressUpdatesError = err?.error?.message || err?.message || 'Failed to load progress updates';
+        this.progressUpdatesLoading = false;
+      }
+    });
   }
 
   requiresResolutionDescription(status: QualityIssueStatus | string | undefined): boolean {

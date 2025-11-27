@@ -50,8 +50,10 @@ export class QualityControlDashboardComponent implements OnInit {
   ];
 
   filterForm: FormGroup;
+  qualityIssuesFilterForm: FormGroup;
   checkpoints: EnrichedCheckpoint[] = [];
   qualityIssues: AggregatedQualityIssue[] = [];
+  filteredQualityIssues: AggregatedQualityIssue[] = [];
   checkpointsLoading = false;
   checkpointsError = '';
   qualityIssuesLoading = false;
@@ -87,6 +89,20 @@ export class QualityControlDashboardComponent implements OnInit {
       wirNumber: [''],
       from: [''],
       to: ['']
+    });
+
+    this.qualityIssuesFilterForm = this.fb.group({
+      wirNumber: [''],
+      boxTag: [''],
+      projectCode: [''],
+      status: [''],
+      issueType: [''],
+      severity: ['']
+    });
+
+    // Apply filters when form values change
+    this.qualityIssuesFilterForm.valueChanges.subscribe(() => {
+      this.applyQualityIssuesFilters();
     });
   }
 
@@ -159,11 +175,18 @@ export class QualityControlDashboardComponent implements OnInit {
   }
 
   onAddChecklist(checkpoint: EnrichedCheckpoint): void {
-    this.navigateToCheckpoint(checkpoint, { from: 'quality-control' });
+    // Navigate to add-items step (Step 2) since checkpoint already exists
+    this.navigateToCheckpoint(checkpoint, { step: 'add-items', from: 'quality-control' });
   }
 
   onReviewCheckpoint(checkpoint: EnrichedCheckpoint): void {
-    this.navigateToCheckpoint(checkpoint, { step: 'review', from: 'quality-control' });
+    // Determine the appropriate step based on checkpoint status
+    // If checklist items exist, go to review step, otherwise go to add-items
+    let targetStep: string = 'review';
+    if (!checkpoint.checklistItems || checkpoint.checklistItems.length === 0) {
+      targetStep = 'add-items'; // Need to add checklist items first
+    }
+    this.navigateToCheckpoint(checkpoint, { step: targetStep, from: 'quality-control' });
   }
 
   private navigateToCheckpoint(checkpoint: EnrichedCheckpoint, query?: ChecklistNavigationQuery): void {
@@ -243,7 +266,11 @@ export class QualityControlDashboardComponent implements OnInit {
   }
   private updateSummary(checkpoints: EnrichedCheckpoint[]): void {
     const total = checkpoints.length;
-    const pendingReviews = checkpoints.filter(cp => cp.status === WIRCheckpointStatus.ConditionalApproval).length;
+    // Pending reviews should include both Pending and ConditionalApproval statuses
+    const pendingReviews = checkpoints.filter(cp => 
+      cp.status === WIRCheckpointStatus.Pending || 
+      cp.status === WIRCheckpointStatus.ConditionalApproval
+    ).length;
     const loggedIssues = checkpoints.reduce((total, cp) => total + (cp.qualityIssues?.length || 0), 0);
     const resolvedIssues = checkpoints.reduce((total, cp) => {
       const resolved = (cp.qualityIssues || []).filter(issue => (issue as any)?.status === 'Resolved').length;
@@ -273,6 +300,59 @@ export class QualityControlDashboardComponent implements OnInit {
         issueStatus: issue.status
       }))
     );
+    // Apply filters after building the list
+    this.applyQualityIssuesFilters();
+  }
+
+  applyQualityIssuesFilters(): void {
+    const filters = this.qualityIssuesFilterForm.value;
+    
+    this.filteredQualityIssues = this.qualityIssues.filter(issue => {
+      // Filter by WIR Number
+      if (filters.wirNumber && filters.wirNumber.trim()) {
+        const wirMatch = (issue.wirNumber || '').toLowerCase().includes(filters.wirNumber.toLowerCase().trim()) ||
+                        (issue.wirName || '').toLowerCase().includes(filters.wirNumber.toLowerCase().trim());
+        if (!wirMatch) return false;
+      }
+
+      // Filter by Box Tag
+      if (filters.boxTag && filters.boxTag.trim()) {
+        const boxTagMatch = (issue.boxTag || '').toLowerCase().includes(filters.boxTag.toLowerCase().trim());
+        if (!boxTagMatch) return false;
+      }
+
+      // Filter by Project Code
+      if (filters.projectCode && filters.projectCode.trim()) {
+        const projectMatch = (issue.projectCode || '').toLowerCase().includes(filters.projectCode.toLowerCase().trim());
+        if (!projectMatch) return false;
+      }
+
+      // Filter by Status
+      if (filters.status && filters.status.trim()) {
+        const issueStatus = (issue.issueStatus || issue.status || '').toString().toLowerCase();
+        const filterStatus = filters.status.toLowerCase();
+        if (issueStatus !== filterStatus) return false;
+      }
+
+      // Filter by Issue Type
+      if (filters.issueType && filters.issueType.trim()) {
+        const typeMatch = (issue.issueType || '').toLowerCase().includes(filters.issueType.toLowerCase().trim());
+        if (!typeMatch) return false;
+      }
+
+      // Filter by Severity
+      if (filters.severity && filters.severity.trim()) {
+        const severityMatch = (issue.severity || '').toLowerCase() === filters.severity.toLowerCase().trim();
+        if (!severityMatch) return false;
+      }
+
+      return true;
+    });
+  }
+
+  resetQualityIssuesFilters(): void {
+    this.qualityIssuesFilterForm.reset();
+    this.applyQualityIssuesFilters();
   }
 
   getQualityIssueStatusLabel(status?: QualityIssueStatus | string): string {

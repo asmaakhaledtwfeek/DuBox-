@@ -133,8 +133,9 @@ export class QaQcChecklistComponent implements OnInit {
     if (viewParam === 'quality-list') {
       this.qualityIssuesOnlyView = true;
     }
-    if (stepParam === 'quality-issues') {
-      this.initialStepFromQuery = 'quality-issues';
+    // Capture step parameter for validation (will be validated after checkpoint loads)
+    if (stepParam && ['create-checkpoint', 'add-items', 'review', 'quality-issues'].includes(stepParam)) {
+      this.initialStepFromQuery = stepParam as ReviewStep;
     }
     
     this.initForm();
@@ -226,25 +227,81 @@ export class QaQcChecklistComponent implements OnInit {
   }
 
   checkWIRCheckpoint(): void {
-    if (!this.wirRecord) {
+    if (!this.wirRecord || !this.wirRecord.wirCode) {
       this.loading = false;
       return;
     }
 
+    const expectedWirCode = this.wirRecord.wirCode;
+
     // Check if WIR checkpoint exists for this box/activity by WIR code
-    this.wirService.getWIRCheckpointByActivity(this.boxId, this.wirRecord.wirCode).subscribe({
+    console.log('checkWIRCheckpoint - Searching for checkpoint with boxId:', this.boxId, 'wirCode:', expectedWirCode);
+    this.wirService.getWIRCheckpointByActivity(this.boxId, expectedWirCode).subscribe({
       next: (checkpoint) => {
         if (checkpoint) {
-          this.wirCheckpoint = checkpoint;
-          this.syncReviewFormFromCheckpoint();
-          this.pendingAction = checkpoint.checklistItems && checkpoint.checklistItems.length > 0 ? 'review' : 'add-items';
-          this.currentStep = null;
-          this.applyInitialStepFromQuery();
+          console.log('Found checkpoint by activity search:', checkpoint);
+          console.log('Checkpoint WIR Number:', checkpoint.wirNumber, 'Expected:', expectedWirCode);
+          console.log('Checkpoint WIR ID:', checkpoint.wirId);
+          
+          // Verify the checkpoint matches the expected WIR code before reloading
+          const wirCodeMatch = checkpoint.wirNumber === expectedWirCode || 
+                               checkpoint.wirNumber?.toLowerCase() === expectedWirCode?.toLowerCase();
+          
+          if (!wirCodeMatch) {
+            console.warn('Checkpoint WIR code mismatch! Expected:', expectedWirCode, 'Got:', checkpoint.wirNumber);
+            // Don't use this checkpoint, treat as if none exists
+            this.currentStep = 'create-checkpoint';
+            this.pendingAction = null;
+            this.applyInitialStepFromQuery();
+            this.loading = false;
+            return;
+          }
+          
+          // Reload checkpoint by ID to ensure all data including checklist items is included
+          this.wirService.getWIRCheckpointById(checkpoint.wirId).subscribe({
+            next: (fullCheckpoint) => {
+              console.log('Reloaded checkpoint by ID:', fullCheckpoint);
+              console.log('Reloaded checkpoint WIR Number:', fullCheckpoint.wirNumber);
+              console.log('Checkpoint checklist items:', fullCheckpoint.checklistItems?.length || 0, fullCheckpoint.checklistItems);
+              
+              // Verify the reloaded checkpoint still matches
+              const reloadedMatch = fullCheckpoint.wirNumber === expectedWirCode || 
+                                    fullCheckpoint.wirNumber?.toLowerCase() === expectedWirCode?.toLowerCase();
+              
+              if (!reloadedMatch) {
+                console.error('Reloaded checkpoint WIR code mismatch! Expected:', expectedWirCode, 'Got:', fullCheckpoint.wirNumber);
+                this.error = 'Checkpoint data mismatch. Please refresh the page.';
+                this.loading = false;
+                return;
+              }
+              
+              this.wirCheckpoint = fullCheckpoint;
+              this.syncReviewFormFromCheckpoint();
+              this.processCheckpointLoaded();
+            },
+            error: (err) => {
+              console.error('Error loading checkpoint by ID, using checkpoint from search:', err);
+              // Fallback to checkpoint from search, but verify it matches
+              if (wirCodeMatch) {
+                this.wirCheckpoint = checkpoint;
+                console.log('Using checkpoint from search:', checkpoint);
+                console.log('Checkpoint checklist items:', checkpoint.checklistItems?.length || 0, checkpoint.checklistItems);
+                this.syncReviewFormFromCheckpoint();
+                this.processCheckpointLoaded();
+              } else {
+                this.error = 'Failed to load correct checkpoint data.';
+                this.loading = false;
+              }
+            }
+          });
         } else {
+          // No checkpoint exists, start at Step 1
+          console.log('No checkpoint found for WIR code:', expectedWirCode);
           this.currentStep = 'create-checkpoint';
           this.pendingAction = null;
+          this.applyInitialStepFromQuery();
+          this.loading = false;
         }
-        this.loading = false;
       },
       error: (err) => {
         console.error('Error checking WIR checkpoint:', err);
@@ -253,6 +310,59 @@ export class QaQcChecklistComponent implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  private processCheckpointLoaded(): void {
+    if (!this.wirCheckpoint) {
+      this.loading = false;
+      return;
+    }
+    
+    // Validate query parameter step before applying
+    if (this.initialStepFromQuery === 'create-checkpoint') {
+      // Only allow if explicitly requested and checkpoint doesn't exist (shouldn't happen, but handle gracefully)
+      // If checkpoint exists, redirect to next accessible step
+      const nextStep = this.getNextAccessibleStep();
+      if (nextStep && nextStep !== 'create-checkpoint') {
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { step: nextStep },
+          queryParamsHandling: 'merge'
+        });
+        this.handleStepClick(nextStep);
+      } else {
+        // This shouldn't happen if checkpoint exists, but handle gracefully
+        this.currentStep = null;
+        this.pendingAction = nextStep || 'add-items';
+      }
+      this.initialStepApplied = true;
+    } else {
+      // Apply initial step from query (will validate accessibility)
+      // If navigating to add-items, ensure form is built with existing items
+      if (this.initialStepFromQuery === 'add-items' && this.wirCheckpoint.checklistItems && this.wirCheckpoint.checklistItems.length > 0) {
+        console.log('Pre-populating checklist form with', this.wirCheckpoint.checklistItems.length, 'items');
+        this.buildAddChecklistItemsForm(this.wirCheckpoint.checklistItems);
+      }
+      this.applyInitialStepFromQuery();
+      // If no step was set, determine the next accessible step
+      if (!this.currentStep && !this.pendingAction) {
+        const nextStep = this.getNextAccessibleStep();
+        if (nextStep) {
+          // If checkpoint exists, navigate to the next accessible step instead of showing overview
+          if (nextStep !== 'create-checkpoint') {
+            this.router.navigate([], {
+              relativeTo: this.route,
+              queryParams: { step: nextStep },
+              queryParamsHandling: 'merge'
+            });
+            this.handleStepClick(nextStep);
+          } else {
+            this.pendingAction = nextStep;
+          }
+        }
+      }
+    }
+    this.loading = false;
   }
 
   onCreateCheckpoint(): void {
@@ -276,12 +386,37 @@ export class QaQcChecklistComponent implements OnInit {
 
     this.wirService.createWIRCheckpoint(request).subscribe({
       next: (checkpoint) => {
-        this.wirCheckpoint = checkpoint;
-        this.syncReviewFormFromCheckpoint();
-        this.applyInitialStepFromQuery();
-        this.creatingCheckpoint = false;
-        this.pendingAction = 'add-items';
-        this.currentStep = null;
+        // After creating checkpoint, fetch it again by ID to ensure all data including checklist items is loaded
+        this.wirService.getWIRCheckpointById(checkpoint.wirId).subscribe({
+          next: (fullCheckpoint) => {
+            this.wirCheckpoint = fullCheckpoint;
+            console.log('Reloaded checkpoint after creation:', fullCheckpoint);
+            console.log('Checklist items in reloaded checkpoint:', fullCheckpoint.checklistItems?.length || 0);
+            this.syncReviewFormFromCheckpoint();
+            this.creatingCheckpoint = false;
+            // Navigate directly to Step 2 (Add Checklist Items)
+            this.startAddChecklistFlow();
+            // Clear the step query parameter to allow normal flow
+            this.router.navigate([], {
+              relativeTo: this.route,
+              queryParams: { step: null },
+              queryParamsHandling: 'merge'
+            });
+          },
+          error: (err) => {
+            console.error('Error reloading checkpoint:', err);
+            // Fallback to using the checkpoint from creation response
+            this.wirCheckpoint = checkpoint;
+            this.syncReviewFormFromCheckpoint();
+            this.creatingCheckpoint = false;
+            this.startAddChecklistFlow();
+            this.router.navigate([], {
+              relativeTo: this.route,
+              queryParams: { step: null },
+              queryParamsHandling: 'merge'
+            });
+          }
+        });
       },
       error: (err) => {
         this.creatingCheckpoint = false;
@@ -295,16 +430,23 @@ export class QaQcChecklistComponent implements OnInit {
     const itemsArray = this.addChecklistItemsArray;
     itemsArray.clear();
     
+    console.log('buildAddChecklistItemsForm called with items:', sourceItems?.length || 0);
+    console.log('Source items data:', sourceItems);
+    
     if (sourceItems && sourceItems.length > 0) {
       sourceItems
         .sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
-        .forEach(item => {
+        .forEach((item, index) => {
+          console.log(`Adding checklist item ${index + 1}:`, item);
           itemsArray.push(this.createChecklistItemGroup({
             checkpointDescription: item.checkpointDescription,
             referenceDocument: item.referenceDocument,
             sequence: item.sequence
-      }));
-    });
+          }));
+        });
+      console.log('Form array after building:', itemsArray.length, 'items');
+    } else {
+      console.log('No source items provided or empty array');
     }
 
     this.updateAddChecklistSequences();
@@ -379,9 +521,17 @@ export class QaQcChecklistComponent implements OnInit {
       return;
     }
 
+    // Debug: Log checkpoint state
+    console.log('startAddChecklistFlow - checkpoint:', this.wirCheckpoint);
+    console.log('startAddChecklistFlow - checklistItems:', this.wirCheckpoint.checklistItems);
+    console.log('startAddChecklistFlow - checklistItems length:', this.wirCheckpoint.checklistItems?.length || 0);
+    
+    // Always build the form with existing items from checkpoint
     const existingItems = this.wirCheckpoint.checklistItems && this.wirCheckpoint.checklistItems.length > 0
       ? this.wirCheckpoint.checklistItems
       : undefined;
+    
+    console.log('Building checklist form with items:', existingItems?.length || 0, existingItems);
     this.buildAddChecklistItemsForm(existingItems);
     this.currentStep = 'add-items';
     this.pendingAction = null;
@@ -585,6 +735,63 @@ export class QaQcChecklistComponent implements OnInit {
     return !!status && status !== WIRCheckpointStatus.Pending;
   }
 
+  /**
+   * Check if Step 1 (Create Checkpoint) is completed
+   */
+  isStep1Completed(): boolean {
+    return !!this.wirCheckpoint;
+  }
+
+  /**
+   * Check if Step 2 (Add Checklist Items) is completed
+   */
+  isStep2Completed(): boolean {
+    return this.hasChecklistItems;
+  }
+
+  /**
+   * Check if Step 3 (Review & Sign-off) is completed
+   */
+  isStep3Completed(): boolean {
+    if (!this.wirCheckpoint) return false;
+    const status = this.wirCheckpoint.status as WIRCheckpointStatus | undefined;
+    return !!status && status !== WIRCheckpointStatus.Pending;
+  }
+
+  /**
+   * Check if a specific step is completed based on backend status
+   */
+  isStepCompletedByStatus(step: ReviewStep): boolean {
+    switch (step) {
+      case 'create-checkpoint':
+        return this.isStep1Completed();
+      case 'add-items':
+        return this.isStep2Completed();
+      case 'review':
+        return this.isStep3Completed();
+      case 'quality-issues':
+        return this.isStep3Completed(); // Quality issues can only be accessed after review
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Get the next accessible step based on completion status
+   */
+  getNextAccessibleStep(): ReviewStep | null {
+    if (!this.isStep1Completed()) {
+      return 'create-checkpoint';
+    }
+    if (!this.isStep2Completed()) {
+      return 'add-items';
+    }
+    if (!this.isStep3Completed()) {
+      return 'review';
+    }
+    return 'quality-issues';
+  }
+
   private setInitialFinalStatus(): void {
     const currentStatus = (this.wirCheckpoint?.status as WIRCheckpointStatus) || WIRCheckpointStatus.Pending;
     const defaultStatus = currentStatus === WIRCheckpointStatus.Approved ||
@@ -674,23 +881,46 @@ export class QaQcChecklistComponent implements OnInit {
     return parsed.toISOString().split('T')[0];
   }
 
+  /**
+   * Check if user can navigate to a specific step (enforces sequential workflow)
+   */
   canNavigateToStep(step: ReviewStep): boolean {
-    switch (step) {
-      case 'create-checkpoint':
-        return !this.wirCheckpoint;
-      case 'add-items':
-        return !!this.wirCheckpoint && !this.isChecklistLocked;
-      case 'review':
-        return this.hasChecklistItems;
-      case 'quality-issues':
-        return !!this.wirCheckpoint;
-      default:
-        return false;
+    const stepIndex = this.getStepIndex(step);
+    
+    // Step 1: Always accessible if checkpoint doesn't exist
+    if (step === 'create-checkpoint') {
+      return !this.wirCheckpoint;
     }
+    
+    // Step 2: Only accessible if Step 1 is completed
+    if (step === 'add-items') {
+      return this.isStep1Completed() && !this.isChecklistLocked;
+    }
+    
+    // Step 3: Only accessible if Step 2 is completed
+    if (step === 'review') {
+      return this.isStep2Completed();
+    }
+    
+    // Step 4: Only accessible if Step 3 is completed
+    if (step === 'quality-issues') {
+      return this.isStep3Completed();
+    }
+    
+    return false;
   }
 
   handleStepClick(step: ReviewStep): void {
+    // Strict validation: prevent navigation if step is not accessible
     if (!this.canNavigateToStep(step)) {
+      console.warn(`Cannot navigate to step ${step}. Previous steps must be completed.`);
+      // Optionally show a user-friendly message
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: {
+          message: `Please complete previous steps before accessing ${this.stepMeta.find(s => s.id === step)?.title || step}`,
+          type: 'warning'
+        }
+      }));
       return;
     }
 
@@ -716,9 +946,66 @@ export class QaQcChecklistComponent implements OnInit {
       return;
     }
 
-    if (this.initialStepFromQuery === 'quality-issues' && this.wirCheckpoint) {
-      this.startQualityIssuesFlow();
+    // Validate that the requested step is accessible before allowing navigation
+    if (!this.canNavigateToStep(this.initialStepFromQuery)) {
+      // If step is not accessible, redirect to the next accessible step
+      const nextStep = this.getNextAccessibleStep();
+      if (nextStep) {
+        console.warn(`Step ${this.initialStepFromQuery} is not accessible. Redirecting to ${nextStep}`);
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { step: nextStep },
+          queryParamsHandling: 'merge'
+        });
+        // Set the step after navigation
+        if (nextStep === 'create-checkpoint') {
+          this.currentStep = 'create-checkpoint';
+          this.pendingAction = null;
+        } else {
+          this.handleStepClick(nextStep);
+        }
+      }
       this.initialStepApplied = true;
+      return;
+    }
+
+    // Step is accessible, proceed with navigation
+    switch (this.initialStepFromQuery) {
+      case 'quality-issues':
+        if (this.wirCheckpoint) {
+          this.startQualityIssuesFlow();
+          this.initialStepApplied = true;
+        }
+        break;
+      case 'create-checkpoint':
+        // Only allow if checkpoint doesn't exist
+        if (!this.wirCheckpoint) {
+          this.currentStep = 'create-checkpoint';
+          this.pendingAction = null;
+          this.initialStepApplied = true;
+        } else {
+          // Checkpoint exists, redirect to next accessible step
+          const nextStep = this.getNextAccessibleStep();
+          if (nextStep) {
+            this.handleStepClick(nextStep);
+          }
+          this.initialStepApplied = true;
+        }
+        break;
+      case 'add-items':
+        // Ensure checkpoint is loaded before starting flow
+        if (this.wirCheckpoint) {
+          this.startAddChecklistFlow();
+        } else {
+          // If checkpoint not loaded yet, wait for it
+          console.warn('Checkpoint not loaded yet when trying to navigate to add-items');
+        }
+        this.initialStepApplied = true;
+        break;
+      case 'review':
+        this.startReviewFlow();
+        this.initialStepApplied = true;
+        break;
     }
   }
 
@@ -954,9 +1241,11 @@ export class QaQcChecklistComponent implements OnInit {
     return this.stepFlow.indexOf(step) + 1;
   }
 
+  /**
+   * Check if a step is completed (based on actual backend status, not UI state)
+   */
   isStepCompleted(step: ReviewStep): boolean {
-    const activeIndex = this.getStepIndex(this.activeStep);
-    return this.getStepIndex(step) < activeIndex;
+    return this.isStepCompletedByStatus(step);
   }
 
   isStepActive(step: ReviewStep): boolean {
@@ -1037,12 +1326,30 @@ export class QaQcChecklistComponent implements OnInit {
   }
 
   triggerPendingAction(): void {
+    if (!this.pendingAction) {
+      return;
+    }
+    
+    // Validate that the pending action step is accessible
+    if (!this.canNavigateToStep(this.pendingAction)) {
+      console.warn(`Cannot trigger pending action ${this.pendingAction}. Previous steps must be completed.`);
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: {
+          message: `Please complete previous steps before continuing to ${this.stepMeta.find(s => s.id === this.pendingAction)?.title || this.pendingAction}`,
+          type: 'warning'
+        }
+      }));
+      return;
+    }
+    
     if (this.pendingAction === 'add-items') {
       this.startAddChecklistFlow();
     } else if (this.pendingAction === 'review') {
       this.startReviewFlow();
     } else if (this.pendingAction === 'create-checkpoint') {
       this.currentStep = 'create-checkpoint';
+    } else if (this.pendingAction === 'quality-issues') {
+      this.startQualityIssuesFlow();
     }
   }
 

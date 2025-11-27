@@ -1,4 +1,5 @@
 ﻿using Dubox.Application.DTOs;
+using Dubox.Application.Services;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
@@ -18,6 +19,7 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
     private readonly IQRCodeService _qrCodeService;
     private readonly IBoxActivityService _boxActivityService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IProjectProgressService _projectProgressService;
 
     private static readonly string[] RequiredHeaders = new[]
     {
@@ -26,7 +28,14 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
         "Floor",
     };
 
-    public ImportBoxesFromExcelCommandHandler(IUnitOfWork unitOfWork, IExcelService excelService, IDbContext dbContext, IQRCodeService qrCodeService, IBoxActivityService boxActivityService, ICurrentUserService currentUserService)
+    public ImportBoxesFromExcelCommandHandler(
+        IUnitOfWork unitOfWork,
+        IExcelService excelService,
+        IDbContext dbContext,
+        IQRCodeService qrCodeService,
+        IBoxActivityService boxActivityService,
+        ICurrentUserService currentUserService,
+        IProjectProgressService projectProgressService)
     {
         _unitOfWork = unitOfWork;
         _excelService = excelService;
@@ -34,6 +43,7 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
         _qrCodeService = qrCodeService;
         _boxActivityService = boxActivityService;
         _currentUserService = currentUserService;
+        _projectProgressService = projectProgressService;
     }
 
     public async Task<Result<BoxImportResultDto>> Handle(ImportBoxesFromExcelCommand request, CancellationToken cancellationToken)
@@ -215,6 +225,12 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
 
                 await _unitOfWork.Repository<AuditLog>().AddRangeAsync(projectLogs, cancellationToken);
                 await _unitOfWork.CompleteAsync(cancellationToken);
+
+                await _projectProgressService.UpdateProjectProgressAsync(
+                    project.ProjectId,
+                    currentUserId,
+                    $"Project progress recalculated after importing {successCount} boxes from '{request.FileName}'.",
+                    cancellationToken);
             }
 
             var importedBoxesDtos = boxesToCreate.Adapt<List<BoxDto>>().Select(dto => dto with

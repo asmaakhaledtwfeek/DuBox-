@@ -369,6 +369,7 @@
                 <thead>
                   <tr>
                     <th class="col-seq">Seq</th>
+                    <th class="col-wir">WIR</th>
                     <th class="col-extra">Issue Type</th>
                     <th class="col-extra">Severity</th>
                     <th class="col-extra">Assigned To</th>
@@ -376,13 +377,15 @@
                     <th class="col-extra">Reported By</th>
                     <th class="col-extra">Issue Date</th>
                     <th class="col-extra">Status</th>
-                    <th class="col-extra">WIR</th>
                     <th class="col-actions">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr *ngFor="let issue of qualityIssues; let i = index">
                     <td class="text-center">{{ i + 1 }}</td>
+                    <td class="wir-cell">
+                      <span class="wir-badge">{{ getQualityIssueWir(issue) }}</span>
+                    </td>
                     <td>{{ issue.issueType || '—' }}</td>
                     <td>{{ issue.severity || '—' }}</td>
                     <td>{{ issue.assignedTo || '—' }}</td>
@@ -394,7 +397,6 @@
                         {{ getQualityIssueStatusLabel(issue.status) }}
                       </span>
                     </td>
-                    <td>{{ getQualityIssueWir(issue) }}</td>
                     <td class="col-actions">
                       <div class="action-stack">
                         <button 
@@ -571,9 +573,8 @@
             </div>
           </div>
 
-          <div class="modal-actions">
+          <div class="modal-actions single">
             <button class="btn btn-secondary" (click)="closeIssueDetails()">Close</button>
-            <button class="btn btn-primary" (click)="openStatusModal(selectedIssueDetails)">Update Status</button>
           </div>
         </div>
         </div>

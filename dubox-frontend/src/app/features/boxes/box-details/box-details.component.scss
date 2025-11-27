@@ -713,6 +713,25 @@
       width: 70px;
     }
 
+    .col-wir {
+      width: 110px;
+    }
+
+    .wir-cell {
+      .wir-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-start;
+        font-weight: 600;
+        font-size: 13px;
+        padding: 0;
+        border-radius: 0;
+        background: transparent;
+        color: var(--text-primary);
+        text-transform: uppercase;
+      }
+    }
+
     .col-extra {
       white-space: nowrap;
     }

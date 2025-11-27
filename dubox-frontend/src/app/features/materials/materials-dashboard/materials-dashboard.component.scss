@@ -25,9 +25,9 @@
 .spinner {
   width: 48px;
   height: 48px;
-  border: 4px solid rgba(255, 203, 27, 0.1);
+  border: 4px solid rgba(27, 154, 170, 0.1);
   border-radius: 50%;
-  border-top-color: var(--primary-color, #ffcb1b);
+  border-top-color: var(--amana-teal);
   animation: spin 0.8s linear infinite;
   margin: 0 auto 16px;
 }
@@ -71,7 +71,7 @@
   font-size: var(--font-size-sm, 14px);
 
   svg {
-    color: var(--primary-color, #ffcb1b);
+    color: var(--amana-teal);
   }
 }
 
@@ -185,8 +185,8 @@
       
       &:focus {
         outline: none;
-        border-color: var(--primary-color, #ffcb1b);
-        box-shadow: 0 0 0 3px rgba(255, 203, 27, 0.1);
+        border-color: var(--amana-teal);
+        box-shadow: 0 0 0 3px rgba(27, 154, 170, 0.1);
       }
     }
   }
@@ -207,7 +207,7 @@
       
       &:focus {
         outline: none;
-        border-color: var(--primary-color, #ffcb1b);
+        border-color: var(--amana-teal);
       }
     }
     
@@ -223,7 +223,7 @@
         width: 18px;
         height: 18px;
         cursor: pointer;
-        accent-color: var(--primary-color, #ffcb1b);
+        accent-color: var(--amana-teal);
       }
     }
   }
@@ -278,7 +278,7 @@
         
         &.code-cell {
           font-weight: 600;
-          color: var(--primary-color, #ffcb1b);
+          background: linear-gradient(90deg, var(--amana-teal) 0%, var(--amana-blue) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
         }
         
         &.name-cell {
@@ -348,13 +348,13 @@
   transition: all 0.2s ease;
   
   &.btn-primary {
-    background: var(--primary-gradient, linear-gradient(135deg, #ffcb1b 0%, #ffd94d 100%));
-    color: var(--secondary-color, #1f2937);
+    background: var(--primary-gradient);
+    color: var(--white);
     
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(255, 203, 27, 0.4);
-      background: var(--primary-gradient, linear-gradient(135deg, #ffd94d 0%, #ffcb1b 100%));
+      box-shadow: 0 4px 12px rgba(27, 154, 170, 0.4);
+      background: linear-gradient(135deg, var(--amana-green-dark) 0%, var(--amana-teal) 100%);
     }
   }
 }
@@ -427,11 +427,11 @@
   transition: all var(--transition-fast, 0.15s ease);
 
   &.btn-primary {
-    background: var(--primary-gradient, linear-gradient(135deg, #ffcb1b 0%, #ffd94d 100%));
-    color: var(--secondary-color, #1f2937);
+    background: var(--primary-gradient);
+    color: var(--white);
 
     &:hover {
-      box-shadow: 0 4px 12px rgba(255, 203, 27, 0.3);
+      box-shadow: 0 4px 12px rgba(27, 154, 170, 0.3);
       transform: translateY(-1px);
     }
   }

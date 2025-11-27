@@ -231,6 +231,31 @@ export const routes: Routes = [
     loadComponent: () => import('./features/notifications/notifications-center/notifications-center.component').then(m => m.NotificationsCenterComponent)
   },
   {
+    path: 'reports',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/reports/reports-dashboard/reports-dashboard.component').then(m => m.ReportsDashboardComponent)
+  },
+  {
+    path: 'reports/box-progress',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/reports/box-progress-report/box-progress-report.component').then(m => m.BoxProgressReportComponent)
+  },
+  {
+    path: 'reports/team-productivity',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/reports/team-productivity-report/team-productivity-report.component').then(m => m.TeamProductivityReportComponent)
+  },
+  {
+    path: 'reports/phase-readiness',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/reports/phase-readiness-report/phase-readiness-report.component').then(m => m.PhaseReadinessReportComponent)
+  },
+  {
+    path: 'reports/missing-materials',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/reports/missing-materials-report/missing-materials-report.component').then(m => m.MissingMaterialsReportComponent)
+  },
+  {
     path: 'unauthorized',
     loadComponent: () => import('./shared/components/unauthorized/unauthorized.component').then(m => m.UnauthorizedComponent)
   },

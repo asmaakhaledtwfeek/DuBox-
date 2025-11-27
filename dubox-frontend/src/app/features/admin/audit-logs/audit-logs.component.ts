@@ -8,6 +8,7 @@ import { AuditLogService } from '../../../core/services/audit-log.service';
 import { AuditLog, AuditLogQueryParams } from '../../../core/models/audit-log.model';
 import { DiffUtil } from '../../../core/utils/diff.util';
 import { AuditLogDetailsModalComponent } from './audit-log-details-modal/audit-log-details-modal.component';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-audit-logs',
@@ -224,6 +225,78 @@ export class AuditLogsComponent implements OnInit {
     this.isDetailsModalOpen = false;
     this.selectedLog = null;
     document.body.style.overflow = '';
+  }
+
+  exportToExcel(): void {
+    if (!this.filteredLogs || this.filteredLogs.length === 0) {
+      alert('No data to export');
+      return;
+    }
+
+    // Prepare data for Excel
+    const exportData = this.filteredLogs.map(log => {
+      const row: any = {
+        'Timestamp': this.formatDateForExcel(log.timestamp),
+        'Action': log.action || '',
+        'Entity Type': this.getTableLabel(log.tableName),
+        'Entity Name': log.entityDisplayName || '',
+        'Description': this.formatDescription(log.description) || this.getNoChangeSummary(log),
+        'Changed By': this.getLogAuthor(log) || 'System',
+      };
+
+      // Add changes as separate columns
+      if (log.changes && log.changes.length > 0) {
+        const changesText = log.changes
+          .map(change => `${change.field}: ${DiffUtil.formatValue(change.oldValue)} → ${DiffUtil.formatValue(change.newValue)}`)
+          .join('; ');
+        row['Changes'] = changesText;
+      } else {
+        row['Changes'] = 'No changes';
+      }
+
+      return row;
+    });
+
+    // Create worksheet
+    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(exportData);
+
+    // Set column widths
+    const columnWidths = [
+      { wch: 20 }, // Timestamp
+      { wch: 12 }, // Action
+      { wch: 15 }, // Entity Type
+      { wch: 25 }, // Entity Name
+      { wch: 50 }, // Description
+      { wch: 20 }, // Changed By
+      { wch: 60 }, // Changes
+    ];
+    worksheet['!cols'] = columnWidths;
+
+    // Create workbook
+    const workbook: XLSX.WorkBook = {
+      Sheets: { 'Audit Logs': worksheet },
+      SheetNames: ['Audit Logs']
+    };
+
+    // Generate file name with current date
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0];
+    const fileName = `Audit_Logs_${dateStr}.xlsx`;
+
+    // Save file
+    XLSX.writeFile(workbook, fileName);
+  }
+
+  private formatDateForExcel(date: Date | string): string {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
   }
 }
 

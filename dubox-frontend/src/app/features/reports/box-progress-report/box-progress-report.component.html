@@ -1,0 +1,179 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="page-content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-left">
+        <button class="btn-back" routerLink="/reports">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+          Back to Reports
+        </button>
+        <div class="title-section">
+          <h1 class="page-title">Box Progress Report</h1>
+          <p class="page-subtitle">Track the progress of all boxes across different phases and stages</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button 
+          class="btn btn-success" 
+          (click)="exportToExcel()"
+          [disabled]="buildingStatuses.length === 0"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Export to Excel
+        </button>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="summary-card blue">
+        <div class="card-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+          </svg>
+        </div>
+        <div class="card-content">
+          <div class="card-value">{{ totalBoxes }}</div>
+          <div class="card-label">Total Boxes</div>
+        </div>
+      </div>
+
+      <div class="summary-card green">
+        <div class="card-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+        </div>
+        <div class="card-content">
+          <div class="card-value">{{ averageProgress }}%</div>
+          <div class="card-label">Average Progress</div>
+        </div>
+      </div>
+
+      <div class="summary-card purple">
+        <div class="card-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+        </div>
+        <div class="card-content">
+          <div class="card-value">{{ buildingStatuses.length }}</div>
+          <div class="card-label">Buildings</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase Distribution -->
+    <div class="chart-section">
+      <h2 class="section-title">Phase Distribution</h2>
+      <div class="phase-bars">
+        <div 
+          class="phase-bar" 
+          *ngFor="let phase of phaseDistribution"
+          [class.zero]="phase.count === 0"
+        >
+          <div class="phase-info">
+            <span class="phase-name">{{ phase.phase }}</span>
+            <span class="phase-count">{{ phase.count }} boxes ({{ phase.percentage.toFixed(1) }}%)</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="phase.percentage"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Building Status Table -->
+    <div class="table-section">
+      <h2 class="section-title">Building Status Overview</h2>
+      <div class="table-container">
+        <table class="status-table">
+          <thead>
+            <tr>
+              <th>Building</th>
+              <th class="text-center">Non-Assembled</th>
+              <th class="text-center">Backing (Due)</th>
+              <th class="text-center">Released 1st Fix</th>
+              <th class="text-center">Released 2nd Fix</th>
+              <th class="text-center">Released 3rd Fix</th>
+              <th class="text-center">Total</th>
+              <th class="text-center">Progress</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let building of buildingStatuses">
+              <td class="building-name">{{ building.building }}</td>
+              <td class="text-center">
+                <span class="badge gray">{{ building.nonAssembled }}</span>
+              </td>
+              <td class="text-center">
+                <span class="badge orange" *ngIf="building.backing > 0">{{ building.backing }}</span>
+                <span class="badge gray" *ngIf="building.backing === 0">0</span>
+              </td>
+              <td class="text-center">
+                <span class="badge blue" *ngIf="building.released1stFix > 0">{{ building.released1stFix }}</span>
+                <span class="badge gray" *ngIf="building.released1stFix === 0">0</span>
+              </td>
+              <td class="text-center">
+                <span class="badge purple" *ngIf="building.released2ndFix > 0">{{ building.released2ndFix }}</span>
+                <span class="badge gray" *ngIf="building.released2ndFix === 0">0</span>
+              </td>
+              <td class="text-center">
+                <span class="badge green" *ngIf="building.released3rdFix > 0">{{ building.released3rdFix }}</span>
+                <span class="badge gray" *ngIf="building.released3rdFix === 0">0</span>
+              </td>
+              <td class="text-center total-cell">
+                <strong>{{ building.total }}</strong>
+              </td>
+              <td class="text-center">
+                <div class="progress-indicator" [attr.data-color]="getProgressColor(getProgressPercentage(building))">
+                  {{ getProgressPercentage(building) }}%
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Legend -->
+    <div class="legend-section">
+      <h3 class="legend-title">Phase Definitions</h3>
+      <div class="legend-grid">
+        <div class="legend-item">
+          <span class="legend-badge gray"></span>
+          <span class="legend-text"><strong>Non-Assembled:</strong> Boxes awaiting assembly</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-badge orange"></span>
+          <span class="legend-text"><strong>Backing (Due):</strong> Boxes with pending activities</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-badge blue"></span>
+          <span class="legend-text"><strong>Released 1st Fix:</strong> Boxes cleared for first fix activities (MEP Phase 1)</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-badge purple"></span>
+          <span class="legend-text"><strong>Released 2nd Fix:</strong> Boxes cleared for second fix activities (Finishing)</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-badge green"></span>
+          <span class="legend-text"><strong>Released 3rd Fix:</strong> Boxes cleared for final installations (MEP Phase 2)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

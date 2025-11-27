@@ -73,6 +73,12 @@ export class SidebarComponent implements OnInit {
         requiredRoles: [UserRole.QCInspector, UserRole.SystemAdmin, UserRole.ProjectManager]
       },
       {
+        label: 'Reports',
+        icon: 'reports',
+        route: '/reports',
+        permission: { module: 'projects', action: 'view' }
+      },
+      {
         label: 'Notifications',
         icon: 'notifications',
         route: '/notifications',

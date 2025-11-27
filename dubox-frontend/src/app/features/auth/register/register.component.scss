@@ -87,8 +87,8 @@
 
   &:focus {
     outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(255, 203, 27, 0.2);
+    border-color: var(--amana-teal);
+    box-shadow: 0 0 0 3px rgba(27, 154, 170, 0.2);
   }
 
   &.error {
@@ -116,7 +116,7 @@
   transition: color var(--transition-fast);
 
   &:hover {
-    color: var(--primary-color);
+    color: var(--amana-teal);
   }
 }
 
@@ -139,7 +139,7 @@
 .link-button {
   border: none;
   background: none;
-  color: var(--primary-color);
+  color: var(--amana-teal);
   font-weight: 600;
   cursor: pointer;
   padding: 0;
@@ -176,7 +176,7 @@
     width: 14px;
     height: 14px;
     border-width: 2px;
-    border-top-color: var(--primary-color);
+    border-top-color: var(--amana-teal);
   }
 }
 
@@ -193,7 +193,7 @@
   font-size: var(--font-size-sm);
 
   a {
-    color: var(--primary-color);
+    color: var(--amana-teal);
     font-weight: 600;
     text-decoration: none;
 
@@ -227,7 +227,7 @@
 .bg-shape-1 {
   width: 320px;
   height: 320px;
-  background: #ffcb1b;
+  background: var(--primary-color);
   top: 5%;
   right: 15%;
 }

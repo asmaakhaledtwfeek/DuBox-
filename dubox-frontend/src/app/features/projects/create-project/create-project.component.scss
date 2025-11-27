@@ -43,7 +43,7 @@
       transition: color 0.2s;
 
       &:hover {
-        color: var(--primary-color, #ffcb1b);
+        color: var(--amana-teal);
       }
 
       svg {
@@ -56,7 +56,7 @@
   .page-title {
     font-size: 32px;
     font-weight: 700;
-    color: var(--secondary-color, #1f2937);
+    color: var(--white);
     margin: 0 0 8px;
     letter-spacing: -0.5px;
   }
@@ -127,7 +127,7 @@
       left: 0;
       right: 0;
       height: 4px;
-      background: var(--primary-gradient, linear-gradient(135deg, #ffcb1b 0%, #ffd94d 100%));
+      background: var(--primary-gradient);
       border-radius: 16px 16px 0 0;
     }
     
@@ -193,8 +193,8 @@
 
     &:focus {
       outline: none;
-      border-color: var(--primary-color, #ffcb1b);
-      box-shadow: 0 0 0 3px rgba(255, 203, 27, 0.1);
+      border-color: var(--amana-teal);
+      box-shadow: 0 0 0 3px rgba(27, 154, 170, 0.1);
     }
 
     &.invalid {
@@ -270,13 +270,13 @@
   }
 
   .btn-primary {
-    background: var(--primary-gradient, linear-gradient(135deg, #ffcb1b 0%, #ffd94d 100%));
-    color: var(--secondary-color, #1f2937);
+    background: var(--primary-gradient);
+    color: var(--white);
 
     &:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(255, 203, 27, 0.4);
-      background: var(--primary-gradient, linear-gradient(135deg, #ffd94d 0%, #ffcb1b 100%));
+      box-shadow: 0 4px 12px rgba(27, 154, 170, 0.4);
+      background: var(--primary-gradient);
     }
   }
 

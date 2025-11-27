@@ -90,8 +90,8 @@
 
     &:focus {
       outline: none;
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+      border-color: var(--amana-teal);
+      box-shadow: 0 0 0 3px rgba(27, 154, 170, 0.1);
     }
   }
 }
@@ -100,6 +100,45 @@
   display: flex;
   gap: var(--spacing-md);
   justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.btn-success {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: var(--white);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+  }
+
+  &:disabled {
+    background: var(--gray-300);
+    color: var(--gray-500);
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+
+  svg {
+    vertical-align: middle;
+  }
 }
 
 .loading-container,
@@ -199,7 +238,7 @@
 
   .entity-name {
     font-size: var(--font-size-base);
-    color: var(--primary-color);
+    color: var(--amana-teal);
     font-weight: 500;
   }
 
@@ -281,8 +320,8 @@
 
   &:hover {
     background: var(--gray-100);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
+    border-color: var(--amana-teal);
+    color: var(--amana-teal);
   }
 
   svg {

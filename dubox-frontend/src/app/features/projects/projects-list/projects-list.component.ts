@@ -185,6 +185,7 @@ export class ProjectsListComponent implements OnInit {
           break;
         case BoxStatus.Completed:
         case BoxStatus.Delivered:
+        case BoxStatus.Dispatched:
           counts.completedBoxes++;
           break;
         case BoxStatus.ReadyForDelivery:

@@ -36,6 +36,12 @@
           <p class="page-subtitle">{{ box.code }} • {{ box.type }}</p>
         </div>
         <div class="header-right">
+          <button class="btn btn-primary" (click)="openBoxStatusModal()" *ngIf="canEdit">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v20M2 12h20"/>
+            </svg>
+            Update Status
+          </button>
           <button class="btn btn-secondary" (click)="editBox()" *ngIf="canEdit">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -723,6 +729,119 @@
         <span class="spinner" *ngIf="deleting"></span>
         <span *ngIf="!deleting">Delete</span>
         <span *ngIf="deleting">Deleting...</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Box Status Update Modal -->
+<div class="modal-backdrop" *ngIf="isBoxStatusModalOpen" (click)="closeBoxStatusModal()">
+  <div class="box-status-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M2 12h20"/>
+          </svg>
+        </div>
+        <div>
+          <h3>Update Box Status</h3>
+          <p class="modal-subtitle">{{ box?.name || box?.code }}</p>
+        </div>
+      </div>
+      <button class="icon-button" (click)="closeBoxStatusModal()" [disabled]="boxStatusUpdateLoading" title="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <!-- Status Transition Display -->
+      <div class="status-transition" *ngIf="box">
+        <div class="status-item current">
+          <div class="status-label">Current Status</div>
+          <div class="status-badge-wrapper">
+            <span class="status-badge" [ngClass]="getStatusClass(box.status)">
+              <span class="status-dot"></span>
+              {{ getStatusLabel(box.status) }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="status-arrow" *ngIf="selectedBoxStatus">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </div>
+        
+        <div class="status-item new" *ngIf="selectedBoxStatus">
+          <div class="status-label">New Status</div>
+          <div class="status-badge-wrapper">
+            <span class="status-badge" [ngClass]="getStatusClass(selectedBoxStatus)">
+              <span class="status-dot"></span>
+              {{ getStatusLabelForModal(selectedBoxStatus) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Selection -->
+      <div class="status-selection-wrapper">
+        <label class="form-label" for="boxStatusSelect">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          Select New Status
+        </label>
+        <div class="select-wrapper">
+          <select 
+            id="boxStatusSelect" 
+            class="status-select" 
+            [(ngModel)]="selectedBoxStatus"
+            [disabled]="boxStatusUpdateLoading"
+          >
+            <option [value]="null">Choose a status...</option>
+            <option *ngFor="let status of availableBoxStatuses" [value]="status">
+              {{ getStatusLabelForModal(status) }}
+            </option>
+          </select>
+          <svg class="select-arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div class="error-message" *ngIf="boxStatusUpdateError">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>{{ boxStatusUpdateError }}</span>
+      </div>
+    </div>
+    
+    <div class="modal-actions">
+      <button 
+        class="btn btn-secondary" 
+        (click)="closeBoxStatusModal()" 
+        [disabled]="boxStatusUpdateLoading"
+      >
+        Cancel
+      </button>
+      <button 
+        class="btn btn-primary" 
+        (click)="updateBoxStatus()" 
+        [disabled]="boxStatusUpdateLoading || !selectedBoxStatus"
+      >
+        <svg *ngIf="!boxStatusUpdateLoading" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span class="spinner-small" *ngIf="boxStatusUpdateLoading"></span>
+        <span>{{ boxStatusUpdateLoading ? 'Updating...' : 'Update Status' }}</span>
       </button>
     </div>
   </div>

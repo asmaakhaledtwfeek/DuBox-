@@ -45,7 +45,7 @@
         </svg>
         <input 
           type="text" 
-          placeholder="Search boxes by name, code, or type..." 
+          placeholder="Search boxes by name, code, type, or activity (name, status, assigned to, dates)..." 
           [formControl]="searchControl"
           class="search-input"
         />
@@ -79,6 +79,13 @@
           (click)="filterByStatus(BoxStatus.Completed)"
         >
           Completed
+        </button>
+        <button 
+          class="filter-btn" 
+          [class.active]="selectedStatus === BoxStatus.Dispatched"
+          (click)="filterByStatus(BoxStatus.Dispatched)"
+        >
+          Dispatched
         </button>
       </div>
     </div>

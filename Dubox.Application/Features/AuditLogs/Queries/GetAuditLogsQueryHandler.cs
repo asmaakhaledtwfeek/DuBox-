@@ -9,7 +9,7 @@ using System.Text.Json;
 
 namespace Dubox.Application.Features.AuditLogs.Queries
 {
-    public class GetAuditLogsQueryHandler : IRequestHandler<GetAuditLogsQuery, Result<List<AuditLogDto>>>
+    public class GetAuditLogsQueryHandler : IRequestHandler<GetAuditLogsQuery, Result<PaginatedAuditLogsResponseDto>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
@@ -20,8 +20,12 @@ namespace Dubox.Application.Features.AuditLogs.Queries
             _mapper = mapper;
         }
 
-        public async Task<Result<List<AuditLogDto>>> Handle(GetAuditLogsQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PaginatedAuditLogsResponseDto>> Handle(GetAuditLogsQuery request, CancellationToken cancellationToken)
         {
+            // Validate pagination parameters
+            var pageNumber = request.PageNumber < 1 ? 1 : request.PageNumber;
+            var pageSize = request.PageSize < 1 ? 25 : (request.PageSize > 100 ? 100 : request.PageSize);
+
             DateTime? normalizedFrom = null;
             DateTime? normalizedTo = null;
 
@@ -52,10 +56,14 @@ namespace Dubox.Application.Features.AuditLogs.Queries
                 ToDate = normalizedTo,
             };
 
+            // Create specification with pagination
+            var specification = new AuditLogSearchSpecification(searchParams, pageSize, pageNumber);
+
             var logs = _unitOfWork.Repository<AuditLog>()
-                .GetWithSpec(new AuditLogSearchSpecification(searchParams));
+                .GetWithSpec(specification);
 
             var logEntities = logs.Data.ToList();
+            var totalCount = logs.Count;
 
             var logDtos = new List<AuditLogDto>();
 
@@ -87,6 +95,8 @@ namespace Dubox.Application.Features.AuditLogs.Queries
                 logDtos.Add(dto);
             }
 
+            // Note: SearchTerm filtering is done in-memory after pagination
+            // For better performance with large datasets, consider moving SearchTerm to database query
             if (!string.IsNullOrWhiteSpace(request.SearchTerm))
             {
                 var term = request.SearchTerm.Trim().ToLowerInvariant();
@@ -102,7 +112,19 @@ namespace Dubox.Application.Features.AuditLogs.Queries
                     .ToList();
             }
 
-            return Result.Success(logDtos);
+            // Calculate total pages
+            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+            var response = new PaginatedAuditLogsResponseDto
+            {
+                Items = logDtos,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize,
+                TotalPages = totalPages
+            };
+
+            return Result.Success(response);
         }
 
         private async Task<string?> ResolveEntityDisplayNameAsync(string? tableName, Guid? recordId, CancellationToken cancellationToken)

@@ -2,7 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, map, catchError } from 'rxjs/operators';
+import { forkJoin, of } from 'rxjs';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { Box, BoxStatus, BoxTypeStat } from '../../../core/models/box.model';
@@ -118,14 +119,63 @@ export class BoxesListComponent implements OnInit {
         } else {
           this.boxes = boxes;
         }
-        this.filteredBoxes = this.boxes;
-        this.loading = false;
-        this.applyFilters();
+        
+        // Load activities for all boxes in parallel for efficient search
+        this.loadActivitiesForBoxes(this.boxes);
       },
       error: (err) => {
         this.error = err.message || 'Failed to load boxes';
         this.loading = false;
         console.error('Error loading boxes:', err);
+      }
+    });
+  }
+
+  private loadActivitiesForBoxes(boxes: Box[]): void {
+    if (boxes.length === 0) {
+      this.filteredBoxes = [];
+      this.loading = false;
+      this.applyFilters();
+      return;
+    }
+
+    // Load activities for all boxes in parallel
+    // Use catchError to handle individual failures gracefully
+    const activityObservables = boxes.map(box => 
+      this.boxService.getBoxActivities(box.id).pipe(
+        // Map to include box reference
+        map(activities => ({ boxId: box.id, activities })),
+        // Handle individual errors - return empty array if request fails
+        catchError(() => {
+          console.warn(`Failed to load activities for box ${box.id}`);
+          return of({ boxId: box.id, activities: [] });
+        })
+      )
+    );
+
+    // Use forkJoin to load all activities in parallel
+    forkJoin(activityObservables).subscribe({
+      next: (results) => {
+        // Map activities to their respective boxes
+        results.forEach((result: any) => {
+          if (result && result.boxId) {
+            const box = this.boxes.find(b => b.id === result.boxId);
+            if (box) {
+              box.activities = result.activities || [];
+            }
+          }
+        });
+
+        this.filteredBoxes = this.boxes;
+        this.loading = false;
+        this.applyFilters();
+      },
+      error: (err) => {
+        console.error('Error loading activities:', err);
+        // Continue even if activities fail to load
+        this.filteredBoxes = this.boxes;
+        this.loading = false;
+        this.applyFilters();
       }
     });
   }
@@ -167,17 +217,74 @@ export class BoxesListComponent implements OnInit {
       filtered = filtered.filter(box => box.status === this.selectedStatus);
     }
 
-    // Apply search filter
+    // Apply search filter (includes box properties and activity properties)
     const searchTerm = this.searchControl.value?.toLowerCase() || '';
     if (searchTerm) {
-      filtered = filtered.filter(box =>
-        box.name?.toLowerCase().includes(searchTerm) ||
-        box.code?.toLowerCase().includes(searchTerm) ||
-        box.type?.toLowerCase().includes(searchTerm)
-      );
+      filtered = filtered.filter(box => {
+        // Search in box properties
+        const matchesBoxProperties = 
+          box.name?.toLowerCase().includes(searchTerm) ||
+          box.code?.toLowerCase().includes(searchTerm) ||
+          box.type?.toLowerCase().includes(searchTerm) ||
+          box.floor?.toLowerCase().includes(searchTerm) ||
+          box.building?.toLowerCase().includes(searchTerm) ||
+          box.zone?.toLowerCase().includes(searchTerm) ||
+          box.assignedTeam?.toLowerCase().includes(searchTerm) ||
+          box.assignedTo?.toLowerCase().includes(searchTerm);
+
+        // Search in activity properties
+        const matchesActivityProperties = box.activities?.some(activity => {
+          // Get activity name from multiple possible property names (handles both transformed and raw data)
+          const activityName = (
+            activity.name?.toLowerCase() || 
+            (activity as any).activityName?.toLowerCase() || 
+            (activity as any).ActivityName?.toLowerCase() || 
+            ''
+          );
+          
+          const activityStatus = activity.status?.toLowerCase() || '';
+          const assignedTo = activity.assignedTo?.toLowerCase() || '';
+          const description = activity.description?.toLowerCase() || '';
+          
+          // Check if search term matches activity properties
+          // Priority: Activity name search is explicitly checked first
+          return activityName.includes(searchTerm) ||
+                 activityStatus.includes(searchTerm) ||
+                 assignedTo.includes(searchTerm) ||
+                 description.includes(searchTerm) ||
+                 // Check date fields (format dates as strings for search)
+                 this.formatDateForSearch(activity.plannedStartDate)?.includes(searchTerm) ||
+                 this.formatDateForSearch(activity.plannedEndDate)?.includes(searchTerm) ||
+                 this.formatDateForSearch(activity.actualStartDate)?.includes(searchTerm) ||
+                 this.formatDateForSearch(activity.actualEndDate)?.includes(searchTerm);
+        }) || false;
+
+        return matchesBoxProperties || matchesActivityProperties;
+      });
     }
 
     this.filteredBoxes = filtered;
+  }
+
+  private formatDateForSearch(date?: Date): string | null {
+    if (!date) return null;
+    
+    try {
+      const d = typeof date === 'string' ? new Date(date) : date;
+      if (isNaN(d.getTime())) return null;
+      
+      // Format as YYYY-MM-DD, MM/DD/YYYY, and month name for flexible search
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const monthNames = ['january', 'february', 'march', 'april', 'may', 'june',
+                         'july', 'august', 'september', 'october', 'november', 'december'];
+      const monthName = monthNames[d.getMonth()];
+      
+      return `${year}-${month}-${day} ${month}/${day}/${year} ${monthName} ${year}`.toLowerCase();
+    } catch {
+      return null;
+    }
   }
 
   viewBox(boxId: string): void {
@@ -198,7 +305,8 @@ export class BoxesListComponent implements OnInit {
       [BoxStatus.Completed]: 'badge-success',
       [BoxStatus.ReadyForDelivery]: 'badge-primary',
       [BoxStatus.Delivered]: 'badge-success',
-      [BoxStatus.OnHold]: 'badge-danger'
+      [BoxStatus.OnHold]: 'badge-danger',
+      [BoxStatus.Dispatched]: 'badge-primary'
     };
     return statusMap[status] || 'badge-secondary';
   }
@@ -211,7 +319,8 @@ export class BoxesListComponent implements OnInit {
       [BoxStatus.Completed]: 'Completed',
       [BoxStatus.ReadyForDelivery]: 'Ready for Delivery',
       [BoxStatus.Delivered]: 'Delivered',
-      [BoxStatus.OnHold]: 'On Hold'
+      [BoxStatus.OnHold]: 'On Hold',
+      [BoxStatus.Dispatched]: 'Dispatched'
     };
     return labels[status] || status;
   }

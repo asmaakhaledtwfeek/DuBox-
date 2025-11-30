@@ -6,6 +6,7 @@
         InProgress,
         Completed,
         OnHold,
-        Delayed
+        Delayed,
+        Dispatched = 6
     }
 }

@@ -71,6 +71,16 @@ public class BoxesController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
+    [HttpPatch("{boxId}/status")]
+    public async Task<IActionResult> UpdateBoxStatus(Guid boxId, [FromBody] UpdateBoxStatusCommand command, CancellationToken cancellationToken)
+    {
+        if (boxId != command.BoxId)
+            return BadRequest("Box ID mismatch");
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
     [HttpDelete("{boxId}")]
     public async Task<IActionResult> DeleteBox(Guid boxId, CancellationToken cancellationToken)
     {

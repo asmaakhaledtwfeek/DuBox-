@@ -30,6 +30,24 @@ public class GetBoxActivitiesByBoxQueryHandler : IRequestHandler<GetBoxActivitie
 
         var boxActivityDtos = boxActivities.Select(ba =>
         {
+            // Calculate actual duration in days: (actual end date - actual start date) + 1
+            // If same calendar day, return 1 day
+            int? actualDuration = null;
+            if (ba.ActualStartDate.HasValue && ba.ActualEndDate.HasValue)
+            {
+                if (ba.ActualStartDate.Value.Date == ba.ActualEndDate.Value.Date)
+                {
+                    actualDuration = 1;
+                }
+                else
+                {
+                    var timeSpan = ba.ActualEndDate.Value.Date - ba.ActualStartDate.Value.Date;
+                    var days = (int)Math.Ceiling(timeSpan.TotalDays) + 1;
+                    // Ensure at least 1 day
+                    actualDuration = days >= 1 ? days : 1;
+                }
+            }
+
             var dto = ba.Adapt<BoxActivityDto>();
             return dto with
             {
@@ -44,7 +62,8 @@ public class GetBoxActivitiesByBoxQueryHandler : IRequestHandler<GetBoxActivitie
                     ? (!string.IsNullOrEmpty(ba.AssignedMember.EmployeeName) 
                         ? ba.AssignedMember.EmployeeName 
                         : ba.AssignedMember.User?.FullName ?? string.Empty)
-                    : null
+                    : null,
+                ActualDuration = actualDuration
             };
         }).ToList();
 

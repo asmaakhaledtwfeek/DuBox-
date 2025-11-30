@@ -42,7 +42,8 @@ export enum BoxStatus {
   Completed = 'Completed',
   ReadyForDelivery = 'ReadyForDelivery',
   Delivered = 'Delivered',
-  OnHold = 'OnHold'
+  OnHold = 'OnHold',
+  Dispatched = 'Dispatched'
 }
 
 // Map frontend status strings to backend status numbers
@@ -53,6 +54,7 @@ export function getBoxStatusNumber(status: BoxStatus | string): number {
     'Completed': 3,
     'OnHold': 4,
     'Delayed': 5,
+    'Dispatched': 6,
     'QAReview': 2,  // Map to InProgress
     'ReadyForDelivery': 3,  // Map to Completed
     'Delivered': 3  // Map to Completed

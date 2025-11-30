@@ -155,6 +155,10 @@ export class ProjectDashboardComponent implements OnInit {
               // Delivered is also considered completed
               counts.completedBoxes++;
               break;
+            case BoxStatus.Dispatched:
+              // Dispatched is also considered completed
+              counts.completedBoxes++;
+              break;
             case BoxStatus.OnHold:
               counts.onHold++;
               break;

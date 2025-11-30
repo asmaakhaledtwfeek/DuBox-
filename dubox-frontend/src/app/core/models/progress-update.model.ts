@@ -80,6 +80,7 @@ export interface BoxActivityDetail {
   actualStartDate?: Date;
   actualEndDate?: Date;
   duration?: number;
+  actualDuration?: number;
   workDescription?: string;
   issuesEncountered?: string;
   teamId?: number;

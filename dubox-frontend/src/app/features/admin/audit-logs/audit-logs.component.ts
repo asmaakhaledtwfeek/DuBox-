@@ -29,6 +29,12 @@ export class AuditLogsComponent implements OnInit {
   selectedLog: AuditLog | null = null;
   isDetailsModalOpen = false;
 
+  // Pagination
+  currentPage = 1;
+  pageSize = 25;
+  totalCount = 0;
+  totalPages = 0;
+
   // Filters
   filterTableName = '';
   filterAction = '';
@@ -40,6 +46,7 @@ export class AuditLogsComponent implements OnInit {
   expandedLogs = new Set<string>();
 
   readonly DiffUtil = DiffUtil;
+  readonly Math = Math;
   private readonly numericValueRegex = /([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)(%?)/g;
 
   constructor(private auditLogService: AuditLogService) {}
@@ -52,7 +59,10 @@ export class AuditLogsComponent implements OnInit {
     this.loading = true;
     this.error = '';
 
-    const params: AuditLogQueryParams = {};
+    const params: AuditLogQueryParams = {
+      pageNumber: this.currentPage,
+      pageSize: this.pageSize
+    };
     if (this.filterTableName) params.tableName = this.filterTableName;
     if (this.filterAction) params.action = this.filterAction;
     if (this.filterSearchTerm) params.searchTerm = this.filterSearchTerm;
@@ -68,12 +78,18 @@ export class AuditLogsComponent implements OnInit {
     }
 
     this.auditLogService.getAuditLogs(params).subscribe({
-      next: (logs) => {
-        this.logs = logs;
-        this.filteredLogs = logs;
+      next: (response) => {
+        this.logs = response.items;
+        this.filteredLogs = response.items;
+        this.totalCount = response.totalCount;
+        this.totalPages = response.totalPages;
+        this.currentPage = response.pageNumber;
+        this.pageSize = response.pageSize;
+
+        // Update available filters from current page (could be enhanced to load all unique values separately)
         this.actionSet.clear();
         this.tableSet.clear();
-        logs.forEach(log => {
+        response.items.forEach(log => {
           if (log.action) {
             this.actionSet.add(log.action);
           }
@@ -94,6 +110,7 @@ export class AuditLogsComponent implements OnInit {
   }
 
   applyFilters(): void {
+    this.currentPage = 1; // Reset to first page when filters change
     this.loadAuditLogs();
   }
 
@@ -103,7 +120,39 @@ export class AuditLogsComponent implements OnInit {
     this.filterSearchTerm = '';
     this.filterFromDate = '';
     this.filterToDate = '';
+    this.currentPage = 1;
     this.loadAuditLogs();
+  }
+
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.loadAuditLogs();
+      // Scroll to top of logs table
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  changePageSize(size: number): void {
+    this.pageSize = size;
+    this.currentPage = 1; // Reset to first page when page size changes
+    this.loadAuditLogs();
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 7;
+    let startPage = Math.max(1, this.currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
+    
+    if (endPage - startPage < maxPagesToShow - 1) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
   }
 
   toggleExpand(logId: string): void {

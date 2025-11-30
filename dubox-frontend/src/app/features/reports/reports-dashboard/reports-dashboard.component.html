@@ -1,0 +1,350 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="page-content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-content">
+        <div class="title-section">
+          <h1 class="page-title">Reports Dashboard</h1>
+          <p class="page-subtitle">Real-time tracking and analytics for all project activities</p>
+        </div>
+        <div class="header-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <line x1="10" y1="9" x2="8" y2="9"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Stats Summary -->
+    <div class="stats-section">
+      <h2 class="section-title">Quick Statistics</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon blue">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ loading ? '--' : summary.totalBoxes }}</div>
+            <div class="stat-label">Total Boxes</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon green">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ loading ? '--' : summary.averageProgress }}%</div>
+            <div class="stat-label">Average Progress</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon orange">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ loading ? '--' : summary.pendingActivities }}</div>
+            <div class="stat-label">Pending Activities</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon purple">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ loading ? '--' : summary.activeTeams }}</div>
+            <div class="stat-label">Active Teams</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reports Grid -->
+    <div class="reports-section" *ngIf="!activeReport">
+      <h2 class="section-title">Available Reports</h2>
+      <div class="reports-grid">
+        <div
+          *ngFor="let report of reports"
+          (click)="showReport(report.id)"
+          class="report-card clickable"
+          [attr.data-color]="report.color"
+        >
+          <div class="card-icon" [attr.data-color]="report.color">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [innerHTML]="getIconSvg(report.icon)">
+            </svg>
+          </div>
+          <div class="card-content">
+            <h3 class="card-title">{{ report.title }}</h3>
+            <p class="card-description">{{ report.description }}</p>
+          </div>
+          <div class="card-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Report Display -->
+    <div class="active-report-section" *ngIf="activeReport">
+      <!-- Report Header -->
+      <div class="report-header">
+        <button class="btn-back" (click)="closeReport()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+          Back to Reports
+        </button>
+        <div class="report-controls">
+          <!-- Project Filter -->
+          <select 
+            [(ngModel)]="selectedProject" 
+            (change)="onProjectChange()"
+            class="filter-select"
+            *ngIf="projects.length > 0"
+          >
+            <option value="">All Projects</option>
+            <option *ngFor="let project of projects" [value]="project.id">
+              {{ project.name }}
+            </option>
+          </select>
+          
+          <!-- Export Button -->
+          <button 
+            class="btn btn-success" 
+            (click)="activeReport === 'box-progress' ? exportBoxProgressToExcel() : 
+                     activeReport === 'team-productivity' ? exportTeamProductivityToExcel() :
+                     activeReport === 'missing-materials' ? exportMissingMaterialsToExcel() :
+                     exportPhaseReadinessToExcel()"
+            [disabled]="loading"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Export to Excel
+          </button>
+        </div>
+      </div>
+
+      <!-- Box Progress Report -->
+      <div *ngIf="activeReport === 'box-progress'" class="report-content">
+        <h2 class="report-title">Box Progress Report</h2>
+        
+        <div *ngIf="loading" class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading report data...</p>
+        </div>
+
+        <div *ngIf="!loading && boxProgressData.length > 0" class="box-progress-data">
+          <div class="data-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Building</th>
+                  <th>Non-Assembled</th>
+                  <th>Backing (Due)</th>
+                  <th>Released 1st Fix</th>
+                  <th>Released 2nd Fix</th>
+                  <th>Released 3rd Fix</th>
+                  <th>Total</th>
+                  <th>Progress</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let building of boxProgressData">
+                  <td class="building-name">{{ building.building }}</td>
+                  <td class="text-center">{{ building.nonAssembled }}</td>
+                  <td class="text-center">{{ building.backing }}</td>
+                  <td class="text-center">{{ building.released1stFix }}</td>
+                  <td class="text-center">{{ building.released2ndFix }}</td>
+                  <td class="text-center">{{ building.released3rdFix }}</td>
+                  <td class="text-center"><strong>{{ building.total }}</strong></td>
+                  <td class="text-center">
+                    <span class="progress-badge" [attr.data-color]="getProgressColor(getBoxProgressPercentage(building))">
+                      {{ getBoxProgressPercentage(building) }}%
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div *ngIf="!loading && boxProgressData.length === 0" class="empty-state">
+          <p>No data available</p>
+        </div>
+      </div>
+
+      <!-- Team Productivity Report -->
+      <div *ngIf="activeReport === 'team-productivity'" class="report-content">
+        <h2 class="report-title">Team Productivity Report</h2>
+        
+        <div *ngIf="loading" class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading report data...</p>
+        </div>
+
+        <div *ngIf="!loading && teamProductivityData.length > 0" class="team-productivity-data">
+          <div class="data-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Team Name</th>
+                  <th>Total Activities</th>
+                  <th>Completed</th>
+                  <th>In Progress</th>
+                  <th>Avg. Time (days)</th>
+                  <th>Efficiency</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let team of teamProductivityData">
+                  <td class="team-name">{{ team.teamName }}</td>
+                  <td class="text-center">{{ team.totalActivities }}</td>
+                  <td class="text-center">{{ team.completedActivities }}</td>
+                  <td class="text-center">{{ team.inProgress }}</td>
+                  <td class="text-center">{{ team.averageCompletionTime }}</td>
+                  <td class="text-center">
+                    <span class="efficiency-badge" [attr.data-color]="getEfficiencyColor(team.efficiency)">
+                      {{ team.efficiency }}%
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div *ngIf="!loading && teamProductivityData.length === 0" class="empty-state">
+          <p>No data available</p>
+        </div>
+      </div>
+
+      <!-- Missing Materials Report -->
+      <div *ngIf="activeReport === 'missing-materials'" class="report-content">
+        <h2 class="report-title">Missing Materials Report</h2>
+        
+        <div *ngIf="loading" class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading report data...</p>
+        </div>
+
+        <div *ngIf="!loading && missingMaterialsData.length > 0" class="missing-materials-data">
+          <div class="data-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Material Name</th>
+                  <th>Material Code</th>
+                  <th>Required Qty</th>
+                  <th>Available Qty</th>
+                  <th>Shortage Qty</th>
+                  <th>Unit</th>
+                  <th>Affected Boxes</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let material of missingMaterialsData">
+                  <td class="material-name">{{ material.materialName }}</td>
+                  <td class="text-center">{{ material.materialCode }}</td>
+                  <td class="text-center">{{ material.requiredQuantity }}</td>
+                  <td class="text-center">{{ material.availableQuantity }}</td>
+                  <td class="text-center">
+                    <span class="shortage-badge">{{ material.shortageQuantity }}</span>
+                  </td>
+                  <td class="text-center">{{ material.unit }}</td>
+                  <td class="text-center">
+                    <span class="affected-badge">{{ material.affectedBoxes }}</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div *ngIf="!loading && missingMaterialsData.length === 0" class="empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            <circle cx="12" cy="12" r="10" opacity="0.2"/>
+          </svg>
+          <h3>No Material Shortages</h3>
+          <p>All materials are adequately stocked for current requirements</p>
+        </div>
+      </div>
+
+      <!-- Phase Readiness Report -->
+      <div *ngIf="activeReport === 'phase-readiness'" class="report-content">
+        <h2 class="report-title">Phase Readiness Report</h2>
+        
+        <div *ngIf="loading" class="loading-state">
+          <div class="spinner"></div>
+          <p>Loading report data...</p>
+        </div>
+
+        <div *ngIf="!loading && phaseReadinessData.length > 0" class="phase-readiness-data">
+          <div class="data-table">
+            <table>
+              <thead>
+                <tr>
+                  <th>Phase Name</th>
+                  <th>Total Boxes</th>
+                  <th>Ready Boxes</th>
+                  <th>Pending Boxes</th>
+                  <th>Readiness</th>
+                  <th>Blocking Issues</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let phase of phaseReadinessData">
+                  <td class="phase-name">{{ phase.phaseName }}</td>
+                  <td class="text-center">{{ phase.totalBoxes }}</td>
+                  <td class="text-center">{{ phase.readyBoxes }}</td>
+                  <td class="text-center">{{ phase.pendingBoxes }}</td>
+                  <td class="text-center">
+                    <span class="readiness-badge" [attr.data-color]="getReadinessColor(phase.readinessPercentage)">
+                      {{ phase.readinessPercentage }}%
+                    </span>
+                  </td>
+                  <td>
+                    <div *ngIf="phase.blockingIssues.length > 0" class="blocking-issues">
+                      <span *ngFor="let issue of phase.blockingIssues" class="issue-badge">{{ issue }}</span>
+                    </div>
+                    <span *ngIf="phase.blockingIssues.length === 0" class="no-issues">✓ No blocking issues</span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div *ngIf="!loading && phaseReadinessData.length === 0" class="empty-state">
+          <p>No data available</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

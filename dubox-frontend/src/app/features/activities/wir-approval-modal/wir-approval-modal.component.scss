@@ -189,12 +189,12 @@
     margin-bottom: -2px;
 
     &:hover:not(.disabled):not(:disabled) {
-      color: var(--primary-color, #ffcb1b);
+      color: var(--amana-teal);
     }
 
     &.active {
-      color: var(--primary-color, #ffcb1b);
-      border-bottom-color: var(--primary-color, #ffcb1b);
+      color: var(--amana-teal);
+      border-bottom-color: var(--amana-teal);
     }
 
     &.disabled,
@@ -237,8 +237,8 @@
 
     &:focus {
       outline: none;
-      border-color: var(--primary-color, #ffcb1b);
-      box-shadow: 0 0 0 3px rgba(255, 203, 27, 0.1);
+      border-color: var(--amana-teal);
+      box-shadow: 0 0 0 3px rgba(27, 154, 170, 0.1);
     }
 
     &.invalid {

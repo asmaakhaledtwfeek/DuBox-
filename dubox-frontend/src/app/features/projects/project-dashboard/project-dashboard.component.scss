@@ -104,8 +104,8 @@
 
     &:focus {
       outline: none;
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.2);
+      border-color: var(--amana-teal);
+      box-shadow: 0 0 0 3px rgba(27, 154, 170, 0.2);
     }
   }
 
@@ -157,7 +157,7 @@
 }
 
 .breadcrumb-link {
-  color: var(--primary-color);
+  color: var(--amana-teal);
   cursor: pointer;
   text-decoration: none;
 
@@ -244,7 +244,7 @@
   font-size: var(--font-size-sm);
 
   svg {
-    color: var(--primary-color);
+    color: var(--amana-teal);
   }
 }
 
@@ -348,7 +348,7 @@
 .stat-value {
   font-size: var(--font-size-2xl);
   font-weight: 700;
-  color: var(--primary-color);
+  color: var(--amana-teal);
 }
 
 .progress-bar-large {
@@ -448,7 +448,7 @@
 
   &:hover {
     background: var(--primary-color);
-    border-color: var(--primary-color);
+    border-color: var(--amana-teal);
     color: var(--white);
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
@@ -480,8 +480,8 @@
   transition: border-color var(--transition-fast), background var(--transition-fast);
 
   &.dragging {
-    border-color: var(--primary-color);
-    background: rgba(255, 203, 27, 0.08);
+    border-color: var(--amana-teal);
+    background: rgba(46, 125, 50, 0.08);
   }
 }
 
@@ -489,7 +489,7 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: rgba(255, 203, 27, 0.15);
+  background: rgba(46, 125, 50, 0.15);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -524,9 +524,9 @@
   color: var(--gray-700);
 
   &:hover {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-    background: rgba(255, 203, 27, 0.08);
+    border-color: var(--amana-teal);
+    color: var(--amana-teal);
+    background: rgba(46, 125, 50, 0.08);
   }
 }
 
@@ -555,7 +555,7 @@
 .link-btn {
   background: none;
   border: none;
-  color: var(--primary-color);
+  color: var(--amana-teal);
   font-weight: 600;
   cursor: pointer;
   padding: 0;

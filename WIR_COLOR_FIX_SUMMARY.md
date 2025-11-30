@@ -302,3 +302,4 @@ WIR rows now have:
 **Status:** ✅ Complete and Ready for Testing  
 **Impact:** WIR rows now visually match the Process Flow Table yellow highlighting
 
+

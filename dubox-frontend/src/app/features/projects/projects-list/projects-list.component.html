@@ -42,6 +42,7 @@
           class="filter-btn" 
           [class.active]="selectedStatus === 'All'"
           (click)="filterByStatus('All')"
+          title="Show all projects regardless of status"
         >
           All
         </button>
@@ -49,6 +50,7 @@
           class="filter-btn" 
           [class.active]="selectedStatus === ProjectStatus.Active"
           (click)="filterByStatus(ProjectStatus.Active)"
+          title="Projects that are currently in progress"
         >
           Active
         </button>
@@ -56,6 +58,7 @@
           class="filter-btn" 
           [class.active]="selectedStatus === ProjectStatus.OnHold"
           (click)="filterByStatus(ProjectStatus.OnHold)"
+          title="Projects that are temporarily paused or suspended"
         >
           On Hold
         </button>
@@ -63,6 +66,7 @@
           class="filter-btn" 
           [class.active]="selectedStatus === ProjectStatus.Completed"
           (click)="filterByStatus(ProjectStatus.Completed)"
+          title="Projects that have been finished successfully"
         >
           Completed
         </button>
@@ -70,16 +74,17 @@
           class="filter-btn" 
           [class.active]="selectedStatus === ProjectStatus.Archived"
           (click)="filterByStatus(ProjectStatus.Archived)"
+          title="Projects that are archived and stored for records"
         >
           Archived
         </button>
-        <button 
+        <!-- <button 
           class="filter-btn" 
           [class.active]="selectedStatus === ProjectStatus.Closed"
           (click)="filterByStatus(ProjectStatus.Closed)"
         >
           Closed
-        </button>
+        </button> -->
       </div>
     </div>
 

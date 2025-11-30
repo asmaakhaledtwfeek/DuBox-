@@ -40,7 +40,7 @@
   .page-title {
     font-size: 32px;
     font-weight: 700;
-    color: var(--secondary-color, #1f2937);
+    color: var(--white);
     margin: 0;
     letter-spacing: -0.5px;
   }
@@ -65,7 +65,7 @@
     left: 0;
     right: 0;
     height: 4px;
-    background: var(--primary-gradient, linear-gradient(135deg, #ffcb1b 0%, #ffd94d 100%));
+    background: var(--primary-gradient);
     border-radius: 16px 16px 0 0;
   }
   
@@ -87,7 +87,7 @@
     width: 50px;
     height: 50px;
     border: 4px solid var(--gray-200, #e5e7eb);
-    border-top-color: var(--primary-color, #ffcb1b);
+    border-top-color: var(--amana-teal);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-bottom: 20px;
@@ -117,7 +117,7 @@
     width: 20px;
     height: 20px;
     cursor: pointer;
-    accent-color: var(--primary-color, #ffcb1b);
+    accent-color: var(--amana-teal);
   }
 }
 
@@ -168,7 +168,7 @@
   .form-group {
     .form-control {
       &:focus {
-        border-color: var(--primary-color, #ffcb1b);
+        border-color: var(--amana-teal);
       }
     }
   }
@@ -184,13 +184,13 @@
 // Override button styles to use DuBox primary color
 .btn {
   &.btn-primary {
-    background: var(--primary-gradient, linear-gradient(135deg, #ffcb1b 0%, #ffd94d 100%));
-    color: var(--secondary-color, #1f2937);
+    background: var(--primary-gradient);
+    color: var(--white);
     
     &:hover:not(:disabled) {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(255, 203, 27, 0.4);
-      background: var(--primary-gradient, linear-gradient(135deg, #ffd94d 0%, #ffcb1b 100%));
+      box-shadow: 0 4px 12px rgba(27, 154, 170, 0.4);
+      background: var(--primary-gradient);
     }
   }
   

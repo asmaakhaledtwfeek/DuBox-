@@ -1,0 +1,160 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="page-content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-left">
+        <button class="btn-back" routerLink="/reports">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+          Back to Reports
+        </button>
+        <div class="title-section">
+          <h1 class="page-title">Team Productivity Report</h1>
+          <p class="page-subtitle">Monitor the productivity and performance of deployed teams</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button 
+          class="btn btn-success" 
+          (click)="exportToExcel()"
+          [disabled]="teams.length === 0"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Export to Excel
+        </button>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-section" *ngIf="projects.length > 0">
+      <div class="filter-group">
+        <label for="projectFilter">Filter by Project:</label>
+        <select 
+          id="projectFilter" 
+          [(ngModel)]="selectedProject" 
+          (change)="onProjectChange()"
+          class="filter-select"
+        >
+          <option value="">All Projects</option>
+          <option *ngFor="let project of projects" [value]="project.id">
+            {{ project.name }}
+          </option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading team productivity data...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error && !loading" class="error-state">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <p>{{ error }}</p>
+      <button class="btn btn-primary" (click)="loadReportData()">Retry</button>
+    </div>
+
+    <!-- Team Cards -->
+    <div class="teams-grid" *ngIf="!loading && !error">
+      <div *ngFor="let team of teams" class="team-card">
+        <div class="team-header">
+          <div class="team-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <h3 class="team-name">{{ team.teamName }}</h3>
+          <div class="efficiency-badge" [attr.data-color]="getEfficiencyColor(team.efficiency)">
+            {{ team.efficiency }}% Efficiency
+          </div>
+        </div>
+
+        <div class="team-stats">
+          <div class="stat-row">
+            <span class="stat-label">Total Activities</span>
+            <span class="stat-value">{{ team.totalActivities }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Completed</span>
+            <span class="stat-value green">{{ team.completedActivities }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">In Progress</span>
+            <span class="stat-value blue">{{ team.inProgress }}</span>
+          </div>
+          <div class="stat-row">
+            <span class="stat-label">Avg. Completion Time</span>
+            <span class="stat-value">{{ team.averageCompletionTime }} days</span>
+          </div>
+        </div>
+
+        <div class="progress-section">
+          <div class="progress-bar">
+            <div 
+              class="progress-fill" 
+              [style.width.%]="(team.completedActivities / team.totalActivities) * 100"
+            ></div>
+          </div>
+          <div class="progress-text">
+            {{ team.completedActivities }} / {{ team.totalActivities }} completed
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detailed Table -->
+    <div class="table-section">
+      <h2 class="section-title">Detailed Team Metrics</h2>
+      <div class="table-container">
+        <table class="productivity-table">
+          <thead>
+            <tr>
+              <th>Team Name</th>
+              <th class="text-center">Total Activities</th>
+              <th class="text-center">Completed</th>
+              <th class="text-center">In Progress</th>
+              <th class="text-center">Avg. Time (days)</th>
+              <th class="text-center">Efficiency</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let team of teams">
+              <td class="team-name-cell">{{ team.teamName }}</td>
+              <td class="text-center">{{ team.totalActivities }}</td>
+              <td class="text-center">
+                <span class="badge green">{{ team.completedActivities }}</span>
+              </td>
+              <td class="text-center">
+                <span class="badge blue">{{ team.inProgress }}</span>
+              </td>
+              <td class="text-center">{{ team.averageCompletionTime }}</td>
+              <td class="text-center">
+                <div class="efficiency-indicator" [attr.data-color]="getEfficiencyColor(team.efficiency)">
+                  {{ team.efficiency }}%
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

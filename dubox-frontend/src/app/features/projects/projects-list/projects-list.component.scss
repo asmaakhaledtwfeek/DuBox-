@@ -71,8 +71,8 @@
 
   &:focus {
     outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+    border-color: var(--amana-teal);
+    box-shadow: 0 0 0 3px rgba(27, 154, 170, 0.1);
   }
 }
 
@@ -92,16 +92,24 @@
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all var(--transition-fast);
+  position: relative;
 
   &:hover {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
+    border-color: var(--amana-teal);
+    color: var(--amana-teal);
+    transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(27, 154, 170, 0.15);
   }
 
   &.active {
     background: var(--primary-color);
-    border-color: var(--primary-color);
+    border-color: var(--amana-teal);
     color: var(--white);
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 2px 8px rgba(27, 154, 170, 0.25);
+    }
   }
 }
 
@@ -217,7 +225,7 @@
 
   svg {
     flex-shrink: 0;
-    color: var(--primary-color);
+    color: var(--amana-teal);
   }
 }
 
@@ -238,7 +246,7 @@
 .stat-value {
   font-size: var(--font-size-2xl);
   font-weight: 700;
-  color: var(--primary-color);
+  color: var(--amana-teal);
   line-height: 1;
   margin-bottom: var(--spacing-xs);
 }
@@ -301,7 +309,7 @@
   padding: var(--spacing-sm) var(--spacing-md);
   background: transparent;
   border: 1px solid var(--gray-300);
-  color: var(--primary-color);
+  color: var(--amana-teal);
   font-size: var(--font-size-sm);
   font-weight: 500;
   border-radius: var(--radius-md);
@@ -310,7 +318,7 @@
 
   &:hover {
     background: var(--primary-color);
-    border-color: var(--primary-color);
+    border-color: var(--amana-teal);
     color: var(--white);
   }
 }

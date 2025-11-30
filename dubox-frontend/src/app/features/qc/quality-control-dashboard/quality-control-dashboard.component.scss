@@ -721,8 +721,13 @@
   .panel-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
     gap: var(--spacing-lg);
+    flex-wrap: wrap;
+
+    > div:first-child {
+      flex: 1;
+    }
 
     h2 {
       margin: 0;
@@ -731,6 +736,45 @@
     p {
       margin: var(--spacing-xs) 0 0;
       color: var(--text-secondary);
+    }
+
+    .panel-actions {
+      display: flex;
+      gap: var(--spacing-md);
+      align-items: center;
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 20px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+
+        svg {
+          width: 18px;
+          height: 18px;
+        }
+
+        &.btn-primary {
+          background: var(--primary-gradient);
+          color: var(--white, #ffffff);
+          box-shadow: 0 2px 8px rgba(27, 154, 170, 0.2);
+
+          &:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(27, 154, 170, 0.3);
+          }
+
+          &:active {
+            transform: translateY(0);
+          }
+        }
+      }
     }
   }
 

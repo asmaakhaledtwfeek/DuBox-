@@ -42,7 +42,13 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
 
             if (!departmentExists)
                 return Result.Failure<UserDto>($"Department does not exist.");
-
+            if (user.DepartmentId != request.DepartmentId)
+            {
+                var teamMember = await _unitOfWork.Repository<TeamMember>().FindAsync(x => x.UserId == user.UserId, cancellationToken);
+                var teamMemberExist = teamMember.FirstOrDefault();
+                if (teamMemberExist != null)
+                    _unitOfWork.Repository<TeamMember>().Delete(teamMemberExist);
+            }
             user.DepartmentId = request.DepartmentId.Value;
         }
         if (request.IsActive.HasValue)

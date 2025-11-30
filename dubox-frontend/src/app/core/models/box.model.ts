@@ -156,3 +156,14 @@ export interface ImportedBoxPreview {
   status?: string;
 }
 
+export interface BoxTypeStat {
+  boxType: string;
+  boxCount: number;
+  overallProgress: number;
+}
+
+export interface BoxTypeStatsByProject {
+  projectId: string;
+  boxTypeStats: BoxTypeStat[];
+}
+

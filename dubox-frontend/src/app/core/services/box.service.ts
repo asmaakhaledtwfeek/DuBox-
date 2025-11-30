@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiService, PaginatedResponse } from './api.service';
-import { Box, BoxActivity, BoxAttachment, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview } from '../models/box.model';
+import { Box, BoxActivity, BoxAttachment, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview, BoxTypeStatsByProject } from '../models/box.model';
 
 @Injectable({
   providedIn: 'root'
@@ -386,5 +386,12 @@ export class BoxService {
     return this.apiService.upload<any>(endpoint, file).pipe(
       map(result => this.transformImportResult(result))
     );
+  }
+
+  /**
+   * Get box type statistics by project
+   */
+  getBoxTypeStatsByProject(projectId: string): Observable<BoxTypeStatsByProject> {
+    return this.apiService.get<BoxTypeStatsByProject>(`${this.endpoint}/project/${projectId}/box-type-stats`);
   }
 }

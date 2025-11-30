@@ -5,7 +5,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
-import { Box, BoxStatus } from '../../../core/models/box.model';
+import { Box, BoxStatus, BoxTypeStat } from '../../../core/models/box.model';
 import { ProjectService } from '../../../core/services/project.service';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
@@ -23,6 +23,9 @@ export class BoxesListComponent implements OnInit {
   projectCode = '';
   boxes: Box[] = [];
   filteredBoxes: Box[] = [];
+  boxTypes: BoxTypeStat[] = [];
+  selectedBoxType: string | null = null;
+  showBoxTypes = true;
   loading = true;
   error = '';
   canCreate = false;
@@ -41,9 +44,19 @@ export class BoxesListComponent implements OnInit {
 
   ngOnInit(): void {
     this.projectId = this.route.snapshot.params['id'];
+    const boxType = this.route.snapshot.queryParams['boxType'];
+    
     this.canCreate = this.permissionService.canCreate('boxes');
     this.loadProjectDetails();
-    this.loadBoxes();
+    
+    if (boxType) {
+      this.selectedBoxType = boxType;
+      this.showBoxTypes = false;
+      this.loadBoxes();
+    } else {
+      this.loadBoxTypes();
+    }
+    
     this.setupSearch();
   }
 
@@ -74,14 +87,38 @@ export class BoxesListComponent implements OnInit {
       });
   }
 
+  loadBoxTypes(): void {
+    this.loading = true;
+    this.error = '';
+    this.showBoxTypes = true;
+    this.selectedBoxType = null;
+    
+    this.boxService.getBoxTypeStatsByProject(this.projectId).subscribe({
+      next: (response) => {
+        this.boxTypes = response.boxTypeStats || [];
+        this.loading = false;
+      },
+      error: (err) => {
+        this.error = err.message || 'Failed to load box types';
+        this.loading = false;
+        console.error('Error loading box types:', err);
+      }
+    });
+  }
+
   loadBoxes(): void {
     this.loading = true;
     this.error = '';
     
     this.boxService.getBoxesByProject(this.projectId).subscribe({
       next: (boxes) => {
-        this.boxes = boxes;
-        this.filteredBoxes = boxes;
+        // Filter boxes by selected type if a type is selected
+        if (this.selectedBoxType) {
+          this.boxes = boxes.filter(box => box.type === this.selectedBoxType);
+        } else {
+          this.boxes = boxes;
+        }
+        this.filteredBoxes = this.boxes;
         this.loading = false;
         this.applyFilters();
       },
@@ -91,6 +128,30 @@ export class BoxesListComponent implements OnInit {
         console.error('Error loading boxes:', err);
       }
     });
+  }
+
+  viewBoxType(boxType: string): void {
+    this.selectedBoxType = boxType;
+    this.showBoxTypes = false;
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { boxType: boxType },
+      queryParamsHandling: 'merge'
+    });
+    this.loadBoxes();
+  }
+
+  backToBoxTypes(): void {
+    this.selectedBoxType = null;
+    this.showBoxTypes = true;
+    this.boxes = [];
+    this.filteredBoxes = [];
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {},
+      queryParamsHandling: 'merge'
+    });
+    this.loadBoxTypes();
   }
 
   filterByStatus(status: BoxStatus | 'All'): void {
@@ -154,4 +215,7 @@ export class BoxesListComponent implements OnInit {
     };
     return labels[status] || status;
   }
+
+  // Expose Math to template
+  Math = Math;
 }

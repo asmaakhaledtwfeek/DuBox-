@@ -39,6 +39,13 @@ public class BoxesController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
+    [HttpGet("project/{projectId}/box-type-stats")]
+    public async Task<IActionResult> GetBoxTypeStatsByProject(Guid projectId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetBoxTypeStatsByProjectQuery(projectId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
     [HttpGet("qr/{qrCodeString}")]
     public async Task<IActionResult> GetBoxByQRCode(string qrCodeString, CancellationToken cancellationToken)
     {

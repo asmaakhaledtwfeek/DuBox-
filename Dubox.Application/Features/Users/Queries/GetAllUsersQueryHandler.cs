@@ -1,7 +1,8 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
+using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
-using Dubox.Domain.Abstraction;
 using Mapster;
 using MediatR;
 
@@ -18,7 +19,7 @@ public class GetAllUsersQueryHandler : IRequestHandler<GetAllUsersQuery, Result<
 
     public async Task<Result<List<UserDto>>> Handle(GetAllUsersQuery request, CancellationToken cancellationToken)
     {
-        var users = await _unitOfWork.Repository<User>().GetAllAsync(cancellationToken);
+        var users = _unitOfWork.Repository<User>().GetWithSpec(new GetUserWithIcludesSpecification()).Data.ToList();
         return Result.Success(users.Adapt<List<UserDto>>());
     }
 }

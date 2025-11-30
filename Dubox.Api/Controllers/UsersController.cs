@@ -32,6 +32,13 @@ public class UsersController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
+    [HttpPost]
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
     [HttpPut("{userId}")]
     public async Task<IActionResult> UpdateUser(Guid userId, [FromBody] UpdateUserCommand command, CancellationToken cancellationToken)
     {
@@ -63,6 +70,26 @@ public class UsersController : ControllerBase
         var command = new AssignUserToGroupsCommand(userId, groupIds);
         var result = await _mediator.Send(command, cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpDelete("{userId}")]
+    public async Task<IActionResult> DeleteUser(Guid userId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new DeleteUserCommand(userId), cancellationToken);
+
+        if (result.IsSuccess)
+            return Ok(result);
+
+        // Check if it's a constraint/conflict error
+        var errorMessage = result.Message ?? string.Empty;
+        if (errorMessage.Contains("constraint", StringComparison.OrdinalIgnoreCase) ||
+            errorMessage.Contains("foreign key", StringComparison.OrdinalIgnoreCase) ||
+            errorMessage.Contains("relationship", StringComparison.OrdinalIgnoreCase))
+        {
+            return Conflict(result);
+        }
+
+        return BadRequest(result);
     }
 }
 

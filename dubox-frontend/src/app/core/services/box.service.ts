@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiService, PaginatedResponse } from './api.service';
-import { Box, BoxActivity, BoxAttachment, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview } from '../models/box.model';
+import { Box, BoxActivity, BoxAttachment, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview, BoxTypeStatsByProject } from '../models/box.model';
 
 @Injectable({
   providedIn: 'root'
@@ -18,7 +18,7 @@ export class BoxService {
   private mapStatus(status: any): string {
     // If already a string, check if it's valid
     if (typeof status === 'string') {
-      const validStatuses = ['NotStarted', 'InProgress', 'Completed', 'OnHold', 'Delayed', 'QAReview', 'ReadyForDelivery', 'Delivered'];
+      const validStatuses = ['NotStarted', 'InProgress', 'Completed', 'OnHold', 'Delayed', 'Dispatched', 'QAReview', 'ReadyForDelivery', 'Delivered'];
       if (validStatuses.includes(status)) {
         return status;
       }
@@ -30,7 +30,8 @@ export class BoxService {
       2: 'InProgress',
       3: 'Completed',
       4: 'OnHold',
-      5: 'Delayed'
+      5: 'Delayed',
+      6: 'Dispatched'
     };
 
     const numericStatus = typeof status === 'number' ? status : parseInt(status, 10);
@@ -191,8 +192,13 @@ export class BoxService {
   /**
    * Update box status
    */
-  updateBoxStatus(id: string, status: string): Observable<Box> {
-    return this.apiService.patch<any>(`${this.endpoint}/${id}/status`, { status }).pipe(
+  updateBoxStatus(id: string, status: string | number): Observable<Box> {
+    // Backend expects: { boxId: Guid, status: int }
+    const statusNumber = typeof status === 'string' ? parseInt(status, 10) : status;
+    return this.apiService.patch<any>(`${this.endpoint}/${id}/status`, { 
+      boxId: id, 
+      status: statusNumber 
+    }).pipe(
       map(response => this.transformBox(response))
     );
   }
@@ -386,5 +392,12 @@ export class BoxService {
     return this.apiService.upload<any>(endpoint, file).pipe(
       map(result => this.transformImportResult(result))
     );
+  }
+
+  /**
+   * Get box type statistics by project
+   */
+  getBoxTypeStatsByProject(projectId: string): Observable<BoxTypeStatsByProject> {
+    return this.apiService.get<BoxTypeStatsByProject>(`${this.endpoint}/project/${projectId}/box-type-stats`);
   }
 }

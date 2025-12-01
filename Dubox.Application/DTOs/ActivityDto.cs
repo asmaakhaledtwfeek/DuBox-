@@ -30,6 +30,7 @@ public record BoxActivityDto
     public string Status { get; init; } = string.Empty;
     public decimal ProgressPercentage { get; init; }
     public int? Duration { get; init; }
+    public int? ActualDuration { get; init; }
     public DateTime? PlannedStartDate { get; init; }
     public DateTime? PlannedEndDate { get; init; }
     public DateTime? ActualStartDate { get; init; }

@@ -4,7 +4,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
-import { Box, BoxStatus } from '../../../core/models/box.model';
+import { Box, BoxStatus, getBoxStatusNumber } from '../../../core/models/box.model';
 import { WIRService } from '../../../core/services/wir.service';
 import { ProgressUpdate } from '../../../core/models/progress-update.model';
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
@@ -73,6 +73,13 @@ export class BoxDetailsComponent implements OnInit {
   progressUpdatesError = '';
   selectedProgressUpdate: ProgressUpdate | null = null;
   isProgressModalOpen = false;
+
+  // Box Status Update
+  isBoxStatusModalOpen = false;
+  boxStatusUpdateLoading = false;
+  boxStatusUpdateError = '';
+  selectedBoxStatus: BoxStatus | null = null;
+  availableBoxStatuses: BoxStatus[] = [BoxStatus.Dispatched, BoxStatus.InProgress, BoxStatus.OnHold];
 
   constructor(
     private route: ActivatedRoute,
@@ -283,7 +290,8 @@ export class BoxDetailsComponent implements OnInit {
       [BoxStatus.Completed]: 'badge-success',
       [BoxStatus.ReadyForDelivery]: 'badge-primary',
       [BoxStatus.Delivered]: 'badge-success',
-      [BoxStatus.OnHold]: 'badge-danger'
+      [BoxStatus.OnHold]: 'badge-danger',
+      [BoxStatus.Dispatched]: 'badge-primary'
     };
     return statusMap[status] || 'badge-secondary';
   }
@@ -296,7 +304,8 @@ export class BoxDetailsComponent implements OnInit {
       [BoxStatus.Completed]: 'Completed',
       [BoxStatus.ReadyForDelivery]: 'Ready for Delivery',
       [BoxStatus.Delivered]: 'Delivered',
-      [BoxStatus.OnHold]: 'On Hold'
+      [BoxStatus.OnHold]: 'On Hold',
+      [BoxStatus.Dispatched]: 'Dispatched'
     };
     return labels[status] || status;
   }
@@ -625,6 +634,52 @@ export class BoxDetailsComponent implements OnInit {
         this.statusUpdateError = err?.error?.message || err?.message || 'Failed to update issue status';
       }
     });
+  }
+
+  // Box Status Update Methods
+  openBoxStatusModal(): void {
+    this.isBoxStatusModalOpen = true;
+    this.boxStatusUpdateError = '';
+    this.selectedBoxStatus = null;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeBoxStatusModal(): void {
+    this.isBoxStatusModalOpen = false;
+    this.selectedBoxStatus = null;
+    this.boxStatusUpdateError = '';
+    document.body.style.overflow = '';
+  }
+
+  updateBoxStatus(): void {
+    if (!this.box || !this.selectedBoxStatus) {
+      return;
+    }
+
+    this.boxStatusUpdateLoading = true;
+    this.boxStatusUpdateError = '';
+
+    // Convert status to number for backend
+    const statusNumber = getBoxStatusNumber(this.selectedBoxStatus);
+
+    this.boxService.updateBoxStatus(this.boxId, statusNumber).subscribe({
+      next: (updatedBox) => {
+        this.box = updatedBox;
+        this.boxStatusUpdateLoading = false;
+        this.closeBoxStatusModal();
+        // Optionally show success message
+        console.log('✅ Box status updated successfully');
+      },
+      error: (err) => {
+        console.error('❌ Failed to update box status:', err);
+        this.boxStatusUpdateLoading = false;
+        this.boxStatusUpdateError = err?.error?.message || err?.message || 'Failed to update box status';
+      }
+    });
+  }
+
+  getStatusLabelForModal(status: BoxStatus): string {
+    return this.getStatusLabel(status);
   }
 
   private applyUpdatedQualityIssue(updated: QualityIssueDetails): void {

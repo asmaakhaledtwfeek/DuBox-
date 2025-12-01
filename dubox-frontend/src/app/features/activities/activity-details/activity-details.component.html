@@ -125,9 +125,13 @@
               <span class="label">Sequence</span>
               <span class="value">{{ activity.sequence }}</span>
             </div>
-            <div class="info-item" *ngIf="activity.assignedTo">
+            <div class="info-item" *ngIf="activityDetail?.teamName">
               <span class="label">Assigned Team</span>
-              <span class="value">{{ activity.assignedTo }}</span>
+              <span class="value">{{ activityDetail?.teamName }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Assigned Member</span>
+              <span class="value">{{ activityDetail?.assignedMemberName || 'Not assigned' }}</span>
             </div>
           </div>
         </div>
@@ -145,12 +149,20 @@
               <span class="value">{{ formatDate(activity.plannedEndDate) }}</span>
             </div>
             <div class="info-item">
+              <span class="label">Planned Duration</span>
+              <span class="value">{{ activityDetail?.duration || activity.plannedDuration || '—' }} days</span>
+            </div>
+            <div class="info-item">
               <span class="label">Actual Start</span>
               <span class="value">{{ formatDate(activity.actualStartDate) }}</span>
             </div>
             <div class="info-item">
               <span class="label">Actual End</span>
-              <span class="value">{{ formatDate(activity.actualEndDate) }}</span>
+              <span class="value">{{ formatDate(activity.actualEndDate) || 'Not set' }}</span>
+            </div>
+            <div class="info-item" *ngIf="activityDetail?.actualDuration">
+              <span class="label">Actual Duration</span>
+              <span class="value">{{ activityDetail?.actualDuration }} days</span>
             </div>
           </div>
         </div>
@@ -161,16 +173,16 @@
           <div class="info-grid">
             <div class="info-item">
               <span class="label">Planned Duration</span>
-              <span class="value">{{ activity.plannedDuration }} days</span>
+              <span class="value">{{ activityDetail?.duration || activity.plannedDuration || '—' }} days</span>
             </div>
-            <div class="info-item" *ngIf="activity.actualDuration">
+            <div class="info-item" *ngIf="activityDetail?.actualDuration">
               <span class="label">Actual Duration</span>
-              <span class="value">{{ activity.actualDuration }} days</span>
+              <span class="value">{{ activityDetail?.actualDuration }} days</span>
             </div>
-            <div class="info-item" *ngIf="activity.actualDuration && activity.plannedDuration">
+            <div class="info-item" *ngIf="activityDetail?.actualDuration && (activityDetail?.duration || activity.plannedDuration)">
               <span class="label">Variance</span>
-              <span class="value" [class.delayed]="activity.actualDuration > activity.plannedDuration">
-                {{ activity.actualDuration - activity.plannedDuration > 0 ? '+' : '' }}{{ activity.actualDuration - activity.plannedDuration }} days
+              <span class="value" [class.delayed]="(activityDetail?.actualDuration ?? 0) > ((activityDetail?.duration ?? activity.plannedDuration) || 0)">
+                {{ ((activityDetail?.actualDuration ?? 0) - ((activityDetail?.duration ?? activity.plannedDuration) || 0)) > 0 ? '+' : '' }}{{ (activityDetail?.actualDuration ?? 0) - ((activityDetail?.duration ?? activity.plannedDuration) || 0) }} days
               </span>
             </div>
           </div>

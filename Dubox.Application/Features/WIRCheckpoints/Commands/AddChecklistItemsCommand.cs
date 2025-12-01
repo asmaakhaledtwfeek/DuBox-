@@ -5,13 +5,7 @@ using MediatR;
 namespace Dubox.Application.Features.WIRCheckpoints.Commands
 {
     public record AddChecklistItemsCommand(
-    Guid WIRId,
-      List<ChecklistItemForCreate> Items
-) : IRequest<Result<CreateWIRCheckpointDto>>;
-
-    public record ChecklistItemForCreate(
-    string CheckpointDescription,
-    string? ReferenceDocument,
-    int Sequence
-);
+        Guid WIRId,
+        List<Guid> PredefinedItemIds
+    ) : IRequest<Result<CreateWIRCheckpointDto>>;
 }

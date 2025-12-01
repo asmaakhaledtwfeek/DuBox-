@@ -131,9 +131,12 @@ export class ActivityDetailsComponent implements OnInit {
   /**
    * Load team members when a team is selected
    */
-  loadTeamMembers(teamId: string): void {
+  loadTeamMembers(teamId: string, onComplete?: (members: any[]) => void): void {
     if (!teamId) {
       this.availableMembers = [];
+      if (onComplete) {
+        onComplete([]);
+      }
       return;
     }
 
@@ -141,10 +144,16 @@ export class ActivityDetailsComponent implements OnInit {
       next: (teamMembersData) => {
         this.availableMembers = teamMembersData.members.filter(member => member.isActive !== false);
         console.log('✅ Team members loaded:', this.availableMembers);
+        if (onComplete) {
+          onComplete(this.availableMembers);
+        }
       },
       error: (err) => {
         console.error('❌ Error loading team members:', err);
         this.availableMembers = [];
+        if (onComplete) {
+          onComplete([]);
+        }
       }
     });
   }
@@ -386,25 +395,44 @@ export class ActivityDetailsComponent implements OnInit {
   openAssignTeamModal(): void {
     this.assignTeamSuccess = false; // Reset success state
     
-    // Load team members if team is already assigned
+    // Pre-select team and member if they exist
     if (this.activityDetail?.teamId) {
-      this.loadTeamMembers(this.activityDetail.teamId.toString());
+      const teamId = this.activityDetail.teamId.toString();
+      const memberId = this.activityDetail.assignedMemberId || '';
+      
+      // First, set the teamId (without emitting events to avoid triggering valueChanges)
+      this.assignTeamForm.patchValue({
+        teamId: teamId,
+        memberId: '' // Clear member first, will set after members load
+      }, { emitEvent: false });
+      
+      // Load team members for the pre-selected team, then set memberId
+      this.loadTeamMembers(teamId, (members) => {
+        // After team members are loaded, set the memberId if it exists and is valid
+        if (memberId && members.some(m => m.teamMemberId === memberId)) {
+          this.assignTeamForm.patchValue({
+            memberId: memberId
+          }, { emitEvent: false });
+        }
+      });
     } else {
       this.availableMembers = [];
-    }
-
-    if (this.activityDetail) {
       this.assignTeamForm.patchValue({
-        teamId: this.activityDetail.teamId?.toString() || '',
-        memberId: this.activityDetail.assignedMemberId || ''
-      });
+        teamId: '',
+        memberId: ''
+      }, { emitEvent: false });
     }
 
     // Listen to team selection changes to load members
     this.assignTeamForm.get('teamId')?.valueChanges.subscribe(teamId => {
-      this.loadTeamMembers(teamId);
-      // Clear member selection when team changes
-      this.assignTeamForm.patchValue({ memberId: '' }, { emitEvent: false });
+      if (teamId) {
+        this.loadTeamMembers(teamId);
+        // Clear member selection when team changes
+        this.assignTeamForm.patchValue({ memberId: '' }, { emitEvent: false });
+      } else {
+        this.availableMembers = [];
+        this.assignTeamForm.patchValue({ memberId: '' }, { emitEvent: false });
+      }
     });
 
     this.isAssignTeamModalOpen = true;

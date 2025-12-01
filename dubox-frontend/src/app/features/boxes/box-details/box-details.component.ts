@@ -13,6 +13,7 @@ import { QualityIssueDetails, QualityIssueStatus, UpdateQualityIssueStatusReques
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { ActivityTableComponent } from '../../activities/activity-table/activity-table.component';
+import * as ExcelJS from 'exceljs';
 
 @Component({
   selector: 'app-box-details',
@@ -473,6 +474,155 @@ export class BoxDetailsComponent implements OnInit {
 
   refreshQualityIssues(): void {
     this.loadQualityIssues();
+  }
+
+  async exportQualityIssuesToExcel(): Promise<void> {
+    if (this.qualityIssues.length === 0) {
+      alert('No quality issues to export. Please ensure there are quality issues available.');
+      return;
+    }
+
+    // Format dates properly
+    const formatDateForExcel = (date?: string | Date): string => {
+      if (!date) return '—';
+      const d = date instanceof Date ? date : new Date(date);
+      if (isNaN(d.getTime())) return '—';
+      return d.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    };
+
+    // Create a new workbook and worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Quality Issues');
+
+    // Define column headers
+    const headers = [
+      'No.',
+      'WIR Number',
+      'Box Tag',
+      'Box Name',
+      'Status',
+      'Issue Type',
+      'Severity',
+      'Issue Description',
+      'Assigned To',
+      'Reported By',
+      'Issue Date',
+      'Due Date',
+      'Resolution Description',
+      'Resolution Date',
+      'Photo Path'
+    ];
+
+    // Set column widths
+    worksheet.columns = [
+      { width: 5 },   // No.
+      { width: 15 },  // WIR Number
+      { width: 15 },  // Box Tag
+      { width: 20 },  // Box Name
+      { width: 12 },  // Status
+      { width: 15 },  // Issue Type
+      { width: 10 },  // Severity
+      { width: 40 },  // Issue Description
+      { width: 15 },  // Assigned To
+      { width: 15 },  // Reported By
+      { width: 12 },  // Issue Date
+      { width: 12 },  // Due Date
+      { width: 40 },  // Resolution Description
+      { width: 12 },  // Resolution Date
+      { width: 30 }   // Photo Path
+    ];
+
+    // Add header row with styling
+    const headerRow = worksheet.addRow(headers);
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4472C4' } // Blue background
+      };
+      cell.font = {
+        bold: true,
+        color: { argb: 'FFFFFFFF' }, // White text
+        size: 11
+      };
+      cell.alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+        wrapText: true
+      };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF000000' } },
+        bottom: { style: 'thin', color: { argb: 'FF000000' } },
+        left: { style: 'thin', color: { argb: 'FF000000' } },
+        right: { style: 'thin', color: { argb: 'FF000000' } }
+      };
+    });
+    headerRow.height = 25; // Set header row height
+
+    // Add data rows
+    this.qualityIssues.forEach((issue, index) => {
+      const row = worksheet.addRow([
+        index + 1,
+        this.getQualityIssueWir(issue),
+        issue.boxTag || '—',
+        issue.boxName || '—',
+        this.getQualityIssueStatusLabel(issue.status),
+        issue.issueType || '—',
+        issue.severity || '—',
+        issue.issueDescription || '—',
+        issue.assignedTo || '—',
+        issue.reportedBy || '—',
+        formatDateForExcel(issue.issueDate),
+        formatDateForExcel(issue.dueDate),
+        issue.resolutionDescription || '—',
+        formatDateForExcel(issue.resolutionDate),
+        issue.photoPath || '—'
+      ]);
+
+      // Style data rows
+      row.eachCell((cell, colNumber) => {
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          left: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          right: { style: 'thin', color: { argb: 'FFE0E0E0' } }
+        };
+        cell.alignment = {
+          vertical: 'middle',
+          wrapText: true
+        };
+        // Alternate row colors
+        if (index % 2 === 0) {
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFF9F9F9' }
+          };
+        }
+      });
+    });
+
+    // Freeze header row
+    worksheet.views = [{ state: 'frozen', ySplit: 1 }];
+
+    // Generate filename with current date
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0];
+    const fileName = `Quality_Issues_${dateStr}.xlsx`;
+
+    // Generate Excel file and download
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    window.URL.revokeObjectURL(url);
   }
 
   formatIssueDate(date?: string | Date): string {

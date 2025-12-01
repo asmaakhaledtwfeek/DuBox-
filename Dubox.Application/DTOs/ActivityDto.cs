@@ -38,7 +38,9 @@ public record BoxActivityDto
     public string? WorkDescription { get; init; }
     public string? IssuesEncountered { get; init; }
     public string? AssignedTeam { get; init; }
+    public Guid? TeamId { get; init; }
     public string? TeamName { get; init; }
+    public Guid? AssignedMemberId { get; init; }
     public string? AssignedMemberName { get; init; }
     public bool MaterialsAvailable { get; init; }
     public bool IsWIRCheckpoint { get; init; }

@@ -83,7 +83,7 @@ export interface BoxActivityDetail {
   actualDuration?: number;
   workDescription?: string;
   issuesEncountered?: string;
-  teamId?: number;
+  teamId?: string;
   teamName?: string;
   assignedMemberId?: string;
   assignedMemberName?: string;

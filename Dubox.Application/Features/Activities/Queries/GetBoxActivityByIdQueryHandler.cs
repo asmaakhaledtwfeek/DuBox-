@@ -22,13 +22,14 @@ public class GetBoxActivityByIdQueryHandler : IRequestHandler<GetBoxActivityById
             .Include(ba => ba.ActivityMaster)
             .Include(ba => ba.Box)
                 .ThenInclude(b => b.Project)
+            .Include(ba => ba.Team)
+            .Include(ba => ba.AssignedMember)
+                .ThenInclude(ba => ba.User)
             .FirstOrDefaultAsync(ba => ba.BoxActivityId == request.BoxActivityId, cancellationToken);
 
         if (boxActivity == null)
             return Result.Failure<BoxActivityDto>("Box Activity not found");
 
-        // Calculate actual duration in days: (actual end date - actual start date) + 1
-        // If same calendar day, return 1 day
         int? actualDuration = null;
         if (boxActivity.ActualStartDate.HasValue && boxActivity.ActualEndDate.HasValue)
         {
@@ -40,7 +41,6 @@ public class GetBoxActivityByIdQueryHandler : IRequestHandler<GetBoxActivityById
             {
                 var timeSpan = boxActivity.ActualEndDate.Value.Date - boxActivity.ActualStartDate.Value.Date;
                 var days = (int)Math.Ceiling(timeSpan.TotalDays) + 1;
-                // Ensure at least 1 day
                 actualDuration = days >= 1 ? days : 1;
             }
         }
@@ -54,7 +54,14 @@ public class GetBoxActivityByIdQueryHandler : IRequestHandler<GetBoxActivityById
             Stage = boxActivity.ActivityMaster.Stage,
             IsWIRCheckpoint = boxActivity.ActivityMaster.IsWIRCheckpoint,
             WIRCode = boxActivity.ActivityMaster.WIRCode,
-            ActualDuration = actualDuration
+            ActualDuration = actualDuration,
+            TeamId = boxActivity.TeamId,
+            TeamName = boxActivity.Team?.TeamName,
+            AssignedMemberId = boxActivity.AssignedMemberId,
+            AssignedMemberName = boxActivity.AssignedMember != null ?
+               (!string.IsNullOrWhiteSpace(boxActivity.AssignedMember.EmployeeName)
+        ? boxActivity.AssignedMember.EmployeeName
+        : boxActivity.AssignedMember.User?.FullName) : null
         };
 
         return Result.Success(activityDto);

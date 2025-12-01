@@ -54,6 +54,14 @@ export interface UpdateUserRequest {
   isActive: boolean;
 }
 
+export interface PaginatedUsersResponse {
+  items: UserDto[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -63,20 +71,59 @@ export class UserService {
   constructor(private apiService: ApiService) {}
 
   /**
-   * Get all users
+   * Get all users with pagination
    */
-  getUsers(): Observable<UserDto[]> {
-    return this.apiService.get<UserDto[]>(this.endpoint).pipe(
-      map(users => (users || []).map(u => this.transformUser(u)))
+  getUsers(pageNumber: number = 1, pageSize: number = 25): Observable<PaginatedUsersResponse> {
+    const params = new URLSearchParams();
+    params.set('pageNumber', pageNumber.toString());
+    params.set('pageSize', pageSize.toString());
+    
+    return this.apiService.get<any>(`${this.endpoint}?${params.toString()}`).pipe(
+      map((response: any) => {
+        console.log('🔍 UserService.getUsers - Raw API response:', response);
+        
+        // The API service already extracts data/Data, but handle Result wrapper if still present
+        const data = response.data || response.Data || response;
+        console.log('🔍 UserService.getUsers - Extracted data:', data);
+        
+        // Handle both camelCase and PascalCase properties
+        const items = data.items || data.Items || [];
+        const totalCount = data.totalCount ?? data.TotalCount ?? 0;
+        const responsePageNumber = data.pageNumber ?? data.PageNumber ?? pageNumber;
+        const responsePageSize = data.pageSize ?? data.PageSize ?? pageSize;
+        const totalPages = data.totalPages ?? data.TotalPages ?? 0;
+        
+        console.log('🔍 UserService.getUsers - Parsed values:', {
+          itemsCount: items.length,
+          totalCount,
+          pageNumber: responsePageNumber,
+          pageSize: responsePageSize,
+          totalPages
+        });
+        
+        // Ensure we have the paginated response structure
+        const paginatedResponse: PaginatedUsersResponse = {
+          items: items.map((u: any) => this.transformUser(u)),
+          totalCount,
+          pageNumber: responsePageNumber,
+          pageSize: responsePageSize,
+          totalPages
+        };
+        
+        console.log('🔍 UserService.getUsers - Final response:', paginatedResponse);
+        return paginatedResponse;
+      })
     );
   }
 
   /**
    * Get users by department ID
+   * Note: This method fetches all users (may need pagination in the future)
    */
   getUsersByDepartment(departmentId: string): Observable<UserDto[]> {
-    return this.getUsers().pipe(
-      map(users => users.filter(u => u.departmentId === departmentId && u.isActive))
+    // Fetch a large page size to get all users for department filtering
+    return this.getUsers(1, 1000).pipe(
+      map((response: PaginatedUsersResponse) => response.items.filter((u: UserDto) => u.departmentId === departmentId && u.isActive))
     );
   }
 

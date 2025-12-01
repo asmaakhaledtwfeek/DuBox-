@@ -1,7 +1,8 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { AbstractControl, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { UserService } from '../../../core/services/user.service';
@@ -10,6 +11,8 @@ import { GroupDto, GroupService } from '../../../core/services/group.service';
 import { RoleDto, RoleService } from '../../../core/services/role.service';
 import { DepartmentService } from '../../../core/services/department.service';
 import { Department } from '../../../core/models/team.model';
+import { AuditLogService } from '../../../core/services/audit-log.service';
+import { AuditLog, AuditLogQueryParams } from '../../../core/models/audit-log.model';
 import { debounceTime, distinctUntilChanged, switchMap, finalize, catchError, map } from 'rxjs/operators';
 import { forkJoin, of, Subscription, Observable } from 'rxjs';
 
@@ -31,6 +34,7 @@ interface ConfirmationState {
     CommonModule,
     RouterModule,
     ReactiveFormsModule,
+    FormsModule,
     HeaderComponent,
     SidebarComponent
   ],
@@ -39,6 +43,9 @@ interface ConfirmationState {
 })
 export class UserManagementComponent implements OnInit, OnDestroy {
   activeTab: UserManagementTab = 'users';
+  
+  // Expose Math to template
+  readonly Math = Math;
 
   readonly tabs: { id: UserManagementTab; label: string }[] = [
     { id: 'users', label: 'Users' },
@@ -55,6 +62,12 @@ export class UserManagementComponent implements OnInit, OnDestroy {
 
   users: UserDto[] = [];
   filteredUsers: UserDto[] = [];
+  
+  // Pagination
+  currentPage = 1;
+  pageSize = 25;
+  totalCount = 0;
+  totalPages = 0;
   roles: RoleDto[] = [];
   filteredRoles: RoleDto[] = [];
   groups: GroupDto[] = [];
@@ -98,12 +111,14 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).*$/)
   ];
 
+
   constructor(
     private fb: FormBuilder,
     private userService: UserService,
     private groupService: GroupService,
     private roleService: RoleService,
-    private departmentService: DepartmentService
+    private departmentService: DepartmentService,
+    private router: Router
   ) {
     this.filterForm = this.fb.group({
       search: [''],
@@ -161,7 +176,37 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   get totalUsers(): number {
-    return this.users.length;
+    return this.totalCount;
+  }
+  
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.loadUsers();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  changePageSize(size: number): void {
+    this.pageSize = size;
+    this.currentPage = 1;
+    this.loadUsers();
+  }
+
+  getPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 7;
+    let startPage = Math.max(1, this.currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(this.totalPages, startPage + maxPagesToShow - 1);
+    
+    if (endPage - startPage < maxPagesToShow - 1) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
   }
 
   get activeUsers(): number {
@@ -446,14 +491,35 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   private loadUsers(): void {
     this.isLoadingUsers = true;
     this.usersError = '';
-    this.userService.getUsers().pipe(
-      finalize(() => (this.isLoadingUsers = false)),
+    console.log('🔄 UserManagementComponent.loadUsers - Loading users, page:', this.currentPage, 'size:', this.pageSize);
+    
+    this.userService.getUsers(this.currentPage, this.pageSize).pipe(
+      finalize(() => {
+        this.isLoadingUsers = false;
+        console.log('✅ UserManagementComponent.loadUsers - Loading complete');
+      }),
       catchError(err => {
+        console.error('❌ UserManagementComponent.loadUsers - Error:', err);
         this.usersError = this.extractError(err);
-        return of([]);
+        return of({ items: [], totalCount: 0, pageNumber: 1, pageSize: 25, totalPages: 0 });
       })
-    ).subscribe(users => {
-      this.users = users;
+    ).subscribe(response => {
+      console.log('📦 UserManagementComponent.loadUsers - Response received:', response);
+      console.log('📦 UserManagementComponent.loadUsers - Items count:', response.items?.length || 0);
+      
+      this.users = response.items || [];
+      this.totalCount = response.totalCount || 0;
+      this.totalPages = response.totalPages || 0;
+      this.currentPage = response.pageNumber || this.currentPage;
+      this.pageSize = response.pageSize || this.pageSize;
+      
+      console.log('📦 UserManagementComponent.loadUsers - State updated:', {
+        usersCount: this.users.length,
+        totalCount: this.totalCount,
+        totalPages: this.totalPages,
+        currentPage: this.currentPage
+      });
+      
       this.updateGroupMembershipCounts();
       this.applyUserFilters();
     });
@@ -498,6 +564,8 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   private applyUserFilters(): void {
+    // Note: Since we're using server-side pagination, filtering should ideally be done on the server
+    // For now, we'll filter the current page's results client-side
     const { search, status, role, group } = this.filterForm.value;
     const term = (search || '').toLowerCase().trim();
 
@@ -521,6 +589,14 @@ export class UserManagementComponent implements OnInit, OnDestroy {
 
       return matchesSearch && matchesStatus && matchesRole && matchesGroup;
     });
+    
+    // If filters are applied, reset to page 1
+    if (term || status !== 'all' || role !== 'all' || group !== 'all') {
+      if (this.currentPage !== 1) {
+        this.currentPage = 1;
+        this.loadUsers();
+      }
+    }
   }
 
   private applyGroupFilters(): void {
@@ -906,6 +982,11 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   private extractError(error: any): string {
     if (!error) return 'An unexpected error occurred.';
     return error?.error?.message || error?.message || 'An unexpected error occurred.';
+  }
+
+  // Audit Logs Methods
+  openAuditLogsModal(user: UserDto): void {
+    this.router.navigate(['/admin/users', user.userId, 'audit-logs']);
   }
 }
 

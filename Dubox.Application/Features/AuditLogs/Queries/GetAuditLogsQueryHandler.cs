@@ -54,6 +54,7 @@ namespace Dubox.Application.Features.AuditLogs.Queries
                 SearchTerm = request.SearchTerm,
                 FromDate = normalizedFrom,
                 ToDate = normalizedTo,
+                ChangedBy = request.ChangedBy,
             };
 
             // Create specification with pagination

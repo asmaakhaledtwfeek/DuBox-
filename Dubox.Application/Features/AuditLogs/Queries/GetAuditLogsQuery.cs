@@ -12,6 +12,7 @@ namespace Dubox.Application.Features.AuditLogs.Queries
         public string? SearchTerm { get; set; }
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
+        public Guid? ChangedBy { get; set; }
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 25;
 

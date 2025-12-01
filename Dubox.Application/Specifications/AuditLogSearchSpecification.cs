@@ -22,6 +22,9 @@ namespace Dubox.Application.Specifications
             if (parameters.ToDate.HasValue)
                 AddCriteria(log => log.ChangedDate <= parameters.ToDate.Value);
 
+            if (parameters.ChangedBy.HasValue)
+                AddCriteria(log => log.ChangedBy == parameters.ChangedBy.Value);
+
             AddOrderByDescending(log => log.ChangedDate);
 
             // Apply pagination if provided

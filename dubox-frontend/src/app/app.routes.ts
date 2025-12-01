@@ -164,6 +164,12 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/user-management/user-details-page/user-details-page.component').then(m => m.UserDetailsPageComponent)
       },
       {
+        path: 'users/:userId/audit-logs',
+        canActivate: [roleGuard],
+        data: { roles: [UserRole.SystemAdmin] },
+        loadComponent: () => import('./features/admin/user-management/user-audit-logs/user-audit-logs.component').then(m => m.UserAuditLogsComponent)
+      },
+      {
         path: 'audit-logs',
         canActivate: [roleGuard],
         data: { roles: [UserRole.SystemAdmin, UserRole.ProjectManager] },

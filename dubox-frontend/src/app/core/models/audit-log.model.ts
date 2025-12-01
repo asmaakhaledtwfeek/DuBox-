@@ -27,6 +27,7 @@ export interface AuditLogQueryParams {
   searchTerm?: string;
   fromDate?: string;
   toDate?: string;
+  changedBy?: string;
   pageNumber?: number;
   pageSize?: number;
 }

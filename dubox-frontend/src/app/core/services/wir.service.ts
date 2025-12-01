@@ -11,12 +11,15 @@ import {
   WIRCheckpoint,
   CreateWIRCheckpointRequest,
   AddChecklistItemsRequest,
+  UpdateChecklistItemRequest,
+  PredefinedChecklistItem,
   ReviewWIRCheckpointRequest,
   AddQualityIssuesRequest,
   QualityIssueItem,
   QualityIssueDetails,
   UpdateQualityIssueStatusRequest,
-  WIRCheckpointFilter
+  WIRCheckpointFilter,
+  WIRCheckpointChecklistItem
 } from '../models/wir.model';
 
 @Injectable({
@@ -192,12 +195,66 @@ export class WIRService {
   }
 
   /**
-   * Add checklist items to WIR checkpoint
+   * Get all predefined checklist items
+   */
+  getPredefinedChecklistItems(): Observable<PredefinedChecklistItem[]> {
+    return this.apiService.get<any[]>('wircheckpoints/predefined-checklist-items').pipe(
+      map(response => {
+        const items = Array.isArray(response) ? response : (response as any)?.data || [];
+        return items.map((item: any) => ({
+          predefinedItemId: item.predefinedItemId || item.PredefinedItemId,
+          checkpointDescription: item.checkpointDescription || item.CheckpointDescription,
+          referenceDocument: item.referenceDocument || item.ReferenceDocument,
+          sequence: item.sequence || item.Sequence || 0,
+          category: item.category || item.Category,
+          isActive: item.isActive ?? item.IsActive ?? true
+        }));
+      })
+    );
+  }
+
+  /**
+   * Add predefined checklist items to WIR checkpoint
    */
   addChecklistItems(request: AddChecklistItemsRequest): Observable<WIRCheckpoint> {
-    return this.apiService.post<any>(`wircheckpoints/${request.wirId}/checklist-items`, request).pipe(
+    return this.apiService.post<any>(`wircheckpoints/${request.wirId}/checklist-items`, {
+      wirId: request.wirId,
+      predefinedItemIds: request.predefinedItemIds
+    }).pipe(
       map(data => this.transformWIRCheckpoint(data))
     );
+  }
+
+  /**
+   * Update a checklist item
+   */
+  updateChecklistItem(request: UpdateChecklistItemRequest): Observable<WIRCheckpointChecklistItem> {
+    return this.apiService.put<any>(`wircheckpoints/checklist-items/${request.checklistItemId}`, {
+      checklistItemId: request.checklistItemId,
+      checkpointDescription: request.checkpointDescription,
+      referenceDocument: request.referenceDocument,
+      status: request.status,
+      remarks: request.remarks,
+      sequence: request.sequence
+    }).pipe(
+      map((item: any) => ({
+        checklistItemId: item.checklistItemId || item.ChecklistItemId,
+        wirId: item.wirId || item.WIRId,
+        checkpointDescription: item.checkpointDescription || item.CheckpointDescription,
+        referenceDocument: item.referenceDocument || item.ReferenceDocument,
+        status: item.status || item.Status || 'Pending',
+        remarks: item.remarks || item.Remarks,
+        sequence: item.sequence || item.Sequence || 0,
+        predefinedItemId: item.predefinedItemId || item.PredefinedItemId
+      }))
+    );
+  }
+
+  /**
+   * Delete a checklist item
+   */
+  deleteChecklistItem(checklistItemId: string): Observable<boolean> {
+    return this.apiService.delete<boolean>(`wircheckpoints/checklist-items/${checklistItemId}`);
   }
 
   /**
@@ -297,7 +354,8 @@ export class WIRService {
             referenceDocument: item.referenceDocument || item.ReferenceDocument,
             status: item.status || item.Status || 'Pending',
             remarks: item.remarks || item.Remarks || item.comments || item.Comments,
-            sequence: item.sequence || item.Sequence || 0
+            sequence: item.sequence || item.Sequence || 0,
+            predefinedItemId: item.predefinedItemId || item.PredefinedItemId
           };
           console.log(`Transformed item ${index + 1}:`, transformedItem);
           return transformedItem;

@@ -23,12 +23,35 @@ namespace Dubox.Api.Controllers
             var result = await _mediator.Send(command, cancellationToken);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
+        [HttpGet("predefined-checklist-items")]
+        public async Task<IActionResult> GetPredefinedChecklistItems(CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new GetPredefinedChecklistItemsQuery(), cancellationToken);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
         [HttpPost("{wirId}/checklist-items")]
         public async Task<IActionResult> AddChecklistItems(Guid wirId, [FromBody] AddChecklistItemsCommand command, CancellationToken cancellationToken)
         {
             if (wirId != command.WIRId)
                 return BadRequest("WIR Check point ID mismatch");
             var result = await _mediator.Send(command, cancellationToken);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpPut("checklist-items/{checklistItemId}")]
+        public async Task<IActionResult> UpdateChecklistItem(Guid checklistItemId, [FromBody] UpdateChecklistItemCommand command, CancellationToken cancellationToken)
+        {
+            if (checklistItemId != command.ChecklistItemId)
+                return BadRequest("Checklist item ID mismatch");
+            var result = await _mediator.Send(command, cancellationToken);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpDelete("checklist-items/{checklistItemId}")]
+        public async Task<IActionResult> DeleteChecklistItem(Guid checklistItemId, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new DeleteChecklistItemCommand(checklistItemId), cancellationToken);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
         [HttpPost("{wirId}/quality-issues")]

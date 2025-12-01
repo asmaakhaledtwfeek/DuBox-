@@ -375,15 +375,15 @@
             <p>Create or edit inspection checkpoints for this WIR.</p>
           </div>
           <div class="designer-meta">
-            <span><strong>{{ addChecklistItemsArray.length }}</strong> item(s)</span>
+            <span><strong>{{ wirCheckpoint?.checklistItems?.length || 0 }}</strong> item(s)</span>
             <button 
               type="button" 
               class="btn btn-secondary btn-sm" 
-              (click)="openChecklistModal()"
-              [disabled]="isChecklistLocked"
+              (click)="openAddPredefinedItemsModal()"
+              [disabled]="isChecklistLocked || loadingPredefinedItems"
               [title]="isChecklistLocked ? 'Checklist is locked after review' : null"
             >
-              + Add Checklist Item
+              + Add Predefined Items
             </button>
             <button 
               type="button" 
@@ -436,7 +436,7 @@
             <ng-template #noChecklistPlaceholder>
               <div class="empty-checklist">
                 <p>No checklist items added yet.</p>
-                <small>Click “Add Checklist Item” to create one.</small>
+                <small>Click "Add Predefined Items" to select from the predefined checklist.</small>
               </div>
             </ng-template>
           </div>
@@ -444,12 +444,16 @@
           <div class="form-actions sticky-actions">
             <button type="button" class="btn btn-secondary" (click)="closeWorkflowStep()">Close</button>
             <button 
-              type="submit" 
-              class="btn btn-primary" 
-              [disabled]="addingChecklistItems || addChecklistItemsArray.length === 0 || isChecklistLocked"
+              type="button" 
+              class="btn btn-outline" 
+              (click)="openAddPredefinedItemsModal()"
+              [disabled]="addingChecklistItems || isChecklistLocked || loadingPredefinedItems"
             >
-              <span *ngIf="addingChecklistItems">Adding Items...</span>
-              <span *ngIf="!addingChecklistItems">Add Checklist Items</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14"/>
+                <path d="M5 12h14"/>
+              </svg>
+              Add Predefined Items
             </button>
           </div>
         </div>
@@ -508,18 +512,30 @@
                 <th style="width: 50px;">#</th>
                 <th>Checkpoint Description</th>
                 <th style="width: 200px;">Reference Document</th>
-                    <th style="width: 200px;">Status</th>
-                    <th style="width: 260px;">Remarks</th>
+                <th style="width: 200px;">Status</th>
+                <th style="width: 260px;">Remarks</th>
+                <th style="width: 100px;" *ngIf="!isChecklistLocked">Actions</th>
               </tr>
             </thead>
             <tbody formArrayName="checklistItems">
               <tr *ngFor="let item of checklistItems.controls; let i = index" [formGroupName]="i">
                 <td class="text-center">{{ i + 1 }}</td>
                 <td class="checkpoint-desc">
-                  {{ item.value.checkpointDescription }}
+                  <input 
+                    type="text" 
+                    formControlName="checkpointDescription"
+                    class="form-control form-control-sm"
+                    [class.invalid]="item.get('checkpointDescription')?.invalid && item.get('checkpointDescription')?.touched"
+                    [readonly]="isChecklistLocked"
+                  />
                 </td>
                 <td class="reference-doc">
-                  <span class="doc-badge">{{ item.value.referenceDocument }}</span>
+                  <input 
+                    type="text" 
+                    formControlName="referenceDocument"
+                    class="form-control form-control-sm"
+                    [readonly]="isChecklistLocked"
+                  />
                 </td>
                 <td class="status-buttons">
                   <button 
@@ -528,6 +544,7 @@
                     [class.active]="item.value.status === CheckpointStatus.Pass"
                     [class.btn-pass]="item.value.status === CheckpointStatus.Pass"
                     (click)="onCheckpointStatusChange(i, CheckpointStatus.Pass)"
+                    [disabled]="isChecklistLocked"
                   >
                     ✓ Pass
                   </button>
@@ -537,6 +554,7 @@
                     [class.active]="item.value.status === CheckpointStatus.Fail"
                     [class.btn-fail]="item.value.status === CheckpointStatus.Fail"
                     (click)="onCheckpointStatusChange(i, CheckpointStatus.Fail)"
+                    [disabled]="isChecklistLocked"
                   >
                     ✗ Fail
                   </button>
@@ -548,10 +566,34 @@
                     class="form-control form-control-sm"
                     placeholder="Add remarks..."
                     [class.required]="item.value.status === CheckpointStatus.Fail"
+                    [readonly]="isChecklistLocked"
                   />
                   <span class="error-text" *ngIf="item.value.status === CheckpointStatus.Fail && !item.value.remarks">
                     Required for failed items
                   </span>
+                </td>
+                <td class="text-right actions-cell" *ngIf="!isChecklistLocked">
+                  <button 
+                    type="button" 
+                    class="icon-button" 
+                    (click)="updateChecklistItem(i)"
+                    title="Save changes"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M20 6L9 17l-5-5"/>
+                    </svg>
+                  </button>
+                  <button 
+                    type="button" 
+                    class="icon-button" 
+                    (click)="confirmRemoveChecklistItem(i)"
+                    title="Delete item"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                  </button>
                 </td>
               </tr>
             </tbody>
@@ -951,6 +993,148 @@
     <div class="modal-actions">
       <button type="button" class="btn btn-secondary" (click)="cancelDeleteChecklistItem()">Cancel</button>
       <button type="button" class="btn btn-danger" (click)="confirmDeleteChecklistItem()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Predefined Checklist Items Modal -->
+<div class="modal-backdrop" *ngIf="isAddPredefinedItemsModalOpen" (click)="closeAddPredefinedItemsModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div>
+        <h2>Add Predefined Checklist Items</h2>
+        <p>Select items from the predefined checklist to add to this checkpoint.</p>
+        <div *ngIf="!loadingPredefinedItems && availablePredefinedItems.length > 0" class="selection-info">
+          <span *ngIf="selectedPredefinedItemIds.length > 0" class="selection-count">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            {{ selectedPredefinedItemIds.length }} of {{ availablePredefinedItems.length }} selected
+          </span>
+          <span *ngIf="selectedPredefinedItemIds.length === 0" class="selection-hint">
+            Select items to add to the checkpoint
+          </span>
+          <div class="select-all-actions">
+            <button 
+              type="button" 
+              class="btn-select-all" 
+              (click)="areAllItemsSelected() ? deselectAllItems() : selectAllItems()"
+              [disabled]="addingChecklistItems"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              {{ areAllItemsSelected() ? 'Deselect All' : 'Select All' }}
+            </button>
+          </div>
+        </div>
+      </div>
+      <button class="icon-button" (click)="closeAddPredefinedItemsModal()" [disabled]="addingChecklistItems" aria-label="Close modal">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div *ngIf="loadingPredefinedItems" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading predefined items...</p>
+      </div>
+      <div *ngIf="!loadingPredefinedItems && availablePredefinedItems.length === 0" class="empty-state">
+        <p>All predefined checklist items have been added to this checkpoint.</p>
+        <p style="margin-top: 8px; font-size: 0.875rem; opacity: 0.7;">No additional items are available to add.</p>
+      </div>
+      <div *ngIf="!loadingPredefinedItems && availablePredefinedItems.length > 0" class="predefined-items-list">
+        <div *ngFor="let group of getGroupedPredefinedItems()" class="predefined-items-group">
+          <div class="group-header">
+            <div class="group-header-left">
+              <h3 class="group-title">{{ group.category }}</h3>
+              <span class="group-count">{{ group.items.length }} item(s)</span>
+            </div>
+            <button 
+              type="button" 
+              class="btn-select-group" 
+              (click)="areAllInGroupSelected(group.category) ? deselectAllInGroup(group.category) : selectAllInGroup(group.category)"
+              [disabled]="addingChecklistItems"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              {{ areAllInGroupSelected(group.category) ? 'Deselect All' : 'Select All' }}
+            </button>
+          </div>
+          <div class="group-items">
+            <div 
+              *ngFor="let item of group.items" 
+              class="predefined-item-card"
+              [class.selected]="isPredefinedItemSelected(item.predefinedItemId)"
+              (click)="togglePredefinedItemSelection(item.predefinedItemId)"
+              role="button"
+              tabindex="0"
+              (keydown.enter)="togglePredefinedItemSelection(item.predefinedItemId)"
+              (keydown.space)="togglePredefinedItemSelection(item.predefinedItemId); $event.preventDefault()"
+            >
+              <div class="item-checkbox">
+                <input 
+                  type="checkbox" 
+                  [checked]="isPredefinedItemSelected(item.predefinedItemId)"
+                  (change)="togglePredefinedItemSelection(item.predefinedItemId)"
+                  (click)="$event.stopPropagation()"
+                  [id]="'item-' + item.predefinedItemId"
+                  [attr.aria-label]="'Select ' + item.checkpointDescription"
+                />
+              </div>
+              <div class="item-content">
+                <div class="item-main-line">
+                  <span class="item-sequence">#{{ item.sequence }}</span>
+                  <p class="item-description">{{ item.checkpointDescription }}</p>
+                </div>
+                <p class="item-reference" *ngIf="item.referenceDocument">
+                  <strong>Reference:</strong> {{ item.referenceDocument }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div *ngIf="error" class="alert alert-error">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>{{ error }}</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button 
+        type="button" 
+        class="btn btn-secondary" 
+        (click)="closeAddPredefinedItemsModal()"
+        [disabled]="addingChecklistItems"
+      >
+        Cancel
+      </button>
+      <button 
+        type="button" 
+        class="btn btn-primary" 
+        (click)="onAddChecklistItems()"
+        [disabled]="addingChecklistItems || selectedPredefinedItemIds.length === 0"
+      >
+        <span *ngIf="!addingChecklistItems">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          Add Selected Items ({{ selectedPredefinedItemIds.length }})
+        </span>
+        <span *ngIf="addingChecklistItems">
+          <span class="spinner-inline">
+            <span class="spinner small"></span>
+          </span>
+          Adding...
+        </span>
+      </button>
     </div>
   </div>
 </div>

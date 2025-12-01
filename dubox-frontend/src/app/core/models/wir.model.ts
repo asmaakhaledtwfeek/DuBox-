@@ -112,6 +112,16 @@ export interface WIRCheckpointChecklistItem {
   status: CheckListItemStatus;
   remarks?: string;
   sequence: number;
+  predefinedItemId?: string; // Reference to the predefined item this was cloned from
+}
+
+export interface PredefinedChecklistItem {
+  predefinedItemId: string;
+  checkpointDescription: string;
+  referenceDocument?: string;
+  sequence: number;
+  category?: string;
+  isActive: boolean;
 }
 
 export enum WIRCheckpointStatus {
@@ -139,13 +149,16 @@ export interface CreateWIRCheckpointRequest {
 
 export interface AddChecklistItemsRequest {
   wirId: string;
-  items: ChecklistItemForCreate[];
+  predefinedItemIds: string[]; // Array of predefined item IDs to add
 }
 
-export interface ChecklistItemForCreate {
-  checkpointDescription: string;
+export interface UpdateChecklistItemRequest {
+  checklistItemId: string;
+  checkpointDescription?: string;
   referenceDocument?: string;
-  sequence: number;
+  status?: CheckListItemStatus;
+  remarks?: string;
+  sequence?: number;
 }
 
 export interface ReviewWIRCheckpointRequest {

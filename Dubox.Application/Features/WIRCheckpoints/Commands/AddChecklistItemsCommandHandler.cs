@@ -23,33 +23,60 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
         {
             var wirRepository = _unitOfWork.Repository<WIRCheckpoint>();
             var wirChecklistRepository = _unitOfWork.Repository<WIRChecklistItem>();
+            var predefinedRepository = _unitOfWork.Repository<PredefinedChecklistItem>();
 
-            var wir = await wirRepository.GetByIdAsync(request.WIRId);
+            var wir = await wirRepository.GetByIdAsync(request.WIRId, cancellationToken);
 
-            if (wir is null)
+            if (wir == null)
                 return Result.Failure<CreateWIRCheckpointDto>("WIR Checkpoint not found");
 
+            // Get existing checklist items to determine the next sequence number
+            var existingItems = await wirChecklistRepository.FindAsync(x => x.WIRId == request.WIRId, cancellationToken);
+            var maxSequence = existingItems.Any() ? existingItems.Max(x => x.Sequence) : 0;
 
-            var existingItems = await wirChecklistRepository.FindAsync(x => x.WIRId == request.WIRId);
-            if (existingItems.Any())
-                wirChecklistRepository.DeleteRange(existingItems);
+            // Validate that all predefined item IDs exist and are active
+            var predefinedItems = await predefinedRepository.FindAsync(
+                x => request.PredefinedItemIds.Contains(x.PredefinedItemId) && x.IsActive,
+                cancellationToken);
 
-            var newItems = request.Items.Select(item => new WIRChecklistItem
+            if (predefinedItems.Count() != request.PredefinedItemIds.Count)
             {
-                WIRId = request.WIRId,
-                CheckpointDescription = item.CheckpointDescription,
-                ReferenceDocument = item.ReferenceDocument,
-                Sequence = item.Sequence,
-                Status = CheckListItemStatusEnum.Pending,
-                Remarks = null,
-            }).ToList();
+                var foundIds = predefinedItems.Select(x => x.PredefinedItemId).ToList();
+                var missingIds = request.PredefinedItemIds.Except(foundIds).ToList();
+                return Result.Failure<CreateWIRCheckpointDto>($"One or more predefined checklist items not found or inactive. Missing IDs: {string.Join(", ", missingIds)}");
+            }
+
+            // Check if any of these predefined items are already added to this checkpoint
+            var existingPredefinedIds = existingItems
+                .Where(x => x.PredefinedItemId.HasValue)
+                .Select(x => x.PredefinedItemId!.Value)
+                .ToList();
+
+            var duplicates = request.PredefinedItemIds.Intersect(existingPredefinedIds).ToList();
+            if (duplicates.Any())
+            {
+                return Result.Failure<CreateWIRCheckpointDto>($"One or more predefined items are already added to this checkpoint. Duplicate IDs: {string.Join(", ", duplicates)}");
+            }
+
+            // Clone the predefined items to the checkpoint
+            var newItems = predefinedItems
+                .OrderBy(x => x.Sequence)
+                .Select((predefined, index) => new WIRChecklistItem
+                {
+                    WIRId = request.WIRId,
+                    CheckpointDescription = predefined.CheckpointDescription,
+                    ReferenceDocument = predefined.ReferenceDocument,
+                    Sequence = maxSequence + index + 1,
+                    Status = CheckListItemStatusEnum.Pending,
+                    Remarks = null,
+                    PredefinedItemId = predefined.PredefinedItemId
+                })
+                .ToList();
 
             await wirChecklistRepository.AddRangeAsync(newItems, cancellationToken);
-
             await _unitOfWork.CompleteAsync(cancellationToken);
 
             var dto = wir.Adapt<CreateWIRCheckpointDto>();
-
             return Result.Success(dto);
         }
     }

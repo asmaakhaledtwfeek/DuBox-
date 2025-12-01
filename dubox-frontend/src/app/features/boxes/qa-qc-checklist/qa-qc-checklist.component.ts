@@ -11,6 +11,8 @@ import {
   WIRCheckpoint,
   CreateWIRCheckpointRequest,
   AddChecklistItemsRequest,
+  UpdateChecklistItemRequest,
+  PredefinedChecklistItem,
   ReviewWIRCheckpointRequest,
   WIRCheckpointStatus,
   CheckListItemStatus,
@@ -64,7 +66,14 @@ export class QaQcChecklistComponent implements OnInit {
   isChecklistModalOpen = false;
   isDeleteModalOpen = false;
   isQualityIssueModalOpen = false;
+  isAddPredefinedItemsModalOpen = false;
   pendingDeleteIndex: number | null = null;
+  
+  // Predefined checklist items
+  predefinedChecklistItems: PredefinedChecklistItem[] = [];
+  availablePredefinedItems: PredefinedChecklistItem[] = []; // Items not yet added to checkpoint
+  loadingPredefinedItems = false;
+  selectedPredefinedItemIds: string[] = [];
   
   loading = true;
   error = '';
@@ -141,6 +150,122 @@ export class QaQcChecklistComponent implements OnInit {
     this.initForm();
     this.loadWIRRecord();
     this.loadBoxQualityIssues();
+    this.loadPredefinedChecklistItems();
+  }
+
+  private loadPredefinedChecklistItems(): void {
+    this.loadingPredefinedItems = true;
+    this.wirService.getPredefinedChecklistItems().subscribe({
+      next: (items) => {
+        this.predefinedChecklistItems = items;
+        this.updateAvailablePredefinedItems();
+        this.loadingPredefinedItems = false;
+      },
+      error: (err) => {
+        console.error('Error loading predefined checklist items:', err);
+        this.loadingPredefinedItems = false;
+      }
+    });
+  }
+
+  private updateAvailablePredefinedItems(): void {
+    if (!this.wirCheckpoint || !this.predefinedChecklistItems.length) {
+      this.availablePredefinedItems = [...this.predefinedChecklistItems];
+      return;
+    }
+
+    // Get IDs of items already added to this checkpoint
+    const addedPredefinedIds = new Set(
+      (this.wirCheckpoint.checklistItems || [])
+        .map(item => item.predefinedItemId)
+        .filter(id => id != null) as string[]
+    );
+
+    // Filter out items that are already added
+    this.availablePredefinedItems = this.predefinedChecklistItems.filter(
+      item => !addedPredefinedIds.has(item.predefinedItemId)
+    );
+  }
+
+  getGroupedPredefinedItems(): { category: string; items: PredefinedChecklistItem[] }[] {
+    const grouped = new Map<string, PredefinedChecklistItem[]>();
+    
+    // Group items by category
+    this.availablePredefinedItems.forEach(item => {
+      const category = item.category || 'Other';
+      if (!grouped.has(category)) {
+        grouped.set(category, []);
+      }
+      grouped.get(category)!.push(item);
+    });
+
+    // Convert to array and sort by predefined category order
+    const categoryOrder = ['General', 'Setting Out', 'Installation Activity'];
+    const result: { category: string; items: PredefinedChecklistItem[] }[] = [];
+    
+    // Add categories in order
+    categoryOrder.forEach(cat => {
+      if (grouped.has(cat)) {
+        result.push({
+          category: cat,
+          items: grouped.get(cat)!.sort((a, b) => a.sequence - b.sequence)
+        });
+      }
+    });
+
+    // Add any remaining categories
+    grouped.forEach((items, category) => {
+      if (!categoryOrder.includes(category)) {
+        result.push({
+          category,
+          items: items.sort((a, b) => a.sequence - b.sequence)
+        });
+      }
+    });
+
+    return result;
+  }
+
+  selectAllItems(): void {
+    this.selectedPredefinedItemIds = this.availablePredefinedItems.map(item => item.predefinedItemId);
+  }
+
+  deselectAllItems(): void {
+    this.selectedPredefinedItemIds = [];
+  }
+
+  selectAllInGroup(category: string): void {
+    const group = this.getGroupedPredefinedItems().find(g => g.category === category);
+    if (!group) return;
+
+    const groupItemIds = group.items.map(item => item.predefinedItemId);
+    groupItemIds.forEach(itemId => {
+      if (!this.selectedPredefinedItemIds.includes(itemId)) {
+        this.selectedPredefinedItemIds.push(itemId);
+      }
+    });
+  }
+
+  deselectAllInGroup(category: string): void {
+    const group = this.getGroupedPredefinedItems().find(g => g.category === category);
+    if (!group) return;
+
+    const groupItemIds = group.items.map(item => item.predefinedItemId);
+    this.selectedPredefinedItemIds = this.selectedPredefinedItemIds.filter(
+      id => !groupItemIds.includes(id)
+    );
+  }
+
+  areAllItemsSelected(): boolean {
+    return this.availablePredefinedItems.length > 0 && 
+           this.selectedPredefinedItemIds.length === this.availablePredefinedItems.length;
+  }
+
+  areAllInGroupSelected(category: string): boolean {
+    const group = this.getGroupedPredefinedItems().find(g => g.category === category);
+    if (!group || group.items.length === 0) return false;
+
+    return group.items.every(item => this.selectedPredefinedItemIds.includes(item.predefinedItemId));
   }
 
   private initForm(): void {
@@ -362,6 +487,7 @@ export class QaQcChecklistComponent implements OnInit {
         }
       }
     }
+    this.updateAvailablePredefinedItems();
     this.loading = false;
   }
 
@@ -453,8 +579,8 @@ export class QaQcChecklistComponent implements OnInit {
   }
 
   onAddChecklistItems(): void {
-    if (!this.wirCheckpoint || this.addChecklistItemsArray.length === 0) {
-      this.error = 'Add at least one checklist item before submitting.';
+    if (!this.wirCheckpoint || this.selectedPredefinedItemIds.length === 0) {
+      this.error = 'Please select at least one predefined checklist item to add.';
       return;
     }
 
@@ -468,15 +594,13 @@ export class QaQcChecklistComponent implements OnInit {
 
     const request: AddChecklistItemsRequest = {
       wirId: this.wirCheckpoint.wirId,
-      items: this.addChecklistItemsArray.value.map((item: any) => ({
-        checkpointDescription: item.checkpointDescription.trim(),
-        referenceDocument: item.referenceDocument?.trim() || undefined,
-        sequence: item.sequence
-      }))
+      predefinedItemIds: this.selectedPredefinedItemIds
     };
 
     this.wirService.addChecklistItems(request).subscribe({
       next: () => {
+        this.selectedPredefinedItemIds = [];
+        this.closeAddPredefinedItemsModal();
         this.refreshCheckpointDetails(true);
       },
       error: (err) => {
@@ -488,6 +612,32 @@ export class QaQcChecklistComponent implements OnInit {
         this.addingChecklistItems = false;
       }
     });
+  }
+
+  openAddPredefinedItemsModal(): void {
+    this.updateAvailablePredefinedItems();
+    this.selectedPredefinedItemIds = [];
+    this.isAddPredefinedItemsModalOpen = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeAddPredefinedItemsModal(): void {
+    this.isAddPredefinedItemsModalOpen = false;
+    this.selectedPredefinedItemIds = [];
+    document.body.style.overflow = '';
+  }
+
+  togglePredefinedItemSelection(itemId: string): void {
+    const index = this.selectedPredefinedItemIds.indexOf(itemId);
+    if (index > -1) {
+      this.selectedPredefinedItemIds.splice(index, 1);
+    } else {
+      this.selectedPredefinedItemIds.push(itemId);
+    }
+  }
+
+  isPredefinedItemSelected(itemId: string): boolean {
+    return this.selectedPredefinedItemIds.includes(itemId);
   }
 
   private loadChecklistItems(): void {
@@ -587,6 +737,63 @@ export class QaQcChecklistComponent implements OnInit {
     this.updateAddChecklistSequences();
     this.newChecklistForm.reset();
     this.closeChecklistModal();
+  }
+
+  updateChecklistItem(index: number): void {
+    if (!this.wirCheckpoint) return;
+    
+    const itemControl = this.checklistItems.at(index);
+    if (!itemControl || itemControl.invalid) {
+      this.markFormGroupTouched(itemControl as FormGroup);
+      return;
+    }
+
+    const itemValue = itemControl.value;
+    const checklistItemId = itemValue.checklistItemId;
+    
+    if (!checklistItemId) {
+      this.error = 'Checklist item ID is missing';
+      return;
+    }
+
+    const request: UpdateChecklistItemRequest = {
+      checklistItemId: checklistItemId,
+      checkpointDescription: itemValue.checkpointDescription?.trim(),
+      referenceDocument: itemValue.referenceDocument?.trim() || undefined,
+      status: this.mapToCheckListItemStatus(itemValue.status),
+      remarks: itemValue.remarks?.trim() || undefined,
+      sequence: itemValue.sequence
+    };
+
+    this.wirService.updateChecklistItem(request).subscribe({
+      next: () => {
+        this.refreshCheckpointDetails(true);
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { message: 'Checklist item updated successfully', type: 'success' }
+        }));
+      },
+      error: (err) => {
+        this.error = err.error?.message || err.message || 'Failed to update checklist item';
+        console.error('Error updating checklist item:', err);
+      }
+    });
+  }
+
+  deleteChecklistItem(checklistItemId: string): void {
+    if (!checklistItemId) return;
+
+    this.wirService.deleteChecklistItem(checklistItemId).subscribe({
+      next: () => {
+        this.refreshCheckpointDetails(true);
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { message: 'Checklist item deleted successfully', type: 'success' }
+        }));
+      },
+      error: (err) => {
+        this.error = err.error?.message || err.message || 'Failed to delete checklist item';
+        console.error('Error deleting checklist item:', err);
+      }
+    });
   }
 
   removeChecklistItemRow(index: number): void {

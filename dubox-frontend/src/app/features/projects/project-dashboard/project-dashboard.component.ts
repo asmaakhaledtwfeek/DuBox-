@@ -57,6 +57,11 @@ export class ProjectDashboardComponent implements OnInit {
   selectedStatus: ProjectStatus | '' = '';
   statusUpdating = false;
   statusError = '';
+  
+  showCompressionDateModal = false;
+  selectedCompressionDate: Date | null = null;
+  compressionDateUpdating = false;
+  compressionDateError = '';
 
 
   dashboardData = {
@@ -103,7 +108,8 @@ export class ProjectDashboardComponent implements OnInit {
           ...project,
           startDate: project.startDate ? new Date(project.startDate) : undefined,
           plannedStartDate: project.plannedStartDate ? new Date(project.plannedStartDate) : undefined,
-          actualStartDate: project.actualStartDate ? new Date(project.actualStartDate) : undefined
+          actualStartDate: project.actualStartDate ? new Date(project.actualStartDate) : undefined,
+          compressionStartDate: project.compressionStartDate ? new Date(project.compressionStartDate) : undefined
         };
 
         // Load boxes to calculate accurate counts
@@ -229,7 +235,8 @@ export class ProjectDashboardComponent implements OnInit {
           ...updatedProject,
           startDate: updatedProject.startDate ? new Date(updatedProject.startDate) : undefined,
           plannedStartDate: updatedProject.plannedStartDate ? new Date(updatedProject.plannedStartDate) : undefined,
-          actualStartDate: updatedProject.actualStartDate ? new Date(updatedProject.actualStartDate) : undefined
+          actualStartDate: updatedProject.actualStartDate ? new Date(updatedProject.actualStartDate) : undefined,
+          compressionStartDate: updatedProject.compressionStartDate ? new Date(updatedProject.compressionStartDate) : undefined
         };
         this.statusUpdating = false;
         this.closeStatusModal();
@@ -497,15 +504,54 @@ export class ProjectDashboardComponent implements OnInit {
     this.banner = null;
   }
 
+  /**
+   * Get the priority start date based on: ActualStartDate > CompressionStartDate > PlannedStartDate
+   */
+  getPriorityStartDate(): Date | undefined {
+    if (!this.project) return undefined;
+    
+    const actual = this.normalizeDate(this.project.actualStartDate);
+    if (actual) return actual;
+    
+    const compression = this.normalizeDate(this.project.compressionStartDate);
+    if (compression) return compression;
+    
+    return this.normalizeDate(this.project.plannedStartDate);
+  }
+
+  /**
+   * Get the label for the priority start date
+   */
+  getPriorityStartDateLabel(): string {
+    if (!this.project) return 'Not Scheduled';
+    
+    if (this.normalizeDate(this.project.actualStartDate)) {
+      return 'Started:';
+    }
+    if (this.normalizeDate(this.project.compressionStartDate)) {
+      return 'Compression Start:';
+    }
+    if (this.normalizeDate(this.project.plannedStartDate)) {
+      return 'Planned Start:';
+    }
+    return 'Not Scheduled';
+  }
+
+  /**
+   * Get formatted priority start date or fallback text
+   */
+  getPriorityStartDateDisplay(): string {
+    const date = this.getPriorityStartDate();
+    if (!date) return 'Not Scheduled';
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  }
+
   get startDateLabel(): string {
-    return this.hasActualStartDate() ? 'Started' : 'Planned Start';
+    return this.getPriorityStartDateLabel();
   }
 
   get startDateValue(): Date | undefined {
-    if (this.hasActualStartDate()) {
-      return this.normalizeDate(this.project?.actualStartDate);
-    }
-    return this.normalizeDate(this.project?.plannedStartDate);
+    return this.getPriorityStartDate();
   }
 
   private hasActualStartDate(): boolean {
@@ -529,5 +575,68 @@ export class ProjectDashboardComponent implements OnInit {
     }
 
     return dateValue;
+  }
+
+  openCompressionDateModal(): void {
+    if (!this.project) {
+      return;
+    }
+    this.selectedCompressionDate = this.project.compressionStartDate ? new Date(this.project.compressionStartDate) : null;
+    this.compressionDateError = '';
+    this.showCompressionDateModal = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeCompressionDateModal(): void {
+    this.showCompressionDateModal = false;
+    this.compressionDateUpdating = false;
+    this.compressionDateError = '';
+    document.body.style.overflow = '';
+  }
+
+  updateCompressionStartDate(): void {
+    if (!this.project || this.compressionDateUpdating) {
+      return;
+    }
+    this.compressionDateUpdating = true;
+    this.compressionDateError = '';
+
+    this.projectService.updateCompressionStartDate(this.project.id, this.selectedCompressionDate).subscribe({
+      next: (updatedProject) => {
+        this.project = {
+          ...updatedProject,
+          startDate: updatedProject.startDate ? new Date(updatedProject.startDate) : undefined,
+          plannedStartDate: updatedProject.plannedStartDate ? new Date(updatedProject.plannedStartDate) : undefined,
+          actualStartDate: updatedProject.actualStartDate ? new Date(updatedProject.actualStartDate) : undefined,
+          compressionStartDate: updatedProject.compressionStartDate ? new Date(updatedProject.compressionStartDate) : undefined
+        };
+        this.compressionDateUpdating = false;
+        this.closeCompressionDateModal();
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { message: 'Compression start date updated successfully', type: 'success' }
+        }));
+      },
+      error: (error) => {
+        console.error('Failed to update compression start date', error);
+        this.compressionDateUpdating = false;
+        this.compressionDateError = error?.error?.message || 'Failed to update compression start date';
+      }
+    });
+  }
+
+  formatDateForInput(date: Date | null | undefined): string {
+    if (!date) return '';
+    const d = date instanceof Date ? date : new Date(date);
+    if (isNaN(d.getTime())) return '';
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  onCompressionDateChange(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    const value = target.value;
+    this.selectedCompressionDate = value ? new Date(value) : null;
   }
 }

@@ -1796,6 +1796,9 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime?>("PlannedStartDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<DateTime?>("CompressionStartDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<decimal>("ProgressPercentage")
                         .HasColumnType("decimal(18,2)");
 

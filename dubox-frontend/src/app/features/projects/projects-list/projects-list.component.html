@@ -183,13 +183,11 @@
             <span *ngIf="!project.id" style="color: #ff6b6b; font-size: 11px; margin-left: 4px;">(No ID)</span>
           </button>
         <span class="project-date">
-             {{ project.actualStartDate ? 'Started:' : 'Planned Start:' }}
+             {{ getProjectStartDateLabel(project) }}
            {{
-             project.actualStartDate
-               ? (project.actualStartDate | date: 'MMM d, yyyy')
-               : project.plannedStartDate
-                 ? (project.plannedStartDate | date: 'MMM d, yyyy')
-                 : 'Not Scheduled'
+             getProjectStartDate(project)
+               ? (getProjectStartDate(project) | date: 'MMM d, yyyy')
+               : 'Not Scheduled'
            }}
       </span>
         </div>

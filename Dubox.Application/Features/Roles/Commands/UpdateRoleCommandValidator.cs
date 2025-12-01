@@ -24,3 +24,4 @@ public class UpdateRoleCommandValidator : AbstractValidator<UpdateRoleCommand>
     }
 }
 
+

@@ -13,3 +13,4 @@ public record BoxTypeStatsByProjectDto
     public List<BoxTypeStatDto> BoxTypeStats { get; init; } = new();
 }
 
+

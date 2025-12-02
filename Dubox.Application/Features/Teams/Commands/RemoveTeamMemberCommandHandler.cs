@@ -1,5 +1,7 @@
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Interfaces;
 using Dubox.Domain.Shared;
 using MediatR;
 
@@ -8,10 +10,12 @@ namespace Dubox.Application.Features.Teams.Commands
     public class RemoveTeamMemberCommandHandler : IRequestHandler<RemoveTeamMemberCommand, Result<bool>>
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ICurrentUserService _currentUserService;
 
-        public RemoveTeamMemberCommandHandler(IUnitOfWork unitOfWork)
+        public RemoveTeamMemberCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
         {
             _unitOfWork = unitOfWork;
+            _currentUserService = currentUserService;
         }
 
         public async Task<Result<bool>> Handle(RemoveTeamMemberCommand request, CancellationToken cancellationToken)
@@ -31,17 +35,40 @@ namespace Dubox.Application.Features.Teams.Commands
             if (teamMember.TeamId != request.TeamId)
                 return Result.Failure<bool>("Team member does not belong to this team.");
 
-            if (team.TeamLeaderMemberId == request.TeamMemberId)
-            {
+            var wasTeamLeader = team.TeamLeaderMemberId == request.TeamMemberId;
+            if (wasTeamLeader)
                 team.TeamLeaderMemberId = null;
-                _unitOfWork.Repository<Team>().Update(team);
+
+            var assignedNotComplatedActivities = _unitOfWork.Repository<BoxActivity>()
+                .GetWithSpec(new GetNotComplatedActivitiesByAssignedMemberIdSpecification(request.TeamMemberId)).Data.ToList();
+            if (assignedNotComplatedActivities.Any())
+            {
+                foreach (var activity in assignedNotComplatedActivities)
+                    activity.AssignedMemberId = null;
+
+                _unitOfWork.Repository<BoxActivity>().UpdateRange(assignedNotComplatedActivities);
             }
+            teamMember.IsActive = false;
+            _unitOfWork.Repository<Team>().Update(team);
 
-            _unitOfWork.Repository<TeamMember>().Delete(teamMember);
+            _unitOfWork.Repository<TeamMember>().Update(teamMember);
 
-            // Save changes
-            var saveResult = await _unitOfWork.CompleteAsync(cancellationToken);
+            // Create audit log
+            var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
+            var auditLog = new AuditLog
+            {
+                TableName = nameof(TeamMember),
+                RecordId = teamMember.TeamMemberId,
+                Action = "Removal",
+                OldValues = $"IsActive: true, TeamId: {team.TeamId}, TeamCode: {team.TeamCode}, TeamName: {team.TeamName}",
+                NewValues = $"IsActive: false{(wasTeamLeader ? ", TeamLeader removed" : "")}",
+                ChangedBy = currentUserId,
+                ChangedDate = DateTime.UtcNow,
+                Description = $"Team member removed from team '{team.TeamCode} - {team.TeamName}'.{(wasTeamLeader ? " Team leader role was also removed." : "")}{(assignedNotComplatedActivities.Any() ? $" {assignedNotComplatedActivities.Count} assigned activities were unassigned." : "")}"
+            };
+            await _unitOfWork.Repository<AuditLog>().AddAsync(auditLog, cancellationToken);
 
+            await _unitOfWork.CompleteAsync(cancellationToken);
 
             return Result.Success(true);
         }

@@ -30,6 +30,9 @@ public record BoxDto
     public DateTime CreatedDate { get; init; }
     public int ActivitiesCount { get; init; }
     public string? Notes { get; init; }
+    public Guid? CurrentLocationId { get; init; }
+    public string? CurrentLocationCode { get; init; }
+    public string? CurrentLocationName { get; init; }
 }
 
 public record CreateBoxDto

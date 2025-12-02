@@ -38,6 +38,10 @@ public class Box
     [MaxLength(100)]
     public string? Zone { get; set; }
 
+    // Current Location
+    public Guid? CurrentLocationId { get; set; }
+    public FactoryLocation? CurrentLocation { get; set; }
+
     // QR Code Information
     [Required]
     [MaxLength(200)]

@@ -4,6 +4,7 @@ using Dubox.Infrastructure.ApplicationContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Dubox.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251202104635_addCurrentLocationId")]
+    partial class addCurrentLocationId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -955,8 +958,9 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<Guid>("LocationId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("MovedBy")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("MovedBy")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<DateTime>("MovedDate")
                         .HasColumnType("datetime2");
@@ -976,8 +980,6 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasIndex("BoxId");
 
                     b.HasIndex("LocationId");
-
-                    b.HasIndex("MovedBy");
 
                     b.HasIndex("MovedFromLocationId");
 
@@ -3080,11 +3082,6 @@ namespace Dubox.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Dubox.Domain.Entities.User", "MovedByUser")
-                        .WithMany()
-                        .HasForeignKey("MovedBy")
-                        .OnDelete(DeleteBehavior.SetNull);
-
                     b.HasOne("Dubox.Domain.Entities.FactoryLocation", "MovedFromLocation")
                         .WithMany()
                         .HasForeignKey("MovedFromLocationId")
@@ -3093,8 +3090,6 @@ namespace Dubox.Infrastructure.Migrations
                     b.Navigation("Box");
 
                     b.Navigation("Location");
-
-                    b.Navigation("MovedByUser");
 
                     b.Navigation("MovedFromLocation");
                 });

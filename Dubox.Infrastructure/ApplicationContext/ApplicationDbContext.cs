@@ -101,6 +101,12 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(h => h.MovedFromLocationId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<BoxLocationHistory>()
+            .HasOne(h => h.MovedByUser)
+            .WithMany()
+            .HasForeignKey(h => h.MovedBy)
+            .OnDelete(DeleteBehavior.SetNull);
+
         // 4. User and Role Management (Cascade for join tables)
         modelBuilder.Entity<UserRole>()
             .HasOne(ur => ur.User)
@@ -272,6 +278,32 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasOne(am => am.BoxActivity)
             .WithMany(ba => ba.RequiredMaterials)
             .HasForeignKey(am => am.BoxActivityId);
+
+        modelBuilder.Entity<Box>()
+            .HasOne(b => b.CurrentLocation)
+            .WithMany()
+            .HasForeignKey(b => b.CurrentLocationId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<BoxLocationHistory>()
+            .HasOne(h => h.Box)
+            .WithMany(b => b.BoxLocationHistory)
+            .HasForeignKey(h => h.BoxId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<BoxLocationHistory>()
+            .HasOne(h => h.Location)
+            .WithMany(l => l.BoxLocationHistory)
+            .HasForeignKey(h => h.LocationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<BoxLocationHistory>()
+            .HasOne(h => h.MovedFromLocation)
+            .WithMany()
+            .HasForeignKey(h => h.MovedFromLocationId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 
     private void ConfigureIndexes(ModelBuilder modelBuilder)

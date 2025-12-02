@@ -36,6 +36,13 @@
           <p class="page-subtitle">{{ box.code }} • {{ box.type }}</p>
         </div>
         <div class="header-right">
+          <button class="btn btn-secondary" (click)="openMoveLocationModal()" *ngIf="canEdit">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            Move to Location
+          </button>
           <button class="btn btn-primary" (click)="openBoxStatusModal()" *ngIf="canEdit">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 2v20M2 12h20"/>
@@ -102,6 +109,13 @@
           (click)="setActiveTab('attachments')"
         >
           Attachments ({{ box.attachments.length || 0 }})
+        </button>
+        <button 
+          class="tab" 
+          [class.active]="activeTab === 'location-history'"
+          (click)="setActiveTab('location-history')"
+        >
+          Location History ({{ locationHistory.length }})
         </button>
       </div>
 
@@ -181,6 +195,18 @@
                       {{ getStatusLabel(box.status) }}
                     </span>
                   </span>
+                </div>
+                <div class="info-item" *ngIf="box.currentLocationCode">
+                  <span class="label">Current Location</span>
+                  <span class="value">
+                    <a [routerLink]="['/locations', box.currentLocationId]" class="location-link">
+                      {{ box.currentLocationCode }} - {{ box.currentLocationName }}
+                    </a>
+                  </span>
+                </div>
+                <div class="info-item" *ngIf="!box.currentLocationCode">
+                  <span class="label">Current Location</span>
+                  <span class="value text-muted">Not assigned</span>
                 </div>
                 <div class="info-item" *ngIf="box.description">
                   <span class="label">Description</span>
@@ -689,6 +715,157 @@
             </div>
           </div>
         </div>
+
+        <!-- Location History Tab -->
+        <div *ngIf="activeTab === 'location-history'" class="location-history-tab">
+          <div class="location-history-header">
+            <div>
+              <h2 class="card-title">Location History</h2>
+              <p class="card-subtitle">Complete movement history of this box across different factory locations</p>
+            </div>
+            <button 
+              class="btn btn-secondary btn-sm" 
+              (click)="loadLocationHistory()" 
+              [disabled]="locationHistoryLoading"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"/>
+                <polyline points="1 20 1 14 7 14"/>
+                <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"/>
+                <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"/>
+              </svg>
+              Refresh
+            </button>
+          </div>
+
+          <!-- Search Box -->
+          <div class="location-history-search-container" *ngIf="!locationHistoryLoading && locationHistory.length > 0">
+            <div class="search-box">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+              </svg>
+              <input 
+                type="text" 
+                [formControl]="locationHistorySearchControl"
+                placeholder="Search by location, reason, moved by, box tag, or serial number..."
+                class="search-input"
+              />
+              <button 
+                type="button"
+                class="clear-search" 
+                *ngIf="locationHistorySearchControl.value"
+                (click)="locationHistorySearchControl.setValue('')"
+                title="Clear search"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div class="search-results-info" *ngIf="locationHistorySearchControl.value">
+              <span class="results-count">
+                Showing {{ filteredLocationHistory.length }} of {{ locationHistory.length }} entr{{ locationHistory.length !== 1 ? 'ies' : 'y' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="location-history-content">
+            <div class="loading-state" *ngIf="locationHistoryLoading">
+              <div class="spinner"></div>
+              <p>Loading location history...</p>
+            </div>
+
+            <div class="empty-state" *ngIf="!locationHistoryLoading && locationHistory.length === 0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              <h3>No Location History</h3>
+              <p>This box has not been moved to any location yet</p>
+            </div>
+
+            <div class="empty-state" *ngIf="!locationHistoryLoading && locationHistory.length > 0 && filteredLocationHistory.length === 0 && locationHistorySearchControl.value">
+              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+              </svg>
+              <h3>No results found</h3>
+              <p>No location history entries match your search criteria. Try adjusting your search terms.</p>
+              <button class="btn btn-secondary" (click)="locationHistorySearchControl.setValue('')">Clear Search</button>
+            </div>
+
+            <div class="location-history-timeline" *ngIf="!locationHistoryLoading && filteredLocationHistory.length > 0">
+              <div class="history-item" *ngFor="let history of filteredLocationHistory; let i = index">
+                <div class="history-timeline-marker">
+                  <div class="marker-dot"></div>
+                  <div class="marker-line" *ngIf="i < locationHistory.length - 1"></div>
+                </div>
+                <div class="history-content">
+                  <div class="history-header">
+                    <div class="history-location-info">
+                      <div class="location-badge">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                          <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        <span class="location-code">{{ history.locationCode }}</span>
+                      </div>
+                      <div class="location-name">{{ history.locationName }}</div>
+                    </div>
+                    <div class="history-date">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                      </svg>
+                      <span>{{ history.movedDate | date: 'MMM d, yyyy' }}</span>
+                      <span class="time">{{ history.movedDate | date: 'h:mm a' }}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="history-details" *ngIf="history.movedFromLocationCode || history.reason || history.movedBy || history.movedByUsername || history.movedByFullName">
+                    <div class="detail-row" *ngIf="history.movedFromLocationCode">
+                      <span class="detail-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                        Moved from:
+                      </span>
+                      <span class="detail-value">
+                        <a [routerLink]="['/locations', history.movedFromLocationId]" class="location-link">
+                          {{ history.movedFromLocationCode }} - {{ history.movedFromLocationName }}
+                        </a>
+                      </span>
+                    </div>
+                    <div class="detail-row" *ngIf="history.reason">
+                      <span class="detail-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/>
+                          <line x1="16" y1="13" x2="8" y2="13"/>
+                          <line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                        Reason:
+                      </span>
+                      <span class="detail-value">{{ history.reason }}</span>
+                    </div>
+                    <div class="detail-row" *ngIf="history.movedBy || history.movedByUsername || history.movedByFullName">
+                      <span class="detail-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                          <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        Moved by:
+                      </span>
+                      <span class="detail-value">{{ history.movedByFullName || history.movedByUsername || 'Unknown User' }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -887,6 +1064,141 @@
         </svg>
         <span class="spinner-small" *ngIf="boxStatusUpdateLoading"></span>
         <span>{{ boxStatusUpdateLoading ? 'Updating...' : 'Update Status' }}</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Move Box to Location Modal -->
+<div class="modal-backdrop" *ngIf="isMoveLocationModalOpen" (click)="closeMoveLocationModal()">
+  <div class="box-status-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+        </div>
+        <div>
+          <h3>Move Box to Location</h3>
+          <p class="modal-subtitle">{{ box?.name || box?.code }}</p>
+        </div>
+      </div>
+      <button class="icon-button" (click)="closeMoveLocationModal()" [disabled]="moveLocationLoading" title="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <!-- Current Location Card -->
+      <div class="current-location-card" *ngIf="box">
+        <div class="location-card-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          <span class="location-card-label">Current Location</span>
+        </div>
+        <div class="location-card-content" *ngIf="box.currentLocationCode">
+          <div class="location-code-badge">{{ box.currentLocationCode }}</div>
+          <div class="location-name">{{ box.currentLocationName }}</div>
+        </div>
+        <div class="location-card-content no-location" *ngIf="!box.currentLocationCode">
+          <div class="no-location-text">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            <span>Not assigned to any location</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Location Selection -->
+      <div class="form-group">
+        <label for="locationSelect" class="form-label">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          Select New Location
+          <span class="required">*</span>
+        </label>
+        <div *ngIf="locationsLoading" class="loading-state">
+          <div class="spinner-small"></div>
+          <p>Loading locations...</p>
+        </div>
+        <div class="select-wrapper" *ngIf="!locationsLoading">
+          <select 
+            id="locationSelect"
+            [formControl]="selectedLocationId"
+            class="form-select"
+          >
+            <option value="">-- Select a location --</option>
+            <option *ngFor="let location of locations" [value]="location.locationId" [disabled]="location.isFull">
+              {{ location.locationCode }} - {{ location.locationName }}
+              <span *ngIf="location.isFull"> (Full)</span>
+              <span *ngIf="!location.isFull && location.capacity"> ({{ location.availableCapacity }} available)</span>
+            </option>
+          </select>
+          <svg class="select-arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Reason (Optional) -->
+      <div class="form-group">
+        <label for="moveReason" class="form-label">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          Reason (Optional)
+        </label>
+        <textarea 
+          id="moveReason"
+          [formControl]="moveReason"
+          class="form-textarea"
+          placeholder="Enter reason for moving this box (e.g., Quality check, Storage reorganization, etc.)..."
+          rows="4"
+        ></textarea>
+        <div class="form-hint">Provide additional context about why this box is being moved</div>
+      </div>
+
+      <!-- Error Message -->
+      <div class="error-message" *ngIf="moveLocationError">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>{{ moveLocationError }}</span>
+      </div>
+    </div>
+    
+    <div class="modal-actions">
+      <button 
+        class="btn btn-secondary" 
+        (click)="closeMoveLocationModal()" 
+        [disabled]="moveLocationLoading"
+      >
+        Cancel
+      </button>
+      <button 
+        class="btn btn-primary" 
+        (click)="moveBoxToLocation()" 
+        [disabled]="moveLocationLoading || !selectedLocationId.value"
+      >
+        <span *ngIf="!moveLocationLoading">Move Box</span>
+        <span *ngIf="moveLocationLoading">Moving...</span>
       </button>
     </div>
   </div>

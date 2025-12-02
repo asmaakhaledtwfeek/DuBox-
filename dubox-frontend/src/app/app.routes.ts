@@ -141,6 +141,16 @@ export const routes: Routes = [
     loadComponent: () => import('./features/boxes/add-checklist-items/add-checklist-items.component').then(m => m.AddChecklistItemsComponent)
   },
   {
+    path: 'locations',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/locations/locations-management/locations-management.component').then(m => m.LocationsManagementComponent)
+  },
+  {
+    path: 'locations/:locationId',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/locations/location-details/location-details.component').then(m => m.LocationDetailsComponent)
+  },
+  {
     path: 'admin',
     canActivate: [authGuard, roleGuard],
     data: { 

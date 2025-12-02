@@ -1,7 +1,7 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { Box, BoxStatus, getBoxStatusNumber } from '../../../core/models/box.model';
@@ -13,12 +13,15 @@ import { QualityIssueDetails, QualityIssueStatus, UpdateQualityIssueStatusReques
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { ActivityTableComponent } from '../../activities/activity-table/activity-table.component';
+import { LocationService, FactoryLocation, BoxLocationHistory } from '../../../core/services/location.service';
 import * as ExcelJS from 'exceljs';
+import { Subject, takeUntil } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-box-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, HeaderComponent, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, HeaderComponent, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent],
   templateUrl: './box-details.component.html',
   styleUrls: ['./box-details.component.scss']
 })
@@ -32,7 +35,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   showDeleteConfirm = false;
   deleteSuccess = false;
   
-  activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' = 'overview';
+  activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' | 'location-history' = 'overview';
   
   canEdit = false;
   canDelete = false;
@@ -82,13 +85,29 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   selectedBoxStatus: BoxStatus | null = null;
   availableBoxStatuses: BoxStatus[] = [BoxStatus.Dispatched, BoxStatus.InProgress, BoxStatus.OnHold];
 
+  // Location Management
+  isMoveLocationModalOpen = false;
+  locations: FactoryLocation[] = [];
+  locationsLoading = false;
+  moveLocationLoading = false;
+  moveLocationError = '';
+  selectedLocationId = new FormControl<string>('', [Validators.required]);
+  moveReason = new FormControl<string>('');
+  locationHistory: BoxLocationHistory[] = [];
+  filteredLocationHistory: BoxLocationHistory[] = [];
+  locationHistoryLoading = false;
+  showLocationHistory = false;
+  locationHistorySearchControl = new FormControl('');
+  private destroy$ = new Subject<void>();
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private boxService: BoxService,
     private permissionService: PermissionService,
     private wirService: WIRService,
-    private progressUpdateService: ProgressUpdateService
+    private progressUpdateService: ProgressUpdateService,
+    private locationService: LocationService
   ) {}
 
   ngOnInit(): void {
@@ -98,7 +117,41 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.canEdit = this.permissionService.canEdit('boxes');
     this.canDelete = this.permissionService.canDelete('boxes');
     
+    this.setupLocationHistorySearch();
     this.loadBox();
+  }
+
+  private setupLocationHistorySearch(): void {
+    this.locationHistorySearchControl.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(() => {
+        this.applyLocationHistoryFilters();
+      });
+  }
+
+  applyLocationHistoryFilters(): void {
+    const searchTerm = this.locationHistorySearchControl.value?.toLowerCase() || '';
+    
+    if (!searchTerm) {
+      this.filteredLocationHistory = [...this.locationHistory];
+      return;
+    }
+
+    this.filteredLocationHistory = this.locationHistory.filter(history =>
+      history.locationCode?.toLowerCase().includes(searchTerm) ||
+      history.locationName?.toLowerCase().includes(searchTerm) ||
+      history.movedFromLocationCode?.toLowerCase().includes(searchTerm) ||
+      history.movedFromLocationName?.toLowerCase().includes(searchTerm) ||
+      history.reason?.toLowerCase().includes(searchTerm) ||
+      history.movedByUsername?.toLowerCase().includes(searchTerm) ||
+      history.movedByFullName?.toLowerCase().includes(searchTerm) ||
+      history.boxTag?.toLowerCase().includes(searchTerm) ||
+      history.serialNumber?.toLowerCase().includes(searchTerm)
+    );
   }
 
   loadBox(): void {
@@ -120,6 +173,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         this.loadWIRCheckpoints();
         this.loadQualityIssues();
         this.loadProgressUpdates();
+        this.loadLocationHistory();
         
         this.loading = false;
       },
@@ -339,8 +393,11 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments'): void {
+  setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' | 'location-history'): void {
     this.activeTab = tab;
+    if (tab === 'location-history' && this.locationHistory.length === 0) {
+      this.loadLocationHistory();
+    }
   }
 
   getStatusClass(status: BoxStatus): string {
@@ -890,6 +947,87 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   getStatusLabelForModal(status: BoxStatus): string {
     return this.getStatusLabel(status);
+  }
+
+  // Location Management Methods
+  openMoveLocationModal(): void {
+    this.isMoveLocationModalOpen = true;
+    this.moveLocationError = '';
+    this.selectedLocationId.setValue('');
+    this.moveReason.setValue('');
+    this.loadLocations();
+  }
+
+  closeMoveLocationModal(): void {
+    this.isMoveLocationModalOpen = false;
+    this.selectedLocationId.setValue('');
+    this.moveReason.setValue('');
+    this.moveLocationError = '';
+  }
+
+  loadLocations(): void {
+    this.locationsLoading = true;
+    this.locationService.getLocations().subscribe({
+      next: (locations) => {
+        this.locations = locations.filter(l => l.isActive);
+        this.locationsLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading locations:', err);
+        this.locationsLoading = false;
+        this.moveLocationError = 'Failed to load locations';
+      }
+    });
+  }
+
+  moveBoxToLocation(): void {
+    if (!this.selectedLocationId.value || !this.box) {
+      return;
+    }
+
+    this.moveLocationLoading = true;
+    this.moveLocationError = '';
+
+    this.locationService.moveBoxToLocation({
+      boxId: this.boxId,
+      toLocationId: this.selectedLocationId.value,
+      reason: this.moveReason.value || undefined
+    }).subscribe({
+      next: (history) => {
+        this.moveLocationLoading = false;
+        this.closeMoveLocationModal();
+        this.loadBox(); // Reload box to get updated location
+        this.loadLocationHistory(); // Refresh history
+        console.log('✅ Box moved to location successfully');
+      },
+      error: (err) => {
+        console.error('❌ Failed to move box to location:', err);
+        this.moveLocationLoading = false;
+        this.moveLocationError = err?.error?.message || err?.message || 'Failed to move box to location';
+      }
+    });
+  }
+
+  loadLocationHistory(): void {
+    this.locationHistoryLoading = true;
+    this.locationService.getBoxLocationHistory(this.boxId).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (history) => {
+        this.locationHistory = history;
+        this.applyLocationHistoryFilters();
+        this.locationHistoryLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading location history:', err);
+        this.locationHistoryLoading = false;
+      }
+    });
+  }
+
+  toggleLocationHistory(): void {
+    this.showLocationHistory = !this.showLocationHistory;
+    if (this.showLocationHistory && this.locationHistory.length === 0) {
+      this.loadLocationHistory();
+    }
   }
 
   private applyUpdatedQualityIssue(updated: QualityIssueDetails): void {

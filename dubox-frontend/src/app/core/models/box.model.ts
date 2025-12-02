@@ -29,6 +29,9 @@ export interface Box {
   attachments: BoxAttachment[];
   logs: BoxLog[];
   qrCode?: string;
+  currentLocationId?: string;
+  currentLocationCode?: string;
+  currentLocationName?: string;
   createdBy?: string;
   updatedBy?: string;
   createdAt?: Date;

@@ -1,7 +1,8 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
+using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
-using Dubox.Domain.Abstraction;
 using Mapster;
 using MediatR;
 
@@ -18,8 +19,8 @@ public class GetUserByIdQueryHandler : IRequestHandler<GetUserByIdQuery, Result<
 
     public async Task<Result<UserDto>> Handle(GetUserByIdQuery request, CancellationToken cancellationToken)
     {
-        var user = await _unitOfWork.Repository<User>()
-            .GetByIdAsync(request.UserId, cancellationToken);
+        var user = _unitOfWork.Repository<User>()
+            .GetEntityWithSpec(new GetUserWithIcludesSpecification(request.UserId));
 
         if (user == null)
             return Result.Failure<UserDto>("User not found");

@@ -30,6 +30,7 @@ public record BoxActivityDto
     public string Status { get; init; } = string.Empty;
     public decimal ProgressPercentage { get; init; }
     public int? Duration { get; init; }
+    public int? ActualDuration { get; init; }
     public DateTime? PlannedStartDate { get; init; }
     public DateTime? PlannedEndDate { get; init; }
     public DateTime? ActualStartDate { get; init; }
@@ -37,7 +38,9 @@ public record BoxActivityDto
     public string? WorkDescription { get; init; }
     public string? IssuesEncountered { get; init; }
     public string? AssignedTeam { get; init; }
+    public Guid? TeamId { get; init; }
     public string? TeamName { get; init; }
+    public Guid? AssignedMemberId { get; init; }
     public string? AssignedMemberName { get; init; }
     public bool MaterialsAvailable { get; init; }
     public bool IsWIRCheckpoint { get; init; }

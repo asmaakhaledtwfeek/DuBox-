@@ -1,10 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
-import { Box, BoxStatus } from '../../../core/models/box.model';
+import { Box, BoxStatus, getBoxStatusNumber } from '../../../core/models/box.model';
 import { WIRService } from '../../../core/services/wir.service';
 import { ProgressUpdate } from '../../../core/models/progress-update.model';
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
@@ -13,15 +13,19 @@ import { QualityIssueDetails, QualityIssueStatus, UpdateQualityIssueStatusReques
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { ActivityTableComponent } from '../../activities/activity-table/activity-table.component';
+import { LocationService, FactoryLocation, BoxLocationHistory } from '../../../core/services/location.service';
+import * as ExcelJS from 'exceljs';
+import { Subject, takeUntil } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-box-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, HeaderComponent, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, HeaderComponent, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent],
   templateUrl: './box-details.component.html',
   styleUrls: ['./box-details.component.scss']
 })
-export class BoxDetailsComponent implements OnInit {
+export class BoxDetailsComponent implements OnInit, OnDestroy {
   box: Box | null = null;
   boxId!: string;
   projectId!: string;
@@ -31,7 +35,7 @@ export class BoxDetailsComponent implements OnInit {
   showDeleteConfirm = false;
   deleteSuccess = false;
   
-  activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' = 'overview';
+  activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' | 'location-history' = 'overview';
   
   canEdit = false;
   canDelete = false;
@@ -74,13 +78,36 @@ export class BoxDetailsComponent implements OnInit {
   selectedProgressUpdate: ProgressUpdate | null = null;
   isProgressModalOpen = false;
 
+  // Box Status Update
+  isBoxStatusModalOpen = false;
+  boxStatusUpdateLoading = false;
+  boxStatusUpdateError = '';
+  selectedBoxStatus: BoxStatus | null = null;
+  availableBoxStatuses: BoxStatus[] = [BoxStatus.Dispatched, BoxStatus.InProgress, BoxStatus.OnHold];
+
+  // Location Management
+  isMoveLocationModalOpen = false;
+  locations: FactoryLocation[] = [];
+  locationsLoading = false;
+  moveLocationLoading = false;
+  moveLocationError = '';
+  selectedLocationId = new FormControl<string>('', [Validators.required]);
+  moveReason = new FormControl<string>('');
+  locationHistory: BoxLocationHistory[] = [];
+  filteredLocationHistory: BoxLocationHistory[] = [];
+  locationHistoryLoading = false;
+  showLocationHistory = false;
+  locationHistorySearchControl = new FormControl('');
+  private destroy$ = new Subject<void>();
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private boxService: BoxService,
     private permissionService: PermissionService,
     private wirService: WIRService,
-    private progressUpdateService: ProgressUpdateService
+    private progressUpdateService: ProgressUpdateService,
+    private locationService: LocationService
   ) {}
 
   ngOnInit(): void {
@@ -90,7 +117,41 @@ export class BoxDetailsComponent implements OnInit {
     this.canEdit = this.permissionService.canEdit('boxes');
     this.canDelete = this.permissionService.canDelete('boxes');
     
+    this.setupLocationHistorySearch();
     this.loadBox();
+  }
+
+  private setupLocationHistorySearch(): void {
+    this.locationHistorySearchControl.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(() => {
+        this.applyLocationHistoryFilters();
+      });
+  }
+
+  applyLocationHistoryFilters(): void {
+    const searchTerm = this.locationHistorySearchControl.value?.toLowerCase() || '';
+    
+    if (!searchTerm) {
+      this.filteredLocationHistory = [...this.locationHistory];
+      return;
+    }
+
+    this.filteredLocationHistory = this.locationHistory.filter(history =>
+      history.locationCode?.toLowerCase().includes(searchTerm) ||
+      history.locationName?.toLowerCase().includes(searchTerm) ||
+      history.movedFromLocationCode?.toLowerCase().includes(searchTerm) ||
+      history.movedFromLocationName?.toLowerCase().includes(searchTerm) ||
+      history.reason?.toLowerCase().includes(searchTerm) ||
+      history.movedByUsername?.toLowerCase().includes(searchTerm) ||
+      history.movedByFullName?.toLowerCase().includes(searchTerm) ||
+      history.boxTag?.toLowerCase().includes(searchTerm) ||
+      history.serialNumber?.toLowerCase().includes(searchTerm)
+    );
   }
 
   loadBox(): void {
@@ -112,6 +173,7 @@ export class BoxDetailsComponent implements OnInit {
         this.loadWIRCheckpoints();
         this.loadQualityIssues();
         this.loadProgressUpdates();
+        this.loadLocationHistory();
         
         this.loading = false;
       },
@@ -262,17 +324,80 @@ export class BoxDetailsComponent implements OnInit {
     });
   }
 
+  copiedSerialNumber = false;
+  private copyTimeout?: ReturnType<typeof setTimeout>;
+
+  formatSerialNumber(serialNumber: string | undefined): string {
+    if (!serialNumber) return '';
+    // Ensure consistent format: SN-YYYY-######
+    // If already in correct format, return as is
+    if (/^SN-\d{4}-\d{6}$/.test(serialNumber)) {
+      return serialNumber;
+    }
+    // If format is slightly different, try to normalize
+    return serialNumber;
+  }
+
+  copyToClipboard(text: string): void {
+    if (!text) return;
+
+    navigator.clipboard.writeText(text).then(() => {
+      this.copiedSerialNumber = true;
+      
+      // Clear any existing timeout
+      if (this.copyTimeout) {
+        clearTimeout(this.copyTimeout);
+      }
+      
+      // Reset the copied state after 2 seconds
+      this.copyTimeout = setTimeout(() => {
+        this.copiedSerialNumber = false;
+      }, 2000);
+    }).catch(err => {
+      console.error('Failed to copy to clipboard:', err);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        this.copiedSerialNumber = true;
+        if (this.copyTimeout) {
+          clearTimeout(this.copyTimeout);
+        }
+        this.copyTimeout = setTimeout(() => {
+          this.copiedSerialNumber = false;
+        }, 2000);
+      } catch (err) {
+        console.error('Fallback copy failed:', err);
+      }
+      document.body.removeChild(textArea);
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.copyTimeout) {
+      clearTimeout(this.copyTimeout);
+    }
+  }
+
   downloadQRCode(): void {
     if (this.box?.qrCode) {
       const link = document.createElement('a');
       link.href = this.box.qrCode;
-      link.download = `QR-${this.box.code}.png`;
+      link.download = `QR-${this.box.code}${this.box.serialNumber ? '-' + this.box.serialNumber : ''}.png`;
       link.click();
     }
   }
 
-  setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments'): void {
+  setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' | 'location-history'): void {
     this.activeTab = tab;
+    if (tab === 'location-history' && this.locationHistory.length === 0) {
+      this.loadLocationHistory();
+    }
   }
 
   getStatusClass(status: BoxStatus): string {
@@ -283,7 +408,8 @@ export class BoxDetailsComponent implements OnInit {
       [BoxStatus.Completed]: 'badge-success',
       [BoxStatus.ReadyForDelivery]: 'badge-primary',
       [BoxStatus.Delivered]: 'badge-success',
-      [BoxStatus.OnHold]: 'badge-danger'
+      [BoxStatus.OnHold]: 'badge-danger',
+      [BoxStatus.Dispatched]: 'badge-primary'
     };
     return statusMap[status] || 'badge-secondary';
   }
@@ -296,7 +422,8 @@ export class BoxDetailsComponent implements OnInit {
       [BoxStatus.Completed]: 'Completed',
       [BoxStatus.ReadyForDelivery]: 'Ready for Delivery',
       [BoxStatus.Delivered]: 'Delivered',
-      [BoxStatus.OnHold]: 'On Hold'
+      [BoxStatus.OnHold]: 'On Hold',
+      [BoxStatus.Dispatched]: 'Dispatched'
     };
     return labels[status] || status;
   }
@@ -466,6 +593,155 @@ export class BoxDetailsComponent implements OnInit {
     this.loadQualityIssues();
   }
 
+  async exportQualityIssuesToExcel(): Promise<void> {
+    if (this.qualityIssues.length === 0) {
+      alert('No quality issues to export. Please ensure there are quality issues available.');
+      return;
+    }
+
+    // Format dates properly
+    const formatDateForExcel = (date?: string | Date): string => {
+      if (!date) return '—';
+      const d = date instanceof Date ? date : new Date(date);
+      if (isNaN(d.getTime())) return '—';
+      return d.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    };
+
+    // Create a new workbook and worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Quality Issues');
+
+    // Define column headers
+    const headers = [
+      'No.',
+      'WIR Number',
+      'Box Tag',
+      'Box Name',
+      'Status',
+      'Issue Type',
+      'Severity',
+      'Issue Description',
+      'Assigned To',
+      'Reported By',
+      'Issue Date',
+      'Due Date',
+      'Resolution Description',
+      'Resolution Date',
+      'Photo Path'
+    ];
+
+    // Set column widths
+    worksheet.columns = [
+      { width: 5 },   // No.
+      { width: 15 },  // WIR Number
+      { width: 15 },  // Box Tag
+      { width: 20 },  // Box Name
+      { width: 12 },  // Status
+      { width: 15 },  // Issue Type
+      { width: 10 },  // Severity
+      { width: 40 },  // Issue Description
+      { width: 15 },  // Assigned To
+      { width: 15 },  // Reported By
+      { width: 12 },  // Issue Date
+      { width: 12 },  // Due Date
+      { width: 40 },  // Resolution Description
+      { width: 12 },  // Resolution Date
+      { width: 30 }   // Photo Path
+    ];
+
+    // Add header row with styling
+    const headerRow = worksheet.addRow(headers);
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4472C4' } // Blue background
+      };
+      cell.font = {
+        bold: true,
+        color: { argb: 'FFFFFFFF' }, // White text
+        size: 11
+      };
+      cell.alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+        wrapText: true
+      };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF000000' } },
+        bottom: { style: 'thin', color: { argb: 'FF000000' } },
+        left: { style: 'thin', color: { argb: 'FF000000' } },
+        right: { style: 'thin', color: { argb: 'FF000000' } }
+      };
+    });
+    headerRow.height = 25; // Set header row height
+
+    // Add data rows
+    this.qualityIssues.forEach((issue, index) => {
+      const row = worksheet.addRow([
+        index + 1,
+        this.getQualityIssueWir(issue),
+        issue.boxTag || '—',
+        issue.boxName || '—',
+        this.getQualityIssueStatusLabel(issue.status),
+        issue.issueType || '—',
+        issue.severity || '—',
+        issue.issueDescription || '—',
+        issue.assignedTo || '—',
+        issue.reportedBy || '—',
+        formatDateForExcel(issue.issueDate),
+        formatDateForExcel(issue.dueDate),
+        issue.resolutionDescription || '—',
+        formatDateForExcel(issue.resolutionDate),
+        issue.photoPath || '—'
+      ]);
+
+      // Style data rows
+      row.eachCell((cell, colNumber) => {
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          left: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          right: { style: 'thin', color: { argb: 'FFE0E0E0' } }
+        };
+        cell.alignment = {
+          vertical: 'middle',
+          wrapText: true
+        };
+        // Alternate row colors
+        if (index % 2 === 0) {
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFF9F9F9' }
+          };
+        }
+      });
+    });
+
+    // Freeze header row
+    worksheet.views = [{ state: 'frozen', ySplit: 1 }];
+
+    // Generate filename with current date
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0];
+    const fileName = `Quality_Issues_${dateStr}.xlsx`;
+
+    // Generate Excel file and download
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  }
+
   formatIssueDate(date?: string | Date): string {
     if (!date) {
       return '—';
@@ -625,6 +901,133 @@ export class BoxDetailsComponent implements OnInit {
         this.statusUpdateError = err?.error?.message || err?.message || 'Failed to update issue status';
       }
     });
+  }
+
+  // Box Status Update Methods
+  openBoxStatusModal(): void {
+    this.isBoxStatusModalOpen = true;
+    this.boxStatusUpdateError = '';
+    this.selectedBoxStatus = null;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeBoxStatusModal(): void {
+    this.isBoxStatusModalOpen = false;
+    this.selectedBoxStatus = null;
+    this.boxStatusUpdateError = '';
+    document.body.style.overflow = '';
+  }
+
+  updateBoxStatus(): void {
+    if (!this.box || !this.selectedBoxStatus) {
+      return;
+    }
+
+    this.boxStatusUpdateLoading = true;
+    this.boxStatusUpdateError = '';
+
+    // Convert status to number for backend
+    const statusNumber = getBoxStatusNumber(this.selectedBoxStatus);
+
+    this.boxService.updateBoxStatus(this.boxId, statusNumber).subscribe({
+      next: (updatedBox) => {
+        this.box = updatedBox;
+        this.boxStatusUpdateLoading = false;
+        this.closeBoxStatusModal();
+        // Optionally show success message
+        console.log('✅ Box status updated successfully');
+      },
+      error: (err) => {
+        console.error('❌ Failed to update box status:', err);
+        this.boxStatusUpdateLoading = false;
+        this.boxStatusUpdateError = err?.error?.message || err?.message || 'Failed to update box status';
+      }
+    });
+  }
+
+  getStatusLabelForModal(status: BoxStatus): string {
+    return this.getStatusLabel(status);
+  }
+
+  // Location Management Methods
+  openMoveLocationModal(): void {
+    this.isMoveLocationModalOpen = true;
+    this.moveLocationError = '';
+    this.selectedLocationId.setValue('');
+    this.moveReason.setValue('');
+    this.loadLocations();
+  }
+
+  closeMoveLocationModal(): void {
+    this.isMoveLocationModalOpen = false;
+    this.selectedLocationId.setValue('');
+    this.moveReason.setValue('');
+    this.moveLocationError = '';
+  }
+
+  loadLocations(): void {
+    this.locationsLoading = true;
+    this.locationService.getLocations().subscribe({
+      next: (locations) => {
+        this.locations = locations.filter(l => l.isActive);
+        this.locationsLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading locations:', err);
+        this.locationsLoading = false;
+        this.moveLocationError = 'Failed to load locations';
+      }
+    });
+  }
+
+  moveBoxToLocation(): void {
+    if (!this.selectedLocationId.value || !this.box) {
+      return;
+    }
+
+    this.moveLocationLoading = true;
+    this.moveLocationError = '';
+
+    this.locationService.moveBoxToLocation({
+      boxId: this.boxId,
+      toLocationId: this.selectedLocationId.value,
+      reason: this.moveReason.value || undefined
+    }).subscribe({
+      next: (history) => {
+        this.moveLocationLoading = false;
+        this.closeMoveLocationModal();
+        this.loadBox(); // Reload box to get updated location
+        this.loadLocationHistory(); // Refresh history
+        console.log('✅ Box moved to location successfully');
+      },
+      error: (err) => {
+        console.error('❌ Failed to move box to location:', err);
+        this.moveLocationLoading = false;
+        this.moveLocationError = err?.error?.message || err?.message || 'Failed to move box to location';
+      }
+    });
+  }
+
+  loadLocationHistory(): void {
+    this.locationHistoryLoading = true;
+    this.locationService.getBoxLocationHistory(this.boxId).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (history) => {
+        this.locationHistory = history;
+        this.applyLocationHistoryFilters();
+        this.locationHistoryLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading location history:', err);
+        this.locationHistoryLoading = false;
+      }
+    });
+  }
+
+  toggleLocationHistory(): void {
+    this.showLocationHistory = !this.showLocationHistory;
+    if (this.showLocationHistory && this.locationHistory.length === 0) {
+      this.loadLocationHistory();
+    }
   }
 
   private applyUpdatedQualityIssue(updated: QualityIssueDetails): void {

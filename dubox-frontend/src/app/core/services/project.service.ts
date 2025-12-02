@@ -26,8 +26,9 @@ export class ProjectService {
     const clientName = backendProject.clientName || backendProject.ClientName;
     const durationValue = backendProject.duration || backendProject.Duration || backendProject.projectDuration || backendProject.ProjectDuration;
     const actualStartValue = backendProject.actualStartDate || backendProject.ActualStartDate;
+    const compressionStartValue = backendProject.compressionStartDate || backendProject.CompressionStartDate;
     const plannedStartValue = backendProject.plannedStartDate || backendProject.PlannedStartDate;
-    const startDateValue = actualStartValue || plannedStartValue;
+    const startDateValue = actualStartValue || compressionStartValue || plannedStartValue;
     const plannedEndValue = backendProject.plannedEndDate || backendProject.PlannedEndDate || backendProject.endDate || backendProject.EndDate;
     const endDateValue = backendProject.endDate || backendProject.EndDate || plannedEndValue;
     
@@ -47,6 +48,7 @@ export class ProjectService {
       plannedStartDate: plannedStartValue ? new Date(plannedStartValue) : undefined,
       actualStartDate: actualStartValue ? new Date(actualStartValue) : undefined,
       plannedEndDate: plannedEndValue ? new Date(plannedEndValue) : undefined,
+      compressionStartDate: (backendProject.compressionStartDate || backendProject.CompressionStartDate) ? new Date(backendProject.compressionStartDate || backendProject.CompressionStartDate) : undefined,
       duration: durationValue ? Number(durationValue) : undefined,
       status: backendProject.status || backendProject.Status,
       totalBoxes: backendProject.totalBoxes || backendProject.TotalBoxes || 0,
@@ -145,6 +147,16 @@ export class ProjectService {
     return this.apiService.patch<any>(`${this.endpoint}/${id}/status`, {
       projectId: id,
       status
+    }).pipe(map(response => this.transformProject(response)));
+  }
+
+  /**
+   * Update project compression start date
+   */
+  updateCompressionStartDate(id: string, compressionStartDate: Date | null): Observable<Project> {
+    return this.apiService.put<any>(`${this.endpoint}/${id}/compression-start-date`, {
+      projectId: id,
+      compressionStartDate: compressionStartDate ? compressionStartDate.toISOString() : null
     }).pipe(map(response => this.transformProject(response)));
   }
 

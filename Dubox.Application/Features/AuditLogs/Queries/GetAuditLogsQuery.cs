@@ -4,7 +4,7 @@ using MediatR;
 
 namespace Dubox.Application.Features.AuditLogs.Queries
 {
-    public class GetAuditLogsQuery : IRequest<Result<List<AuditLogDto>>>
+    public class GetAuditLogsQuery : IRequest<Result<PaginatedAuditLogsResponseDto>>
     {
         public string? TableName { get; set; }
         public Guid? RecordId { get; set; }
@@ -12,5 +12,9 @@ namespace Dubox.Application.Features.AuditLogs.Queries
         public string? SearchTerm { get; set; }
         public DateTime? FromDate { get; set; }
         public DateTime? ToDate { get; set; }
+        public Guid? ChangedBy { get; set; }
+        public int PageNumber { get; set; } = 1;
+        public int PageSize { get; set; } = 25;
+
     }
 }

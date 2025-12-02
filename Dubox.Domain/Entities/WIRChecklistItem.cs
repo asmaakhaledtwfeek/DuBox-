@@ -29,6 +29,9 @@ namespace Dubox.Domain.Entities
 
         public int Sequence { get; set; }
 
+        // Reference to the predefined item this was cloned from (optional for backward compatibility)
+        public Guid? PredefinedItemId { get; set; }
+
         // Navigation properties
         public virtual WIRCheckpoint WIRCheckpoint { get; set; } = null!;
     }

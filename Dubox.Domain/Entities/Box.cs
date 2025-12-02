@@ -18,6 +18,9 @@ public class Box
     [MaxLength(100)]
     public string BoxTag { get; set; } = string.Empty; // e.g., B2-FF-L3-2
 
+    [MaxLength(50)]
+    public string? SerialNumber { get; set; } // e.g., SN-2025-000123 (nullable for backward compatibility with existing boxes)
+
     [MaxLength(200)]
     public string? BoxName { get; set; }
 
@@ -85,5 +88,7 @@ public class Box
     public ICollection<BoxActivity> BoxActivities { get; set; } = new List<BoxActivity>();
     public ICollection<ProgressUpdate> ProgressUpdates { get; set; } = new List<ProgressUpdate>();
     public ICollection<MaterialTransaction> MaterialTransactions { get; set; } = new List<MaterialTransaction>();
+    public virtual ICollection<BoxLocationHistory> BoxLocationHistory { get; set; } = new List<BoxLocationHistory>();
+
 
 }

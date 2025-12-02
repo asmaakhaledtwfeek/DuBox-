@@ -25,6 +25,7 @@ public static class Bootstrap
         services.AddScoped<IExcelService, ExcelService>();
         services.AddScoped<IQRCodeService, QRCodeService>();
         services.AddScoped<IBoxActivityService, BoxActivityService>();
+        services.AddScoped<ISerialNumberService, SerialNumberService>();
 
         return services;
     }

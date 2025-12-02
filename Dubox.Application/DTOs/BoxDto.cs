@@ -6,6 +6,7 @@ public record BoxDto
     public Guid ProjectId { get; init; }
     public string ProjectCode { get; init; } = string.Empty;
     public string BoxTag { get; init; } = string.Empty;
+    public string? SerialNumber { get; init; }
     public string? BoxName { get; init; }
     public string BoxType { get; init; } = string.Empty;
     public string? Floor { get; init; }

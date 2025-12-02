@@ -6,6 +6,16 @@
     <!-- Page Header -->
     <div class="page-header">
       <div class="header-left">
+        <div class="breadcrumb" *ngIf="showBoxTypes">
+          <button class="breadcrumb-link" (click)="backToProject()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            Project
+          </button>
+          <span class="breadcrumb-separator">/</span>
+          <span class="breadcrumb-current">Box Types</span>
+        </div>
         <div class="breadcrumb" *ngIf="!showBoxTypes && selectedBoxType">
           <button class="breadcrumb-link" (click)="backToBoxTypes()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -45,7 +55,7 @@
         </svg>
         <input 
           type="text" 
-          placeholder="Search boxes by name, code, type, or activity (name, status, assigned to, dates)..." 
+          placeholder="Search boxes by name, code, serial number, type, or activity (name, status, assigned to, dates)..." 
           [formControl]="searchControl"
           class="search-input"
         />

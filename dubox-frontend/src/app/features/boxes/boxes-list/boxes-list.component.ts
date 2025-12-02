@@ -204,6 +204,10 @@ export class BoxesListComponent implements OnInit {
     this.loadBoxTypes();
   }
 
+  backToProject(): void {
+    this.router.navigate(['/projects', this.projectId, 'dashboard']);
+  }
+
   filterByStatus(status: BoxStatus | 'All'): void {
     this.selectedStatus = status;
     this.applyFilters();
@@ -225,6 +229,7 @@ export class BoxesListComponent implements OnInit {
         const matchesBoxProperties = 
           box.name?.toLowerCase().includes(searchTerm) ||
           box.code?.toLowerCase().includes(searchTerm) ||
+          box.serialNumber?.toLowerCase().includes(searchTerm) ||
           box.type?.toLowerCase().includes(searchTerm) ||
           box.floor?.toLowerCase().includes(searchTerm) ||
           box.building?.toLowerCase().includes(searchTerm) ||

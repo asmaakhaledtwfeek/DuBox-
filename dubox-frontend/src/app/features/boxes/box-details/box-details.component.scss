@@ -295,6 +295,156 @@
       }
     }
 
+    &.serial-qr-card {
+      background: linear-gradient(135deg, rgba(27, 154, 170, 0.03) 0%, rgba(25, 118, 210, 0.03) 100%);
+      border: 1px solid rgba(27, 154, 170, 0.15);
+
+      .serial-number-section {
+        margin-bottom: 32px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid rgba(27, 154, 170, 0.1);
+
+        .serial-label {
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--gray-600);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 8px;
+        }
+
+        .serial-value-container {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          flex-wrap: wrap;
+
+          .serial-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--amana-teal);
+            letter-spacing: 0.5px;
+            font-family: 'Courier New', 'Monaco', monospace;
+            background: linear-gradient(135deg, var(--amana-teal) 0%, var(--amana-blue) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            padding: 8px 16px;
+            border-radius: 8px;
+            background-color: rgba(27, 154, 170, 0.08);
+            border: 1px solid rgba(27, 154, 170, 0.2);
+            display: inline-block;
+          }
+
+          .btn-copy {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: white;
+            border: 1px solid var(--gray-300);
+            border-radius: 8px;
+            color: var(--gray-700);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+
+            &:hover {
+              background: var(--amana-teal);
+              color: white;
+              border-color: var(--amana-teal);
+              transform: translateY(-1px);
+              box-shadow: 0 2px 8px rgba(27, 154, 170, 0.2);
+            }
+
+            &:active {
+              transform: translateY(0);
+            }
+
+            &.copied {
+              background: var(--success-color);
+              color: white;
+              border-color: var(--success-color);
+
+              .copy-text {
+                color: white;
+              }
+            }
+
+            svg {
+              flex-shrink: 0;
+            }
+
+            .copy-text {
+              font-size: 13px;
+              font-weight: 500;
+            }
+          }
+        }
+      }
+
+      .qr-code-section {
+        .qr-label {
+          font-size: 13px;
+          font-weight: 600;
+          color: var(--gray-600);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          margin-bottom: 16px;
+        }
+
+        .qr-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 20px;
+
+          .qr-image-wrapper {
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            border: 2px solid rgba(27, 154, 170, 0.1);
+            transition: all 0.3s ease;
+
+            &:hover {
+              box-shadow: 0 6px 20px rgba(27, 154, 170, 0.15);
+              border-color: rgba(27, 154, 170, 0.3);
+              transform: translateY(-2px);
+            }
+
+            .qr-code-image {
+              width: 240px;
+              height: 240px;
+              display: block;
+              border-radius: 8px;
+            }
+          }
+
+          .qr-actions {
+            width: 100%;
+            max-width: 280px;
+
+            .btn {
+              width: 100%;
+              justify-content: center;
+              padding: 12px 20px;
+              font-weight: 500;
+              border-radius: 8px;
+              transition: all 0.2s ease;
+
+              &:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 4px 12px rgba(27, 154, 170, 0.25);
+              }
+            }
+          }
+        }
+      }
+    }
+
     &.qr-card {
       align-items: center;
 

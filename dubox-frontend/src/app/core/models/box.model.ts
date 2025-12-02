@@ -2,6 +2,7 @@ export interface Box {
   id: string;
   name: string;
   code: string;
+  serialNumber?: string;
   projectId: string;
   status: BoxStatus;
   type?: string;

@@ -64,6 +64,7 @@ export class BoxService {
       id: backendBox.boxId || backendBox.id,
       name: backendBox.boxName || backendBox.name,
       code: backendBox.boxTag || backendBox.boxCode || backendBox.code,
+      serialNumber: backendBox.serialNumber || backendBox.SerialNumber,
       projectId: backendBox.projectId,
       status: mappedStatus as any,
       type: backendBox.boxType || backendBox.type,

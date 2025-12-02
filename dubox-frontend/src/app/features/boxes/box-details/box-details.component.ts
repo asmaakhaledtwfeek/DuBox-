@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -22,7 +22,7 @@ import * as ExcelJS from 'exceljs';
   templateUrl: './box-details.component.html',
   styleUrls: ['./box-details.component.scss']
 })
-export class BoxDetailsComponent implements OnInit {
+export class BoxDetailsComponent implements OnInit, OnDestroy {
   box: Box | null = null;
   boxId!: string;
   projectId!: string;
@@ -270,11 +270,71 @@ export class BoxDetailsComponent implements OnInit {
     });
   }
 
+  copiedSerialNumber = false;
+  private copyTimeout?: ReturnType<typeof setTimeout>;
+
+  formatSerialNumber(serialNumber: string | undefined): string {
+    if (!serialNumber) return '';
+    // Ensure consistent format: SN-YYYY-######
+    // If already in correct format, return as is
+    if (/^SN-\d{4}-\d{6}$/.test(serialNumber)) {
+      return serialNumber;
+    }
+    // If format is slightly different, try to normalize
+    return serialNumber;
+  }
+
+  copyToClipboard(text: string): void {
+    if (!text) return;
+
+    navigator.clipboard.writeText(text).then(() => {
+      this.copiedSerialNumber = true;
+      
+      // Clear any existing timeout
+      if (this.copyTimeout) {
+        clearTimeout(this.copyTimeout);
+      }
+      
+      // Reset the copied state after 2 seconds
+      this.copyTimeout = setTimeout(() => {
+        this.copiedSerialNumber = false;
+      }, 2000);
+    }).catch(err => {
+      console.error('Failed to copy to clipboard:', err);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        this.copiedSerialNumber = true;
+        if (this.copyTimeout) {
+          clearTimeout(this.copyTimeout);
+        }
+        this.copyTimeout = setTimeout(() => {
+          this.copiedSerialNumber = false;
+        }, 2000);
+      } catch (err) {
+        console.error('Fallback copy failed:', err);
+      }
+      document.body.removeChild(textArea);
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.copyTimeout) {
+      clearTimeout(this.copyTimeout);
+    }
+  }
+
   downloadQRCode(): void {
     if (this.box?.qrCode) {
       const link = document.createElement('a');
       link.href = this.box.qrCode;
-      link.download = `QR-${this.box.code}.png`;
+      link.download = `QR-${this.box.code}${this.box.serialNumber ? '-' + this.box.serialNumber : ''}.png`;
       link.click();
     }
   }

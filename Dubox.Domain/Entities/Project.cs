@@ -29,6 +29,7 @@ public class Project
     public int? Duration { get; set; }
     public DateTime? PlannedEndDate { get; set; }
     public DateTime? ActualEndDate { get; set; }
+    public DateTime? CompressionStartDate { get; set; }
 
     [Required]
     public ProjectStatusEnum Status { get; set; } = ProjectStatusEnum.Active;

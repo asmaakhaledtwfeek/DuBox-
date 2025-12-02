@@ -39,6 +39,13 @@ public class BoxesController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
+    [HttpGet("project/{projectId}/box-type-stats")]
+    public async Task<IActionResult> GetBoxTypeStatsByProject(Guid projectId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetBoxTypeStatsByProjectQuery(projectId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
     [HttpGet("qr/{qrCodeString}")]
     public async Task<IActionResult> GetBoxByQRCode(string qrCodeString, CancellationToken cancellationToken)
     {
@@ -56,6 +63,16 @@ public class BoxesController : ControllerBase
 
     [HttpPut("{boxId}")]
     public async Task<IActionResult> UpdateBox(Guid boxId, [FromBody] UpdateBoxCommand command, CancellationToken cancellationToken)
+    {
+        if (boxId != command.BoxId)
+            return BadRequest("Box ID mismatch");
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpPatch("{boxId}/status")]
+    public async Task<IActionResult> UpdateBoxStatus(Guid boxId, [FromBody] UpdateBoxStatusCommand command, CancellationToken cancellationToken)
     {
         if (boxId != command.BoxId)
             return BadRequest("Box ID mismatch");

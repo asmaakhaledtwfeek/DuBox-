@@ -32,6 +32,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<DailyProductionLog> DailyProductionLogs { get; set; } = null!;
     public DbSet<WIRCheckpoint> WIRCheckpoints { get; set; } = null!;
     public DbSet<WIRChecklistItem> WIRChecklistItems { get; set; } = null!;
+    public DbSet<PredefinedChecklistItem> PredefinedChecklistItems { get; set; } = null!;
     public DbSet<QualityIssue> QualityIssues { get; set; } = null!;
     public DbSet<Team> Teams { get; set; } = null!;
     public DbSet<TeamMember> TeamMembers { get; set; } = null!;
@@ -62,6 +63,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         ActivityMasterSeedData.SeedActivityMaster(modelBuilder);
         RoleAndUserSeedData.SeedRolesGroupsAndUsers(modelBuilder);
         DepartmentSeesData.SeedDepartmnts(modelBuilder);
+        PredefinedChecklistItemSeedData.SeedPredefinedChecklistItems(modelBuilder);
         base.OnModelCreating(modelBuilder);
     }
 

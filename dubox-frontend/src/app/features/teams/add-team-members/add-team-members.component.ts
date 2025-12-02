@@ -58,9 +58,10 @@ export class AddTeamMembersComponent implements OnInit {
   }
 
   loadUsers(): void {
-    this.userService.getUsers().subscribe({
-      next: (users) => {
-        this.allUsers = users.filter(u => u.isActive);
+    // Fetch a large page size to get all users for team member selection
+    this.userService.getUsers(1, 1000).subscribe({
+      next: (response) => {
+        this.allUsers = response.items.filter((u: UserDto) => u.isActive);
         this.filterUsersByDepartment();
       },
       error: (err) => {

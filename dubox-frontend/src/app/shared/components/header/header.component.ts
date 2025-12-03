@@ -38,8 +38,8 @@ export class HeaderComponent implements OnInit {
   }
 
   navigateToProfile(): void {
-    // Navigate to profile page when implemented
-    console.log('Navigate to profile');
+    this.showUserMenu = false;
+    this.router.navigate(['/profile']);
   }
 
   getRoleDisplayName(role: UserRole | null): string {

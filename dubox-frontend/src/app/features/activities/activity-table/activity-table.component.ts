@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, OnChanges, SimpleChanges, OnDestroy, Output, EventEmitter } from '@angular/core';
+import { Component, Input, OnInit, OnChanges, SimpleChanges, OnDestroy, Output, EventEmitter, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { Subscription } from 'rxjs';
@@ -47,7 +47,8 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   constructor(
     private progressUpdateService: ProgressUpdateService,
     private wirService: WIRService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -618,7 +619,11 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
    */
   openWIRApprovalModal(wirRecord: WIRRecord): void {
     this.selectedWIR = wirRecord;
-    this.isWIRModalOpen = true;
+    // Use setTimeout to ensure the modal component is created before setting isOpen
+    setTimeout(() => {
+      this.isWIRModalOpen = true;
+      this.cdr.detectChanges();
+    }, 0);
   }
 
   /**

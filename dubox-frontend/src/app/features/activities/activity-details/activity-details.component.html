@@ -149,20 +149,12 @@
               <span class="value">{{ formatDate(activity.plannedEndDate) }}</span>
             </div>
             <div class="info-item">
-              <span class="label">Planned Duration</span>
-              <span class="value">{{ activityDetail?.duration || activity.plannedDuration || '—' }} days</span>
-            </div>
-            <div class="info-item">
               <span class="label">Actual Start</span>
               <span class="value">{{ formatDate(activity.actualStartDate) }}</span>
             </div>
             <div class="info-item">
               <span class="label">Actual End</span>
               <span class="value">{{ formatDate(activity.actualEndDate) || 'Not set' }}</span>
-            </div>
-            <div class="info-item" *ngIf="activityDetail?.actualDuration">
-              <span class="label">Actual Duration</span>
-              <span class="value">{{ activityDetail?.actualDuration }} days</span>
             </div>
           </div>
         </div>
@@ -271,6 +263,283 @@
               <div class="timeline-content">
                 <strong>Last Updated</strong>
                 <span class="timeline-date">{{ activity.updatedAt | date: 'MMM d, yyyy h:mm a' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button 
+          class="tab" 
+          [class.active]="activeTab === 'progress-history'"
+          (click)="setActiveTab('progress-history')"
+        >
+          Progress History
+        </button>
+        <button 
+          class="tab" 
+          [class.active]="activeTab === 'activity-logs'"
+          (click)="setActiveTab('activity-logs')"
+        >
+          Activity Logs ({{ activityLogsTotalCount || 0 }})
+        </button>
+      </div>
+
+      <!-- Tab Content -->
+      <div class="tab-content">
+        <!-- Progress History Tab -->
+        <div *ngIf="activeTab === 'progress-history'" class="tab-panel">
+          <div class="progress-history-section">
+            <app-progress-updates-table
+              [updates]="progressHistory"
+              [loading]="progressHistoryLoading"
+              [error]="progressHistoryError"
+              [currentPage]="1"
+              [pageSize]="progressHistory.length || 10"
+              [totalCount]="progressHistory.length"
+              [totalPages]="1"
+              [showSearch]="showProgressHistorySearch"
+              [searchTerm]="progressHistorySearchTerm"
+              [activityName]="progressHistoryActivityName"
+              [status]="progressHistoryStatus"
+              [fromDate]="progressHistoryFromDate"
+              [toDate]="progressHistoryToDate"
+              [hideActivityColumn]="true"
+              [hideActivityFilter]="true"
+              [subtitle]="'Latest progress updates for this activity'"
+              (refresh)="loadProgressHistory()"
+              (viewDetails)="openProgressDetails($event)"
+              (toggleSearch)="toggleProgressHistorySearch()"
+              (searchChange)="onProgressHistorySearchChange($event)"
+              (clearSearch)="clearProgressHistorySearch()"
+            ></app-progress-updates-table>
+          </div>
+        </div>
+
+        <!-- Activity Logs Tab -->
+        <div *ngIf="activeTab === 'activity-logs'" class="tab-panel">
+          <div class="activity-logs-section">
+            <!-- Filters Section -->
+            <div class="filters-section" *ngIf="showActivityLogsSearch">
+              <div class="filter-row">
+                <div class="filter-field">
+                  <label for="activityLogsSearch">Search</label>
+                  <input 
+                    type="text" 
+                    id="activityLogsSearch"
+                    [(ngModel)]="activityLogsSearchTerm"
+                    placeholder="Search logs..."
+                    class="filter-input"
+                  />
+                </div>
+                <div class="filter-field">
+                  <label for="activityLogsAction">Action</label>
+                  <select 
+                    id="activityLogsAction"
+                    [(ngModel)]="activityLogsAction"
+                    class="filter-select"
+                  >
+                    <option value="">All Actions</option>
+                    <option *ngFor="let action of availableActivityLogActions" [value]="action">
+                      {{ getActionLabel(action) }}
+                    </option>
+                  </select>
+                </div>
+                <div class="filter-field">
+                  <label for="activityLogsFromDate">From Date</label>
+                  <input 
+                    type="date" 
+                    id="activityLogsFromDate"
+                    [(ngModel)]="activityLogsFromDate"
+                    class="filter-input"
+                  />
+                </div>
+                <div class="filter-field">
+                  <label for="activityLogsToDate">To Date</label>
+                  <input 
+                    type="date" 
+                    id="activityLogsToDate"
+                    [(ngModel)]="activityLogsToDate"
+                    class="filter-input"
+                  />
+                </div>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-secondary" (click)="clearActivityLogsSearch()">Reset</button>
+                <button class="btn btn-primary" (click)="applyActivityLogsFilters()">Apply Filters</button>
+              </div>
+            </div>
+
+            <!-- Search Toggle Button -->
+            <div class="search-toggle-container" *ngIf="!showActivityLogsSearch">
+              <button type="button" class="btn btn-outline btn-sm" (click)="toggleActivityLogsSearch()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="m21 21-4.35-4.35"/>
+                </svg>
+                Search & Filter
+              </button>
+            </div>
+
+            <div *ngIf="activityLogsError" class="alert alert-error">
+              <span>{{ activityLogsError }}</span>
+            </div>
+
+            <div *ngIf="activityLogsLoading && !activityLogsError" class="loading-state">
+              <span class="spinner large"></span>
+              <p>Loading activity logs...</p>
+            </div>
+
+            <!-- Logs Container -->
+            <div class="logs-container" *ngIf="!activityLogsLoading && !activityLogsError">
+              <!-- Empty State -->
+              <div class="empty-state" *ngIf="activityLogs.length === 0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+                <h3>No Activity Logs Found</h3>
+                <p>No logs match your current filters. Try adjusting your search criteria.</p>
+              </div>
+
+              <!-- Log Entries (Card Format) -->
+              <div
+                class="log-entry"
+                *ngFor="let log of activityLogs; trackBy: trackByLogId"
+                [class]="'log-entry log-action-' + (log.action?.toLowerCase() || 'default')"
+              >
+                <div class="log-header">
+                  <div class="log-icon-wrapper">
+                    <div class="log-icon" [class]="'icon-' + (log.action?.toLowerCase() || 'default')">
+                      <span class="action-icon">{{ getActionIcon(log.action) }}</span>
+                    </div>
+                  </div>
+                  <div class="log-main">
+                    <div class="log-title-row">
+                      <div class="log-title-content">
+                        <h4 class="log-action-title">{{ getActionLabel(log.action) }}</h4>
+                        <div class="log-meta-info">
+                          <span class="log-user" *ngIf="getLogAuthor(log)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                              <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                            {{ getLogAuthor(log) }}
+                          </span>
+                          <span class="log-date">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <circle cx="12" cy="12" r="10"/>
+                              <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                            {{ log.timestamp | date: 'MMM d, y' }} at {{ log.timestamp | date: 'h:mm a' }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <p class="log-description" *ngIf="formatDescription(log)">
+                      {{ formatDescription(log) }}
+                    </p>
+                  </div>
+                </div>
+
+                <!-- Changes List -->
+                <div class="log-changes" *ngIf="log.changes && log.changes.length > 0">
+                  <div class="changes-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="16 18 22 12 16 6"/>
+                      <polyline points="8 6 2 12 8 18"/>
+                    </svg>
+                    <span>Field Changes</span>
+                  </div>
+                  <div class="changes-list">
+                    <div class="change-item" *ngFor="let change of log.changes">
+                      <span class="change-field" *ngIf="change.field">{{ change.field }}</span>
+                      <div class="change-values">
+                        <span class="change-old" *ngIf="change.oldValue">{{ change.oldValue }}</span>
+                        <span class="change-arrow" *ngIf="change.oldValue && change.newValue">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"/>
+                          </svg>
+                        </span>
+                        <span class="change-new" *ngIf="change.newValue">{{ change.newValue }}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pagination Controls -->
+            <div class="pagination-container" *ngIf="!activityLogsLoading && !activityLogsError && activityLogsTotalPages > 0">
+              <div class="pagination-info">
+                <span>Showing {{ (activityLogsCurrentPage - 1) * activityLogsPageSize + 1 }} - {{ Math.min(activityLogsCurrentPage * activityLogsPageSize, activityLogsTotalCount) }} of {{ activityLogsTotalCount }} logs</span>
+                <div class="page-size-selector">
+                  <label for="activityLogsPageSize">Items per page:</label>
+                  <select id="activityLogsPageSize" [ngModel]="activityLogsPageSize" (ngModelChange)="onActivityLogsPageSizeChange($event)" class="page-size-select">
+                    <option [value]="10">10</option>
+                    <option [value]="25">25</option>
+                    <option [value]="50">50</option>
+                    <option [value]="100">100</option>
+                  </select>
+                </div>
+              </div>
+              <div class="pagination-controls">
+                <button 
+                  class="pagination-btn" 
+                  [disabled]="activityLogsCurrentPage === 1"
+                  (click)="onActivityLogsPageChange(1)"
+                  title="First page"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="11 17 6 12 11 7"/>
+                    <polyline points="18 17 13 12 18 7"/>
+                  </svg>
+                </button>
+                <button 
+                  class="pagination-btn" 
+                  [disabled]="activityLogsCurrentPage === 1"
+                  (click)="onActivityLogsPageChange(activityLogsCurrentPage - 1)"
+                  title="Previous page"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+                <span class="pagination-pages">
+                  <button 
+                    *ngFor="let page of [].constructor(activityLogsTotalPages); let i = index"
+                    class="pagination-page"
+                    [class.active]="activityLogsCurrentPage === (i + 1)"
+                    (click)="onActivityLogsPageChange(i + 1)"
+                  >
+                    {{ i + 1 }}
+                  </button>
+                </span>
+                <button 
+                  class="pagination-btn" 
+                  [disabled]="activityLogsCurrentPage === activityLogsTotalPages"
+                  (click)="onActivityLogsPageChange(activityLogsCurrentPage + 1)"
+                  title="Next page"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+                <button 
+                  class="pagination-btn" 
+                  [disabled]="activityLogsCurrentPage === activityLogsTotalPages"
+                  (click)="onActivityLogsPageChange(activityLogsTotalPages)"
+                  title="Last page"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="13 17 18 12 13 7"/>
+                    <polyline points="6 17 11 12 6 7"/>
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
@@ -443,3 +712,213 @@
   (closeModal)="closeProgressModal()"
   (progressUpdated)="onProgressUpdated($event)">
 </app-update-progress-modal>
+
+<!-- Progress Details Modal -->
+<div class="progress-modal-backdrop" *ngIf="isProgressModalOpen && selectedProgressUpdate" (click)="closeProgressDetails()">
+  <div class="progress-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+        </div>
+        <div>
+          <h2>Progress Update Details</h2>
+          <p class="header-subtitle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            {{ selectedProgressUpdate.updateDate | date: 'MMM d, yyyy' }} at {{ selectedProgressUpdate.updateDate | date: 'h:mm a' }}
+          </p>
+        </div>
+      </div>
+      <button class="icon-button" (click)="closeProgressDetails()" title="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <!-- Key Metrics Section -->
+      <div class="metrics-section">
+        <div class="metric-card primary">
+          <div class="metric-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
+          <div class="metric-content">
+            <label>Activity Progress</label>
+            <div class="metric-value">
+              <span class="progress-pill-large" [ngClass]="{
+                'pill-low': selectedProgressUpdate.progressPercentage < 25,
+                'pill-medium': selectedProgressUpdate.progressPercentage >= 25 && selectedProgressUpdate.progressPercentage < 75,
+                'pill-high': selectedProgressUpdate.progressPercentage >= 75
+              }">
+                {{ selectedProgressUpdate.progressPercentage | number:'1.0-2' }}%
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="metric-card" *ngIf="selectedProgressUpdate.boxProgressSnapshot !== undefined && selectedProgressUpdate.boxProgressSnapshot !== null">
+          <div class="metric-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <line x1="9" y1="3" x2="9" y2="21"/>
+              <line x1="3" y1="9" x2="21" y2="9"/>
+            </svg>
+          </div>
+          <div class="metric-content">
+            <label>Box Progress</label>
+            <div class="metric-value">
+              <span class="progress-pill-large box-progress" [ngClass]="{
+                'pill-low': (selectedProgressUpdate.boxProgressSnapshot ?? 0) < 25,
+                'pill-medium': (selectedProgressUpdate.boxProgressSnapshot ?? 0) >= 25 && (selectedProgressUpdate.boxProgressSnapshot ?? 0) < 75,
+                'pill-high': (selectedProgressUpdate.boxProgressSnapshot ?? 0) >= 75
+              }">
+                {{ (selectedProgressUpdate.boxProgressSnapshot ?? 0) | number:'1.0-2' }}%
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Details Grid -->
+      <div class="details-section">
+        <div class="detail-item">
+          <div class="detail-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v20M2 12h20"/>
+            </svg>
+            Activity
+          </div>
+          <div class="detail-value">{{ selectedProgressUpdate.activityName || '—' }}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            Status
+          </div>
+          <div class="detail-value">
+            <span class="status-badge-modal" [ngClass]="getProgressStatusClass(selectedProgressUpdate.status)">
+              {{ getProgressStatusLabel(selectedProgressUpdate.status) }}
+            </span>
+          </div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            Updated By
+          </div>
+          <div class="detail-value">{{ selectedProgressUpdate.updatedByName || selectedProgressUpdate.updatedBy || '—' }}</div>
+        </div>
+        <div class="detail-item" *ngIf="selectedProgressUpdate.updateMethod">
+          <div class="detail-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+              <line x1="8" y1="21" x2="16" y2="21"/>
+              <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            Update Method
+          </div>
+          <div class="detail-value">{{ selectedProgressUpdate.updateMethod }}</div>
+        </div>
+        <div class="detail-item" *ngIf="selectedProgressUpdate.locationDescription">
+          <div class="detail-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            Location
+          </div>
+          <div class="detail-value">{{ selectedProgressUpdate.locationDescription }}</div>
+        </div>
+      </div>
+
+      <!-- Work Description -->
+      <div class="text-section" *ngIf="selectedProgressUpdate.workDescription">
+        <div class="section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          <h3>Work Description</h3>
+        </div>
+        <div class="section-content">
+          <p>{{ selectedProgressUpdate.workDescription }}</p>
+        </div>
+      </div>
+
+      <!-- Issues Encountered -->
+      <div class="text-section issues-section" *ngIf="selectedProgressUpdate.issuesEncountered">
+        <div class="section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <h3>Issues Encountered</h3>
+        </div>
+        <div class="section-content">
+          <p>{{ selectedProgressUpdate.issuesEncountered }}</p>
+        </div>
+      </div>
+
+      <!-- Photos -->
+      <div class="photo-section" *ngIf="selectedProgressUpdate.photoUrls && getPhotoUrls(selectedProgressUpdate.photoUrls).length > 0">
+        <div class="section-header">
+          <div class="header-icon-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Photos</h3>
+            <p class="section-subtitle">{{ getPhotoUrls(selectedProgressUpdate.photoUrls).length }} photo{{ getPhotoUrls(selectedProgressUpdate.photoUrls).length !== 1 ? 's' : '' }} attached</p>
+          </div>
+        </div>
+        <div class="photo-gallery">
+          <div class="photo-item" *ngFor="let photoUrl of getPhotoUrls(selectedProgressUpdate.photoUrls); let i = index">
+            <div class="photo-wrapper">
+              <img [src]="photoUrl" 
+                   [alt]="'Progress photo ' + (i + 1)"
+                   class="photo-thumbnail"
+                   (click)="openPhotoInNewTab(photoUrl)"
+                   (error)="onImageError($event)"
+                   loading="lazy" />
+              <div class="photo-overlay">
+                <button class="photo-view-btn" (click)="openPhotoInNewTab(photoUrl); $event.stopPropagation()" title="View full size">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                </button>
+                <button class="photo-download-btn" (click)="downloadPhoto(photoUrl); $event.stopPropagation()" title="Download photo">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="photo-number">{{ i + 1 }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -4,7 +4,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
-import { Box, BoxStatus, getBoxStatusNumber } from '../../../core/models/box.model';
+import { Box, BoxStatus, BoxLog, getBoxStatusNumber } from '../../../core/models/box.model';
 import { WIRService } from '../../../core/services/wir.service';
 import { ProgressUpdate, ProgressUpdatesSearchParams } from '../../../core/models/progress-update.model';
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
@@ -18,6 +18,7 @@ import { ApiService } from '../../../core/services/api.service';
 import * as ExcelJS from 'exceljs';
 import { Subject, takeUntil } from 'rxjs';
 import { debounceTime, distinctUntilChanged, map } from 'rxjs/operators';
+import { DiffUtil } from '../../../core/utils/diff.util';
 
 @Component({
   selector: 'app-box-details',
@@ -41,6 +42,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   canEdit = false;
   canDelete = false;
   BoxStatus = BoxStatus;
+  Math = Math;
   
   actualActivityCount: number = 0; // Actual count from activity table (excluding WIR rows)
   wirCheckpoints: WIRCheckpoint[] = [];
@@ -121,6 +123,25 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   locationHistoryLoading = false;
   showLocationHistory = false;
   locationHistorySearchControl = new FormControl('');
+  
+  // Box Logs
+  boxLogs: BoxLog[] = [];
+  boxLogsLoading = false;
+  boxLogsError = '';
+  boxLogsCurrentPage = 1;
+  boxLogsPageSize = 25;
+  boxLogsTotalCount = 0;
+  boxLogsTotalPages = 0;
+  boxLogsSearchTerm = '';
+  boxLogsAction = '';
+  boxLogsFromDate = '';
+  boxLogsToDate = '';
+  showBoxLogsSearch = false;
+  boxLogsSearchControl = new FormControl('');
+  availableBoxLogActions: string[] = [];
+  private boxLogActionSet = new Set<string>();
+  readonly DiffUtil = DiffUtil;
+  
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -142,6 +163,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.canDelete = this.permissionService.canDelete('boxes');
     
     this.setupLocationHistorySearch();
+    this.setupBoxLogsSearch();
     this.loadBox();
   }
 
@@ -198,6 +220,8 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         this.loadQualityIssues();
         this.loadProgressUpdates();
         this.loadLocationHistory();
+        // Load logs count (with minimal page size to get total count quickly)
+        this.loadBoxLogsCount();
         
         this.loading = false;
       },
@@ -421,6 +445,12 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.activeTab = tab;
     if (tab === 'location-history' && this.locationHistory.length === 0) {
       this.loadLocationHistory();
+    }
+    if (tab === 'logs') {
+      // Always load logs when clicking the tab if logs haven't been loaded yet
+      if (this.boxLogs.length === 0 && !this.boxLogsLoading) {
+        this.loadBoxLogs(this.boxLogsCurrentPage, this.boxLogsPageSize);
+      }
     }
   }
 
@@ -1330,11 +1360,155 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
+  private setupBoxLogsSearch(): void {
+    this.boxLogsSearchControl.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(() => {
+        this.boxLogsSearchTerm = this.boxLogsSearchControl.value || '';
+        this.boxLogsCurrentPage = 1;
+        this.loadBoxLogs(this.boxLogsCurrentPage, this.boxLogsPageSize);
+      });
+  }
+
+  loadBoxLogsCount(): void {
+    if (!this.boxId) {
+      return;
+    }
+
+    // Load just the count with minimal page size
+    this.boxService.getBoxLogs(this.boxId, 1, 1).subscribe({
+      next: (response) => {
+        this.boxLogsTotalCount = response.totalCount || 0;
+        this.boxLogsTotalPages = response.totalPages || 0;
+      },
+      error: (err) => {
+        // Silently fail - count will be loaded when tab is clicked
+        console.error('Error loading box logs count:', err);
+      }
+    });
+  }
+
+  loadBoxLogs(page: number = 1, pageSize: number = 25): void {
+    if (!this.boxId) {
+      return;
+    }
+
+    this.boxLogsLoading = true;
+    this.boxLogsError = '';
+    this.boxLogsCurrentPage = page;
+    this.boxLogsPageSize = pageSize;
+
+    const searchTerm = this.boxLogsSearchTerm?.trim() || undefined;
+    const action = this.boxLogsAction?.trim() || undefined;
+    const fromDate = this.boxLogsFromDate || undefined;
+    const toDate = this.boxLogsToDate || undefined;
+
+    this.boxService.getBoxLogs(this.boxId, page, pageSize, searchTerm, action, fromDate, toDate).subscribe({
+      next: (response) => {
+        this.boxLogs = (response.items || []).map(log => ({
+          ...log,
+          performedAt: log.performedAt ? new Date(log.performedAt) : new Date()
+        }));
+        this.boxLogsTotalCount = response.totalCount || 0;
+        this.boxLogsTotalPages = response.totalPages || 0;
+        this.boxLogsCurrentPage = response.pageNumber || page;
+        this.boxLogsPageSize = response.pageSize || pageSize;
+        
+        // Update available actions from current page
+        this.boxLogActionSet.clear();
+        this.boxLogs.forEach(log => {
+          if (log.action) {
+            this.boxLogActionSet.add(log.action);
+          }
+        });
+        this.availableBoxLogActions = Array.from(this.boxLogActionSet).sort((a, b) => a.localeCompare(b));
+        
+        this.boxLogsLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading box logs:', err);
+        this.boxLogsError = err?.error?.message || err?.message || 'Failed to load box logs';
+        this.boxLogsLoading = false;
+      }
+    });
+  }
+
+  applyBoxLogsSearch(): void {
+    this.boxLogsCurrentPage = 1;
+    this.loadBoxLogs(1, this.boxLogsPageSize);
+  }
+
+  applyBoxLogsFilters(): void {
+    this.boxLogsCurrentPage = 1;
+    this.loadBoxLogs(1, this.boxLogsPageSize);
+  }
+
+  resetBoxLogsFilters(): void {
+    this.boxLogsSearchTerm = '';
+    this.boxLogsAction = '';
+    this.boxLogsFromDate = '';
+    this.boxLogsToDate = '';
+    this.boxLogsSearchControl.setValue('');
+    this.boxLogsCurrentPage = 1;
+    this.loadBoxLogs(1, this.boxLogsPageSize);
+  }
+
+  clearBoxLogsSearch(): void {
+    this.resetBoxLogsFilters();
+  }
+
+  toggleBoxLogsSearch(): void {
+    this.showBoxLogsSearch = !this.showBoxLogsSearch;
+    if (!this.showBoxLogsSearch) {
+      this.clearBoxLogsSearch();
+    }
+  }
+
+  onBoxLogsPageChange(page: number): void {
+    this.loadBoxLogs(page, this.boxLogsPageSize);
+  }
+
+  onBoxLogsPageSizeChange(pageSize: number): void {
+    this.loadBoxLogs(1, pageSize);
+  }
+
+  getBoxLogsPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPages = Math.min(this.boxLogsTotalPages, 7);
+    let startPage = Math.max(1, this.boxLogsCurrentPage - 3);
+    let endPage = Math.min(this.boxLogsTotalPages, startPage + maxPages - 1);
+    
+    if (endPage - startPage < maxPages - 1) {
+      startPage = Math.max(1, endPage - maxPages + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
   private applyUpdatedQualityIssue(updated: QualityIssueDetails): void {
     this.qualityIssues = this.qualityIssues.map(issue =>
       issue.issueId === updated.issueId ? { ...issue, ...updated } : issue
     );
     const count = this.qualityIssues.length;
     this.qualityIssueCount = count;
+  }
+
+  trackByLogId(index: number, log: BoxLog): string {
+    return log.id;
+  }
+
+  getActionIcon(action: string): string {
+    return DiffUtil.getActionIcon(action);
+  }
+
+  trackByAction(index: number, action: string): string {
+    return action;
   }
 }

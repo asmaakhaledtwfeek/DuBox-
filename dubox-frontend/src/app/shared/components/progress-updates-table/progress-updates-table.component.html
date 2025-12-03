@@ -2,7 +2,7 @@
   <div class="card-header">
     <div>
       <h3>Progress History</h3>
-      <p class="subtitle">Latest updates recorded for this box</p>
+      <p class="subtitle">{{ subtitle }}</p>
     </div>
     <button class="btn btn-outline" type="button" (click)="onRefresh()" [disabled]="loading">
       <ng-container *ngIf="!loading; else refreshing">
@@ -49,7 +49,7 @@
             />
           </div>
         </div>
-        <div class="filter-group">
+        <div class="filter-group" *ngIf="!hideActivityFilter">
           <label for="activityName">Activity</label>
           <input 
             id="activityName"
@@ -129,7 +129,7 @@
       <table>
         <thead>
           <tr>
-            <th>Activity</th>
+            <th *ngIf="!hideActivityColumn">Activity</th>
             <th>Activity Progress</th>
             <th>Activity Status</th>
             <th>Box Progress</th>
@@ -140,7 +140,7 @@
         </thead>
         <tbody>
           <tr *ngFor="let update of updates; trackBy: trackById" (click)="openDetails(update)">
-            <td>
+            <td *ngIf="!hideActivityColumn">
               {{ update.activityName || '—' }}
             </td>
             <td>

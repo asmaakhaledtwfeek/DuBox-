@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { BoxService } from '../../../core/services/box.service';
 import { BoxActivity } from '../../../core/models/box.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
@@ -11,11 +12,15 @@ import { ProgressUpdateService } from '../../../core/services/progress-update.se
 import { BoxActivityDetail, ProgressUpdate } from '../../../core/models/progress-update.model';
 import { TeamService } from '../../../core/services/team.service';
 import { Team, TeamMember } from '../../../core/models/team.model';
+import { ProgressUpdatesTableComponent } from '../../../shared/components/progress-updates-table/progress-updates-table.component';
+import { AuditLogService } from '../../../core/services/audit-log.service';
+import { AuditLog, AuditLogQueryParams } from '../../../core/models/audit-log.model';
+import { DiffUtil } from '../../../core/utils/diff.util';
 
 @Component({
   selector: 'app-activity-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, HeaderComponent, SidebarComponent, UpdateProgressModalComponent],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, FormsModule, HeaderComponent, SidebarComponent, UpdateProgressModalComponent, ProgressUpdatesTableComponent],
   templateUrl: './activity-details.component.html',
   styleUrls: ['./activity-details.component.scss']
 })
@@ -23,12 +28,39 @@ export class ActivityDetailsComponent implements OnInit {
   activity: BoxActivity | null = null;
   activityDetail: BoxActivityDetail | null = null;
   progressHistory: ProgressUpdate[] = [];
+  progressHistoryLoading = false;
+  progressHistoryError = '';
+  selectedProgressUpdate: ProgressUpdate | null = null;
+  isProgressModalOpen = false;
+  showProgressHistorySearch = false;
+  progressHistorySearchTerm = '';
+  progressHistoryActivityName = '';
+  progressHistoryStatus = '';
+  progressHistoryFromDate = '';
+  progressHistoryToDate = '';
+  activeTab: 'progress-history' | 'activity-logs' = 'progress-history';
   activityId!: string;
   projectId!: string;
   boxId!: string;
   loading = true;
   error = '';
   isModalOpen = false;
+
+  // Activity Logs
+  activityLogs: AuditLog[] = [];
+  activityLogsLoading = false;
+  activityLogsError = '';
+  activityLogsCurrentPage = 1;
+  activityLogsPageSize = 25;
+  activityLogsTotalCount = 0;
+  activityLogsTotalPages = 0;
+  showActivityLogsSearch = false;
+  activityLogsSearchTerm = '';
+  activityLogsAction = '';
+  activityLogsFromDate = '';
+  activityLogsToDate = '';
+  availableActivityLogActions: string[] = [];
+  activityLogActionSet = new Set<string>();
 
   // Modal states
   isUpdateStatusModalOpen = false;
@@ -64,7 +96,8 @@ export class ActivityDetailsComponent implements OnInit {
     private fb: FormBuilder,
     private boxService: BoxService,
     private progressUpdateService: ProgressUpdateService,
-    private teamService: TeamService
+    private teamService: TeamService,
+    private auditLogService: AuditLogService
   ) {}
 
   ngOnInit(): void {
@@ -192,20 +225,259 @@ export class ActivityDetailsComponent implements OnInit {
   }
 
   loadProgressHistory(): void {
+    this.progressHistoryLoading = true;
+    this.progressHistoryError = '';
+    
     this.progressUpdateService.getProgressUpdatesByActivity(this.activityId).subscribe({
       next: (history) => {
-        this.progressHistory = history.sort((a, b) => 
+        let filteredHistory = history.sort((a, b) => 
           new Date(b.updateDate || b.createdDate || '').getTime() - 
           new Date(a.updateDate || a.createdDate || '').getTime()
         );
+        
+        // Apply client-side filtering if search is active
+        if (this.showProgressHistorySearch) {
+          filteredHistory = this.applyProgressHistoryFilters(filteredHistory);
+        }
+        
+        this.progressHistory = filteredHistory;
+        this.progressHistoryLoading = false;
         console.log('✅ Progress history loaded:', this.progressHistory.length, 'updates');
       },
       error: (err) => {
         console.warn('⚠️ Could not load progress history:', err);
+        this.progressHistoryError = err?.error?.message || err?.message || 'Failed to load progress history';
+        this.progressHistoryLoading = false;
         // Not critical, just log the warning
       }
     });
   }
+
+  applyProgressHistoryFilters(history: ProgressUpdate[]): ProgressUpdate[] {
+    return history.filter(update => {
+      // Search term filter
+      if (this.progressHistorySearchTerm?.trim()) {
+        const searchLower = this.progressHistorySearchTerm.toLowerCase();
+        const matchesSearch = 
+          (update.workDescription?.toLowerCase().includes(searchLower)) ||
+          (update.issuesEncountered?.toLowerCase().includes(searchLower)) ||
+          (update.activityName?.toLowerCase().includes(searchLower)) ||
+          (update.updatedByName?.toLowerCase().includes(searchLower)) ||
+          (update.updatedBy?.toLowerCase().includes(searchLower)) ||
+          (update.locationDescription?.toLowerCase().includes(searchLower));
+        if (!matchesSearch) return false;
+      }
+
+      // Activity name filter (should always match since it's for a specific activity, but keep for consistency)
+      if (this.progressHistoryActivityName?.trim()) {
+        const activityLower = this.progressHistoryActivityName.toLowerCase();
+        if (!update.activityName?.toLowerCase().includes(activityLower)) {
+          return false;
+        }
+      }
+
+      // Status filter
+      if (this.progressHistoryStatus?.trim()) {
+        const updateStatus = typeof update.status === 'string' ? update.status.toLowerCase() : String(update.status).toLowerCase();
+        if (updateStatus !== this.progressHistoryStatus.toLowerCase()) {
+          return false;
+        }
+      }
+
+      // Date range filter
+      if (this.progressHistoryFromDate || this.progressHistoryToDate) {
+        const updateDate = new Date(update.updateDate || update.createdDate || '');
+        if (isNaN(updateDate.getTime())) return false;
+
+        if (this.progressHistoryFromDate) {
+          const fromDate = new Date(this.progressHistoryFromDate);
+          fromDate.setHours(0, 0, 0, 0);
+          if (updateDate < fromDate) return false;
+        }
+
+        if (this.progressHistoryToDate) {
+          const toDate = new Date(this.progressHistoryToDate);
+          toDate.setHours(23, 59, 59, 999);
+          if (updateDate > toDate) return false;
+        }
+      }
+
+      return true;
+    });
+  }
+
+  toggleProgressHistorySearch(): void {
+    this.showProgressHistorySearch = !this.showProgressHistorySearch;
+    if (!this.showProgressHistorySearch) {
+      this.clearProgressHistorySearch();
+    } else {
+      // Reapply filters when opening search
+      this.loadProgressHistory();
+    }
+  }
+
+  onProgressHistorySearchChange(searchParams: {
+    searchTerm: string;
+    activityName: string;
+    status: string;
+    fromDate: string;
+    toDate: string;
+  }): void {
+    this.progressHistorySearchTerm = searchParams.searchTerm;
+    this.progressHistoryActivityName = searchParams.activityName;
+    this.progressHistoryStatus = searchParams.status;
+    this.progressHistoryFromDate = searchParams.fromDate;
+    this.progressHistoryToDate = searchParams.toDate;
+    this.loadProgressHistory();
+  }
+
+  clearProgressHistorySearch(): void {
+    this.progressHistorySearchTerm = '';
+    this.progressHistoryActivityName = '';
+    this.progressHistoryStatus = '';
+    this.progressHistoryFromDate = '';
+    this.progressHistoryToDate = '';
+    this.loadProgressHistory();
+  }
+
+  // Tab Navigation
+  setActiveTab(tab: 'progress-history' | 'activity-logs'): void {
+    this.activeTab = tab;
+    if (tab === 'activity-logs' && this.activityLogs.length === 0 && !this.activityLogsLoading) {
+      this.loadActivityLogs(this.activityLogsCurrentPage, this.activityLogsPageSize);
+    }
+  }
+
+  // Activity Logs Methods
+  loadActivityLogs(page: number = 1, pageSize: number = 25): void {
+    if (!this.activityId) {
+      return;
+    }
+
+    this.activityLogsLoading = true;
+    this.activityLogsError = '';
+    this.activityLogsCurrentPage = page;
+    this.activityLogsPageSize = pageSize;
+
+    const params: AuditLogQueryParams = {
+      pageNumber: page,
+      pageSize: pageSize,
+      tableName: 'BoxActivity',
+      recordId: this.activityId
+    };
+
+    if (this.activityLogsSearchTerm?.trim()) {
+      params.searchTerm = this.activityLogsSearchTerm.trim();
+    }
+    if (this.activityLogsAction?.trim()) {
+      params.action = this.activityLogsAction.trim();
+    }
+    if (this.activityLogsFromDate) {
+      const from = new Date(this.activityLogsFromDate);
+      from.setHours(0, 0, 0, 0);
+      params.fromDate = from.toISOString();
+    }
+    if (this.activityLogsToDate) {
+      const to = new Date(this.activityLogsToDate);
+      to.setHours(23, 59, 59, 999);
+      params.toDate = to.toISOString();
+    }
+
+    this.auditLogService.getAuditLogs(params).subscribe({
+      next: (response) => {
+        this.activityLogs = response.items;
+        this.activityLogsTotalCount = response.totalCount || 0;
+        this.activityLogsTotalPages = response.totalPages || 0;
+        this.activityLogsCurrentPage = response.pageNumber || page;
+        this.activityLogsPageSize = response.pageSize || pageSize;
+        
+        // Update available actions from current page
+        this.activityLogActionSet.clear();
+        this.activityLogs.forEach(log => {
+          if (log.action) {
+            this.activityLogActionSet.add(log.action);
+          }
+        });
+        this.availableActivityLogActions = Array.from(this.activityLogActionSet).sort((a, b) => a.localeCompare(b));
+        
+        this.activityLogsLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading activity logs:', err);
+        this.activityLogsError = err?.error?.message || err?.message || 'Failed to load activity logs';
+        this.activityLogsLoading = false;
+      }
+    });
+  }
+
+  toggleActivityLogsSearch(): void {
+    this.showActivityLogsSearch = !this.showActivityLogsSearch;
+    if (!this.showActivityLogsSearch) {
+      this.clearActivityLogsSearch();
+    }
+  }
+
+  applyActivityLogsFilters(): void {
+    this.activityLogsCurrentPage = 1;
+    this.loadActivityLogs(1, this.activityLogsPageSize);
+  }
+
+  clearActivityLogsSearch(): void {
+    this.activityLogsSearchTerm = '';
+    this.activityLogsAction = '';
+    this.activityLogsFromDate = '';
+    this.activityLogsToDate = '';
+    this.activityLogsCurrentPage = 1;
+    this.loadActivityLogs(1, this.activityLogsPageSize);
+  }
+
+  onActivityLogsPageChange(page: number): void {
+    this.loadActivityLogs(page, this.activityLogsPageSize);
+  }
+
+  onActivityLogsPageSizeChange(size: number): void {
+    this.loadActivityLogs(1, size);
+  }
+
+  // Helper methods for activity logs display
+  getActionIcon(action: string): string {
+    return DiffUtil.getActionIcon(action);
+  }
+
+  getActionLabel(action: string): string {
+    return DiffUtil.getActionLabel(action);
+  }
+
+  formatDescription(log: AuditLog): string {
+    return log.description || log.entityDisplayName || `${log.action} on ${log.tableName}`;
+  }
+
+  getLogAuthor(log: AuditLog): string {
+    return log.changedByFullName || log.changedByUsername || log.changedBy || 'System';
+  }
+
+  isExpanded(logId: string): boolean {
+    // Simple implementation - could be enhanced with a Set
+    return false;
+  }
+
+  toggleExpand(logId: string): void {
+    // Simple implementation - could be enhanced with a Set
+  }
+
+  getVisibleChanges(log: AuditLog): any[] {
+    return log.changes?.slice(0, 3) || [];
+  }
+
+  getHiddenChanges(log: AuditLog): any[] {
+    return log.changes?.slice(3) || [];
+  }
+
+  trackByLogId(_index: number, log: AuditLog): string {
+    return log.auditLogId;
+  }
+
+  readonly Math = Math;
 
   convertToBoxActivity(detail: BoxActivityDetail): BoxActivity {
     return {
@@ -239,6 +511,9 @@ export class ActivityDetailsComponent implements OnInit {
     // Reload activity data to reflect the updated progress
     this.loadActivity();
     
+    // Reload progress history to show the new update
+    this.loadProgressHistory();
+    
     // Show success message
     document.dispatchEvent(new CustomEvent('app-toast', {
       detail: { 
@@ -248,6 +523,99 @@ export class ActivityDetailsComponent implements OnInit {
         type: 'success' 
       }
     }));
+  }
+
+  openProgressDetails(update: ProgressUpdate): void {
+    this.selectedProgressUpdate = update;
+    this.isProgressModalOpen = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeProgressDetails(): void {
+    this.isProgressModalOpen = false;
+    this.selectedProgressUpdate = null;
+    document.body.style.overflow = '';
+  }
+
+  getProgressStatusClass(status: string | any): string {
+    if (!status) return 'status-unknown';
+    
+    const statusStr = typeof status === 'string' ? status : String(status);
+    const normalized = statusStr.toLowerCase();
+    
+    switch (normalized) {
+      case 'notstarted':
+        return 'status-not-started';
+      case 'inprogress':
+        return 'status-in-progress';
+      case 'completed':
+        return 'status-completed';
+      case 'onhold':
+        return 'status-on-hold';
+      case 'delayed':
+        return 'status-delayed';
+      default:
+        return 'status-unknown';
+    }
+  }
+
+  getProgressStatusLabel(status: string | any): string {
+    if (!status) return '—';
+    
+    const statusStr = typeof status === 'string' ? status : String(status);
+    const normalized = statusStr.toLowerCase();
+    
+    switch (normalized) {
+      case 'notstarted':
+        return 'Not Started';
+      case 'inprogress':
+        return 'In Progress';
+      case 'completed':
+        return 'Completed';
+      case 'onhold':
+        return 'On Hold';
+      case 'delayed':
+        return 'Delayed';
+      default:
+        return statusStr;
+    }
+  }
+
+  getPhotoUrls(photoUrls: string | undefined): string[] {
+    if (!photoUrls) return [];
+    
+    try {
+      const parsed = JSON.parse(photoUrls);
+      if (Array.isArray(parsed)) {
+        return parsed.filter(url => url && typeof url === 'string' && url.trim().length > 0);
+      }
+    } catch {
+      // If not JSON, try splitting by comma
+      if (typeof photoUrls === 'string') {
+        return photoUrls.split(',').map(url => url.trim()).filter(url => url.length > 0);
+      }
+    }
+    
+    return [];
+  }
+
+  openPhotoInNewTab(photoUrl: string): void {
+    window.open(photoUrl, '_blank');
+  }
+
+  downloadPhoto(photoUrl: string): void {
+    const link = document.createElement('a');
+    link.href = photoUrl;
+    link.download = photoUrl.split('/').pop() || 'photo.jpg';
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
   }
 
   goBack(): void {

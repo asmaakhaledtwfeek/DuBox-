@@ -98,3 +98,16 @@ public record BoxImportResultDto
     public List<BoxDto> ImportedBoxes { get; init; } = new();
 }
 
+public record BoxLogDto
+{
+    public Guid Id { get; init; }
+    public Guid BoxId { get; init; }
+    public string Action { get; init; } = string.Empty;
+    public string Description { get; init; } = string.Empty;
+    public string? Field { get; init; }
+    public string? OldValue { get; init; }
+    public string? NewValue { get; init; }
+    public string PerformedBy { get; init; } = string.Empty;
+    public DateTime PerformedAt { get; init; }
+}
+

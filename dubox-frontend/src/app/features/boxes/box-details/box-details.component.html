@@ -101,7 +101,7 @@
           [class.active]="activeTab === 'logs'"
           (click)="setActiveTab('logs')"
         >
-          Logs ({{ box.logs.length || 0 }})
+          Logs ({{ boxLogsTotalCount || 0 }})
         </button>
         <button 
           class="tab" 
@@ -766,33 +766,229 @@
 
         <!-- Logs Tab -->
         <div *ngIf="activeTab === 'logs'" class="logs-tab">
-          <div class="empty-state" *ngIf="!box.logs || box.logs.length === 0">
-            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/>
-              <line x1="16" y1="17" x2="8" y2="17"/>
-              <polyline points="10 9 9 9 8 9"/>
-            </svg>
-            <h3>No Logs</h3>
-            <p>No activity logs recorded for this box</p>
-          </div>
-
-          <div class="logs-list" *ngIf="box.logs && box.logs.length > 0">
-            <div class="log-item" *ngFor="let log of box.logs">
-              <div class="log-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <polyline points="12 6 12 12 16 14"/>
-                </svg>
+          <div class="box-logs-card">
+            <div class="card-header">
+              <div>
+                <h3>Box Logs</h3>
+                <p class="subtitle">Complete audit trail of all actions performed on this box</p>
               </div>
-              <div class="log-content">
-                <div class="log-header">
-                  <strong>{{ log.action }}</strong>
-                  <span class="log-time">{{ log.performedAt | date: 'MMM d, yyyy h:mm a' }}</span>
+              <div class="card-header-actions">
+                <button 
+                  class="btn btn-secondary btn-sm" 
+                  (click)="toggleBoxLogsSearch()"
+                  [class.active]="showBoxLogsSearch"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                  </svg>
+                  {{ showBoxLogsSearch ? 'Hide Search' : 'Search' }}
+                </button>
+                <button 
+                  class="btn btn-primary btn-sm" 
+                  (click)="loadBoxLogs(boxLogsCurrentPage, boxLogsPageSize)" 
+                  [disabled]="boxLogsLoading"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <polyline points="1 20 1 14 7 14"/>
+                    <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"/>
+                    <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"/>
+                  </svg>
+                  Refresh
+                </button>
+              </div>
+            </div>
+
+            <!-- Filters Section (matching Audit Logs) -->
+            <div class="filters-section" *ngIf="showBoxLogsSearch">
+              <div class="filter-row">
+                <div class="filter-field">
+                  <label for="boxLogsAction">Action</label>
+                  <select id="boxLogsAction" [(ngModel)]="boxLogsAction" class="filter-input">
+                    <option value="">All Actions</option>
+                    <option *ngFor="let action of availableBoxLogActions; trackBy: trackByAction" [value]="action">
+                      {{ action }}
+                    </option>
+                  </select>
                 </div>
-                <p class="log-description">{{ log.description }}</p>
-                <span class="log-user">by {{ log.performedBy }}</span>
+
+                <div class="filter-field">
+                  <label for="boxLogsSearchTerm">Search</label>
+                  <input 
+                    type="text" 
+                    id="boxLogsSearchTerm" 
+                    [(ngModel)]="boxLogsSearchTerm" 
+                    placeholder="Search in logs..."
+                    class="filter-input"
+                  />
+                </div>
+
+                <div class="filter-field">
+                  <label for="boxLogsFromDate">From Date</label>
+                  <input 
+                    type="date" 
+                    id="boxLogsFromDate" 
+                    [(ngModel)]="boxLogsFromDate" 
+                    class="filter-input"
+                  />
+                </div>
+
+                <div class="filter-field">
+                  <label for="boxLogsToDate">To Date</label>
+                  <input 
+                    type="date" 
+                    id="boxLogsToDate" 
+                    [(ngModel)]="boxLogsToDate" 
+                    class="filter-input"
+                  />
+                </div>
+              </div>
+
+              <div class="filter-actions">
+                <button class="btn btn-secondary" (click)="resetBoxLogsFilters()">Reset</button>
+                <button class="btn btn-primary" (click)="applyBoxLogsFilters()">Apply Filters</button>
+              </div>
+            </div>
+
+            <!-- Search Toggle Button -->
+            <div class="search-toggle-container" *ngIf="!showBoxLogsSearch">
+              <button type="button" class="btn btn-outline btn-sm" (click)="toggleBoxLogsSearch()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="m21 21-4.35-4.35"/>
+                </svg>
+                Search & Filter
+              </button>
+            </div>
+
+            <div *ngIf="boxLogsError" class="alert alert-error">
+              <span>{{ boxLogsError }}</span>
+            </div>
+
+            <div *ngIf="boxLogsLoading && !boxLogsError" class="loading-state">
+              <span class="spinner large"></span>
+              <p>Loading box logs...</p>
+            </div>
+
+            <!-- Logs Container (matching Audit Logs) -->
+            <div class="logs-container" *ngIf="!boxLogsLoading && !boxLogsError">
+              <!-- Empty State -->
+              <div class="empty-state" *ngIf="boxLogs.length === 0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+                <h3>No Box Logs Found</h3>
+                <p>No logs match your current filters. Try adjusting your search criteria.</p>
+              </div>
+
+              <!-- Log Entries (Card Format) -->
+              <div
+                class="log-entry"
+                *ngFor="let log of boxLogs; trackBy: trackByLogId"
+              >
+                <div class="log-header">
+                  <div class="log-icon">
+                    <span class="action-icon">{{ getActionIcon(log.action) }}</span>
+                  </div>
+                  <div class="log-main">
+                    <div class="log-title">
+                      <strong>{{ log.action }}</strong>
+                      <span class="log-date">on {{ log.performedAt | date: 'MMM d, y' }}</span>
+                    </div>
+                    <p class="log-description" *ngIf="log.description">
+                      {{ log.description }}
+                    </p>
+                    <div class="log-meta" *ngIf="log.performedBy">
+                      <span class="log-user">by {{ log.performedBy }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Changes List -->
+                <div class="log-changes" *ngIf="log.field || log.oldValue || log.newValue">
+                  <div class="changes-list">
+                    <div class="change-item">
+                      <span class="change-field" *ngIf="log.field">{{ log.field }}:</span>
+                      <span class="change-old" *ngIf="log.oldValue">{{ log.oldValue }}</span>
+                      <span class="change-arrow" *ngIf="log.oldValue && log.newValue">→</span>
+                      <span class="change-new" *ngIf="log.newValue">{{ log.newValue }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pagination Controls -->
+            <div class="pagination-container" *ngIf="!boxLogsLoading && !boxLogsError && boxLogsTotalPages > 0">
+              <div class="pagination-info">
+                <span>Showing {{ (boxLogsCurrentPage - 1) * boxLogsPageSize + 1 }} - {{ Math.min(boxLogsCurrentPage * boxLogsPageSize, boxLogsTotalCount) }} of {{ boxLogsTotalCount }} logs</span>
+                <div class="page-size-selector">
+                  <label for="boxLogsPageSize">Items per page:</label>
+                  <select id="boxLogsPageSize" [ngModel]="boxLogsPageSize" (ngModelChange)="onBoxLogsPageSizeChange($event)" class="page-size-select">
+                    <option [value]="10">10</option>
+                    <option [value]="25">25</option>
+                    <option [value]="50">50</option>
+                    <option [value]="100">100</option>
+                  </select>
+                </div>
+              </div>
+              <div class="pagination-controls">
+                <button 
+                  class="pagination-btn" 
+                  [disabled]="boxLogsCurrentPage === 1"
+                  (click)="onBoxLogsPageChange(1)"
+                  title="First page"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="11 17 6 12 11 7"/>
+                    <polyline points="18 17 13 12 18 7"/>
+                  </svg>
+                </button>
+                <button 
+                  class="pagination-btn" 
+                  [disabled]="boxLogsCurrentPage === 1"
+                  (click)="onBoxLogsPageChange(boxLogsCurrentPage - 1)"
+                  title="Previous page"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+                <div class="page-numbers">
+                  <button 
+                    *ngFor="let page of getBoxLogsPageNumbers()"
+                    class="page-number"
+                    [class.active]="page === boxLogsCurrentPage"
+                    (click)="onBoxLogsPageChange(page)"
+                  >
+                    {{ page }}
+                  </button>
+                </div>
+                <button 
+                  class="pagination-btn" 
+                  [disabled]="boxLogsCurrentPage === boxLogsTotalPages"
+                  (click)="onBoxLogsPageChange(boxLogsCurrentPage + 1)"
+                  title="Next page"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+                <button 
+                  class="pagination-btn" 
+                  [disabled]="boxLogsCurrentPage === boxLogsTotalPages"
+                  (click)="onBoxLogsPageChange(boxLogsTotalPages)"
+                  title="Last page"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="13 17 18 12 13 7"/>
+                    <polyline points="6 17 11 12 6 7"/>
+                  </svg>
+                </button>
               </div>
             </div>
           </div>

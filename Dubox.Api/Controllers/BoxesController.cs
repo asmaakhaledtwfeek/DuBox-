@@ -25,13 +25,6 @@ public class BoxesController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    [HttpGet("{boxId}")]
-    public async Task<IActionResult> GetBoxById(Guid boxId, CancellationToken cancellationToken)
-    {
-        var result = await _mediator.Send(new GetBoxByIdQuery(boxId), cancellationToken);
-        return result.IsSuccess ? Ok(result) : BadRequest(result);
-    }
-
     [HttpGet("project/{projectId}")]
     public async Task<IActionResult> GetBoxesByProject(Guid projectId, CancellationToken cancellationToken)
     {
@@ -50,6 +43,36 @@ public class BoxesController : ControllerBase
     public async Task<IActionResult> GetBoxByQRCode(string qrCodeString, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetBoxByQRCodeQuery(qrCodeString), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("{boxId}/logs")]
+    public async Task<IActionResult> GetBoxLogs(
+        Guid boxId,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 25,
+        [FromQuery] string? searchTerm = null,
+        [FromQuery] string? action = null,
+        [FromQuery] DateTime? fromDate = null,
+        [FromQuery] DateTime? toDate = null,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(new GetBoxLogsQuery(
+            boxId,
+            pageNumber,
+            pageSize,
+            searchTerm,
+            action,
+            fromDate,
+            toDate
+        ), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("{boxId}")]
+    public async Task<IActionResult> GetBoxById(Guid boxId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetBoxByIdQuery(boxId), cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 

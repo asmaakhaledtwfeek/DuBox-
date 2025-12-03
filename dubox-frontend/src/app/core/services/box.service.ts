@@ -361,10 +361,27 @@ export class BoxService {
   }
 
   /**
-   * Get box logs
+   * Get box logs with pagination and search
    */
-  getBoxLogs(boxId: string): Observable<BoxLog[]> {
-    return this.apiService.get<BoxLog[]>(`${this.endpoint}/${boxId}/logs`);
+  getBoxLogs(
+    boxId: string, 
+    page: number = 1, 
+    pageSize: number = 25,
+    searchTerm?: string,
+    action?: string,
+    fromDate?: string,
+    toDate?: string
+  ): Observable<PaginatedResponse<BoxLog>> {
+    const params: any = {
+      pageNumber: page,
+      pageSize: pageSize
+    };
+    if (searchTerm) params.searchTerm = searchTerm;
+    if (action) params.action = action;
+    if (fromDate) params.fromDate = fromDate;
+    if (toDate) params.toDate = toDate;
+    
+    return this.apiService.get<PaginatedResponse<BoxLog>>(`${this.endpoint}/${boxId}/logs`, params);
   }
 
   /**

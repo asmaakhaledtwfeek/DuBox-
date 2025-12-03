@@ -24,6 +24,9 @@ export class ProgressUpdatesTableComponent {
   @Input() status = '';
   @Input() fromDate = '';
   @Input() toDate = '';
+  @Input() hideActivityColumn = false;
+  @Input() hideActivityFilter = false;
+  @Input() subtitle = 'Latest updates recorded for this box';
   @Output() refresh = new EventEmitter<void>();
   @Output() viewDetails = new EventEmitter<ProgressUpdate>();
   @Output() pageChange = new EventEmitter<number>();

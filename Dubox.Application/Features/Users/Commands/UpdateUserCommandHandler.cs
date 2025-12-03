@@ -1,4 +1,5 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
@@ -42,7 +43,26 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
 
             if (!departmentExists)
                 return Result.Failure<UserDto>($"Department does not exist.");
+            if (user.DepartmentId != request.DepartmentId)
+            {
+                var teamMember = await _unitOfWork.Repository<TeamMember>().FindAsync(x => x.UserId == user.UserId, cancellationToken);
+                var teamMemberExist = teamMember.FirstOrDefault();
+                if (teamMemberExist != null)
+                {
+                    teamMemberExist.IsActive = false;
+                    _unitOfWork.Repository<TeamMember>().Update(teamMemberExist);
 
+                    var assignedNotComplatedActivities = _unitOfWork.Repository<BoxActivity>()
+                .GetWithSpec(new GetNotComplatedActivitiesByAssignedMemberIdSpecification(teamMemberExist.TeamMemberId)).Data.ToList();
+                    if (assignedNotComplatedActivities.Any())
+                    {
+                        foreach (var activity in assignedNotComplatedActivities)
+                            activity.AssignedMemberId = null;
+
+                        _unitOfWork.Repository<BoxActivity>().UpdateRange(assignedNotComplatedActivities);
+                    }
+                }
+            }
             user.DepartmentId = request.DepartmentId.Value;
         }
         if (request.IsActive.HasValue)

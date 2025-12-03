@@ -44,13 +44,13 @@ namespace Dubox.Application.DTOs
     public class WIRChecklistItemDto
     {
         public Guid ChecklistItemId { get; set; }
-        public string ItemName { get; set; } = string.Empty;
-        public bool IsChecked { get; set; }
+        public Guid WIRId { get; set; }
+        public string CheckpointDescription { get; set; } = string.Empty;
         public string? ReferenceDocument { get; set; }
         public string? Remarks { get; set; }
         public CheckListItemStatusEnum Status { get; set; }
         public int Sequence { get; set; }
-
+        public Guid? PredefinedItemId { get; set; } // Reference to the predefined item this was cloned from
     }
     public class QualityIssueDto
     {
@@ -62,6 +62,16 @@ namespace Dubox.Application.DTOs
         public DateTime DueDate { get; set; }
         public string? ReportedBy { get; set; }
         public QualityIssueStatusEnum Status { get; set; }
+    }
+
+    public class PredefinedChecklistItemDto
+    {
+        public Guid PredefinedItemId { get; set; }
+        public string CheckpointDescription { get; set; } = string.Empty;
+        public string? ReferenceDocument { get; set; }
+        public int Sequence { get; set; }
+        public string? Category { get; set; }
+        public bool IsActive { get; set; }
     }
     public class CreateWIRCheckpointDto
     {

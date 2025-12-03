@@ -141,6 +141,16 @@ export const routes: Routes = [
     loadComponent: () => import('./features/boxes/add-checklist-items/add-checklist-items.component').then(m => m.AddChecklistItemsComponent)
   },
   {
+    path: 'locations',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/locations/locations-management/locations-management.component').then(m => m.LocationsManagementComponent)
+  },
+  {
+    path: 'locations/:locationId',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/locations/location-details/location-details.component').then(m => m.LocationDetailsComponent)
+  },
+  {
     path: 'admin',
     canActivate: [authGuard, roleGuard],
     data: { 
@@ -156,6 +166,18 @@ export const routes: Routes = [
         canActivate: [roleGuard],
         data: { roles: [UserRole.SystemAdmin] },
         loadComponent: () => import('./features/admin/user-management/user-management.component').then(m => m.UserManagementComponent)
+      },
+      {
+        path: 'users/:userId',
+        canActivate: [roleGuard],
+        data: { roles: [UserRole.SystemAdmin] },
+        loadComponent: () => import('./features/admin/user-management/user-details-page/user-details-page.component').then(m => m.UserDetailsPageComponent)
+      },
+      {
+        path: 'users/:userId/audit-logs',
+        canActivate: [roleGuard],
+        data: { roles: [UserRole.SystemAdmin] },
+        loadComponent: () => import('./features/admin/user-management/user-audit-logs/user-audit-logs.component').then(m => m.UserAuditLogsComponent)
       },
       {
         path: 'audit-logs',

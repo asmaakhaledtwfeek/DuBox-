@@ -29,12 +29,33 @@ public class ProgressUpdatesController : ControllerBase
     }
 
     /// <summary>
-    /// Get all progress updates for a specific box
+    /// Get all progress updates for a specific box with pagination and search
     /// </summary>
     [HttpGet("box/{boxId}")]
-    public async Task<IActionResult> GetProgressUpdatesByBox(Guid boxId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetProgressUpdatesByBox(
+        Guid boxId, 
+        [FromQuery] int pageNumber = 1, 
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? searchTerm = null,
+        [FromQuery] string? activityName = null,
+        [FromQuery] string? status = null,
+        [FromQuery] DateTime? fromDate = null,
+        [FromQuery] DateTime? toDate = null,
+        [FromQuery] Guid? updatedBy = null,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetProgressUpdatesByBoxQuery(boxId), cancellationToken);
+        var query = new GetProgressUpdatesByBoxQuery(boxId)
+        {
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            SearchTerm = searchTerm,
+            ActivityName = activityName,
+            Status = status,
+            FromDate = fromDate,
+            ToDate = toDate,
+            UpdatedBy = updatedBy
+        };
+        var result = await _mediator.Send(query, cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 

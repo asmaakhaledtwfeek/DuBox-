@@ -32,6 +32,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<DailyProductionLog> DailyProductionLogs { get; set; } = null!;
     public DbSet<WIRCheckpoint> WIRCheckpoints { get; set; } = null!;
     public DbSet<WIRChecklistItem> WIRChecklistItems { get; set; } = null!;
+    public DbSet<PredefinedChecklistItem> PredefinedChecklistItems { get; set; } = null!;
     public DbSet<QualityIssue> QualityIssues { get; set; } = null!;
     public DbSet<Team> Teams { get; set; } = null!;
     public DbSet<TeamMember> TeamMembers { get; set; } = null!;
@@ -62,6 +63,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         ActivityMasterSeedData.SeedActivityMaster(modelBuilder);
         RoleAndUserSeedData.SeedRolesGroupsAndUsers(modelBuilder);
         DepartmentSeesData.SeedDepartmnts(modelBuilder);
+        PredefinedChecklistItemSeedData.SeedPredefinedChecklistItems(modelBuilder);
         base.OnModelCreating(modelBuilder);
     }
 
@@ -98,6 +100,12 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .WithMany()
             .HasForeignKey(h => h.MovedFromLocationId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<BoxLocationHistory>()
+            .HasOne(h => h.MovedByUser)
+            .WithMany()
+            .HasForeignKey(h => h.MovedBy)
+            .OnDelete(DeleteBehavior.SetNull);
 
         // 4. User and Role Management (Cascade for join tables)
         modelBuilder.Entity<UserRole>()
@@ -270,6 +278,32 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasOne(am => am.BoxActivity)
             .WithMany(ba => ba.RequiredMaterials)
             .HasForeignKey(am => am.BoxActivityId);
+
+        modelBuilder.Entity<Box>()
+            .HasOne(b => b.CurrentLocation)
+            .WithMany()
+            .HasForeignKey(b => b.CurrentLocationId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<BoxLocationHistory>()
+            .HasOne(h => h.Box)
+            .WithMany(b => b.BoxLocationHistory)
+            .HasForeignKey(h => h.BoxId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<BoxLocationHistory>()
+            .HasOne(h => h.Location)
+            .WithMany(l => l.BoxLocationHistory)
+            .HasForeignKey(h => h.LocationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<BoxLocationHistory>()
+            .HasOne(h => h.MovedFromLocation)
+            .WithMany()
+            .HasForeignKey(h => h.MovedFromLocationId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 
     private void ConfigureIndexes(ModelBuilder modelBuilder)

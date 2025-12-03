@@ -30,7 +30,10 @@ public class GetBoxByIdQueryHandler : IRequestHandler<GetBoxByIdQuery, Result<Bo
         var boxDto = box.Adapt<BoxDto>() with
         {
             ProjectCode = box.Project.ProjectCode,
-            QRCodeImage = _qrCodeService.GenerateQRCodeBase64(box.QRCodeString)
+            QRCodeImage = _qrCodeService.GenerateQRCodeBase64(box.QRCodeString),
+            CurrentLocationId = box.CurrentLocationId,
+            CurrentLocationCode = box.CurrentLocation?.LocationCode,
+            CurrentLocationName = box.CurrentLocation?.LocationName
         };
 
         return Result.Success(boxDto);

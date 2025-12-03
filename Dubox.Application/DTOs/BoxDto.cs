@@ -6,6 +6,7 @@ public record BoxDto
     public Guid ProjectId { get; init; }
     public string ProjectCode { get; init; } = string.Empty;
     public string BoxTag { get; init; } = string.Empty;
+    public string? SerialNumber { get; init; }
     public string? BoxName { get; init; }
     public string BoxType { get; init; } = string.Empty;
     public string? Floor { get; init; }
@@ -29,6 +30,9 @@ public record BoxDto
     public DateTime CreatedDate { get; init; }
     public int ActivitiesCount { get; init; }
     public string? Notes { get; init; }
+    public Guid? CurrentLocationId { get; init; }
+    public string? CurrentLocationCode { get; init; }
+    public string? CurrentLocationName { get; init; }
 }
 
 public record CreateBoxDto

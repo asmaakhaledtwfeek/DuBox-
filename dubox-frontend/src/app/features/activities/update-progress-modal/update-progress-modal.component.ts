@@ -1,17 +1,19 @@
-import { Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges } from '@angular/core';
+import { Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
 import { ActivityProgressStatus, BoxActivityDetail } from '../../../core/models/progress-update.model';
+import { ApiService } from '../../../core/services/api.service';
+import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-update-progress-modal',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './update-progress-modal.component.html',
   styleUrls: ['./update-progress-modal.component.scss']
 })
-export class UpdateProgressModalComponent implements OnInit, OnChanges {
+export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestroy {
   @Input() activity!: BoxActivityDetail;
   @Input() isOpen: boolean = false;
   @Output() closeModal = new EventEmitter<void>();
@@ -24,9 +26,20 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges {
   selectedFiles: File[] = [];
   ActivityProgressStatus = ActivityProgressStatus;
 
+  // Photo upload state
+  photoUrl: string = '';
+  selectedFile: File | null = null;
+  photoPreview: string | null = null;
+  isUploadingPhoto = false;
+  photoUploadError = '';
+  cameraStream: MediaStream | null = null;
+  showCamera = false;
+  photoInputMethod: 'url' | 'upload' | 'camera' = 'url';
+
   constructor(
     private fb: FormBuilder,
-    private progressUpdateService: ProgressUpdateService
+    private progressUpdateService: ProgressUpdateService,
+    private apiService: ApiService
   ) {}
 
   ngOnInit(): void {
@@ -42,8 +55,17 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges {
         this.errorMessage = '';
         this.successMessage = '';
         this.selectedFiles = [];
+        this.photoUrl = '';
+        this.selectedFile = null;
+        this.photoPreview = null;
+        this.showCamera = false;
+        this.stopCamera();
       }
     }
+  }
+
+  ngOnDestroy(): void {
+    this.stopCamera();
   }
 
   initializeForm(): void {
@@ -61,8 +83,102 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges {
 
   onFileSelected(event: any): void {
     const files = event.target.files;
-    if (files) {
-      this.selectedFiles = Array.from(files);
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (file.type.startsWith('image/')) {
+        this.selectedFile = file;
+        this.photoUrl = ''; // Clear URL when file is selected
+        this.photoInputMethod = 'upload';
+        this.previewImage(file);
+      } else {
+        this.photoUploadError = 'Please select an image file';
+      }
+    }
+  }
+
+  openFileInput(): void {
+    this.showCamera = false;
+    const fileInput = document.getElementById('progress-photo-file-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+  previewImage(file: File): void {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.photoPreview = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  removeSelectedFile(): void {
+    this.selectedFile = null;
+    this.photoPreview = null;
+  }
+
+  uploadPhoto(file: File) {
+    return this.apiService.upload<{ url: string }>('upload/progress-photos', file).pipe(
+      map((response: any) => {
+        if (typeof response === 'string') return response;
+        return response?.url || response?.photoPath || response?.data?.url || response?.data?.photoPath || '';
+      })
+    );
+  }
+
+  // Camera methods
+  async openCamera(): Promise<void> {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } // Use back camera on mobile
+      });
+      this.cameraStream = stream;
+      this.showCamera = true;
+      this.selectedFile = null;
+      this.photoPreview = null;
+      this.photoUrl = '';
+      this.photoInputMethod = 'camera';
+      
+      // Wait for video element to be rendered
+      setTimeout(() => {
+        const video = document.getElementById('progress-camera-preview') as HTMLVideoElement;
+        if (video) {
+          video.srcObject = stream;
+          video.play();
+        }
+      }, 100);
+    } catch (err) {
+      console.error('Error accessing camera:', err);
+      this.photoUploadError = 'Unable to access camera. Please check permissions.';
+    }
+  }
+
+  stopCamera(): void {
+    if (this.cameraStream) {
+      this.cameraStream.getTracks().forEach(track => track.stop());
+      this.cameraStream = null;
+    }
+    this.showCamera = false;
+  }
+
+  capturePhoto(): void {
+    const video = document.getElementById('progress-camera-preview') as HTMLVideoElement;
+    if (!video) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(video, 0, 0);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], `progress-photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+          this.selectedFile = file;
+          this.previewImage(file);
+          this.stopCamera();
+        }
+      }, 'image/jpeg', 0.9);
     }
   }
 
@@ -81,12 +197,32 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges {
     this.isSubmitting = true;
     this.errorMessage = '';
     this.successMessage = '';
+    this.photoUploadError = '';
 
     try {
       let photoUrlsArray: string[] = [];
       
-      // Upload photos if any
-      if (this.selectedFiles.length > 0) {
+      // Handle photo upload or URL
+      if (this.selectedFile) {
+        try {
+          this.isUploadingPhoto = true;
+          const uploadedUrl = await this.uploadPhoto(this.selectedFile).toPromise();
+          if (uploadedUrl) {
+            photoUrlsArray = [uploadedUrl];
+          }
+          this.isUploadingPhoto = false;
+        } catch (uploadError: any) {
+          console.error('Photo upload failed:', uploadError);
+          this.isUploadingPhoto = false;
+          this.photoUploadError = uploadError?.error?.message || uploadError?.message || 'Failed to upload photo';
+          this.isSubmitting = false;
+          return;
+        }
+      } else if (this.photoUrl?.trim()) {
+        // Use URL if provided
+        photoUrlsArray = [this.photoUrl.trim()];
+      } else if (this.selectedFiles.length > 0) {
+        // Fallback to old method for multiple files
         try {
           const uploadedUrls = await this.progressUpdateService.uploadProgressPhotos(this.selectedFiles).toPromise();
           photoUrlsArray = uploadedUrls || [];
@@ -140,6 +276,11 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges {
   close(): void {
     this.progressForm.reset();
     this.selectedFiles = [];
+    this.selectedFile = null;
+    this.photoPreview = null;
+    this.photoUrl = '';
+    this.showCamera = false;
+    this.stopCamera();
     this.errorMessage = '';
     this.successMessage = '';
     this.closeModal.emit();

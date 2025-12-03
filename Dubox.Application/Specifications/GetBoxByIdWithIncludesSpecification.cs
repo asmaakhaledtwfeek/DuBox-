@@ -12,6 +12,7 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(Box.BoxAssets));
             AddInclude(nameof(Box.BoxActivities));
             AddInclude(nameof(Box.ProgressUpdates));
+            AddInclude(nameof(Box.CurrentLocation));
         }
     }
 }

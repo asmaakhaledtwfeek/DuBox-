@@ -1,10 +1,13 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, FormControl } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, FormsModule, FormControl } from '@angular/forms';
 import { WIRService } from '../../../core/services/wir.service';
 import { BoxService } from '../../../core/services/box.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ApiService } from '../../../core/services/api.service';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { 
   WIRRecord, 
   CheckpointStatus, 
@@ -43,11 +46,11 @@ type QualityIssueFormValue = {
 @Component({
   selector: 'app-qa-qc-checklist',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, HeaderComponent, SidebarComponent],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, FormsModule, HeaderComponent, SidebarComponent],
   templateUrl: './qa-qc-checklist.component.html',
   styleUrls: ['./qa-qc-checklist.component.scss']
 })
-export class QaQcChecklistComponent implements OnInit {
+export class QaQcChecklistComponent implements OnInit, OnDestroy {
   wirRecord: WIRRecord | null = null;
   wirCheckpoint: WIRCheckpoint | null = null;
   projectId!: string;
@@ -94,6 +97,16 @@ export class QaQcChecklistComponent implements OnInit {
   boxIssuesLoading = false;
   boxIssuesError = '';
   
+  // Photo upload state (enhanced)
+  photoUrl: string = '';
+  selectedFile: File | null = null;
+  photoPreview: string | null = null;
+  isUploadingPhoto = false;
+  photoUploadError = '';
+  cameraStream: MediaStream | null = null;
+  showCamera = false;
+  photoInputMethod: 'url' | 'upload' | 'camera' = 'upload';
+  
   CheckpointStatus = CheckpointStatus;
   WIRCheckpointStatus = WIRCheckpointStatus;
   CheckListItemStatus = CheckListItemStatus;
@@ -125,7 +138,8 @@ export class QaQcChecklistComponent implements OnInit {
     private fb: FormBuilder,
     private wirService: WIRService,
     private boxService: BoxService,
-    private authService: AuthService
+    private authService: AuthService,
+    private apiService: ApiService
   ) {}
 
   ngOnInit(): void {
@@ -1651,26 +1665,137 @@ export class QaQcChecklistComponent implements OnInit {
     item.get('remarks')?.updateValueAndValidity();
   }
 
-  // Photo Upload Methods
+  // Photo Upload Methods (Enhanced)
   onPhotosSelected(event: Event): void {
-    const files = (event.target as HTMLInputElement).files;
-    if (files) {
-      Array.from(files).forEach(file => {
-        this.uploadedPhotos.push(file);
-        
-        // Create preview
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      if (file.type.startsWith('image/')) {
+        this.selectedFile = file;
+        this.photoUrl = ''; // Clear URL when file is selected
+        this.photoInputMethod = 'upload';
+        this.showCamera = false; // Stop camera if active
+        this.stopCamera(); // Ensure camera is stopped
+        this.photoUploadError = ''; // Clear any previous errors
+        this.previewImage(file);
+        // Also add to uploadedPhotos array for backward compatibility
+        this.uploadedPhotos = [file];
         const reader = new FileReader();
         reader.onload = (e: any) => {
-          this.photoPreviewUrls.push(e.target.result);
+          this.photoPreviewUrls = [e.target.result];
         };
         reader.readAsDataURL(file);
+      } else {
+        this.photoUploadError = 'Please select an image file';
+      }
+    }
+  }
+
+  openFileInput(): void {
+    this.showCamera = false;
+    const fileInput = document.getElementById('wir-photo-file-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+  previewImage(file: File): void {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.photoPreview = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  removeSelectedFile(): void {
+    this.selectedFile = null;
+    this.photoPreview = null;
+    this.uploadedPhotos = [];
+    this.photoPreviewUrls = [];
+  }
+
+  uploadPhoto(file: File): Observable<string> {
+    return this.apiService.upload<{ url: string }>('upload/wir-inspection-photo', file).pipe(
+      map((response: any) => {
+        if (typeof response === 'string') return response;
+        return response?.url || response?.photoPath || response?.attachmentPath || response?.data?.url || response?.data?.photoPath || response?.data?.attachmentPath || '';
+      })
+    );
+  }
+
+  // Camera methods
+  async openCamera(): Promise<void> {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } // Use back camera on mobile
       });
+      this.cameraStream = stream;
+      this.showCamera = true;
+      this.selectedFile = null;
+      this.photoPreview = null;
+      this.photoUrl = '';
+      this.photoInputMethod = 'camera';
+      
+      // Wait for video element to be rendered
+      setTimeout(() => {
+        const video = document.getElementById('wir-camera-preview') as HTMLVideoElement;
+        if (video) {
+          video.srcObject = stream;
+          video.play();
+        }
+      }, 100);
+    } catch (err) {
+      console.error('Error accessing camera:', err);
+      this.photoUploadError = 'Unable to access camera. Please check permissions.';
+    }
+  }
+
+  stopCamera(): void {
+    if (this.cameraStream) {
+      this.cameraStream.getTracks().forEach(track => track.stop());
+      this.cameraStream = null;
+    }
+    this.showCamera = false;
+  }
+
+  capturePhoto(): void {
+    const video = document.getElementById('wir-camera-preview') as HTMLVideoElement;
+    if (!video) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(video, 0, 0);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], `wir-inspection-${Date.now()}.jpg`, { type: 'image/jpeg' });
+          this.selectedFile = file;
+          this.previewImage(file);
+          this.uploadedPhotos = [file];
+          const reader = new FileReader();
+          reader.onload = (e: any) => {
+            this.photoPreviewUrls = [e.target.result];
+          };
+          reader.readAsDataURL(file);
+          this.stopCamera();
+        }
+      }, 'image/jpeg', 0.9);
     }
   }
 
   removePhoto(index: number): void {
     this.uploadedPhotos.splice(index, 1);
     this.photoPreviewUrls.splice(index, 1);
+    if (index === 0 && this.uploadedPhotos.length === 0) {
+      this.selectedFile = null;
+      this.photoPreview = null;
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.stopCamera();
   }
 
   // Validation
@@ -1702,6 +1827,7 @@ export class QaQcChecklistComponent implements OnInit {
     const status = this.finalStatusControl.value as WIRCheckpointStatus;
     this.submitting = true;
     this.error = '';
+    this.photoUploadError = '';
 
     let missingChecklistId = false;
     const reviewItems = this.checklistItems.controls.map((control, index) => {
@@ -1723,11 +1849,35 @@ export class QaQcChecklistComponent implements OnInit {
       return;
     }
 
+    // Upload photo if file is selected, otherwise proceed with URL
+    if (this.selectedFile) {
+      this.isUploadingPhoto = true;
+      this.uploadPhoto(this.selectedFile).subscribe({
+        next: (uploadResult) => {
+          this.isUploadingPhoto = false;
+          const attachmentPath = uploadResult || this.photoUrl?.trim() || null;
+          this.submitReviewWithAttachment(attachmentPath, status, reviewItems);
+        },
+        error: (err: any) => {
+          console.error('❌ Failed to upload photo:', err);
+          this.isUploadingPhoto = false;
+          this.photoUploadError = err?.error?.message || err?.message || 'Failed to upload photo';
+          this.submitting = false;
+        }
+      });
+    } else {
+      const attachmentPath = this.photoUrl?.trim() || null;
+      this.submitReviewWithAttachment(attachmentPath, status, reviewItems);
+    }
+  }
+
+  private submitReviewWithAttachment(attachmentPath: string | null, status: WIRCheckpointStatus, reviewItems: any[]): void {
     const request: ReviewWIRCheckpointRequest = {
-      wirId: this.wirCheckpoint.wirId,
+      wirId: this.wirCheckpoint!.wirId,
       status,
       comment: this.checklistForm.value.inspectionNotes?.trim() || undefined,
       inspectorRole: this.checklistForm.value.inspectorRole?.trim() || undefined,
+      attachmentPath: attachmentPath || undefined,
       items: reviewItems
     };
 

@@ -166,6 +166,7 @@ export interface ReviewWIRCheckpointRequest {
   status: WIRCheckpointStatus;
   comment?: string;
   inspectorRole?: string;
+  attachmentPath?: string;
   items: ChecklistItemForReview[];
 }
 

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
@@ -7,6 +7,8 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
 import { WIRService } from '../../../core/services/wir.service';
 import { QualityIssueItem, QualityIssueDetails, QualityIssueStatus, UpdateQualityIssueStatusRequest, WIRCheckpoint, WIRCheckpointStatus } from '../../../core/models/wir.model';
 import { FormsModule } from '@angular/forms';
+import { ApiService } from '../../../core/services/api.service';
+import { map } from 'rxjs/operators';
 import * as ExcelJS from 'exceljs';
 
 type QcTab = 'checkpoints' | 'quality-issues';
@@ -32,7 +34,7 @@ type AggregatedQualityIssue = QualityIssueItem & {
   templateUrl: './quality-control-dashboard.component.html',
   styleUrl: './quality-control-dashboard.component.scss'
 })
-export class QualityControlDashboardComponent implements OnInit {
+export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   activeTab: QcTab = 'checkpoints';
   readonly statusOptions = Object.values(WIRCheckpointStatus);
   
@@ -77,11 +79,20 @@ export class QualityControlDashboardComponent implements OnInit {
   statusUpdateLoading = false;
   statusUpdateError = '';
   qualityIssueStatuses: QualityIssueStatus[] = ['Open', 'InProgress', 'Resolved', 'Closed'];
+  
+  // Photo upload state
+  selectedFile: File | null = null;
+  photoPreview: string | null = null;
+  isUploadingPhoto = false;
+  photoUploadError = '';
+  cameraStream: MediaStream | null = null;
+  showCamera = false;
 
   constructor(
     private fb: FormBuilder,
     private wirService: WIRService,
-    private router: Router
+    private router: Router,
+    private apiService: ApiService
   ) {
     this.filterForm = this.fb.group({
       projectCode: [''],
@@ -419,6 +430,10 @@ export class QualityControlDashboardComponent implements OnInit {
       photoPath: issue.photoPath || ''
     };
     this.statusUpdateError = '';
+    this.selectedFile = null;
+    this.photoPreview = null;
+    this.showCamera = false;
+    this.stopCamera();
     this.isStatusModalOpen = true;
   }
 
@@ -427,6 +442,10 @@ export class QualityControlDashboardComponent implements OnInit {
     this.selectedIssueForStatus = null;
     this.statusUpdateLoading = false;
     this.statusUpdateError = '';
+    this.selectedFile = null;
+    this.photoPreview = null;
+    this.showCamera = false;
+    this.stopCamera();
   }
 
   requiresResolutionDescription(status: QualityIssueStatus | string | undefined): boolean {
@@ -454,17 +473,45 @@ export class QualityControlDashboardComponent implements OnInit {
       return;
     }
 
+    this.statusUpdateLoading = true;
+    this.statusUpdateError = '';
+    this.photoUploadError = '';
+
+    // Upload photo if file is selected, otherwise proceed with URL
+    if (this.selectedFile) {
+      this.isUploadingPhoto = true;
+      this.uploadPhoto(this.selectedFile).subscribe({
+        next: (uploadResult) => {
+          this.isUploadingPhoto = false;
+          const photoPath = uploadResult || this.statusUpdateForm.photoPath?.trim() || null;
+          this.submitStatusUpdateWithPhoto(photoPath);
+        },
+        error: (err: any) => {
+          console.error('❌ Failed to upload photo:', err);
+          this.isUploadingPhoto = false;
+          this.photoUploadError = err?.error?.message || err?.message || 'Failed to upload photo';
+          this.statusUpdateLoading = false;
+        }
+      });
+    } else {
+      const photoPath = this.statusUpdateForm.photoPath?.trim() || null;
+      this.submitStatusUpdateWithPhoto(photoPath);
+    }
+  }
+
+  private submitStatusUpdateWithPhoto(photoPath: string | null): void {
+    if (!this.selectedIssueForStatus || !this.selectedIssueForStatus.issueId) {
+      return;
+    }
+
     const payload: UpdateQualityIssueStatusRequest = {
       issueId: this.selectedIssueForStatus.issueId,
       status: this.statusUpdateForm.status,
       resolutionDescription: this.requiresResolutionDescription(this.statusUpdateForm.status)
         ? this.statusUpdateForm.resolutionDescription?.trim()
         : null,
-      photoPath: this.statusUpdateForm.photoPath?.trim() || null
+      photoPath: photoPath
     };
-
-    this.statusUpdateLoading = true;
-    this.statusUpdateError = '';
 
     this.wirService.updateQualityIssueStatus(payload.issueId, payload).subscribe({
       next: (updatedIssue) => {
@@ -478,6 +525,112 @@ export class QualityControlDashboardComponent implements OnInit {
         this.statusUpdateError = err?.error?.message || err?.message || 'Failed to update issue status';
       }
     });
+  }
+
+  // Photo upload methods
+  openFileInput(): void {
+    this.showCamera = false;
+    const fileInput = document.getElementById('file-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const file = input.files[0];
+      if (file.type.startsWith('image/')) {
+        this.selectedFile = file;
+        this.statusUpdateForm.photoPath = ''; // Clear URL when file is selected
+        this.previewImage(file);
+      } else {
+        this.photoUploadError = 'Please select an image file';
+      }
+    }
+  }
+
+  previewImage(file: File): void {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.photoPreview = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  removeSelectedFile(): void {
+    this.selectedFile = null;
+    this.photoPreview = null;
+  }
+
+  uploadPhoto(file: File) {
+    // Use a generic upload endpoint - adjust the endpoint as needed
+    return this.apiService.upload<{ url: string }>('upload/quality-issue-photo', file).pipe(
+      map((response: any) => {
+        // Handle different response formats
+        if (typeof response === 'string') return response;
+        return response?.url || response?.photoPath || response?.data?.url || response?.data?.photoPath || '';
+      })
+    );
+  }
+
+  // Camera methods
+  async openCamera(): Promise<void> {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } // Use back camera on mobile
+      });
+      this.cameraStream = stream;
+      this.showCamera = true;
+      this.selectedFile = null;
+      this.photoPreview = null;
+      this.statusUpdateForm.photoPath = '';
+      
+      // Wait for video element to be rendered
+      setTimeout(() => {
+        const video = document.getElementById('camera-preview') as HTMLVideoElement;
+        if (video) {
+          video.srcObject = stream;
+          video.play();
+        }
+      }, 100);
+    } catch (err) {
+      console.error('Error accessing camera:', err);
+      this.photoUploadError = 'Unable to access camera. Please check permissions.';
+    }
+  }
+
+  stopCamera(): void {
+    if (this.cameraStream) {
+      this.cameraStream.getTracks().forEach(track => track.stop());
+      this.cameraStream = null;
+    }
+    this.showCamera = false;
+  }
+
+  capturePhoto(): void {
+    const video = document.getElementById('camera-preview') as HTMLVideoElement;
+    if (!video) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(video, 0, 0);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+          this.selectedFile = file;
+          this.previewImage(file);
+          this.stopCamera();
+        }
+      }, 'image/jpeg', 0.9);
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.stopCamera();
   }
 
   private applyUpdatedQualityIssue(updated: QualityIssueDetails): void {

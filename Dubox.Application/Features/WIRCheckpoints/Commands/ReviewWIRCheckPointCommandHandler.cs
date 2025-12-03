@@ -72,6 +72,9 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             if (!string.IsNullOrWhiteSpace(request.Comment))
                 wir.Comments = request.Comment;
 
+            if (!string.IsNullOrWhiteSpace(request.AttachmentPath))
+                wir.AttachmentPath = request.AttachmentPath.Trim();
+
             await _unitOfWork.CompleteAsync(cancellationToken);
 
             var dto = wir.Adapt<WIRCheckpointDto>();

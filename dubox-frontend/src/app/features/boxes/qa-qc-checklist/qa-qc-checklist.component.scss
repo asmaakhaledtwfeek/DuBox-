@@ -1317,7 +1317,230 @@ textarea.form-control {
   margin-top: 4px;
 }
 
-// Photo Upload
+// Photo Upload (Enhanced)
+.photo-upload-hint {
+  margin: 0 0 16px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.photo-input-tabs {
+  display: flex;
+  gap: 10px;
+  border-bottom: 2px solid var(--gray-200);
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+
+  .tab-button {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border: 2px solid transparent;
+    background: white;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    &:hover {
+      background: var(--gray-50);
+      border-color: var(--gray-300);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+    }
+
+    &.active {
+      background: var(--amana-teal);
+      color: white;
+      border-color: var(--amana-teal);
+      box-shadow: 0 4px 12px rgba(27, 154, 170, 0.3);
+      transform: translateY(-1px);
+
+      svg {
+        filter: brightness(0) invert(1);
+      }
+    }
+  }
+}
+
+.photo-input-content {
+  margin-top: 8px;
+}
+
+.camera-preview-container {
+  margin-top: 20px;
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #000;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+
+  video {
+    width: 100%;
+    height: auto;
+    max-height: 400px;
+    object-fit: contain;
+  }
+
+  .camera-controls {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.7);
+
+    .btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      min-width: 100px;
+      justify-content: center;
+
+      &.btn-primary {
+        background: var(--amana-teal);
+        color: white;
+        box-shadow: 0 4px 12px rgba(27, 154, 170, 0.4);
+
+        &:hover {
+          background: #1a9fb0;
+          transform: translateY(-1px);
+          box-shadow: 0 6px 16px rgba(27, 154, 170, 0.5);
+        }
+
+        &:active {
+          transform: translateY(0);
+        }
+      }
+
+      &.btn-secondary {
+        background: rgba(255, 255, 255, 0.25);
+        color: white;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+
+        &:hover {
+          background: rgba(255, 255, 255, 0.35);
+          border-color: rgba(255, 255, 255, 0.5);
+        }
+      }
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+    }
+  }
+}
+
+.photo-preview-container {
+  margin-top: 20px;
+
+  .photo-preview {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 2px solid var(--gray-200);
+    background: white;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.1);
+
+    img {
+      width: 100%;
+      height: auto;
+      max-height: 400px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .remove-photo-btn {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(220, 38, 38, 0.9);
+      color: white;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+      &:hover {
+        background: rgba(220, 38, 38, 1);
+        transform: scale(1.1);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+    }
+  }
+
+  .photo-preview-info {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+}
+
+.upload-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px;
+  background: rgba(27, 154, 170, 0.1);
+  border-radius: 8px;
+  color: var(--amana-teal);
+  font-size: 13px;
+  font-weight: 500;
+  margin-top: 12px;
+
+  .spinner-small {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(27, 154, 170, 0.3);
+    border-top-color: var(--amana-teal);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// Legacy photo upload zone (kept for backward compatibility)
 .photo-upload-zone {
   border: 2px dashed #ddd;
   border-radius: 12px;

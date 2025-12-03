@@ -2,6 +2,7 @@ export interface Box {
   id: string;
   name: string;
   code: string;
+  serialNumber?: string;
   projectId: string;
   status: BoxStatus;
   type?: string;
@@ -28,6 +29,9 @@ export interface Box {
   attachments: BoxAttachment[];
   logs: BoxLog[];
   qrCode?: string;
+  currentLocationId?: string;
+  currentLocationCode?: string;
+  currentLocationName?: string;
   createdBy?: string;
   updatedBy?: string;
   createdAt?: Date;
@@ -42,7 +46,8 @@ export enum BoxStatus {
   Completed = 'Completed',
   ReadyForDelivery = 'ReadyForDelivery',
   Delivered = 'Delivered',
-  OnHold = 'OnHold'
+  OnHold = 'OnHold',
+  Dispatched = 'Dispatched'
 }
 
 // Map frontend status strings to backend status numbers
@@ -53,6 +58,7 @@ export function getBoxStatusNumber(status: BoxStatus | string): number {
     'Completed': 3,
     'OnHold': 4,
     'Delayed': 5,
+    'Dispatched': 6,
     'QAReview': 2,  // Map to InProgress
     'ReadyForDelivery': 3,  // Map to Completed
     'Delivered': 3  // Map to Completed
@@ -154,5 +160,16 @@ export interface ImportedBoxPreview {
   building?: string;
   zone?: string;
   status?: string;
+}
+
+export interface BoxTypeStat {
+  boxType: string;
+  boxCount: number;
+  overallProgress: number;
+}
+
+export interface BoxTypeStatsByProject {
+  projectId: string;
+  boxTypeStats: BoxTypeStat[];
 }
 

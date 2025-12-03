@@ -12,12 +12,13 @@
         public void Register(TypeAdapterConfig config)
         {
             TypeAdapterConfig<WIRChecklistItem, WIRChecklistItemDto>.NewConfig()
-                .Map(dest => dest.ItemName, src => src.CheckpointDescription)
-                .Map(dest => dest.IsChecked, src => src.Status != CheckListItemStatusEnum.Pending && src.Status == CheckListItemStatusEnum.Pass)
+                .Map(dest => dest.CheckpointDescription, src => src.CheckpointDescription)
+                .Map(dest => dest.WIRId, src => src.WIRId)
                 .Map(dest => dest.ReferenceDocument, src => src.ReferenceDocument)
                 .Map(dest => dest.Remarks, src => src.Remarks)
                 .Map(dest => dest.Status, src => src.Status)
-                .Map(dest => dest.Sequence, src => src.Sequence);
+                .Map(dest => dest.Sequence, src => src.Sequence)
+                .Map(dest => dest.PredefinedItemId, src => src.PredefinedItemId);
 
             TypeAdapterConfig<QualityIssue, QualityIssueDto>.NewConfig()
                 .Map(dest => dest.IssueId, src => src.IssueId)

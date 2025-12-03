@@ -20,6 +20,7 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
     private readonly IBoxActivityService _boxActivityService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IProjectProgressService _projectProgressService;
+    private readonly ISerialNumberService _serialNumberService;
 
     private static readonly string[] RequiredHeaders = new[]
     {
@@ -35,7 +36,8 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
         IQRCodeService qrCodeService,
         IBoxActivityService boxActivityService,
         ICurrentUserService currentUserService,
-        IProjectProgressService projectProgressService)
+        IProjectProgressService projectProgressService,
+        ISerialNumberService serialNumberService)
     {
         _unitOfWork = unitOfWork;
         _excelService = excelService;
@@ -44,6 +46,7 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
         _boxActivityService = boxActivityService;
         _currentUserService = currentUserService;
         _projectProgressService = projectProgressService;
+        _serialNumberService = serialNumberService;
     }
 
     public async Task<Result<BoxImportResultDto>> Handle(ImportBoxesFromExcelCommand request, CancellationToken cancellationToken)
@@ -131,6 +134,7 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                         continue;
                     }
 
+                    var serialNumber = _serialNumberService.GenerateSerialNumber();
                     var newBox = new Box
                     {
                         ProjectId = request.ProjectId,
@@ -146,7 +150,8 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                         UnitOfMeasure = UnitOfMeasureEnum.m,
                         BIMModelReference = boxDto.BIMModelReference?.Trim(),
                         Notes = boxDto.Notes?.Trim(),
-                        QRCodeString = $"{project.ProjectCode}_{boxDto.BoxTag.Trim()}",
+                        SerialNumber = serialNumber,
+                        QRCodeString = $"ProjectCode: {project.ProjectCode}\nBoxTag: {boxDto.BoxTag.Trim()}\nSerialNumber: {serialNumber}",
                         Status = BoxStatusEnum.NotStarted,
                         ProgressPercentage = 0,
                         IsActive = true,

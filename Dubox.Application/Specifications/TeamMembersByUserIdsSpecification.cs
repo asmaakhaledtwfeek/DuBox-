@@ -6,7 +6,7 @@ public class TeamMembersByUserIdsSpecification : Specification<TeamMember>
 {
     public TeamMembersByUserIdsSpecification(Guid teamId)
     {
-        AddCriteria(tm => tm.TeamId == teamId);
+        AddCriteria(tm => tm.TeamId == teamId && tm.IsActive == true);
 
         AddInclude(nameof(TeamMember.User));
     }

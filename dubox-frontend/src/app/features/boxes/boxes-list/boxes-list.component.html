@@ -6,14 +6,36 @@
     <!-- Page Header -->
     <div class="page-header">
       <div class="header-left">
-        <h1 class="page-title">Boxes</h1>
+        <div class="breadcrumb" *ngIf="showBoxTypes">
+          <button class="breadcrumb-link" (click)="backToProject()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            Project
+          </button>
+          <span class="breadcrumb-separator">/</span>
+          <span class="breadcrumb-current">Box Types</span>
+        </div>
+        <div class="breadcrumb" *ngIf="!showBoxTypes && selectedBoxType">
+          <button class="breadcrumb-link" (click)="backToBoxTypes()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+            Box Types
+          </button>
+          <span class="breadcrumb-separator">/</span>
+          <span class="breadcrumb-current">{{ selectedBoxType }}</span>
+        </div>
+        <h1 class="page-title">{{ showBoxTypes ? 'Box Types' : 'Boxes' }}</h1>
         <p class="page-subtitle" *ngIf="projectName || projectCode">
           <span *ngIf="projectCode" class="project-code">{{ projectCode }}</span>
           <span *ngIf="projectName" class="project-name">{{ projectName }}</span>
         </p>
-        <p class="page-helper">Manage all boxes for this project</p>
+        <p class="page-helper">
+          {{ showBoxTypes ? 'Select a box type to view boxes' : 'Manage boxes for ' + selectedBoxType }}
+        </p>
       </div>
-      <div class="header-right" *ngIf="canCreate">
+      <div class="header-right" *ngIf="canCreate && !showBoxTypes">
         <button class="btn btn-primary" (click)="createBox()">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="12" y1="5" x2="12" y2="19"/>
@@ -24,8 +46,8 @@
       </div>
     </div>
 
-    <!-- Filters -->
-    <div class="filters-section">
+    <!-- Filters (only show when viewing boxes) -->
+    <div class="filters-section" *ngIf="!showBoxTypes">
       <div class="search-box">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="11" cy="11" r="8"/>
@@ -33,7 +55,7 @@
         </svg>
         <input 
           type="text" 
-          placeholder="Search boxes by name, code, or type..." 
+          placeholder="Search boxes by name, code, serial number, type, or activity (name, status, assigned to, dates)..." 
           [formControl]="searchControl"
           class="search-input"
         />
@@ -68,6 +90,13 @@
         >
           Completed
         </button>
+        <button 
+          class="filter-btn" 
+          [class.active]="selectedStatus === BoxStatus.Dispatched"
+          (click)="filterByStatus(BoxStatus.Dispatched)"
+        >
+          Dispatched
+        </button>
       </div>
     </div>
 
@@ -83,8 +112,63 @@
       <button class="btn btn-primary" (click)="loadBoxes()">Retry</button>
     </div>
 
+    <!-- Box Types Grid -->
+    <div class="boxes-grid" *ngIf="showBoxTypes && !loading && !error">
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="boxTypes.length === 0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+        </svg>
+        <h3>No box types found</h3>
+        <p>This project doesn't have any boxes yet</p>
+      </div>
+
+      <!-- Box Type Cards -->
+      <div class="box-card" *ngFor="let boxType of boxTypes" (click)="viewBoxType(boxType.boxType)">
+        <div class="card-header">
+          <div class="box-info">
+            <h3 class="box-name">{{ boxType.boxType }}</h3>
+            <span class="box-code">{{ boxType.boxCount }} {{ boxType.boxCount === 1 ? 'box' : 'boxes' }}</span>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <div class="box-progress">
+            <div class="progress-header">
+              <span class="progress-label">Overall Progress</span>
+              <span class="progress-value">{{ Math.round(boxType.overallProgress) }}%</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="boxType.overallProgress"></div>
+            </div>
+          </div>
+
+          <div class="box-stats">
+            <div class="stat-item">
+              <span class="stat-label">Total Boxes</span>
+              <span class="stat-value">{{ boxType.boxCount }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Progress</span>
+              <span class="stat-value">{{ Math.round(boxType.overallProgress) }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <button class="btn-text" (click)="viewBoxType(boxType.boxType); $event.stopPropagation()">
+            View Boxes
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Boxes Grid -->
-    <div class="boxes-grid" *ngIf="!loading && !error">
+    <div class="boxes-grid" *ngIf="!showBoxTypes && !loading && !error">
       <!-- Empty State -->
       <div class="empty-state" *ngIf="filteredBoxes.length === 0">
         <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">

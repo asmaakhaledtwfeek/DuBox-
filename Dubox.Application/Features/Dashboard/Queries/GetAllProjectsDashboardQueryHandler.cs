@@ -53,7 +53,7 @@ public class GetAllProjectsDashboardQueryHandler : IRequestHandler<GetAllProject
                 BoxesCompleted = boxesCompleted,
                 ProgressPercentage = (decimal)progressPercentage,
                 PendingWIRs = pendingWIRs,
-                StartDate = project.ActualStartDate,
+                StartDate = project.ActualStartDate ?? project.CompressionStartDate ?? project.PlannedStartDate,
                 PlannedEndDate = project.PlannedEndDate,
                 Status = project.Status
             });

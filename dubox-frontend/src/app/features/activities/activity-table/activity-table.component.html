@@ -13,6 +13,7 @@
           <th>Activity</th>
           <th>Assigned to</th>
           <th>Duration</th>
+          <th>Actual Duration</th>
           <th>Actual Start</th>
           <th>Progress</th>
           <th>Actual Finish</th>
@@ -36,6 +37,9 @@
             </td>
             <td class="text-center">
               <span>{{ getActivity(row)?.duration || '-' }}</span>
+            </td>
+            <td class="text-center">
+              <span>{{ getActualDurationDisplay(getActivity(row)) }}</span>
             </td>
             <td class="text-center">
               <span>{{ formatDate(getActivity(row)?.actualStartDate) }}</span>
@@ -93,8 +97,8 @@
             <td class="assigned-to" *ngIf="hasWIRInspector(row)">
               <strong class="wir-assigned">{{ getWIRInspectorName(row) }}</strong>
             </td>
-            <!-- Merge empty Duration and Actual Start cells -->
-            <td class="text-center" colspan="2"></td>
+            <!-- Merge empty Duration, Actual Duration, and Actual Start cells -->
+            <td class="text-center" colspan="3"></td>
             <td class="text-center wir-progress-cell">
               <span class="wir-progress-label">
                 {{ getWIRDescription(getWIR(row)) }}

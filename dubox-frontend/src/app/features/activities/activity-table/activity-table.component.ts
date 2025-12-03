@@ -106,6 +106,9 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
           actualStartDate: a.actualStartDate,
           actualEndDate: a.actualEndDate,
           duration: a.duration,
+          actualDuration: a.actualDuration !== undefined && a.actualDuration !== null 
+            ? a.actualDuration 
+            : this.calculateActualDuration(a.actualStartDate, a.actualEndDate),
           workDescription: a.workDescription,
           issuesEncountered: a.issuesEncountered,
           teamId: a.teamId,
@@ -372,6 +375,58 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
     const month = d.toLocaleString('en-US', { month: 'short' });
     const year = d.getFullYear().toString().slice(-2);
     return `${day}-${month}-${year}`;
+  }
+
+  /**
+   * Calculate actual duration in days: (actual end date - actual start date) + 1
+   * If same calendar day, return 1 day
+   */
+  calculateActualDuration(actualStartDate?: Date | string, actualEndDate?: Date | string): number | undefined {
+    if (!actualStartDate || !actualEndDate) return undefined;
+    
+    try {
+      const start = typeof actualStartDate === 'string' ? new Date(actualStartDate) : actualStartDate;
+      const end = typeof actualEndDate === 'string' ? new Date(actualEndDate) : actualEndDate;
+      
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) return undefined;
+      
+      // Check if same calendar day (ignoring time)
+      const startDate = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+      const endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate());
+      
+      if (startDate.getTime() === endDate.getTime()) {
+        return 1; // Same day = 1 day
+      }
+      
+      // Calculate difference in days and add 1 for inclusive range
+      const diff = endDate.getTime() - startDate.getTime();
+      const days = Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
+      // Return at least 1 day
+      return days >= 1 ? days : 1;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * Get display text for actual duration
+   */
+  getActualDurationDisplay(activity: BoxActivityDetail | null): string {
+    if (!activity) return '-';
+    
+    // If actualDuration is explicitly set, use it
+    if (activity.actualDuration !== undefined && activity.actualDuration !== null) {
+      return `${activity.actualDuration} days`;
+    }
+    
+    // Otherwise, try to calculate from dates
+    const calculated = this.calculateActualDuration(activity.actualStartDate, activity.actualEndDate);
+    if (calculated !== undefined && calculated !== null) {
+      return `${calculated} days`;
+    }
+    
+    // If we can't calculate, show "-"
+    return '-';
   }
 
   /**

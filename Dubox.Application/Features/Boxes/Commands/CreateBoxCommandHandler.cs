@@ -19,6 +19,7 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
     private readonly IBoxActivityService _boxActivityService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IProjectProgressService _projectProgressService;
+    private readonly ISerialNumberService _serialNumberService;
 
     public CreateBoxCommandHandler(
         IUnitOfWork unitOfWork,
@@ -27,7 +28,8 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
         IQRCodeService qrCodeService,
         IBoxActivityService boxActivityService,
         ICurrentUserService currentUserService,
-        IProjectProgressService projectProgressService)
+        IProjectProgressService projectProgressService,
+        ISerialNumberService serialNumberService)
     {
         _unitOfWork = unitOfWork;
         _dbContext = dbContext;
@@ -36,6 +38,7 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
         _boxActivityService = boxActivityService;
         _currentUserService = currentUserService;
         _projectProgressService = projectProgressService;
+        _serialNumberService = serialNumberService;
     }
 
     public async Task<Result<BoxDto>> Handle(CreateBoxCommand request, CancellationToken cancellationToken)
@@ -59,7 +62,11 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
 
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
 
-        box.QRCodeString = $"{project.ProjectCode}_{request.BoxTag}";
+        // Generate unique serial number
+        box.SerialNumber = _serialNumberService.GenerateSerialNumber();
+        
+        // Generate QR code string with structured format
+        box.QRCodeString = $"ProjectCode: {project.ProjectCode}\nBoxTag: {request.BoxTag}\nSerialNumber: {box.SerialNumber}";
         box.CreatedBy = currentUserId;
         box.BoxAssets = request.Assets?.Adapt<List<BoxAsset>>() ?? new List<BoxAsset>();
         foreach (var asset in box.BoxAssets)

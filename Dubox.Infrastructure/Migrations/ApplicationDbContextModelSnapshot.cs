@@ -664,6 +664,9 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid?>("CurrentLocationId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<int?>("Duration")
                         .HasColumnType("int");
 
@@ -718,6 +721,10 @@ namespace Dubox.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
+                    b.Property<string>("SerialNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<int>("Status")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
@@ -735,6 +742,8 @@ namespace Dubox.Infrastructure.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.HasKey("BoxId");
+
+                    b.HasIndex("CurrentLocationId");
 
                     b.HasIndex("QRCodeString")
                         .IsUnique();
@@ -946,9 +955,8 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<Guid>("LocationId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("MovedBy")
-                        .HasMaxLength(200)
-                        .HasColumnType("nvarchar(200)");
+                    b.Property<Guid?>("MovedBy")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("MovedDate")
                         .HasColumnType("datetime2");
@@ -968,6 +976,8 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasIndex("BoxId");
 
                     b.HasIndex("LocationId");
+
+                    b.HasIndex("MovedBy");
 
                     b.HasIndex("MovedFromLocationId");
 
@@ -1673,6 +1683,203 @@ namespace Dubox.Infrastructure.Migrations
                     b.ToTable("Notifications");
                 });
 
+            modelBuilder.Entity("Dubox.Domain.Entities.PredefinedChecklistItem", b =>
+                {
+                    b.Property<Guid>("PredefinedItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Category")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("CheckpointDescription")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ReferenceDocument")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("int");
+
+                    b.HasKey("PredefinedItemId");
+
+                    b.ToTable("PredefinedChecklistItems");
+
+                    b.HasData(
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0000-000000000001"),
+                            Category = "General",
+                            CheckpointDescription = "Ensure method statement, material submittal and drawings are approved.",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Sequence = 1
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0000-000000000002"),
+                            Category = "General",
+                            CheckpointDescription = "Ensure materials (Gypsum board, cement board, insulation material, supporting system, etc.) are stored under dry, clean, shaded area, away from sunlight and other sources of heat.",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Sequence = 2
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0000-000000000003"),
+                            Category = "General",
+                            CheckpointDescription = "Check the color, type, material, fire rating and thickness are as per approved material approval and project requirements.",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Sequence = 3
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0000-000000000004"),
+                            Category = "General",
+                            CheckpointDescription = "Verify and record the DCL product conformity certificate for the insulation materials.",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Sequence = 4
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0000-000000000005"),
+                            Category = "Setting Out",
+                            CheckpointDescription = "Verify the marking and setting out of the partition walls as per the approved drawings.",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Sequence = 5
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0000-000000000006"),
+                            Category = "Installation Activity",
+                            CheckpointDescription = "Verify the completion of the required finishes of the adjacent substrates.",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Sequence = 6
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0000-000000000007"),
+                            Category = "Installation Activity",
+                            CheckpointDescription = "Verify the location, spacing and fixation of the supporting grid (vertical and horizontal channel, wall angle, etc.) as per the approved drawings.",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Sequence = 7
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0000-000000000008"),
+                            Category = "Installation Activity",
+                            CheckpointDescription = "Verify the fixation of the board (on one side of the supports) as per the approved drawings.",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Sequence = 8
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0000-000000000009"),
+                            Category = "Installation Activity",
+                            CheckpointDescription = "Ensure the completion of all embedded MEP and other discipline works prior to closure as per the approved drawings.",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Sequence = 9
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0000-000000000010"),
+                            Category = "Installation Activity",
+                            CheckpointDescription = "Ensure additional supports are provided for the wall mounted fixtures as applicable.",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Sequence = 10
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0000-000000000011"),
+                            Category = "Installation Activity",
+                            CheckpointDescription = "Verify the installation of insulation works (if applicable) as per the approved drawings.",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Sequence = 11
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0000-000000000012"),
+                            Category = "Installation Activity",
+                            CheckpointDescription = "Obtain approval (Civil / MEP) from consultant / Client to proceed with further works.",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Sequence = 12
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0000-000000000013"),
+                            Category = "Installation Activity",
+                            CheckpointDescription = "Verify the fixation of the board as per the approved drawings.",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Sequence = 13
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0000-000000000014"),
+                            Category = "Installation Activity",
+                            CheckpointDescription = "Ensure the completion of MEP and other discipline works above the false ceiling level and obtain clearance to proceed for further works.",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Sequence = 14
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0000-000000000015"),
+                            Category = "Installation Activity",
+                            CheckpointDescription = "Verify the marking, position and alignment of MEP & wall mounted fixtures in the wall as per the approved drawings.",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Sequence = 15
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0000-000000000016"),
+                            Category = "Installation Activity",
+                            CheckpointDescription = "Ensure the cutting of gypsum board on the marked locations as per the project requirements.",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Sequence = 16
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0000-000000000017"),
+                            Category = "Installation Activity",
+                            CheckpointDescription = "Verify the jointing & taping as per the manufacturer recommendations.",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Sequence = 17
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0000-000000000018"),
+                            Category = "Installation Activity",
+                            CheckpointDescription = "Approval obtain from Consultant/Client to proceed with further activities.",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            Sequence = 18
+                        });
+                });
+
             modelBuilder.Entity("Dubox.Domain.Entities.ProgressUpdate", b =>
                 {
                     b.Property<Guid>("ProgressUpdateId")
@@ -1763,6 +1970,9 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<string>("ClientName")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("CompressionStartDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("CreatedBy")
                         .HasColumnType("nvarchar(max)");
@@ -2583,6 +2793,9 @@ namespace Dubox.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<Guid?>("PredefinedItemId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("ReferenceDocument")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -2771,11 +2984,18 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.Box", b =>
                 {
+                    b.HasOne("Dubox.Domain.Entities.FactoryLocation", "CurrentLocation")
+                        .WithMany()
+                        .HasForeignKey("CurrentLocationId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Dubox.Domain.Entities.Project", "Project")
                         .WithMany("Boxes")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("CurrentLocation");
 
                     b.Navigation("Project");
                 });
@@ -2849,9 +3069,9 @@ namespace Dubox.Infrastructure.Migrations
             modelBuilder.Entity("Dubox.Domain.Entities.BoxLocationHistory", b =>
                 {
                     b.HasOne("Dubox.Domain.Entities.Box", "Box")
-                        .WithMany()
+                        .WithMany("BoxLocationHistory")
                         .HasForeignKey("BoxId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Dubox.Domain.Entities.FactoryLocation", "Location")
@@ -2860,14 +3080,21 @@ namespace Dubox.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Dubox.Domain.Entities.User", "MovedByUser")
+                        .WithMany()
+                        .HasForeignKey("MovedBy")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Dubox.Domain.Entities.FactoryLocation", "MovedFromLocation")
                         .WithMany()
                         .HasForeignKey("MovedFromLocationId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Box");
 
                     b.Navigation("Location");
+
+                    b.Navigation("MovedByUser");
 
                     b.Navigation("MovedFromLocation");
                 });
@@ -3208,6 +3435,8 @@ namespace Dubox.Infrastructure.Migrations
                     b.Navigation("BoxActivities");
 
                     b.Navigation("BoxAssets");
+
+                    b.Navigation("BoxLocationHistory");
 
                     b.Navigation("MaterialTransactions");
 

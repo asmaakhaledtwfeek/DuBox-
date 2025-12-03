@@ -1,5 +1,14 @@
 namespace Dubox.Application.DTOs;
 
+public class PaginatedUsersResponseDto
+{
+    public List<UserDto> Items { get; set; } = new List<UserDto>();
+    public int TotalCount { get; set; }
+    public int PageNumber { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages { get; set; }
+}
+
 public record UserDto
 {
     public Guid UserId { get; init; }

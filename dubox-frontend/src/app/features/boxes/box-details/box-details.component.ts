@@ -6,7 +6,7 @@ import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { Box, BoxStatus, getBoxStatusNumber } from '../../../core/models/box.model';
 import { WIRService } from '../../../core/services/wir.service';
-import { ProgressUpdate } from '../../../core/models/progress-update.model';
+import { ProgressUpdate, ProgressUpdatesSearchParams } from '../../../core/models/progress-update.model';
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
 import { ProgressUpdatesTableComponent } from '../../../shared/components/progress-updates-table/progress-updates-table.component';
 import { QualityIssueDetails, QualityIssueStatus, UpdateQualityIssueStatusRequest, WIRCheckpoint, WIRCheckpointStatus, WIRRecord } from '../../../core/models/wir.model';
@@ -36,7 +36,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   showDeleteConfirm = false;
   deleteSuccess = false;
   
-  activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' | 'location-history' = 'overview';
+  activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' | 'location-history' | 'progress-updates' = 'overview';
   
   canEdit = false;
   canDelete = false;
@@ -86,6 +86,20 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   progressUpdatesError = '';
   selectedProgressUpdate: ProgressUpdate | null = null;
   isProgressModalOpen = false;
+  
+  // Pagination for progress updates
+  progressUpdatesCurrentPage = 1;
+  progressUpdatesPageSize = 10;
+  progressUpdatesTotalCount = 0;
+  progressUpdatesTotalPages = 0;
+  
+  // Search filters for progress updates
+  progressUpdatesSearchTerm = '';
+  progressUpdatesActivityName = '';
+  progressUpdatesStatus = '';
+  progressUpdatesFromDate = '';
+  progressUpdatesToDate = '';
+  showProgressUpdatesSearch = false;
 
   // Box Status Update
   isBoxStatusModalOpen = false;
@@ -403,7 +417,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' | 'location-history'): void {
+  setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' | 'location-history' | 'progress-updates'): void {
     this.activeTab = tab;
     if (tab === 'location-history' && this.locationHistory.length === 0) {
       this.loadLocationHistory();
@@ -840,26 +854,129 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.selectedProgressUpdate = null;
   }
 
-  loadProgressUpdates(): void {
+  getProgressStatusClass(status: string | any): string {
+    if (!status) return 'status-unknown';
+    
+    const statusStr = typeof status === 'string' ? status : String(status);
+    const normalized = statusStr.toLowerCase();
+    
+    switch (normalized) {
+      case 'notstarted':
+        return 'status-not-started';
+      case 'inprogress':
+        return 'status-in-progress';
+      case 'completed':
+        return 'status-completed';
+      case 'onhold':
+        return 'status-on-hold';
+      case 'delayed':
+        return 'status-delayed';
+      default:
+        return 'status-unknown';
+    }
+  }
+
+  getProgressStatusLabel(status: string | any): string {
+    if (!status) return '—';
+    
+    const statusStr = typeof status === 'string' ? status : String(status);
+    const normalized = statusStr.toLowerCase();
+    
+    switch (normalized) {
+      case 'notstarted':
+        return 'Not Started';
+      case 'inprogress':
+        return 'In Progress';
+      case 'completed':
+        return 'Completed';
+      case 'onhold':
+        return 'On Hold';
+      case 'delayed':
+        return 'Delayed';
+      default:
+        return statusStr;
+    }
+  }
+
+  getPhotoUrls(photoUrls: string | undefined): string[] {
+    if (!photoUrls) return [];
+    
+    try {
+      // Try parsing as JSON array first
+      const parsed = JSON.parse(photoUrls);
+      if (Array.isArray(parsed)) {
+        return parsed;
+      }
+    } catch {
+      // If not JSON, try comma-separated string
+      if (typeof photoUrls === 'string') {
+        return photoUrls.split(',').map(url => url.trim()).filter(url => url.length > 0);
+      }
+    }
+    
+    return [];
+  }
+
+  openPhotoInNewTab(photoUrl: string): void {
+    window.open(photoUrl, '_blank', 'noopener,noreferrer');
+  }
+
+  downloadPhoto(photoUrl: string): void {
+    const link = document.createElement('a');
+    link.href = photoUrl;
+    link.download = `progress-photo-${Date.now()}.jpg`;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YxZjVmOSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5NDk4YjgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pjwvc3ZnPg==';
+    img.style.objectFit = 'contain';
+    img.style.padding = '20px';
+  }
+
+  loadProgressUpdates(page: number = 1, pageSize: number = 10): void {
     if (!this.boxId) {
       return;
     }
 
     this.progressUpdatesLoading = true;
     this.progressUpdatesError = '';
+    this.progressUpdatesCurrentPage = page;
+    this.progressUpdatesPageSize = pageSize;
 
-    this.progressUpdateService.getProgressUpdatesByBox(this.boxId).subscribe({
-      next: (updates) => {
-        this.progressUpdates = (updates || [])
+    // Build search parameters
+    const searchParams: ProgressUpdatesSearchParams = {};
+    if (this.progressUpdatesSearchTerm?.trim()) {
+      searchParams.searchTerm = this.progressUpdatesSearchTerm.trim();
+    }
+    if (this.progressUpdatesActivityName?.trim()) {
+      searchParams.activityName = this.progressUpdatesActivityName.trim();
+    }
+    if (this.progressUpdatesStatus?.trim()) {
+      searchParams.status = this.progressUpdatesStatus.trim();
+    }
+    if (this.progressUpdatesFromDate) {
+      searchParams.fromDate = this.progressUpdatesFromDate;
+    }
+    if (this.progressUpdatesToDate) {
+      searchParams.toDate = this.progressUpdatesToDate;
+    }
+
+    this.progressUpdateService.getProgressUpdatesByBox(this.boxId, page, pageSize, searchParams).subscribe({
+      next: (response) => {
+        this.progressUpdates = (response.items || [])
           .map(update => ({
             ...update,
             updateDate: update.updateDate ? new Date(update.updateDate) : undefined
-          }))
-          .sort((a, b) => {
-            const aTime = a.updateDate ? new Date(a.updateDate).getTime() : 0;
-            const bTime = b.updateDate ? new Date(b.updateDate).getTime() : 0;
-            return bTime - aTime;
-          });
+          }));
+        this.progressUpdatesTotalCount = response.totalCount;
+        this.progressUpdatesTotalPages = response.totalPages;
+        this.progressUpdatesCurrentPage = response.pageNumber;
+        this.progressUpdatesPageSize = response.pageSize;
         this.progressUpdatesLoading = false;
       },
       error: (err) => {
@@ -868,6 +985,43 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         this.progressUpdatesLoading = false;
       }
     });
+  }
+
+  applyProgressUpdatesSearch(): void {
+    this.progressUpdatesCurrentPage = 1; // Reset to first page when searching
+    this.loadProgressUpdates(1, this.progressUpdatesPageSize);
+  }
+
+  clearProgressUpdatesSearch(): void {
+    this.progressUpdatesSearchTerm = '';
+    this.progressUpdatesActivityName = '';
+    this.progressUpdatesStatus = '';
+    this.progressUpdatesFromDate = '';
+    this.progressUpdatesToDate = '';
+    this.progressUpdatesCurrentPage = 1;
+    this.loadProgressUpdates(1, this.progressUpdatesPageSize);
+  }
+
+  toggleProgressUpdatesSearch(): void {
+    this.showProgressUpdatesSearch = !this.showProgressUpdatesSearch;
+    if (!this.showProgressUpdatesSearch) {
+      this.clearProgressUpdatesSearch();
+    }
+  }
+
+  onProgressUpdatesSearchChange(searchParams: {
+    searchTerm: string;
+    activityName: string;
+    status: string;
+    fromDate: string;
+    toDate: string;
+  }): void {
+    this.progressUpdatesSearchTerm = searchParams.searchTerm;
+    this.progressUpdatesActivityName = searchParams.activityName;
+    this.progressUpdatesStatus = searchParams.status;
+    this.progressUpdatesFromDate = searchParams.fromDate;
+    this.progressUpdatesToDate = searchParams.toDate;
+    this.applyProgressUpdatesSearch();
   }
 
   requiresResolutionDescription(status: QualityIssueStatus | string | undefined): boolean {

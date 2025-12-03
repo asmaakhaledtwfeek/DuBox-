@@ -117,6 +117,13 @@
         >
           Location History ({{ locationHistory.length }})
         </button>
+        <button 
+          class="tab" 
+          [class.active]="activeTab === 'progress-updates'"
+          (click)="setActiveTab('progress-updates')"
+        >
+          Progress History ({{ progressUpdatesTotalCount }})
+        </button>
       </div>
 
       <!-- Tab Content -->
@@ -967,43 +974,241 @@
             </div>
           </div>
         </div>
+
+        <!-- Progress Updates Tab -->
+        <div *ngIf="activeTab === 'progress-updates'" class="progress-updates-tab">
+          <app-progress-updates-table
+            [updates]="progressUpdates"
+            [loading]="progressUpdatesLoading"
+            [error]="progressUpdatesError"
+            [currentPage]="progressUpdatesCurrentPage"
+            [pageSize]="progressUpdatesPageSize"
+            [totalCount]="progressUpdatesTotalCount"
+            [totalPages]="progressUpdatesTotalPages"
+            [showSearch]="showProgressUpdatesSearch"
+            [searchTerm]="progressUpdatesSearchTerm"
+            [activityName]="progressUpdatesActivityName"
+            [status]="progressUpdatesStatus"
+            [fromDate]="progressUpdatesFromDate"
+            [toDate]="progressUpdatesToDate"
+            (refresh)="loadProgressUpdates(progressUpdatesCurrentPage, progressUpdatesPageSize)"
+            (viewDetails)="openProgressDetails($event)"
+            (pageChange)="loadProgressUpdates($event, progressUpdatesPageSize)"
+            (pageSizeChange)="loadProgressUpdates(1, $event)"
+            (searchChange)="onProgressUpdatesSearchChange($event)"
+            (clearSearch)="clearProgressUpdatesSearch()"
+            (toggleSearch)="toggleProgressUpdatesSearch()"
+          ></app-progress-updates-table>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<div class="progress-modal-backdrop" *ngIf="isProgressModalOpen && selectedProgressUpdate">
-  <div class="progress-modal">
+<div class="progress-modal-backdrop" *ngIf="isProgressModalOpen && selectedProgressUpdate" (click)="closeProgressDetails()">
+  <div class="progress-modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <div>
-        <h2>Progress Update</h2>
-        <p>{{ selectedProgressUpdate.updateDate | date: 'MMM d, y, h:mm a' }}</p>
+      <div class="header-content">
+        <div class="header-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+        </div>
+        <div>
+          <h2>Progress Update Details</h2>
+          <p class="header-subtitle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            {{ selectedProgressUpdate.updateDate | date: 'MMM d, yyyy' }} at {{ selectedProgressUpdate.updateDate | date: 'h:mm a' }}
+          </p>
+        </div>
       </div>
-      <button class="icon-button" (click)="closeProgressDetails()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <button class="icon-button" (click)="closeProgressDetails()" title="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18"/>
           <line x1="6" y1="6" x2="18" y2="18"/>
         </svg>
       </button>
     </div>
     <div class="modal-body">
-      <div class="modal-grid">
-        <div>
-          <label>Updated By</label>
-          <p>{{ selectedProgressUpdate.updatedByName || selectedProgressUpdate.updatedBy || '—' }}</p>
+      <!-- Key Metrics Section -->
+      <div class="metrics-section">
+        <div class="metric-card primary">
+          <div class="metric-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
+          <div class="metric-content">
+            <label>Activity Progress</label>
+            <div class="metric-value">
+              <span class="progress-pill-large" [ngClass]="{
+                'pill-low': selectedProgressUpdate.progressPercentage < 25,
+                'pill-medium': selectedProgressUpdate.progressPercentage >= 25 && selectedProgressUpdate.progressPercentage < 75,
+                'pill-high': selectedProgressUpdate.progressPercentage >= 75
+              }">
+                {{ selectedProgressUpdate.progressPercentage | number:'1.0-2' }}%
+              </span>
+            </div>
+          </div>
         </div>
-        <div>
-          <label>Progress</label>
-          <p>{{ selectedProgressUpdate.progressPercentage | number:'1.0-2' }}%</p>
+        <div class="metric-card" *ngIf="selectedProgressUpdate.boxProgressSnapshot !== undefined && selectedProgressUpdate.boxProgressSnapshot !== null">
+          <div class="metric-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <line x1="9" y1="3" x2="9" y2="21"/>
+              <line x1="3" y1="9" x2="21" y2="9"/>
+            </svg>
+          </div>
+          <div class="metric-content">
+            <label>Box Progress</label>
+            <div class="metric-value">
+              <span class="progress-pill-large box-progress" [ngClass]="{
+                'pill-low': (selectedProgressUpdate.boxProgressSnapshot ?? 0) < 25,
+                'pill-medium': (selectedProgressUpdate.boxProgressSnapshot ?? 0) >= 25 && (selectedProgressUpdate.boxProgressSnapshot ?? 0) < 75,
+                'pill-high': (selectedProgressUpdate.boxProgressSnapshot ?? 0) >= 75
+              }">
+                {{ (selectedProgressUpdate.boxProgressSnapshot ?? 0) | number:'1.0-2' }}%
+              </span>
+            </div>
+          </div>
         </div>
       </div>
-      <div>
-        <label>Notes</label>
-        <p>{{ selectedProgressUpdate.workDescription || 'No notes provided.' }}</p>
+
+      <!-- Details Grid -->
+      <div class="details-section">
+        <div class="detail-item">
+          <div class="detail-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v20M2 12h20"/>
+            </svg>
+            Activity
+          </div>
+          <div class="detail-value">{{ selectedProgressUpdate.activityName || '—' }}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            Status
+          </div>
+          <div class="detail-value">
+            <span class="status-badge-modal" [ngClass]="getProgressStatusClass(selectedProgressUpdate.status)">
+              {{ getProgressStatusLabel(selectedProgressUpdate.status) }}
+            </span>
+          </div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            Updated By
+          </div>
+          <div class="detail-value">{{ selectedProgressUpdate.updatedByName || selectedProgressUpdate.updatedBy || '—' }}</div>
+        </div>
+        <div class="detail-item" *ngIf="selectedProgressUpdate.updateMethod">
+          <div class="detail-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+              <line x1="8" y1="21" x2="16" y2="21"/>
+              <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            Update Method
+          </div>
+          <div class="detail-value">{{ selectedProgressUpdate.updateMethod }}</div>
+        </div>
+        <div class="detail-item" *ngIf="selectedProgressUpdate.locationDescription">
+          <div class="detail-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            Location
+          </div>
+          <div class="detail-value">{{ selectedProgressUpdate.locationDescription }}</div>
+        </div>
       </div>
-      <div *ngIf="selectedProgressUpdate.issuesEncountered">
-        <label>Issues Encountered</label>
-        <p>{{ selectedProgressUpdate.issuesEncountered }}</p>
+
+      <!-- Work Description -->
+      <div class="text-section" *ngIf="selectedProgressUpdate.workDescription">
+        <div class="section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          <h3>Work Description</h3>
+        </div>
+        <div class="section-content">
+          <p>{{ selectedProgressUpdate.workDescription }}</p>
+        </div>
+      </div>
+
+      <!-- Issues Encountered -->
+      <div class="text-section issues-section" *ngIf="selectedProgressUpdate.issuesEncountered">
+        <div class="section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <h3>Issues Encountered</h3>
+        </div>
+        <div class="section-content">
+          <p>{{ selectedProgressUpdate.issuesEncountered }}</p>
+        </div>
+      </div>
+
+      <!-- Photos -->
+      <div class="photo-section" *ngIf="selectedProgressUpdate.photoUrls && getPhotoUrls(selectedProgressUpdate.photoUrls).length > 0">
+        <div class="section-header">
+          <div class="header-icon-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Photos</h3>
+            <p class="section-subtitle">{{ getPhotoUrls(selectedProgressUpdate.photoUrls).length }} photo{{ getPhotoUrls(selectedProgressUpdate.photoUrls).length !== 1 ? 's' : '' }} attached</p>
+          </div>
+        </div>
+        <div class="photo-gallery">
+          <div class="photo-item" *ngFor="let photoUrl of getPhotoUrls(selectedProgressUpdate.photoUrls); let i = index">
+            <div class="photo-wrapper">
+              <img [src]="photoUrl" 
+                   [alt]="'Progress photo ' + (i + 1)"
+                   class="photo-thumbnail"
+                   (click)="openPhotoInNewTab(photoUrl)"
+                   (error)="onImageError($event)"
+                   loading="lazy" />
+              <div class="photo-overlay">
+                <button class="photo-view-btn" (click)="openPhotoInNewTab(photoUrl); $event.stopPropagation()" title="View full size">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                </button>
+                <button class="photo-download-btn" (click)="downloadPhoto(photoUrl); $event.stopPropagation()" title="Download photo">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="photo-number">{{ i + 1 }}</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>

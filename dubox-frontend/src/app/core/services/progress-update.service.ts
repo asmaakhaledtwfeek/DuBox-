@@ -1,11 +1,13 @@
 import { Injectable } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, map } from 'rxjs';
 import { ApiService } from './api.service';
 import { 
   ProgressUpdate, 
   CreateProgressUpdateRequest, 
   ProgressUpdateResponse,
-  BoxActivityDetail 
+  BoxActivityDetail,
+  PaginatedProgressUpdatesResponse,
+  ProgressUpdatesSearchParams
 } from '../models/progress-update.model';
 
 @Injectable({
@@ -38,10 +40,54 @@ export class ProgressUpdateService {
   }
 
   /**
-   * Get all progress updates for a box
+   * Get all progress updates for a box with pagination and search
    */
-  getProgressUpdatesByBox(boxId: string): Observable<ProgressUpdate[]> {
-    return this.apiService.get<ProgressUpdate[]>(`${this.endpoint}/box/${boxId}`);
+  getProgressUpdatesByBox(
+    boxId: string, 
+    pageNumber: number = 1, 
+    pageSize: number = 10,
+    searchParams?: ProgressUpdatesSearchParams
+  ): Observable<PaginatedProgressUpdatesResponse> {
+    const params = new URLSearchParams();
+    params.set('pageNumber', pageNumber.toString());
+    params.set('pageSize', pageSize.toString());
+    
+    if (searchParams) {
+      if (searchParams.searchTerm) {
+        params.set('searchTerm', searchParams.searchTerm);
+      }
+      if (searchParams.activityName) {
+        params.set('activityName', searchParams.activityName);
+      }
+      if (searchParams.status) {
+        params.set('status', searchParams.status);
+      }
+      if (searchParams.fromDate) {
+        params.set('fromDate', searchParams.fromDate);
+      }
+      if (searchParams.toDate) {
+        params.set('toDate', searchParams.toDate);
+      }
+    }
+    
+    return this.apiService.get<any>(`${this.endpoint}/box/${boxId}?${params.toString()}`).pipe(
+      map((response: any) => {
+        const data = response.data || response.Data || response;
+        const items = data.items || data.Items || [];
+        const totalCount = data.totalCount ?? data.TotalCount ?? 0;
+        const responsePageNumber = data.pageNumber ?? data.PageNumber ?? pageNumber;
+        const responsePageSize = data.pageSize ?? data.PageSize ?? pageSize;
+        const totalPages = data.totalPages ?? data.TotalPages ?? 0;
+        
+        return {
+          items: items,
+          totalCount,
+          pageNumber: responsePageNumber,
+          pageSize: responsePageSize,
+          totalPages
+        };
+      })
+    );
   }
 
   /**

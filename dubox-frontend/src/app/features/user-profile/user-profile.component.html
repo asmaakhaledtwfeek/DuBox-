@@ -1,0 +1,229 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="page-content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-left">
+        <h1 class="page-title">My Profile</h1>
+        <p class="page-subtitle">Manage your account settings and security</p>
+      </div>
+    </div>
+
+    <!-- Profile Content -->
+    <div class="profile-content" *ngIf="currentUser">
+      <!-- User Info Card -->
+      <div class="profile-card user-info-card">
+        <div class="card-header">
+          <div class="user-avatar-section">
+            <div class="user-avatar-large">
+              {{ currentUser.firstName?.charAt(0) || 'U' }}{{ currentUser.lastName?.charAt(0) || '' }}
+            </div>
+            <div class="avatar-badge">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+            </div>
+          </div>
+          <div class="user-info">
+            <h2 class="user-name">{{ currentUser.firstName }} {{ currentUser.lastName }}</h2>
+            <p class="user-email">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                <polyline points="22,6 12,13 2,6"/>
+              </svg>
+              {{ currentUser.email }}
+            </p>
+            <div class="user-meta">
+              <span class="meta-item" *ngIf="currentUser.department">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
+                {{ currentUser.department }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Change Password Card -->
+      <div class="profile-card password-card">
+        <div class="card-header">
+          <div class="card-title-section">
+            <div class="title-icon-wrapper">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+              </svg>
+            </div>
+            <div class="title-content">
+              <h2>Change Password</h2>
+              <p class="card-subtitle">Update your password to keep your account secure</p>
+            </div>
+          </div>
+        </div>
+
+        <form [formGroup]="changePasswordForm" (ngSubmit)="onChangePassword()" class="password-form">
+          <!-- Success Message -->
+          <div class="alert alert-success" *ngIf="passwordChangeSuccess">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 6L9 17l-5-5"/>
+            </svg>
+            <span>Password changed successfully!</span>
+          </div>
+
+          <!-- Error Message -->
+          <div class="alert alert-error" *ngIf="passwordChangeError">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>{{ passwordChangeError }}</span>
+          </div>
+
+          <!-- Current Password -->
+          <div class="form-group">
+            <label for="currentPassword">
+              Current Password <span class="required">*</span>
+            </label>
+            <div class="input-wrapper">
+              <input
+                [type]="showCurrentPassword ? 'text' : 'password'"
+                id="currentPassword"
+                formControlName="currentPassword"
+                placeholder="Enter your current password"
+                class="form-control"
+                [class.invalid]="changePasswordForm.get('currentPassword')?.invalid && changePasswordForm.get('currentPassword')?.touched"
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                (click)="toggleCurrentPasswordVisibility()"
+                tabindex="-1"
+              >
+                <svg *ngIf="!showCurrentPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <svg *ngIf="showCurrentPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              </button>
+            </div>
+            <span class="error-message" *ngIf="getFieldError('currentPassword')">
+              {{ getFieldError('currentPassword') }}
+            </span>
+          </div>
+
+          <!-- New Password -->
+          <div class="form-group">
+            <label for="newPassword">
+              New Password <span class="required">*</span>
+            </label>
+            <div class="input-wrapper">
+              <input
+                [type]="showNewPassword ? 'text' : 'password'"
+                id="newPassword"
+                formControlName="newPassword"
+                placeholder="Enter your new password"
+                class="form-control"
+                [class.invalid]="changePasswordForm.get('newPassword')?.invalid && changePasswordForm.get('newPassword')?.touched"
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                (click)="toggleNewPasswordVisibility()"
+                tabindex="-1"
+              >
+                <svg *ngIf="!showNewPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <svg *ngIf="showNewPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              </button>
+            </div>
+            <span class="error-message" *ngIf="getFieldError('newPassword')">
+              {{ getFieldError('newPassword') }}
+            </span>
+            <!-- Password Requirements -->
+            <div class="password-requirements" *ngIf="changePasswordForm.get('newPassword')?.touched && changePasswordForm.get('newPassword')?.invalid">
+              <p class="requirements-title">Password must contain:</p>
+              <ul class="requirements-list">
+                <li *ngFor="let error of getPasswordStrengthErrors()" [class.valid]="false">
+                  {{ error }}
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Confirm Password -->
+          <div class="form-group">
+            <label for="confirmPassword">
+              Confirm New Password <span class="required">*</span>
+            </label>
+            <div class="input-wrapper">
+              <input
+                [type]="showConfirmPassword ? 'text' : 'password'"
+                id="confirmPassword"
+                formControlName="confirmPassword"
+                placeholder="Confirm your new password"
+                class="form-control"
+                [class.invalid]="(changePasswordForm.get('confirmPassword')?.invalid || changePasswordForm.errors?.['passwordMismatch']) && changePasswordForm.get('confirmPassword')?.touched"
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                (click)="toggleConfirmPasswordVisibility()"
+                tabindex="-1"
+              >
+                <svg *ngIf="!showConfirmPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                <svg *ngIf="showConfirmPassword" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              </button>
+            </div>
+            <span class="error-message" *ngIf="getFieldError('confirmPassword') || (changePasswordForm.errors?.['passwordMismatch'] && changePasswordForm.get('confirmPassword')?.touched)">
+              {{ getFieldError('confirmPassword') || 'Passwords do not match' }}
+            </span>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="form-actions">
+            <button
+              type="submit"
+              class="btn btn-primary"
+              [disabled]="isChangingPassword || changePasswordForm.invalid"
+            >
+              <span *ngIf="!isChangingPassword">Change Password</span>
+              <span *ngIf="isChangingPassword" class="loading">
+                <span class="spinner small"></span>
+                Changing Password...
+              </span>
+            </button>
+            <button
+              type="button"
+              class="btn btn-secondary"
+              (click)="changePasswordForm.reset(); passwordChangeError = ''; passwordChangeSuccess = false"
+              [disabled]="isChangingPassword"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+

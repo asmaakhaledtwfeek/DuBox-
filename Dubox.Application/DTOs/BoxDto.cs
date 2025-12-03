@@ -6,6 +6,7 @@ public record BoxDto
     public Guid ProjectId { get; init; }
     public string ProjectCode { get; init; } = string.Empty;
     public string BoxTag { get; init; } = string.Empty;
+    public string? SerialNumber { get; init; }
     public string? BoxName { get; init; }
     public string BoxType { get; init; } = string.Empty;
     public string? Floor { get; init; }
@@ -29,6 +30,9 @@ public record BoxDto
     public DateTime CreatedDate { get; init; }
     public int ActivitiesCount { get; init; }
     public string? Notes { get; init; }
+    public Guid? CurrentLocationId { get; init; }
+    public string? CurrentLocationCode { get; init; }
+    public string? CurrentLocationName { get; init; }
 }
 
 public record CreateBoxDto
@@ -92,5 +96,18 @@ public record BoxImportResultDto
     public int FailureCount { get; init; }
     public List<string> Errors { get; init; } = new();
     public List<BoxDto> ImportedBoxes { get; init; } = new();
+}
+
+public record BoxLogDto
+{
+    public Guid Id { get; init; }
+    public Guid BoxId { get; init; }
+    public string Action { get; init; } = string.Empty;
+    public string Description { get; init; } = string.Empty;
+    public string? Field { get; init; }
+    public string? OldValue { get; init; }
+    public string? NewValue { get; init; }
+    public string PerformedBy { get; init; } = string.Empty;
+    public DateTime PerformedAt { get; init; }
 }
 

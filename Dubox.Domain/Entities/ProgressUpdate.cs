@@ -23,6 +23,7 @@ public class ProgressUpdate
     public User UpdatedByUser { get; set; } = null!;
 
     public decimal ProgressPercentage { get; set; } // Progress at time of update
+    public decimal BoxProgressSnapshot { get; set; } = 0;
 
     [Required]
     [MaxLength(50)]

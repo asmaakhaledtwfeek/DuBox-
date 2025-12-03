@@ -2,13 +2,16 @@
 
 export interface ProgressUpdate {
   progressUpdateId?: string;
+  boxId?: string;
+  boxTag?: string;
   boxActivityId: string;
-  status: ActivityProgressStatus;
+  activityName?: string;
+  status: ActivityProgressStatus | string;
   progressPercentage: number;
   workDescription?: string;
   issuesEncountered?: string;
-  materialsAvailable: boolean;
-  qualityCheckPassed: boolean;
+  materialsAvailable?: boolean;
+  qualityCheckPassed?: boolean;
   photoUrls?: string;
   teamId?: string;
   teamMemberId?: string;
@@ -16,6 +19,9 @@ export interface ProgressUpdate {
   updatedByName?: string;
   updateDate?: Date;
   createdDate?: Date;
+  locationDescription?: string;
+  updateMethod?: string;
+  boxProgressSnapshot?: number;
 }
 
 export enum ActivityProgressStatus {
@@ -80,9 +86,10 @@ export interface BoxActivityDetail {
   actualStartDate?: Date;
   actualEndDate?: Date;
   duration?: number;
+  actualDuration?: number;
   workDescription?: string;
   issuesEncountered?: string;
-  teamId?: number;
+  teamId?: string;
   teamName?: string;
   assignedMemberId?: string;
   assignedMemberName?: string;
@@ -99,5 +106,21 @@ export interface BoxActivityDetail {
   // Additional frontend properties
   isWIRCheckpoint?: boolean;
   wirCode?: string;
+}
+
+export interface PaginatedProgressUpdatesResponse {
+  items: ProgressUpdate[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface ProgressUpdatesSearchParams {
+  searchTerm?: string;
+  activityName?: string;
+  status?: string;
+  fromDate?: string;
+  toDate?: string;
 }
 

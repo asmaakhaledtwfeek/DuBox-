@@ -72,6 +72,7 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         {
             progressUpdate.DeviceInfo = progressUpdate.DeviceInfo.Substring(0, 100);
         }
+        progressUpdate.BoxProgressSnapshot = await UpdateBoxProgress(request.BoxId, currentUserId, cancellationToken);
 
         await _unitOfWork.Repository<ProgressUpdate>().AddAsync(progressUpdate, cancellationToken);
 
@@ -113,7 +114,6 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         };
         await _unitOfWork.Repository<AuditLog>().AddAsync(log, cancellationToken);
 
-        await UpdateBoxProgress(request.BoxId, currentUserId, cancellationToken);
 
         if (boxActivity.Box != null)
             await UpdateProjectProgress(boxActivity.Box.ProjectId, currentUserId, cancellationToken);
@@ -153,13 +153,13 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         return Result.Success(dto);
     }
 
-    private async Task UpdateBoxProgress(Guid boxId, Guid currentUserId, CancellationToken cancellationToken)
+    private async Task<decimal> UpdateBoxProgress(Guid boxId, Guid currentUserId, CancellationToken cancellationToken)
     {
         var boxActivities = await _unitOfWork.Repository<BoxActivity>()
             .FindAsync(ba => ba.BoxId == boxId && ba.IsActive, cancellationToken);
 
         if (!boxActivities.Any())
-            return;
+            return 0;
 
         var averageProgress = boxActivities.Average(ba => ba.ProgressPercentage);
         var allCompleted = boxActivities.All(ba => ba.Status == BoxStatusEnum.Completed);
@@ -214,7 +214,11 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
                 await _unitOfWork.Repository<AuditLog>().AddAsync(log, cancellationToken);
             }
 
+            return box.ProgressPercentage;
+
         }
+        return 0;
+
     }
 
     private async Task UpdateProjectProgress(Guid projectId, Guid currentUserId, CancellationToken cancellationToken)

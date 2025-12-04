@@ -21,7 +21,87 @@ export class ProgressUpdateService {
   /**
    * Create a new progress update for an activity
    */
-  createProgressUpdate(request: CreateProgressUpdateRequest): Observable<ProgressUpdateResponse> {
+  createProgressUpdate(request: CreateProgressUpdateRequest, file?: File): Observable<ProgressUpdateResponse> {
+    // If file is provided, send as multipart/form-data
+    if (file) {
+      const formData = new FormData();
+      formData.append('BoxId', request.boxId);
+      formData.append('BoxActivityId', request.boxActivityId);
+      formData.append('ProgressPercentage', request.progressPercentage.toString());
+      
+      if (request.workDescription) {
+        formData.append('WorkDescription', request.workDescription);
+      }
+      if (request.issuesEncountered) {
+        formData.append('IssuesEncountered', request.issuesEncountered);
+      }
+      if (request.latitude !== undefined) {
+        formData.append('Latitude', request.latitude.toString());
+      }
+      if (request.longitude !== undefined) {
+        formData.append('Longitude', request.longitude.toString());
+      }
+      if (request.locationDescription) {
+        formData.append('LocationDescription', request.locationDescription);
+      }
+      if (request.imageUrl) {
+        formData.append('ImageUrl', request.imageUrl);
+      }
+      formData.append('File', file);
+      formData.append('UpdateMethod', request.updateMethod);
+      if (request.deviceInfo) {
+        formData.append('DeviceInfo', request.deviceInfo);
+      }
+
+      return this.apiService.post<ProgressUpdateResponse>(this.endpoint, formData).pipe(
+        tap(response => {
+          console.log('✅ Progress update created:', response);
+          if (response.wirCreated) {
+            console.log('🎯 WIR automatically created:', response.wirCode);
+          }
+        })
+      );
+    }
+    
+    // If imageUrl is provided without file, send as multipart/form-data
+    if (request.imageUrl) {
+      const formData = new FormData();
+      formData.append('BoxId', request.boxId);
+      formData.append('BoxActivityId', request.boxActivityId);
+      formData.append('ProgressPercentage', request.progressPercentage.toString());
+      
+      if (request.workDescription) {
+        formData.append('WorkDescription', request.workDescription);
+      }
+      if (request.issuesEncountered) {
+        formData.append('IssuesEncountered', request.issuesEncountered);
+      }
+      if (request.latitude !== undefined) {
+        formData.append('Latitude', request.latitude.toString());
+      }
+      if (request.longitude !== undefined) {
+        formData.append('Longitude', request.longitude.toString());
+      }
+      if (request.locationDescription) {
+        formData.append('LocationDescription', request.locationDescription);
+      }
+      formData.append('ImageUrl', request.imageUrl);
+      formData.append('UpdateMethod', request.updateMethod);
+      if (request.deviceInfo) {
+        formData.append('DeviceInfo', request.deviceInfo);
+      }
+
+      return this.apiService.post<ProgressUpdateResponse>(this.endpoint, formData).pipe(
+        tap(response => {
+          console.log('✅ Progress update created:', response);
+          if (response.wirCreated) {
+            console.log('🎯 WIR automatically created:', response.wirCode);
+          }
+        })
+      );
+    }
+
+    // Otherwise, send as JSON (no image)
     return this.apiService.post<ProgressUpdateResponse>(this.endpoint, request).pipe(
       tap(response => {
         console.log('✅ Progress update created:', response);

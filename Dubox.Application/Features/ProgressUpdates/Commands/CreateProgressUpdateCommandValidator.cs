@@ -22,6 +22,15 @@ namespace Dubox.Application.Features.ProgressUpdates.Commands
 
             RuleFor(x => x.UpdateMethod)
                 .NotEmpty().WithMessage("Update Method is required.");
+
+            // Validate file if provided
+            When(x => x.File != null, () =>
+            {
+                RuleFor(x => x.File!.Length)
+                    .GreaterThan(0).WithMessage("File cannot be empty.")
+                    .LessThanOrEqualTo(10_485_760).WithMessage("File size cannot exceed 10 MB.");
+            });
+
         }
     }
 }

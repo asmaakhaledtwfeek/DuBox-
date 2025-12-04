@@ -12,7 +12,7 @@ export interface ProgressUpdate {
   issuesEncountered?: string;
   materialsAvailable?: boolean;
   qualityCheckPassed?: boolean;
-  photoUrls?: string;
+  photo?: string;
   teamId?: string;
   teamMemberId?: string;
   updatedBy?: string;
@@ -41,7 +41,7 @@ export interface CreateProgressUpdateRequest {
   latitude?: number;
   longitude?: number;
   locationDescription?: string;
-  photoUrls?: string[];
+  imageUrl?: string; // For URL input method
   updateMethod: string; // "Web" or "Mobile"
   deviceInfo?: string;
 }

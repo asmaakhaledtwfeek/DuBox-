@@ -23,9 +23,9 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                        .WithMessage("Resolution description is required when resolving or closing an issue.");
                    });
 
-            RuleFor(x => x.PhotoPath)
+            RuleFor(x => x.Photo)
                 .MaximumLength(500)
-                .When(x => !string.IsNullOrWhiteSpace(x.PhotoPath))
+                .When(x => !string.IsNullOrWhiteSpace(x.Photo))
                 .WithMessage("Photo path cannot exceed 500 characters.");
 
             When(x => x.Status == QualityIssueStatusEnum.InProgress, () =>

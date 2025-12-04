@@ -9,7 +9,7 @@ namespace Dubox.Application.Features.QualityIssues.Commands
         Guid IssueId,
         QualityIssueStatusEnum Status,
         string? ResolutionDescription,
-        string? PhotoPath
+        string? Photo
         ) : IRequest<Result<QualityIssueDetailsDto>>;
 
 }

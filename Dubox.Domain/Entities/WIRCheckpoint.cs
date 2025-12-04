@@ -48,8 +48,7 @@ namespace Dubox.Domain.Entities
 
         public string? Comments { get; set; }
 
-        [MaxLength(500)]
-        public string? AttachmentPath { get; set; }
+        public string? Photo { get; set; }
 
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 

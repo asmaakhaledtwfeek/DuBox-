@@ -931,16 +931,56 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   getPhotoUrls(photoUrls: string | undefined): string[] {
     if (!photoUrls) return [];
     
+    // Check if it's a base64 string (starts with data:image or is a long base64 string)
+    if (photoUrls.startsWith('data:image/')) {
+      return [photoUrls];
+    }
+    
+    // Check if it's a base64 string without data URI prefix
+    // Base64 strings are typically long and contain only base64 characters
+    const base64Pattern = /^[A-Za-z0-9+/=]+$/;
+    if (photoUrls.length > 100 && base64Pattern.test(photoUrls)) {
+      // Assume it's a JPEG if no prefix, but you might want to detect the actual format
+      return [`data:image/jpeg;base64,${photoUrls}`];
+    }
+    
     try {
       // Try parsing as JSON array first
       const parsed = JSON.parse(photoUrls);
       if (Array.isArray(parsed)) {
-        return parsed;
+        return parsed.map(url => {
+          // Handle base64 strings in array
+          if (typeof url === 'string') {
+            if (url.startsWith('data:image/')) {
+              return url;
+            }
+            // Check if it's a base64 string
+            const base64Pattern = /^[A-Za-z0-9+/=]+$/;
+            if (url.length > 100 && base64Pattern.test(url)) {
+              return `data:image/jpeg;base64,${url}`;
+            }
+            return url; // Regular URL
+          }
+          return '';
+        }).filter(url => url && url.trim().length > 0);
       }
     } catch {
       // If not JSON, try comma-separated string
       if (typeof photoUrls === 'string') {
-        return photoUrls.split(',').map(url => url.trim()).filter(url => url.length > 0);
+        return photoUrls.split(',').map(url => {
+          const trimmed = url.trim();
+          if (!trimmed) return '';
+          
+          // Handle base64 strings
+          if (trimmed.startsWith('data:image/')) {
+            return trimmed;
+          }
+          const base64Pattern = /^[A-Za-z0-9+/=]+$/;
+          if (trimmed.length > 100 && base64Pattern.test(trimmed)) {
+            return `data:image/jpeg;base64,${trimmed}`;
+          }
+          return trimmed; // Regular URL
+        }).filter(url => url.length > 0);
       }
     }
     
@@ -948,13 +988,33 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   }
 
   openPhotoInNewTab(photoUrl: string): void {
-    window.open(photoUrl, '_blank', 'noopener,noreferrer');
+    // For base64 images, create a new window with the image
+    if (photoUrl.startsWith('data:image/')) {
+      const newWindow = window.open();
+      if (newWindow) {
+        newWindow.document.write(`<img src="${photoUrl}" style="max-width: 100%; height: auto;" />`);
+      }
+    } else {
+      window.open(photoUrl, '_blank', 'noopener,noreferrer');
+    }
   }
 
   downloadPhoto(photoUrl: string): void {
     const link = document.createElement('a');
-    link.href = photoUrl;
-    link.download = `progress-photo-${Date.now()}.jpg`;
+    
+    if (photoUrl.startsWith('data:image/')) {
+      // Handle base64 image
+      link.href = photoUrl;
+      // Extract format from data URI or default to jpg
+      const formatMatch = photoUrl.match(/data:image\/([^;]+)/);
+      const format = formatMatch ? formatMatch[1] : 'jpg';
+      link.download = `progress-photo-${Date.now()}.${format}`;
+    } else {
+      // Handle regular URL
+      link.href = photoUrl;
+      link.download = photoUrl.split('/').pop() || 'photo.jpg';
+    }
+    
     link.target = '_blank';
     document.body.appendChild(link);
     link.click();
@@ -1506,6 +1566,18 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   getActionIcon(action: string): string {
     return DiffUtil.getActionIcon(action);
+  }
+
+  getActionType(action: string): string {
+    const upperAction = action.toUpperCase();
+    if (upperAction.includes('INSERT') || upperAction.includes('CREATE')) {
+      return 'create';
+    } else if (upperAction.includes('UPDATE') || upperAction.includes('MODIFY') || upperAction.includes('CHANGE')) {
+      return 'update';
+    } else if (upperAction.includes('DELETE') || upperAction.includes('REMOVE')) {
+      return 'delete';
+    }
+    return 'other';
   }
 
   trackByAction(index: number, action: string): string {

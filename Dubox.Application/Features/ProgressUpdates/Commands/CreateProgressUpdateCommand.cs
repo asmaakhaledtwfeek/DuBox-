@@ -13,7 +13,7 @@ public record CreateProgressUpdateCommand(
     double? Latitude,
     double? Longitude,
     string? LocationDescription,
-    List<string>? PhotoUrls,
+    byte[]? File,
     string UpdateMethod,
     string? DeviceInfo
 ) : IRequest<Result<ProgressUpdateDto>>;

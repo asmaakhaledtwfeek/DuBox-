@@ -18,7 +18,7 @@ public record ProgressUpdateDto
     public double? Latitude { get; init; }
     public double? Longitude { get; init; }
     public string? LocationDescription { get; init; }
-    public string? PhotoUrls { get; init; }
+    public string? Photo { get; init; }
     public string UpdateMethod { get; init; } = string.Empty;
 }
 

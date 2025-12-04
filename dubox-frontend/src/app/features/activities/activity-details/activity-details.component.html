@@ -321,6 +321,40 @@
         <!-- Activity Logs Tab -->
         <div *ngIf="activeTab === 'activity-logs'" class="tab-panel">
           <div class="activity-logs-section">
+            <div class="activity-logs-card">
+              <div class="card-header">
+                <div>
+                  <h3>Activity Logs</h3>
+                  <p class="subtitle">Complete audit trail of all actions performed on this activity</p>
+                </div>
+                <div class="card-header-actions">
+                  <button 
+                    class="btn btn-secondary btn-sm" 
+                    (click)="toggleActivityLogsSearch()"
+                    [class.active]="showActivityLogsSearch"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="11" cy="11" r="8"/>
+                      <path d="m21 21-4.35-4.35"/>
+                    </svg>
+                    {{ showActivityLogsSearch ? 'Hide Search' : 'Search' }}
+                  </button>
+                  <button 
+                    class="btn btn-primary btn-sm" 
+                    (click)="loadActivityLogs(activityLogsCurrentPage, activityLogsPageSize)" 
+                    [disabled]="activityLogsLoading"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="23 4 23 10 17 10"/>
+                      <polyline points="1 20 1 14 7 14"/>
+                      <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"/>
+                      <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"/>
+                    </svg>
+                    Refresh
+                  </button>
+                </div>
+              </div>
+
             <!-- Filters Section -->
             <div class="filters-section" *ngIf="showActivityLogsSearch">
               <div class="filter-row">
@@ -392,7 +426,7 @@
               <p>Loading activity logs...</p>
             </div>
 
-            <!-- Logs Container -->
+            <!-- Logs Container (Timeline Format) -->
             <div class="logs-container" *ngIf="!activityLogsLoading && !activityLogsError">
               <!-- Empty State -->
               <div class="empty-state" *ngIf="activityLogs.length === 0">
@@ -406,66 +440,96 @@
                 <p>No logs match your current filters. Try adjusting your search criteria.</p>
               </div>
 
-              <!-- Log Entries (Card Format) -->
-              <div
-                class="log-entry"
-                *ngFor="let log of activityLogs; trackBy: trackByLogId"
-                [class]="'log-entry log-action-' + (log.action?.toLowerCase() || 'default')"
-              >
-                <div class="log-header">
-                  <div class="log-icon-wrapper">
-                    <div class="log-icon" [class]="'icon-' + (log.action?.toLowerCase() || 'default')">
-                      <span class="action-icon">{{ getActionIcon(log.action) }}</span>
-                    </div>
+              <!-- Log Entries (Timeline Format) -->
+              <div class="logs-timeline">
+                <div
+                  class="log-entry"
+                  *ngFor="let log of activityLogs; trackBy: trackByLogId; let last = last"
+                  [class.last-entry]="last"
+                >
+                  <!-- Timeline Connector -->
+                  <div class="timeline-connector" *ngIf="!last"></div>
+                  
+                  <!-- Timeline Dot -->
+                  <div class="timeline-dot" [class]="'dot-' + getActionType(log.action)">
+                    <svg *ngIf="getActionType(log.action) === 'create'" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                    <svg *ngIf="getActionType(log.action) === 'update'" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    <svg *ngIf="getActionType(log.action) === 'delete'" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                    <svg *ngIf="getActionType(log.action) === 'other'" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="16" x2="12" y2="12"/>
+                      <line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
                   </div>
-                  <div class="log-main">
-                    <div class="log-title-row">
-                      <div class="log-title-content">
-                        <h4 class="log-action-title">{{ getActionLabel(log.action) }}</h4>
-                        <div class="log-meta-info">
-                          <span class="log-user" *ngIf="getLogAuthor(log)">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                              <circle cx="12" cy="7" r="4"/>
-                            </svg>
-                            {{ getLogAuthor(log) }}
-                          </span>
-                          <span class="log-date">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                              <circle cx="12" cy="12" r="10"/>
-                              <polyline points="12 6 12 12 16 14"/>
-                            </svg>
-                            {{ log.timestamp | date: 'MMM d, y' }} at {{ log.timestamp | date: 'h:mm a' }}
-                          </span>
-                        </div>
+
+                  <!-- Log Content -->
+                  <div class="log-content">
+                    <div class="log-header">
+                      <div class="log-title-row">
+                        <span class="action-badge" [class]="'badge-' + getActionType(log.action)">
+                          {{ getActionLabel(log.action) }}
+                        </span>
+                        <span class="log-date">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                          </svg>
+                          {{ log.timestamp | date: 'MMM d, y' }} at {{ log.timestamp | date: 'h:mm a' }}
+                        </span>
+                      </div>
+                      
+                      <p class="log-description" *ngIf="formatDescription(log)">
+                        {{ formatDescription(log) }}
+                      </p>
+                      
+                      <div class="log-meta" *ngIf="getLogAuthor(log)">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                          <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <span class="log-user">{{ getLogAuthor(log) }}</span>
                       </div>
                     </div>
-                    <p class="log-description" *ngIf="formatDescription(log)">
-                      {{ formatDescription(log) }}
-                    </p>
-                  </div>
-                </div>
 
-                <!-- Changes List -->
-                <div class="log-changes" *ngIf="log.changes && log.changes.length > 0">
-                  <div class="changes-header">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <polyline points="16 18 22 12 16 6"/>
-                      <polyline points="8 6 2 12 8 18"/>
-                    </svg>
-                    <span>Field Changes</span>
-                  </div>
-                  <div class="changes-list">
-                    <div class="change-item" *ngFor="let change of log.changes">
-                      <span class="change-field" *ngIf="change.field">{{ change.field }}</span>
-                      <div class="change-values">
-                        <span class="change-old" *ngIf="change.oldValue">{{ change.oldValue }}</span>
-                        <span class="change-arrow" *ngIf="change.oldValue && change.newValue">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="9 18 15 12 9 6"/>
-                          </svg>
-                        </span>
-                        <span class="change-new" *ngIf="change.newValue">{{ change.newValue }}</span>
+                    <!-- Changes List -->
+                    <div class="log-changes" *ngIf="log.changes && log.changes.length > 0">
+                      <div class="changes-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="9 11 12 14 22 4"/>
+                          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                        </svg>
+                        <span>Field Changes</span>
+                      </div>
+                      <div class="changes-list">
+                        <div class="change-item" *ngFor="let change of log.changes">
+                          <span class="change-field" *ngIf="change.field">
+                            <strong>{{ change.field }}</strong>
+                          </span>
+                          <div class="change-values" *ngIf="change.oldValue || change.newValue">
+                            <span class="change-old" *ngIf="change.oldValue">
+                              <span class="change-label">From:</span>
+                              {{ change.oldValue }}
+                            </span>
+                            <span class="change-arrow" *ngIf="change.oldValue && change.newValue">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                                <polyline points="12 5 19 12 12 19"/>
+                              </svg>
+                            </span>
+                            <span class="change-new" *ngIf="change.newValue">
+                              <span class="change-label">To:</span>
+                              {{ change.newValue }}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -541,6 +605,7 @@
                   </svg>
                 </button>
               </div>
+            </div>
             </div>
           </div>
         </div>
@@ -876,7 +941,7 @@
       </div>
 
       <!-- Photos -->
-      <div class="photo-section" *ngIf="selectedProgressUpdate.photoUrls && getPhotoUrls(selectedProgressUpdate.photoUrls).length > 0">
+      <div class="photo-section" *ngIf="selectedProgressUpdate.photo && getPhotoUrls(selectedProgressUpdate.photo).length > 0">
         <div class="section-header">
           <div class="header-icon-wrapper">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -887,11 +952,11 @@
           </div>
           <div>
             <h3>Photos</h3>
-            <p class="section-subtitle">{{ getPhotoUrls(selectedProgressUpdate.photoUrls).length }} photo{{ getPhotoUrls(selectedProgressUpdate.photoUrls).length !== 1 ? 's' : '' }} attached</p>
+            <p class="section-subtitle">{{ getPhotoUrls(selectedProgressUpdate.photo).length }} photo{{ getPhotoUrls(selectedProgressUpdate.photo).length !== 1 ? 's' : '' }} attached</p>
           </div>
         </div>
         <div class="photo-gallery">
-          <div class="photo-item" *ngFor="let photoUrl of getPhotoUrls(selectedProgressUpdate.photoUrls); let i = index">
+          <div class="photo-item" *ngFor="let photoUrl of getPhotoUrls(selectedProgressUpdate.photo); let i = index">
             <div class="photo-wrapper">
               <img [src]="photoUrl" 
                    [alt]="'Progress photo ' + (i + 1)"

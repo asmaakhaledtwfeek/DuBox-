@@ -7,6 +7,6 @@ namespace Dubox.Application.Features.WIRRecords.Commands;
 public record ApproveWIRRecordCommand(
     Guid WIRRecordId,
     string? InspectionNotes,
-    string? PhotoUrls
+    string? Photo
 ) : IRequest<Result<WIRRecordDto>>;
 

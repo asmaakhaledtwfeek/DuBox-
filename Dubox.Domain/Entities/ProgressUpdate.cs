@@ -42,9 +42,7 @@ public class ProgressUpdate
     [MaxLength(200)]
     public string? LocationDescription { get; set; }
 
-    // Photos (JSON array of URLs or comma-separated)
-    [MaxLength(2000)]
-    public string? PhotoUrls { get; set; }
+    public string? Photo { get; set; }
 
     // Update method
     [MaxLength(50)]

@@ -3,8 +3,6 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
 import { ActivityProgressStatus, BoxActivityDetail } from '../../../core/models/progress-update.model';
-import { ApiService } from '../../../core/services/api.service';
-import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-update-progress-modal',
@@ -38,8 +36,7 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
 
   constructor(
     private fb: FormBuilder,
-    private progressUpdateService: ProgressUpdateService,
-    private apiService: ApiService
+    private progressUpdateService: ProgressUpdateService
   ) {}
 
   ngOnInit(): void {
@@ -117,14 +114,6 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
     this.photoPreview = null;
   }
 
-  uploadPhoto(file: File) {
-    return this.apiService.upload<{ url: string }>('upload/progress-photos', file).pipe(
-      map((response: any) => {
-        if (typeof response === 'string') return response;
-        return response?.url || response?.photoPath || response?.data?.url || response?.data?.photoPath || '';
-      })
-    );
-  }
 
   // Camera methods
   async openCamera(): Promise<void> {
@@ -200,38 +189,6 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
     this.photoUploadError = '';
 
     try {
-      let photoUrlsArray: string[] = [];
-      
-      // Handle photo upload or URL
-      if (this.selectedFile) {
-        try {
-          this.isUploadingPhoto = true;
-          const uploadedUrl = await this.uploadPhoto(this.selectedFile).toPromise();
-          if (uploadedUrl) {
-            photoUrlsArray = [uploadedUrl];
-          }
-          this.isUploadingPhoto = false;
-        } catch (uploadError: any) {
-          console.error('Photo upload failed:', uploadError);
-          this.isUploadingPhoto = false;
-          this.photoUploadError = uploadError?.error?.message || uploadError?.message || 'Failed to upload photo';
-          this.isSubmitting = false;
-          return;
-        }
-      } else if (this.photoUrl?.trim()) {
-        // Use URL if provided
-        photoUrlsArray = [this.photoUrl.trim()];
-      } else if (this.selectedFiles.length > 0) {
-        // Fallback to old method for multiple files
-        try {
-          const uploadedUrls = await this.progressUpdateService.uploadProgressPhotos(this.selectedFiles).toPromise();
-          photoUrlsArray = uploadedUrls || [];
-        } catch (uploadError) {
-          console.error('Photo upload failed:', uploadError);
-          // Continue anyway, photos are optional
-        }
-      }
-
       // Truncate device info to 100 characters (database limit)
       const deviceInfo = navigator.userAgent.substring(0, 100);
 
@@ -241,12 +198,15 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
         progressPercentage: this.progressForm.value.progressPercentage || 0,
         workDescription: this.progressForm.value.workDescription || undefined,
         issuesEncountered: this.progressForm.value.issuesEncountered || undefined,
-        photoUrls: photoUrlsArray.length > 0 ? photoUrlsArray : undefined,
+        imageUrl: this.photoUrl?.trim() || undefined,
         updateMethod: 'Web',
         deviceInfo: deviceInfo
       };
 
-      this.progressUpdateService.createProgressUpdate(request).subscribe({
+      // Send file directly with the request if provided
+      const fileToSend = this.selectedFile || undefined;
+
+      this.progressUpdateService.createProgressUpdate(request, fileToSend).subscribe({
         next: (response) => {
           this.successMessage = 'Progress updated successfully!';
           

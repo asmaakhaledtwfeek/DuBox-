@@ -10,7 +10,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
       WIRCheckpointStatusEnum Status,
       string? Comment,
       string? InspectorRole,
-      string? AttachmentPath,
+      string? Photo,
       List<ChecklistItemForReview> Items
  ) : IRequest<Result<WIRCheckpointDto>>;
 

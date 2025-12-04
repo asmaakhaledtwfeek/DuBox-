@@ -61,18 +61,33 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         if (isDuplicate)
             return Result.Failure<ProgressUpdateDto>("A progress update with the exact same details already exists for this activity.");
 
+        // Process image: convert byte array to base64
+        // Note: Image download from URL is handled in the controller to keep Application layer clean
+        string? photoBase64 = null;
+        if (request.File != null && request.File.Length > 0)
+        {
+            try
+            {
+                // Convert byte array to base64
+                photoBase64 = Convert.ToBase64String(request.File);
+            }
+            catch (Exception ex)
+            {
+                return Result.Failure<ProgressUpdateDto>("Error processing uploaded file: " + ex.Message);
+            }
+        }
+
         var progressUpdate = request.Adapt<ProgressUpdate>();
         progressUpdate.Status = inferredStatus;
         progressUpdate.UpdatedBy = currentUserId;
         progressUpdate.UpdateDate = DateTime.UtcNow;
         progressUpdate.CreatedDate = DateTime.UtcNow;
+        progressUpdate.Photo = photoBase64;
 
-        // Truncate DeviceInfo to max 100 characters to prevent database truncation error
         if (!string.IsNullOrEmpty(progressUpdate.DeviceInfo) && progressUpdate.DeviceInfo.Length > 100)
         {
             progressUpdate.DeviceInfo = progressUpdate.DeviceInfo.Substring(0, 100);
         }
-        progressUpdate.BoxProgressSnapshot = await UpdateBoxProgress(request.BoxId, currentUserId, cancellationToken);
 
         await _unitOfWork.Repository<ProgressUpdate>().AddAsync(progressUpdate, cancellationToken);
 
@@ -101,6 +116,7 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         var newActualEndDateString = boxActivity.ActualEndDate?.ToString(dateFormat) ?? "N/A";
 
         _unitOfWork.Repository<BoxActivity>().Update(boxActivity);
+
         var log = new AuditLog
         {
             TableName = nameof(BoxActivity),
@@ -113,8 +129,10 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             Description = $"Progress updated to {boxActivity.ProgressPercentage}%. Status inferred to {boxActivity.Status.ToString()}."
         };
         await _unitOfWork.Repository<AuditLog>().AddAsync(log, cancellationToken);
+        await _unitOfWork.CompleteAsync(cancellationToken);
 
-
+        progressUpdate.BoxProgressSnapshot = await UpdateBoxProgress(request.BoxId, currentUserId, cancellationToken);
+        _unitOfWork.Repository<ProgressUpdate>().Update(progressUpdate);
         if (boxActivity.Box != null)
             await UpdateProjectProgress(boxActivity.Box.ProjectId, currentUserId, cancellationToken);
 
@@ -133,7 +151,7 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
                     Status = WIRRecordStatusEnum.Pending,
                     RequestedDate = DateTime.UtcNow,
                     RequestedBy = currentUserId,
-                    PhotoUrls = progressUpdate.PhotoUrls,
+                    Photo = progressUpdate.Photo,
                     CreatedDate = DateTime.UtcNow
                 };
 
@@ -147,7 +165,8 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         {
             BoxTag = boxActivity.Box.BoxTag,
             ActivityName = boxActivity.ActivityMaster.ActivityName,
-            UpdatedByName = user.FullName ?? user.Email
+            UpdatedByName = user.FullName ?? user.Email,
+            Photo = progressUpdate.Photo // Explicitly map Photo to PhotoUrls
         };
 
         return Result.Success(dto);

@@ -34,8 +34,7 @@ public class WIRRecord
     [MaxLength(1000)]
     public string? InspectionNotes { get; set; }
 
-    [MaxLength(2000)]
-    public string? PhotoUrls { get; set; }
+    public string? Photo { get; set; }
 
     [MaxLength(1000)]
     public string? RejectionReason { get; set; }

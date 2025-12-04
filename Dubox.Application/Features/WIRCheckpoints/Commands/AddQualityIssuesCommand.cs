@@ -16,6 +16,6 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
     string IssueDescription,
     string? AssignedTo = null,
     DateTime? DueDate = null,
-    string? PhotoPath = null
+    string? Photo = null
 );
 }

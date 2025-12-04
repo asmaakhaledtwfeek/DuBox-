@@ -40,8 +40,8 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                 issue.ResolutionDate = null;
             }
 
-            if (!string.IsNullOrWhiteSpace(request.PhotoPath))
-                issue.PhotoPath = request.PhotoPath;
+            if (!string.IsNullOrWhiteSpace(request.Photo))
+                issue.Photo = request.Photo;
 
             _unitOfWork.Repository<QualityIssue>().Update(issue);
             await _unitOfWork.CompleteAsync(cancellationToken);

@@ -56,7 +56,7 @@ public class CreateWIRRecordCommandHandler : IRequestHandler<CreateWIRRecordComm
             Status = WIRRecordStatusEnum.Pending,
             RequestedDate = DateTime.UtcNow,
             RequestedBy = currentUserId,
-            PhotoUrls = request.PhotoUrls,
+            Photo = request.Photo,
             CreatedDate = DateTime.UtcNow
         };
 

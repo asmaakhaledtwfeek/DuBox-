@@ -45,9 +45,9 @@
                 .When(x => !string.IsNullOrWhiteSpace(x.AssignedTo))
                 .WithMessage("AssignedTo cannot exceed 200 characters.");
 
-            RuleFor(x => x.PhotoPath)
+            RuleFor(x => x.Photo)
                 .MaximumLength(500)
-                .When(x => !string.IsNullOrWhiteSpace(x.PhotoPath))
+                .When(x => !string.IsNullOrWhiteSpace(x.Photo))
                 .WithMessage("PhotoPath cannot exceed 500 characters.");
 
             RuleFor(x => x.DueDate)

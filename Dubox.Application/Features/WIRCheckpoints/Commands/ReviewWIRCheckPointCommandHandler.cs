@@ -72,8 +72,8 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             if (!string.IsNullOrWhiteSpace(request.Comment))
                 wir.Comments = request.Comment;
 
-            if (!string.IsNullOrWhiteSpace(request.AttachmentPath))
-                wir.AttachmentPath = request.AttachmentPath.Trim();
+            if (!string.IsNullOrWhiteSpace(request.Photo))
+                wir.Photo = request.Photo.Trim();
 
             await _unitOfWork.CompleteAsync(cancellationToken);
 

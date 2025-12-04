@@ -7,6 +7,6 @@ namespace Dubox.Application.Features.WIRRecords.Commands;
 public record CreateWIRRecordCommand(
     Guid BoxActivityId,
     string WIRCode,
-    string? PhotoUrls
+    string? Photo
 ) : IRequest<Result<WIRRecordDto>>;
 

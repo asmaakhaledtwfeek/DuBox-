@@ -235,6 +235,20 @@ export class AuditLogsComponent implements OnInit {
     return log.changedByFullName || log.changedByUsername || null;
   }
 
+  getActionType(action: string): 'create' | 'update' | 'delete' | 'assignment' | 'default' {
+    const upperAction = action.toUpperCase();
+    if (upperAction.includes('CREATE') || upperAction.includes('INSERT')) {
+      return 'create';
+    } else if (upperAction.includes('UPDATE') || upperAction.includes('MODIFY')) {
+      return 'update';
+    } else if (upperAction.includes('DELETE') || upperAction.includes('REMOVE')) {
+      return 'delete';
+    } else if (upperAction.includes('ASSIGN')) {
+      return 'assignment';
+    }
+    return 'default';
+  }
+
   formatDescription(description?: string | null): string {
     if (!description) {
       return '';

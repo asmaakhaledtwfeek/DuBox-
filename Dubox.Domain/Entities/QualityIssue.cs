@@ -45,8 +45,7 @@ namespace Dubox.Domain.Entities
 
         public string? ResolutionDescription { get; set; }
 
-        [MaxLength(500)]
-        public string? PhotoPath { get; set; }
+        public string? Photo { get; set; }
 
         // Navigation properties
         public virtual Box Box { get; set; } = null!;

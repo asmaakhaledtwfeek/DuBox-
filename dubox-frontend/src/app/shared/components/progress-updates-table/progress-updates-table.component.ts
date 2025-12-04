@@ -166,30 +166,30 @@ export class ProgressUpdatesTableComponent {
   }
 
   hasPhotos(update: ProgressUpdate): boolean {
-    if (!update.photoUrls) return false;
+    if (!update.photo) return false;
     try {
-      const parsed = JSON.parse(update.photoUrls);
+      const parsed = JSON.parse(update.photo);
       if (Array.isArray(parsed)) {
         return parsed.length > 0;
       }
     } catch {
-      if (typeof update.photoUrls === 'string') {
-        return update.photoUrls.trim().length > 0;
+      if (typeof update.photo === 'string') {
+        return update.photo.trim().length > 0;
       }
     }
     return false;
   }
 
   getPhotoCount(update: ProgressUpdate): number {
-    if (!update.photoUrls) return 0;
+    if (!update.photo) return 0;
     try {
-      const parsed = JSON.parse(update.photoUrls);
+      const parsed = JSON.parse(update.photo);
       if (Array.isArray(parsed)) {
         return parsed.length;
       }
     } catch {
-      if (typeof update.photoUrls === 'string') {
-        const urls = update.photoUrls.split(',').filter(url => url.trim().length > 0);
+      if (typeof update.photo === 'string') {
+        const urls = update.photo.split(',').filter(url => url.trim().length > 0);
         return urls.length;
       }
     }

@@ -15,7 +15,6 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
     SeverityEnum Severity,
     string IssueDescription,
     string? AssignedTo = null,
-    DateTime? DueDate = null,
-    string? Photo = null
+    DateTime? DueDate = null
 );
 }

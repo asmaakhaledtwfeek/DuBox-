@@ -52,7 +52,6 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                 IssueDescription = i.IssueDescription,
                 AssignedTo = i.AssignedTo,
                 DueDate = i.DueDate,
-                Photo = i.Photo,
                 Status = QualityIssueStatusEnum.Open,
                 IssueDate = DateTime.UtcNow,
                 ReportedBy = reportedBy

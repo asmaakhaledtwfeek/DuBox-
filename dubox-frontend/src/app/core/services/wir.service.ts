@@ -287,13 +287,53 @@ export class WIRService {
     );
   }
 
-  updateQualityIssueStatus(issueId: string, payload: UpdateQualityIssueStatusRequest): Observable<QualityIssueDetails> {
-    return this.apiService.put<any>(`qualityissues/${issueId}/status`, payload).pipe(
-      map(response => {
-        const issue = response?.data || response;
-        return this.transformQualityIssueDetails(issue);
-      })
-    );
+  updateQualityIssueStatus(
+    issueId: string, 
+    payload: UpdateQualityIssueStatusRequest,
+    files?: File[],
+    imageUrls?: string[]
+  ): Observable<QualityIssueDetails> {
+    const hasFiles = files && files.length > 0;
+    const hasUrls = imageUrls && imageUrls.length > 0;
+    
+    // If files or URLs are provided, send as multipart/form-data
+    if (hasFiles || hasUrls) {
+      const formData = new FormData();
+      formData.append('Status', payload.status);
+      
+      if (payload.resolutionDescription) {
+        formData.append('ResolutionDescription', payload.resolutionDescription);
+      }
+      
+      // Append multiple files
+      if (hasFiles) {
+        files.forEach((file) => {
+          formData.append('Files', file);
+        });
+      }
+      
+      // Append multiple image URLs
+      if (hasUrls) {
+        imageUrls.forEach((url) => {
+          formData.append('ImageUrls', url);
+        });
+      }
+
+      return this.apiService.put<any>(`qualityissues/${issueId}/status`, formData).pipe(
+        map(response => {
+          const issue = response?.data || response;
+          return this.transformQualityIssueDetails(issue);
+        })
+      );
+    } else {
+      // No files/URLs, send as JSON (backward compatibility)
+      return this.apiService.put<any>(`qualityissues/${issueId}/status`, payload).pipe(
+        map(response => {
+          const issue = response?.data || response;
+          return this.transformQualityIssueDetails(issue);
+        })
+      );
+    }
   }
 
   /**
@@ -394,6 +434,19 @@ export class WIRService {
   }
 
   private transformQualityIssueDetails(issue: any): QualityIssueDetails {
+    // Transform images array if present
+    const images = issue.images || issue.Images || [];
+    const transformedImages = Array.isArray(images) ? images.map((img: any) => ({
+      qualityIssueImageId: img.qualityIssueImageId || img.QualityIssueImageId,
+      issueId: img.issueId || img.IssueId,
+      imageData: img.imageData || img.ImageData,
+      imageType: (img.imageType || img.ImageType || 'file') as 'file' | 'url',
+      originalName: img.originalName || img.OriginalName,
+      fileSize: img.fileSize || img.FileSize,
+      sequence: img.sequence ?? img.Sequence ?? 0,
+      createdDate: img.createdDate ? new Date(img.createdDate) : (img.CreatedDate ? new Date(img.CreatedDate) : new Date())
+    })) : [];
+
     return {
       issueId: issue.issueId || issue.IssueId,
       issueType: issue.issueType || issue.IssueType,
@@ -417,7 +470,8 @@ export class WIRService {
       wirRequestedDate: issue.wirRequestedDate ? new Date(issue.wirRequestedDate) : undefined,
       inspectorName: issue.inspectorName || issue.InspectorName,
       isOverdue: issue.isOverdue ?? issue.IsOverdue,
-      overdueDays: issue.overdueDays ?? issue.OverdueDays
+      overdueDays: issue.overdueDays ?? issue.OverdueDays,
+      images: transformedImages
     };
   }
 }

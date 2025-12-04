@@ -547,18 +547,18 @@
               name="resolutionDescription"
             ></textarea>
 
-            <!-- Photo Upload Section -->
+            <!-- Multiple Images Upload Section -->
             <div class="photo-upload-section">
-              <label class="modal-label">Photo / Document</label>
-              <p class="photo-upload-hint">Upload an image, enter a URL, or use your camera</p>
+              <label class="modal-label">Photos / Documents</label>
+              <p class="photo-upload-hint">Upload multiple images from device, camera, or URLs</p>
               
               <!-- Tabs for different input methods -->
               <div class="photo-input-tabs">
                 <button 
                   type="button"
                   class="tab-button"
-                  [class.active]="!showCamera && !selectedFile"
-                  (click)="showCamera = false; selectedFile = null; photoPreview = null"
+                  [class.active]="currentImageInputMode === 'url' && !showCamera"
+                  (click)="setImageInputMode('url')"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
@@ -569,7 +569,7 @@
                 <button 
                   type="button"
                   class="tab-button"
-                  [class.active]="selectedFile && !showCamera"
+                  [class.active]="currentImageInputMode === 'upload' && !showCamera"
                   (click)="openFileInput()"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -582,7 +582,7 @@
                 <button 
                   type="button"
                   class="tab-button"
-                  [class.active]="showCamera"
+                  [class.active]="currentImageInputMode === 'camera' && showCamera"
                   (click)="openCamera()"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -594,64 +594,127 @@
               </div>
 
               <!-- URL Input -->
-              <div *ngIf="!showCamera && !selectedFile" class="photo-input-content">
-                <input
-                  id="photoPath"
-                  class="modal-input"
-                  type="text"
-                  placeholder="Enter photo/document URL (e.g., https://example.com/photo.jpg)"
-                  [(ngModel)]="statusUpdateForm.photoPath"
-                  name="photoPath"
-                  [disabled]="isUploadingPhoto"
-                />
+              <div *ngIf="currentImageInputMode === 'url' && !showCamera" class="photo-input-content">
+                <div class="url-input-group">
+                  <div class="url-input-wrapper">
+                    <svg class="url-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                    </svg>
+                    <input
+                      id="photoUrl"
+                      class="modal-input url-input"
+                      type="text"
+                      placeholder="Enter image URL (e.g., https://example.com/photo.jpg)"
+                      [(ngModel)]="currentUrlInput"
+                      name="currentUrlInput"
+                      (keyup.enter)="addImageFromUrl()"
+                      [disabled]="statusUpdateLoading"
+                    />
+                  </div>
+                  <button 
+                    type="button" 
+                    class="btn btn-primary btn-add-url"
+                    (click)="addImageFromUrl()"
+                    [disabled]="!currentUrlInput?.trim() || statusUpdateLoading"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="12" y1="5" x2="12" y2="19"/>
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Add
+                  </button>
+                </div>
               </div>
 
-              <!-- File Upload Input (hidden) -->
+              <!-- File Upload Input (hidden, supports multiple) -->
               <input
                 id="box-details-photo-file-input"
                 type="file"
                 accept="image/*"
+                multiple
                 style="display: none"
                 (change)="onFileSelected($event)"
-                [disabled]="isUploadingPhoto"
+                [disabled]="statusUpdateLoading"
               />
 
-              <!-- Camera Preview -->
-              <div *ngIf="showCamera" class="camera-preview-container">
-                <video id="box-details-camera-preview" autoplay playsinline></video>
-                <div class="camera-controls">
-                  <button type="button" class="btn btn-secondary btn-sm" (click)="stopCamera()">
-                    Cancel
-                  </button>
-                  <button type="button" class="btn btn-primary btn-sm" (click)="capturePhoto()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="12" cy="12" r="3"/>
-                    </svg>
-                    Capture
-                  </button>
+              <!-- Full Screen Camera Preview -->
+              <div *ngIf="showCamera" class="camera-fullscreen-overlay" (click)="stopCamera()">
+                <div class="camera-fullscreen-container" (click)="$event.stopPropagation()">
+                  <div class="camera-header">
+                    <h4>Camera</h4>
+                    <button type="button" class="camera-close-btn" (click)="stopCamera()" title="Close Camera">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
+                  </div>
+                  <video id="box-details-camera-preview" autoplay playsinline></video>
+                  <div class="camera-controls-fullscreen">
+                    <button type="button" class="btn btn-secondary btn-lg" (click)="stopCamera()">
+                      Cancel
+                    </button>
+                    <button type="button" class="btn-capture" (click)="capturePhoto()" title="Capture Photo">
+                      <div class="capture-button-inner"></div>
+                    </button>
+                    <button type="button" class="btn btn-primary btn-lg" (click)="capturePhoto()">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                      Capture
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <!-- Photo Preview -->
-              <div *ngIf="photoPreview && !showCamera" class="photo-preview-container">
-                <div class="photo-preview">
-                  <img [src]="photoPreview" alt="Preview" />
-                  <button type="button" class="remove-photo-btn" (click)="removeSelectedFile()" [disabled]="isUploadingPhoto">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <line x1="18" y1="6" x2="6" y2="18"/>
-                      <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                  </button>
+              <!-- Selected Images Preview List -->
+              <div *ngIf="selectedImages.length > 0 && !showCamera" class="images-preview-list">
+                <div class="images-preview-header">
+                  <span class="images-count">{{ selectedImages.length }} {{ selectedImages.length === 1 ? 'image' : 'images' }} selected</span>
                 </div>
-                <p class="photo-preview-info" *ngIf="selectedFile">
-                  {{ selectedFile.name }} ({{ (selectedFile.size / 1024).toFixed(1) }} KB)
-                </p>
-              </div>
-
-              <!-- Upload Progress -->
-              <div *ngIf="isUploadingPhoto" class="upload-progress">
-                <div class="spinner-small"></div>
-                <span>Uploading photo...</span>
+                <div class="images-grid">
+                  <div *ngFor="let image of selectedImages; trackBy: trackByImageId" class="image-preview-item">
+                    <div class="image-preview-wrapper">
+                      <div class="image-overlay">
+                        <button 
+                          type="button" 
+                          class="remove-image-btn" 
+                          (click)="removeImage(image.id)"
+                          [disabled]="statusUpdateLoading"
+                          title="Remove image"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                          </svg>
+                        </button>
+                      </div>
+                      <img [src]="image.preview" [alt]="image.name || 'Preview'" />
+                    </div>
+                    <div class="image-preview-info">
+                      <span class="image-name" *ngIf="image.name" [title]="image.name">{{ image.name.length > 25 ? (image.name.substring(0, 25) + '...') : image.name }}</span>
+                      <div class="image-meta">
+                        <span class="image-size" *ngIf="image.size">{{ (image.size / 1024).toFixed(1) }} KB</span>
+                        <span class="image-type-badge" [class]="'type-' + image.type">
+                          <svg *ngIf="image.type === 'file'" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                            <polyline points="13 2 13 9 20 9"/>
+                          </svg>
+                          <svg *ngIf="image.type === 'url'" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                          </svg>
+                          <svg *ngIf="image.type === 'camera'" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                            <circle cx="12" cy="13" r="4"/>
+                          </svg>
+                          {{ image.type }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <!-- Errors -->
@@ -726,14 +789,42 @@
               <span class="label">Resolution Date</span>
               <span class="value">{{ formatIssueDate(selectedIssueDetails.resolutionDate) }}</span>
             </div>
-            <div class="details-row">
-              <span class="label">Photo</span>
+            <div class="details-row" *ngIf="getQualityIssueImageUrls(selectedIssueDetails).length > 0">
+              <span class="label">Images</span>
               <span class="value">
-                <a *ngIf="selectedIssueDetails.photoPath" [href]="selectedIssueDetails.photoPath" target="_blank" rel="noopener">
-                  View attachment
-                </a>
-                <span *ngIf="!selectedIssueDetails.photoPath">—</span>
+                <div class="quality-issue-images-gallery">
+                  <div class="image-item" *ngFor="let imageUrl of getQualityIssueImageUrls(selectedIssueDetails); let i = index">
+                    <div class="image-wrapper">
+                      <img [src]="imageUrl" 
+                           [alt]="'Quality issue image ' + (i + 1)"
+                           class="image-thumbnail"
+                           (click)="openImageInNewTab(imageUrl)"
+                           (error)="onImageError($event)"
+                           loading="lazy" />
+                      <div class="image-overlay">
+                        <button class="image-view-btn" (click)="openImageInNewTab(imageUrl); $event.stopPropagation()" title="View full size">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                          </svg>
+                        </button>
+                        <button class="image-download-btn" (click)="downloadImage(imageUrl); $event.stopPropagation()" title="Download image">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                          </svg>
+                        </button>
+                      </div>
+                      <div class="image-number">{{ i + 1 }}</div>
+                    </div>
+                  </div>
+                </div>
               </span>
+            </div>
+            <div class="details-row" *ngIf="getQualityIssueImageUrls(selectedIssueDetails).length === 0">
+              <span class="label">Images</span>
+              <span class="value">—</span>
             </div>
             <div class="details-row">
               <span class="label">Inspector</span>

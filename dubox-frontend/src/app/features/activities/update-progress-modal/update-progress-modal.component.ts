@@ -60,6 +60,22 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
   }
 
   ngOnDestroy(): void {
+    // Cleanup: stop camera stream on component unmount
+    const video = document.getElementById('progress-camera-preview') as HTMLVideoElement;
+    if (video) {
+      const stream = video.srcObject as MediaStream;
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+      video.srcObject = null;
+    }
+    
+    // Also stop any stored stream reference
+    if (this.cameraStream) {
+      this.cameraStream.getTracks().forEach((track) => track.stop());
+      this.cameraStream = null;
+    }
+    
     this.stopCamera();
   }
 
@@ -107,6 +123,27 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
       this.photoUploadError = '';
     };
     reader.readAsDataURL(file);
+  }
+
+  addImageFromDataUrl(imageData: string): void {
+    // Convert data URL to File for consistency with existing structure
+    fetch(imageData)
+      .then(res => res.blob())
+      .then(blob => {
+        const file = new File([blob], `progress-photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        this.selectedImages.push({
+          type: 'file',
+          file: file,
+          preview: imageData,
+          name: file.name
+        });
+        this.photoInputMethod = 'camera';
+        this.photoUploadError = '';
+      })
+      .catch(err => {
+        console.error('Error converting data URL to file:', err);
+        this.photoUploadError = 'Failed to process captured image.';
+      });
   }
 
   addImageUrl(url: string): void {
@@ -170,11 +207,12 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
           return;
         }
         
-        // Set video source
+        // Set video source and play
         video.srcObject = stream;
         video.muted = true;
         video.playsInline = true;
         video.autoplay = true;
+        video.play();
         
         // Wait for video to start playing before going fullscreen
         const handlePlaying = () => {
@@ -244,6 +282,10 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
     // Clear video element
     const video = document.getElementById('progress-camera-preview') as HTMLVideoElement;
     if (video) {
+      const stream = video.srcObject as MediaStream;
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
       video.srcObject = null;
       video.pause();
     }
@@ -288,9 +330,11 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
     }
 
     try {
+      // Create canvas and draw video frame
       const canvas = document.createElement('canvas');
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
+      
       const ctx = canvas.getContext('2d');
       
       if (!ctx) {
@@ -301,27 +345,38 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
       // Draw the current video frame to canvas
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       
-      // Convert to blob
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const file = new File([blob], `progress-photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
-          
-          // Exit fullscreen first
-          this.exitFullscreen();
-          
-          // Add the captured image to the list
-          this.addImageFile(file);
-          
-          // Close camera screen after successful capture
-          this.stopCamera();
+      // Convert to Base64 data URL
+      const imageData = canvas.toDataURL('image/jpeg', 0.9);
       
-        } else {
-          this.photoUploadError = 'Failed to capture image. Please try again.';
-        }
-      }, 'image/jpeg', 0.9);
+      // Stop camera stream immediately before any async operations
+      const stream = video.srcObject as MediaStream;
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+      
+      // Clear video element srcObject
+      video.srcObject = null;
+      
+      // Clear camera stream reference
+      if (this.cameraStream) {
+        this.cameraStream.getTracks().forEach((track) => track.stop());
+        this.cameraStream = null;
+      }
+      
+      // Close camera UI immediately
+      this.showCamera = false;
+      
+      // Exit fullscreen
+      this.exitFullscreen();
+      
+      // Add the captured image to the list
+      this.addImageFromDataUrl(imageData);
+      
     } catch (err) {
       console.error('Error capturing photo:', err);
       this.photoUploadError = 'Error capturing image. Please try again.';
+      // Ensure camera is stopped even on error
+      this.stopCamera();
     }
   }
 

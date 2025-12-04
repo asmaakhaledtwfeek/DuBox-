@@ -66,18 +66,25 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   statusUpdateForm: {
     status: QualityIssueStatus;
     resolutionDescription: string;
-    photoPath: string;
   } = {
     status: 'Open',
-    resolutionDescription: '',
-    photoPath: ''
+    resolutionDescription: ''
   };
   isDetailsModalOpen = false;
   selectedIssueDetails: QualityIssueDetails | null = null;
   
-  // Photo upload state
-  selectedFile: File | null = null;
-  photoPreview: string | null = null;
+  // Multiple images state
+  selectedImages: Array<{
+    id: string;
+    type: 'file' | 'url' | 'camera';
+    file?: File;
+    url?: string;
+    preview: string;
+    name?: string;
+    size?: number;
+  }> = [];
+  currentImageInputMode: 'url' | 'upload' | 'camera' = 'url';
+  currentUrlInput: string = '';
   isUploadingPhoto = false;
   photoUploadError = '';
   cameraStream: MediaStream | null = null;
@@ -844,6 +851,57 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.selectedIssueDetails = null;
   }
 
+  getQualityIssueImageUrls(issue: QualityIssueDetails | null): string[] {
+    if (!issue) return [];
+    
+    // First, try to use the new Images array
+    if (issue.images && Array.isArray(issue.images) && issue.images.length > 0) {
+      return issue.images
+        .sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
+        .map((img) => {
+          const imageData = img.imageData || '';
+          // If it's already a data URL, return as is
+          if (imageData.startsWith('data:image/')) {
+            return imageData;
+          }
+          // If it's a URL, return as is
+          if (imageData.startsWith('http://') || imageData.startsWith('https://')) {
+            return imageData;
+          }
+          // Otherwise, assume it's base64 and add data URI prefix
+          return `data:image/jpeg;base64,${imageData}`;
+        })
+        .filter((url: string) => url && url.trim().length > 0);
+    }
+    
+    // Fallback to old PhotoPath field (backward compatibility)
+    if (issue.photoPath) {
+      return [issue.photoPath];
+    }
+    
+    return [];
+  }
+
+  openImageInNewTab(imageUrl: string): void {
+    window.open(imageUrl, '_blank', 'noopener,noreferrer');
+  }
+
+  downloadImage(imageUrl: string): void {
+    try {
+      const link = document.createElement('a');
+      link.href = imageUrl;
+      link.download = `quality-issue-image-${Date.now()}.jpg`;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading image:', error);
+      // Fallback: open in new tab
+      this.openImageInNewTab(imageUrl);
+    }
+  }
+
   openStatusModal(issue: QualityIssueDetails): void {
     if (this.isDetailsModalOpen) {
       this.closeIssueDetails();
@@ -852,12 +910,12 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.selectedIssueForStatus = issue;
     this.statusUpdateForm = {
       status: issue.status || 'Open',
-      resolutionDescription: issue.resolutionDescription || '',
-      photoPath: issue.photoPath || ''
+      resolutionDescription: issue.resolutionDescription || ''
     };
     this.statusUpdateError = '';
-    this.selectedFile = null;
-    this.photoPreview = null;
+    this.selectedImages = [];
+    this.currentImageInputMode = 'url';
+    this.currentUrlInput = '';
     this.showCamera = false;
     this.stopCamera();
     this.isStatusModalOpen = true;
@@ -865,8 +923,9 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   closeStatusModal(): void {
     this.isStatusModalOpen = false;
-    this.selectedFile = null;
-    this.photoPreview = null;
+    this.selectedImages = [];
+    this.currentImageInputMode = 'url';
+    this.currentUrlInput = '';
     this.showCamera = false;
     this.stopCamera();
     this.selectedIssueForStatus = null;
@@ -1146,43 +1205,31 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.statusUpdateError = '';
     this.photoUploadError = '';
 
-    // Upload photo if file is selected, otherwise proceed with URL
-    if (this.selectedFile) {
-      this.isUploadingPhoto = true;
-      this.uploadPhoto(this.selectedFile).subscribe({
-        next: (uploadResult) => {
-          this.isUploadingPhoto = false;
-          const photoPath = uploadResult || this.statusUpdateForm.photoPath?.trim() || null;
-          this.submitStatusUpdateWithPhoto(photoPath);
-        },
-        error: (err: any) => {
-          console.error('❌ Failed to upload photo:', err);
-          this.isUploadingPhoto = false;
-          this.photoUploadError = err?.error?.message || err?.message || 'Failed to upload photo';
-          this.statusUpdateLoading = false;
-        }
-      });
-    } else {
-      const photoPath = this.statusUpdateForm.photoPath?.trim() || null;
-      this.submitStatusUpdateWithPhoto(photoPath);
-    }
-  }
+    // Prepare files and URLs
+    const files = this.selectedImages
+      .filter(img => img.type === 'file' || img.type === 'camera')
+      .map(img => img.file!)
+      .filter((file): file is File => file !== undefined);
 
-  private submitStatusUpdateWithPhoto(photoPath: string | null): void {
-    if (!this.selectedIssueForStatus) {
-      return;
-    }
+    const imageUrls = this.selectedImages
+      .filter(img => img.type === 'url' && img.url)
+      .map(img => img.url!)
+      .filter((url): url is string => url !== undefined && url.trim() !== '');
 
     const payload: UpdateQualityIssueStatusRequest = {
       issueId: this.selectedIssueForStatus.issueId,
       status: this.statusUpdateForm.status,
       resolutionDescription: this.requiresResolutionDescription(this.statusUpdateForm.status)
         ? this.statusUpdateForm.resolutionDescription?.trim()
-        : null,
-      photoPath: photoPath
+        : null
     };
 
-    this.wirService.updateQualityIssueStatus(payload.issueId, payload).subscribe({
+    this.wirService.updateQualityIssueStatus(
+      payload.issueId, 
+      payload,
+      files.length > 0 ? files : undefined,
+      imageUrls.length > 0 ? imageUrls : undefined
+    ).subscribe({
       next: (updatedIssue) => {
         this.statusUpdateLoading = false;
         this.applyUpdatedQualityIssue(updatedIssue);
@@ -1196,9 +1243,19 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Photo upload methods
+  // Multiple images methods
+  setImageInputMode(mode: 'url' | 'upload' | 'camera'): void {
+    this.currentImageInputMode = mode;
+    if (mode !== 'camera') {
+      this.showCamera = false;
+      this.stopCamera();
+    }
+  }
+
   openFileInput(): void {
+    this.currentImageInputMode = 'upload';
     this.showCamera = false;
+    this.stopCamera();
     const fileInput = document.getElementById('box-details-photo-file-input') as HTMLInputElement;
     if (fileInput) {
       fileInput.click();
@@ -1208,50 +1265,91 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      const file = input.files[0];
-      if (file.type.startsWith('image/')) {
-        this.selectedFile = file;
-        this.statusUpdateForm.photoPath = ''; // Clear URL when file is selected
-        this.previewImage(file);
-      } else {
-        this.photoUploadError = 'Please select an image file';
-      }
+      Array.from(input.files).forEach(file => {
+        if (file.type.startsWith('image/')) {
+          this.addImageFromFile(file);
+        } else {
+          this.photoUploadError = 'Please select image files only';
+        }
+      });
+      // Reset input to allow selecting the same file again
+      input.value = '';
     }
   }
 
-  previewImage(file: File): void {
+  addImageFromFile(file: File): void {
     const reader = new FileReader();
     reader.onload = (e) => {
-      this.photoPreview = e.target?.result as string;
+      const preview = e.target?.result as string;
+      this.selectedImages.push({
+        id: `file-${Date.now()}-${Math.random()}`,
+        type: 'file',
+        file: file,
+        preview: preview,
+        name: file.name,
+        size: file.size
+      });
+      this.photoUploadError = '';
     };
     reader.readAsDataURL(file);
   }
 
-  removeSelectedFile(): void {
-    this.selectedFile = null;
-    this.photoPreview = null;
+  addImageFromUrl(): void {
+    const url = this.currentUrlInput?.trim();
+    if (!url) {
+      this.photoUploadError = 'Please enter a valid URL';
+      return;
+    }
+
+    // Validate URL format
+    try {
+      new URL(url);
+    } catch {
+      this.photoUploadError = 'Please enter a valid URL';
+      return;
+    }
+
+    // Check if it's a data URL (base64)
+    if (url.startsWith('data:image/')) {
+      this.selectedImages.push({
+        id: `url-${Date.now()}-${Math.random()}`,
+        type: 'url',
+        url: url,
+        preview: url,
+        name: 'Base64 Image'
+      });
+    } else {
+      // For external URLs, we'll use the URL as preview (backend will download it)
+      this.selectedImages.push({
+        id: `url-${Date.now()}-${Math.random()}`,
+        type: 'url',
+        url: url,
+        preview: url, // Will be replaced by actual image if URL is valid
+        name: url.length > 50 ? url.substring(0, 50) + '...' : url
+      });
+    }
+
+    this.currentUrlInput = '';
+    this.photoUploadError = '';
   }
 
-  uploadPhoto(file: File) {
-    return this.apiService.upload<{ url: string }>('upload/quality-issue-photo', file).pipe(
-      map((response: any) => {
-        if (typeof response === 'string') return response;
-        return response?.url || response?.photoPath || response?.data?.url || response?.data?.photoPath || '';
-      })
-    );
+  removeImage(imageId: string): void {
+    this.selectedImages = this.selectedImages.filter(img => img.id !== imageId);
+  }
+
+  trackByImageId(index: number, image: { id: string }): string {
+    return image.id;
   }
 
   // Camera methods
   async openCamera(): Promise<void> {
     try {
+      this.currentImageInputMode = 'camera';
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'environment' } // Use back camera on mobile
       });
       this.cameraStream = stream;
       this.showCamera = true;
-      this.selectedFile = null;
-      this.photoPreview = null;
-      this.statusUpdateForm.photoPath = '';
       
       // Wait for video element to be rendered
       setTimeout(() => {
@@ -1264,6 +1362,8 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     } catch (err) {
       console.error('Error accessing camera:', err);
       this.photoUploadError = 'Unable to access camera. Please check permissions.';
+      this.showCamera = false;
+      this.currentImageInputMode = 'url';
     }
   }
 
@@ -1273,6 +1373,9 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       this.cameraStream = null;
     }
     this.showCamera = false;
+    if (this.currentImageInputMode === 'camera') {
+      this.currentImageInputMode = 'url';
+    }
   }
 
   capturePhoto(): void {
@@ -1288,8 +1391,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       canvas.toBlob((blob) => {
         if (blob) {
           const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
-          this.selectedFile = file;
-          this.previewImage(file);
+          this.addImageFromFile(file);
           this.stopCamera();
         }
       }, 'image/jpeg', 0.9);

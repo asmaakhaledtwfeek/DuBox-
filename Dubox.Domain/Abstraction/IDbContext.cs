@@ -30,6 +30,7 @@ public interface IDbContext
     // Production tracking
     DbSet<DailyProductionLog> DailyProductionLogs { get; }
     DbSet<QualityIssue> QualityIssues { get; }
+    DbSet<QualityIssueImage> QualityIssueImages { get; }
     
     // Team management
     DbSet<Team> Teams { get; }

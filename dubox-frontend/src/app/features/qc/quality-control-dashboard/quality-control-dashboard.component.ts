@@ -70,19 +70,26 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   statusUpdateForm: {
     status: QualityIssueStatus;
     resolutionDescription: string;
-    photoPath: string;
   } = {
     status: 'Open',
-    resolutionDescription: '',
-    photoPath: ''
+    resolutionDescription: ''
   };
   statusUpdateLoading = false;
   statusUpdateError = '';
   qualityIssueStatuses: QualityIssueStatus[] = ['Open', 'InProgress', 'Resolved', 'Closed'];
   
-  // Photo upload state
-  selectedFile: File | null = null;
-  photoPreview: string | null = null;
+  // Multiple images state
+  selectedImages: Array<{
+    id: string;
+    type: 'file' | 'url' | 'camera';
+    file?: File;
+    url?: string;
+    preview: string;
+    name?: string;
+    size?: number;
+  }> = [];
+  currentImageInputMode: 'url' | 'upload' | 'camera' = 'url';
+  currentUrlInput: string = '';
   isUploadingPhoto = false;
   photoUploadError = '';
   cameraStream: MediaStream | null = null;
@@ -242,7 +249,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     return classes[key] || 'pending';
   }
 
-  private fetchCheckpoints(): void {
+  fetchCheckpoints(): void {
     this.checkpointsLoading = true;
     this.qualityIssuesLoading = true;
     this.checkpointsError = '';
@@ -413,6 +420,96 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     this.selectedIssueDetails = null;
   }
 
+  getQualityIssueImageUrls(issue: QualityIssueDetails | null): string[] {
+    if (!issue) return [];
+    
+    // First, try to use the new Images array
+    if (issue.images && Array.isArray(issue.images) && issue.images.length > 0) {
+      return issue.images
+        .sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
+        .map((img) => {
+          const imageData = img.imageData || '';
+          // If it's already a data URL, return as is
+          if (imageData.startsWith('data:image/')) {
+            return imageData;
+          }
+          // If it's a URL, return as is
+          if (imageData.startsWith('http://') || imageData.startsWith('https://')) {
+            return imageData;
+          }
+          // Otherwise, assume it's base64 and add data URI prefix
+          return `data:image/jpeg;base64,${imageData}`;
+        })
+        .filter((url: string) => url && url.trim().length > 0);
+    }
+    
+    // Fallback to old PhotoPath field (backward compatibility)
+    if (issue.photoPath) {
+      return [issue.photoPath];
+    }
+    
+    return [];
+  }
+
+  openImageInNewTab(imageUrl: string): void {
+    window.open(imageUrl, '_blank', 'noopener,noreferrer');
+  }
+
+  downloadImage(imageUrl: string): void {
+    try {
+      const link = document.createElement('a');
+      link.href = imageUrl;
+      link.download = `quality-issue-image-${Date.now()}.jpg`;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading image:', error);
+      // Fallback: open in new tab
+      this.openImageInNewTab(imageUrl);
+    }
+  }
+
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pjwvc3ZnPg==';
+  }
+
+  // Lightbox functionality
+  lightboxOpen = false;
+  lightboxImageIndex = 0;
+  lightboxImages: string[] = [];
+
+  openLightbox(imageUrl: string, allImages: string[]): void {
+    this.lightboxImages = allImages;
+    this.lightboxImageIndex = allImages.indexOf(imageUrl);
+    if (this.lightboxImageIndex === -1) this.lightboxImageIndex = 0;
+    this.lightboxOpen = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeLightbox(): void {
+    this.lightboxOpen = false;
+    document.body.style.overflow = '';
+  }
+
+  nextImage(): void {
+    if (this.lightboxImageIndex < this.lightboxImages.length - 1) {
+      this.lightboxImageIndex++;
+    } else {
+      this.lightboxImageIndex = 0;
+    }
+  }
+
+  previousImage(): void {
+    if (this.lightboxImageIndex > 0) {
+      this.lightboxImageIndex--;
+    } else {
+      this.lightboxImageIndex = this.lightboxImages.length - 1;
+    }
+  }
+
   openStatusModal(issue: AggregatedQualityIssue): void {
     if (this.isDetailsModalOpen) {
       this.closeIssueDetails();
@@ -426,12 +523,12 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     this.selectedIssueForStatus = issue;
     this.statusUpdateForm = {
       status: (issue.issueStatus || issue.status || 'Open') as QualityIssueStatus,
-      resolutionDescription: '',
-      photoPath: issue.photoPath || ''
+      resolutionDescription: ''
     };
     this.statusUpdateError = '';
-    this.selectedFile = null;
-    this.photoPreview = null;
+    this.selectedImages = [];
+    this.currentImageInputMode = 'url';
+    this.currentUrlInput = '';
     this.showCamera = false;
     this.stopCamera();
     this.isStatusModalOpen = true;
@@ -442,8 +539,9 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     this.selectedIssueForStatus = null;
     this.statusUpdateLoading = false;
     this.statusUpdateError = '';
-    this.selectedFile = null;
-    this.photoPreview = null;
+    this.selectedImages = [];
+    this.currentImageInputMode = 'url';
+    this.currentUrlInput = '';
     this.showCamera = false;
     this.stopCamera();
   }
@@ -477,43 +575,31 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     this.statusUpdateError = '';
     this.photoUploadError = '';
 
-    // Upload photo if file is selected, otherwise proceed with URL
-    if (this.selectedFile) {
-      this.isUploadingPhoto = true;
-      this.uploadPhoto(this.selectedFile).subscribe({
-        next: (uploadResult) => {
-          this.isUploadingPhoto = false;
-          const photoPath = uploadResult || this.statusUpdateForm.photoPath?.trim() || null;
-          this.submitStatusUpdateWithPhoto(photoPath);
-        },
-        error: (err: any) => {
-          console.error('❌ Failed to upload photo:', err);
-          this.isUploadingPhoto = false;
-          this.photoUploadError = err?.error?.message || err?.message || 'Failed to upload photo';
-          this.statusUpdateLoading = false;
-        }
-      });
-    } else {
-      const photoPath = this.statusUpdateForm.photoPath?.trim() || null;
-      this.submitStatusUpdateWithPhoto(photoPath);
-    }
-  }
+    // Prepare files and URLs
+    const files = this.selectedImages
+      .filter(img => img.type === 'file' || img.type === 'camera')
+      .map(img => img.file!)
+      .filter((file): file is File => file !== undefined);
 
-  private submitStatusUpdateWithPhoto(photoPath: string | null): void {
-    if (!this.selectedIssueForStatus || !this.selectedIssueForStatus.issueId) {
-      return;
-    }
+    const imageUrls = this.selectedImages
+      .filter(img => img.type === 'url' && img.url)
+      .map(img => img.url!)
+      .filter((url): url is string => url !== undefined && url.trim() !== '');
 
     const payload: UpdateQualityIssueStatusRequest = {
       issueId: this.selectedIssueForStatus.issueId,
       status: this.statusUpdateForm.status,
       resolutionDescription: this.requiresResolutionDescription(this.statusUpdateForm.status)
         ? this.statusUpdateForm.resolutionDescription?.trim()
-        : null,
-      photoPath: photoPath
+        : null
     };
 
-    this.wirService.updateQualityIssueStatus(payload.issueId, payload).subscribe({
+    this.wirService.updateQualityIssueStatus(
+      payload.issueId, 
+      payload,
+      files.length > 0 ? files : undefined,
+      imageUrls.length > 0 ? imageUrls : undefined
+    ).subscribe({
       next: (updatedIssue) => {
         this.statusUpdateLoading = false;
         this.applyUpdatedQualityIssue(updatedIssue);
@@ -527,10 +613,18 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Photo upload methods
+  // Multiple images methods
+  setImageInputMode(mode: 'url' | 'upload' | 'camera'): void {
+    this.currentImageInputMode = mode;
+    if (mode !== 'camera') {
+      this.showCamera = false;
+      this.stopCamera();
+    }
+  }
+
   openFileInput(): void {
     this.showCamera = false;
-    const fileInput = document.getElementById('file-input') as HTMLInputElement;
+    const fileInput = document.getElementById('issue-photo-file-input') as HTMLInputElement;
     if (fileInput) {
       fileInput.click();
     }
@@ -539,98 +633,321 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      const file = input.files[0];
-      if (file.type.startsWith('image/')) {
-        this.selectedFile = file;
-        this.statusUpdateForm.photoPath = ''; // Clear URL when file is selected
-        this.previewImage(file);
-      } else {
-        this.photoUploadError = 'Please select an image file';
-      }
+      Array.from(input.files).forEach(file => {
+        if (file.type.startsWith('image/')) {
+          this.addImageFromFile(file);
+        } else {
+          this.photoUploadError = 'Please select image files only';
+        }
+      });
+      // Reset input to allow selecting the same file again
+      input.value = '';
     }
   }
 
-  previewImage(file: File): void {
+  addImageFromFile(file: File): void {
     const reader = new FileReader();
     reader.onload = (e) => {
-      this.photoPreview = e.target?.result as string;
+      const preview = e.target?.result as string;
+      this.selectedImages.push({
+        id: `file-${Date.now()}-${Math.random()}`,
+        type: 'file',
+        file: file,
+        preview: preview,
+        name: file.name,
+        size: file.size
+      });
+      this.photoUploadError = '';
     };
     reader.readAsDataURL(file);
   }
 
-  removeSelectedFile(): void {
-    this.selectedFile = null;
-    this.photoPreview = null;
+  addImageFromDataUrl(imageData: string): void {
+    // Convert data URL to File for consistency with existing structure
+    fetch(imageData)
+      .then(res => res.blob())
+      .then(blob => {
+        const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        this.selectedImages.push({
+          id: `camera-${Date.now()}-${Math.random()}`,
+          type: 'camera',
+          file: file,
+          preview: imageData,
+          name: file.name,
+          size: file.size
+        });
+        this.photoUploadError = '';
+      })
+      .catch(err => {
+        console.error('Error converting data URL to file:', err);
+        this.photoUploadError = 'Failed to process captured image.';
+      });
   }
 
-  uploadPhoto(file: File) {
-    // Use a generic upload endpoint - adjust the endpoint as needed
-    return this.apiService.upload<{ url: string }>('upload/quality-issue-photo', file).pipe(
-      map((response: any) => {
-        // Handle different response formats
-        if (typeof response === 'string') return response;
-        return response?.url || response?.photoPath || response?.data?.url || response?.data?.photoPath || '';
-      })
-    );
+  addImageFromUrl(): void {
+    const url = this.currentUrlInput?.trim();
+    if (url && url.trim()) {
+      // Validate URL format
+      try {
+        new URL(url);
+        this.selectedImages.push({
+          id: `url-${Date.now()}-${Math.random()}`,
+          type: 'url',
+          url: url.trim(),
+          preview: url.trim() // Use URL as preview
+        });
+        this.currentUrlInput = '';
+        this.currentImageInputMode = 'url';
+        this.photoUploadError = '';
+      } catch {
+        this.photoUploadError = 'Please enter a valid URL';
+      }
+    }
+  }
+
+  removeImage(imageId: string): void {
+    this.selectedImages = this.selectedImages.filter(img => img.id !== imageId);
+  }
+
+  clearAllImages(): void {
+    this.selectedImages = [];
+    this.currentUrlInput = '';
+    this.photoUploadError = '';
+  }
+
+  trackByImageId(index: number, image: { id: string }): string {
+    return image.id;
   }
 
   // Camera methods
   async openCamera(): Promise<void> {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } // Use back camera on mobile
+        video: { 
+          facingMode: 'environment' // Use back camera on mobile
+        } 
       });
       this.cameraStream = stream;
       this.showCamera = true;
-      this.selectedFile = null;
-      this.photoPreview = null;
-      this.statusUpdateForm.photoPath = '';
+      this.currentImageInputMode = 'camera';
       
       // Wait for video element to be rendered
       setTimeout(() => {
-        const video = document.getElementById('camera-preview') as HTMLVideoElement;
-        if (video) {
-          video.srcObject = stream;
-          video.play();
+        const video = document.getElementById('issue-camera-preview') as HTMLVideoElement;
+        const cameraContainer = document.getElementById('camera-preview-container') as HTMLElement;
+        
+        if (!video) {
+          console.error('Video element not found');
+          return;
         }
+        
+        // Set video source and play
+        video.srcObject = stream;
+        video.muted = true;
+        video.playsInline = true;
+        video.autoplay = true;
+        video.play();
+        
+        // Wait for video to start playing before going fullscreen
+        const handlePlaying = () => {
+          console.log('Video is playing, requesting fullscreen');
+          
+          // Request fullscreen for camera container
+          if (cameraContainer) {
+            const requestFullscreen = () => {
+              if (cameraContainer.requestFullscreen) {
+                return cameraContainer.requestFullscreen();
+              } else if ((cameraContainer as any).webkitRequestFullscreen) {
+                return (cameraContainer as any).webkitRequestFullscreen();
+              } else if ((cameraContainer as any).mozRequestFullScreen) {
+                return (cameraContainer as any).mozRequestFullScreen();
+              } else if ((cameraContainer as any).msRequestFullscreen) {
+                return (cameraContainer as any).msRequestFullscreen();
+              }
+              return Promise.reject('Fullscreen not supported');
+            };
+            
+            requestFullscreen().catch((err: unknown) => {
+              console.warn('Error attempting to enable fullscreen:', err);
+            });
+          }
+        };
+        
+        // Ensure video plays
+        video.play().then(() => {
+          console.log('Video play() resolved');
+          // Wait a bit more to ensure video is actually rendering
+          setTimeout(() => {
+            if (video.readyState >= 2 && video.videoWidth > 0) {
+              handlePlaying();
+            } else {
+              // Fallback: wait for playing event
+              video.addEventListener('playing', handlePlaying, { once: true });
+            }
+          }, 300);
+        }).catch(err => {
+          console.error('Error playing video:', err);
+          this.photoUploadError = 'Error starting camera preview.';
+        });
+        
+        // Also listen for playing event as backup
+        video.addEventListener('playing', () => {
+          console.log('Video playing event fired');
+        }, { once: true });
+        
       }, 100);
     } catch (err) {
       console.error('Error accessing camera:', err);
       this.photoUploadError = 'Unable to access camera. Please check permissions.';
+      this.showCamera = false;
     }
   }
 
   stopCamera(): void {
+    // Exit fullscreen if active
+    this.exitFullscreen();
+    
+    // Stop video stream
     if (this.cameraStream) {
       this.cameraStream.getTracks().forEach(track => track.stop());
       this.cameraStream = null;
     }
+    
+    // Clear video element
+    const video = document.getElementById('issue-camera-preview') as HTMLVideoElement;
+    if (video) {
+      const stream = video.srcObject as MediaStream;
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      video.srcObject = null;
+      video.pause();
+    }
+    
     this.showCamera = false;
   }
 
-  capturePhoto(): void {
-    const video = document.getElementById('camera-preview') as HTMLVideoElement;
-    if (!video) return;
+  private exitFullscreen(): void {
+    if (document.fullscreenElement || (document as any).webkitFullscreenElement || 
+        (document as any).mozFullScreenElement || (document as any).msFullscreenElement) {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(err => console.warn('Error exiting fullscreen:', err));
+      } else if ((document as any).webkitExitFullscreen) {
+        (document as any).webkitExitFullscreen();
+      } else if ((document as any).mozCancelFullScreen) {
+        (document as any).mozCancelFullScreen();
+      } else if ((document as any).msExitFullscreen) {
+        (document as any).msExitFullscreen();
+      }
+    }
+  }
 
-    const canvas = document.createElement('canvas');
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.drawImage(video, 0, 0);
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
-          this.selectedFile = file;
-          this.previewImage(file);
-          this.stopCamera();
-        }
-      }, 'image/jpeg', 0.9);
+  capturePhoto(): void {
+    const video = document.getElementById('issue-camera-preview') as HTMLVideoElement;
+    
+    if (!video) {
+      this.photoUploadError = 'Camera element not found.';
+      return;
+    }
+    
+    // Check if video has valid dimensions
+    if (!video.videoWidth || !video.videoHeight || video.videoWidth === 0 || video.videoHeight === 0) {
+      console.warn('Video dimensions not ready:', { 
+        width: video.videoWidth, 
+        height: video.videoHeight,
+        readyState: video.readyState 
+      });
+      this.photoUploadError = 'Camera not ready. Please wait a moment and try again.';
+      return;
+    }
+
+    // Check if video is actually playing
+    if (video.readyState < 2) {
+      console.warn('Video not ready:', { readyState: video.readyState });
+      this.photoUploadError = 'Camera stream not ready. Please wait a moment.';
+      return;
+    }
+    
+    // Check if video is paused
+    if (video.paused) {
+      console.warn('Video is paused, attempting to play');
+      video.play().catch(err => {
+        console.error('Error playing video for capture:', err);
+        this.photoUploadError = 'Camera is paused. Please try again.';
+        return;
+      });
+    }
+
+    try {
+      // Create canvas and draw video frame
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      const ctx = canvas.getContext('2d');
+      
+      if (!ctx) {
+        this.photoUploadError = 'Unable to create canvas context.';
+        return;
+      }
+      
+      // Draw the current video frame to canvas
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Convert to Base64 data URL
+      const imageData = canvas.toDataURL('image/jpeg', 0.9);
+      
+      // Stop camera stream immediately before any async operations
+      const stream = video.srcObject as MediaStream;
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+      
+      // Clear video element srcObject
+      video.srcObject = null;
+      
+      // Clear camera stream reference
+      if (this.cameraStream) {
+        this.cameraStream.getTracks().forEach((track) => track.stop());
+        this.cameraStream = null;
+      }
+      
+      // Exit fullscreen
+      this.exitFullscreen();
+      
+      // Close camera UI immediately
+      this.showCamera = false;
+      
+      // Add the captured image to the list
+      this.addImageFromDataUrl(imageData);
+      
+    } catch (err) {
+      console.error('Error capturing photo:', err);
+      this.photoUploadError = 'Error capturing image. Please try again.';
+      // Ensure camera is stopped even on error
+      this.stopCamera();
     }
   }
 
   ngOnDestroy(): void {
+    // Cleanup: stop camera stream on component unmount
+    const video = document.getElementById('issue-camera-preview') as HTMLVideoElement;
+    if (video) {
+      const stream = video.srcObject as MediaStream;
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+      video.srcObject = null;
+    }
+    
+    // Also stop any stored stream reference
+    if (this.cameraStream) {
+      this.cameraStream.getTracks().forEach((track) => track.stop());
+      this.cameraStream = null;
+    }
+    
     this.stopCamera();
+    this.closeLightbox();
   }
 
   private applyUpdatedQualityIssue(updated: QualityIssueDetails): void {

@@ -34,8 +34,9 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<WIRCheckpoint> WIRCheckpoints { get; set; } = null!;
     public DbSet<WIRChecklistItem> WIRChecklistItems { get; set; } = null!;
     public DbSet<PredefinedChecklistItem> PredefinedChecklistItems { get; set; } = null!;
-    public DbSet<QualityIssue> QualityIssues { get; set; } = null!;
-    public DbSet<Team> Teams { get; set; } = null!;
+        public DbSet<QualityIssue> QualityIssues { get; set; } = null!;
+        public DbSet<QualityIssueImage> QualityIssueImages { get; set; } = null!;
+        public DbSet<Team> Teams { get; set; } = null!;
     public DbSet<TeamMember> TeamMembers { get; set; } = null!;
     public DbSet<Material> Materials { get; set; } = null!;
     public DbSet<BoxMaterial> BoxMaterials { get; set; } = null!;
@@ -205,6 +206,13 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(img => img.ProgressUpdateId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // QualityIssueImage relationships
+        modelBuilder.Entity<QualityIssueImage>()
+            .HasOne(img => img.QualityIssue)
+            .WithMany(qi => qi.Images)
+            .HasForeignKey(img => img.IssueId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<BoxActivity>()
             .HasOne(ba => ba.Box)
             .WithMany(b => b.BoxActivities)
@@ -364,6 +372,10 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         // ProgressUpdateImage indexes
         modelBuilder.Entity<ProgressUpdateImage>()
             .HasIndex(img => new { img.ProgressUpdateId, img.Sequence });
+
+        // QualityIssueImage indexes
+        modelBuilder.Entity<QualityIssueImage>()
+            .HasIndex(img => new { img.IssueId, img.Sequence });
 
         modelBuilder.Entity<DailyProductionLog>()
             .HasIndex(dpl => new { dpl.LogDate, dpl.TeamId });

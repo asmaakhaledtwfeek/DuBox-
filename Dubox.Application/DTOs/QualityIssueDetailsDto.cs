@@ -15,7 +15,9 @@ namespace Dubox.Application.DTOs
         public QualityIssueStatusEnum Status { get; set; }
         public DateTime? ResolutionDate { get; set; }
         public string? ResolutionDescription { get; set; }
+        [Obsolete("Use Images list instead. Kept for backward compatibility.")]
         public string? PhotoPath { get; set; }
+        public List<QualityIssueImageDto> Images { get; set; } = new();
 
         public bool IsOverdue { get; set; }
         public int OverdueDays { get; set; }
@@ -30,6 +32,18 @@ namespace Dubox.Application.DTOs
         public WIRCheckpointStatusEnum? WIRStatus { get; set; }
         public DateTime? WIRRequestedDate { get; set; }
         public string? InspectorName { get; set; }
+    }
+
+    public class QualityIssueImageDto
+    {
+        public Guid QualityIssueImageId { get; set; }
+        public Guid IssueId { get; set; }
+        public string ImageData { get; set; } = string.Empty;
+        public string ImageType { get; set; } = string.Empty;
+        public string? OriginalName { get; set; }
+        public long? FileSize { get; set; }
+        public int Sequence { get; set; }
+        public DateTime CreatedDate { get; set; }
     }
 
 }

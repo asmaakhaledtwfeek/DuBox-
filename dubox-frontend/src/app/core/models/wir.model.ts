@@ -193,6 +193,17 @@ export interface QualityIssueItem {
   status?: QualityIssueStatus | string;
 }
 
+export interface QualityIssueImage {
+  qualityIssueImageId: string;
+  issueId: string;
+  imageData: string;
+  imageType: 'file' | 'url';
+  originalName?: string;
+  fileSize?: number;
+  sequence: number;
+  createdDate: Date;
+}
+
 export interface QualityIssueDetails extends QualityIssueItem {
   issueId: string;
   status?: QualityIssueStatus;
@@ -209,6 +220,7 @@ export interface QualityIssueDetails extends QualityIssueItem {
   inspectorName?: string;
   isOverdue?: boolean;
   overdueDays?: number;
+  images?: QualityIssueImage[];
 }
 
 export interface AddQualityIssuesRequest {
@@ -220,7 +232,7 @@ export interface UpdateQualityIssueStatusRequest {
   issueId: string;
   status: QualityIssueStatus;
   resolutionDescription?: string | null;
-  photoPath?: string | null;
+  photoPath?: string | null; // Deprecated - kept for backward compatibility
 }
 
 // Predefined Checklist Templates for each WIR Code

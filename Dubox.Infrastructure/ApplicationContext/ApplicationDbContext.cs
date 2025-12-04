@@ -33,6 +33,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<DailyProductionLog> DailyProductionLogs { get; set; } = null!;
     public DbSet<WIRCheckpoint> WIRCheckpoints { get; set; } = null!;
     public DbSet<WIRChecklistItem> WIRChecklistItems { get; set; } = null!;
+    public DbSet<WIRCheckpointImage> WIRCheckpointImages { get; set; } = null!;
     public DbSet<PredefinedChecklistItem> PredefinedChecklistItems { get; set; } = null!;
         public DbSet<QualityIssue> QualityIssues { get; set; } = null!;
         public DbSet<QualityIssueImage> QualityIssueImages { get; set; } = null!;
@@ -213,6 +214,13 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(img => img.IssueId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // WIRCheckpointImage relationships
+        modelBuilder.Entity<WIRCheckpointImage>()
+            .HasOne(img => img.WIRCheckpoint)
+            .WithMany(wir => wir.Images)
+            .HasForeignKey(img => img.WIRId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<BoxActivity>()
             .HasOne(ba => ba.Box)
             .WithMany(b => b.BoxActivities)
@@ -376,6 +384,10 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         // QualityIssueImage indexes
         modelBuilder.Entity<QualityIssueImage>()
             .HasIndex(img => new { img.IssueId, img.Sequence });
+
+        // WIRCheckpointImage indexes
+        modelBuilder.Entity<WIRCheckpointImage>()
+            .HasIndex(img => new { img.WIRId, img.Sequence });
 
         modelBuilder.Entity<DailyProductionLog>()
             .HasIndex(dpl => new { dpl.LogDate, dpl.TeamId });

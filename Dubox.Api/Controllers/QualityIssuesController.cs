@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Dubox.Api.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/qualityissues")]
     [ApiController]
     [Authorize]
     public class QualityIssuesController : ControllerBase

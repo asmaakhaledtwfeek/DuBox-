@@ -93,6 +93,18 @@ export interface WIRCheckpoint {
   createdDate: Date;
   checklistItems?: WIRCheckpointChecklistItem[];
   qualityIssues?: QualityIssueItem[];
+  images?: WIRCheckpointImage[];
+}
+
+export interface WIRCheckpointImage {
+  wirCheckpointImageId: string;
+  wirId: string;
+  imageData: string;
+  imageType: string;
+  originalName?: string;
+  fileSize?: number;
+  sequence: number;
+  createdDate: Date;
 }
 
 export interface WIRCheckpointFilter {
@@ -162,11 +174,12 @@ export interface UpdateChecklistItemRequest {
 }
 
 export interface ReviewWIRCheckpointRequest {
-  wirId: string;
+  wIRId: string;
   status: WIRCheckpointStatus;
   comment?: string;
   inspectorRole?: string;
-  attachmentPath?: string;
+  files?: File[];
+  imageUrls?: string[];
   items: ChecklistItemForReview[];
 }
 
@@ -191,6 +204,7 @@ export interface QualityIssueItem {
   reportedBy?: string;
   issueDate?: string | Date;
   status?: QualityIssueStatus | string;
+  imageDataUrls?: string[];
 }
 
 export interface QualityIssueImage {
@@ -223,9 +237,15 @@ export interface QualityIssueDetails extends QualityIssueItem {
   images?: QualityIssueImage[];
 }
 
-export interface AddQualityIssuesRequest {
+export interface AddQualityIssueRequest {
   wirId: string;
-  issues: QualityIssueItem[];
+  issueType: IssueType;
+  severity: SeverityType;
+  issueDescription: string;
+  assignedTo?: string;
+  dueDate?: string | Date;
+  imageUrls?: string[];
+  files?: File[];
 }
 
 export interface UpdateQualityIssueStatusRequest {

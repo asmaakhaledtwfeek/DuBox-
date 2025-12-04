@@ -40,6 +40,19 @@ namespace Dubox.Application.DTOs
         public BoxDto? Box { get; set; }
         public List<WIRChecklistItemDto> ChecklistItems { get; set; } = new();
         public List<QualityIssueDto> QualityIssues { get; set; } = new();
+        public List<WIRCheckpointImageDto> Images { get; set; } = new();
+    }
+    
+    public class WIRCheckpointImageDto
+    {
+        public Guid WIRCheckpointImageId { get; set; }
+        public Guid WIRId { get; set; }
+        public string ImageData { get; set; } = string.Empty;
+        public string ImageType { get; set; } = "file";
+        public string? OriginalName { get; set; }
+        public long? FileSize { get; set; }
+        public int Sequence { get; set; }
+        public DateTime CreatedDate { get; set; }
     }
     public class WIRChecklistItemDto
     {
@@ -62,6 +75,7 @@ namespace Dubox.Application.DTOs
         public DateTime DueDate { get; set; }
         public string? ReportedBy { get; set; }
         public QualityIssueStatusEnum Status { get; set; }
+        public List<QualityIssueImageDto> Images { get; set; } = new();
     }
 
     public class PredefinedChecklistItemDto

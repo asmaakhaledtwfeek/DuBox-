@@ -6,7 +6,7 @@ import { WIRService } from '../../../core/services/wir.service';
 import { BoxService } from '../../../core/services/box.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { ApiService } from '../../../core/services/api.service';
-import { Observable } from 'rxjs';
+import { Observable, forkJoin } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { 
   WIRRecord, 
@@ -19,12 +19,14 @@ import {
   ReviewWIRCheckpointRequest,
   WIRCheckpointStatus,
   CheckListItemStatus,
-  AddQualityIssuesRequest,
+  AddQualityIssueRequest,
   IssueType,
   SeverityType,
   QualityIssueItem,
   QualityIssueDetails,
-  WIRCheckpointChecklistItem
+  QualityIssueImage,
+  WIRCheckpointChecklistItem,
+  QualityIssueStatus
 } from '../../../core/models/wir.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
@@ -41,6 +43,8 @@ type QualityIssueFormValue = {
   photoPath?: string;
   reportedBy?: string;
   issueDate?: string;
+  imageDataUrls?: string[];
+  files?: File[]; // Store File objects separately
 };
 
 @Component({
@@ -70,6 +74,41 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   isChecklistModalOpen = false;
   isDeleteModalOpen = false;
   isQualityIssueModalOpen = false;
+  isQualityIssueDetailsModalOpen = false;
+  selectedQualityIssueDetails: {
+    issue?: QualityIssueItem;
+    formIssue?: any;
+    images?: string[];
+  } | null = null;
+  
+  // Lightbox state
+  lightboxOpen = false;
+  lightboxImages: string[] = [];
+  lightboxImageIndex = 0;
+  
+  // Quality issue status metadata
+  qualityIssueStatusMeta: Record<QualityIssueStatus, { label: string; class: string }> = {
+    Open: { label: 'OPEN', class: 'status-open' },
+    InProgress: { label: 'IN PROGRESS', class: 'status-inprogress' },
+    Resolved: { label: 'RESOLVED', class: 'status-resolved' },
+    Closed: { label: 'CLOSED', class: 'status-closed' }
+  };
+  
+  // Quality Issue Images
+  qualityIssueImages: Array<{
+    id: string;
+    type: 'file' | 'url' | 'camera';
+    file?: File;
+    url?: string;
+    preview: string;
+    name?: string;
+    size?: number;
+  }> = [];
+  showQualityIssueCamera = false;
+  qualityIssuePhotoInputMethod: 'url' | 'upload' | 'camera' = 'upload';
+  qualityIssueCurrentUrlInput = '';
+  qualityIssueVideoRef?: HTMLVideoElement;
+  qualityIssueCameraStream: MediaStream | null = null;
   isAddPredefinedItemsModalOpen = false;
   isItemReviewModalOpen = false;
   pendingDeleteIndex: number | null = null;
@@ -97,15 +136,27 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   boxIssuesLoading = false;
   boxIssuesError = '';
   
-  // Photo upload state (enhanced)
-  photoUrl: string = '';
-  selectedFile: File | null = null;
-  photoPreview: string | null = null;
+  // Photo upload state (enhanced - multiple images support)
+  selectedImages: Array<{
+    id: string;
+    type: 'file' | 'url' | 'camera';
+    file?: File;
+    url?: string;
+    preview: string;
+    name?: string;
+    size?: number;
+  }> = [];
+  currentUrlInput: string = '';
   isUploadingPhoto = false;
   photoUploadError = '';
   cameraStream: MediaStream | null = null;
   showCamera = false;
   photoInputMethod: 'url' | 'upload' | 'camera' = 'upload';
+  
+  // Legacy properties for backward compatibility (deprecated)
+  photoUrl: string = '';
+  selectedFile: File | null = null;
+  photoPreview: string | null = null;
   
   CheckpointStatus = CheckpointStatus;
   WIRCheckpointStatus = WIRCheckpointStatus;
@@ -912,6 +963,9 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
         this.syncReviewFormFromCheckpoint();
         this.buildAddChecklistItemsForm(checkpoint.checklistItems || []);
         
+        // Reload quality issues into the form array to reflect any changes
+        this.resetQualityIssuesForm();
+        
         // If we're on the review step, reload checklist items
         if (this.currentStep === 'review') {
           this.loadChecklistItems();
@@ -953,9 +1007,13 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
       severity: this.severityLevels[0],
       issueType: this.issueTypes[0],
       assignedTo: '',
-      dueDate: '',
-      photoPath: ''
+      dueDate: ''
     });
+    this.qualityIssueImages = [];
+    this.qualityIssueCurrentUrlInput = '';
+    this.showQualityIssueCamera = false;
+    this.qualityIssuePhotoInputMethod = 'upload';
+    this.stopQualityIssueCamera();
     this.isQualityIssueModalOpen = true;
   }
 
@@ -1074,55 +1132,89 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     });
   }
 
+  savingQualityIssue: boolean = false; // Loading state for single issue submission
+
   addQualityIssueFromModal(): void {
     if (this.newQualityIssueForm.invalid) {
       this.newQualityIssueForm.markAllAsTouched();
       return;
     }
 
+    if (!this.wirCheckpoint) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: 'WIR checkpoint not found.', type: 'error' }
+      }));
+      return;
+    }
+
     const value = this.newQualityIssueForm.value;
-    this.addQualityIssueRow({
-      issueDescription: value.issueDescription,
-      severity: value.severity,
-      issueType: value.issueType,
-      assignedTo: value.assignedTo,
-      dueDate: value.dueDate,
-      photoPath: value.photoPath,
-      reportedBy: 'Current User',
-      issueDate: this.toDateInputValue(new Date())
+    
+    // Separate files from URLs
+    const files: File[] = [];
+    const imageUrls: string[] = [];
+    
+    this.qualityIssueImages.forEach(img => {
+      if (img.type === 'url' && img.url) {
+        // URL type - add to imageUrls
+        imageUrls.push(img.url.trim());
+      } else if ((img.type === 'file' || img.type === 'camera') && img.file) {
+        // File/Camera type - add to files array
+        files.push(img.file);
+      } else if (img.preview && img.preview.startsWith('data:image/')) {
+        // Base64 data URL from camera/file - add to imageUrls
+        imageUrls.push(img.preview);
+      }
     });
-    this.closeQualityIssueModal();
-  }
+    
+    // Build request for single issue
+    const request: AddQualityIssueRequest = {
+      wirId: this.wirCheckpoint.wirId,
+      issueType: value.issueType,
+      severity: value.severity,
+      issueDescription: value.issueDescription?.trim() || '',
+      assignedTo: value.assignedTo?.trim() || undefined,
+      dueDate: value.dueDate || undefined,
+      imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+      files: files.length > 0 ? files : undefined
+    };
 
-  submitQualityIssues(): void {
-    if (!this.wirCheckpoint || this.qualityIssuesArray.length === 0) {
-      return;
-    }
+    this.savingQualityIssue = true;
 
-    if (this.qualityIssuesForm.invalid) {
-      this.markFormGroupTouched(this.qualityIssuesForm);
-      return;
-    }
-
-    const request = this.buildQualityIssuesRequest(this.wirCheckpoint.wirId);
-    this.savingQualityIssues = true;
-
-    this.wirService.addQualityIssues(request).subscribe({
+    this.wirService.addQualityIssue(request).subscribe({
       next: (updatedCheckpoint) => {
         this.wirCheckpoint = updatedCheckpoint;
-        this.refreshCheckpointDetails();
+        
+        // Reload quality issues into the form array to show the newly added issue
         this.resetQualityIssuesForm();
+        
+        // Refresh checkpoint details to ensure all data is up to date
+        this.refreshCheckpointDetails();
+        
+        // Clear the form and close modal
+        this.newQualityIssueForm.reset();
+        this.qualityIssueImages = [];
+        this.qualityIssueCurrentUrlInput = '';
+        this.stopQualityIssueCamera();
+        this.closeQualityIssueModal();
+        
         document.dispatchEvent(new CustomEvent('app-toast', {
-          detail: { message: 'Quality issues saved successfully.', type: 'success' }
+          detail: { message: 'Quality issue added successfully.', type: 'success' }
         }));
-        this.savingQualityIssues = false;
+        
+        this.savingQualityIssue = false;
       },
       error: (err) => {
-        console.error('Failed to add quality issues:', err);
-        this.savingQualityIssues = false;
+        console.error('Failed to add quality issue:', err);
+        this.savingQualityIssue = false;
+        
+        const errorMessage = err.error?.message || err.message || 'Failed to add quality issue. Please try again.';
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { message: errorMessage, type: 'error' }
+        }));
       }
     });
   }
+
 
   closeWorkflowStep(): void {
     this.currentStep = null;
@@ -1208,6 +1300,7 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
 
   private resetQualityIssuesForm(): void {
     this.qualityIssuesArray.clear();
+    this.qualityIssueFilesMap.clear();
     const existing = this.existingQualityIssues;
     if (existing.length) {
       existing.forEach(issue => {
@@ -1225,8 +1318,11 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     this.addQualityIssueRow();
   }
 
+  // Store files separately for each issue (indexed by form array index)
+  private qualityIssueFilesMap: Map<number, File[]> = new Map();
+
   private addQualityIssueRow(issue?: Partial<QualityIssueFormValue>): void {
-    this.qualityIssuesArray.push(this.fb.group({
+    const formGroup = this.fb.group({
       issueType: [issue?.issueType || this.issueTypes[0], Validators.required],
       severity: [issue?.severity || this.severityLevels[0], Validators.required],
       issueDescription: [issue?.issueDescription || '', [Validators.required, Validators.maxLength(500)]],
@@ -1234,11 +1330,248 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
       dueDate: [issue?.dueDate || ''],
       photoPath: [issue?.photoPath || '', [Validators.maxLength(500)]],
       reportedBy: [issue?.reportedBy || null],
-      issueDate: [issue?.issueDate || null]
-    }));
+      issueDate: [issue?.issueDate || null],
+      imageDataUrls: [issue?.imageDataUrls || []]
+    });
+    
+    const index = this.qualityIssuesArray.length;
+    this.qualityIssuesArray.push(formGroup);
+    
+    // Store files for this issue if they exist
+    if (issue?.files && issue.files.length > 0) {
+      this.qualityIssueFilesMap.set(index, issue.files);
+    }
+  }
+
+  viewQualityIssueDetails(index: number): void {
+    const issue = this.getExistingQualityIssue(index);
+    const formIssue = this.qualityIssuesArray.at(index);
+    
+    if (!issue && !formIssue) {
+      return;
+    }
+
+    // Debug logging
+    console.log('[QA/QC] Viewing quality issue details:', issue);
+    console.log('[QA/QC] Issue images property:', (issue as any)?.images);
+
+    // Get images from the issue
+    let images: string[] = [];
+    
+    // Get images from existing issue (if it has images property - QualityIssueDetails or QualityIssueItem with images)
+    if (issue) {
+      const issueDetails = issue as QualityIssueDetails & { images?: QualityIssueImage[] };
+      
+      // First, check for images array (QualityIssueImage[])
+      if (issueDetails.images && Array.isArray(issueDetails.images) && issueDetails.images.length > 0) {
+        console.log('[QA/QC] Found images array with', issueDetails.images.length, 'images');
+        images = issueDetails.images
+          .sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
+          .map((img: QualityIssueImage) => {
+            const imageData = img.imageData || '';
+            // If it's already a data URL, return as is
+            if (imageData.startsWith('data:image/')) {
+              return imageData;
+            }
+            // If it's a URL, return as is
+            if (imageData.startsWith('http://') || imageData.startsWith('https://')) {
+              return imageData;
+            }
+            // Otherwise, assume it's base64 and add data URI prefix
+            return `data:image/jpeg;base64,${imageData}`;
+          })
+          .filter((url: string) => url && url.trim().length > 0);
+      }
+      
+      // Also check imageDataUrls if available (for backward compatibility)
+      if (issue.imageDataUrls && Array.isArray(issue.imageDataUrls) && issue.imageDataUrls.length > 0) {
+        const urlImages = issue.imageDataUrls
+          .filter((url: string) => url && url.trim().length > 0)
+          .map((url: string) => {
+            // If it's already a data URL, return as is
+            if (url.startsWith('data:image/')) {
+              return url;
+            }
+            // If it's a URL, return as is
+            if (url.startsWith('http://') || url.startsWith('https://')) {
+              return url;
+            }
+            // Otherwise, assume it's base64 and add data URI prefix
+            return `data:image/jpeg;base64,${url}`;
+          });
+        images = [...images, ...urlImages];
+      }
+      
+      // Also check photoPath (legacy field)
+      if (issue.photoPath && issue.photoPath.trim().length > 0) {
+        const photoPath = issue.photoPath.trim();
+        if (photoPath.startsWith('data:image/') || photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
+          images.push(photoPath);
+        } else {
+          images.push(`data:image/jpeg;base64,${photoPath}`);
+        }
+      }
+    }
+    
+    // Also check imageDataUrls from form (for issues being edited)
+    if (formIssue) {
+      const formImageUrls = formIssue.get('imageDataUrls')?.value || [];
+      if (Array.isArray(formImageUrls) && formImageUrls.length > 0) {
+        const formUrls = formImageUrls
+          .filter((url: string) => url && url.trim().length > 0)
+          .map((url: string) => {
+            // If it's already a data URL, return as is
+            if (url.startsWith('data:image/')) {
+              return url;
+            }
+            // If it's a URL, return as is
+            if (url.startsWith('http://') || url.startsWith('https://')) {
+              return url;
+            }
+            // Otherwise, assume it's base64 and add data URI prefix
+            return `data:image/jpeg;base64,${url}`;
+          });
+        images = [...images, ...formUrls];
+      }
+    }
+
+    // Remove duplicates
+    images = [...new Set(images)];
+
+    console.log('[QA/QC] Total images extracted:', images.length);
+    console.log('[QA/QC] Image URLs:', images);
+
+    // Store selected issue details
+    this.selectedQualityIssueDetails = {
+      issue: issue,
+      formIssue: formIssue,
+      images: images.length > 0 ? images : undefined
+    };
+
+    // Open the modal
+    this.isQualityIssueDetailsModalOpen = true;
+  }
+
+  closeQualityIssueDetailsModal(): void {
+    this.isQualityIssueDetailsModalOpen = false;
+    this.selectedQualityIssueDetails = null;
+  }
+
+  openImageInNewTab(imageUrl: string): void {
+    window.open(imageUrl, '_blank');
+  }
+  
+  getQualityIssueStatusLabel(status?: QualityIssueStatus | string): string {
+    const normalized = (status || 'Open') as QualityIssueStatus;
+    return this.qualityIssueStatusMeta[normalized]?.label || 'OPEN';
+  }
+
+  getQualityIssueStatusClass(status?: QualityIssueStatus | string): string {
+    const normalized = (status || 'Open') as QualityIssueStatus;
+    return this.qualityIssueStatusMeta[normalized]?.class || 'status-open';
+  }
+  
+  formatIssueDate(date?: string | Date): string {
+    if (!date) return '—';
+    const d = date instanceof Date ? date : new Date(date);
+    if (isNaN(d.getTime())) return '—';
+    return d.toISOString().split('T')[0];
+  }
+  
+  getQualityIssueImageUrls(): string[] {
+    if (!this.selectedQualityIssueDetails) return [];
+    
+    const images = this.selectedQualityIssueDetails.images || [];
+    
+    // Process image URLs - handle base64 data URLs and regular URLs
+    return images
+      .map((img: string) => {
+        // If it's already a data URL, return as is
+        if (img.startsWith('data:image/')) {
+          return img;
+        }
+        // If it's a URL, return as is
+        if (img.startsWith('http://') || img.startsWith('https://')) {
+          return img;
+        }
+        // Otherwise, assume it's base64 and add data URI prefix
+        return `data:image/jpeg;base64,${img}`;
+      })
+      .filter((url: string) => url && url.trim().length > 0);
+  }
+  
+  openLightbox(imageUrl: string, allImages: string[]): void {
+    this.lightboxImages = allImages;
+    this.lightboxImageIndex = allImages.indexOf(imageUrl);
+    if (this.lightboxImageIndex === -1) this.lightboxImageIndex = 0;
+    this.lightboxOpen = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeLightbox(): void {
+    this.lightboxOpen = false;
+    document.body.style.overflow = '';
+  }
+  
+  getCurrentLightboxImage(): string {
+    if (this.lightboxImages.length === 0) return '';
+    return this.lightboxImages[this.lightboxImageIndex] || this.lightboxImages[0];
+  }
+  
+  previousImage(): void {
+    if (this.lightboxImages.length === 0) return;
+    this.lightboxImageIndex = (this.lightboxImageIndex - 1 + this.lightboxImages.length) % this.lightboxImages.length;
+  }
+  
+  nextImage(): void {
+    if (this.lightboxImages.length === 0) return;
+    this.lightboxImageIndex = (this.lightboxImageIndex + 1) % this.lightboxImages.length;
+  }
+  
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pjwvc3ZnPg==';
+  }
+
+  getQualityIssueDetail(field: string): any {
+    if (!this.selectedQualityIssueDetails) return '—';
+    
+    const { issue, formIssue } = this.selectedQualityIssueDetails;
+    
+    // Try form issue first, then existing issue
+    if (formIssue) {
+      const value = formIssue.get(field)?.value;
+      if (value !== null && value !== undefined && value !== '') {
+        return value;
+      }
+    }
+    
+    if (issue) {
+      const value = (issue as any)[field];
+      if (value !== null && value !== undefined && value !== '') {
+        return value;
+      }
+    }
+    
+    return '—';
   }
 
   removeQualityIssue(index: number): void {
+    if (!confirm('Are you sure you want to delete this quality issue?')) {
+      return;
+    }
+    
+    this.qualityIssueFilesMap.delete(index);
+    // Reindex the map after removal
+    const newMap = new Map<number, File[]>();
+    this.qualityIssueFilesMap.forEach((files, oldIndex) => {
+      if (oldIndex < index) {
+        newMap.set(oldIndex, files);
+      } else if (oldIndex > index) {
+        newMap.set(oldIndex - 1, files);
+      }
+    });
+    this.qualityIssueFilesMap = newMap;
     this.qualityIssuesArray.removeAt(index);
   }
 
@@ -1665,40 +1998,122 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     item.get('remarks')?.updateValueAndValidity();
   }
 
-  // Photo Upload Methods (Enhanced)
+  // Photo Upload Methods (Enhanced - Multiple Images Support)
   onPhotosSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      const file = input.files[0];
-      if (file.type.startsWith('image/')) {
-        this.selectedFile = file;
-        this.photoUrl = ''; // Clear URL when file is selected
-        this.photoInputMethod = 'upload';
-        this.showCamera = false; // Stop camera if active
-        this.stopCamera(); // Ensure camera is stopped
-        this.photoUploadError = ''; // Clear any previous errors
-        this.previewImage(file);
-        // Also add to uploadedPhotos array for backward compatibility
-        this.uploadedPhotos = [file];
-        const reader = new FileReader();
-        reader.onload = (e: any) => {
-          this.photoPreviewUrls = [e.target.result];
-        };
-        reader.readAsDataURL(file);
+      const files = Array.from(input.files);
+      const imageFiles: File[] = [];
+      const invalidFiles: string[] = [];
+      const maxSizeBytes = 5 * 1024 * 1024; // 5MB in bytes
+      
+      // Process all selected files
+      files.forEach(file => {
+        // Check if file is an image
+        if (!file.type.startsWith('image/')) {
+          invalidFiles.push(`${file.name} (not an image)`);
+          return;
+        }
+        
+        // Check file size (5MB limit)
+        if (file.size > maxSizeBytes) {
+          invalidFiles.push(`${file.name} (exceeds 5MB limit)`);
+          return;
+        }
+        
+        // File is valid - add to processing list
+        imageFiles.push(file);
+      });
+      
+      // Add all valid image files to the preview list
+      imageFiles.forEach(file => {
+        this.addImageFromFile(file);
+      });
+      
+      // Show error message if any files were invalid
+      if (invalidFiles.length > 0) {
+        const errorMsg = invalidFiles.length === 1 
+          ? `${invalidFiles[0]} was skipped.`
+          : `${invalidFiles.length} file(s) were skipped: ${invalidFiles.slice(0, 3).join(', ')}${invalidFiles.length > 3 ? '...' : ''}`;
+        this.photoUploadError = errorMsg;
       } else {
-        this.photoUploadError = 'Please select an image file';
+        this.photoUploadError = '';
       }
+      
+      // Reset input to allow selecting the same file again
+      input.value = '';
+      this.photoInputMethod = 'upload';
+      this.showCamera = false;
+      this.stopCamera();
     }
+  }
+  
+  addImageFromFile(file: File): void {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const preview = e.target?.result as string;
+      // Generate unique ID with timestamp, random number, and file name hash
+      const uniqueId = `file-${Date.now()}-${Math.random().toString(36).substring(2, 9)}-${file.name.substring(0, 5)}`;
+      this.selectedImages.push({
+        id: uniqueId,
+        type: 'file',
+        file: file,
+        preview: preview,
+        name: file.name,
+        size: file.size
+      });
+      this.photoUploadError = '';
+    };
+    reader.readAsDataURL(file);
   }
 
   openFileInput(): void {
     this.showCamera = false;
     const fileInput = document.getElementById('wir-photo-file-input') as HTMLInputElement;
     if (fileInput) {
+      // Ensure multiple attribute is set to allow multi-select
+      if (!fileInput.hasAttribute('multiple')) {
+        fileInput.setAttribute('multiple', '');
+      }
+      // Clear previous selection to allow re-selecting the same files
+      fileInput.value = '';
+      // Trigger file picker
       fileInput.click();
     }
   }
 
+  addImageFromUrl(): void {
+    const url = this.currentUrlInput?.trim();
+    if (url && url.trim()) {
+      // Validate URL format
+      try {
+        new URL(url);
+        this.selectedImages.push({
+          id: `url-${Date.now()}-${Math.random()}`,
+          type: 'url',
+          url: url.trim(),
+          preview: url.trim() // Use URL as preview
+        });
+        this.currentUrlInput = '';
+        this.photoInputMethod = 'url';
+        this.photoUploadError = '';
+      } catch {
+        this.photoUploadError = 'Please enter a valid URL';
+      }
+    }
+  }
+  
+  removeImage(imageId: string): void {
+    this.selectedImages = this.selectedImages.filter(img => img.id !== imageId);
+  }
+  
+  clearAllImages(): void {
+    this.selectedImages = [];
+    this.currentUrlInput = '';
+    this.photoUploadError = '';
+  }
+  
+  // Legacy methods for backward compatibility (deprecated)
   previewImage(file: File): void {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -1715,10 +2130,20 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   }
 
   uploadPhoto(file: File): Observable<string> {
-    return this.apiService.upload<{ url: string }>('upload/wir-inspection-photo', file).pipe(
-      map((response: any) => {
-        if (typeof response === 'string') return response;
-        return response?.url || response?.photoPath || response?.attachmentPath || response?.data?.url || response?.data?.photoPath || response?.data?.attachmentPath || '';
+    // Use WIRService to upload to the correct endpoint
+    // Note: This method uploads a single file, but we'll batch uploads in onSubmitReview
+    if (!this.wirRecord?.wirRecordId) {
+      return new Observable(observer => {
+        observer.error(new Error('WIR Record ID is not available'));
+        observer.complete();
+      });
+    }
+    
+    // Use the WIRService method which handles the correct endpoint
+    return this.wirService.uploadInspectionPhotos(this.wirRecord.wirRecordId, [file]).pipe(
+      map((urls: string[]) => {
+        // Return the first URL (since we uploaded one file)
+        return urls && urls.length > 0 ? urls[0] : '';
       })
     );
   }
@@ -1726,66 +2151,127 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   // Camera methods
   async openCamera(): Promise<void> {
     try {
+      // Stop any existing camera stream first
+      this.stopCamera();
+      
+      // Set showCamera to true first so video element is rendered
+      this.showCamera = true;
+      this.photoInputMethod = 'camera';
+      this.photoUploadError = '';
+      
+      // Get user media stream
       const stream = await navigator.mediaDevices.getUserMedia({ 
         video: { facingMode: 'environment' } // Use back camera on mobile
       });
-      this.cameraStream = stream;
-      this.showCamera = true;
-      this.selectedFile = null;
-      this.photoPreview = null;
-      this.photoUrl = '';
-      this.photoInputMethod = 'camera';
       
-      // Wait for video element to be rendered
+      this.cameraStream = stream;
+      
+      // Wait for video element to be rendered, then initialize
       setTimeout(() => {
         const video = document.getElementById('wir-camera-preview') as HTMLVideoElement;
         if (video) {
           video.srcObject = stream;
-          video.play();
+          video.play().catch(err => {
+            console.error('Error playing video:', err);
+            this.photoUploadError = 'Unable to start camera preview.';
+            this.stopCamera();
+          });
+        } else {
+          // If video element not found, stop camera
+          this.stopCamera();
         }
       }, 100);
     } catch (err) {
       console.error('Error accessing camera:', err);
       this.photoUploadError = 'Unable to access camera. Please check permissions.';
+      this.showCamera = false;
     }
   }
 
   stopCamera(): void {
+    // Stop all tracks in the stream
     if (this.cameraStream) {
       this.cameraStream.getTracks().forEach(track => track.stop());
       this.cameraStream = null;
     }
+    
+    // Clear video element's srcObject
+    const video = document.getElementById('wir-camera-preview') as HTMLVideoElement;
+    if (video) {
+      const stream = video.srcObject as MediaStream;
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      video.srcObject = null;
+      video.pause();
+    }
+    
+    // Close camera UI
     this.showCamera = false;
   }
 
   capturePhoto(): void {
     const video = document.getElementById('wir-camera-preview') as HTMLVideoElement;
-    if (!video) return;
+    if (!video || !video.srcObject) return;
 
+    // Get the stream before stopping
+    const stream = video.srcObject as MediaStream;
+    
+    // Create canvas and capture image
     const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
+    
     const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.drawImage(video, 0, 0);
-      canvas.toBlob((blob) => {
-        if (blob) {
-          const file = new File([blob], `wir-inspection-${Date.now()}.jpg`, { type: 'image/jpeg' });
-          this.selectedFile = file;
-          this.previewImage(file);
-          this.uploadedPhotos = [file];
-          const reader = new FileReader();
-          reader.onload = (e: any) => {
-            this.photoPreviewUrls = [e.target.result];
-          };
-          reader.readAsDataURL(file);
-          this.stopCamera();
-        }
-      }, 'image/jpeg', 0.9);
+    if (!ctx) return;
+    
+    // Draw the current video frame to canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Convert to base64 image data
+    const imageData = canvas.toDataURL('image/jpeg', 0.9);
+    
+    // Stop camera stream immediately BEFORE adding image to prevent black screen
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
     }
+    
+    // Clear video element
+    video.srcObject = null;
+    video.pause();
+    
+    // Close camera UI immediately
+    this.showCamera = false;
+    this.cameraStream = null;
+    
+    // Add captured image (this happens after UI is closed, so no black screen)
+    this.addImageFromDataUrl(imageData);
+  }
+  
+  addImageFromDataUrl(imageData: string): void {
+    // Convert data URL to File for consistency with existing structure
+    fetch(imageData)
+      .then(res => res.blob())
+      .then(blob => {
+        const file = new File([blob], `wir-inspection-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        this.selectedImages.push({
+          id: `camera-${Date.now()}-${Math.random()}`,
+          type: 'camera',
+          file: file,
+          preview: imageData,
+          name: file.name,
+          size: file.size
+        });
+        this.photoUploadError = '';
+      })
+      .catch(err => {
+        console.error('Error converting data URL to file:', err);
+        this.photoUploadError = 'Failed to process captured image.';
+      });
   }
 
   removePhoto(index: number): void {
+    // Legacy method for backward compatibility
     this.uploadedPhotos.splice(index, 1);
     this.photoPreviewUrls.splice(index, 1);
     if (index === 0 && this.uploadedPhotos.length === 0) {
@@ -1796,6 +2282,159 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopCamera();
+    this.stopQualityIssueCamera();
+  }
+
+  // Quality Issue Image Methods
+  onQualityIssuePhotosSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    Array.from(input.files).forEach(file => {
+      this.addQualityIssueImageFromFile(file);
+    });
+
+    // Clear the input so the same file can be selected again
+    input.value = '';
+  }
+
+  addQualityIssueImageFromFile(file: File): void {
+    if (!file.type.startsWith('image/')) {
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const preview = e.target?.result as string;
+      if (preview) {
+        this.qualityIssueImages.push({
+          id: `file-${Date.now()}-${Math.random()}`,
+          type: 'file',
+          file: file,
+          preview: preview,
+          name: file.name,
+          size: file.size
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  openQualityIssueFileInput(): void {
+    const fileInput = document.getElementById('quality-issue-photo-file-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+      fileInput.click();
+    }
+  }
+
+  addQualityIssueImageFromUrl(): void {
+    const url = this.qualityIssueCurrentUrlInput.trim();
+    if (!url) return;
+
+    if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('data:image/')) {
+      return;
+    }
+
+    this.qualityIssueImages.push({
+      id: `url-${Date.now()}-${Math.random()}`,
+      type: 'url',
+      url: url.trim(),
+      preview: url.trim()
+    });
+
+    this.qualityIssueCurrentUrlInput = '';
+  }
+
+  removeQualityIssueImage(imageId: string): void {
+    this.qualityIssueImages = this.qualityIssueImages.filter(img => img.id !== imageId);
+  }
+
+  clearAllQualityIssueImages(): void {
+    this.qualityIssueImages = [];
+    this.qualityIssueCurrentUrlInput = '';
+    this.stopQualityIssueCamera();
+  }
+
+  openQualityIssueCamera(): void {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return;
+    }
+
+    this.showQualityIssueCamera = true;
+    this.qualityIssuePhotoInputMethod = 'camera';
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        this.qualityIssueCameraStream = stream;
+        setTimeout(() => {
+          const video = document.getElementById('quality-issue-video') as HTMLVideoElement;
+          if (video) {
+            video.srcObject = stream;
+            video.play();
+          }
+        }, 100);
+      })
+      .catch(err => {
+        console.error('Error accessing camera:', err);
+        this.showQualityIssueCamera = false;
+      });
+  }
+
+  stopQualityIssueCamera(): void {
+    if (this.qualityIssueCameraStream) {
+      this.qualityIssueCameraStream.getTracks().forEach(track => track.stop());
+      this.qualityIssueCameraStream = null;
+    }
+    const video = document.getElementById('quality-issue-video') as HTMLVideoElement;
+    if (video) {
+      video.srcObject = null;
+      video.pause();
+    }
+    this.showQualityIssueCamera = false;
+  }
+
+  captureQualityIssuePhoto(): void {
+    const video = document.getElementById('quality-issue-video') as HTMLVideoElement;
+    if (!video || !this.qualityIssueCameraStream) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.drawImage(video, 0, 0);
+    const imageData = canvas.toDataURL('image/jpeg', 0.9);
+
+    // Stop camera first
+    this.qualityIssueCameraStream.getTracks().forEach(track => track.stop());
+    this.qualityIssueCameraStream = null;
+    video.srcObject = null;
+    video.pause();
+    this.showQualityIssueCamera = false;
+
+    // Add captured image
+    fetch(imageData)
+      .then(res => res.blob())
+      .then(blob => {
+        const file = new File([blob], `quality-issue-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        this.qualityIssueImages.push({
+          id: `camera-${Date.now()}-${Math.random()}`,
+          type: 'camera',
+          file: file,
+          preview: imageData,
+          name: file.name,
+          size: file.size
+        });
+      })
+      .catch(err => {
+        console.error('Error converting data URL to file:', err);
+      });
   }
 
   // Validation
@@ -1849,35 +2488,29 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Upload photo if file is selected, otherwise proceed with URL
-    if (this.selectedFile) {
-      this.isUploadingPhoto = true;
-      this.uploadPhoto(this.selectedFile).subscribe({
-        next: (uploadResult) => {
-          this.isUploadingPhoto = false;
-          const attachmentPath = uploadResult || this.photoUrl?.trim() || null;
-          this.submitReviewWithAttachment(attachmentPath, status, reviewItems);
-        },
-        error: (err: any) => {
-          console.error('❌ Failed to upload photo:', err);
-          this.isUploadingPhoto = false;
-          this.photoUploadError = err?.error?.message || err?.message || 'Failed to upload photo';
-          this.submitting = false;
-        }
-      });
-    } else {
-      const attachmentPath = this.photoUrl?.trim() || null;
-      this.submitReviewWithAttachment(attachmentPath, status, reviewItems);
-    }
+    // Handle multiple images: send files directly in review request
+    const filesToUpload = this.selectedImages
+      .filter(img => (img.type === 'file' || img.type === 'camera') && img.file)
+      .map(img => img.file!)
+      .filter((file): file is File => file !== undefined);
+    
+    const urlImages = this.selectedImages
+      .filter(img => img.type === 'url' && img.url)
+      .map(img => img.url!.trim())
+      .filter((url): url is string => url !== '');
+
+    // Send files and URLs directly in the review request (no separate upload needed)
+    this.submitReviewWithFiles(filesToUpload, urlImages, status, reviewItems);
   }
 
-  private submitReviewWithAttachment(attachmentPath: string | null, status: WIRCheckpointStatus, reviewItems: any[]): void {
+  private submitReviewWithFiles(files: File[], imageUrls: string[], status: WIRCheckpointStatus, reviewItems: any[]): void {
     const request: ReviewWIRCheckpointRequest = {
-      wirId: this.wirCheckpoint!.wirId,
+      wIRId: this.wirCheckpoint!.wirId,
       status,
       comment: this.checklistForm.value.inspectionNotes?.trim() || undefined,
       inspectorRole: this.checklistForm.value.inspectorRole?.trim() || undefined,
-      attachmentPath: attachmentPath || undefined,
+      files: files.length > 0 ? files : undefined,
+      imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
       items: reviewItems
     };
 
@@ -1918,19 +2551,6 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     console.error('Review error:', err);
   }
 
-  private buildQualityIssuesRequest(wirId: string): AddQualityIssuesRequest {
-    return {
-      wirId,
-      issues: this.qualityIssuesArray.value.map((issue: QualityIssueFormValue) => ({
-        issueType: issue.issueType,
-        severity: issue.severity,
-        issueDescription: issue.issueDescription?.trim() || '',
-        assignedTo: issue.assignedTo?.trim() || undefined,
-        dueDate: issue.dueDate ? new Date(issue.dueDate) : undefined,
-        photoPath: issue.photoPath?.trim() || undefined
-      }))
-    };
-  }
 
   private mapToCheckListItemStatus(status: CheckpointStatus): CheckListItemStatus {
     const statusMap: Record<string, CheckListItemStatus> = {
@@ -1939,6 +2559,65 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
       'Fail': CheckListItemStatus.Fail
     };
     return statusMap[status] || CheckListItemStatus.Pending;
+  }
+
+  /**
+   * Get image URLs from the current WIR checkpoint
+   */
+  getCheckpointImageUrls(): string[] {
+    if (!this.wirCheckpoint) {
+      console.log('getCheckpointImageUrls - no checkpoint');
+      return [];
+    }
+    
+    if (!this.wirCheckpoint.images) {
+      console.log('getCheckpointImageUrls - no images property');
+      return [];
+    }
+    
+    if (!Array.isArray(this.wirCheckpoint.images)) {
+      console.log('getCheckpointImageUrls - images is not an array:', typeof this.wirCheckpoint.images);
+      return [];
+    }
+    
+    if (this.wirCheckpoint.images.length === 0) {
+      console.log('getCheckpointImageUrls - images array is empty');
+      return [];
+    }
+    
+    console.log('getCheckpointImageUrls - found', this.wirCheckpoint.images.length, 'images');
+    
+    return this.wirCheckpoint.images
+      .sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
+      .map((img) => {
+        const imageData = img.imageData || '';
+        // If it's already a data URL, return as is
+        if (imageData.startsWith('data:image/')) {
+          return imageData;
+        }
+        // If it's a URL, return as is
+        if (imageData.startsWith('http://') || imageData.startsWith('https://')) {
+          return imageData;
+        }
+        // Otherwise, assume it's base64 and add data URI prefix
+        return `data:image/jpeg;base64,${imageData}`;
+      })
+      .filter((url: string) => url && url.trim().length > 0);
+  }
+
+  /**
+   * Open image in new tab
+   */
+  openCheckpointImageInNewTab(imageUrl: string): void {
+    window.open(imageUrl, '_blank', 'noopener,noreferrer');
+  }
+
+  /**
+   * Handle image load error
+   */
+  onCheckpointImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
   }
 
   private markFormGroupTouched(formGroup: FormGroup): void {

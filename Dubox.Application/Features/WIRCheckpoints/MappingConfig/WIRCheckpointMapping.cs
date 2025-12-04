@@ -28,11 +28,13 @@
                 .Map(dest => dest.DueDate, src => src.DueDate)
                 .Map(dest => dest.IssueDate, src => src.IssueDate)
                 .Map(dest => dest.ReportedBy, src => src.ReportedBy)
-                .Map(dest => dest.Status, src => src.Status);
+                .Map(dest => dest.Status, src => src.Status)
+                .Map(dest => dest.Images, src => src.Images);
 
             TypeAdapterConfig<WIRCheckpoint, WIRCheckpointDto>.NewConfig()
                 .Map(dest => dest.ChecklistItems, src => src.ChecklistItems)
                 .Map(dest => dest.QualityIssues, src => src.QualityIssues)
+                .Map(dest => dest.Images, src => src.Images)
                 .Map(dest => dest.PendingDays, src => src.PendingDays)
                 .Map(dest => dest.IsOverdue, src => src.IsOverdue)
                 .Map(dest => dest.Box, src => src.Box)
@@ -40,6 +42,26 @@
                 .Map(dest => dest.ProjectCode, src => src.Box != null && src.Box.Project != null ? src.Box.Project.ProjectCode : null)
                 .Map(dest => dest.BoxName, src => src.Box != null ? src.Box.BoxName : string.Empty)
                 .Map(dest => dest.BoxTag, src => src.Box != null ? src.Box.BoxTag : string.Empty);
+
+            TypeAdapterConfig<WIRCheckpointImage, WIRCheckpointImageDto>.NewConfig()
+                .Map(dest => dest.WIRCheckpointImageId, src => src.WIRCheckpointImageId)
+                .Map(dest => dest.WIRId, src => src.WIRId)
+                .Map(dest => dest.ImageData, src => src.ImageData)
+                .Map(dest => dest.ImageType, src => src.ImageType)
+                .Map(dest => dest.OriginalName, src => src.OriginalName)
+                .Map(dest => dest.FileSize, src => src.FileSize)
+                .Map(dest => dest.Sequence, src => src.Sequence)
+                .Map(dest => dest.CreatedDate, src => src.CreatedDate);
+
+            TypeAdapterConfig<QualityIssueImage, QualityIssueImageDto>.NewConfig()
+                .Map(dest => dest.QualityIssueImageId, src => src.QualityIssueImageId)
+                .Map(dest => dest.IssueId, src => src.IssueId)
+                .Map(dest => dest.ImageData, src => src.ImageData)
+                .Map(dest => dest.ImageType, src => src.ImageType)
+                .Map(dest => dest.OriginalName, src => src.OriginalName)
+                .Map(dest => dest.FileSize, src => src.FileSize)
+                .Map(dest => dest.Sequence, src => src.Sequence)
+                .Map(dest => dest.CreatedDate, src => src.CreatedDate);
 
         }
     }

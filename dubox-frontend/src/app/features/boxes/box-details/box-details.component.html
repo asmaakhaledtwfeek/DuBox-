@@ -1423,7 +1423,7 @@
       </div>
 
       <!-- Photos -->
-      <div class="photo-section" *ngIf="selectedProgressUpdate.photo && getPhotoUrls(selectedProgressUpdate.photo).length > 0">
+      <div class="photo-section" *ngIf="getPhotoUrls(selectedProgressUpdate).length > 0">
         <div class="section-header">
           <div class="header-icon-wrapper">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1434,11 +1434,11 @@
           </div>
           <div>
             <h3>Photos</h3>
-            <p class="section-subtitle">{{ getPhotoUrls(selectedProgressUpdate.photo).length }} photo{{ getPhotoUrls(selectedProgressUpdate.photo).length !== 1 ? 's' : '' }} attached</p>
+            <p class="section-subtitle">{{ getPhotoUrls(selectedProgressUpdate).length }} photo{{ getPhotoUrls(selectedProgressUpdate).length !== 1 ? 's' : '' }} attached</p>
           </div>
         </div>
         <div class="photo-gallery">
-          <div class="photo-item" *ngFor="let photoUrl of getPhotoUrls(selectedProgressUpdate.photo); let i = index">
+          <div class="photo-item" *ngFor="let photoUrl of getPhotoUrls(selectedProgressUpdate); let i = index">
             <div class="photo-wrapper">
               <img [src]="photoUrl" 
                    [alt]="'Progress photo ' + (i + 1)"

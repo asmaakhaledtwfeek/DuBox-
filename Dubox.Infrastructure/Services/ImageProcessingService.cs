@@ -39,5 +39,31 @@ namespace Dubox.Infrastructure.Services
 
             return null;
         }
+
+        public async Task<byte[]?> DownloadImageFromUrlAsync(string imageUrl, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(imageUrl))
+                return null;
+
+            try
+            {
+                using var httpClient = _httpClientFactory.CreateClient();
+                httpClient.Timeout = TimeSpan.FromSeconds(30);
+                
+                var response = await httpClient.GetAsync(imageUrl, cancellationToken);
+                response.EnsureSuccessStatusCode();
+
+                var contentType = response.Content.Headers.ContentType?.MediaType;
+
+                if (contentType == null || !contentType.StartsWith("image/"))
+                    throw new Exception("The provided URL does not point to a valid image.");
+
+                return await response.Content.ReadAsByteArrayAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to download image from URL: {imageUrl}. Error: {ex.Message}", ex);
+            }
+        }
     }
 }

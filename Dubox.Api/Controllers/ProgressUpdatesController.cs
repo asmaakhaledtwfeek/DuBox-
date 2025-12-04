@@ -22,7 +22,7 @@ public class ProgressUpdatesController : ControllerBase
 
     [HttpPost]
     [Consumes("multipart/form-data")]
-    [RequestSizeLimit(10_485_760)] // 10 MB
+    [RequestSizeLimit(50_000_000)] // 50 MB for multiple images
     public async Task<IActionResult> CreateProgressUpdate(
     [FromForm] Guid BoxId,
     [FromForm] Guid BoxActivityId,
@@ -32,14 +32,33 @@ public class ProgressUpdatesController : ControllerBase
     [FromForm] double? Latitude,
     [FromForm] double? Longitude,
     [FromForm] string? LocationDescription,
-    [FromForm] IFormFile? File,
-    [FromForm] string? ImageUrl,
+    [FromForm] List<IFormFile>? Files,
+    [FromForm] List<string>? ImageUrls,
     [FromForm] string UpdateMethod,
     [FromForm] string? DeviceInfo,
     CancellationToken cancellationToken)
     {
-        var imageBytes = await _imageProcessingService
-            .GetImageBytesAsync(File, ImageUrl, cancellationToken);
+        List<byte[]>? fileBytes = null;
+        if (Files != null && Files.Count > 0)
+        {
+            fileBytes = new List<byte[]>();
+            foreach (var file in Files.Where(f => f != null && f.Length > 0))
+            {
+                using var ms = new MemoryStream();
+                await file.CopyToAsync(ms, cancellationToken);
+                fileBytes.Add(ms.ToArray());
+            }
+        }
+
+        List<string>? validImageUrls = null;
+        if (ImageUrls != null && ImageUrls.Count > 0)
+        {
+            validImageUrls = ImageUrls.Where(url => !string.IsNullOrWhiteSpace(url)).ToList();
+            if (validImageUrls.Count == 0)
+            {
+                validImageUrls = null;
+            }
+        }
 
         var command = new CreateProgressUpdateCommand(
             BoxId,
@@ -50,7 +69,8 @@ public class ProgressUpdatesController : ControllerBase
             Latitude,
             Longitude,
             LocationDescription,
-            imageBytes,
+            fileBytes,
+            validImageUrls,
             UpdateMethod,
             DeviceInfo
         );

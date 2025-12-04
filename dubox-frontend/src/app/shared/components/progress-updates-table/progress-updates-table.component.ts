@@ -166,6 +166,12 @@ export class ProgressUpdatesTableComponent {
   }
 
   hasPhotos(update: ProgressUpdate): boolean {
+    // Check new Images array first
+    if (update.images && Array.isArray(update.images) && update.images.length > 0) {
+      return true;
+    }
+    
+    // Fallback to old Photo field
     if (!update.photo) return false;
     try {
       const parsed = JSON.parse(update.photo);
@@ -181,6 +187,12 @@ export class ProgressUpdatesTableComponent {
   }
 
   getPhotoCount(update: ProgressUpdate): number {
+    // Check new Images array first
+    if (update.images && Array.isArray(update.images)) {
+      return update.images.length;
+    }
+    
+    // Fallback to old Photo field
     if (!update.photo) return 0;
     try {
       const parsed = JSON.parse(update.photo);

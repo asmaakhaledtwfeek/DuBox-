@@ -23,13 +23,42 @@ namespace Dubox.Application.Features.ProgressUpdates.Commands
             RuleFor(x => x.UpdateMethod)
                 .NotEmpty().WithMessage("Update Method is required.");
 
-            // Validate file if provided
-            When(x => x.File != null, () =>
+            // Validate files if provided
+            When(x => x.Files != null && x.Files.Count > 0, () =>
             {
-                RuleFor(x => x.File!.Length)
-                    .GreaterThan(0).WithMessage("File cannot be empty.")
-                    .LessThanOrEqualTo(10_485_760).WithMessage("File size cannot exceed 10 MB.");
+                RuleForEach(x => x.Files!)
+                    .Must(file => file != null && file.Length > 0)
+                    .WithMessage("File cannot be empty.")
+                    .Must(file => file != null && file.Length <= 10_485_760)
+                    .WithMessage("Each file size cannot exceed 10 MB.");
+
+                RuleFor(x => x.Files!)
+                    .Must(files => files.Count <= 10)
+                    .WithMessage("Maximum 10 files allowed.");
             });
+
+            // Validate image URLs if provided
+            When(x => x.ImageUrls != null && x.ImageUrls.Count > 0, () =>
+            {
+                RuleForEach(x => x.ImageUrls!)
+                    .Must(url => !string.IsNullOrWhiteSpace(url))
+                    .WithMessage("Image URL cannot be empty.")
+                    .Must(url => string.IsNullOrWhiteSpace(url) || Uri.IsWellFormedUriString(url, UriKind.Absolute))
+                    .WithMessage("Image URL must be a valid URL.");
+
+                RuleFor(x => x.ImageUrls!)
+                    .Must(urls => urls.Count <= 10)
+                    .WithMessage("Maximum 10 image URLs allowed.");
+            });
+
+            // Ensure at least one image source if any provided
+            RuleFor(x => x)
+                .Must(cmd =>
+                    (cmd.Files == null || cmd.Files.Count == 0) &&
+                    (cmd.ImageUrls == null || cmd.ImageUrls.Count == 0) ||
+                    (cmd.Files != null && cmd.Files.Count > 0) ||
+                    (cmd.ImageUrls != null && cmd.ImageUrls.Count > 0))
+                .WithMessage("At least one file or image URL must be provided if images are specified.");
 
         }
     }

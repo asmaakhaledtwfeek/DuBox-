@@ -928,50 +928,53 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  getPhotoUrls(photoUrls: string | undefined): string[] {
+  getPhotoUrls(progressUpdate: any): string[] {
+    // First, try to use the new Images array
+    if (progressUpdate.images && Array.isArray(progressUpdate.images) && progressUpdate.images.length > 0) {
+      return progressUpdate.images
+        .sort((a: any, b: any) => (a.sequence || 0) - (b.sequence || 0))
+        .map((img: any) => img.imageData || img.ImageData || '')
+        .filter((url: string) => url && url.trim().length > 0);
+    }
+    
+    // Fallback to old Photo field (backward compatibility)
+    const photoUrls = progressUpdate.photo || progressUpdate.photoUrls;
     if (!photoUrls) return [];
     
     // Check if it's a base64 string (starts with data:image or is a long base64 string)
-    if (photoUrls.startsWith('data:image/')) {
+    if (typeof photoUrls === 'string' && photoUrls.startsWith('data:image/')) {
       return [photoUrls];
     }
     
     // Check if it's a base64 string without data URI prefix
-    // Base64 strings are typically long and contain only base64 characters
     const base64Pattern = /^[A-Za-z0-9+/=]+$/;
-    if (photoUrls.length > 100 && base64Pattern.test(photoUrls)) {
-      // Assume it's a JPEG if no prefix, but you might want to detect the actual format
+    if (typeof photoUrls === 'string' && photoUrls.length > 100 && base64Pattern.test(photoUrls)) {
       return [`data:image/jpeg;base64,${photoUrls}`];
     }
     
     try {
-      // Try parsing as JSON array first
       const parsed = JSON.parse(photoUrls);
       if (Array.isArray(parsed)) {
-        return parsed.map(url => {
-          // Handle base64 strings in array
+        return parsed.map((url: any) => {
           if (typeof url === 'string') {
             if (url.startsWith('data:image/')) {
               return url;
             }
-            // Check if it's a base64 string
             const base64Pattern = /^[A-Za-z0-9+/=]+$/;
             if (url.length > 100 && base64Pattern.test(url)) {
               return `data:image/jpeg;base64,${url}`;
             }
-            return url; // Regular URL
+            return url;
           }
           return '';
-        }).filter(url => url && url.trim().length > 0);
+        }).filter((url: string) => url && url.trim().length > 0);
       }
     } catch {
-      // If not JSON, try comma-separated string
+      // If not JSON, try splitting by comma
       if (typeof photoUrls === 'string') {
-        return photoUrls.split(',').map(url => {
+        return photoUrls.split(',').map((url: string) => {
           const trimmed = url.trim();
           if (!trimmed) return '';
-          
-          // Handle base64 strings
           if (trimmed.startsWith('data:image/')) {
             return trimmed;
           }
@@ -979,8 +982,8 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
           if (trimmed.length > 100 && base64Pattern.test(trimmed)) {
             return `data:image/jpeg;base64,${trimmed}`;
           }
-          return trimmed; // Regular URL
-        }).filter(url => url.length > 0);
+          return trimmed;
+        }).filter((url: string) => url.length > 0);
       }
     }
     

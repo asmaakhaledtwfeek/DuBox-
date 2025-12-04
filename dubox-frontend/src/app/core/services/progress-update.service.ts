@@ -20,51 +20,18 @@ export class ProgressUpdateService {
 
   /**
    * Create a new progress update for an activity
+   * Supports multiple files and URLs
    */
-  createProgressUpdate(request: CreateProgressUpdateRequest, file?: File): Observable<ProgressUpdateResponse> {
-    // If file is provided, send as multipart/form-data
-    if (file) {
-      const formData = new FormData();
-      formData.append('BoxId', request.boxId);
-      formData.append('BoxActivityId', request.boxActivityId);
-      formData.append('ProgressPercentage', request.progressPercentage.toString());
-      
-      if (request.workDescription) {
-        formData.append('WorkDescription', request.workDescription);
-      }
-      if (request.issuesEncountered) {
-        formData.append('IssuesEncountered', request.issuesEncountered);
-      }
-      if (request.latitude !== undefined) {
-        formData.append('Latitude', request.latitude.toString());
-      }
-      if (request.longitude !== undefined) {
-        formData.append('Longitude', request.longitude.toString());
-      }
-      if (request.locationDescription) {
-        formData.append('LocationDescription', request.locationDescription);
-      }
-      if (request.imageUrl) {
-        formData.append('ImageUrl', request.imageUrl);
-      }
-      formData.append('File', file);
-      formData.append('UpdateMethod', request.updateMethod);
-      if (request.deviceInfo) {
-        formData.append('DeviceInfo', request.deviceInfo);
-      }
-
-      return this.apiService.post<ProgressUpdateResponse>(this.endpoint, formData).pipe(
-        tap(response => {
-          console.log('✅ Progress update created:', response);
-          if (response.wirCreated) {
-            console.log('🎯 WIR automatically created:', response.wirCode);
-          }
-        })
-      );
-    }
+  createProgressUpdate(
+    request: CreateProgressUpdateRequest, 
+    files?: File[], 
+    imageUrls?: string[]
+  ): Observable<ProgressUpdateResponse> {
+    const hasFiles = files && files.length > 0;
+    const hasUrls = imageUrls && imageUrls.length > 0;
     
-    // If imageUrl is provided without file, send as multipart/form-data
-    if (request.imageUrl) {
+    // If files or URLs are provided, send as multipart/form-data
+    if (hasFiles || hasUrls) {
       const formData = new FormData();
       formData.append('BoxId', request.boxId);
       formData.append('BoxActivityId', request.boxActivityId);
@@ -85,7 +52,21 @@ export class ProgressUpdateService {
       if (request.locationDescription) {
         formData.append('LocationDescription', request.locationDescription);
       }
-      formData.append('ImageUrl', request.imageUrl);
+      
+      // Append multiple files - ASP.NET Core expects Files parameter name
+      if (hasFiles) {
+        files.forEach((file) => {
+          formData.append('Files', file);
+        });
+      }
+      
+      // Append multiple image URLs - ASP.NET Core expects ImageUrls parameter name
+      if (hasUrls) {
+        imageUrls.forEach((url) => {
+          formData.append('ImageUrls', url);
+        });
+      }
+      
       formData.append('UpdateMethod', request.updateMethod);
       if (request.deviceInfo) {
         formData.append('DeviceInfo', request.deviceInfo);
@@ -101,7 +82,7 @@ export class ProgressUpdateService {
       );
     }
 
-    // Otherwise, send as JSON (no image)
+    // Otherwise, send as JSON (no images)
     return this.apiService.post<ProgressUpdateResponse>(this.endpoint, request).pipe(
       tap(response => {
         console.log('✅ Progress update created:', response);

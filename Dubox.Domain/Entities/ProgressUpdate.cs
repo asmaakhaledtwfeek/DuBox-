@@ -42,7 +42,11 @@ public class ProgressUpdate
     [MaxLength(200)]
     public string? LocationDescription { get; set; }
 
+    [Obsolete("Use Images navigation property instead. This field is kept for backward compatibility.")]
     public string? Photo { get; set; }
+
+    // Navigation property for images
+    public List<ProgressUpdateImage> Images { get; set; } = new();
 
     // Update method
     [MaxLength(50)]

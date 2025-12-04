@@ -45,7 +45,18 @@ public class GetProgressUpdatesByBoxQueryHandler : IRequestHandler<GetProgressUp
                 BoxTag = u.Box.BoxTag,
                 ActivityName = u.BoxActivity.ActivityMaster.ActivityName,
                 UpdatedByName = u.UpdatedByUser.FullName ?? u.UpdatedByUser.Email,
-                Photo = u.Photo // Explicitly map Photo to PhotoUrls
+                Photo = u.Photo, // Keep for backward compatibility
+                Images = u.Images.OrderBy(img => img.Sequence).Select(img => new ProgressUpdateImageDto
+                {
+                    ProgressUpdateImageId = img.ProgressUpdateImageId,
+                    ProgressUpdateId = img.ProgressUpdateId,
+                    ImageData = img.ImageData,
+                    ImageType = img.ImageType,
+                    OriginalName = img.OriginalName,
+                    FileSize = img.FileSize,
+                    Sequence = img.Sequence,
+                    CreatedDate = img.CreatedDate
+                }).ToList()
             };
         }).ToList();
 

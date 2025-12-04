@@ -18,8 +18,22 @@ public record ProgressUpdateDto
     public double? Latitude { get; init; }
     public double? Longitude { get; init; }
     public string? LocationDescription { get; init; }
+    [Obsolete("Use Images list instead. Kept for backward compatibility.")]
     public string? Photo { get; init; }
+    public List<ProgressUpdateImageDto> Images { get; init; } = new();
     public string UpdateMethod { get; init; } = string.Empty;
+}
+
+public record ProgressUpdateImageDto
+{
+    public Guid ProgressUpdateImageId { get; init; }
+    public Guid ProgressUpdateId { get; init; }
+    public string ImageData { get; init; } = string.Empty;
+    public string ImageType { get; init; } = string.Empty;
+    public string? OriginalName { get; init; }
+    public long? FileSize { get; init; }
+    public int Sequence { get; init; }
+    public DateTime CreatedDate { get; init; }
 }
 
 public record CreateProgressUpdateDto

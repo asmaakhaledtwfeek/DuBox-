@@ -21,6 +21,7 @@ public interface IDbContext
     DbSet<BoxActivity> BoxActivities { get; }
     DbSet<ActivityDependency> ActivityDependencies { get; }
     DbSet<ProgressUpdate> ProgressUpdates { get; }
+    DbSet<ProgressUpdateImage> ProgressUpdateImages { get; }
     DbSet<WIRRecord> WIRRecords { get; }
     DbSet<WIRCheckpoint> WIRCheckpoints { get; }
     DbSet<WIRChecklistItem> WIRChecklistItems { get; }

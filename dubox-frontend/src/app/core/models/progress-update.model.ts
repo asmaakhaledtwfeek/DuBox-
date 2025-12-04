@@ -12,7 +12,8 @@ export interface ProgressUpdate {
   issuesEncountered?: string;
   materialsAvailable?: boolean;
   qualityCheckPassed?: boolean;
-  photo?: string;
+  photo?: string; // Deprecated: Use images array instead
+  images?: ProgressUpdateImage[];
   teamId?: string;
   teamMemberId?: string;
   updatedBy?: string;
@@ -114,6 +115,17 @@ export interface PaginatedProgressUpdatesResponse {
   pageNumber: number;
   pageSize: number;
   totalPages: number;
+}
+
+export interface ProgressUpdateImage {
+  progressUpdateImageId: string;
+  progressUpdateId: string;
+  imageData: string;
+  imageType: 'file' | 'url';
+  originalName?: string;
+  fileSize?: number;
+  sequence: number;
+  createdDate: Date;
 }
 
 export interface ProgressUpdatesSearchParams {

@@ -28,6 +28,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<BoxActivity> BoxActivities { get; set; } = null!;
     public DbSet<ActivityDependency> ActivityDependencies { get; set; } = null!;
     public DbSet<ProgressUpdate> ProgressUpdates { get; set; } = null!;
+    public DbSet<ProgressUpdateImage> ProgressUpdateImages { get; set; } = null!;
     public DbSet<WIRRecord> WIRRecords { get; set; } = null!;
     public DbSet<DailyProductionLog> DailyProductionLogs { get; set; } = null!;
     public DbSet<WIRCheckpoint> WIRCheckpoints { get; set; } = null!;
@@ -197,6 +198,13 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(p => p.UpdatedBy)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // ProgressUpdateImage relationships
+        modelBuilder.Entity<ProgressUpdateImage>()
+            .HasOne(img => img.ProgressUpdate)
+            .WithMany(pu => pu.Images)
+            .HasForeignKey(img => img.ProgressUpdateId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<BoxActivity>()
             .HasOne(ba => ba.Box)
             .WithMany(b => b.BoxActivities)
@@ -352,6 +360,10 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
 
         modelBuilder.Entity<ProgressUpdate>()
             .HasIndex(pu => new { pu.BoxId, pu.UpdateDate });
+
+        // ProgressUpdateImage indexes
+        modelBuilder.Entity<ProgressUpdateImage>()
+            .HasIndex(img => new { img.ProgressUpdateId, img.Sequence });
 
         modelBuilder.Entity<DailyProductionLog>()
             .HasIndex(dpl => new { dpl.LogDate, dpl.TeamId });

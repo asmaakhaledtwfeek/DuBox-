@@ -23,6 +23,7 @@ export interface TableRow {
   selector: 'app-activity-table',
   standalone: true,
   imports: [CommonModule, RouterModule, UpdateProgressModalComponent, WIRApprovalModalComponent],
+  providers: [ProgressUpdateService, WIRService],
   templateUrl: './activity-table.component.html',
   styleUrls: ['./activity-table.component.scss']
 })

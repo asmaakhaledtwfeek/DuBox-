@@ -149,7 +149,7 @@
                 'pill-medium': update.progressPercentage >= 25 && update.progressPercentage < 75,
                 'pill-high': update.progressPercentage >= 75
               }">
-                {{ update.progressPercentage | number: '1.0-2' }}%
+                {{ update.progressPercentage | number: '1.2-2' }}%
               </span>
             </td>
             <td>
@@ -163,7 +163,7 @@
                 'pill-medium': (update.boxProgressSnapshot ?? 0) >= 25 && (update.boxProgressSnapshot ?? 0) < 75,
                 'pill-high': (update.boxProgressSnapshot ?? 0) >= 75
               }">
-                {{ (update.boxProgressSnapshot ?? 0) | number: '1.0-2' }}%
+                {{ (update.boxProgressSnapshot ?? 0) | number: '1.2-2' }}%
               </span>
             </td>
             <td>

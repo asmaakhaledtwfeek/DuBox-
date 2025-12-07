@@ -96,6 +96,10 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   selectedProgressUpdate: ProgressUpdate | null = null;
   isProgressModalOpen = false;
   
+  // All progress updates for attachments (images)
+  allProgressUpdatesForImages: ProgressUpdate[] = [];
+  loadingProgressUpdateImages = false;
+  
   // Pagination for progress updates
   progressUpdatesCurrentPage = 1;
   progressUpdatesPageSize = 10;
@@ -457,6 +461,12 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       // Always load logs when clicking the tab if logs haven't been loaded yet
       if (this.boxLogs.length === 0 && !this.boxLogsLoading) {
         this.loadBoxLogs(this.boxLogsCurrentPage, this.boxLogsPageSize);
+      }
+    }
+    if (tab === 'attachments') {
+      // Load all progress updates to get images when attachments tab is opened
+      if (this.allProgressUpdatesForImages.length === 0 && !this.loadingProgressUpdateImages) {
+        this.loadAllProgressUpdatesForImages();
       }
     }
   }
@@ -1088,6 +1098,61 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YxZjVmOSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5NDk4YjgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pjwvc3ZnPg==';
     img.style.objectFit = 'contain';
     img.style.padding = '20px';
+  }
+
+  // Load all progress updates to extract images for attachments section
+  loadAllProgressUpdatesForImages(): void {
+    if (!this.boxId || this.loadingProgressUpdateImages) {
+      return;
+    }
+
+    this.loadingProgressUpdateImages = true;
+    // Load with a large page size to get all progress updates
+    this.progressUpdateService.getProgressUpdatesByBox(this.boxId, 1, 1000, {}).subscribe({
+      next: (response) => {
+        this.allProgressUpdatesForImages = (response.items || [])
+          .map(update => ({
+            ...update,
+            updateDate: update.updateDate ? new Date(update.updateDate) : undefined
+          }));
+        this.loadingProgressUpdateImages = false;
+      },
+      error: (err) => {
+        console.error('Error loading progress updates for images:', err);
+        this.loadingProgressUpdateImages = false;
+      }
+    });
+  }
+
+  // Get all images from all progress updates
+  getAllProgressUpdateImages(): Array<{ imageUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number }> {
+    const allImages: Array<{ imageUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number }> = [];
+    
+    this.allProgressUpdatesForImages.forEach(update => {
+      const photoUrls = this.getPhotoUrls(update);
+      photoUrls.forEach(imageUrl => {
+        allImages.push({
+          imageUrl,
+          updateDate: update.updateDate,
+          activityName: update.activityName,
+          progressPercentage: update.progressPercentage
+        });
+      });
+    });
+    
+    return allImages;
+  }
+
+  // Check if there are any images from progress updates
+  hasProgressUpdateImages(): boolean {
+    return this.getAllProgressUpdateImages().length > 0;
+  }
+
+  // Get total attachments count (files + images)
+  getTotalAttachmentsCount(): number {
+    const fileCount = this.box?.attachments?.length || 0;
+    const imageCount = this.hasProgressUpdateImages() ? this.getAllProgressUpdateImages().length : 0;
+    return fileCount + imageCount;
   }
 
   loadProgressUpdates(page: number = 1, pageSize: number = 10): void {

@@ -951,10 +951,29 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   }
 
   private applyUpdatedQualityIssue(updated: QualityIssueDetails): void {
+    // Update qualityIssues array
     this.qualityIssues = this.qualityIssues.map(issue =>
       issue.issueId === updated.issueId ? { ...issue, ...updated, issueStatus: updated.status } : issue
     );
-    // Update summary
+    
+    // Update the issue in checkpoints array so summary counts update correctly
+    this.checkpoints = this.checkpoints.map(checkpoint => {
+      if (checkpoint.qualityIssues && checkpoint.qualityIssues.some(issue => (issue as any).issueId === updated.issueId)) {
+        return {
+          ...checkpoint,
+          qualityIssues: checkpoint.qualityIssues.map(issue => 
+            (issue as any).issueId === updated.issueId 
+              ? { ...issue, status: updated.status, ...updated } 
+              : issue
+          )
+        };
+      }
+      return checkpoint;
+    });
+    
+    // Update filtered list to reflect changes in the UI
+    this.applyQualityIssuesFilters();
+    // Update summary with updated checkpoints
     this.updateSummary(this.checkpoints);
   }
 

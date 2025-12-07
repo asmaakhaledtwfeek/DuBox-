@@ -134,10 +134,7 @@
           <!-- Export Button -->
           <button 
             class="btn btn-success" 
-            (click)="activeReport === 'box-progress' ? exportBoxProgressToExcel() : 
-                     activeReport === 'team-productivity' ? exportTeamProductivityToExcel() :
-                     activeReport === 'missing-materials' ? exportMissingMaterialsToExcel() :
-                     exportPhaseReadinessToExcel()"
+            (click)="exportTeamProductivityToExcel()"
             [disabled]="loading"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -147,55 +144,6 @@
             </svg>
             Export to Excel
           </button>
-        </div>
-      </div>
-
-      <!-- Box Progress Report -->
-      <div *ngIf="activeReport === 'box-progress'" class="report-content">
-        <h2 class="report-title">Box Progress Report</h2>
-        
-        <div *ngIf="loading" class="loading-state">
-          <div class="spinner"></div>
-          <p>Loading report data...</p>
-        </div>
-
-        <div *ngIf="!loading && boxProgressData.length > 0" class="box-progress-data">
-          <div class="data-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Building</th>
-                  <th>Non-Assembled</th>
-                  <th>Backing (Due)</th>
-                  <th>Released 1st Fix</th>
-                  <th>Released 2nd Fix</th>
-                  <th>Released 3rd Fix</th>
-                  <th>Total</th>
-                  <th>Progress</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let building of boxProgressData">
-                  <td class="building-name">{{ building.building }}</td>
-                  <td class="text-center">{{ building.nonAssembled }}</td>
-                  <td class="text-center">{{ building.backing }}</td>
-                  <td class="text-center">{{ building.released1stFix }}</td>
-                  <td class="text-center">{{ building.released2ndFix }}</td>
-                  <td class="text-center">{{ building.released3rdFix }}</td>
-                  <td class="text-center"><strong>{{ building.total }}</strong></td>
-                  <td class="text-center">
-                    <span class="progress-badge" [attr.data-color]="getProgressColor(getBoxProgressPercentage(building))">
-                      {{ getBoxProgressPercentage(building) }}%
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div *ngIf="!loading && boxProgressData.length === 0" class="empty-state">
-          <p>No data available</p>
         </div>
       </div>
 
@@ -244,107 +192,6 @@
         </div>
       </div>
 
-      <!-- Missing Materials Report -->
-      <div *ngIf="activeReport === 'missing-materials'" class="report-content">
-        <h2 class="report-title">Missing Materials Report</h2>
-        
-        <div *ngIf="loading" class="loading-state">
-          <div class="spinner"></div>
-          <p>Loading report data...</p>
-        </div>
-
-        <div *ngIf="!loading && missingMaterialsData.length > 0" class="missing-materials-data">
-          <div class="data-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Material Name</th>
-                  <th>Material Code</th>
-                  <th>Required Qty</th>
-                  <th>Available Qty</th>
-                  <th>Shortage Qty</th>
-                  <th>Unit</th>
-                  <th>Affected Boxes</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let material of missingMaterialsData">
-                  <td class="material-name">{{ material.materialName }}</td>
-                  <td class="text-center">{{ material.materialCode }}</td>
-                  <td class="text-center">{{ material.requiredQuantity }}</td>
-                  <td class="text-center">{{ material.availableQuantity }}</td>
-                  <td class="text-center">
-                    <span class="shortage-badge">{{ material.shortageQuantity }}</span>
-                  </td>
-                  <td class="text-center">{{ material.unit }}</td>
-                  <td class="text-center">
-                    <span class="affected-badge">{{ material.affectedBoxes }}</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div *ngIf="!loading && missingMaterialsData.length === 0" class="empty-state">
-          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            <circle cx="12" cy="12" r="10" opacity="0.2"/>
-          </svg>
-          <h3>No Material Shortages</h3>
-          <p>All materials are adequately stocked for current requirements</p>
-        </div>
-      </div>
-
-      <!-- Phase Readiness Report -->
-      <div *ngIf="activeReport === 'phase-readiness'" class="report-content">
-        <h2 class="report-title">Phase Readiness Report</h2>
-        
-        <div *ngIf="loading" class="loading-state">
-          <div class="spinner"></div>
-          <p>Loading report data...</p>
-        </div>
-
-        <div *ngIf="!loading && phaseReadinessData.length > 0" class="phase-readiness-data">
-          <div class="data-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Phase Name</th>
-                  <th>Total Boxes</th>
-                  <th>Ready Boxes</th>
-                  <th>Pending Boxes</th>
-                  <th>Readiness</th>
-                  <th>Blocking Issues</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let phase of phaseReadinessData">
-                  <td class="phase-name">{{ phase.phaseName }}</td>
-                  <td class="text-center">{{ phase.totalBoxes }}</td>
-                  <td class="text-center">{{ phase.readyBoxes }}</td>
-                  <td class="text-center">{{ phase.pendingBoxes }}</td>
-                  <td class="text-center">
-                    <span class="readiness-badge" [attr.data-color]="getReadinessColor(phase.readinessPercentage)">
-                      {{ phase.readinessPercentage }}%
-                    </span>
-                  </td>
-                  <td>
-                    <div *ngIf="phase.blockingIssues.length > 0" class="blocking-issues">
-                      <span *ngFor="let issue of phase.blockingIssues" class="issue-badge">{{ issue }}</span>
-                    </div>
-                    <span *ngIf="phase.blockingIssues.length === 0" class="no-issues">✓ No blocking issues</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div *ngIf="!loading && phaseReadinessData.length === 0" class="empty-state">
-          <p>No data available</p>
-        </div>
-      </div>
     </div>
   </div>
 </div>

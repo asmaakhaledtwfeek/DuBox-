@@ -109,5 +109,20 @@ public class ReportsController : ControllerBase
         var result = await _mediator.Send(query, cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+
+    /// <summary>
+    /// Get projects summary report - Aggregated information about all projects
+    /// </summary>
+    /// <param name="query">Query parameters for filtering (isActive, status, search)</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Projects summary report with KPIs, status distribution, and project list</returns>
+    [HttpGet("projects")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetProjectsSummaryReport([FromQuery] GetProjectsSummaryReportQuery query, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
 }
 

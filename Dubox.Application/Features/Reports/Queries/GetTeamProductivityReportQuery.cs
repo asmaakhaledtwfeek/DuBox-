@@ -7,9 +7,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.Reports.Queries;
 
-/// <summary>
-/// Query to get team productivity report with performance metrics
-/// </summary>
 public record GetTeamProductivityReportQuery(Guid? ProjectId = null) : IRequest<Result<List<TeamProductivityReportDto>>>;
 
 public class GetTeamProductivityReportQueryHandler : IRequestHandler<GetTeamProductivityReportQuery, Result<List<TeamProductivityReportDto>>>
@@ -25,7 +22,6 @@ public class GetTeamProductivityReportQueryHandler : IRequestHandler<GetTeamProd
     {
         try
         {
-            // Get all teams with their activities
             var teamsQuery = _dbContext.Teams
                 .Include(t => t.AssignedActivities)
                     .ThenInclude(a => a.Box)
@@ -36,19 +32,17 @@ public class GetTeamProductivityReportQueryHandler : IRequestHandler<GetTeamProd
             var teams = await teamsQuery.ToListAsync(cancellationToken);
 
             if (!teams.Any())
-            {
+
                 return Result<List<TeamProductivityReportDto>>.Success(new List<TeamProductivityReportDto>());
-            }
 
             var reportData = new List<TeamProductivityReportDto>();
 
             foreach (var team in teams)
             {
-                // Filter activities by project if specified
                 var activities = team.AssignedActivities
-                    .Where(a => a.IsActive && 
-                               (!request.ProjectId.HasValue || 
-                                request.ProjectId.Value == Guid.Empty || 
+                    .Where(a => a.IsActive &&
+                               (!request.ProjectId.HasValue ||
+                                request.ProjectId.Value == Guid.Empty ||
                                 a.Box.ProjectId == request.ProjectId.Value))
                     .ToList();
 
@@ -76,8 +70,8 @@ public class GetTeamProductivityReportQueryHandler : IRequestHandler<GetTeamProd
 
                 // Calculate average completion time for completed activities
                 var completedWithDates = activities
-                    .Where(a => a.Status == BoxStatusEnum.Completed && 
-                               a.ActualStartDate.HasValue && 
+                    .Where(a => a.Status == BoxStatusEnum.Completed &&
+                               a.ActualStartDate.HasValue &&
                                a.ActualEndDate.HasValue)
                     .ToList();
 
@@ -90,8 +84,8 @@ public class GetTeamProductivityReportQueryHandler : IRequestHandler<GetTeamProd
                 }
 
                 // Calculate efficiency as percentage of completed activities
-                decimal efficiency = totalActivities > 0 
-                    ? Math.Round((decimal)completedActivities / totalActivities * 100, 2) 
+                decimal efficiency = totalActivities > 0
+                    ? Math.Round((decimal)completedActivities / totalActivities * 100, 2)
                     : 0;
 
                 reportData.Add(new TeamProductivityReportDto

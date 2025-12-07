@@ -7,6 +7,10 @@ import {
   BoxSummaryReportQueryParams,
   BoxSummaryReportItem 
 } from '../models/boxes-summary-report.model';
+import {
+  ProjectsSummaryReportResponse,
+  ProjectsSummaryReportQueryParams
+} from '../models/projects-summary-report.model';
 
 export interface BoxProgressData {
   building: string;
@@ -286,6 +290,58 @@ export class ReportsService {
         efficiency: 0
       };
     });
+  }
+
+  /**
+   * Get projects summary report - Aggregated information about all projects
+   */
+  getProjectsSummaryReport(params?: ProjectsSummaryReportQueryParams): Observable<ProjectsSummaryReportResponse> {
+    const queryParams: any = {};
+    
+    if (params?.pageNumber !== undefined) queryParams.pageNumber = params.pageNumber;
+    if (params?.pageSize !== undefined) queryParams.pageSize = params.pageSize;
+    if (params?.isActive !== undefined) queryParams.isActive = params.isActive;
+    if (params?.status && params.status.length > 0) queryParams.status = params.status;
+    if (params?.search) queryParams.search = params.search;
+
+    return this.apiService.get<any>(`${this.endpoint}/projects`, queryParams).pipe(
+      map(response => this.transformProjectsSummaryReport(response))
+    );
+  }
+
+  /**
+   * Transform backend projects summary report response to frontend model
+   */
+  private transformProjectsSummaryReport(backendData: any): ProjectsSummaryReportResponse {
+    const data = backendData.data || backendData.Data || backendData;
+    
+    return {
+      items: (data.items || data.Items || data.projects || data.Projects || []).map((p: any) => ({
+        projectId: p.projectId || p.ProjectId || '',
+        projectCode: p.projectCode || p.ProjectCode || '',
+        projectName: p.projectName || p.ProjectName || '',
+        clientName: p.clientName || p.ClientName,
+        location: p.location || p.Location,
+        status: p.status || p.Status || '',
+        totalBoxes: p.totalBoxes ?? p.TotalBoxes ?? 0,
+        progressPercentage: p.progressPercentage ?? p.ProgressPercentage ?? 0,
+        progressPercentageFormatted: p.progressPercentageFormatted || p.ProgressPercentageFormatted || '0.00%',
+        isActive: p.isActive ?? p.IsActive ?? false
+      })),
+      totalCount: data.totalCount ?? data.TotalCount ?? 0,
+      pageNumber: data.pageNumber ?? data.PageNumber ?? 1,
+      pageSize: data.pageSize ?? data.PageSize ?? 25,
+      totalPages: data.totalPages ?? data.TotalPages ?? 0,
+      kpis: {
+        totalProjects: data.kpis?.totalProjects ?? data.kpis?.TotalProjects ?? 0,
+        activeProjects: data.kpis?.activeProjects ?? data.kpis?.ActiveProjects ?? 0,
+        inactiveProjects: data.kpis?.inactiveProjects ?? data.kpis?.InactiveProjects ?? 0,
+        totalBoxes: data.kpis?.totalBoxes ?? data.kpis?.TotalBoxes ?? 0,
+        averageProgressPercentage: data.kpis?.averageProgressPercentage ?? data.kpis?.AverageProgressPercentage ?? 0,
+        averageProgressPercentageFormatted: data.kpis?.averageProgressPercentageFormatted || data.kpis?.AverageProgressPercentageFormatted || '0.00%'
+      },
+      statusDistribution: data.statusDistribution || data.StatusDistribution || {}
+    };
   }
 
   /**

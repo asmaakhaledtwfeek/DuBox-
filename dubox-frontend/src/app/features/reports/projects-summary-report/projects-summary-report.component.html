@@ -1,0 +1,316 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="projects-summary-report-container">
+  <div class="content-wrapper">
+    <div class="report-header">
+      <div class="header-title-section">
+        <a [routerLink]="['/reports']" class="back-link" title="Back to Reports">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span>Reports</span>
+        </a>
+        <h1>Projects Summary Report</h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn-export btn-export-excel" (click)="exportToExcel()" [disabled]="loading || !reportData" title="Export to Excel">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span>Export Excel</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="filters-section">
+      <div class="filters-header" (click)="filtersCollapsed = !filtersCollapsed">
+        <h2>Filters</h2>
+        <span class="collapse-icon">{{ filtersCollapsed ? '▼' : '▲' }}</span>
+      </div>
+      
+      <div class="filters-content" [class.collapsed]="filtersCollapsed">
+        <div class="filter-row">
+          <div class="filter-group">
+            <label>Active Status</label>
+            <select [(ngModel)]="isActiveFilter" (change)="applyFilters()">
+              <option [ngValue]="null">All</option>
+              <option [ngValue]="true">Active Only</option>
+              <option [ngValue]="false">Inactive Only</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>Status</label>
+            <div class="status-checkboxes">
+              <label *ngFor="let status of statusOptions" class="checkbox-label">
+                <input 
+                  type="checkbox" 
+                  [checked]="selectedStatuses.includes(status.value)"
+                  (change)="toggleStatus(status.value)">
+                {{ status.label }}
+              </label>
+            </div>
+          </div>
+
+          <div class="filter-group filter-group-search">
+            <label>Search</label>
+            <input 
+              type="text" 
+              [(ngModel)]="searchTerm" 
+              placeholder="Search by code, name, or client..."
+              (keyup.enter)="applyFilters()">
+          </div>
+        </div>
+
+        <div class="filter-actions">
+          <button class="btn btn-primary" (click)="applyFilters()">Apply Filters</button>
+          <button class="btn btn-secondary" (click)="resetFilters()">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div *ngIf="error" class="error-message">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      {{ error }}
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading projects summary report...</p>
+    </div>
+
+    <!-- Report Content -->
+    <div *ngIf="!loading && reportData" class="report-content">
+      <!-- KPI Cards -->
+      <div class="kpi-cards">
+        <div class="kpi-card kpi-total">
+          <div class="kpi-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ reportData.kpis.totalProjects }}</div>
+            <div class="kpi-label">Total Projects</div>
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-active">
+          <div class="kpi-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ reportData.kpis.activeProjects }}</div>
+            <div class="kpi-label">Active Projects</div>
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-inactive">
+          <div class="kpi-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ reportData.kpis.inactiveProjects }}</div>
+            <div class="kpi-label">Inactive Projects</div>
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-boxes">
+          <div class="kpi-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ reportData.kpis.totalBoxes | number }}</div>
+            <div class="kpi-label">Total Boxes</div>
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-progress">
+          <div class="kpi-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ reportData.kpis.averageProgressPercentageFormatted }}</div>
+            <div class="kpi-label">Avg. Progress</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Distribution Chart -->
+      <div class="charts-section" *ngIf="reportData.statusDistribution && Object.keys(reportData.statusDistribution).length > 0">
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3>Projects by Status</h3>
+          </div>
+          <div class="chart-content">
+            <div class="status-distribution">
+              <div *ngFor="let entry of Object.entries(reportData.statusDistribution)" class="status-item">
+                <div class="status-bar-header">
+                  <span class="status-label">{{ entry[0] }}</span>
+                  <span class="status-count">{{ entry[1] }}</span>
+                </div>
+                <div class="status-bar-container">
+                  <div 
+                    class="status-bar-fill" 
+                    [attr.data-status]="entry[0].toLowerCase()"
+                    [style.width.%]="(entry[1] / reportData.kpis.totalProjects) * 100">
+                  </div>
+                  <span class="status-percentage">
+                    {{ ((entry[1] / reportData.kpis.totalProjects) * 100).toFixed(1) }}%
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Projects Table -->
+      <div class="table-section">
+        <div class="table-header">
+          <h2>Projects List</h2>
+          <div class="table-info">
+            <span *ngIf="reportData && totalCount > 0">
+              Showing {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, totalCount) }} of {{ totalCount }} project(s)
+            </span>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table class="projects-table">
+            <thead>
+              <tr>
+                <th>Project Code</th>
+                <th>Project Name</th>
+                <th>Client Name</th>
+                <th>Location</th>
+                <th>Status</th>
+                <th>Total Boxes</th>
+                <th>Progress</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let project of paginatedProjects">
+                <td class="project-code">{{ project.projectCode }}</td>
+                <td class="project-name">{{ project.projectName }}</td>
+                <td>{{ project.clientName || '-' }}</td>
+                <td>{{ project.location || '-' }}</td>
+                <td>
+                  <span class="badge" [attr.data-status]="getStatusColor(project.status)">
+                    {{ project.status }}
+                  </span>
+                </td>
+                <td class="text-center">{{ project.totalBoxes | number }}</td>
+                <td class="progress-cell">
+                  <div class="progress-bar">
+                    <div class="progress-fill" [style.width.%]="project.progressPercentage"></div>
+                  </div>
+                  <span class="progress-text">{{ project.progressPercentageFormatted }}</span>
+                </td>
+                <td class="text-center">
+                  <div class="action-buttons">
+                    <button 
+                      class="btn-action btn-action-icon-only" 
+                      (click)="viewProject(project.projectId)"
+                      title="View Project Dashboard"
+                      aria-label="View Project Dashboard">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div *ngIf="reportData && reportData.items.length === 0" class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+            <h3>No Projects Found</h3>
+            <p>No projects match the current filters. Try adjusting your search criteria.</p>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" *ngIf="reportData && !loading && totalCount > 0">
+          <div class="pagination-info">
+            Showing {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, totalCount) }} of {{ totalCount }} projects
+          </div>
+          <div class="pagination-controls">
+            <button class="btn btn-sm btn-icon" 
+                    [disabled]="currentPage === 1" 
+                    (click)="firstPage()"
+                    title="First Page">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+              </svg>
+            </button>
+            <button class="btn btn-sm btn-icon" 
+                    [disabled]="currentPage === 1" 
+                    (click)="onPageChange(currentPage - 1)"
+                    title="Previous Page">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            
+            <div class="page-numbers">
+              <button *ngFor="let page of getPageNumbers()" 
+                      class="btn btn-sm" 
+                      [class.active]="page === currentPage"
+                      (click)="onPageChange(page)">
+                {{ page }}
+              </button>
+            </div>
+
+            <button class="btn btn-sm btn-icon" 
+                    [disabled]="currentPage === totalPages" 
+                    (click)="onPageChange(currentPage + 1)"
+                    title="Next Page">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+            <button class="btn btn-sm btn-icon" 
+                    [disabled]="currentPage === totalPages" 
+                    (click)="lastPage()"
+                    title="Last Page">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M6 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+
+          <div class="page-size-selector">
+            <label for="pageSizeSelect">Items per page:</label>
+            <select id="pageSizeSelect" [(ngModel)]="pageSize" (change)="onPageSizeChange()">
+              <option value="10">10</option>
+              <option value="25">25</option>
+              <option value="50">50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -46,6 +46,50 @@ public record ReportSummaryDto
 }
 
 /// <summary>
+/// DTO for Projects Summary Report - aggregated information about all projects
+/// </summary>
+public record ProjectsSummaryReportResponseDto
+{
+    public List<ProjectSummaryItemDto> Items { get; init; } = new();
+    public int TotalCount { get; init; }
+    public int PageNumber { get; init; }
+    public int PageSize { get; init; }
+    public int TotalPages { get; init; }
+    public ProjectsSummaryReportKpisDto Kpis { get; init; } = new();
+    public Dictionary<string, int> StatusDistribution { get; init; } = new();
+}
+
+/// <summary>
+/// DTO for Projects Summary Report KPIs
+/// </summary>
+public record ProjectsSummaryReportKpisDto
+{
+    public int TotalProjects { get; init; }
+    public int ActiveProjects { get; init; }
+    public int InactiveProjects { get; init; }
+    public int TotalBoxes { get; init; }
+    public decimal AverageProgressPercentage { get; init; }
+    public string AverageProgressPercentageFormatted { get; init; } = string.Empty;
+}
+
+/// <summary>
+/// DTO for individual project in the summary report
+/// </summary>
+public record ProjectSummaryItemDto
+{
+    public Guid ProjectId { get; init; }
+    public string ProjectCode { get; init; } = string.Empty;
+    public string ProjectName { get; init; } = string.Empty;
+    public string? ClientName { get; init; }
+    public string? Location { get; init; }
+    public string Status { get; init; } = string.Empty;
+    public int TotalBoxes { get; init; }
+    public decimal ProgressPercentage { get; init; }
+    public string ProgressPercentageFormatted { get; init; } = string.Empty;
+    public bool IsActive { get; init; }
+}
+
+/// <summary>
 /// DTO for Phase Readiness Report (future implementation)
 /// </summary>
 public record PhaseReadinessReportDto

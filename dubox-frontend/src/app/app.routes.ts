@@ -278,6 +278,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/reports/boxes-summary-report/boxes-summary-report.component').then(m => m.BoxesSummaryReportComponent)
   },
   {
+    path: 'reports/activities',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/reports/activities-report/activities-report.component').then(m => m.ActivitiesReportComponent)
+  },
+  {
     path: 'unauthorized',
     loadComponent: () => import('./shared/components/unauthorized/unauthorized.component').then(m => m.UnauthorizedComponent)
   },

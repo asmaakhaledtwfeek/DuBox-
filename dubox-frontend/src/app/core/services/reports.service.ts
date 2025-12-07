@@ -11,6 +11,11 @@ import {
   ProjectsSummaryReportResponse,
   ProjectsSummaryReportQueryParams
 } from '../models/projects-summary-report.model';
+import {
+  PaginatedActivitiesReportResponse,
+  ActivitiesReportQueryParams,
+  ActivitiesSummary
+} from '../models/activities-report.model';
 
 export interface BoxProgressData {
   building: string;
@@ -446,6 +451,124 @@ export class ReportsService {
         projectName: p.projectName || p.ProjectName || '',
         boxCount: p.boxCount ?? p.BoxCount ?? 0
       }))
+    };
+  }
+
+  /**
+   * Get activities report with filtering and pagination
+   */
+  getActivitiesReport(params: ActivitiesReportQueryParams): Observable<PaginatedActivitiesReportResponse> {
+    const queryParams: any = {};
+    
+    if (params.page !== undefined) queryParams.page = params.page;
+    if (params.pageSize !== undefined) queryParams.pageSize = params.pageSize;
+    if (params.projectId) queryParams.projectId = params.projectId;
+    if (params.teamId) queryParams.teamId = params.teamId;
+    if (params.status !== undefined) queryParams.status = params.status;
+    if (params.plannedStartDateFrom) queryParams.plannedStartDateFrom = params.plannedStartDateFrom;
+    if (params.plannedStartDateTo) queryParams.plannedStartDateTo = params.plannedStartDateTo;
+    if (params.plannedEndDateFrom) queryParams.plannedEndDateFrom = params.plannedEndDateFrom;
+    if (params.plannedEndDateTo) queryParams.plannedEndDateTo = params.plannedEndDateTo;
+    if (params.search) queryParams.search = params.search;
+
+    return this.apiService.get<any>(`${this.endpoint}/activities`, queryParams).pipe(
+      map(response => this.transformActivitiesReport(response))
+    );
+  }
+
+  /**
+   * Get activities summary/KPIs
+   */
+  getActivitiesSummary(params?: Partial<ActivitiesReportQueryParams>): Observable<ActivitiesSummary> {
+    const queryParams: any = {};
+    
+    if (params?.projectId) queryParams.projectId = params.projectId;
+    if (params?.teamId) queryParams.teamId = params.teamId;
+    if (params?.status !== undefined) queryParams.status = params.status;
+    if (params?.plannedStartDateFrom) queryParams.plannedStartDateFrom = params.plannedStartDateFrom;
+    if (params?.plannedStartDateTo) queryParams.plannedStartDateTo = params.plannedStartDateTo;
+    if (params?.plannedEndDateFrom) queryParams.plannedEndDateFrom = params.plannedEndDateFrom;
+    if (params?.plannedEndDateTo) queryParams.plannedEndDateTo = params.plannedEndDateTo;
+    if (params?.search) queryParams.search = params.search;
+
+    return this.apiService.get<any>(`${this.endpoint}/activities/summary`, queryParams).pipe(
+      map(response => this.transformActivitiesSummary(response))
+    );
+  }
+
+  /**
+   * Export activities report to Excel
+   */
+  exportActivitiesReportToExcel(params: ActivitiesReportQueryParams): Observable<Blob> {
+    const queryParams: any = {};
+    
+    if (params.projectId) queryParams.projectId = params.projectId;
+    if (params.teamId) queryParams.teamId = params.teamId;
+    if (params.status !== undefined) queryParams.status = params.status;
+    if (params.plannedStartDateFrom) queryParams.plannedStartDateFrom = params.plannedStartDateFrom;
+    if (params.plannedStartDateTo) queryParams.plannedStartDateTo = params.plannedStartDateTo;
+    if (params.plannedEndDateFrom) queryParams.plannedEndDateFrom = params.plannedEndDateFrom;
+    if (params.plannedEndDateTo) queryParams.plannedEndDateTo = params.plannedEndDateTo;
+    if (params.search) queryParams.search = params.search;
+
+    // Build query string
+    const queryString = Object.keys(queryParams)
+      .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(queryParams[key])}`)
+      .join('&');
+    
+    const endpoint = queryString 
+      ? `${this.endpoint}/activities/export/excel?${queryString}`
+      : `${this.endpoint}/activities/export/excel`;
+
+    return this.apiService.download(endpoint);
+  }
+
+  /**
+   * Transform backend activities report response to frontend model
+   */
+  private transformActivitiesReport(backendData: any): PaginatedActivitiesReportResponse {
+    const data = backendData.data || backendData.Data || backendData;
+    
+    return {
+      items: (data.items || data.Items || []).map((item: any) => ({
+        activityId: item.activityId || item.ActivityId || '',
+        activityName: item.activityName || item.ActivityName || '',
+        boxTag: item.boxTag || item.BoxTag || '',
+        projectName: item.projectName || item.ProjectName || '',
+        assignedTeam: item.assignedTeam || item.AssignedTeam,
+        status: item.status || item.Status || '',
+        progressPercentage: item.progressPercentage ?? item.ProgressPercentage ?? 0,
+        plannedStartDate: item.plannedStartDate || item.PlannedStartDate,
+        plannedEndDate: item.plannedEndDate || item.PlannedEndDate,
+        actualStartDate: item.actualStartDate || item.ActualStartDate,
+        actualEndDate: item.actualEndDate || item.ActualEndDate,
+        actualDuration: item.actualDuration ?? item.ActualDuration,
+        delayDays: item.delayDays ?? item.DelayDays,
+        boxId: item.boxId || item.BoxId || '',
+        projectId: item.projectId || item.ProjectId || ''
+      })),
+      page: data.page ?? data.Page ?? 1,
+      pageSize: data.pageSize ?? data.PageSize ?? 50,
+      totalCount: data.totalCount ?? data.TotalCount ?? 0,
+      totalPages: data.totalPages ?? data.TotalPages ?? 0
+    };
+  }
+
+  /**
+   * Transform backend activities summary response to frontend model
+   */
+  private transformActivitiesSummary(backendData: any): ActivitiesSummary {
+    const data = backendData.data || backendData.Data || backendData;
+    
+    return {
+      totalActivities: data.totalActivities ?? data.TotalActivities ?? 0,
+      completed: data.completed ?? data.Completed ?? 0,
+      inProgress: data.inProgress ?? data.InProgress ?? 0,
+      pending: data.pending ?? data.Pending ?? 0,
+      delayed: data.delayed ?? data.Delayed ?? 0,
+      averageProgress: data.averageProgress ?? data.AverageProgress ?? 0,
+      overdue: data.overdue ?? data.Overdue ?? 0,
+      dueThisWeek: data.dueThisWeek ?? data.DueThisWeek ?? 0
     };
   }
 }

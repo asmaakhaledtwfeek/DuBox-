@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
@@ -46,6 +46,13 @@ export class ReportsDashboardComponent implements OnInit {
 
   reports: ReportCard[] = [
     {
+      id: 'boxes-summary',
+      title: 'Boxes Summary Report',
+      description: 'Comprehensive report with filtering, KPIs, charts, and detailed box information',
+      icon: 'boxes',
+      color: 'teal'
+    },
+    {
       id: 'box-progress',
       title: 'Box Progress Report',
       description: 'Track the progress of all boxes across different phases and stages',
@@ -77,7 +84,8 @@ export class ReportsDashboardComponent implements OnInit {
 
   constructor(
     private reportsService: ReportsService,
-    private projectService: ProjectService
+    private projectService: ProjectService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -111,6 +119,12 @@ export class ReportsDashboardComponent implements OnInit {
   }
 
   showReport(reportId: string): void {
+    // Navigate to boxes-summary report page instead of inline display
+    if (reportId === 'boxes-summary') {
+      this.router.navigate(['/reports/boxes']);
+      return;
+    }
+    
     this.activeReport = reportId;
     
     if (reportId === 'box-progress') {
@@ -334,6 +348,7 @@ export class ReportsDashboardComponent implements OnInit {
 
   getIconSvg(icon: string): string {
     const icons: Record<string, string> = {
+      boxes: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/><circle cx="7" cy="8" r="1"/><circle cx="17" cy="8" r="1"/><circle cx="7" cy="16" r="1"/><circle cx="17" cy="16" r="1"/>',
       box: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>',
       team: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
       phases: '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>',

@@ -94,5 +94,20 @@ public class ReportsController : ControllerBase
         var result = await _mediator.Send(new GetPhaseReadinessReportQuery(projectId), cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+
+    /// <summary>
+    /// Get boxes summary report - Comprehensive report with filtering, pagination, sorting, KPIs, and charts
+    /// </summary>
+    /// <param name="query">Query parameters for filtering, pagination, and sorting</param>
+    /// <param name="cancellationToken">Cancellation token</param>
+    /// <returns>Paginated boxes summary report with KPIs and aggregations</returns>
+    [HttpGet("boxes")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetBoxesSummaryReport([FromQuery] GetBoxesSummaryReportQuery query, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
 }
 

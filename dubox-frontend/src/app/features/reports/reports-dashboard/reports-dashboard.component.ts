@@ -4,7 +4,7 @@ import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
-import { ReportsService, ReportSummary, TeamProductivityData } from '../../../core/services/reports.service';
+import { ReportsService, ReportSummary } from '../../../core/services/reports.service';
 import { ProjectService } from '../../../core/services/project.service';
 import { Project } from '../../../core/models/project.model';
 import * as XLSX from 'xlsx';
@@ -35,7 +35,6 @@ export class ReportsDashboardComponent implements OnInit {
 
   // Active report tracking
   activeReport: string | null = null;
-  teamProductivityData: TeamProductivityData[] = [];
   
   // Projects for filtering
   projects: Project[] = [];
@@ -64,11 +63,11 @@ export class ReportsDashboardComponent implements OnInit {
       color: 'blue'
     },
     {
-      id: 'team-productivity',
-      title: 'Team Productivity Report',
-      description: 'Monitor the productivity and performance of deployed teams',
-      icon: 'team',
-      color: 'green'
+      id: 'teams-performance',
+      title: 'Teams Performance Report',
+      description: 'Analyze the performance of all teams across all project activities with detailed metrics and drill-down capabilities',
+      icon: 'team-performance',
+      color: 'purple'
     }
   ];
 
@@ -122,12 +121,12 @@ export class ReportsDashboardComponent implements OnInit {
       this.router.navigate(['/reports/activities']);
       return;
     }
+    if (reportId === 'teams-performance') {
+      this.router.navigate(['/reports/teams-performance']);
+      return;
+    }
     
     this.activeReport = reportId;
-    
-    if (reportId === 'team-productivity') {
-      this.loadTeamProductivityReport();
-    }
   }
 
   closeReport(): void {
@@ -136,57 +135,7 @@ export class ReportsDashboardComponent implements OnInit {
   }
 
   onProjectChange(): void {
-    if (this.activeReport === 'team-productivity') {
-      this.loadTeamProductivityReport();
-    }
-  }
-
-  loadTeamProductivityReport(): void {
-    this.loading = true;
-    this.reportsService.getTeamProductivityReport(this.selectedProject || undefined).subscribe({
-      next: (data) => {
-        this.teamProductivityData = data;
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Failed to load team productivity:', err);
-        this.loading = false;
-      }
-    });
-  }
-
-  // Team Productivity methods
-  getEfficiencyColor(efficiency: number): string {
-    if (efficiency >= 85) return 'green';
-    if (efficiency >= 70) return 'blue';
-    if (efficiency >= 50) return 'orange';
-    return 'red';
-  }
-
-  exportTeamProductivityToExcel(): void {
-    if (!this.teamProductivityData || this.teamProductivityData.length === 0) {
-      alert('No data to export');
-      return;
-    }
-
-    const exportData = this.teamProductivityData.map(team => ({
-      'Team Name': team.teamName,
-      'Total Activities': team.totalActivities,
-      'Completed Activities': team.completedActivities,
-      'In Progress': team.inProgress,
-      'Avg Completion Time (days)': team.averageCompletionTime,
-      'Efficiency %': team.efficiency
-    }));
-
-    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook: XLSX.WorkBook = {
-      Sheets: { 'Team Productivity': worksheet },
-      SheetNames: ['Team Productivity']
-    };
-
-    const today = new Date();
-    const dateStr = today.toISOString().split('T')[0];
-    XLSX.writeFile(workbook, `Team_Productivity_Report_${dateStr}.xlsx`);
+    // Handle project change for other reports if needed
   }
 
   getIconSvg(icon: string): string {
@@ -194,7 +143,8 @@ export class ReportsDashboardComponent implements OnInit {
       projects: '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/>',
       boxes: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/><circle cx="7" cy="8" r="1"/><circle cx="17" cy="8" r="1"/><circle cx="7" cy="16" r="1"/><circle cx="17" cy="16" r="1"/>',
       activities: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>',
-      team: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>'
+      team: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+      'team-performance': '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M9 11l2 2 4-4"/>'
     };
     return icons[icon] || '';
   }

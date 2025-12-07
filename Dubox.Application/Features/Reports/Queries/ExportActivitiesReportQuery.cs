@@ -3,9 +3,6 @@ using MediatR;
 
 namespace Dubox.Application.Features.Reports.Queries;
 
-/// <summary>
-/// Query to export activities report to Excel - Same filters as GetActivitiesReportQuery
-/// </summary>
 public record ExportActivitiesReportQuery : IRequest<Result<Stream>>
 {
     public Guid? ProjectId { get; init; }

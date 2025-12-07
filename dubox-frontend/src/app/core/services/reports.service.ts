@@ -16,6 +16,12 @@ import {
   ActivitiesReportQueryParams,
   ActivitiesSummary
 } from '../models/activities-report.model';
+import {
+  PaginatedTeamsPerformanceResponse,
+  TeamsPerformanceReportQueryParams,
+  TeamsPerformanceSummary,
+  TeamActivitiesResponse
+} from '../models/teams-performance-report.model';
 
 export interface BoxProgressData {
   building: string;
@@ -28,16 +34,6 @@ export interface BoxProgressData {
   total: number;
 }
 
-export interface TeamProductivityData {
-  teamId: string;
-  teamName: string;
-  totalActivities: number;
-  completedActivities: number;
-  inProgress: number;
-  pending: number;
-  averageCompletionTime: number;
-  efficiency: number;
-}
 
 export interface ReportSummary {
   totalBoxes: number;
@@ -85,15 +81,6 @@ export class ReportsService {
     );
   }
 
-  /**
-   * Get team productivity report data
-   */
-  getTeamProductivityReport(projectId?: string): Observable<TeamProductivityData[]> {
-    const params = projectId ? { projectId } : {};
-    return this.apiService.get<any[]>(`${this.endpoint}/team-productivity`, params).pipe(
-      map(data => this.transformTeamProductivityData(data))
-    );
-  }
 
   /**
    * Get report summary statistics
@@ -136,15 +123,6 @@ export class ReportsService {
     );
   }
 
-  /**
-   * Get team productivity from activities and teams
-   * Fallback method if reports endpoint not available
-   */
-  getTeamProductivityFromActivities(projectId?: string): Observable<TeamProductivityData[]> {
-    return this.apiService.get<any[]>('teams').pipe(
-      map(teams => this.calculateTeamProductivityFromRawData(teams))
-    );
-  }
 
   /**
    * Transform backend box progress data to frontend model
@@ -162,21 +140,6 @@ export class ReportsService {
     }));
   }
 
-  /**
-   * Transform backend team productivity data to frontend model
-   */
-  private transformTeamProductivityData(backendData: any[]): TeamProductivityData[] {
-    return (backendData || []).map(item => ({
-      teamId: item.teamId || item.TeamId || '',
-      teamName: item.teamName || item.TeamName || '',
-      totalActivities: item.totalActivities || item.TotalActivities || 0,
-      completedActivities: item.completedActivities || item.CompletedActivities || 0,
-      inProgress: item.inProgress || item.InProgress || item.inProgressActivities || 0,
-      pending: item.pending || item.Pending || item.pendingActivities || 0,
-      averageCompletionTime: item.averageCompletionTime || item.AverageCompletionTime || 0,
-      efficiency: item.efficiency || item.Efficiency || 0
-    }));
-  }
 
   /**
    * Transform report summary data
@@ -276,26 +239,6 @@ export class ReportsService {
     return result;
   }
 
-  /**
-   * Calculate team productivity from raw team and activity data
-   */
-  private calculateTeamProductivityFromRawData(teams: any[]): TeamProductivityData[] {
-    if (!teams || teams.length === 0) return [];
-
-    return teams.map(team => {
-      // For now, return basic data - will need activities data for accurate metrics
-      return {
-        teamId: team.teamId || team.TeamId || '',
-        teamName: team.teamName || team.TeamName || '',
-        totalActivities: 0, // Would need to query activities by team
-        completedActivities: 0,
-        inProgress: 0,
-        pending: 0,
-        averageCompletionTime: 0,
-        efficiency: 0
-      };
-    });
-  }
 
   /**
    * Get projects summary report - Aggregated information about all projects
@@ -569,6 +512,150 @@ export class ReportsService {
       averageProgress: data.averageProgress ?? data.AverageProgress ?? 0,
       overdue: data.overdue ?? data.Overdue ?? 0,
       dueThisWeek: data.dueThisWeek ?? data.DueThisWeek ?? 0
+    };
+  }
+
+  /**
+   * Get teams performance report with filtering and pagination
+   */
+  getTeamsPerformanceReport(params: TeamsPerformanceReportQueryParams): Observable<PaginatedTeamsPerformanceResponse> {
+    const queryParams: any = {};
+    
+    if (params.page !== undefined) queryParams.page = params.page;
+    if (params.pageSize !== undefined) queryParams.pageSize = params.pageSize;
+    if (params.projectId) queryParams.projectId = params.projectId;
+    if (params.teamId) queryParams.teamId = params.teamId;
+    if (params.status !== undefined) queryParams.status = params.status;
+    if (params.search) queryParams.search = params.search;
+
+    return this.apiService.get<any>(`${this.endpoint}/teams-performance`, queryParams).pipe(
+      map(response => this.transformTeamsPerformanceReport(response))
+    );
+  }
+
+  /**
+   * Get teams performance summary/KPIs
+   */
+  getTeamsPerformanceSummary(params?: Partial<TeamsPerformanceReportQueryParams>): Observable<TeamsPerformanceSummary> {
+    const queryParams: any = {};
+    
+    if (params?.projectId) queryParams.projectId = params.projectId;
+    if (params?.teamId) queryParams.teamId = params.teamId;
+    if (params?.status !== undefined) queryParams.status = params.status;
+    if (params?.search) queryParams.search = params.search;
+
+    return this.apiService.get<any>(`${this.endpoint}/teams-performance/summary`, queryParams).pipe(
+      map(response => this.transformTeamsPerformanceSummary(response))
+    );
+  }
+
+  /**
+   * Get team activities for drill-down
+   */
+  getTeamActivities(teamId: string, params?: { projectId?: string; status?: number }): Observable<TeamActivitiesResponse> {
+    const queryParams: any = {};
+    
+    if (params?.projectId) queryParams.projectId = params.projectId;
+    if (params?.status !== undefined) queryParams.status = params.status;
+
+    return this.apiService.get<any>(`${this.endpoint}/teams-performance/${teamId}/activities`, queryParams).pipe(
+      map(response => this.transformTeamActivities(response))
+    );
+  }
+
+  /**
+   * Export teams performance report to Excel
+   */
+  exportTeamsPerformanceReportToExcel(params: TeamsPerformanceReportQueryParams): Observable<Blob> {
+    const queryParams: any = {};
+    
+    if (params.projectId) queryParams.projectId = params.projectId;
+    if (params.teamId) queryParams.teamId = params.teamId;
+    if (params.status !== undefined) queryParams.status = params.status;
+    if (params.search) queryParams.search = params.search;
+
+    // Build query string
+    const queryString = Object.keys(queryParams)
+      .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(queryParams[key])}`)
+      .join('&');
+    
+    const endpoint = queryString 
+      ? `${this.endpoint}/teams-performance/export/excel?${queryString}`
+      : `${this.endpoint}/teams-performance/export/excel`;
+
+    return this.apiService.download(endpoint);
+  }
+
+  /**
+   * Transform backend teams performance report response to frontend model
+   */
+  private transformTeamsPerformanceReport(backendData: any): PaginatedTeamsPerformanceResponse {
+    const data = backendData.data || backendData.Data || backendData;
+    
+    return {
+      items: (data.items || data.Items || []).map((item: any) => ({
+        teamId: item.teamId || item.TeamId || '',
+        teamCode: item.teamCode || item.TeamCode || '',
+        teamName: item.teamName || item.TeamName || '',
+        membersCount: item.membersCount ?? item.MembersCount ?? 0,
+        totalAssignedActivities: item.totalAssignedActivities ?? item.TotalAssignedActivities ?? 0,
+        completed: item.completed ?? item.Completed ?? 0,
+        inProgress: item.inProgress ?? item.InProgress ?? 0,
+        pending: item.pending ?? item.Pending ?? 0,
+        delayed: item.delayed ?? item.Delayed ?? 0,
+        averageTeamProgress: item.averageTeamProgress ?? item.AverageTeamProgress ?? 0,
+        workloadLevel: item.workloadLevel || item.WorkloadLevel || 'Normal'
+      })),
+      page: data.page ?? data.Page ?? 1,
+      pageSize: data.pageSize ?? data.PageSize ?? 25,
+      totalCount: data.totalCount ?? data.TotalCount ?? 0,
+      totalPages: data.totalPages ?? data.TotalPages ?? 0
+    };
+  }
+
+  /**
+   * Transform backend teams performance summary response to frontend model
+   */
+  private transformTeamsPerformanceSummary(backendData: any): TeamsPerformanceSummary {
+    const data = backendData.data || backendData.Data || backendData;
+    
+    return {
+      totalTeams: data.totalTeams ?? data.TotalTeams ?? 0,
+      totalTeamMembers: data.totalTeamMembers ?? data.TotalTeamMembers ?? 0,
+      totalAssignedActivities: data.totalAssignedActivities ?? data.TotalAssignedActivities ?? 0,
+      completedActivities: data.completedActivities ?? data.CompletedActivities ?? 0,
+      inProgressActivities: data.inProgressActivities ?? data.InProgressActivities ?? 0,
+      delayedActivities: data.delayedActivities ?? data.DelayedActivities ?? 0,
+      averageTeamProgress: data.averageTeamProgress ?? data.AverageTeamProgress ?? 0,
+      teamWorkloadIndicator: data.teamWorkloadIndicator ?? data.TeamWorkloadIndicator ?? 0
+    };
+  }
+
+  /**
+   * Transform backend team activities response to frontend model
+   */
+  private transformTeamActivities(backendData: any): TeamActivitiesResponse {
+    const data = backendData.data || backendData.Data || backendData;
+    
+    return {
+      teamId: data.teamId || data.TeamId || '',
+      teamName: data.teamName || data.TeamName || '',
+      activities: (data.activities || data.Activities || []).map((item: any) => ({
+        activityId: item.activityId || item.ActivityId || '',
+        activityName: item.activityName || item.ActivityName || '',
+        boxTag: item.boxTag || item.BoxTag || '',
+        projectName: item.projectName || item.ProjectName || '',
+        status: item.status || item.Status || '',
+        progressPercentage: item.progressPercentage ?? item.ProgressPercentage ?? 0,
+        plannedStartDate: item.plannedStartDate || item.PlannedStartDate,
+        plannedEndDate: item.plannedEndDate || item.PlannedEndDate,
+        actualStartDate: item.actualStartDate || item.ActualStartDate,
+        actualEndDate: item.actualEndDate || item.ActualEndDate,
+        duration: item.duration ?? item.Duration,
+        boxId: item.boxId || item.BoxId || '',
+        projectId: item.projectId || item.ProjectId || ''
+      })),
+      totalCount: data.totalCount ?? data.TotalCount ?? 0
     };
   }
 }

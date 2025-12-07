@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiService } from './api.service';
-import { Team, CreateTeam, UpdateTeam, TeamMember, TeamMembersDto, AssignTeamMembers, CompleteTeamMemberProfile, Department } from '../models/team.model';
+import { Team, CreateTeam, UpdateTeam, TeamMember, TeamMembersDto, AssignTeamMembers, CompleteTeamMemberProfile, Department, PaginatedTeamsResponse } from '../models/team.model';
 
 @Injectable({
   providedIn: 'root'
@@ -18,6 +18,46 @@ export class TeamService {
   getTeams(): Observable<Team[]> {
     return this.apiService.get<Team[]>(this.endpoint).pipe(
       map(teams => teams.map(t => this.transformTeam(t)))
+    );
+  }
+
+  /**
+   * Get teams with pagination and filters
+   */
+  getTeamsPaginated(params: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    department?: string;
+    trade?: string;
+    isActive?: boolean;
+  }): Observable<PaginatedTeamsResponse> {
+    const queryParams: any = {};
+    
+    if (params.page !== undefined) queryParams.page = params.page;
+    if (params.pageSize !== undefined) queryParams.pageSize = params.pageSize;
+    if (params.search) queryParams.search = params.search;
+    if (params.department) queryParams.department = params.department;
+    if (params.trade) queryParams.trade = params.trade;
+    if (params.isActive !== undefined) queryParams.isActive = params.isActive;
+
+    return this.apiService.get<any>(this.endpoint, queryParams).pipe(
+      map((response: any) => {
+        const data = response.data || response.Data || response;
+        const items = data.items || data.Items || [];
+        const totalCount = data.totalCount ?? data.TotalCount ?? 0;
+        const page = data.page ?? data.Page ?? params.page ?? 1;
+        const pageSize = data.pageSize ?? data.PageSize ?? params.pageSize ?? 25;
+        const totalPages = data.totalPages ?? data.TotalPages ?? 0;
+
+        return {
+          items: items.map((t: any) => this.transformTeam(t)),
+          totalCount,
+          page,
+          pageSize,
+          totalPages
+        };
+      })
     );
   }
 

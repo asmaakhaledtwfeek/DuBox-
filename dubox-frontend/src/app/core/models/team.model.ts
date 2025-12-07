@@ -72,4 +72,12 @@ export interface Department {
   isActive: boolean;
 }
 
+export interface PaginatedTeamsResponse {
+  items: Team[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
 

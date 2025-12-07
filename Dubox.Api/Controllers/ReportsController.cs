@@ -27,14 +27,6 @@ public class ReportsController : ControllerBase
     }
 
 
-    [HttpGet("team-productivity")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetTeamProductivityReport([FromQuery] Guid? projectId, CancellationToken cancellationToken)
-    {
-        var result = await _mediator.Send(new GetTeamProductivityReportQuery(projectId), cancellationToken);
-        return result.IsSuccess ? Ok(result) : BadRequest(result);
-    }
 
     [HttpGet("summary")]
     [ProducesResponseType(StatusCodes.Status200OK)]
@@ -115,6 +107,63 @@ public class ReportsController : ControllerBase
 
         var stream = result.Data!;
         var fileName = $"activities_report_{DateTime.UtcNow:yyyyMMddHHmmss}.xlsx";
+
+        return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+    }
+
+    [HttpGet("teams-performance")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetTeamsPerformanceReport([FromQuery] GetTeamsPerformanceReportQuery query, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("teams-performance/summary")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetTeamsPerformanceSummary([FromQuery] GetTeamsPerformanceSummaryQuery query, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("teams-performance/{teamId}/activities")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetTeamActivities(
+        Guid teamId,
+        [FromQuery] Guid? projectId,
+        [FromQuery] int? status,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetTeamActivitiesQuery
+        {
+            TeamId = teamId,
+            ProjectId = projectId,
+            Status = status
+        };
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("teams-performance/export/excel")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ExportTeamsPerformanceReportToExcel(
+        [FromQuery] ExportTeamsPerformanceReportQuery query,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(query, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(result);
+        }
+
+        var stream = result.Data!;
+        var fileName = $"teams_performance_report_{DateTime.UtcNow:yyyyMMddHHmmss}.xlsx";
 
         return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
     }

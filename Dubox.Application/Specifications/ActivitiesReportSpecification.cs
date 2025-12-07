@@ -12,7 +12,7 @@ public class ActivitiesReportSpecification : Specification<BoxActivity>
         : this(query.ProjectId, query.TeamId, query.Status,
                query.PlannedStartDateFrom, query.PlannedStartDateTo,
                query.PlannedEndDateFrom, query.PlannedEndDateTo,
-               query.Search, enablePaging, query.Page, query.PageSize)
+               query.Search, enablePaging, query.Page, query.PageSize, onlyWithTeamId: false)
     {
     }
 
@@ -20,7 +20,28 @@ public class ActivitiesReportSpecification : Specification<BoxActivity>
         : this(query.ProjectId, query.TeamId, query.Status,
                query.PlannedStartDateFrom, query.PlannedStartDateTo,
                query.PlannedEndDateFrom, query.PlannedEndDateTo,
-               query.Search, enablePaging: false, page: 1, pageSize: 1)
+               query.Search, enablePaging: false, page: 1, pageSize: 1, onlyWithTeamId: false)
+    {
+    }
+
+    public ActivitiesReportSpecification(ExportActivitiesReportQuery query)
+        : this(query.ProjectId, query.TeamId, query.Status,
+               query.PlannedStartDateFrom, query.PlannedStartDateTo,
+               query.PlannedEndDateFrom, query.PlannedEndDateTo,
+               query.Search, enablePaging: false, page: 1, pageSize: 1, onlyWithTeamId: false)
+    {
+    }
+
+
+    public ActivitiesReportSpecification(
+        Guid? projectId,
+        int? status,
+        bool enablePaging = false,
+        bool onlyWithTeamId = false)
+        : this(projectId, teamId: null, status,
+               plannedStartDateFrom: null, plannedStartDateTo: null,
+               plannedEndDateFrom: null, plannedEndDateTo: null,
+               search: null, enablePaging, page: 1, pageSize: int.MaxValue, onlyWithTeamId)
     {
     }
 
@@ -35,7 +56,8 @@ public class ActivitiesReportSpecification : Specification<BoxActivity>
         string? search,
         bool enablePaging,
         int page = 1,
-        int pageSize = 1)
+        int pageSize = 1,
+        bool onlyWithTeamId = false)
     {
         AddInclude(nameof(BoxActivity.Box));
         AddInclude($"{nameof(BoxActivity.Box)}.{nameof(Box.Project)}");
@@ -49,6 +71,10 @@ public class ActivitiesReportSpecification : Specification<BoxActivity>
 
         if (teamId.HasValue && teamId.Value != Guid.Empty)
             AddCriteria(ba => ba.TeamId == teamId.Value);
+
+        // Filter only activities with TeamId assigned (for Teams Performance Report)
+        if (onlyWithTeamId)
+            AddCriteria(ba => ba.TeamId.HasValue);
 
         if (status.HasValue)
         {

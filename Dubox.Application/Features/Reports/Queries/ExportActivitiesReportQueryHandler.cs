@@ -1,6 +1,7 @@
+using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
-using Dubox.Domain.Enums;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using MediatR;
@@ -10,13 +11,13 @@ namespace Dubox.Application.Features.Reports.Queries;
 
 public class ExportActivitiesReportQueryHandler : IRequestHandler<ExportActivitiesReportQuery, Result<Stream>>
 {
-    private readonly IDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly IExcelService _excelService;
     private const int BatchSize = 1000;
 
-    public ExportActivitiesReportQueryHandler(IDbContext dbContext, IExcelService excelService)
+    public ExportActivitiesReportQueryHandler(IUnitOfWork unitOfWork, IExcelService excelService)
     {
-        _dbContext = dbContext;
+        _unitOfWork = unitOfWork;
         _excelService = excelService;
     }
 
@@ -34,10 +35,8 @@ public class ExportActivitiesReportQueryHandler : IRequestHandler<ExportActiviti
 
     private async Task<Result<Stream>> ExportToExcelAsync(ExportActivitiesReportQuery request, CancellationToken cancellationToken)
     {
-        // Build base query
-        var baseQuery = BuildBaseQuery(request);
+        var baseQuery = _unitOfWork.Repository<BoxActivity>().GetWithSpec(new ActivitiesReportSpecification(request)).Data;
 
-        // Collect all data in batches to avoid loading everything into memory at once
         var allActivities = new List<ActivityExportDto>();
         int skip = 0;
         bool hasMoreData = true;
@@ -45,7 +44,7 @@ public class ExportActivitiesReportQueryHandler : IRequestHandler<ExportActiviti
         while (hasMoreData)
         {
             var batch = await baseQuery
-                .OrderByDescending(ba => ba.BoxActivityId)
+                .AsNoTracking()
                 .Skip(skip)
                 .Take(BatchSize)
                 .Select(ba => new
@@ -78,7 +77,6 @@ public class ExportActivitiesReportQueryHandler : IRequestHandler<ExportActiviti
                 break;
             }
 
-            // Transform to ActivityExportDto with proper formatting
             foreach (var item in batch)
             {
                 allActivities.Add(new ActivityExportDto
@@ -103,7 +101,6 @@ public class ExportActivitiesReportQueryHandler : IRequestHandler<ExportActiviti
             hasMoreData = batch.Count == BatchSize;
         }
 
-        // Use ExcelService to generate the Excel file
         var headers = new[] {
             "Activity ID",
             "Activity Name",
@@ -126,83 +123,6 @@ public class ExportActivitiesReportQueryHandler : IRequestHandler<ExportActiviti
         return Result.Success((Stream)stream);
     }
 
-    // Helper DTO for export - properties must be in the same order as headers
-    // ExcelService maps properties by position, so order matters
-    private class ActivityExportDto
-    {
-        // Properties in exact order of headers array
-        public object ActivityId { get; set; } = string.Empty;
-        public object ActivityName { get; set; } = string.Empty;
-        public object BoxTag { get; set; } = string.Empty;
-        public object ProjectName { get; set; } = string.Empty;
-        public object AssignedTeam { get; set; } = string.Empty;
-        public object Status { get; set; } = string.Empty;
-        public object ProgressPercentage { get; set; } = string.Empty;
-        public object PlannedStartDate { get; set; } = string.Empty;
-        public object PlannedEndDate { get; set; } = string.Empty;
-        public object ActualStartDate { get; set; } = string.Empty;
-        public object ActualEndDate { get; set; } = string.Empty;
-        public object ActualDuration { get; set; } = string.Empty;
-        public object DelayDays { get; set; } = string.Empty;
-    }
 
-    private IQueryable<BoxActivity> BuildBaseQuery(ExportActivitiesReportQuery request)
-    {
-        var baseQuery = _dbContext.BoxActivities
-            .AsNoTracking()
-            .Where(ba => ba.IsActive);
-
-        // Apply filters (same as GetActivitiesReportQueryHandler)
-        if (request.ProjectId.HasValue && request.ProjectId.Value != Guid.Empty)
-        {
-            baseQuery = baseQuery.Where(ba => ba.Box.ProjectId == request.ProjectId.Value);
-        }
-
-        if (request.TeamId.HasValue && request.TeamId.Value != Guid.Empty)
-        {
-            baseQuery = baseQuery.Where(ba => ba.TeamId == request.TeamId.Value);
-        }
-
-        if (request.Status.HasValue)
-        {
-            var status = (BoxStatusEnum)request.Status.Value;
-            baseQuery = baseQuery.Where(ba => ba.Status == status);
-        }
-
-        if (request.PlannedStartDateFrom.HasValue)
-        {
-            baseQuery = baseQuery.Where(ba => ba.PlannedStartDate.HasValue &&
-                ba.PlannedStartDate >= request.PlannedStartDateFrom.Value);
-        }
-
-        if (request.PlannedStartDateTo.HasValue)
-        {
-            baseQuery = baseQuery.Where(ba => ba.PlannedStartDate.HasValue &&
-                ba.PlannedStartDate <= request.PlannedStartDateTo.Value);
-        }
-
-        if (request.PlannedEndDateFrom.HasValue)
-        {
-            baseQuery = baseQuery.Where(ba => ba.PlannedEndDate.HasValue &&
-                ba.PlannedEndDate >= request.PlannedEndDateFrom.Value);
-        }
-
-        if (request.PlannedEndDateTo.HasValue)
-        {
-            baseQuery = baseQuery.Where(ba => ba.PlannedEndDate.HasValue &&
-                ba.PlannedEndDate <= request.PlannedEndDateTo.Value);
-        }
-
-        if (!string.IsNullOrWhiteSpace(request.Search))
-        {
-            var searchTerm = request.Search.Trim().ToLowerInvariant();
-            baseQuery = baseQuery.Where(ba =>
-                ba.ActivityMaster.ActivityName.ToLower().Contains(searchTerm) ||
-                ba.Box.BoxTag.ToLower().Contains(searchTerm) ||
-                ba.Box.Project.ProjectCode.ToLower().Contains(searchTerm));
-        }
-
-        return baseQuery;
-    }
 }
 

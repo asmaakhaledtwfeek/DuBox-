@@ -22,7 +22,7 @@ public class TeamMembersMapping : IRegister
             .Map(dest => dest.TeamId, src => src.team.TeamId)
             .Map(dest => dest.TeamName, src => src.team.TeamName)
             .Map(dest => dest.TeamCode, src => src.team.TeamCode)
-           .Map(dest => dest.TeamSize, src => src.members.Count)
+           .Map(dest => dest.TeamSize, src => src.members.Count(m => m.IsActive))
            .Map(dest => dest.Members, src => src.members);
     }
 }

@@ -263,11 +263,6 @@ export const routes: Routes = [
     loadComponent: () => import('./features/reports/reports-dashboard/reports-dashboard.component').then(m => m.ReportsDashboardComponent)
   },
   {
-    path: 'reports/team-productivity',
-    canActivate: [authGuard],
-    loadComponent: () => import('./features/reports/team-productivity-report/team-productivity-report.component').then(m => m.TeamProductivityReportComponent)
-  },
-  {
     path: 'reports/projects',
     canActivate: [authGuard],
     loadComponent: () => import('./features/reports/projects-summary-report/projects-summary-report.component').then(m => m.ProjectsSummaryReportComponent)
@@ -281,6 +276,11 @@ export const routes: Routes = [
     path: 'reports/activities',
     canActivate: [authGuard],
     loadComponent: () => import('./features/reports/activities-report/activities-report.component').then(m => m.ActivitiesReportComponent)
+  },
+  {
+    path: 'reports/teams-performance',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/reports/teams-performance-report/teams-performance-report.component').then(m => m.TeamsPerformanceReportComponent)
   },
   {
     path: 'unauthorized',

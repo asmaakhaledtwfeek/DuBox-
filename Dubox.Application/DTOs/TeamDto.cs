@@ -70,5 +70,7 @@ public record TeamMemberDto
     public string? MobileNumber { get; set; }
 }
 
+public record PaginatedTeamsResponseDto : PaginatedResponse<TeamDto>;
+
 
 

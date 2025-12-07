@@ -17,20 +17,6 @@ public record BoxProgressReportDto
     public decimal ProgressPercentage { get; set; }
 }
 
-/// <summary>
-/// DTO for Team Productivity Report - shows team performance metrics
-/// </summary>
-public record TeamProductivityReportDto
-{
-    public string TeamId { get; set; } = string.Empty;
-    public string TeamName { get; set; } = string.Empty;
-    public int TotalActivities { get; set; }
-    public int CompletedActivities { get; set; }
-    public int InProgress { get; set; }
-    public int Pending { get; set; }
-    public decimal AverageCompletionTime { get; set; } // in days
-    public decimal Efficiency { get; set; } // percentage
-}
 
 /// <summary>
 /// DTO for Report Summary - dashboard statistics

@@ -12,7 +12,7 @@ namespace Dubox.Application.Features.Teams.MappingConfig
                  .Map(dest => dest.TeamId, src => src.TeamId)
                  .Map(dest => dest.DepartmentId, src => src.DepartmentId)
                  .Map(dest => dest.DepartmentName, src => src.Department != null ? src.Department.DepartmentName : string.Empty)
-                 .Map(dest => dest.TeamSize, src => src.Members != null ? src.Members.Count : 0)
+                 .Map(dest => dest.TeamSize, src => src.Members != null ? src.Members.Count(m => m.IsActive) : 0)
                  .Map(dest => dest.TeamLeaderName, src => src.TeamLeader != null ? src.TeamLeader.EmployeeName : null);
         }
     }

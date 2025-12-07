@@ -21,5 +21,45 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(Team.Members));
         }
 
+        public GetTeamWithIncludesSpecification(string? search, string? department, string? trade, bool? isActive, int pageSize, int pageNumber)
+        {
+            AddInclude(nameof(Team.Department));
+            AddInclude(nameof(Team.TeamLeader));
+            AddInclude(nameof(Team.Members));
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var searchTerm = search.Trim().ToLowerInvariant();
+                AddCriteria(team => 
+                    team.TeamCode.ToLower().Contains(searchTerm) ||
+                    team.TeamName.ToLower().Contains(searchTerm) ||
+                    (team.Department != null && team.Department.DepartmentName.ToLower().Contains(searchTerm)) ||
+                    (team.Trade != null && team.Trade.ToLower().Contains(searchTerm)) ||
+                    (team.TeamLeader != null && team.TeamLeader.User != null && team.TeamLeader.User.FullName != null && team.TeamLeader.User.FullName.ToLower().Contains(searchTerm))
+                );
+            }
+
+            // Apply department filter
+            if (!string.IsNullOrWhiteSpace(department))
+            {
+                AddCriteria(team => team.Department != null && team.Department.DepartmentName == department);
+            }
+
+            // Apply trade filter
+            if (!string.IsNullOrWhiteSpace(trade))
+            {
+                AddCriteria(team => team.Trade == trade);
+            }
+
+            // Apply active filter
+            if (isActive.HasValue)
+            {
+                AddCriteria(team => team.IsActive == isActive.Value);
+            }
+
+            // Apply pagination
+            ApplyPaging(pageSize, pageNumber);
+        }
     }
 }

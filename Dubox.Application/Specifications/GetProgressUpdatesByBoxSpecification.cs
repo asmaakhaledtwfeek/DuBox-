@@ -64,6 +64,9 @@ namespace Dubox.Application.Specifications
             }
 
             AddOrderByDescending(pu => pu.UpdateDate);
+            
+            // Enable split query to avoid Cartesian explosion with collection includes (Images)
+            EnableSplitQuery();
 
             if (query.PageSize > 0 && query.PageNumber > 0)
             {

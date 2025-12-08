@@ -6,6 +6,7 @@ using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.Boxes.Queries;
 
@@ -22,7 +23,11 @@ public class GetAllBoxesQueryHandler : IRequestHandler<GetAllBoxesQuery, Result<
 
     public async Task<Result<List<BoxDto>>> Handle(GetAllBoxesQuery request, CancellationToken cancellationToken)
     {
-        var boxes = _unitOfWork.Repository<Box>().GetWithSpec(new GetAllBoxesWithIncludesSpecification()).Data.ToList();
+        // Use AsNoTracking and ToListAsync for better performance
+        var boxes = await _unitOfWork.Repository<Box>()
+            .GetWithSpec(new GetAllBoxesWithIncludesSpecification()).Data
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
 
         var boxDtos = boxes.Select(b =>
         {

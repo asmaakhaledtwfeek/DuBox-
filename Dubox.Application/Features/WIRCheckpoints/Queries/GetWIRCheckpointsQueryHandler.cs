@@ -5,6 +5,7 @@ using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
 
 namespace Dubox.Application.Features.WIRCheckpoints.Queries
@@ -20,8 +21,11 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
 
         public async Task<Result<List<WIRCheckpointDto>>> Handle(GetWIRCheckpointsQuery request, CancellationToken cancellationToken)
         {
-            var checkPoints = _unitOfWork.Repository<WIRCheckpoint>()
-                 .GetWithSpec(new GetWIRCheckpointsSpecification(request)).Data.ToList();
+            // Use AsNoTracking and ToListAsync for better performance
+            var checkPoints = await _unitOfWork.Repository<WIRCheckpoint>()
+                 .GetWithSpec(new GetWIRCheckpointsSpecification(request)).Data
+                 .AsNoTracking()
+                 .ToListAsync(cancellationToken);
 
             var checkpointDtos = checkPoints.Adapt<List<WIRCheckpointDto>>();
 
@@ -48,8 +52,11 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
                 return;
             }
 
-            var wirRecords = _unitOfWork.Repository<WIRRecord>()
-                .GetWithSpec(new GetWIRRecordsByCodesSpecification(wirCodes)).Data.ToList();
+            // Use AsNoTracking and ToListAsync for better performance
+            var wirRecords = await _unitOfWork.Repository<WIRRecord>()
+                .GetWithSpec(new GetWIRRecordsByCodesSpecification(wirCodes)).Data
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
 
             var recordMap = wirRecords
                 .GroupBy(record => record.WIRCode.ToLower())

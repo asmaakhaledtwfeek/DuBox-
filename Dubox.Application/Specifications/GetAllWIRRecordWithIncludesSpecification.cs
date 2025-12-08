@@ -13,6 +13,9 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(WIRRecord.RequestedByUser));
             AddInclude(nameof(WIRRecord.InspectedByUser));
             AddOrderByDescending(w => w.RequestedDate);
+            
+            // Enable split query to avoid Cartesian explosion with multiple includes
+            EnableSplitQuery();
         }
     }
 }

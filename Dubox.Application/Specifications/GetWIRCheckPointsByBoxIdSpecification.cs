@@ -14,6 +14,9 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(WIRCheckpoint.QualityIssues));
             AddInclude(nameof(WIRCheckpoint.Images));
             AddOrderByDescending(w => w.CreatedDate);
+            
+            // Enable split query to avoid Cartesian explosion with multiple collection includes
+            EnableSplitQuery();
         }
     }
 }

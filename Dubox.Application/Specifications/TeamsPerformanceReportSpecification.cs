@@ -28,6 +28,9 @@ public class TeamsPerformanceReportSpecification : Specification<Team>
         AddInclude(nameof(Team.AssignedActivities));
         AddInclude($"{nameof(Team.AssignedActivities)}.{nameof(BoxActivity.Box)}");
         AddInclude($"{nameof(Team.AssignedActivities)}.{nameof(BoxActivity.Box)}.{nameof(Box.Project)}");
+        
+        // Enable split query to avoid Cartesian explosion with collection includes
+        EnableSplitQuery();
 
         // Base criteria: only active teams
         AddCriteria(t => t.IsActive);

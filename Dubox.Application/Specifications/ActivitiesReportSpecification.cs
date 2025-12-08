@@ -63,6 +63,9 @@ public class ActivitiesReportSpecification : Specification<BoxActivity>
         AddInclude($"{nameof(BoxActivity.Box)}.{nameof(Box.Project)}");
         AddInclude(nameof(BoxActivity.ActivityMaster));
         AddInclude(nameof(BoxActivity.Team));
+        
+        // Enable split query to avoid Cartesian explosion with multiple includes
+        EnableSplitQuery();
 
         AddCriteria(ba => ba.IsActive);
 

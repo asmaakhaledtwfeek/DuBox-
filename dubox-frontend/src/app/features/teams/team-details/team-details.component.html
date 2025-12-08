@@ -39,14 +39,14 @@
           </div>
           <p class="page-subtitle">{{ team.teamCode }} • {{ team.departmentName || 'No Department' }} • {{ team.trade || 'No Trade' }}</p>
         </div>
-        <div class="header-right">
-          <button class="btn btn-secondary" (click)="addMembers()">
+        <div class="header-right" *ngIf="canManageMembers || canEditTeam">
+          <button *ngIf="canManageMembers" class="btn btn-secondary" (click)="addMembers()">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75M12 5v14M5 12h14"/>
             </svg>
             Add Members
           </button>
-          <button class="btn btn-primary" (click)="editTeam()">
+          <button *ngIf="canEditTeam" class="btn btn-primary" (click)="editTeam()">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -139,6 +139,7 @@
             <div *ngIf="teamMembers && teamMembers.members.length > 0" class="members-grid">
               <div *ngFor="let member of teamMembers.members" class="member-card">
                 <button 
+                  *ngIf="canManageMembers"
                   class="btn-remove-icon"
                   (click)="openRemoveMemberModal(member)"
                   title="Remove Member"
@@ -175,7 +176,7 @@
                     <span class="detail-value status-incomplete">Profile Incomplete</span>
                   </div>
                 </div>
-                <div class="member-actions">
+                <div class="member-actions" *ngIf="canManageMembers">
                   <button 
                     class="btn-complete-profile"
                     (click)="openCompleteProfileModal(member)"

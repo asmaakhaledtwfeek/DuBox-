@@ -6,6 +6,7 @@ import { Team, TeamMembersDto, TeamMember, CompleteTeamMemberProfile } from '../
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
+import { PermissionService } from '../../../core/services/permission.service';
 
 @Component({
   selector: 'app-team-details',
@@ -34,12 +35,21 @@ export class TeamDetailsComponent implements OnInit {
   removingMember = false;
   removeMemberError = '';
 
+  // Permission flags
+  canEditTeam: boolean = false;
+  canManageMembers: boolean = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private teamService: TeamService,
-    private fb: FormBuilder
-  ) {}
+    private fb: FormBuilder,
+    private permissionService: PermissionService
+  ) {
+    // Check permissions
+    this.canEditTeam = this.permissionService.hasPermission('teams', 'edit');
+    this.canManageMembers = this.permissionService.hasPermission('teams', 'manage-members');
+  }
 
   ngOnInit(): void {
     this.teamId = this.route.snapshot.paramMap.get('id') || '';

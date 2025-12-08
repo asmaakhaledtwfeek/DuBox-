@@ -5,6 +5,7 @@ using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.QualityIssues.Queries
 {
@@ -18,7 +19,11 @@ namespace Dubox.Application.Features.QualityIssues.Queries
 
         public async Task<Result<List<QualityIssueDetailsDto>>> Handle(GetQualityIssuesQuery request, CancellationToken cancellationToken)
         {
-            var qualityIssues = _unitOfWork.Repository<QualityIssue>().GetWithSpec(new GetQualityIssuesSpecification(request)).Data.ToList();
+            // Use AsNoTracking and ToListAsync for better performance
+            var qualityIssues = await _unitOfWork.Repository<QualityIssue>()
+                .GetWithSpec(new GetQualityIssuesSpecification(request)).Data
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
 
             var dtos = qualityIssues.Select(issue =>
             {

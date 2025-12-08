@@ -5,6 +5,7 @@ using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.WIRRecords.Queries;
 
@@ -20,8 +21,11 @@ public class GetWIRRecordsByBoxQueryHandler : IRequestHandler<GetWIRRecordsByBox
 
     public async Task<Result<List<WIRRecordDto>>> Handle(GetWIRRecordsByBoxQuery request, CancellationToken cancellationToken)
     {
-        var wirRecords = _unitOfWork.Repository<WIRRecord>()
-       .GetWithSpec(new GetAllWIRRecordWithIncludesSpecification()).Data.ToList();
+        // Use AsNoTracking and ToListAsync for better performance
+        var wirRecords = await _unitOfWork.Repository<WIRRecord>()
+            .GetWithSpec(new GetAllWIRRecordWithIncludesSpecification()).Data
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
 
         var wirDtos = wirRecords.Select(w =>
         {

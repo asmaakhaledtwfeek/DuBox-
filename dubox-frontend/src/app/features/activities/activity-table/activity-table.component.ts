@@ -10,6 +10,7 @@ import { ProgressUpdateService } from '../../../core/services/progress-update.se
 import { BoxActivityDetail } from '../../../core/models/progress-update.model';
 import { WIRService } from '../../../core/services/wir.service';
 import { WIRRecord, WIRStatus, WIRCheckpoint } from '../../../core/models/wir.model';
+import { PermissionService } from '../../../core/services/permission.service';
 
 // Combined type for activities and WIR rows
 export interface TableRow {
@@ -45,12 +46,21 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   isLoading = false;
   private routerSubscription?: Subscription;
 
+  // Permission flags
+  canUpdateProgress: boolean = false;
+  canReviewWIR: boolean = false;
+
   constructor(
     private progressUpdateService: ProgressUpdateService,
     private wirService: WIRService,
     private router: Router,
-    private cdr: ChangeDetectorRef
-  ) {}
+    private cdr: ChangeDetectorRef,
+    private permissionService: PermissionService
+  ) {
+    // Check permissions
+    this.canUpdateProgress = this.permissionService.hasPermission('activities', 'update-progress');
+    this.canReviewWIR = this.permissionService.hasPermission('wir', 'review');
+  }
 
   ngOnInit(): void {
     this.loadActivitiesWithDetails();

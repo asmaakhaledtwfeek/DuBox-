@@ -12,6 +12,9 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(QualityIssue.WIRCheckpoint));
             AddInclude(nameof(QualityIssue.Images));
             AddOrderByDescending(q => q.IssueDate);
+            
+            // Enable split query to avoid Cartesian explosion with Images collection
+            EnableSplitQuery();
         }
     }
 }

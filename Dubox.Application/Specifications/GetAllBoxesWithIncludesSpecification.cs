@@ -12,6 +12,9 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(Box.BoxActivities));
             AddInclude(nameof(Box.ProgressUpdates));
             AddOrderByDescending(x => x.CreatedDate);
+            
+            // Enable split query to avoid Cartesian explosion with multiple collection includes
+            EnableSplitQuery();
         }
     }
 }

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
+import { PermissionService } from '../../../core/services/permission.service';
 
 @Component({
   selector: 'app-admin-panel',
@@ -15,7 +16,7 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
       <div class="page-content">
         <h1 class="page-title">Admin Panel</h1>
         <div class="admin-grid">
-          <a routerLink="/admin/users" class="admin-card">
+          <a *ngIf="canViewUsers" routerLink="/admin/users" class="admin-card">
             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
@@ -28,7 +29,7 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
             <h3>Settings</h3>
             <p>System configuration</p>
           </div>
-          <a routerLink="/admin/audit-logs" class="admin-card">
+          <a *ngIf="canViewAuditLogs" routerLink="/admin/audit-logs" class="admin-card">
             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
             </svg>
@@ -97,4 +98,12 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
     }
   `]
 })
-export class AdminPanelComponent {}
+export class AdminPanelComponent {
+  canViewUsers: boolean;
+  canViewAuditLogs: boolean;
+
+  constructor(private permissionService: PermissionService) {
+    this.canViewUsers = this.permissionService.hasPermission('users', 'view');
+    this.canViewAuditLogs = this.permissionService.hasPermission('audit-logs', 'view');
+  }
+}

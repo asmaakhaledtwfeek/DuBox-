@@ -53,9 +53,9 @@
               {{ formatDate(getActivity(row)?.actualEndDate) }}
             </td>
             <td class="text-center actions-cell">
-              <!-- Update Progress Button -->
+              <!-- Update Progress Button - Only show if user has permission -->
               <button 
-                *ngIf="getActivity(row)"
+                *ngIf="getActivity(row) && canUpdateProgress"
                 class="btn-update-progress"
                 (click)="openProgressModal(getActivity(row)!)"
                 title="Update Progress"

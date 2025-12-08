@@ -14,6 +14,9 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(ProgressUpdate.UpdatedByUser));
             AddInclude(nameof(ProgressUpdate.Images));
             AddOrderByDescending(pu => pu.UpdateDate);
+            
+            // Enable split query to avoid Cartesian explosion with Images collection
+            EnableSplitQuery();
         }
     }
 }

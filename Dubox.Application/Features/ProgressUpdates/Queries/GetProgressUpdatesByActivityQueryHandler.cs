@@ -5,6 +5,7 @@ using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.ProgressUpdates.Queries;
 
@@ -21,7 +22,11 @@ public class GetProgressUpdatesByActivityQueryHandler : IRequestHandler<GetProgr
 
     public async Task<Result<List<ProgressUpdateDto>>> Handle(GetProgressUpdatesByActivityQuery request, CancellationToken cancellationToken)
     {
-        var updates = _unitOfWork.Repository<ProgressUpdate>().GetWithSpec(new GetProgressUpdatesByActivitySpecification(request.BoxActivityId)).Data.ToList();
+        // Use AsNoTracking and ToListAsync for better performance
+        var updates = await _unitOfWork.Repository<ProgressUpdate>()
+            .GetWithSpec(new GetProgressUpdatesByActivitySpecification(request.BoxActivityId)).Data
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
 
         var updateDtos = updates.Select(u =>
         {

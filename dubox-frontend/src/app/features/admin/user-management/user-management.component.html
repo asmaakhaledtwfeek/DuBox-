@@ -10,7 +10,7 @@
         <p>Manage every account, role, and group across the platform.</p>
       </div>
       <div class="header-actions">
-        <button class="btn btn-ghost" [routerLink]="['/admin/audit-logs']">
+        <button *ngIf="canViewAuditLogs" class="btn btn-ghost" [routerLink]="['/admin/audit-logs']">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"></circle>
             <line x1="12" y1="8" x2="12" y2="12"></line>

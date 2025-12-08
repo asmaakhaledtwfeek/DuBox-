@@ -12,6 +12,9 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(Team.Department));
             AddInclude(nameof(Team.TeamLeader));
             AddInclude(nameof(Team.Members));
+            
+            // Enable split query to avoid Cartesian explosion with Members collection
+            EnableSplitQuery();
         }
 
         public GetTeamWithIncludesSpecification()
@@ -19,6 +22,9 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(Team.Department));
             AddInclude(nameof(Team.TeamLeader));
             AddInclude(nameof(Team.Members));
+            
+            // Enable split query to avoid Cartesian explosion with Members collection
+            EnableSplitQuery();
         }
 
         public GetTeamWithIncludesSpecification(string? search, string? department, string? trade, bool? isActive, int pageSize, int pageNumber)
@@ -26,6 +32,9 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(Team.Department));
             AddInclude(nameof(Team.TeamLeader));
             AddInclude(nameof(Team.Members));
+            
+            // Enable split query to avoid Cartesian explosion with Members collection
+            EnableSplitQuery();
 
             // Apply search filter
             if (!string.IsNullOrWhiteSpace(search))

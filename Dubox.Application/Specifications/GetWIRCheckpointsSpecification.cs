@@ -13,6 +13,9 @@
             AddInclude(nameof(WIRCheckpoint.ChecklistItems));
             AddInclude($"{nameof(WIRCheckpoint.QualityIssues)}.{nameof(Domain.Entities.QualityIssue.Images)}");
             AddInclude(nameof(WIRCheckpoint.QualityIssues));
+            
+            // Enable split query to avoid Cartesian explosion with multiple collection includes
+            EnableSplitQuery();
 
             if (!string.IsNullOrWhiteSpace(query.ProjectCode))
                 AddCriteria(x => x.Box.Project.ProjectCode == query.ProjectCode);
@@ -35,9 +38,6 @@
                 AddCriteria(x => x.CreatedDate <= query.To.Value);
 
             AddOrderByDescending(x => x.CreatedDate);
-
-
-
         }
     }
 

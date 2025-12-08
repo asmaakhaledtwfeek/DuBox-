@@ -14,6 +14,9 @@ public class GetBoxActivitiesByBoxSpecification : Specification<BoxActivity>
         AddInclude(nameof(BoxActivity.AssignedMember));
         AddInclude($"{nameof(BoxActivity.AssignedMember)}.{nameof(TeamMember.User)}");
         AddOrderBy(ba => ba.Sequence);
+        
+        // Enable split query to avoid Cartesian explosion with multiple includes
+        EnableSplitQuery();
     }
 }
 

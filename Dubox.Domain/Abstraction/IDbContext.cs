@@ -16,6 +16,9 @@ public interface IDbContext
     // Permissions
     DbSet<Permission> Permissions { get; }
     DbSet<RolePermission> RolePermissions { get; }
+    
+    // Navigation
+    DbSet<NavigationMenuItem> NavigationMenuItems { get; }
 
     // DuBox tracking system - Core entities
     DbSet<Project> Projects { get; }

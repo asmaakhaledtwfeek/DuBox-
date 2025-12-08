@@ -59,6 +59,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<ActivityMaterial> ActivityMaterials { get; set; } = null!;
     public DbSet<Permission> Permissions { get; set; } = null!;
     public DbSet<RolePermission> RolePermissions { get; set; } = null!;
+    public DbSet<NavigationMenuItem> NavigationMenuItems { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -70,6 +71,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         DepartmentSeesData.SeedDepartmnts(modelBuilder);
         PredefinedChecklistItemSeedData.SeedPredefinedChecklistItems(modelBuilder);
         PermissionSeedData.SeedPermissions(modelBuilder);
+        NavigationMenuSeedData.SeedNavigationMenuItems(modelBuilder);
         base.OnModelCreating(modelBuilder);
     }
 

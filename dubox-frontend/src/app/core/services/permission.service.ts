@@ -42,6 +42,19 @@ export interface UserPermissionsDto {
   permissionKeys: string[];
 }
 
+export interface NavigationMenuItemDto {
+  menuItemId: string;
+  label: string;
+  icon: string;
+  route: string;
+  aliases?: string[];
+  permissionModule: string;
+  permissionAction: string;
+  displayOrder: number;
+  isActive: boolean;
+  children?: NavigationMenuItemDto[];
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -234,6 +247,48 @@ export class PermissionService {
       [UserRole.ProcurementOfficer]: ['view'],
       [UserRole.HSEOfficer]: ['view'],
       [UserRole.CostEstimator]: ['view'],
+      [UserRole.Viewer]: ['view']
+    },
+
+    // WIR (Work Inspection Request) Module - Quality Control
+    wir: {
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'approve', 'reject', 'manage'],
+      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'approve', 'reject', 'manage'],
+      [UserRole.QCInspector]: ['view', 'create', 'edit', 'approve', 'reject'],
+      [UserRole.SiteEngineer]: ['view', 'create', 'edit', 'approve', 'reject'],
+      [UserRole.DesignEngineer]: ['view', 'create'],
+      [UserRole.Foreman]: ['view', 'create'],
+      [UserRole.ProcurementOfficer]: ['view'],
+      [UserRole.HSEOfficer]: ['view', 'approve'],
+      [UserRole.CostEstimator]: ['view'],
+      [UserRole.Viewer]: ['view']
+    },
+
+    // Quality Issues Module
+    qualityissues: {
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'resolve', 'manage'],
+      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'resolve', 'manage'],
+      [UserRole.QCInspector]: ['view', 'create', 'edit', 'resolve'],
+      [UserRole.SiteEngineer]: ['view', 'create', 'edit'],
+      [UserRole.DesignEngineer]: ['view', 'create'],
+      [UserRole.Foreman]: ['view', 'create'],
+      [UserRole.ProcurementOfficer]: ['view'],
+      [UserRole.HSEOfficer]: ['view'],
+      [UserRole.CostEstimator]: ['view'],
+      [UserRole.Viewer]: ['view']
+    },
+
+    // Dashboard Module
+    dashboard: {
+      [UserRole.SystemAdmin]: ['view', 'export'],
+      [UserRole.ProjectManager]: ['view', 'export'],
+      [UserRole.DesignEngineer]: ['view', 'export'],
+      [UserRole.SiteEngineer]: ['view', 'export'],
+      [UserRole.QCInspector]: ['view', 'export'],
+      [UserRole.Foreman]: ['view'],
+      [UserRole.ProcurementOfficer]: ['view', 'export'],
+      [UserRole.HSEOfficer]: ['view', 'export'],
+      [UserRole.CostEstimator]: ['view', 'export'],
       [UserRole.Viewer]: ['view']
     }
   };
@@ -580,5 +635,19 @@ export class PermissionService {
    */
   get permissions$(): Observable<string[]> {
     return this.userPermissionsCache.asObservable();
+  }
+
+  // ============= Navigation Menu Items =============
+
+  /**
+   * Get navigation menu items from database
+   */
+  getNavigationMenuItems(): Observable<NavigationMenuItemDto[]> {
+    return this.apiService.get<NavigationMenuItemDto[]>('navigation/menu').pipe(
+      catchError(err => {
+        console.warn('⚠️ Failed to load navigation menu from backend:', err);
+        return of([]);
+      })
+    );
   }
 }

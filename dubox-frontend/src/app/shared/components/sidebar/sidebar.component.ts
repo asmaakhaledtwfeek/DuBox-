@@ -2,18 +2,16 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { filter, skip } from 'rxjs/operators';
-import { Subscription } from 'rxjs';
-import { PermissionService } from '../../../core/services/permission.service';
-import { AuthService } from '../../../core/services/auth.service';
-import { UserRole } from '../../../core/models/user.model';
+import { Subscription, forkJoin } from 'rxjs';
+import { PermissionService, NavigationMenuItemDto } from '../../../core/services/permission.service';
 
 interface MenuItem {
   label: string;
   icon: string;
   route: string;
   aliases?: string[];
-  permission?: { module: string; action: string };
-  requiredRoles?: UserRole[];
+  permissionModule: string;
+  permissionAction: string;
   children?: MenuItem[];
 }
 
@@ -28,12 +26,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
   isCollapsed = false;
   activeRoute = '';
   menuItems: MenuItem[] = [];
+  private allMenuItemsFromDb: NavigationMenuItemDto[] = [];
   private subscriptions: Subscription[] = [];
+  private menuLoaded = false;
 
   constructor(
     private router: Router,
-    private permissionService: PermissionService,
-    private authService: AuthService
+    private permissionService: PermissionService
   ) {
     this.subscriptions.push(
       this.router.events
@@ -45,7 +44,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.buildMenuItems();
+    // Load menu items from database
+    this.loadMenuItems();
 
     // Subscribe to permission changes and rebuild menu when permissions are loaded
     this.subscriptions.push(
@@ -62,76 +62,68 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
-  buildMenuItems(): void {
-    const allMenuItems: MenuItem[] = [
-      {
-        label: 'Projects',
-        icon: 'projects',
-        route: '/projects',
-        permission: { module: 'projects', action: 'view' }
+  loadMenuItems(): void {
+    this.permissionService.getNavigationMenuItems().subscribe({
+      next: (items) => {
+        console.log('📋 Loaded menu items from database:', items);
+        this.allMenuItemsFromDb = items;
+        this.menuLoaded = true;
+        this.buildMenuItems();
       },
-      {
-        label: 'Materials',
-        icon: 'materials',
-        route: '/materials',
-        permission: { module: 'materials', action: 'view' }
-      },
-      {
-        label: 'Locations',
-        icon: 'location',
-        route: '/locations',
-        permission: { module: 'locations', action: 'view' }
-      },
-      {
-        label: 'Teams',
-        icon: 'teams',
-        route: '/teams',
-        permission: { module: 'teams', action: 'view' }
-      },
-      {
-        label: 'Quality Control',
-        icon: 'qc',
-        route: '/qc',
-        aliases: ['/quality'],
-        permission: { module: 'qaqc', action: 'view' },
-        requiredRoles: [UserRole.QCInspector, UserRole.SystemAdmin, UserRole.ProjectManager]
-      },
-      {
-        label: 'Reports',
-        icon: 'reports',
-        route: '/reports',
-        permission: { module: 'projects', action: 'view' }
-      },
-      {
-        label: 'Notifications',
-        icon: 'notifications',
-        route: '/notifications',
-        permission: { module: 'notifications', action: 'view' }
-      },
-      {
-        label: 'Admin',
-        icon: 'admin',
-        route: '/admin',
-        permission: { module: 'users', action: 'view' },
-        requiredRoles: [UserRole.SystemAdmin, UserRole.ProjectManager]
+      error: (err) => {
+        console.warn('⚠️ Failed to load menu items, using fallback:', err);
+        this.menuLoaded = true;
+        this.buildMenuItems();
       }
-    ];
-
-    this.menuItems = allMenuItems.filter(item => {
-      // Check permission if specified
-      if (item.permission) {
-        const hasPermission = this.permissionService.hasPermission(item.permission.module, item.permission.action);
-        if (!hasPermission) return false;
-      }
-
-      // Check required roles if specified
-      if (item.requiredRoles && item.requiredRoles.length > 0) {
-        const hasRole = this.authService.hasAnyRole(item.requiredRoles);
-        if (!hasRole) return false;
-      }
-
-      return true;
     });
+  }
+
+  buildMenuItems(): void {
+    let allMenuItems: MenuItem[];
+
+    // Use database menu items if loaded, otherwise use fallback
+    if (this.allMenuItemsFromDb.length > 0) {
+      allMenuItems = this.allMenuItemsFromDb.map(item => ({
+        label: item.label,
+        icon: item.icon,
+        route: item.route,
+        aliases: item.aliases,
+        permissionModule: item.permissionModule,
+        permissionAction: item.permissionAction,
+        children: item.children?.map(child => ({
+          label: child.label,
+          icon: child.icon,
+          route: child.route,
+          aliases: child.aliases,
+          permissionModule: child.permissionModule,
+          permissionAction: child.permissionAction
+        }))
+      }));
+    } else {
+      // Fallback menu items if database not available
+      allMenuItems = this.getFallbackMenuItems();
+    }
+
+    // Filter menu items based on user permissions
+    this.menuItems = allMenuItems.filter(item => {
+      const hasPermission = this.permissionService.hasPermission(item.permissionModule, item.permissionAction);
+      return hasPermission;
+    });
+
+    console.log('🎯 Filtered menu items:', this.menuItems.map(m => m.label));
+  }
+
+  private getFallbackMenuItems(): MenuItem[] {
+    return [
+      { label: 'Projects', icon: 'projects', route: '/projects', permissionModule: 'projects', permissionAction: 'view' },
+      { label: 'Materials', icon: 'materials', route: '/materials', permissionModule: 'materials', permissionAction: 'view' },
+      { label: 'Locations', icon: 'location', route: '/locations', permissionModule: 'locations', permissionAction: 'view' },
+      { label: 'Teams', icon: 'teams', route: '/teams', permissionModule: 'teams', permissionAction: 'view' },
+      { label: 'Quality Control', icon: 'qc', route: '/qc', aliases: ['/quality'], permissionModule: 'wir', permissionAction: 'view' },
+      { label: 'Reports', icon: 'reports', route: '/reports', permissionModule: 'reports', permissionAction: 'view' },
+      { label: 'Notifications', icon: 'notifications', route: '/notifications', permissionModule: 'notifications', permissionAction: 'view' },
+      { label: 'Admin', icon: 'admin', route: '/admin', permissionModule: 'users', permissionAction: 'view' }
+    ];
   }
 
   toggleSidebar(): void {

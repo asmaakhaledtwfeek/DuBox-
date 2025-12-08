@@ -1803,7 +1803,7 @@ namespace Dubox.Infrastructure.Migrations
                             IsActive = true,
                             IsVisible = true,
                             Label = "Admin",
-                            PermissionAction = "view",
+                            PermissionAction = "manage",
                             PermissionModule = "users",
                             Route = "/admin"
                         });

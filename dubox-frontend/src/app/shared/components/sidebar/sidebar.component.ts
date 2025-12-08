@@ -122,7 +122,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       { label: 'Quality Control', icon: 'qc', route: '/qc', aliases: ['/quality'], permissionModule: 'wir', permissionAction: 'view' },
       { label: 'Reports', icon: 'reports', route: '/reports', permissionModule: 'reports', permissionAction: 'view' },
       { label: 'Notifications', icon: 'notifications', route: '/notifications', permissionModule: 'notifications', permissionAction: 'view' },
-      { label: 'Admin', icon: 'admin', route: '/admin', permissionModule: 'users', permissionAction: 'view' }
+      { label: 'Admin', icon: 'admin', route: '/admin', permissionModule: 'users', permissionAction: 'manage' }
     ];
   }
 

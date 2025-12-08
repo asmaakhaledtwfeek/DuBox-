@@ -136,7 +136,7 @@ public static class NavigationMenuSeedData
                 Route = "/admin",
                 Aliases = "/admin/users",
                 PermissionModule = "users",
-                PermissionAction = "view",
+                PermissionAction = "manage",
                 DisplayOrder = 100,
                 IsActive = true,
                 IsVisible = true,

@@ -12,6 +12,10 @@ public interface IDbContext
     DbSet<UserRole> UserRoles { get; }
     DbSet<UserGroup> UserGroups { get; }
     DbSet<GroupRole> GroupRoles { get; }
+    
+    // Permissions
+    DbSet<Permission> Permissions { get; }
+    DbSet<RolePermission> RolePermissions { get; }
 
     // DuBox tracking system - Core entities
     DbSet<Project> Projects { get; }

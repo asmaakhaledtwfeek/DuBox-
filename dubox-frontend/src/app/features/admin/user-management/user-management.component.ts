@@ -13,10 +13,11 @@ import { DepartmentService } from '../../../core/services/department.service';
 import { Department } from '../../../core/models/team.model';
 import { AuditLogService } from '../../../core/services/audit-log.service';
 import { AuditLog, AuditLogQueryParams } from '../../../core/models/audit-log.model';
+import { PermissionService, PermissionDto, PermissionGroupDto, RolePermissionMatrixDto } from '../../../core/services/permission.service';
 import { debounceTime, distinctUntilChanged, switchMap, finalize, catchError, map } from 'rxjs/operators';
 import { forkJoin, of, Subscription, Observable } from 'rxjs';
 
-type UserManagementTab = 'users' | 'groups' | 'roles';
+type UserManagementTab = 'users' | 'groups' | 'roles' | 'permissions';
 type ModalMode = 'create' | 'edit';
 
 interface ConfirmationState {
@@ -50,7 +51,8 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   readonly tabs: { id: UserManagementTab; label: string }[] = [
     { id: 'users', label: 'Users' },
     { id: 'groups', label: 'Groups' },
-    { id: 'roles', label: 'Roles' }
+    { id: 'roles', label: 'Roles' },
+    { id: 'permissions', label: 'Permissions' }
   ];
 
   filterForm: FormGroup;
@@ -83,6 +85,17 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   isLoadingDepartments = false;
 
   groupMemberCounts = new Map<string, number>();
+
+  // Permissions
+  permissionGroups: PermissionGroupDto[] = [];
+  permissionMatrix: RolePermissionMatrixDto[] = [];
+  allPermissions: PermissionDto[] = [];
+  isLoadingPermissions = false;
+  permissionsError = '';
+  selectedRoleForPermissions: RoleDto | null = null;
+  selectedPermissionIds: Set<string> = new Set();
+  savingPermissions = false;
+  permissionMatrixModalOpen = false;
 
   userModalOpen = false;
   groupModalOpen = false;
@@ -118,6 +131,7 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     private groupService: GroupService,
     private roleService: RoleService,
     private departmentService: DepartmentService,
+    private permissionService: PermissionService,
     private router: Router
   ) {
     this.filterForm = this.fb.group({
@@ -219,10 +233,6 @@ export class UserManagementComponent implements OnInit, OnDestroy {
 
   get totalRoles(): number {
     return this.roles.length;
-  }
-
-  setTab(tab: UserManagementTab): void {
-    this.activeTab = tab;
   }
 
   openUserModal(mode: ModalMode, user?: UserDto): void {
@@ -987,6 +997,118 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   // Audit Logs Methods
   openAuditLogsModal(user: UserDto): void {
     this.router.navigate(['/admin/users', user.userId, 'audit-logs']);
+  }
+
+  // ================ Permissions Methods ================
+
+  loadPermissions(): void {
+    this.isLoadingPermissions = true;
+    this.permissionsError = '';
+
+    forkJoin({
+      groups: this.permissionService.getPermissionsGrouped(),
+      matrix: this.permissionService.getPermissionMatrix(),
+      all: this.permissionService.getAllPermissions()
+    }).pipe(
+      finalize(() => this.isLoadingPermissions = false),
+      catchError(err => {
+        this.permissionsError = this.extractError(err);
+        return of({ groups: [], matrix: [], all: [] });
+      })
+    ).subscribe(result => {
+      this.permissionGroups = result.groups;
+      this.permissionMatrix = result.matrix;
+      this.allPermissions = result.all;
+    });
+  }
+
+  openPermissionMatrixModal(role: RoleDto): void {
+    this.selectedRoleForPermissions = role;
+    this.permissionMatrixModalOpen = true;
+    
+    // Get current permissions for this role
+    this.permissionService.getRolePermissions(role.roleId).subscribe(permissions => {
+      this.selectedPermissionIds = new Set(permissions.map(p => p.permissionId));
+    });
+  }
+
+  closePermissionMatrixModal(): void {
+    this.permissionMatrixModalOpen = false;
+    this.selectedRoleForPermissions = null;
+    this.selectedPermissionIds = new Set();
+  }
+
+  togglePermission(permissionId: string): void {
+    if (this.selectedPermissionIds.has(permissionId)) {
+      this.selectedPermissionIds.delete(permissionId);
+    } else {
+      this.selectedPermissionIds.add(permissionId);
+    }
+  }
+
+  isPermissionSelected(permissionId: string): boolean {
+    return this.selectedPermissionIds.has(permissionId);
+  }
+
+  toggleAllPermissionsInGroup(group: PermissionGroupDto, select: boolean): void {
+    group.permissions.forEach(p => {
+      if (select) {
+        this.selectedPermissionIds.add(p.permissionId);
+      } else {
+        this.selectedPermissionIds.delete(p.permissionId);
+      }
+    });
+  }
+
+  areAllPermissionsInGroupSelected(group: PermissionGroupDto): boolean {
+    return group.permissions.every(p => this.selectedPermissionIds.has(p.permissionId));
+  }
+
+  areSomePermissionsInGroupSelected(group: PermissionGroupDto): boolean {
+    const selected = group.permissions.filter(p => this.selectedPermissionIds.has(p.permissionId));
+    return selected.length > 0 && selected.length < group.permissions.length;
+  }
+
+  saveRolePermissions(): void {
+    if (!this.selectedRoleForPermissions) return;
+
+    this.savingPermissions = true;
+    const permissionIds = Array.from(this.selectedPermissionIds);
+
+    this.permissionService.assignPermissionsToRole(
+      this.selectedRoleForPermissions.roleId,
+      permissionIds
+    ).pipe(
+      finalize(() => this.savingPermissions = false)
+    ).subscribe({
+      next: () => {
+        this.notify('Permissions updated successfully.');
+        this.showAlert('Permissions updated successfully.', 'success');
+        this.closePermissionMatrixModal();
+        this.loadPermissions();
+      },
+      error: (err: any) => {
+        this.handleError(err);
+        this.showAlert('Failed to update permissions.', 'error');
+      }
+    });
+  }
+
+  getRolePermissionCount(roleId: string): number {
+    const roleMatrix = this.permissionMatrix.find(m => m.roleId === roleId);
+    return roleMatrix?.permissionKeys?.length || 0;
+  }
+
+  hasRolePermission(roleId: string, permissionKey: string): boolean {
+    const roleMatrix = this.permissionMatrix.find(m => m.roleId === roleId);
+    return roleMatrix?.permissionKeys?.includes(permissionKey) || false;
+  }
+
+  setTab(tab: UserManagementTab): void {
+    this.activeTab = tab;
+    if (tab === 'permissions' && this.permissionGroups.length === 0) {
+      this.loadPermissions();
+    }
   }
 }
 

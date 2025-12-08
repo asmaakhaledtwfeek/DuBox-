@@ -448,6 +448,93 @@
         </table>
       </div>
     </section>
+
+    <!-- Permissions Panel -->
+    <section *ngIf="activeTab === 'permissions'" class="panel">
+      <div class="panel-toolbar">
+        <div>
+          <h3>Permission Matrix</h3>
+          <p *ngIf="!permissionsError">Configure permissions for each role across all modules.</p>
+          <p *ngIf="permissionsError" class="text-error">{{ permissionsError }}</p>
+        </div>
+        <div class="toolbar-actions">
+          <button class="btn btn-secondary" (click)="loadPermissions()" [disabled]="isLoadingPermissions">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div class="table-state" *ngIf="isLoadingPermissions">
+        <p>Loading permissions...</p>
+      </div>
+
+      <div class="permissions-content" *ngIf="!isLoadingPermissions">
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 45%;">Role</th>
+                <th style="width: 25%; text-align: center;">Permissions</th>
+                <th style="width: 30%; text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let role of roles; trackBy: trackById">
+                <td>
+                  <div class="role-cell">
+                    <strong>{{ role.roleName }}</strong>
+                    <span>{{ role.description || 'No description' }}</span>
+                  </div>
+                </td>
+                <td style="text-align: center;">
+                  <span class="permission-badge" 
+                        [class.high]="getRolePermissionCount(role.roleId) > 50" 
+                        [class.medium]="getRolePermissionCount(role.roleId) > 20 && getRolePermissionCount(role.roleId) <= 50" 
+                        [class.low]="getRolePermissionCount(role.roleId) <= 20">
+                    {{ getRolePermissionCount(role.roleId) }} permissions
+                  </span>
+                </td>
+                <td style="text-align: right;">
+                  <button class="btn btn-secondary" (click)="openPermissionMatrixModal(role)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"></path>
+                      <path d="M14.06 4.94l3.75 3.75"></path>
+                    </svg>
+                    Edit Permissions
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="roles.length === 0">
+                <td colspan="3" class="empty-row">No roles available. Create roles in the Roles tab first.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Permission Categories Legend -->
+        <div class="permission-categories" *ngIf="permissionGroups.length > 0">
+          <h4>Available Permission Categories</h4>
+          <div class="categories-grid">
+            <div class="category-card" *ngFor="let group of permissionGroups">
+              <div class="category-header">
+                <span class="category-name">{{ group.module }}</span>
+                <span class="category-badge">{{ group.permissions.length }}</span>
+              </div>
+              <div class="category-permissions">
+                <span class="permission-tag" *ngFor="let perm of group.permissions">
+                  {{ perm.action }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 </div>
 
@@ -984,6 +1071,68 @@
         </button>
       </div>
     </form>
+  </div>
+</div>
+
+<!-- Permission Matrix Modal -->
+<div class="modal-backdrop" *ngIf="permissionMatrixModalOpen">
+  <div class="modal-card xlarge">
+    <div class="modal-header">
+      <div>
+        <h3>Edit Permissions: {{ selectedRoleForPermissions?.roleName }}</h3>
+        <p>Select the permissions to grant to this role.</p>
+      </div>
+      <button class="icon-button" (click)="closePermissionMatrixModal()">&times;</button>
+    </div>
+
+    <div class="modal-body permission-matrix-body">
+      <div class="permission-groups">
+        <div class="permission-group" *ngFor="let group of permissionGroups">
+          <div class="group-header">
+            <label class="checkbox-label group-toggle">
+              <input 
+                type="checkbox" 
+                [checked]="areAllPermissionsInGroupSelected(group)"
+                [indeterminate]="areSomePermissionsInGroupSelected(group)"
+                (change)="toggleAllPermissionsInGroup(group, $any($event.target).checked)"
+                class="custom-checkbox"
+              />
+              <span class="checkbox-custom"></span>
+              <span class="group-name">{{ group.module }}</span>
+              <span class="group-category">{{ group.category }}</span>
+            </label>
+          </div>
+          <div class="permission-list">
+            <label class="checkbox-label permission-item" *ngFor="let perm of group.permissions">
+              <input 
+                type="checkbox" 
+                [checked]="isPermissionSelected(perm.permissionId)"
+                (change)="togglePermission(perm.permissionId)"
+                class="custom-checkbox"
+              />
+              <span class="checkbox-custom"></span>
+              <div class="permission-info">
+                <span class="permission-name">{{ perm.displayName || perm.action }}</span>
+                <span class="permission-description">{{ perm.description }}</span>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <span class="selected-count">{{ selectedPermissionIds.size }} permissions selected</span>
+      <button class="btn btn-secondary" type="button" (click)="closePermissionMatrixModal()">Cancel</button>
+      <button class="btn btn-primary" type="button" (click)="saveRolePermissions()" [disabled]="savingPermissions">
+        <svg *ngIf="!savingPermissions" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 6L9 17l-5-5"></path>
+        </svg>
+        <span *ngIf="!savingPermissions">Save Permissions</span>
+        <span *ngIf="savingPermissions" class="loading-spinner"></span>
+        <span *ngIf="savingPermissions">Saving...</span>
+      </button>
+    </div>
   </div>
 </div>
 

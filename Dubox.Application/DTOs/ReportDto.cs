@@ -183,3 +183,4 @@ public record PaginatedBoxSummaryReportResponseDto
     public BoxSummaryReportAggregationsDto Aggregations { get; init; } = new();
 }
 
+

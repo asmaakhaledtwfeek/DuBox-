@@ -57,6 +57,8 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<GroupRole> GroupRoles { get; set; } = null!;
     public DbSet<Department> Departments { get; set; } = null!;
     public DbSet<ActivityMaterial> ActivityMaterials { get; set; } = null!;
+    public DbSet<Permission> Permissions { get; set; } = null!;
+    public DbSet<RolePermission> RolePermissions { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -67,6 +69,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         RoleAndUserSeedData.SeedRolesGroupsAndUsers(modelBuilder);
         DepartmentSeesData.SeedDepartmnts(modelBuilder);
         PredefinedChecklistItemSeedData.SeedPredefinedChecklistItems(modelBuilder);
+        PermissionSeedData.SeedPermissions(modelBuilder);
         base.OnModelCreating(modelBuilder);
     }
 
@@ -146,6 +149,26 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .WithMany(r => r.GroupRoles)
             .HasForeignKey(gr => gr.RoleId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // RolePermission relationships
+        modelBuilder.Entity<RolePermission>()
+            .HasOne(rp => rp.Role)
+            .WithMany(r => r.RolePermissions)
+            .HasForeignKey(rp => rp.RoleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<RolePermission>()
+            .HasOne(rp => rp.Permission)
+            .WithMany(p => p.RolePermissions)
+            .HasForeignKey(rp => rp.PermissionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<RolePermission>()
+            .HasOne(rp => rp.GrantedByUser)
+            .WithMany()
+            .HasForeignKey(rp => rp.GrantedByUserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
 
         // 5. Department and User
         modelBuilder.Entity<User>()
@@ -414,6 +437,18 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
 
         modelBuilder.Entity<GroupRole>()
             .HasIndex(gr => new { gr.GroupId, gr.RoleId })
+            .IsUnique();
+
+        // Permission indexes
+        modelBuilder.Entity<Permission>()
+            .HasIndex(p => p.PermissionKey)
+            .IsUnique();
+
+        modelBuilder.Entity<Permission>()
+            .HasIndex(p => new { p.Module, p.Action });
+
+        modelBuilder.Entity<RolePermission>()
+            .HasIndex(rp => new { rp.RoleId, rp.PermissionId })
             .IsUnique();
     }
 

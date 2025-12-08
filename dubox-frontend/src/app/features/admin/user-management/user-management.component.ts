@@ -177,8 +177,6 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     });
   }
 
-<<<<<<< Updated upstream
-=======
   // Permission getters for template
   get canCreateRole(): boolean {
     return this.permissionService.canCreate('roles');
@@ -233,7 +231,6 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     return this.permissionService.canEdit('users');
   }
 
->>>>>>> Stashed changes
   ngOnInit(): void {
     this.registerFilterListeners();
     this.bootstrap();

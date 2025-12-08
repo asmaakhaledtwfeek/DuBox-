@@ -263,49 +263,6 @@ export class PermissionService {
       [UserRole.CostEstimator]: ['view'],
       [UserRole.Viewer]: ['view']
     },
-<<<<<<< Updated upstream
-
-    // WIR (Work Inspection Request) Module - Quality Control
-    wir: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'approve', 'reject', 'manage'],
-      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'approve', 'reject', 'manage'],
-      [UserRole.QCInspector]: ['view', 'create', 'edit', 'approve', 'reject'],
-      [UserRole.SiteEngineer]: ['view', 'create', 'edit', 'approve', 'reject'],
-      [UserRole.DesignEngineer]: ['view', 'create'],
-      [UserRole.Foreman]: ['view', 'create'],
-      [UserRole.ProcurementOfficer]: ['view'],
-      [UserRole.HSEOfficer]: ['view', 'approve'],
-      [UserRole.CostEstimator]: ['view'],
-      [UserRole.Viewer]: ['view']
-    },
-
-    // Quality Issues Module
-    qualityissues: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'resolve', 'manage'],
-      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'resolve', 'manage'],
-      [UserRole.QCInspector]: ['view', 'create', 'edit', 'resolve'],
-      [UserRole.SiteEngineer]: ['view', 'create', 'edit'],
-      [UserRole.DesignEngineer]: ['view', 'create'],
-      [UserRole.Foreman]: ['view', 'create'],
-      [UserRole.ProcurementOfficer]: ['view'],
-      [UserRole.HSEOfficer]: ['view'],
-      [UserRole.CostEstimator]: ['view'],
-      [UserRole.Viewer]: ['view']
-    },
-
-    // Dashboard Module
-    dashboard: {
-      [UserRole.SystemAdmin]: ['view', 'export'],
-      [UserRole.ProjectManager]: ['view', 'export'],
-      [UserRole.DesignEngineer]: ['view', 'export'],
-      [UserRole.SiteEngineer]: ['view', 'export'],
-      [UserRole.QCInspector]: ['view', 'export'],
-      [UserRole.Foreman]: ['view'],
-      [UserRole.ProcurementOfficer]: ['view', 'export'],
-      [UserRole.HSEOfficer]: ['view', 'export'],
-      [UserRole.CostEstimator]: ['view', 'export'],
-      [UserRole.Viewer]: ['view']
-=======
     
     // Progress Updates Module
     'progress-updates': {
@@ -375,7 +332,6 @@ export class PermissionService {
       [UserRole.CostEstimator]: [],
       [UserRole.HSEOfficer]: [],
       [UserRole.Viewer]: []
->>>>>>> Stashed changes
     }
   };
 

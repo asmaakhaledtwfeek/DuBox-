@@ -51,6 +51,7 @@ export class PermissionService {
   // Cache for user permissions loaded from backend
   private userPermissionsCache = new BehaviorSubject<string[]>([]);
   private permissionsLoaded = false;
+  private permissionsLoading = false;
   
   // Define module permissions based on Group AMANA roles (fallback if backend not available)
   private readonly modulePermissions: Record<string, Record<UserRole, string[]>> = {
@@ -206,6 +207,34 @@ export class PermissionService {
       [UserRole.HSEOfficer]: ['view'],
       [UserRole.CostEstimator]: ['view'],
       [UserRole.Viewer]: ['view']
+    },
+
+    // Materials Module
+    materials: {
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage', 'export'],
+      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'delete', 'export'],
+      [UserRole.ProcurementOfficer]: ['view', 'create', 'edit', 'export'],
+      [UserRole.CostEstimator]: ['view', 'create', 'edit', 'export'],
+      [UserRole.DesignEngineer]: ['view', 'create', 'edit'],
+      [UserRole.SiteEngineer]: ['view', 'edit'],
+      [UserRole.Foreman]: ['view'],
+      [UserRole.QCInspector]: ['view'],
+      [UserRole.HSEOfficer]: ['view'],
+      [UserRole.Viewer]: ['view']
+    },
+
+    // Locations Module
+    locations: {
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage'],
+      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'delete', 'manage'],
+      [UserRole.DesignEngineer]: ['view', 'create', 'edit'],
+      [UserRole.SiteEngineer]: ['view', 'edit'],
+      [UserRole.Foreman]: ['view'],
+      [UserRole.QCInspector]: ['view'],
+      [UserRole.ProcurementOfficer]: ['view'],
+      [UserRole.HSEOfficer]: ['view'],
+      [UserRole.CostEstimator]: ['view'],
+      [UserRole.Viewer]: ['view']
     }
   };
 
@@ -216,6 +245,7 @@ export class PermissionService {
 
   /**
    * Check if user has permission for a specific module and action
+   * Checks backend permissions first, then falls back to hardcoded role-based permissions
    */
   hasPermission(module: string, action: string): boolean {
     const user = this.authService.getCurrentUser();
@@ -229,20 +259,36 @@ export class PermissionService {
       return true;
     }
 
-    // Check module permissions for all user roles
-    const modulePerms = this.modulePermissions[module];
+    // Build the permission key to check (e.g., "projects.view" - lowercase with dot)
+    const permissionKey = `${module.toLowerCase()}.${action.toLowerCase()}`;
+    const cachedPermissions = this.userPermissionsCache.value;
+    
+    // If backend permissions are loaded, use them
+    if (this.permissionsLoaded && cachedPermissions.length > 0) {
+      const hasPermission = cachedPermissions.some(p => 
+        p.toLowerCase() === permissionKey
+      );
+      console.log(`🔐 Permission check (backend): ${permissionKey} = ${hasPermission}`);
+      return hasPermission;
+    }
+
+    // Fallback to hardcoded role-based permissions
+    const modulePerms = this.modulePermissions[module.toLowerCase()];
     if (!modulePerms) {
+      console.log(`🔐 Permission check (fallback): Module "${module}" not found`);
       return false;
     }
 
     // Check if any of the user's roles grants the permission
     for (const role of user.allRoles) {
       const rolePerms = modulePerms[role];
-      if (rolePerms && rolePerms.includes(action)) {
+      if (rolePerms && rolePerms.includes(action.toLowerCase())) {
+        console.log(`🔐 Permission check (fallback): ${permissionKey} = true (via role ${role})`);
         return true;
       }
     }
 
+    console.log(`🔐 Permission check (fallback): ${permissionKey} = false`);
     return false;
   }
 
@@ -455,20 +501,55 @@ export class PermissionService {
   loadCurrentUserPermissions(): Observable<string[]> {
     const user = this.authService.getCurrentUser();
     if (!user) {
+      this.permissionsLoaded = true;
       return of([]);
     }
+
+    // Prevent multiple simultaneous loads
+    if (this.permissionsLoading) {
+      return this.userPermissionsCache.asObservable();
+    }
+
+    this.permissionsLoading = true;
 
     return this.getUserPermissionsFromBackend(user.id).pipe(
       map(result => result?.permissionKeys || []),
       tap(permissions => {
+        console.log('✅ Loaded user permissions from backend:', permissions);
         this.userPermissionsCache.next(permissions);
         this.permissionsLoaded = true;
+        this.permissionsLoading = false;
       }),
-      catchError(() => {
+      catchError(err => {
+        console.warn('⚠️ Failed to load permissions from backend, using role-based fallback:', err);
         this.permissionsLoaded = true;
+        this.permissionsLoading = false;
         return of([]);
       })
     );
+  }
+
+  /**
+   * Initialize permissions - call after login
+   */
+  initializePermissions(): void {
+    this.loadCurrentUserPermissions().subscribe();
+  }
+
+  /**
+   * Clear cached permissions - call on logout
+   */
+  clearPermissions(): void {
+    this.userPermissionsCache.next([]);
+    this.permissionsLoaded = false;
+    this.permissionsLoading = false;
+  }
+
+  /**
+   * Check if permissions have been loaded from backend
+   */
+  arePermissionsLoaded(): boolean {
+    return this.permissionsLoaded;
   }
 
   /**

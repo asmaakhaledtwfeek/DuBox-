@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
-import { filter } from 'rxjs/operators';
+import { filter, skip } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 import { PermissionService } from '../../../core/services/permission.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { UserRole } from '../../../core/models/user.model';
@@ -23,25 +24,42 @@ interface MenuItem {
   templateUrl: './sidebar.component.html',
   styleUrl: './sidebar.component.scss'
 })
-export class SidebarComponent implements OnInit {
+export class SidebarComponent implements OnInit, OnDestroy {
   isCollapsed = false;
   activeRoute = '';
   menuItems: MenuItem[] = [];
+  private subscriptions: Subscription[] = [];
 
   constructor(
     private router: Router,
     private permissionService: PermissionService,
     private authService: AuthService
   ) {
-    this.router.events
-      .pipe(filter(event => event instanceof NavigationEnd))
-      .subscribe((event: any) => {
-        this.activeRoute = event.url;
-      });
+    this.subscriptions.push(
+      this.router.events
+        .pipe(filter(event => event instanceof NavigationEnd))
+        .subscribe((event: any) => {
+          this.activeRoute = event.url;
+        })
+    );
   }
 
   ngOnInit(): void {
     this.buildMenuItems();
+
+    // Subscribe to permission changes and rebuild menu when permissions are loaded
+    this.subscriptions.push(
+      this.permissionService.permissions$
+        .pipe(skip(1)) // Skip initial empty value
+        .subscribe(() => {
+          console.log('🔄 Permissions loaded, rebuilding sidebar menu');
+          this.buildMenuItems();
+        })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
   buildMenuItems(): void {

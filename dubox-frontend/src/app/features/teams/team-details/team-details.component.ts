@@ -34,7 +34,10 @@ export class TeamDetailsComponent implements OnInit {
   memberToRemove: TeamMember | null = null;
   removingMember = false;
   removeMemberError = '';
+  
+  // Permission flags
   canManageMembers = false;
+  canEditTeam = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -47,9 +50,10 @@ export class TeamDetailsComponent implements OnInit {
   ngOnInit(): void {
     this.teamId = this.route.snapshot.paramMap.get('id') || '';
     
-    // Check permission to manage team members
+    // Check permissions
     this.canManageMembers = this.permissionService.hasPermission('teams', 'manage-members') || 
                             this.permissionService.hasPermission('teams', 'manage');
+    this.canEditTeam = this.permissionService.hasPermission('teams', 'edit');
     
     this.completeProfileForm = this.fb.group({
       employeeCode: ['', [Validators.required, Validators.maxLength(50)]],

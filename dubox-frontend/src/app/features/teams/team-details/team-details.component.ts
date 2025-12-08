@@ -67,6 +67,11 @@ export class TeamDetailsComponent implements OnInit {
     }
   }
 
+  // Permission getter for template
+  get canEditTeam(): boolean {
+    return this.permissionService.canEdit('teams');
+  }
+
   loadTeamDetails(): void {
     this.teamService.getTeamById(this.teamId).subscribe({
       next: (team) => {

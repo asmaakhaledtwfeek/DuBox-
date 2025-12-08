@@ -5,6 +5,7 @@ import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, For
 import { WIRService } from '../../../core/services/wir.service';
 import { BoxService } from '../../../core/services/box.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { PermissionService } from '../../../core/services/permission.service';
 import { ApiService } from '../../../core/services/api.service';
 import { Observable, forkJoin } from 'rxjs';
 import { map } from 'rxjs/operators';
@@ -190,8 +191,14 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     private wirService: WIRService,
     private boxService: BoxService,
     private authService: AuthService,
+    private permissionService: PermissionService,
     private apiService: ApiService
   ) {}
+
+  // Permission getter for template
+  get canReviewWIR(): boolean {
+    return this.permissionService.hasPermission('wir', 'review');
+  }
 
   ngOnInit(): void {
     this.projectId = this.route.snapshot.params['projectId'];
@@ -792,6 +799,11 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
 
   startReviewFlow(): void {
     if (!this.wirCheckpoint || !this.hasChecklistItems) {
+      return;
+    }
+    // Check if user has permission to review WIR checkpoints
+    if (!this.permissionService.hasPermission('wir', 'review')) {
+      this.error = 'You do not have permission to review WIR checkpoints.';
       return;
     }
     this.currentStep = 'review';

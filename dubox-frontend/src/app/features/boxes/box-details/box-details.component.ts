@@ -41,6 +41,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   
   canEdit = false;
   canDelete = false;
+  canUpdateQualityIssueStatus = false;
   BoxStatus = BoxStatus;
   Math = Math;
   
@@ -172,6 +173,8 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     
     this.canEdit = this.permissionService.canEdit('boxes');
     this.canDelete = this.permissionService.canDelete('boxes');
+    this.canUpdateQualityIssueStatus = this.permissionService.hasPermission('quality-issues', 'edit') || 
+                                       this.permissionService.hasPermission('quality-issues', 'resolve');
     
     this.setupLocationHistorySearch();
     this.setupBoxLogsSearch();
@@ -591,7 +594,12 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   }
 
   canNavigateToReview(checkpoint: WIRCheckpoint | null): boolean {
-    return !!checkpoint?.boxActivityId;
+    // Check if checkpoint exists and has required data
+    if (!checkpoint?.boxActivityId) {
+      return false;
+    }
+    // Check if user has permission to review WIR checkpoints
+    return this.permissionService.hasPermission('wir', 'review');
   }
 
   navigateToAddChecklist(checkpoint: WIRCheckpoint): void {

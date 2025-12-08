@@ -83,7 +83,7 @@ export const routes: Routes = [
     path: 'projects/:projectId/boxes/:boxId/activities/:activityId/qa-qc',
     canActivate: [authGuard, permissionGuard],
     data: { 
-      permission: { module: 'wir', action: 'review' }
+      permission: { module: 'wir', action: 'create' } // Allow access to add checklist items
     },
     loadComponent: () => import('./features/boxes/qa-qc-checklist/qa-qc-checklist.component').then(m => m.QaQcChecklistComponent)
   },
@@ -91,7 +91,7 @@ export const routes: Routes = [
     path: 'quality/projects/:projectId/boxes/:boxId/activities/:activityId/qa-qc',
     canActivate: [authGuard, permissionGuard],
     data: { 
-      permission: { module: 'wir', action: 'review' }
+      permission: { module: 'wir', action: 'create' } // Allow access to add checklist items
     },
     loadComponent: () => import('./features/boxes/qa-qc-checklist/qa-qc-checklist.component').then(m => m.QaQcChecklistComponent)
   },

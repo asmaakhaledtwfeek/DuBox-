@@ -8,6 +8,7 @@ import { WIRService } from '../../../core/services/wir.service';
 import { QualityIssueItem, QualityIssueDetails, QualityIssueStatus, UpdateQualityIssueStatusRequest, WIRCheckpoint, WIRCheckpointStatus } from '../../../core/models/wir.model';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
+import { PermissionService } from '../../../core/services/permission.service';
 import { map } from 'rxjs/operators';
 import * as ExcelJS from 'exceljs';
 
@@ -99,7 +100,8 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private wirService: WIRService,
     private router: Router,
-    private apiService: ApiService
+    private apiService: ApiService,
+    private permissionService: PermissionService
   ) {
     this.filterForm = this.fb.group({
       projectCode: [''],
@@ -123,6 +125,12 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     this.qualityIssuesFilterForm.valueChanges.subscribe(() => {
       this.applyQualityIssuesFilters();
     });
+  }
+
+  // Permission getter for template
+  get canUpdateQualityIssueStatus(): boolean {
+    return this.permissionService.hasPermission('quality-issues', 'edit') || 
+           this.permissionService.hasPermission('quality-issues', 'resolve');
   }
 
   ngOnInit(): void {

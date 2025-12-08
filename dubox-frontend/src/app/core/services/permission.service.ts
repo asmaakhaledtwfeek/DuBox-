@@ -129,7 +129,7 @@ export class PermissionService {
       [UserRole.SystemAdmin]: ['view', 'create', 'approve', 'reject', 'review', 'manage'],
       [UserRole.ProjectManager]: ['view', 'create', 'approve', 'reject', 'review', 'manage'], // Full WIR management
       [UserRole.QCInspector]: ['view', 'create', 'approve', 'reject', 'review'],
-      [UserRole.SiteEngineer]: ['view', 'create', 'review'],
+      [UserRole.SiteEngineer]: ['view', 'create'], // Can add checklist items and quality issues, but NOT review
       [UserRole.DesignEngineer]: ['view'],
       [UserRole.Foreman]: ['view', 'create'],
       [UserRole.CostEstimator]: ['view'],

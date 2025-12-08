@@ -16,8 +16,13 @@ export class TeamService {
    * Get all teams
    */
   getTeams(): Observable<Team[]> {
-    return this.apiService.get<Team[]>(this.endpoint).pipe(
-      map(teams => teams.map(t => this.transformTeam(t)))
+    return this.apiService.get<any>(this.endpoint).pipe(
+      map(response => {
+        // Handle both paginated response and direct array
+        const data = response?.data || response?.Data || response;
+        const items = Array.isArray(data) ? data : (data?.items || data?.Items || []);
+        return items.map((t: any) => this.transformTeam(t));
+      })
     );
   }
 

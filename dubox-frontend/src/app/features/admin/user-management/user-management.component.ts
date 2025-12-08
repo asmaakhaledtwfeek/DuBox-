@@ -211,6 +211,26 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     return this.permissionService.hasPermission('audit-logs', 'view');
   }
 
+  get canCreateUser(): boolean {
+    return this.permissionService.canCreate('users');
+  }
+
+  get canEditUser(): boolean {
+    return this.permissionService.canEdit('users');
+  }
+
+  get canDeleteUser(): boolean {
+    return this.permissionService.canDelete('users');
+  }
+
+  get canAssignRoles(): boolean {
+    return this.permissionService.hasPermission('users', 'assign-roles');
+  }
+
+  get canAssignGroups(): boolean {
+    return this.permissionService.hasPermission('users', 'assign-groups');
+  }
+
   ngOnInit(): void {
     this.registerFilterListeners();
     this.bootstrap();

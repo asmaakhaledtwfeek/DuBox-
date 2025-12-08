@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { ReportsService } from '../../../core/services/reports.service';
@@ -73,7 +73,8 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
 
   constructor(
     private reportsService: ReportsService,
-    private projectService: ProjectService
+    private projectService: ProjectService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -306,7 +307,7 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
 
     const headers = [
       'Box Tag', 'Serial Number', 'Project', 'Box Type', 'Floor', 'Building', 'Zone',
-      'Progress', 'Status', 'Current Location', 'Activities', 'Assets'
+      'Progress', 'Status', 'Non-Resolved Issues', 'Current Location', 'Activities', 'Assets'
     ];
 
     const rows = items.map(item => [
@@ -319,6 +320,7 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
       item.zone || '',
       item.progressPercentageFormatted,
       item.status,
+      item.qualityIssuesCount || 0,
       item.currentLocationName || '',
       item.activitiesCount,
       item.assetsCount
@@ -360,6 +362,7 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
       'Zone': item.zone || '',
       'Progress': item.progressPercentageFormatted,
       'Status': item.status,
+      'Non-Resolved Issues': item.qualityIssuesCount || 0,
       'Current Location': item.currentLocationName || '',
       'Activities': item.activitiesCount,
       'Assets': item.assetsCount
@@ -413,6 +416,16 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
       pages.push(i);
     }
     return pages;
+  }
+
+  navigateToBoxDetails(projectId: string, boxId: string, event: Event): void {
+    // Prevent navigation if clicking on checkbox or other interactive elements
+    const target = event.target as HTMLElement;
+    if (target.tagName === 'INPUT' || target.tagName === 'BUTTON' || target.closest('input, button')) {
+      return;
+    }
+    
+    this.router.navigate(['/projects', projectId, 'boxes', boxId]);
   }
 }
 

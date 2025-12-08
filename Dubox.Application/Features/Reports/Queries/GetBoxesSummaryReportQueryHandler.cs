@@ -67,6 +67,16 @@ public class GetBoxesSummaryReportQueryHandler : IRequestHandler<GetBoxesSummary
                     .ToDictionaryAsync(x => x.BoxId, x => x.Count, cancellationToken)
                 : new Dictionary<Guid, int>();
 
+            var qualityIssuesCounts = boxIds.Any()
+                ? await _dbContext.QualityIssues
+                    .Where(qi => boxIds.Contains(qi.BoxId) 
+                        && qi.Status != QualityIssueStatusEnum.Resolved 
+                        && qi.Status != QualityIssueStatusEnum.Closed)
+                    .GroupBy(qi => qi.BoxId)
+                    .Select(g => new { BoxId = g.Key, Count = g.Count() })
+                    .ToDictionaryAsync(x => x.BoxId, x => x.Count, cancellationToken)
+                : new Dictionary<Guid, int>();
+
             var items = boxes.Select(box =>
             {
                 var dto = box.Adapt<BoxSummaryReportItemDto>();
@@ -81,6 +91,9 @@ public class GetBoxesSummaryReportQueryHandler : IRequestHandler<GetBoxesSummary
                         : 0,
                     AssetsCount = assetsCounts.ContainsKey(box.BoxId)
                         ? assetsCounts[box.BoxId]
+                        : 0,
+                    QualityIssuesCount = qualityIssuesCounts.ContainsKey(box.BoxId)
+                        ? qualityIssuesCounts[box.BoxId]
                         : 0
                 };
 

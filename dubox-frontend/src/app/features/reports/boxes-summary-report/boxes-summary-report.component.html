@@ -336,21 +336,21 @@
               <th (click)="onSort('status')" class="sortable">
                 Status <span *ngIf="sortBy === 'status'">{{ sortDir === 'asc' ? '↑' : '↓' }}</span>
               </th>
+              <th>Non-Resolved Issues</th>
               <th>Location</th>
-              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of reportData.items">
-              <td>
+            <tr *ngFor="let item of reportData.items" 
+                class="clickable-row"
+                (click)="navigateToBoxDetails(item.projectId, item.boxId, $event)">
+              <td (click)="$event.stopPropagation()">
                 <input type="checkbox" 
                        [checked]="isSelected(item.boxId)"
                        (change)="toggleSelectItem(item.boxId)">
               </td>
               <td>
-                <a [routerLink]="['/projects', item.projectId, 'boxes', item.boxId]" class="box-link">
-                  {{ item.boxTag }}
-                </a>
+                {{ item.boxTag }}
               </td>
               <td>{{ item.serialNumber || '-' }}</td>
               <td>{{ item.projectName }}</td>
@@ -373,19 +373,8 @@
                   {{ item.status }}
                 </span>
               </td>
+              <td>{{ item.qualityIssuesCount || 0 }}</td>
               <td>{{ item.currentLocationName || '-' }}</td>
-              <td>
-                <div class="action-buttons">
-                  <button class="btn-action btn-action-icon-only" 
-                          [routerLink]="['/projects', item.projectId, 'boxes', item.boxId]"
-                          title="View Box Details">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                  </button>
-                </div>
-              </td>
             </tr>
             <tr *ngIf="reportData.items.length === 0">
               <td colspan="11" class="empty-state">No boxes found matching the filters</td>

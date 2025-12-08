@@ -369,7 +369,8 @@ export class ReportsService {
       duration: item.duration ?? item.Duration,
       lastUpdateDate: item.lastUpdateDate ? new Date(item.lastUpdateDate) : (item.LastUpdateDate ? new Date(item.LastUpdateDate) : undefined),
       activitiesCount: item.activitiesCount ?? item.ActivitiesCount ?? 0,
-      assetsCount: item.assetsCount ?? item.AssetsCount ?? 0
+      assetsCount: item.assetsCount ?? item.AssetsCount ?? 0,
+      qualityIssuesCount: item.qualityIssuesCount ?? item.QualityIssuesCount ?? 0
     };
   }
 

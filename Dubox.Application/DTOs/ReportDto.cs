@@ -132,6 +132,7 @@ public record BoxSummaryReportItemDto
     public DateTime? LastUpdateDate { get; init; }
     public int ActivitiesCount { get; init; }
     public int AssetsCount { get; init; }
+    public int QualityIssuesCount { get; init; }
 }
 
 /// <summary>

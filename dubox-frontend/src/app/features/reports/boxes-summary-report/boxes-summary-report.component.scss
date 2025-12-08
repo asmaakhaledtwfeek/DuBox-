@@ -1203,6 +1203,20 @@
         }
       }
     }
+
+    tbody tr.clickable-row {
+      cursor: pointer;
+
+      &:hover {
+        background: linear-gradient(90deg, #ecfdf5 0%, #ffffff 100%);
+        box-shadow: 0 2px 8px rgba(5, 150, 105, 0.08);
+        transform: translateX(2px);
+      }
+
+      &:nth-child(even):hover {
+        background: linear-gradient(90deg, #ecfdf5 0%, #f9fafb 100%);
+      }
+    }
   }
 }
 

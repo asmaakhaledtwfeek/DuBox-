@@ -27,6 +27,7 @@ export interface BoxSummaryReportItem {
   lastUpdateDate?: Date;
   activitiesCount: number;
   assetsCount: number;
+  qualityIssuesCount: number;
 }
 
 export interface BoxSummaryReportKpis {

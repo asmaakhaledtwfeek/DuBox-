@@ -91,7 +91,7 @@
               <th>Box</th>
               <th>Status</th>
               <th>Requested Date</th>
-              <th>Actions</th>
+              <th *ngIf="canManageWIRCheckpoints">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -110,7 +110,7 @@
                 </span>
               </td>
               <td>{{ formatDate(checkpoint.requestedDate) }}</td>
-              <td class="col-actions">
+              <td class="col-actions" *ngIf="canManageWIRCheckpoints">
                 <div class="action-stack">
                   <button 
                     class="action-btn ghost" 

@@ -26,7 +26,6 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
             if (box == null)
                 return Result.Failure<List<WIRCheckpointDto>>("Box not found");
 
-            // Use AsNoTracking and ToListAsync for better performance
             var checkpoints = await _unitOfWork.Repository<WIRCheckpoint>()
                 .GetWithSpec(new GetWIRCheckPointsByBoxIdSpecification(request.BoxId)).Data
                 .AsNoTracking()

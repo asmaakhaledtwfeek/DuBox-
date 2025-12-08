@@ -177,6 +177,63 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     });
   }
 
+<<<<<<< Updated upstream
+=======
+  // Permission getters for template
+  get canCreateRole(): boolean {
+    return this.permissionService.canCreate('roles');
+  }
+
+  get canEditRole(): boolean {
+    return this.permissionService.canEdit('roles');
+  }
+
+  get canDeleteRole(): boolean {
+    return this.permissionService.canDelete('roles');
+  }
+
+  get canCreateGroup(): boolean {
+    return this.permissionService.canCreate('groups');
+  }
+
+  get canEditGroup(): boolean {
+    return this.permissionService.canEdit('groups');
+  }
+
+  get canDeleteGroup(): boolean {
+    return this.permissionService.canDelete('groups');
+  }
+
+  get canManagePermissions(): boolean {
+    return this.permissionService.hasPermission('roles', 'assign-permissions') || 
+           this.permissionService.hasPermission('permissions', 'manage');
+  }
+
+  get canViewAuditLogs(): boolean {
+    return this.permissionService.hasPermission('audit-logs', 'view');
+  }
+
+  get canDeleteUser(): boolean {
+    return this.permissionService.canDelete('users');
+  }
+
+  get canAssignRoles(): boolean {
+    return this.permissionService.hasPermission('users', 'assign-roles');
+  }
+
+  get canAssignGroups(): boolean {
+    return this.permissionService.hasPermission('users', 'assign-groups');
+  }
+
+  get canCreateUser(): boolean {
+    return this.permissionService.canCreate('users');
+  }
+
+  get canEditUser(): boolean {
+    return this.permissionService.canEdit('users');
+  }
+
+>>>>>>> Stashed changes
   ngOnInit(): void {
     this.registerFilterListeners();
     this.bootstrap();

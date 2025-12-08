@@ -129,7 +129,7 @@
           </label>
         </div>
 
-        <div class="selection-field">
+        <div class="selection-field" *ngIf="canAssignRoles">
           <div class="selection-info">
             <label>Assign roles</label>
             <input type="text" class="readonly-input" [value]="selectedRoleNames" readonly />
@@ -138,7 +138,7 @@
           <button type="button" class="btn btn-secondary light" (click)="openRolesModal()">Manage</button>
         </div>
 
-        <div class="selection-field">
+        <div class="selection-field" *ngIf="canAssignGroups">
           <div class="selection-info">
             <label>Assign groups</label>
             <input type="text" class="readonly-input" [value]="selectedGroupNames" readonly />

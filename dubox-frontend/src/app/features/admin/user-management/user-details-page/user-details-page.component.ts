@@ -4,6 +4,7 @@ import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HeaderComponent } from '../../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../../shared/components/sidebar/sidebar.component';
+import { PermissionService } from '../../../../core/services/permission.service';
 import { UserService } from '../../../../core/services/user.service';
 import type { UserDto, UpdateUserRequest, RoleSummary } from '../../../../core/services/user.service';
 import { RoleService, RoleDto } from '../../../../core/services/role.service';
@@ -50,7 +51,8 @@ export class UserDetailsPageComponent implements OnInit, OnDestroy {
     private userService: UserService,
     private roleService: RoleService,
     private groupService: GroupService,
-    private departmentService: DepartmentService
+    private departmentService: DepartmentService,
+    private permissionService: PermissionService
   ) {
     this.userForm = this.fb.group({
       userId: [''],
@@ -91,6 +93,15 @@ export class UserDetailsPageComponent implements OnInit, OnDestroy {
       return groupNames.length ? groupNames.join(', ') : 'No groups assigned';
     }
     return 'No groups assigned';
+  }
+
+  // Permission getters for template
+  get canAssignRoles(): boolean {
+    return this.permissionService.hasPermission('users', 'assign-roles');
+  }
+
+  get canAssignGroups(): boolean {
+    return this.permissionService.hasPermission('users', 'assign-groups');
   }
 
   openRolesModal(): void {

@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 import { BoxService } from '../../../core/services/box.service';
+import { PermissionService } from '../../../core/services/permission.service';
 import { BoxActivity } from '../../../core/models/box.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
@@ -45,6 +46,12 @@ export class ActivityDetailsComponent implements OnInit {
   loading = true;
   error = '';
   isModalOpen = false;
+  
+  // Permissions
+  canUpdateProgress = false;
+  canAssignTeam = false;
+  canIssueMaterial = false;
+  canSetSchedule = false;
 
   // Activity Logs
   activityLogs: AuditLog[] = [];
@@ -95,6 +102,7 @@ export class ActivityDetailsComponent implements OnInit {
     private router: Router,
     private fb: FormBuilder,
     private boxService: BoxService,
+    private permissionService: PermissionService,
     private progressUpdateService: ProgressUpdateService,
     private teamService: TeamService,
     private auditLogService: AuditLogService
@@ -110,6 +118,12 @@ export class ActivityDetailsComponent implements OnInit {
       this.loading = false;
       return;
     }
+    
+    // Check permissions
+    this.canUpdateProgress = this.permissionService.hasPermission('activities', 'update-progress');
+    this.canAssignTeam = this.permissionService.hasPermission('activities', 'assign-team');
+    this.canIssueMaterial = this.permissionService.hasPermission('materials', 'restock'); // Using restock permission for material issuing
+    this.canSetSchedule = this.permissionService.canEdit('activities');
     
     this.initForms();
     this.loadActivity();

@@ -17,14 +17,14 @@
         <p class="page-subtitle" *ngIf="activity">{{ activity.name }}</p>
       </div>
       <div class="header-actions" *ngIf="activity && !loading && !error">
-        <button class="btn btn-secondary" (click)="openUpdateStatusModal()">
+        <button class="btn btn-secondary" (click)="openUpdateStatusModal()" *ngIf="canSetSchedule">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
           </svg>
           Update Status
         </button>
-        <button class="btn btn-secondary" (click)="openAssignTeamModal()">
+        <button class="btn btn-secondary" (click)="openAssignTeamModal()" *ngIf="canAssignTeam">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
             <circle cx="9" cy="7" r="4"/>
@@ -33,7 +33,7 @@
           </svg>
           Assign to Team
         </button>
-        <button class="btn btn-secondary" (click)="openIssueMaterialModal()">
+        <button class="btn btn-secondary" (click)="openIssueMaterialModal()" *ngIf="canIssueMaterial">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
             <line x1="3" y1="6" x2="21" y2="6"/>
@@ -41,7 +41,7 @@
           </svg>
           Issue Material
         </button>
-        <button class="btn btn-secondary" (click)="openSetScheduleModal()">
+        <button class="btn btn-secondary" (click)="openSetScheduleModal()" *ngIf="canSetSchedule">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
             <line x1="16" y1="2" x2="16" y2="6"/>
@@ -50,7 +50,7 @@
           </svg>
           Set Schedule
         </button>
-        <button class="btn btn-primary" (click)="openProgressModal()">
+        <button class="btn btn-primary" (click)="openProgressModal()" *ngIf="canUpdateProgress">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
           </svg>

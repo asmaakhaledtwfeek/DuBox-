@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
+import { PermissionService } from '../../../core/services/permission.service';
 import { ReportsService } from '../../../core/services/reports.service';
 import {
   ProjectsSummaryReportResponse,
@@ -24,6 +25,7 @@ export class ProjectsSummaryReportComponent implements OnInit {
   reportData: ProjectsSummaryReportResponse | null = null;
   loading = false;
   error = '';
+  canExport = false;
 
   // Filters
   filtersCollapsed = false;
@@ -51,10 +53,12 @@ export class ProjectsSummaryReportComponent implements OnInit {
 
   constructor(
     private reportsService: ReportsService,
+    private permissionService: PermissionService,
     private router: Router
   ) {}
 
   ngOnInit(): void {
+    this.canExport = this.permissionService.hasPermission('reports', 'export');
     this.loadReportData();
   }
 

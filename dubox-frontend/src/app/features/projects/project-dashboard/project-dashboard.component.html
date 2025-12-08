@@ -167,7 +167,7 @@
       </div>
 
       <!-- Excel Import Section -->
-      <div class="excel-import card" #excelSection>
+      <div class="excel-import card" #excelSection *ngIf="canImportBoxes">
         <div class="excel-header">
           <div>
             <h2 class="card-title">Bulk Import via Excel</h2>

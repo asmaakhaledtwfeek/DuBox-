@@ -28,9 +28,9 @@ export const routes: Routes = [
   },
   {
     path: 'projects/create',
-    canActivate: [authGuard, roleGuard],
+    canActivate: [authGuard, permissionGuard],
     data: { 
-      roles: [UserRole.SystemAdmin, UserRole.ProjectManager, UserRole.DesignEngineer] 
+      permission: { module: 'projects', action: 'create' }
     },
     loadComponent: () => import('./features/projects/create-project/create-project.component').then(m => m.CreateProjectComponent)
   },
@@ -46,9 +46,9 @@ export const routes: Routes = [
   },
   {
     path: 'boxes/create',
-    canActivate: [authGuard, roleGuard],
+    canActivate: [authGuard, permissionGuard],
     data: { 
-      roles: [UserRole.SystemAdmin, UserRole.ProjectManager, UserRole.DesignEngineer, UserRole.SiteEngineer] 
+      permission: { module: 'boxes', action: 'create' }
     },
     loadComponent: () => import('./features/boxes/create-box/create-box.component').then(m => m.CreateBoxComponent)
   },
@@ -59,9 +59,9 @@ export const routes: Routes = [
   },
   {
     path: 'projects/:projectId/boxes/:boxId/edit',
-    canActivate: [authGuard, roleGuard],
+    canActivate: [authGuard, permissionGuard],
     data: { 
-      roles: [UserRole.SystemAdmin, UserRole.ProjectManager, UserRole.DesignEngineer, UserRole.SiteEngineer] 
+      permission: { module: 'boxes', action: 'edit' }
     },
     loadComponent: () => import('./features/boxes/edit-box/edit-box.component').then(m => m.EditBoxComponent)
   },
@@ -72,71 +72,41 @@ export const routes: Routes = [
   },
   {
     path: 'qc',
-    canActivate: [authGuard, roleGuard],
+    canActivate: [authGuard, permissionGuard],
     data: {
-      roles: [
-        UserRole.SystemAdmin,
-        UserRole.ProjectManager,
-        UserRole.QCInspector,
-        UserRole.SiteEngineer,
-        UserRole.Foreman
-      ]
+      permission: { module: 'quality-issues', action: 'view' }
     },
     loadComponent: () => import('./features/qc/quality-control-dashboard/quality-control-dashboard.component').then(m => m.QualityControlDashboardComponent)
   },
   {
     path: 'projects/:projectId/boxes/:boxId/activities/:activityId/qa-qc',
-    canActivate: [authGuard, roleGuard],
+    canActivate: [authGuard, permissionGuard],
     data: { 
-      roles: [
-        UserRole.SystemAdmin, 
-        UserRole.ProjectManager, 
-        UserRole.QCInspector, 
-        UserRole.SiteEngineer,
-        UserRole.Foreman
-      ] 
+      permission: { module: 'wir', action: 'review' }
     },
     loadComponent: () => import('./features/boxes/qa-qc-checklist/qa-qc-checklist.component').then(m => m.QaQcChecklistComponent)
   },
   {
     path: 'quality/projects/:projectId/boxes/:boxId/activities/:activityId/qa-qc',
-    canActivate: [authGuard, roleGuard],
+    canActivate: [authGuard, permissionGuard],
     data: { 
-      roles: [
-        UserRole.SystemAdmin, 
-        UserRole.ProjectManager, 
-        UserRole.QCInspector, 
-        UserRole.SiteEngineer,
-        UserRole.Foreman
-      ] 
+      permission: { module: 'wir', action: 'review' }
     },
     loadComponent: () => import('./features/boxes/qa-qc-checklist/qa-qc-checklist.component').then(m => m.QaQcChecklistComponent)
   },
   {
     path: 'projects/:projectId/boxes/:boxId/activities/:activityId/create-wir-checkpoint',
-    canActivate: [authGuard, roleGuard],
+    canActivate: [authGuard, permissionGuard],
     data: { 
-      roles: [
-        UserRole.SystemAdmin, 
-        UserRole.ProjectManager, 
-        UserRole.QCInspector, 
-        UserRole.SiteEngineer,
-        UserRole.Foreman
-      ] 
+      permission: { module: 'wir', action: 'create' }
     },
     loadComponent: () => import('./features/boxes/create-wir-checkpoint/create-wir-checkpoint.component').then(m => m.CreateWIRCheckpointComponent)
   },
   {
     path: 'projects/:projectId/boxes/:boxId/activities/:activityId/wir-checkpoints/:wirId/add-checklist-items',
-    canActivate: [authGuard, roleGuard],
+    canActivate: [authGuard, permissionGuard],
     data: { 
-      roles: [
-        UserRole.SystemAdmin, 
-        UserRole.ProjectManager, 
-        UserRole.QCInspector, 
-        UserRole.SiteEngineer,
-        UserRole.Foreman
-      ] 
+      permission: { module: 'wir', action: 'create' }
     },
     loadComponent: () => import('./features/boxes/add-checklist-items/add-checklist-items.component').then(m => m.AddChecklistItemsComponent)
   },
@@ -152,9 +122,9 @@ export const routes: Routes = [
   },
   {
     path: 'admin',
-    canActivate: [authGuard, roleGuard],
+    canActivate: [authGuard, permissionGuard],
     data: { 
-      roles: [UserRole.SystemAdmin, UserRole.ProjectManager] 
+      permission: { module: 'users', action: 'view' }
     },
     children: [
       {
@@ -194,9 +164,9 @@ export const routes: Routes = [
   },
   {
     path: 'materials/create',
-    canActivate: [authGuard, roleGuard],
+    canActivate: [authGuard, permissionGuard],
     data: { 
-      roles: [UserRole.SystemAdmin, UserRole.ProjectManager, UserRole.ProcurementOfficer] 
+      permission: { module: 'materials', action: 'create' }
     },
     loadComponent: () => import('./features/materials/create-material/create-material.component').then(m => m.CreateMaterialComponent)
   },
@@ -207,9 +177,9 @@ export const routes: Routes = [
   },
   {
     path: 'materials/:id/edit',
-    canActivate: [authGuard, roleGuard],
+    canActivate: [authGuard, permissionGuard],
     data: { 
-      roles: [UserRole.SystemAdmin, UserRole.ProjectManager, UserRole.ProcurementOfficer] 
+      permission: { module: 'materials', action: 'edit' }
     },
     loadComponent: () => import('./features/materials/edit-material/edit-material.component').then(m => m.EditMaterialComponent)
   },
@@ -220,25 +190,25 @@ export const routes: Routes = [
   },
   {
     path: 'teams/create',
-    canActivate: [authGuard, roleGuard],
+    canActivate: [authGuard, permissionGuard],
     data: { 
-      roles: [UserRole.SystemAdmin, UserRole.ProjectManager] 
+      permission: { module: 'teams', action: 'create' }
     },
     loadComponent: () => import('./features/teams/create-team/create-team.component').then(m => m.CreateTeamComponent)
   },
   {
     path: 'teams/:id/add-members',
-    canActivate: [authGuard, roleGuard],
+    canActivate: [authGuard, permissionGuard],
     data: { 
-      roles: [UserRole.SystemAdmin, UserRole.ProjectManager] 
+      permission: { module: 'teams', action: 'manage-members' }
     },
     loadComponent: () => import('./features/teams/add-team-members/add-team-members.component').then(m => m.AddTeamMembersComponent)
   },
   {
     path: 'teams/:id/edit',
-    canActivate: [authGuard, roleGuard],
+    canActivate: [authGuard, permissionGuard],
     data: { 
-      roles: [UserRole.SystemAdmin, UserRole.ProjectManager] 
+      permission: { module: 'teams', action: 'edit' }
     },
     loadComponent: () => import('./features/teams/edit-team/edit-team.component').then(m => m.EditTeamComponent)
   },

@@ -71,7 +71,7 @@ export class PermissionService {
     // Projects Module
     projects: {
       [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage', 'export'],
-      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'delete', 'manage', 'export'],
+      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'delete', 'manage', 'export'], // Full project management permissions
       [UserRole.DesignEngineer]: ['view', 'create', 'edit', 'export'],
       [UserRole.SiteEngineer]: ['view', 'edit', 'export'],
       [UserRole.CostEstimator]: ['view', 'export'],
@@ -84,8 +84,8 @@ export class PermissionService {
     
     // Boxes Module
     boxes: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'update-status', 'manage', 'export'],
-      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'delete', 'update-status', 'manage', 'export'],
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'update-status', 'manage', 'export', 'import'],
+      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'delete', 'update-status', 'manage', 'export', 'import'], // Full box management with import
       [UserRole.DesignEngineer]: ['view', 'create', 'edit', 'update-status', 'export'],
       [UserRole.SiteEngineer]: ['view', 'edit', 'update-status', 'export'],
       [UserRole.Foreman]: ['view', 'update-status'],
@@ -98,36 +98,50 @@ export class PermissionService {
     
     // Activities Module
     activities: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'approve', 'reject', 'manage'],
-      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'delete', 'approve', 'reject', 'manage'],
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage', 'assign-team', 'update-progress'],
+      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'delete', 'manage', 'assign-team', 'update-progress'], // Full activity management
       [UserRole.DesignEngineer]: ['view', 'create', 'edit', 'submit'],
-      [UserRole.SiteEngineer]: ['view', 'create', 'edit', 'approve', 'reject'],
-      [UserRole.Foreman]: ['view', 'edit', 'submit'],
-      [UserRole.QCInspector]: ['view', 'approve', 'reject'],
+      [UserRole.SiteEngineer]: ['view', 'create', 'edit', 'update-progress'],
+      [UserRole.Foreman]: ['view', 'edit', 'submit', 'update-progress'],
+      [UserRole.QCInspector]: ['view'],
       [UserRole.CostEstimator]: ['view'],
       [UserRole.ProcurementOfficer]: ['view'],
       [UserRole.HSEOfficer]: ['view'],
       [UserRole.Viewer]: ['view']
     },
     
-    // QA/QC Module
-    qaqc: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'approve', 'reject', 'manage'],
-      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'approve', 'reject', 'manage'],
-      [UserRole.QCInspector]: ['view', 'create', 'edit', 'approve', 'reject'],
-      [UserRole.SiteEngineer]: ['view', 'approve', 'reject'],
-      [UserRole.DesignEngineer]: ['view', 'submit'],
-      [UserRole.Foreman]: ['view', 'submit'],
+    // QA/QC Module (mapped to quality-issues)
+    'quality-issues': {
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'resolve', 'manage'],
+      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'resolve', 'manage'], // Full quality issue management
+      [UserRole.QCInspector]: ['view', 'create', 'edit', 'resolve'],
+      [UserRole.SiteEngineer]: ['view', 'create'],
+      [UserRole.DesignEngineer]: ['view'],
+      [UserRole.Foreman]: ['view', 'create'],
       [UserRole.CostEstimator]: ['view'],
       [UserRole.ProcurementOfficer]: ['view'],
-      [UserRole.HSEOfficer]: ['view', 'approve'],
+      [UserRole.HSEOfficer]: ['view'],
+      [UserRole.Viewer]: ['view']
+    },
+    
+    // WIR Module
+    wir: {
+      [UserRole.SystemAdmin]: ['view', 'create', 'approve', 'reject', 'review', 'manage'],
+      [UserRole.ProjectManager]: ['view', 'create', 'approve', 'reject', 'review', 'manage'], // Full WIR management
+      [UserRole.QCInspector]: ['view', 'create', 'approve', 'reject', 'review'],
+      [UserRole.SiteEngineer]: ['view', 'create', 'review'],
+      [UserRole.DesignEngineer]: ['view'],
+      [UserRole.Foreman]: ['view', 'create'],
+      [UserRole.CostEstimator]: ['view'],
+      [UserRole.ProcurementOfficer]: ['view'],
+      [UserRole.HSEOfficer]: ['view'],
       [UserRole.Viewer]: ['view']
     },
     
     // Users & Admin Module
     users: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage', 'assign-roles'],
-      [UserRole.ProjectManager]: ['view', 'create', 'edit'],
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage', 'assign-roles', 'assign-groups'],
+      [UserRole.ProjectManager]: ['view', 'create', 'edit'], // NO delete, assign-roles, or assign-groups
       [UserRole.DesignEngineer]: [],
       [UserRole.SiteEngineer]: [],
       [UserRole.Foreman]: [],
@@ -210,8 +224,8 @@ export class PermissionService {
     
     // Teams Module
     teams: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage'],
-      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'manage'],
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'manage', 'manage-members'],
+      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'manage', 'manage-members'], // Full team management
       [UserRole.SiteEngineer]: ['view', 'edit'],
       [UserRole.Foreman]: ['view'],
       [UserRole.DesignEngineer]: ['view'],
@@ -224,10 +238,10 @@ export class PermissionService {
 
     // Materials Module
     materials: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage', 'export'],
-      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'delete', 'export'],
-      [UserRole.ProcurementOfficer]: ['view', 'create', 'edit', 'export'],
-      [UserRole.CostEstimator]: ['view', 'create', 'edit', 'export'],
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'restock', 'import', 'manage'],
+      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'restock', 'import'], // Material management with restock and import
+      [UserRole.ProcurementOfficer]: ['view', 'create', 'edit', 'restock', 'import'],
+      [UserRole.CostEstimator]: ['view', 'create', 'edit'],
       [UserRole.DesignEngineer]: ['view', 'create', 'edit'],
       [UserRole.SiteEngineer]: ['view', 'edit'],
       [UserRole.Foreman]: ['view'],
@@ -239,7 +253,7 @@ export class PermissionService {
     // Locations Module
     locations: {
       [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage'],
-      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'delete', 'manage'],
+      [UserRole.ProjectManager]: ['view', 'create', 'edit'], // Location management (no delete)
       [UserRole.DesignEngineer]: ['view', 'create', 'edit'],
       [UserRole.SiteEngineer]: ['view', 'edit'],
       [UserRole.Foreman]: ['view'],
@@ -249,6 +263,7 @@ export class PermissionService {
       [UserRole.CostEstimator]: ['view'],
       [UserRole.Viewer]: ['view']
     },
+<<<<<<< Updated upstream
 
     // WIR (Work Inspection Request) Module - Quality Control
     wir: {
@@ -290,6 +305,77 @@ export class PermissionService {
       [UserRole.HSEOfficer]: ['view', 'export'],
       [UserRole.CostEstimator]: ['view', 'export'],
       [UserRole.Viewer]: ['view']
+=======
+    
+    // Progress Updates Module
+    'progress-updates': {
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'manage'],
+      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'manage'], // Full progress update management
+      [UserRole.SiteEngineer]: ['view', 'create', 'edit'],
+      [UserRole.Foreman]: ['view', 'create'],
+      [UserRole.DesignEngineer]: ['view'],
+      [UserRole.QCInspector]: ['view'],
+      [UserRole.ProcurementOfficer]: ['view'],
+      [UserRole.CostEstimator]: ['view'],
+      [UserRole.HSEOfficer]: ['view'],
+      [UserRole.Viewer]: ['view']
+    },
+    
+    // Dashboard Module
+    dashboard: {
+      [UserRole.SystemAdmin]: ['view', 'export'],
+      [UserRole.ProjectManager]: ['view', 'export'], // View and export dashboard
+      [UserRole.DesignEngineer]: ['view', 'export'],
+      [UserRole.SiteEngineer]: ['view', 'export'],
+      [UserRole.CostEstimator]: ['view', 'export'],
+      [UserRole.QCInspector]: ['view'],
+      [UserRole.Foreman]: ['view'],
+      [UserRole.ProcurementOfficer]: ['view'],
+      [UserRole.HSEOfficer]: ['view'],
+      [UserRole.Viewer]: ['view']
+    },
+    
+    // Roles Module
+    roles: {
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage'],
+      [UserRole.ProjectManager]: ['view'], // View only for roles
+      [UserRole.DesignEngineer]: [],
+      [UserRole.SiteEngineer]: [],
+      [UserRole.Foreman]: [],
+      [UserRole.QCInspector]: [],
+      [UserRole.ProcurementOfficer]: [],
+      [UserRole.CostEstimator]: [],
+      [UserRole.HSEOfficer]: [],
+      [UserRole.Viewer]: []
+    },
+    
+    // Groups Module
+    groups: {
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage'],
+      [UserRole.ProjectManager]: ['view'], // View only for groups
+      [UserRole.DesignEngineer]: [],
+      [UserRole.SiteEngineer]: [],
+      [UserRole.Foreman]: [],
+      [UserRole.QCInspector]: [],
+      [UserRole.ProcurementOfficer]: [],
+      [UserRole.CostEstimator]: [],
+      [UserRole.HSEOfficer]: [],
+      [UserRole.Viewer]: []
+    },
+    
+    // Departments Module
+    departments: {
+      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage'],
+      [UserRole.ProjectManager]: ['view'], // View only for departments
+      [UserRole.DesignEngineer]: [],
+      [UserRole.SiteEngineer]: [],
+      [UserRole.Foreman]: [],
+      [UserRole.QCInspector]: [],
+      [UserRole.ProcurementOfficer]: [],
+      [UserRole.CostEstimator]: [],
+      [UserRole.HSEOfficer]: [],
+      [UserRole.Viewer]: []
+>>>>>>> Stashed changes
     }
   };
 

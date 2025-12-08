@@ -11,7 +11,6 @@
             AddInclude(nameof(WIRCheckpoint.Box));
             AddInclude($"{nameof(WIRCheckpoint.Box)}.{nameof(WIRCheckpoint.Box.Project)}");
             AddInclude(nameof(WIRCheckpoint.ChecklistItems));
-            AddInclude($"{nameof(WIRCheckpoint.QualityIssues)}.{nameof(Domain.Entities.QualityIssue.Images)}");
             AddInclude(nameof(WIRCheckpoint.QualityIssues));
             
             // Enable split query to avoid Cartesian explosion with multiple collection includes

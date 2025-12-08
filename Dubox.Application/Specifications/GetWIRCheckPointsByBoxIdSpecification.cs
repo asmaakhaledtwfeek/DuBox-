@@ -10,9 +10,9 @@ namespace Dubox.Application.Specifications
             AddCriteria(w => w.BoxId == boxId);
             AddInclude(nameof(WIRCheckpoint.Box));
             AddInclude(nameof(WIRCheckpoint.ChecklistItems));
-            AddInclude($"{nameof(WIRCheckpoint.QualityIssues)}.{nameof(Domain.Entities.QualityIssue.Images)}");
             AddInclude(nameof(WIRCheckpoint.QualityIssues));
-            AddInclude(nameof(WIRCheckpoint.Images));
+            // NOTE: Don't include Images or QualityIssues.Images - base64 ImageData is too large
+            // Image metadata is loaded separately with lightweight query
             AddOrderByDescending(w => w.CreatedDate);
             
             // Enable split query to avoid Cartesian explosion with multiple collection includes

@@ -10,10 +10,11 @@ namespace Dubox.Application.Specifications
             AddCriteria(q => q.BoxId == boxId);
             AddInclude(nameof(QualityIssue.Box));
             AddInclude(nameof(QualityIssue.WIRCheckpoint));
-            AddInclude(nameof(QualityIssue.Images));
+            // NOTE: Don't include Images - base64 ImageData is too large
+            // Image metadata is loaded separately with lightweight query
             AddOrderByDescending(q => q.IssueDate);
             
-            // Enable split query to avoid Cartesian explosion with Images collection
+            // Enable split query to avoid Cartesian explosion
             EnableSplitQuery();
         }
     }

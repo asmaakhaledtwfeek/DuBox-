@@ -2602,6 +2602,14 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     return this.wirCheckpoint.images
       .sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
       .map((img) => {
+        // Use imageUrl if available (new API returns URL for on-demand loading)
+        if (img.imageUrl) {
+          // Convert relative URL to full API URL
+          const baseUrl = this.getApiBaseUrl();
+          return img.imageUrl.startsWith('/') ? `${baseUrl}${img.imageUrl}` : img.imageUrl;
+        }
+        
+        // Fallback to imageData for backward compatibility
         const imageData = img.imageData || '';
         // If it's already a data URL, return as is
         if (imageData.startsWith('data:image/')) {
@@ -2612,9 +2620,20 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
           return imageData;
         }
         // Otherwise, assume it's base64 and add data URI prefix
-        return `data:image/jpeg;base64,${imageData}`;
+        if (imageData) {
+          return `data:image/jpeg;base64,${imageData}`;
+        }
+        return '';
       })
       .filter((url: string) => url && url.trim().length > 0);
+  }
+  
+  /**
+   * Get the API base URL
+   */
+  private getApiBaseUrl(): string {
+    // Get base URL from environment or current location
+    return (window as any).__env?.apiUrl || 'https://localhost:7098';
   }
 
   /**

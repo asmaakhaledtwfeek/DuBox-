@@ -43,16 +43,28 @@ namespace Dubox.Application.DTOs
         public List<WIRCheckpointImageDto> Images { get; set; } = new();
     }
     
+    /// <summary>
+    /// Lightweight image info without base64 data - used in listings.
+    /// Use /api/images/WIRCheckpoint/{WIRCheckpointImageId} to fetch full image.
+    /// </summary>
     public class WIRCheckpointImageDto
     {
         public Guid WIRCheckpointImageId { get; set; }
         public Guid WIRId { get; set; }
-        public string ImageData { get; set; } = string.Empty;
+        /// <summary>
+        /// Base64 image data - only populated when fetching single image details.
+        /// For listings, this will be null and ImageUrl should be used instead.
+        /// </summary>
+        public string? ImageData { get; set; }
         public string ImageType { get; set; } = "file";
         public string? OriginalName { get; set; }
         public long? FileSize { get; set; }
         public int Sequence { get; set; }
         public DateTime CreatedDate { get; set; }
+        /// <summary>
+        /// URL to fetch full image: /api/images/WIRCheckpoint/{WIRCheckpointImageId}
+        /// </summary>
+        public string? ImageUrl { get; set; }
     }
     public class WIRChecklistItemDto
     {
@@ -76,6 +88,10 @@ namespace Dubox.Application.DTOs
         public string? ReportedBy { get; set; }
         public QualityIssueStatusEnum Status { get; set; }
         public List<QualityIssueImageDto> Images { get; set; } = new();
+        /// <summary>
+        /// Number of images (useful when Images list is empty but images exist)
+        /// </summary>
+        public int ImageCount { get; set; }
     }
 
     public class PredefinedChecklistItemDto

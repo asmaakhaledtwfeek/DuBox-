@@ -99,12 +99,13 @@ export interface WIRCheckpoint {
 export interface WIRCheckpointImage {
   wirCheckpointImageId: string;
   wirId: string;
-  imageData: string;
+  imageData?: string; // May be null for lightweight responses - use imageUrl instead
   imageType: string;
   originalName?: string;
   fileSize?: number;
   sequence: number;
   createdDate: Date;
+  imageUrl?: string; // URL to fetch image on-demand: /api/images/WIRCheckpoint/{wirCheckpointImageId}
 }
 
 export interface WIRCheckpointFilter {
@@ -210,12 +211,13 @@ export interface QualityIssueItem {
 export interface QualityIssueImage {
   qualityIssueImageId: string;
   issueId: string;
-  imageData: string;
+  imageData?: string; // May be null for lightweight responses - use imageUrl instead
   imageType: 'file' | 'url';
   originalName?: string;
   fileSize?: number;
   sequence: number;
   createdDate: Date;
+  imageUrl?: string; // URL to fetch image on-demand: /api/images/QualityIssue/{qualityIssueImageId}
 }
 
 export interface QualityIssueDetails extends QualityIssueItem {

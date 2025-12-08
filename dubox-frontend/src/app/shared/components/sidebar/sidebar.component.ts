@@ -112,23 +112,23 @@ export class SidebarComponent implements OnInit, OnDestroy {
         label: 'Admin',
         icon: 'admin',
         route: '/admin',
-        permission: { module: 'users', action: 'view' },
-        requiredRoles: [UserRole.SystemAdmin, UserRole.ProjectManager]
+        permission: { module: 'users', action: 'view' }
+        // Permission check handles access - no hardcoded roles needed
       }
     ];
 
     this.menuItems = allMenuItems.filter(item => {
-      // Check permission if specified
+      // Only check permissions - backend permissions are the source of truth
+      // If no permission is specified, allow access (for backward compatibility)
       if (item.permission) {
         const hasPermission = this.permissionService.hasPermission(item.permission.module, item.permission.action);
-        if (!hasPermission) return false;
+        if (!hasPermission) {
+          return false;
+        }
       }
 
-      // Check required roles if specified
-      if (item.requiredRoles && item.requiredRoles.length > 0) {
-        const hasRole = this.authService.hasAnyRole(item.requiredRoles);
-        if (!hasRole) return false;
-      }
+      // Removed: Hardcoded role checks - permissions from backend are authoritative
+      // The backend permission system already accounts for roles
 
       return true;
     });

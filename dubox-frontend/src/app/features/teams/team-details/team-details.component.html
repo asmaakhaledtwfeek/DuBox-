@@ -139,6 +139,7 @@
             <div *ngIf="teamMembers && teamMembers.members.length > 0" class="members-grid">
               <div *ngFor="let member of teamMembers.members" class="member-card">
                 <button 
+                  *ngIf="canManageMembers"
                   class="btn-remove-icon"
                   (click)="openRemoveMemberModal(member)"
                   title="Remove Member"

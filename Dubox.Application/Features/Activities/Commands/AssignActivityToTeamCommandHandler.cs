@@ -2,6 +2,7 @@
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using MediatR;
 
@@ -11,11 +12,18 @@ namespace Dubox.Application.Features.Activities.Commands
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserService _currentUserService;
-        public AssignActivityToTeamCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+        private readonly IProjectTeamVisibilityService _visibilityService;
+
+        public AssignActivityToTeamCommandHandler(
+            IUnitOfWork unitOfWork, 
+            ICurrentUserService currentUserService,
+            IProjectTeamVisibilityService visibilityService)
         {
             _unitOfWork = unitOfWork;
             _currentUserService = currentUserService;
+            _visibilityService = visibilityService;
         }
+
         public async Task<Result<AssignBoxActivityTeamDto>> Handle(AssignActivityToTeamCommand request, CancellationToken cancellationToken)
         {
             var activity = _unitOfWork.Repository<BoxActivity>().GetEntityWithSpec(new GetBoxActivityByIdSpecification(request.BoxActivityId));
@@ -23,10 +31,24 @@ namespace Dubox.Application.Features.Activities.Commands
             if (activity == null)
                 return Result.Failure<AssignBoxActivityTeamDto>("Box Activity not found.");
 
+            // Check if user has access to the project containing this activity
+            var canAccessProject = await _visibilityService.CanAccessProjectAsync(activity.Box.ProjectId, cancellationToken);
+            if (!canAccessProject)
+            {
+                return Result.Failure<AssignBoxActivityTeamDto>("Access denied. You do not have permission to modify activities in this project.");
+            }
+
             var team = await _unitOfWork.Repository<Team>().GetByIdAsync(request.TeamId);
 
             if (team == null)
                 return Result.Failure<AssignBoxActivityTeamDto>("Team not found.");
+
+            // Check if user has access to this team
+            var canAccessTeam = await _visibilityService.CanAccessTeamAsync(request.TeamId, cancellationToken);
+            if (!canAccessTeam)
+            {
+                return Result.Failure<AssignBoxActivityTeamDto>("Access denied. You do not have permission to assign this team.");
+            }
 
             var teamMember = _unitOfWork.Repository<TeamMember>().GetEntityWithSpec(new GetTeamMemberWithIcludesSpecification(request.TeamMemberId));
 

@@ -22,6 +22,7 @@ public static class Bootstrap
         services.AddScoped<IUserRoleService, UserRoleService>();
         services.AddScoped(typeof(IDateTime), typeof(DateTimeService));
         services.AddScoped(typeof(ICurrentUserService), typeof(CurrentUserService));
+        services.AddScoped<IProjectTeamVisibilityService, ProjectTeamVisibilityService>();
         services.AddScoped<IExcelService, ExcelService>();
         services.AddScoped<IQRCodeService, QRCodeService>();
         services.AddScoped<IBoxActivityService, BoxActivityService>();

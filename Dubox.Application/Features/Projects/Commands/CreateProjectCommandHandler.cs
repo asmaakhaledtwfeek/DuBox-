@@ -1,6 +1,7 @@
 using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MapsterMapper;
@@ -13,16 +14,29 @@ public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand,
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IProjectTeamVisibilityService _visibilityService;
 
-    public CreateProjectCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserService currentUserService)
+    public CreateProjectCommandHandler(
+        IUnitOfWork unitOfWork, 
+        IMapper mapper, 
+        ICurrentUserService currentUserService,
+        IProjectTeamVisibilityService visibilityService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _currentUserService = currentUserService;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<ProjectDto>> Handle(CreateProjectCommand request, CancellationToken cancellationToken)
     {
+        // Authorization: Only SystemAdmin and ProjectManager can create projects
+        var canCreate = await _visibilityService.CanCreateProjectOrTeamAsync(cancellationToken);
+        if (!canCreate)
+        {
+            return Result.Failure<ProjectDto>("Access denied. Only System Administrators and Project Managers can create projects.");
+        }
+
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
 
         var projectExists = await _unitOfWork.Repository<Project>()

@@ -1,6 +1,7 @@
 using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Enums;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -10,17 +11,28 @@ namespace Dubox.Application.Features.Dashboard.Queries;
 public class GetAllProjectsDashboardQueryHandler : IRequestHandler<GetAllProjectsDashboardQuery, Result<List<ProjectDashboardDto>>>
 {
     private readonly IDbContext _dbContext;
+    private readonly IProjectTeamVisibilityService _visibilityService;
 
-    public GetAllProjectsDashboardQueryHandler(IDbContext dbContext)
+    public GetAllProjectsDashboardQueryHandler(IDbContext dbContext, IProjectTeamVisibilityService visibilityService)
     {
         _dbContext = dbContext;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<List<ProjectDashboardDto>>> Handle(GetAllProjectsDashboardQuery request, CancellationToken cancellationToken)
     {
-        var projects = await _dbContext.Projects
-            .Where(p => p.IsActive)
-            .ToListAsync(cancellationToken);
+        // Apply visibility filtering
+        var accessibleProjectIds = await _visibilityService.GetAccessibleProjectIdsAsync(cancellationToken);
+
+        var projectsQuery = _dbContext.Projects.Where(p => p.IsActive);
+
+        // Apply visibility filtering
+        if (accessibleProjectIds != null)
+        {
+            projectsQuery = projectsQuery.Where(p => accessibleProjectIds.Contains(p.ProjectId));
+        }
+
+        var projects = await projectsQuery.ToListAsync(cancellationToken);
 
         var projectDashboards = new List<ProjectDashboardDto>();
 

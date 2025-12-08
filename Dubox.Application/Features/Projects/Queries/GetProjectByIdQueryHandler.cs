@@ -1,5 +1,6 @@
 using Dubox.Application.DTOs;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Dubox.Domain.Abstraction;
 using Mapster;
@@ -10,10 +11,12 @@ namespace Dubox.Application.Features.Projects.Queries;
 public class GetProjectByIdQueryHandler : IRequestHandler<GetProjectByIdQuery, Result<ProjectDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IProjectTeamVisibilityService _visibilityService;
 
-    public GetProjectByIdQueryHandler(IUnitOfWork unitOfWork)
+    public GetProjectByIdQueryHandler(IUnitOfWork unitOfWork, IProjectTeamVisibilityService visibilityService)
     {
         _unitOfWork = unitOfWork;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<ProjectDto>> Handle(GetProjectByIdQuery request, CancellationToken cancellationToken)
@@ -23,6 +26,13 @@ public class GetProjectByIdQueryHandler : IRequestHandler<GetProjectByIdQuery, R
 
         if (project == null)
             return Result.Failure<ProjectDto>("Project not found");
+
+        // Check if user has access to this project
+        var canAccess = await _visibilityService.CanAccessProjectAsync(request.ProjectId, cancellationToken);
+        if (!canAccess)
+        {
+            return Result.Failure<ProjectDto>("Access denied. You do not have permission to view this project.");
+        }
 
         return Result.Success(project.Adapt<ProjectDto>());
     }

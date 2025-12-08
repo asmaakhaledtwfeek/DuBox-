@@ -7,8 +7,16 @@ namespace Dubox.Application.Specifications
 {
     public class GetProjectsSpecification : Specification<Project>
     {
-        public GetProjectsSpecification(GetAllProjectsQuery query)
+        public GetProjectsSpecification(GetAllProjectsQuery query, List<Guid>? accessibleProjectIds)
         {
+            // Apply visibility filtering
+            // If accessibleProjectIds is null, user can access all projects (SystemAdmin)
+            // If list is provided, filter to only those projects
+            if (accessibleProjectIds != null)
+            {
+                AddCriteria(p => accessibleProjectIds.Contains(p.ProjectId));
+            }
+
             if (!string.IsNullOrEmpty(query.SearchTerm))
             {
                 var searchTermLower = query.SearchTerm.ToLower().Trim();

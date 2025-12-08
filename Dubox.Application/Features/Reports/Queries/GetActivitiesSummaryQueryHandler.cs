@@ -2,6 +2,7 @@ using Dubox.Application.DTOs;
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Enums;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -12,17 +13,22 @@ namespace Dubox.Application.Features.Reports.Queries;
 public class GetActivitiesSummaryQueryHandler : IRequestHandler<GetActivitiesSummaryQuery, Result<ActivitiesSummaryDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IProjectTeamVisibilityService _visibilityService;
 
-    public GetActivitiesSummaryQueryHandler(IUnitOfWork unitOfWork)
+    public GetActivitiesSummaryQueryHandler(IUnitOfWork unitOfWork, IProjectTeamVisibilityService visibilityService)
     {
         _unitOfWork = unitOfWork;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<ActivitiesSummaryDto>> Handle(GetActivitiesSummaryQuery request, CancellationToken cancellationToken)
     {
         try
         {
-            var result = _unitOfWork.Repository<Domain.Entities.BoxActivity>().GetWithSpec(new ActivitiesReportSpecification(request));
+            // Apply visibility filtering
+            var accessibleProjectIds = await _visibilityService.GetAccessibleProjectIdsAsync(cancellationToken);
+
+            var result = _unitOfWork.Repository<Domain.Entities.BoxActivity>().GetWithSpec(new ActivitiesReportSpecification(request, accessibleProjectIds));
 
             var query = result.Data.AsNoTracking();
 

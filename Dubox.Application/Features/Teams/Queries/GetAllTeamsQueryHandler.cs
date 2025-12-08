@@ -1,6 +1,7 @@
 using Dubox.Application.DTOs;
 using Dubox.Application.Specifications;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Dubox.Domain.Abstraction;
 using Mapster;
@@ -12,14 +13,19 @@ namespace Dubox.Application.Features.Teams.Queries;
 public class GetAllTeamsQueryHandler : IRequestHandler<GetAllTeamsQuery, Result<PaginatedTeamsResponseDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IProjectTeamVisibilityService _visibilityService;
 
-    public GetAllTeamsQueryHandler(IUnitOfWork unitOfWork)
+    public GetAllTeamsQueryHandler(IUnitOfWork unitOfWork, IProjectTeamVisibilityService visibilityService)
     {
         _unitOfWork = unitOfWork;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<PaginatedTeamsResponseDto>> Handle(GetAllTeamsQuery request, CancellationToken cancellationToken)
     {
+        // Get accessible team IDs based on user role
+        var accessibleTeamIds = await _visibilityService.GetAccessibleTeamIdsAsync(cancellationToken);
+
         // Normalize pagination parameters
         var (page, pageSize) = new PaginatedRequest
         {
@@ -27,12 +33,13 @@ public class GetAllTeamsQueryHandler : IRequestHandler<GetAllTeamsQuery, Result<
             PageSize = request.PageSize
         }.GetNormalizedPagination();
 
-        // Create specification with filters and pagination
+        // Create specification with filters, visibility, and pagination
         var specification = new GetTeamWithIncludesSpecification(
             request.Search,
             request.Department,
             request.Trade,
             request.IsActive,
+            accessibleTeamIds,
             pageSize,
             page
         );

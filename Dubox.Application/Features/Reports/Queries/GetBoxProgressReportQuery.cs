@@ -1,5 +1,6 @@
 using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
@@ -15,23 +16,40 @@ public record GetBoxProgressReportQuery(Guid? ProjectId = null) : IRequest<Resul
 public class GetBoxProgressReportQueryHandler : IRequestHandler<GetBoxProgressReportQuery, Result<List<BoxProgressReportDto>>>
 {
     private readonly IDbContext _dbContext;
+    private readonly IProjectTeamVisibilityService _visibilityService;
 
-    public GetBoxProgressReportQueryHandler(IDbContext dbContext)
+    public GetBoxProgressReportQueryHandler(IDbContext dbContext, IProjectTeamVisibilityService visibilityService)
     {
         _dbContext = dbContext;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<List<BoxProgressReportDto>>> Handle(GetBoxProgressReportQuery request, CancellationToken cancellationToken)
     {
         try
         {
-            // Get all boxes, optionally filtered by project
+            // Apply visibility filtering
+            var accessibleProjectIds = await _visibilityService.GetAccessibleProjectIdsAsync(cancellationToken);
+
+            // Get all boxes, filtered by accessible projects
             var boxesQuery = _dbContext.Boxes
                 .Include(b => b.Project)
                 .AsQueryable();
 
+            // Apply project visibility filter
+            if (accessibleProjectIds != null)
+            {
+                boxesQuery = boxesQuery.Where(b => accessibleProjectIds.Contains(b.ProjectId));
+            }
+
             if (request.ProjectId.HasValue && request.ProjectId.Value != Guid.Empty)
             {
+                // Verify user has access to this specific project
+                if (accessibleProjectIds != null && !accessibleProjectIds.Contains(request.ProjectId.Value))
+                {
+                    return Result.Failure<List<BoxProgressReportDto>>("Access denied. You do not have permission to view this project's data.");
+                }
+
                 boxesQuery = boxesQuery.Where(b => b.ProjectId == request.ProjectId.Value);
             }
 

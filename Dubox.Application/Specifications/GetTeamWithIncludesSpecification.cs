@@ -29,7 +29,7 @@ namespace Dubox.Application.Specifications
             EnableSplitQuery();
         }
 
-        public GetTeamWithIncludesSpecification(string? search, string? department, string? trade, bool? isActive, int pageSize, int pageNumber)
+        public GetTeamWithIncludesSpecification(string? search, string? department, string? trade, bool? isActive, List<Guid>? accessibleTeamIds, int pageSize, int pageNumber)
         {
             AddInclude(nameof(Team.Department));
             AddInclude(nameof(Team.TeamLeader));
@@ -38,6 +38,14 @@ namespace Dubox.Application.Specifications
             
             // Enable split query to avoid Cartesian explosion with Members collection
             EnableSplitQuery();
+
+            // Apply visibility filtering
+            // If accessibleTeamIds is null, user can access all teams (SystemAdmin)
+            // If list is provided, filter to only those teams
+            if (accessibleTeamIds != null)
+            {
+                AddCriteria(team => accessibleTeamIds.Contains(team.TeamId));
+            }
 
             // Apply search filter
             if (!string.IsNullOrWhiteSpace(search))

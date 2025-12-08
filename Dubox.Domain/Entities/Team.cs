@@ -39,6 +39,8 @@ namespace Dubox.Domain.Entities
         public bool IsActive { get; set; } = true;
 
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        
+        public Guid? CreatedBy { get; set; }
 
         // Navigation properties
         public virtual ICollection<TeamMember> Members { get; set; } = new List<TeamMember>();

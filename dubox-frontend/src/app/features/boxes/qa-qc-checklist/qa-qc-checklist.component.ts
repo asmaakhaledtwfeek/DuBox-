@@ -1644,9 +1644,9 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
       return this.isStep1Completed() && !this.isChecklistLocked;
     }
     
-    // Step 3: Only accessible if Step 2 is completed
+    // Step 3: Only accessible if Step 2 is completed AND user has review permission
     if (step === 'review') {
-      return this.isStep2Completed();
+      return this.isStep2Completed() && this.canReviewWIR;
     }
     
     // Step 4: Only accessible if Step 3 is completed

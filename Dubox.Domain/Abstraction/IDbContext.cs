@@ -21,13 +21,16 @@ public interface IDbContext
     DbSet<BoxActivity> BoxActivities { get; }
     DbSet<ActivityDependency> ActivityDependencies { get; }
     DbSet<ProgressUpdate> ProgressUpdates { get; }
+    DbSet<ProgressUpdateImage> ProgressUpdateImages { get; }
     DbSet<WIRRecord> WIRRecords { get; }
     DbSet<WIRCheckpoint> WIRCheckpoints { get; }
     DbSet<WIRChecklistItem> WIRChecklistItems { get; }
+    DbSet<PredefinedChecklistItem> PredefinedChecklistItems { get; }
     
     // Production tracking
     DbSet<DailyProductionLog> DailyProductionLogs { get; }
     DbSet<QualityIssue> QualityIssues { get; }
+    DbSet<QualityIssueImage> QualityIssueImages { get; }
     
     // Team management
     DbSet<Team> Teams { get; }

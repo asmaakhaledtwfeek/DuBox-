@@ -1,7 +1,7 @@
 <div class="modal-overlay" *ngIf="isOpen" (click)="close()">
   <div class="modal-container" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h2>Update Activity Progress</h2>
+      <h2>Update Activity Progress: <span class="activity-name-in-title">{{ activity?.activityName }}</span></h2>
       <button class="close-btn" (click)="close()" type="button">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -11,19 +11,13 @@
     </div>
 
     <div class="modal-body">
-      <!-- Activity Info -->
-      <div class="activity-info">
-        <h3>{{ activity?.activityName }}</h3>
-        <p class="activity-sequence">Activity #{{ activity?.sequence }}</p>
-        
-        <!-- WIR Checkpoint Badge -->
-        <div *ngIf="isWIRCheckpoint" class="wir-badge">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 11l3 3L22 4"/>
-            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-          </svg>
-          <span>WIR Checkpoint - {{ wirCode }}</span>
-        </div>
+      <!-- WIR Checkpoint Badge (moved to top after removing activity info card) -->
+      <div *ngIf="isWIRCheckpoint" class="wir-badge-standalone">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 11l3 3L22 4"/>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+        <span>WIR Checkpoint - {{ wirCode }}</span>
       </div>
 
       <!-- Alert Messages -->
@@ -74,13 +68,165 @@
 
         <!-- Status Info (Read-only) -->
         <div class="form-group">
-          <label>Status</label>
+          <label>
+            Status
+            <span class="status-note">(automatically determined by progress percentage)</span>
+          </label>
           <div class="status-info">
             <span *ngIf="progressForm.get('progressPercentage')?.value === 0" class="status-badge status-not-started">Not Started</span>
             <span *ngIf="progressForm.get('progressPercentage')?.value > 0 && progressForm.get('progressPercentage')?.value < 100" class="status-badge status-in-progress">In Progress</span>
             <span *ngIf="progressForm.get('progressPercentage')?.value === 100" class="status-badge status-completed">Completed</span>
           </div>
-          <small class="form-text">Status is automatically determined by progress percentage</small>
+        </div>
+
+        <!-- Photo Upload Section -->
+        <div class="form-group">
+          <label>Progress Photos <span class="image-count-badge" *ngIf="selectedImages.length > 0">{{ selectedImages.length }}</span></label>
+          <p class="photo-upload-hint">Add multiple images from upload, camera, or URL</p>
+          
+          <!-- Selected Images Preview List -->
+          <div class="selected-images-list" *ngIf="selectedImages.length > 0">
+            <div class="image-preview-item" *ngFor="let image of selectedImages; let i = index">
+              <div class="image-preview-wrapper">
+                <img [src]="image.preview || image.url" [alt]="image.name || 'Image preview'" />
+                <button 
+                  type="button" 
+                  class="remove-image-btn" 
+                  (click)="removeImage(i)" 
+                  [disabled]="isUploadingPhoto"
+                  title="Remove image"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+                <div class="image-type-badge" [class.type-file]="image.type === 'file'" [class.type-url]="image.type === 'url'">
+                  {{ image.type === 'file' ? 'File' : 'URL' }}
+                </div>
+              </div>
+              <div class="image-info" *ngIf="image.name || image.url">
+                <p class="image-name" *ngIf="image.name">{{ image.name }}</p>
+                <p class="image-url" *ngIf="image.url">{{ image.url }}</p>
+                <p class="image-size" *ngIf="image.file">{{ (image.file.size / 1024).toFixed(1) }} KB</p>
+              </div>
+            </div>
+            <button 
+              type="button" 
+              class="btn-clear-all" 
+              (click)="clearAllImages()" 
+              [disabled]="isUploadingPhoto"
+              *ngIf="selectedImages.length > 1"
+            >
+              Clear All
+            </button>
+          </div>
+          
+          <!-- Tabs for different input methods -->
+          <div class="photo-input-tabs" *ngIf="!showCamera">
+            <button 
+              type="button"
+              class="tab-button"
+              [class.active]="photoInputMethod === 'url'"
+              (click)="photoInputMethod = 'url'; showCamera = false"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+              URL
+            </button>
+            <button 
+              type="button"
+              class="tab-button"
+              [class.active]="photoInputMethod === 'upload'"
+              (click)="openFileInput(); photoInputMethod = 'upload'"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              Upload
+            </button>
+            <button 
+              type="button"
+              class="tab-button"
+              [class.active]="photoInputMethod === 'camera'"
+              (click)="openCamera()"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+              Camera
+            </button>
+          </div>
+
+          <!-- URL Input -->
+          <div *ngIf="photoInputMethod === 'url' && !showCamera" class="photo-input-content">
+            <div class="url-input-group">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Enter photo URL (e.g., https://example.com/photo.jpg)"
+                [(ngModel)]="currentPhotoUrl"
+                [ngModelOptions]="{standalone: true}"
+                [disabled]="isUploadingPhoto"
+                (keydown.enter)="addImageUrl(currentPhotoUrl); $event.preventDefault()"
+              />
+              <button 
+                type="button" 
+                class="btn-add-url" 
+                (click)="addImageUrl(currentPhotoUrl)"
+                [disabled]="isUploadingPhoto || !currentPhotoUrl?.trim()"
+              >
+                Add URL
+              </button>
+            </div>
+          </div>
+
+          <!-- File Upload Input (hidden, supports multiple) -->
+          <input
+            id="progress-photo-file-input"
+            type="file"
+            accept="image/*"
+            multiple
+            style="display: none"
+            (change)="onFileSelected($event)"
+            [disabled]="isUploadingPhoto"
+          />
+
+          <!-- Camera Preview -->
+          <div *ngIf="showCamera" id="camera-preview-container" class="camera-preview-container">
+            <video 
+              id="progress-camera-preview" 
+              autoplay 
+              playsinline 
+              muted
+              style="display: block; visibility: visible; opacity: 1;"
+            ></video>
+            <div class="camera-controls">
+              <button type="button" class="btn btn-secondary btn-sm" (click)="stopCamera()">
+                Cancel
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" (click)="capturePhoto()" [disabled]="isSubmitting">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                Capture
+              </button>
+            </div>
+          </div>
+
+          <!-- Upload Progress -->
+          <div *ngIf="isUploadingPhoto" class="upload-progress">
+            <div class="spinner-small"></div>
+            <span>Uploading photos...</span>
+          </div>
+
+          <!-- Errors -->
+          <p class="form-text text-danger" *ngIf="photoUploadError">{{ photoUploadError }}</p>
         </div>
 
         <!-- Work Description -->
@@ -105,24 +251,6 @@
             rows="3"
             placeholder="Describe any issues or challenges..."
           ></textarea>
-        </div>
-
-
-        <!-- Photo Upload -->
-        <div class="form-group">
-          <label for="photoUpload">Progress Photos</label>
-          <input 
-            type="file" 
-            id="photoUpload"
-            (change)="onFileSelected($event)"
-            accept="image/*"
-            multiple
-            class="form-control"
-          />
-          <small class="form-text">Upload photos of completed work (optional)</small>
-          <div *ngIf="selectedFiles.length > 0" class="selected-files">
-            <p>{{ selectedFiles.length }} file(s) selected</p>
-          </div>
         </div>
 
         <!-- Action Buttons -->

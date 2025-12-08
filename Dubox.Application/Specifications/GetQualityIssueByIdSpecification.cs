@@ -10,7 +10,7 @@ namespace Dubox.Application.Specifications
             AddCriteria(i => i.IssueId == issueId);
             AddInclude(nameof(QualityIssue.Box));
             AddInclude(nameof(QualityIssue.WIRCheckpoint));
-
+            AddInclude(nameof(QualityIssue.Images));
         }
     }
 }

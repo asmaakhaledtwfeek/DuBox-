@@ -1,11 +1,13 @@
 import { Injectable } from '@angular/core';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, map } from 'rxjs';
 import { ApiService } from './api.service';
 import { 
   ProgressUpdate, 
   CreateProgressUpdateRequest, 
   ProgressUpdateResponse,
-  BoxActivityDetail 
+  BoxActivityDetail,
+  PaginatedProgressUpdatesResponse,
+  ProgressUpdatesSearchParams
 } from '../models/progress-update.model';
 
 @Injectable({
@@ -18,8 +20,69 @@ export class ProgressUpdateService {
 
   /**
    * Create a new progress update for an activity
+   * Supports multiple files and URLs
    */
-  createProgressUpdate(request: CreateProgressUpdateRequest): Observable<ProgressUpdateResponse> {
+  createProgressUpdate(
+    request: CreateProgressUpdateRequest, 
+    files?: File[], 
+    imageUrls?: string[]
+  ): Observable<ProgressUpdateResponse> {
+    const hasFiles = files && files.length > 0;
+    const hasUrls = imageUrls && imageUrls.length > 0;
+    
+    // If files or URLs are provided, send as multipart/form-data
+    if (hasFiles || hasUrls) {
+      const formData = new FormData();
+      formData.append('BoxId', request.boxId);
+      formData.append('BoxActivityId', request.boxActivityId);
+      formData.append('ProgressPercentage', request.progressPercentage.toString());
+      
+      if (request.workDescription) {
+        formData.append('WorkDescription', request.workDescription);
+      }
+      if (request.issuesEncountered) {
+        formData.append('IssuesEncountered', request.issuesEncountered);
+      }
+      if (request.latitude !== undefined) {
+        formData.append('Latitude', request.latitude.toString());
+      }
+      if (request.longitude !== undefined) {
+        formData.append('Longitude', request.longitude.toString());
+      }
+      if (request.locationDescription) {
+        formData.append('LocationDescription', request.locationDescription);
+      }
+      
+      // Append multiple files - ASP.NET Core expects Files parameter name
+      if (hasFiles) {
+        files.forEach((file) => {
+          formData.append('Files', file);
+        });
+      }
+      
+      // Append multiple image URLs - ASP.NET Core expects ImageUrls parameter name
+      if (hasUrls) {
+        imageUrls.forEach((url) => {
+          formData.append('ImageUrls', url);
+        });
+      }
+      
+      formData.append('UpdateMethod', request.updateMethod);
+      if (request.deviceInfo) {
+        formData.append('DeviceInfo', request.deviceInfo);
+      }
+
+      return this.apiService.post<ProgressUpdateResponse>(this.endpoint, formData).pipe(
+        tap(response => {
+          console.log('✅ Progress update created:', response);
+          if (response.wirCreated) {
+            console.log('🎯 WIR automatically created:', response.wirCode);
+          }
+        })
+      );
+    }
+
+    // Otherwise, send as JSON (no images)
     return this.apiService.post<ProgressUpdateResponse>(this.endpoint, request).pipe(
       tap(response => {
         console.log('✅ Progress update created:', response);
@@ -38,10 +101,54 @@ export class ProgressUpdateService {
   }
 
   /**
-   * Get all progress updates for a box
+   * Get all progress updates for a box with pagination and search
    */
-  getProgressUpdatesByBox(boxId: string): Observable<ProgressUpdate[]> {
-    return this.apiService.get<ProgressUpdate[]>(`${this.endpoint}/box/${boxId}`);
+  getProgressUpdatesByBox(
+    boxId: string, 
+    pageNumber: number = 1, 
+    pageSize: number = 10,
+    searchParams?: ProgressUpdatesSearchParams
+  ): Observable<PaginatedProgressUpdatesResponse> {
+    const params = new URLSearchParams();
+    params.set('pageNumber', pageNumber.toString());
+    params.set('pageSize', pageSize.toString());
+    
+    if (searchParams) {
+      if (searchParams.searchTerm) {
+        params.set('searchTerm', searchParams.searchTerm);
+      }
+      if (searchParams.activityName) {
+        params.set('activityName', searchParams.activityName);
+      }
+      if (searchParams.status) {
+        params.set('status', searchParams.status);
+      }
+      if (searchParams.fromDate) {
+        params.set('fromDate', searchParams.fromDate);
+      }
+      if (searchParams.toDate) {
+        params.set('toDate', searchParams.toDate);
+      }
+    }
+    
+    return this.apiService.get<any>(`${this.endpoint}/box/${boxId}?${params.toString()}`).pipe(
+      map((response: any) => {
+        const data = response.data || response.Data || response;
+        const items = data.items || data.Items || [];
+        const totalCount = data.totalCount ?? data.TotalCount ?? 0;
+        const responsePageNumber = data.pageNumber ?? data.PageNumber ?? pageNumber;
+        const responsePageSize = data.pageSize ?? data.PageSize ?? pageSize;
+        const totalPages = data.totalPages ?? data.TotalPages ?? 0;
+        
+        return {
+          items: items,
+          totalCount,
+          pageNumber: responsePageNumber,
+          pageSize: responsePageSize,
+          totalPages
+        };
+      })
+    );
   }
 
   /**

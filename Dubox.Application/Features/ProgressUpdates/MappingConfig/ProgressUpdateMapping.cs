@@ -1,4 +1,4 @@
-﻿using Dubox.Application.Features.ProgressUpdates.Commands;
+﻿using Dubox.Application.DTOs;
 using Dubox.Domain.Entities;
 using Mapster;
 
@@ -8,12 +8,9 @@ namespace Dubox.Application.Features.ProgressUpdates.MappingConfig
     {
         public void Register(TypeAdapterConfig config)
         {
-            config.NewConfig<CreateProgressUpdateCommand, ProgressUpdate>()
-                .Map(dest => dest.PhotoUrls,
-                     src => src.PhotoUrls != null ? string.Join(",", src.PhotoUrls) : null)
-                .Ignore(dest => dest.UpdatedBy)
-                .Ignore(dest => dest.UpdateDate)
-                .Ignore(dest => dest.CreatedDate);
+            // Map Photo field from entity to PhotoUrls in DTO
+            TypeAdapterConfig<ProgressUpdate, ProgressUpdateDto>.NewConfig()
+                .Map(dest => dest.Photo, src => src.Photo);
         }
     }
 }

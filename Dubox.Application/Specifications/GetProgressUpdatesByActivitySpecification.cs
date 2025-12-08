@@ -12,6 +12,7 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(ProgressUpdate.BoxActivity));
             AddInclude($"{nameof(ProgressUpdate.BoxActivity)}.{nameof(ProgressUpdate.BoxActivity.ActivityMaster)}");
             AddInclude(nameof(ProgressUpdate.UpdatedByUser));
+            AddInclude(nameof(ProgressUpdate.Images));
             AddOrderByDescending(pu => pu.UpdateDate);
         }
     }

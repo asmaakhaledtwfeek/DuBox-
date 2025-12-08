@@ -11,14 +11,29 @@ public record ProgressUpdateDto
     public Guid UpdatedBy { get; init; }
     public string UpdatedByName { get; init; } = string.Empty;
     public decimal ProgressPercentage { get; init; }
+    public decimal BoxProgressSnapshot { get; init; }
     public string Status { get; init; } = string.Empty;
     public string? WorkDescription { get; init; }
     public string? IssuesEncountered { get; init; }
     public double? Latitude { get; init; }
     public double? Longitude { get; init; }
     public string? LocationDescription { get; init; }
-    public string? PhotoUrls { get; init; }
+    [Obsolete("Use Images list instead. Kept for backward compatibility.")]
+    public string? Photo { get; init; }
+    public List<ProgressUpdateImageDto> Images { get; init; } = new();
     public string UpdateMethod { get; init; } = string.Empty;
+}
+
+public record ProgressUpdateImageDto
+{
+    public Guid ProgressUpdateImageId { get; init; }
+    public Guid ProgressUpdateId { get; init; }
+    public string ImageData { get; init; } = string.Empty;
+    public string ImageType { get; init; } = string.Empty;
+    public string? OriginalName { get; init; }
+    public long? FileSize { get; init; }
+    public int Sequence { get; init; }
+    public DateTime CreatedDate { get; init; }
 }
 
 public record CreateProgressUpdateDto
@@ -48,5 +63,14 @@ public record ScanQRUpdateDto
     public double? Latitude { get; init; }
     public double? Longitude { get; init; }
     public List<string>? PhotoUrls { get; init; }
+}
+
+public class PaginatedProgressUpdatesResponseDto
+{
+    public List<ProgressUpdateDto> Items { get; set; } = new List<ProgressUpdateDto>();
+    public int TotalCount { get; set; }
+    public int PageNumber { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages { get; set; }
 }
 

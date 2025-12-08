@@ -23,6 +23,7 @@ public class ProgressUpdate
     public User UpdatedByUser { get; set; } = null!;
 
     public decimal ProgressPercentage { get; set; } // Progress at time of update
+    public decimal BoxProgressSnapshot { get; set; } = 0;
 
     [Required]
     [MaxLength(50)]
@@ -41,9 +42,11 @@ public class ProgressUpdate
     [MaxLength(200)]
     public string? LocationDescription { get; set; }
 
-    // Photos (JSON array of URLs or comma-separated)
-    [MaxLength(2000)]
-    public string? PhotoUrls { get; set; }
+    [Obsolete("Use Images navigation property instead. This field is kept for backward compatibility.")]
+    public string? Photo { get; set; }
+
+    // Navigation property for images
+    public List<ProgressUpdateImage> Images { get; set; } = new();
 
     // Update method
     [MaxLength(50)]

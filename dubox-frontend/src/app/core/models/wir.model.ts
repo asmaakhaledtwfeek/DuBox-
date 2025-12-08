@@ -93,6 +93,18 @@ export interface WIRCheckpoint {
   createdDate: Date;
   checklistItems?: WIRCheckpointChecklistItem[];
   qualityIssues?: QualityIssueItem[];
+  images?: WIRCheckpointImage[];
+}
+
+export interface WIRCheckpointImage {
+  wirCheckpointImageId: string;
+  wirId: string;
+  imageData: string;
+  imageType: string;
+  originalName?: string;
+  fileSize?: number;
+  sequence: number;
+  createdDate: Date;
 }
 
 export interface WIRCheckpointFilter {
@@ -112,6 +124,16 @@ export interface WIRCheckpointChecklistItem {
   status: CheckListItemStatus;
   remarks?: string;
   sequence: number;
+  predefinedItemId?: string; // Reference to the predefined item this was cloned from
+}
+
+export interface PredefinedChecklistItem {
+  predefinedItemId: string;
+  checkpointDescription: string;
+  referenceDocument?: string;
+  sequence: number;
+  category?: string;
+  isActive: boolean;
 }
 
 export enum WIRCheckpointStatus {
@@ -139,20 +161,25 @@ export interface CreateWIRCheckpointRequest {
 
 export interface AddChecklistItemsRequest {
   wirId: string;
-  items: ChecklistItemForCreate[];
+  predefinedItemIds: string[]; // Array of predefined item IDs to add
 }
 
-export interface ChecklistItemForCreate {
-  checkpointDescription: string;
+export interface UpdateChecklistItemRequest {
+  checklistItemId: string;
+  checkpointDescription?: string;
   referenceDocument?: string;
-  sequence: number;
+  status?: CheckListItemStatus;
+  remarks?: string;
+  sequence?: number;
 }
 
 export interface ReviewWIRCheckpointRequest {
-  wirId: string;
+  wIRId: string;
   status: WIRCheckpointStatus;
   comment?: string;
   inspectorRole?: string;
+  files?: File[];
+  imageUrls?: string[];
   items: ChecklistItemForReview[];
 }
 
@@ -177,6 +204,18 @@ export interface QualityIssueItem {
   reportedBy?: string;
   issueDate?: string | Date;
   status?: QualityIssueStatus | string;
+  imageDataUrls?: string[];
+}
+
+export interface QualityIssueImage {
+  qualityIssueImageId: string;
+  issueId: string;
+  imageData: string;
+  imageType: 'file' | 'url';
+  originalName?: string;
+  fileSize?: number;
+  sequence: number;
+  createdDate: Date;
 }
 
 export interface QualityIssueDetails extends QualityIssueItem {
@@ -195,18 +234,25 @@ export interface QualityIssueDetails extends QualityIssueItem {
   inspectorName?: string;
   isOverdue?: boolean;
   overdueDays?: number;
+  images?: QualityIssueImage[];
 }
 
-export interface AddQualityIssuesRequest {
+export interface AddQualityIssueRequest {
   wirId: string;
-  issues: QualityIssueItem[];
+  issueType: IssueType;
+  severity: SeverityType;
+  issueDescription: string;
+  assignedTo?: string;
+  dueDate?: string | Date;
+  imageUrls?: string[];
+  files?: File[];
 }
 
 export interface UpdateQualityIssueStatusRequest {
   issueId: string;
   status: QualityIssueStatus;
   resolutionDescription?: string | null;
-  photoPath?: string | null;
+  photoPath?: string | null; // Deprecated - kept for backward compatibility
 }
 
 // Predefined Checklist Templates for each WIR Code

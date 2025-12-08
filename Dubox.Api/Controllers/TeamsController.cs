@@ -21,9 +21,26 @@ public class TeamsController : ControllerBase
 
 
     [HttpGet]
-    public async Task<IActionResult> GetAllTeams(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAllTeams(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 25,
+        [FromQuery] string? search = null,
+        [FromQuery] string? department = null,
+        [FromQuery] string? trade = null,
+        [FromQuery] bool? isActive = null,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetAllTeamsQuery(), cancellationToken);
+        var query = new GetAllTeamsQuery
+        {
+            Page = page,
+            PageSize = pageSize,
+            Search = search,
+            Department = department,
+            Trade = trade,
+            IsActive = isActive
+        };
+        
+        var result = await _mediator.Send(query, cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 

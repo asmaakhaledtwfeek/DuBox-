@@ -10,6 +10,7 @@ namespace Dubox.Application.Specifications
         {
             AddInclude(nameof(QualityIssue.Box));
             AddInclude(nameof(QualityIssue.WIRCheckpoint));
+            AddInclude(nameof(QualityIssue.Images));
 
             if (!string.IsNullOrWhiteSpace(query.SearchTerm))
             {

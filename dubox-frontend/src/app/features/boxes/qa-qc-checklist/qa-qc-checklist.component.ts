@@ -1,28 +1,36 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, FormControl } from '@angular/forms';
+import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, FormsModule, FormControl } from '@angular/forms';
 import { WIRService } from '../../../core/services/wir.service';
 import { BoxService } from '../../../core/services/box.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { ApiService } from '../../../core/services/api.service';
+import { Observable, forkJoin } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { 
   WIRRecord, 
   CheckpointStatus, 
   WIRCheckpoint,
   CreateWIRCheckpointRequest,
   AddChecklistItemsRequest,
+  UpdateChecklistItemRequest,
+  PredefinedChecklistItem,
   ReviewWIRCheckpointRequest,
   WIRCheckpointStatus,
   CheckListItemStatus,
-  AddQualityIssuesRequest,
+  AddQualityIssueRequest,
   IssueType,
   SeverityType,
   QualityIssueItem,
   QualityIssueDetails,
-  WIRCheckpointChecklistItem
+  QualityIssueImage,
+  WIRCheckpointChecklistItem,
+  QualityIssueStatus
 } from '../../../core/models/wir.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
+import * as ExcelJS from 'exceljs';
 
 type ReviewStep = 'create-checkpoint' | 'add-items' | 'review' | 'quality-issues';
 
@@ -35,16 +43,18 @@ type QualityIssueFormValue = {
   photoPath?: string;
   reportedBy?: string;
   issueDate?: string;
+  imageDataUrls?: string[];
+  files?: File[]; // Store File objects separately
 };
 
 @Component({
   selector: 'app-qa-qc-checklist',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, HeaderComponent, SidebarComponent],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, FormsModule, HeaderComponent, SidebarComponent],
   templateUrl: './qa-qc-checklist.component.html',
   styleUrls: ['./qa-qc-checklist.component.scss']
 })
-export class QaQcChecklistComponent implements OnInit {
+export class QaQcChecklistComponent implements OnInit, OnDestroy {
   wirRecord: WIRRecord | null = null;
   wirCheckpoint: WIRCheckpoint | null = null;
   projectId!: string;
@@ -64,7 +74,54 @@ export class QaQcChecklistComponent implements OnInit {
   isChecklistModalOpen = false;
   isDeleteModalOpen = false;
   isQualityIssueModalOpen = false;
+  isQualityIssueDetailsModalOpen = false;
+  selectedQualityIssueDetails: {
+    issue?: QualityIssueItem;
+    formIssue?: any;
+    images?: string[];
+  } | null = null;
+  
+  // Lightbox state
+  lightboxOpen = false;
+  lightboxImages: string[] = [];
+  lightboxImageIndex = 0;
+  
+  // Quality issue status metadata
+  qualityIssueStatusMeta: Record<QualityIssueStatus, { label: string; class: string }> = {
+    Open: { label: 'OPEN', class: 'status-open' },
+    InProgress: { label: 'IN PROGRESS', class: 'status-inprogress' },
+    Resolved: { label: 'RESOLVED', class: 'status-resolved' },
+    Closed: { label: 'CLOSED', class: 'status-closed' }
+  };
+  
+  // Quality Issue Images
+  qualityIssueImages: Array<{
+    id: string;
+    type: 'file' | 'url' | 'camera';
+    file?: File;
+    url?: string;
+    preview: string;
+    name?: string;
+    size?: number;
+  }> = [];
+  showQualityIssueCamera = false;
+  qualityIssuePhotoInputMethod: 'url' | 'upload' | 'camera' = 'upload';
+  qualityIssueCurrentUrlInput = '';
+  qualityIssueVideoRef?: HTMLVideoElement;
+  qualityIssueCameraStream: MediaStream | null = null;
+  isAddPredefinedItemsModalOpen = false;
+  isItemReviewModalOpen = false;
   pendingDeleteIndex: number | null = null;
+  pendingDeleteChecklistItemId: string | null = null;
+  selectedReviewItemIndex: number | null = null;
+  itemReviewForm!: FormGroup;
+  savingItemReview = false;
+  
+  // Predefined checklist items
+  predefinedChecklistItems: PredefinedChecklistItem[] = [];
+  availablePredefinedItems: PredefinedChecklistItem[] = []; // Items not yet added to checkpoint
+  loadingPredefinedItems = false;
+  selectedPredefinedItemIds: string[] = [];
   
   loading = true;
   error = '';
@@ -79,12 +136,34 @@ export class QaQcChecklistComponent implements OnInit {
   boxIssuesLoading = false;
   boxIssuesError = '';
   
+  // Photo upload state (enhanced - multiple images support)
+  selectedImages: Array<{
+    id: string;
+    type: 'file' | 'url' | 'camera';
+    file?: File;
+    url?: string;
+    preview: string;
+    name?: string;
+    size?: number;
+  }> = [];
+  currentUrlInput: string = '';
+  isUploadingPhoto = false;
+  photoUploadError = '';
+  cameraStream: MediaStream | null = null;
+  showCamera = false;
+  photoInputMethod: 'url' | 'upload' | 'camera' = 'upload';
+  
+  // Legacy properties for backward compatibility (deprecated)
+  photoUrl: string = '';
+  selectedFile: File | null = null;
+  photoPreview: string | null = null;
+  
   CheckpointStatus = CheckpointStatus;
   WIRCheckpointStatus = WIRCheckpointStatus;
   CheckListItemStatus = CheckListItemStatus;
   
   // Step tracking
-  currentStep: ReviewStep | null = 'create-checkpoint';
+  currentStep: ReviewStep | null = null;
   pendingAction: ReviewStep | null = null;
   private initialStepFromQuery: ReviewStep | null = null;
   initialStepApplied = false;
@@ -110,7 +189,8 @@ export class QaQcChecklistComponent implements OnInit {
     private fb: FormBuilder,
     private wirService: WIRService,
     private boxService: BoxService,
-    private authService: AuthService
+    private authService: AuthService,
+    private apiService: ApiService
   ) {}
 
   ngOnInit(): void {
@@ -141,6 +221,122 @@ export class QaQcChecklistComponent implements OnInit {
     this.initForm();
     this.loadWIRRecord();
     this.loadBoxQualityIssues();
+    this.loadPredefinedChecklistItems();
+  }
+
+  private loadPredefinedChecklistItems(): void {
+    this.loadingPredefinedItems = true;
+    this.wirService.getPredefinedChecklistItems().subscribe({
+      next: (items) => {
+        this.predefinedChecklistItems = items;
+        this.updateAvailablePredefinedItems();
+        this.loadingPredefinedItems = false;
+      },
+      error: (err) => {
+        console.error('Error loading predefined checklist items:', err);
+        this.loadingPredefinedItems = false;
+      }
+    });
+  }
+
+  private updateAvailablePredefinedItems(): void {
+    if (!this.wirCheckpoint || !this.predefinedChecklistItems.length) {
+      this.availablePredefinedItems = [...this.predefinedChecklistItems];
+      return;
+    }
+
+    // Get IDs of items already added to this checkpoint
+    const addedPredefinedIds = new Set(
+      (this.wirCheckpoint.checklistItems || [])
+        .map(item => item.predefinedItemId)
+        .filter(id => id != null) as string[]
+    );
+
+    // Filter out items that are already added
+    this.availablePredefinedItems = this.predefinedChecklistItems.filter(
+      item => !addedPredefinedIds.has(item.predefinedItemId)
+    );
+  }
+
+  getGroupedPredefinedItems(): { category: string; items: PredefinedChecklistItem[] }[] {
+    const grouped = new Map<string, PredefinedChecklistItem[]>();
+    
+    // Group items by category
+    this.availablePredefinedItems.forEach(item => {
+      const category = item.category || 'Other';
+      if (!grouped.has(category)) {
+        grouped.set(category, []);
+      }
+      grouped.get(category)!.push(item);
+    });
+
+    // Convert to array and sort by predefined category order
+    const categoryOrder = ['General', 'Setting Out', 'Installation Activity'];
+    const result: { category: string; items: PredefinedChecklistItem[] }[] = [];
+    
+    // Add categories in order
+    categoryOrder.forEach(cat => {
+      if (grouped.has(cat)) {
+        result.push({
+          category: cat,
+          items: grouped.get(cat)!.sort((a, b) => a.sequence - b.sequence)
+        });
+      }
+    });
+
+    // Add any remaining categories
+    grouped.forEach((items, category) => {
+      if (!categoryOrder.includes(category)) {
+        result.push({
+          category,
+          items: items.sort((a, b) => a.sequence - b.sequence)
+        });
+      }
+    });
+
+    return result;
+  }
+
+  selectAllItems(): void {
+    this.selectedPredefinedItemIds = this.availablePredefinedItems.map(item => item.predefinedItemId);
+  }
+
+  deselectAllItems(): void {
+    this.selectedPredefinedItemIds = [];
+  }
+
+  selectAllInGroup(category: string): void {
+    const group = this.getGroupedPredefinedItems().find(g => g.category === category);
+    if (!group) return;
+
+    const groupItemIds = group.items.map(item => item.predefinedItemId);
+    groupItemIds.forEach(itemId => {
+      if (!this.selectedPredefinedItemIds.includes(itemId)) {
+        this.selectedPredefinedItemIds.push(itemId);
+      }
+    });
+  }
+
+  deselectAllInGroup(category: string): void {
+    const group = this.getGroupedPredefinedItems().find(g => g.category === category);
+    if (!group) return;
+
+    const groupItemIds = group.items.map(item => item.predefinedItemId);
+    this.selectedPredefinedItemIds = this.selectedPredefinedItemIds.filter(
+      id => !groupItemIds.includes(id)
+    );
+  }
+
+  areAllItemsSelected(): boolean {
+    return this.availablePredefinedItems.length > 0 && 
+           this.selectedPredefinedItemIds.length === this.availablePredefinedItems.length;
+  }
+
+  areAllInGroupSelected(category: string): boolean {
+    const group = this.getGroupedPredefinedItems().find(g => g.category === category);
+    if (!group || group.items.length === 0) return false;
+
+    return group.items.every(item => this.selectedPredefinedItemIds.includes(item.predefinedItemId));
   }
 
   private initForm(): void {
@@ -181,6 +377,24 @@ export class QaQcChecklistComponent implements OnInit {
     this.newChecklistForm = this.fb.group({
       checkpointDescription: ['', [Validators.required, Validators.maxLength(500)]],
       referenceDocument: ['', [Validators.maxLength(250)]]
+    });
+
+    // Item review form
+    this.itemReviewForm = this.fb.group({
+      status: [CheckpointStatus.Pending, Validators.required],
+      referenceDocument: ['', [Validators.maxLength(250)]],
+      remarks: ['', [Validators.maxLength(1000)]]
+    });
+
+    // Add conditional validation for remarks when status is Fail
+    this.itemReviewForm.get('status')?.valueChanges.subscribe(status => {
+      const remarksControl = this.itemReviewForm.get('remarks');
+      if (status === CheckpointStatus.Fail) {
+        remarksControl?.setValidators([Validators.required, Validators.maxLength(1000)]);
+      } else {
+        remarksControl?.setValidators([Validators.maxLength(1000)]);
+      }
+      remarksControl?.updateValueAndValidity();
     });
   }
 
@@ -318,12 +532,38 @@ export class QaQcChecklistComponent implements OnInit {
       return;
     }
     
-    // Validate query parameter step before applying
-    if (this.initialStepFromQuery === 'create-checkpoint') {
-      // Only allow if explicitly requested and checkpoint doesn't exist (shouldn't happen, but handle gracefully)
-      // If checkpoint exists, redirect to next accessible step
+    // If there's a step query parameter, apply it first
+    if (this.initialStepFromQuery) {
+      // Validate query parameter step before applying
+      if (this.initialStepFromQuery === 'create-checkpoint') {
+        // Checkpoint exists, so redirect to next accessible step instead of create-checkpoint
+        const nextStep = this.getNextAccessibleStep();
+        if (nextStep && nextStep !== 'create-checkpoint') {
+          this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: { step: nextStep },
+            queryParamsHandling: 'merge'
+          });
+          this.handleStepClick(nextStep);
+        } else {
+          this.currentStep = null;
+          this.pendingAction = nextStep || 'add-items';
+        }
+        this.initialStepApplied = true;
+      } else {
+        // Apply initial step from query (will validate accessibility)
+        // If navigating to add-items, ensure form is built with existing items
+        if (this.initialStepFromQuery === 'add-items' && this.wirCheckpoint.checklistItems && this.wirCheckpoint.checklistItems.length > 0) {
+          console.log('Pre-populating checklist form with', this.wirCheckpoint.checklistItems.length, 'items');
+          this.buildAddChecklistItemsForm(this.wirCheckpoint.checklistItems);
+        }
+        this.applyInitialStepFromQuery();
+      }
+    } else {
+      // No step query parameter, determine the next accessible step
       const nextStep = this.getNextAccessibleStep();
       if (nextStep && nextStep !== 'create-checkpoint') {
+        // Auto-navigate to the next accessible step
         this.router.navigate([], {
           relativeTo: this.route,
           queryParams: { step: nextStep },
@@ -331,37 +571,12 @@ export class QaQcChecklistComponent implements OnInit {
         });
         this.handleStepClick(nextStep);
       } else {
-        // This shouldn't happen if checkpoint exists, but handle gracefully
         this.currentStep = null;
         this.pendingAction = nextStep || 'add-items';
       }
-      this.initialStepApplied = true;
-    } else {
-      // Apply initial step from query (will validate accessibility)
-      // If navigating to add-items, ensure form is built with existing items
-      if (this.initialStepFromQuery === 'add-items' && this.wirCheckpoint.checklistItems && this.wirCheckpoint.checklistItems.length > 0) {
-        console.log('Pre-populating checklist form with', this.wirCheckpoint.checklistItems.length, 'items');
-        this.buildAddChecklistItemsForm(this.wirCheckpoint.checklistItems);
-      }
-      this.applyInitialStepFromQuery();
-      // If no step was set, determine the next accessible step
-      if (!this.currentStep && !this.pendingAction) {
-        const nextStep = this.getNextAccessibleStep();
-        if (nextStep) {
-          // If checkpoint exists, navigate to the next accessible step instead of showing overview
-          if (nextStep !== 'create-checkpoint') {
-            this.router.navigate([], {
-              relativeTo: this.route,
-              queryParams: { step: nextStep },
-              queryParamsHandling: 'merge'
-            });
-            this.handleStepClick(nextStep);
-          } else {
-            this.pendingAction = nextStep;
-          }
-        }
-      }
     }
+    
+    this.updateAvailablePredefinedItems();
     this.loading = false;
   }
 
@@ -439,6 +654,7 @@ export class QaQcChecklistComponent implements OnInit {
         .forEach((item, index) => {
           console.log(`Adding checklist item ${index + 1}:`, item);
           itemsArray.push(this.createChecklistItemGroup({
+            checklistItemId: item.checklistItemId,
             checkpointDescription: item.checkpointDescription,
             referenceDocument: item.referenceDocument,
             sequence: item.sequence
@@ -453,8 +669,8 @@ export class QaQcChecklistComponent implements OnInit {
   }
 
   onAddChecklistItems(): void {
-    if (!this.wirCheckpoint || this.addChecklistItemsArray.length === 0) {
-      this.error = 'Add at least one checklist item before submitting.';
+    if (!this.wirCheckpoint || this.selectedPredefinedItemIds.length === 0) {
+      this.error = 'Please select at least one predefined checklist item to add.';
       return;
     }
 
@@ -468,15 +684,13 @@ export class QaQcChecklistComponent implements OnInit {
 
     const request: AddChecklistItemsRequest = {
       wirId: this.wirCheckpoint.wirId,
-      items: this.addChecklistItemsArray.value.map((item: any) => ({
-        checkpointDescription: item.checkpointDescription.trim(),
-        referenceDocument: item.referenceDocument?.trim() || undefined,
-        sequence: item.sequence
-      }))
+      predefinedItemIds: this.selectedPredefinedItemIds
     };
 
     this.wirService.addChecklistItems(request).subscribe({
       next: () => {
+        this.selectedPredefinedItemIds = [];
+        this.closeAddPredefinedItemsModal();
         this.refreshCheckpointDetails(true);
       },
       error: (err) => {
@@ -490,24 +704,63 @@ export class QaQcChecklistComponent implements OnInit {
     });
   }
 
+  openAddPredefinedItemsModal(): void {
+    this.updateAvailablePredefinedItems();
+    this.selectedPredefinedItemIds = [];
+    this.isAddPredefinedItemsModalOpen = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeAddPredefinedItemsModal(): void {
+    this.isAddPredefinedItemsModalOpen = false;
+    this.selectedPredefinedItemIds = [];
+    document.body.style.overflow = '';
+  }
+
+  togglePredefinedItemSelection(itemId: string): void {
+    const index = this.selectedPredefinedItemIds.indexOf(itemId);
+    if (index > -1) {
+      this.selectedPredefinedItemIds.splice(index, 1);
+    } else {
+      this.selectedPredefinedItemIds.push(itemId);
+    }
+  }
+
+  isPredefinedItemSelected(itemId: string): boolean {
+    return this.selectedPredefinedItemIds.includes(itemId);
+  }
+
   private loadChecklistItems(): void {
-    if (!this.wirCheckpoint) return;
+    if (!this.wirCheckpoint) {
+      console.warn('loadChecklistItems: wirCheckpoint is null');
+      return;
+    }
 
     // Clear existing items
     this.checklistItems.clear();
     
+    console.log('loadChecklistItems: checkpoint items', this.wirCheckpoint.checklistItems);
+    
     if (this.wirCheckpoint.checklistItems && this.wirCheckpoint.checklistItems.length > 0) {
+      // Sort items by sequence before loading
+      const sortedItems = [...this.wirCheckpoint.checklistItems].sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
+      
       // Load existing checklist items from checkpoint
-      this.wirCheckpoint.checklistItems.forEach(item => {
-        this.checklistItems.push(this.fb.group({
+      sortedItems.forEach(item => {
+        const itemGroup = this.fb.group({
           checklistItemId: [item.checklistItemId, Validators.required],
           sequence: [item.sequence],
-          checkpointDescription: [item.checkpointDescription],
-          referenceDocument: [item.referenceDocument],
+          checkpointDescription: [item.checkpointDescription || ''],
+          referenceDocument: [item.referenceDocument || ''],
           status: [this.mapCheckListItemStatus(item.status), Validators.required],
           remarks: [item.remarks || '']
-        }));
+        });
+        this.checklistItems.push(itemGroup);
       });
+      
+      console.log('loadChecklistItems: loaded', this.checklistItems.length, 'items');
+    } else {
+      console.warn('loadChecklistItems: No checklist items found in checkpoint');
     }
   }
 
@@ -556,8 +809,9 @@ export class QaQcChecklistComponent implements OnInit {
     this.resetQualityIssuesForm();
   }
 
-  private createChecklistItemGroup(item?: Partial<{ checkpointDescription: string; referenceDocument?: string; sequence?: number }>): FormGroup {
+  private createChecklistItemGroup(item?: Partial<{ checklistItemId?: string; checkpointDescription: string; referenceDocument?: string; sequence?: number }>): FormGroup {
     return this.fb.group({
+      checklistItemId: [item?.checklistItemId || null],
       checkpointDescription: [item?.checkpointDescription || '', Validators.required],
       referenceDocument: [item?.referenceDocument || ''],
       sequence: [item?.sequence || 1, [Validators.required, Validators.min(1)]]
@@ -589,6 +843,64 @@ export class QaQcChecklistComponent implements OnInit {
     this.closeChecklistModal();
   }
 
+  updateChecklistItem(index: number): void {
+    if (!this.wirCheckpoint) return;
+    
+    const itemControl = this.checklistItems.at(index);
+    if (!itemControl || itemControl.invalid) {
+      this.markFormGroupTouched(itemControl as FormGroup);
+      return;
+    }
+
+    const itemValue = itemControl.value;
+    const checklistItemId = itemValue.checklistItemId;
+    
+    if (!checklistItemId) {
+      this.error = 'Checklist item ID is missing';
+      return;
+    }
+
+    const request: UpdateChecklistItemRequest = {
+      checklistItemId: checklistItemId,
+      checkpointDescription: itemValue.checkpointDescription?.trim(),
+      referenceDocument: itemValue.referenceDocument?.trim() || undefined,
+      status: this.mapToCheckListItemStatus(itemValue.status),
+      remarks: itemValue.remarks?.trim() || undefined,
+      sequence: itemValue.sequence
+    };
+
+    this.wirService.updateChecklistItem(request).subscribe({
+      next: () => {
+        this.refreshCheckpointDetails(true);
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { message: 'Checklist item updated successfully', type: 'success' }
+        }));
+      },
+      error: (err) => {
+        this.error = err.error?.message || err.message || 'Failed to update checklist item';
+        console.error('Error updating checklist item:', err);
+      }
+    });
+  }
+
+  deleteChecklistItem(checklistItemId: string, stayOnCurrentStep = false): void {
+    if (!checklistItemId) return;
+
+    this.wirService.deleteChecklistItem(checklistItemId).subscribe({
+      next: () => {
+        // Refresh checkpoint but stay on current step if requested
+        this.refreshCheckpointDetails(false, stayOnCurrentStep);
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { message: 'Checklist item deleted successfully', type: 'success' }
+        }));
+      },
+      error: (err) => {
+        this.error = err.error?.message || err.message || 'Failed to delete checklist item';
+        console.error('Error deleting checklist item:', err);
+      }
+    });
+  }
+
   removeChecklistItemRow(index: number): void {
     this.addChecklistItemsArray.removeAt(index);
     this.updateAddChecklistSequences();
@@ -599,7 +911,10 @@ export class QaQcChecklistComponent implements OnInit {
       this.notifyChecklistLocked();
       return;
     }
+    const itemControl = this.addChecklistItemsArray.at(index);
+    const checklistItemId = itemControl?.value?.checklistItemId || null;
     this.pendingDeleteIndex = index;
+    this.pendingDeleteChecklistItemId = checklistItemId;
     this.isDeleteModalOpen = true;
   }
 
@@ -611,17 +926,33 @@ export class QaQcChecklistComponent implements OnInit {
 
   cancelDeleteChecklistItem(): void {
     this.pendingDeleteIndex = null;
+    this.pendingDeleteChecklistItemId = null;
     this.isDeleteModalOpen = false;
   }
 
   confirmDeleteChecklistItem(): void {
     if (this.pendingDeleteIndex !== null) {
-      this.removeChecklistItemRow(this.pendingDeleteIndex);
+      const checklistItemId = this.pendingDeleteChecklistItemId;
+      if (checklistItemId) {
+        // Item exists in backend, delete via API
+        // Pass stayOnCurrentStep=true to keep user on add-items step
+        this.deleteChecklistItem(checklistItemId, true);
+      } else {
+        // New item not yet saved, just remove from form
+        this.removeChecklistItemRow(this.pendingDeleteIndex);
+        const currentCheckpoint = this.wirCheckpoint;
+        if (currentCheckpoint && currentCheckpoint.checklistItems) {
+          this.wirCheckpoint = {
+            ...currentCheckpoint,
+            checklistItems: currentCheckpoint.checklistItems.filter((_, idx) => idx !== this.pendingDeleteIndex)
+          };
+        }
+      }
     }
     this.cancelDeleteChecklistItem();
   }
 
-  private refreshCheckpointDetails(resetToOverview = false): void {
+  private refreshCheckpointDetails(resetToOverview = false, stayOnCurrentStep = false): void {
     if (!this.wirCheckpoint?.wirId) {
       return;
     }
@@ -630,11 +961,25 @@ export class QaQcChecklistComponent implements OnInit {
       next: (checkpoint) => {
         this.wirCheckpoint = checkpoint;
         this.syncReviewFormFromCheckpoint();
-        this.applyInitialStepFromQuery();
         this.buildAddChecklistItemsForm(checkpoint.checklistItems || []);
-        if (resetToOverview) {
+        
+        // Reload quality issues into the form array to reflect any changes
+        this.resetQualityIssuesForm();
+        
+        // If we're on the review step, reload checklist items
+        if (this.currentStep === 'review') {
+          this.loadChecklistItems();
+        }
+        
+        if (stayOnCurrentStep) {
+          // Stay on current step (e.g., add-items) after refresh
+          // Don't change currentStep or pendingAction
+        } else if (resetToOverview) {
           this.pendingAction = 'review';
           this.currentStep = null;
+          this.applyInitialStepFromQuery();
+        } else {
+          this.applyInitialStepFromQuery();
         }
       },
       error: (err) => {
@@ -662,9 +1007,13 @@ export class QaQcChecklistComponent implements OnInit {
       severity: this.severityLevels[0],
       issueType: this.issueTypes[0],
       assignedTo: '',
-      dueDate: '',
-      photoPath: ''
+      dueDate: ''
     });
+    this.qualityIssueImages = [];
+    this.qualityIssueCurrentUrlInput = '';
+    this.showQualityIssueCamera = false;
+    this.qualityIssuePhotoInputMethod = 'upload';
+    this.stopQualityIssueCamera();
     this.isQualityIssueModalOpen = true;
   }
 
@@ -672,55 +1021,200 @@ export class QaQcChecklistComponent implements OnInit {
     this.isQualityIssueModalOpen = false;
   }
 
+  openItemReviewModal(itemIndex: number): void {
+    if (this.isChecklistLocked || itemIndex < 0 || itemIndex >= this.checklistItems.length) {
+      return;
+    }
+    this.selectedReviewItemIndex = itemIndex;
+    const item = this.checklistItems.at(itemIndex);
+    const itemValue = item?.value;
+    
+    // Load current values into the review form
+    this.itemReviewForm.patchValue({
+      status: itemValue?.status || CheckpointStatus.Pending,
+      referenceDocument: itemValue?.referenceDocument || '',
+      remarks: itemValue?.remarks || ''
+    });
+    
+    this.isItemReviewModalOpen = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeItemReviewModal(): void {
+    this.isItemReviewModalOpen = false;
+    this.selectedReviewItemIndex = null;
+    this.itemReviewForm.reset();
+    this.error = '';
+    document.body.style.overflow = '';
+  }
+
+  isItemReviewFormInvalid(): boolean {
+    // Check if status is set and is not Pending
+    const status = this.itemReviewForm.get('status')?.value;
+    
+    // Status must be Pass or Fail (not Pending or empty)
+    if (!status || status === CheckpointStatus.Pending) {
+      return true;
+    }
+
+    // If status is Fail, remarks is required
+    if (status === CheckpointStatus.Fail) {
+      const remarks = this.itemReviewForm.get('remarks')?.value?.trim();
+      if (!remarks) {
+        return true;
+      }
+    }
+
+    // Check other form validations
+    if (this.itemReviewForm.invalid) {
+      return true;
+    }
+
+    return false;
+  }
+
+  saveItemReview(): void {
+    if (this.itemReviewForm.invalid || this.selectedReviewItemIndex === null) {
+      this.itemReviewForm.markAllAsTouched();
+      return;
+    }
+
+    const formValue = this.itemReviewForm.value;
+    const itemControl = this.checklistItems.at(this.selectedReviewItemIndex);
+    
+    if (!itemControl) {
+      this.error = 'Checklist item not found';
+      return;
+    }
+
+    const itemValue = itemControl.value;
+    const checklistItemId = itemValue.checklistItemId;
+    
+    if (!checklistItemId) {
+      this.error = 'Checklist item ID is missing';
+      return;
+    }
+
+    // Validate remarks if status is Fail
+    if (formValue.status === CheckpointStatus.Fail && !formValue.remarks?.trim()) {
+      this.error = 'Remarks are required when status is Fail';
+      this.itemReviewForm.get('remarks')?.markAsTouched();
+      return;
+    }
+
+    this.savingItemReview = true;
+    this.error = '';
+
+    const request: UpdateChecklistItemRequest = {
+      checklistItemId: checklistItemId,
+      checkpointDescription: itemValue.checkpointDescription?.trim(),
+      referenceDocument: formValue.referenceDocument?.trim() || undefined,
+      status: this.mapToCheckListItemStatus(formValue.status),
+      remarks: formValue.remarks?.trim() || undefined,
+      sequence: itemValue.sequence
+    };
+
+    this.wirService.updateChecklistItem(request).subscribe({
+      next: () => {
+        this.savingItemReview = false;
+        this.closeItemReviewModal();
+        // Refresh the checkpoint data to update the UI
+        this.refreshCheckpointDetails(false, true);
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { message: 'Review saved successfully', type: 'success' }
+        }));
+      },
+      error: (err) => {
+        this.savingItemReview = false;
+        this.error = err.error?.message || err.message || 'Failed to save review';
+        console.error('Error saving review:', err);
+      }
+    });
+  }
+
+  savingQualityIssue: boolean = false; // Loading state for single issue submission
+
   addQualityIssueFromModal(): void {
     if (this.newQualityIssueForm.invalid) {
       this.newQualityIssueForm.markAllAsTouched();
       return;
     }
 
+    if (!this.wirCheckpoint) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: 'WIR checkpoint not found.', type: 'error' }
+      }));
+      return;
+    }
+
     const value = this.newQualityIssueForm.value;
-    this.addQualityIssueRow({
-      issueDescription: value.issueDescription,
-      severity: value.severity,
-      issueType: value.issueType,
-      assignedTo: value.assignedTo,
-      dueDate: value.dueDate,
-      photoPath: value.photoPath,
-      reportedBy: 'Current User',
-      issueDate: this.toDateInputValue(new Date())
+    
+    // Separate files from URLs
+    const files: File[] = [];
+    const imageUrls: string[] = [];
+    
+    this.qualityIssueImages.forEach(img => {
+      if (img.type === 'url' && img.url) {
+        // URL type - add to imageUrls
+        imageUrls.push(img.url.trim());
+      } else if ((img.type === 'file' || img.type === 'camera') && img.file) {
+        // File/Camera type - add to files array
+        files.push(img.file);
+      } else if (img.preview && img.preview.startsWith('data:image/')) {
+        // Base64 data URL from camera/file - add to imageUrls
+        imageUrls.push(img.preview);
+      }
     });
-    this.closeQualityIssueModal();
-  }
+    
+    // Build request for single issue
+    const request: AddQualityIssueRequest = {
+      wirId: this.wirCheckpoint.wirId,
+      issueType: value.issueType,
+      severity: value.severity,
+      issueDescription: value.issueDescription?.trim() || '',
+      assignedTo: value.assignedTo?.trim() || undefined,
+      dueDate: value.dueDate || undefined,
+      imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+      files: files.length > 0 ? files : undefined
+    };
 
-  submitQualityIssues(): void {
-    if (!this.wirCheckpoint || this.qualityIssuesArray.length === 0) {
-      return;
-    }
+    this.savingQualityIssue = true;
 
-    if (this.qualityIssuesForm.invalid) {
-      this.markFormGroupTouched(this.qualityIssuesForm);
-      return;
-    }
-
-    const request = this.buildQualityIssuesRequest(this.wirCheckpoint.wirId);
-    this.savingQualityIssues = true;
-
-    this.wirService.addQualityIssues(request).subscribe({
+    this.wirService.addQualityIssue(request).subscribe({
       next: (updatedCheckpoint) => {
         this.wirCheckpoint = updatedCheckpoint;
-        this.refreshCheckpointDetails();
+        
+        // Reload quality issues into the form array to show the newly added issue
         this.resetQualityIssuesForm();
+        
+        // Refresh checkpoint details to ensure all data is up to date
+        this.refreshCheckpointDetails();
+        
+        // Clear the form and close modal
+        this.newQualityIssueForm.reset();
+        this.qualityIssueImages = [];
+        this.qualityIssueCurrentUrlInput = '';
+        this.stopQualityIssueCamera();
+        this.closeQualityIssueModal();
+        
         document.dispatchEvent(new CustomEvent('app-toast', {
-          detail: { message: 'Quality issues saved successfully.', type: 'success' }
+          detail: { message: 'Quality issue added successfully.', type: 'success' }
         }));
-        this.savingQualityIssues = false;
+        
+        this.savingQualityIssue = false;
       },
       error: (err) => {
-        console.error('Failed to add quality issues:', err);
-        this.savingQualityIssues = false;
+        console.error('Failed to add quality issue:', err);
+        this.savingQualityIssue = false;
+        
+        const errorMessage = err.error?.message || err.message || 'Failed to add quality issue. Please try again.';
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { message: errorMessage, type: 'error' }
+        }));
       }
     });
   }
+
 
   closeWorkflowStep(): void {
     this.currentStep = null;
@@ -806,6 +1300,7 @@ export class QaQcChecklistComponent implements OnInit {
 
   private resetQualityIssuesForm(): void {
     this.qualityIssuesArray.clear();
+    this.qualityIssueFilesMap.clear();
     const existing = this.existingQualityIssues;
     if (existing.length) {
       existing.forEach(issue => {
@@ -823,8 +1318,11 @@ export class QaQcChecklistComponent implements OnInit {
     this.addQualityIssueRow();
   }
 
+  // Store files separately for each issue (indexed by form array index)
+  private qualityIssueFilesMap: Map<number, File[]> = new Map();
+
   private addQualityIssueRow(issue?: Partial<QualityIssueFormValue>): void {
-    this.qualityIssuesArray.push(this.fb.group({
+    const formGroup = this.fb.group({
       issueType: [issue?.issueType || this.issueTypes[0], Validators.required],
       severity: [issue?.severity || this.severityLevels[0], Validators.required],
       issueDescription: [issue?.issueDescription || '', [Validators.required, Validators.maxLength(500)]],
@@ -832,11 +1330,248 @@ export class QaQcChecklistComponent implements OnInit {
       dueDate: [issue?.dueDate || ''],
       photoPath: [issue?.photoPath || '', [Validators.maxLength(500)]],
       reportedBy: [issue?.reportedBy || null],
-      issueDate: [issue?.issueDate || null]
-    }));
+      issueDate: [issue?.issueDate || null],
+      imageDataUrls: [issue?.imageDataUrls || []]
+    });
+    
+    const index = this.qualityIssuesArray.length;
+    this.qualityIssuesArray.push(formGroup);
+    
+    // Store files for this issue if they exist
+    if (issue?.files && issue.files.length > 0) {
+      this.qualityIssueFilesMap.set(index, issue.files);
+    }
+  }
+
+  viewQualityIssueDetails(index: number): void {
+    const issue = this.getExistingQualityIssue(index);
+    const formIssue = this.qualityIssuesArray.at(index);
+    
+    if (!issue && !formIssue) {
+      return;
+    }
+
+    // Debug logging
+    console.log('[QA/QC] Viewing quality issue details:', issue);
+    console.log('[QA/QC] Issue images property:', (issue as any)?.images);
+
+    // Get images from the issue
+    let images: string[] = [];
+    
+    // Get images from existing issue (if it has images property - QualityIssueDetails or QualityIssueItem with images)
+    if (issue) {
+      const issueDetails = issue as QualityIssueDetails & { images?: QualityIssueImage[] };
+      
+      // First, check for images array (QualityIssueImage[])
+      if (issueDetails.images && Array.isArray(issueDetails.images) && issueDetails.images.length > 0) {
+        console.log('[QA/QC] Found images array with', issueDetails.images.length, 'images');
+        images = issueDetails.images
+          .sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
+          .map((img: QualityIssueImage) => {
+            const imageData = img.imageData || '';
+            // If it's already a data URL, return as is
+            if (imageData.startsWith('data:image/')) {
+              return imageData;
+            }
+            // If it's a URL, return as is
+            if (imageData.startsWith('http://') || imageData.startsWith('https://')) {
+              return imageData;
+            }
+            // Otherwise, assume it's base64 and add data URI prefix
+            return `data:image/jpeg;base64,${imageData}`;
+          })
+          .filter((url: string) => url && url.trim().length > 0);
+      }
+      
+      // Also check imageDataUrls if available (for backward compatibility)
+      if (issue.imageDataUrls && Array.isArray(issue.imageDataUrls) && issue.imageDataUrls.length > 0) {
+        const urlImages = issue.imageDataUrls
+          .filter((url: string) => url && url.trim().length > 0)
+          .map((url: string) => {
+            // If it's already a data URL, return as is
+            if (url.startsWith('data:image/')) {
+              return url;
+            }
+            // If it's a URL, return as is
+            if (url.startsWith('http://') || url.startsWith('https://')) {
+              return url;
+            }
+            // Otherwise, assume it's base64 and add data URI prefix
+            return `data:image/jpeg;base64,${url}`;
+          });
+        images = [...images, ...urlImages];
+      }
+      
+      // Also check photoPath (legacy field)
+      if (issue.photoPath && issue.photoPath.trim().length > 0) {
+        const photoPath = issue.photoPath.trim();
+        if (photoPath.startsWith('data:image/') || photoPath.startsWith('http://') || photoPath.startsWith('https://')) {
+          images.push(photoPath);
+        } else {
+          images.push(`data:image/jpeg;base64,${photoPath}`);
+        }
+      }
+    }
+    
+    // Also check imageDataUrls from form (for issues being edited)
+    if (formIssue) {
+      const formImageUrls = formIssue.get('imageDataUrls')?.value || [];
+      if (Array.isArray(formImageUrls) && formImageUrls.length > 0) {
+        const formUrls = formImageUrls
+          .filter((url: string) => url && url.trim().length > 0)
+          .map((url: string) => {
+            // If it's already a data URL, return as is
+            if (url.startsWith('data:image/')) {
+              return url;
+            }
+            // If it's a URL, return as is
+            if (url.startsWith('http://') || url.startsWith('https://')) {
+              return url;
+            }
+            // Otherwise, assume it's base64 and add data URI prefix
+            return `data:image/jpeg;base64,${url}`;
+          });
+        images = [...images, ...formUrls];
+      }
+    }
+
+    // Remove duplicates
+    images = [...new Set(images)];
+
+    console.log('[QA/QC] Total images extracted:', images.length);
+    console.log('[QA/QC] Image URLs:', images);
+
+    // Store selected issue details
+    this.selectedQualityIssueDetails = {
+      issue: issue,
+      formIssue: formIssue,
+      images: images.length > 0 ? images : undefined
+    };
+
+    // Open the modal
+    this.isQualityIssueDetailsModalOpen = true;
+  }
+
+  closeQualityIssueDetailsModal(): void {
+    this.isQualityIssueDetailsModalOpen = false;
+    this.selectedQualityIssueDetails = null;
+  }
+
+  openImageInNewTab(imageUrl: string): void {
+    window.open(imageUrl, '_blank');
+  }
+  
+  getQualityIssueStatusLabel(status?: QualityIssueStatus | string): string {
+    const normalized = (status || 'Open') as QualityIssueStatus;
+    return this.qualityIssueStatusMeta[normalized]?.label || 'OPEN';
+  }
+
+  getQualityIssueStatusClass(status?: QualityIssueStatus | string): string {
+    const normalized = (status || 'Open') as QualityIssueStatus;
+    return this.qualityIssueStatusMeta[normalized]?.class || 'status-open';
+  }
+  
+  formatIssueDate(date?: string | Date): string {
+    if (!date) return '—';
+    const d = date instanceof Date ? date : new Date(date);
+    if (isNaN(d.getTime())) return '—';
+    return d.toISOString().split('T')[0];
+  }
+  
+  getQualityIssueImageUrls(): string[] {
+    if (!this.selectedQualityIssueDetails) return [];
+    
+    const images = this.selectedQualityIssueDetails.images || [];
+    
+    // Process image URLs - handle base64 data URLs and regular URLs
+    return images
+      .map((img: string) => {
+        // If it's already a data URL, return as is
+        if (img.startsWith('data:image/')) {
+          return img;
+        }
+        // If it's a URL, return as is
+        if (img.startsWith('http://') || img.startsWith('https://')) {
+          return img;
+        }
+        // Otherwise, assume it's base64 and add data URI prefix
+        return `data:image/jpeg;base64,${img}`;
+      })
+      .filter((url: string) => url && url.trim().length > 0);
+  }
+  
+  openLightbox(imageUrl: string, allImages: string[]): void {
+    this.lightboxImages = allImages;
+    this.lightboxImageIndex = allImages.indexOf(imageUrl);
+    if (this.lightboxImageIndex === -1) this.lightboxImageIndex = 0;
+    this.lightboxOpen = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeLightbox(): void {
+    this.lightboxOpen = false;
+    document.body.style.overflow = '';
+  }
+  
+  getCurrentLightboxImage(): string {
+    if (this.lightboxImages.length === 0) return '';
+    return this.lightboxImages[this.lightboxImageIndex] || this.lightboxImages[0];
+  }
+  
+  previousImage(): void {
+    if (this.lightboxImages.length === 0) return;
+    this.lightboxImageIndex = (this.lightboxImageIndex - 1 + this.lightboxImages.length) % this.lightboxImages.length;
+  }
+  
+  nextImage(): void {
+    if (this.lightboxImages.length === 0) return;
+    this.lightboxImageIndex = (this.lightboxImageIndex + 1) % this.lightboxImages.length;
+  }
+  
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pjwvc3ZnPg==';
+  }
+
+  getQualityIssueDetail(field: string): any {
+    if (!this.selectedQualityIssueDetails) return '—';
+    
+    const { issue, formIssue } = this.selectedQualityIssueDetails;
+    
+    // Try form issue first, then existing issue
+    if (formIssue) {
+      const value = formIssue.get(field)?.value;
+      if (value !== null && value !== undefined && value !== '') {
+        return value;
+      }
+    }
+    
+    if (issue) {
+      const value = (issue as any)[field];
+      if (value !== null && value !== undefined && value !== '') {
+        return value;
+      }
+    }
+    
+    return '—';
   }
 
   removeQualityIssue(index: number): void {
+    if (!confirm('Are you sure you want to delete this quality issue?')) {
+      return;
+    }
+    
+    this.qualityIssueFilesMap.delete(index);
+    // Reindex the map after removal
+    const newMap = new Map<number, File[]>();
+    this.qualityIssueFilesMap.forEach((files, oldIndex) => {
+      if (oldIndex < index) {
+        newMap.set(oldIndex, files);
+      } else if (oldIndex > index) {
+        newMap.set(oldIndex - 1, files);
+      }
+    });
+    this.qualityIssueFilesMap = newMap;
     this.qualityIssuesArray.removeAt(index);
   }
 
@@ -1040,6 +1775,155 @@ export class QaQcChecklistComponent implements OnInit {
     this.initialStepApplied = false;
   }
 
+  async exportQualityIssuesToExcel(): Promise<void> {
+    if (this.boxQualityIssues.length === 0) {
+      alert('No quality issues to export. Please ensure there are quality issues available.');
+      return;
+    }
+
+    // Format dates properly
+    const formatDateForExcel = (date?: string | Date): string => {
+      if (!date) return '—';
+      const d = date instanceof Date ? date : new Date(date);
+      if (isNaN(d.getTime())) return '—';
+      return d.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    };
+
+    // Create a new workbook and worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Quality Issues');
+
+    // Define column headers
+    const headers = [
+      'No.',
+      'WIR Number',
+      'Box Tag',
+      'Box Name',
+      'Status',
+      'Issue Type',
+      'Severity',
+      'Issue Description',
+      'Assigned To',
+      'Reported By',
+      'Issue Date',
+      'Due Date',
+      'Resolution Description',
+      'Resolution Date',
+      'Photo Path'
+    ];
+
+    // Set column widths
+    worksheet.columns = [
+      { width: 5 },   // No.
+      { width: 15 },  // WIR Number
+      { width: 15 },  // Box Tag
+      { width: 20 },  // Box Name
+      { width: 12 },  // Status
+      { width: 15 },  // Issue Type
+      { width: 10 },  // Severity
+      { width: 40 },  // Issue Description
+      { width: 15 },  // Assigned To
+      { width: 15 },  // Reported By
+      { width: 12 },  // Issue Date
+      { width: 12 },  // Due Date
+      { width: 40 },  // Resolution Description
+      { width: 12 },  // Resolution Date
+      { width: 30 }   // Photo Path
+    ];
+
+    // Add header row with styling
+    const headerRow = worksheet.addRow(headers);
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4472C4' } // Blue background
+      };
+      cell.font = {
+        bold: true,
+        color: { argb: 'FFFFFFFF' }, // White text
+        size: 11
+      };
+      cell.alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+        wrapText: true
+      };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF000000' } },
+        bottom: { style: 'thin', color: { argb: 'FF000000' } },
+        left: { style: 'thin', color: { argb: 'FF000000' } },
+        right: { style: 'thin', color: { argb: 'FF000000' } }
+      };
+    });
+    headerRow.height = 25; // Set header row height
+
+    // Add data rows
+    this.boxQualityIssues.forEach((issue, index) => {
+      const row = worksheet.addRow([
+        index + 1,
+        issue.wirNumber || issue.wirName || '—',
+        issue.boxTag || '—',
+        issue.boxName || '—',
+        issue.status || 'Open',
+        issue.issueType || '—',
+        issue.severity || '—',
+        issue.issueDescription || '—',
+        issue.assignedTo || '—',
+        issue.reportedBy || '—',
+        formatDateForExcel(issue.issueDate),
+        formatDateForExcel(issue.dueDate),
+        issue.resolutionDescription || '—',
+        formatDateForExcel(issue.resolutionDate),
+        issue.photoPath || '—'
+      ]);
+
+      // Style data rows
+      row.eachCell((cell, colNumber) => {
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          left: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          right: { style: 'thin', color: { argb: 'FFE0E0E0' } }
+        };
+        cell.alignment = {
+          vertical: 'middle',
+          wrapText: true
+        };
+        // Alternate row colors
+        if (index % 2 === 0) {
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFF9F9F9' }
+          };
+        }
+      });
+    });
+
+    // Freeze header row
+    worksheet.views = [{ state: 'frozen', ySplit: 1 }];
+
+    // Generate filename with current date
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0];
+    const fileName = `Quality_Issues_${dateStr}.xlsx`;
+
+    // Generate Excel file and download
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  }
+
   get isRejectedSelected(): boolean {
     return this.finalStatusControl.value === WIRCheckpointStatus.Rejected;
   }
@@ -1050,6 +1934,42 @@ export class QaQcChecklistComponent implements OnInit {
 
   private applyRejectionValidation(): void {
     // No-op since backend does not track rejection reason
+  }
+
+  getStatusLabel(status: CheckpointStatus | string | undefined): string {
+    if (!status) return 'Pending';
+    const statusStr = typeof status === 'string' ? status : String(status);
+    switch (statusStr) {
+      case CheckpointStatus.Pass:
+      case 'Pass':
+        return 'Pass';
+      case CheckpointStatus.Fail:
+      case 'Fail':
+        return 'Fail';
+      case CheckpointStatus.Pending:
+      case 'Pending':
+        return 'Pending';
+      default:
+        return 'Pending';
+    }
+  }
+
+  getStatusBadgeClass(status: CheckpointStatus | string | undefined): string {
+    if (!status) return 'status-badge-pending';
+    const statusStr = typeof status === 'string' ? status : String(status);
+    switch (statusStr) {
+      case CheckpointStatus.Pass:
+      case 'Pass':
+        return 'status-badge-pass';
+      case CheckpointStatus.Fail:
+      case 'Fail':
+        return 'status-badge-fail';
+      case CheckpointStatus.Pending:
+      case 'Pending':
+        return 'status-badge-pending';
+      default:
+        return 'status-badge-pending';
+    }
   }
 
   get addChecklistItemsArray(): FormArray {
@@ -1078,26 +1998,443 @@ export class QaQcChecklistComponent implements OnInit {
     item.get('remarks')?.updateValueAndValidity();
   }
 
-  // Photo Upload Methods
+  // Photo Upload Methods (Enhanced - Multiple Images Support)
   onPhotosSelected(event: Event): void {
-    const files = (event.target as HTMLInputElement).files;
-    if (files) {
-      Array.from(files).forEach(file => {
-        this.uploadedPhotos.push(file);
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      const files = Array.from(input.files);
+      const imageFiles: File[] = [];
+      const invalidFiles: string[] = [];
+      const maxSizeBytes = 5 * 1024 * 1024; // 5MB in bytes
+      
+      // Process all selected files
+      files.forEach(file => {
+        // Check if file is an image
+        if (!file.type.startsWith('image/')) {
+          invalidFiles.push(`${file.name} (not an image)`);
+          return;
+        }
         
-        // Create preview
-        const reader = new FileReader();
-        reader.onload = (e: any) => {
-          this.photoPreviewUrls.push(e.target.result);
-        };
-        reader.readAsDataURL(file);
+        // Check file size (5MB limit)
+        if (file.size > maxSizeBytes) {
+          invalidFiles.push(`${file.name} (exceeds 5MB limit)`);
+          return;
+        }
+        
+        // File is valid - add to processing list
+        imageFiles.push(file);
       });
+      
+      // Add all valid image files to the preview list
+      imageFiles.forEach(file => {
+        this.addImageFromFile(file);
+      });
+      
+      // Show error message if any files were invalid
+      if (invalidFiles.length > 0) {
+        const errorMsg = invalidFiles.length === 1 
+          ? `${invalidFiles[0]} was skipped.`
+          : `${invalidFiles.length} file(s) were skipped: ${invalidFiles.slice(0, 3).join(', ')}${invalidFiles.length > 3 ? '...' : ''}`;
+        this.photoUploadError = errorMsg;
+      } else {
+        this.photoUploadError = '';
+      }
+      
+      // Reset input to allow selecting the same file again
+      input.value = '';
+      this.photoInputMethod = 'upload';
+      this.showCamera = false;
+      this.stopCamera();
+    }
+  }
+  
+  addImageFromFile(file: File): void {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const preview = e.target?.result as string;
+      // Generate unique ID with timestamp, random number, and file name hash
+      const uniqueId = `file-${Date.now()}-${Math.random().toString(36).substring(2, 9)}-${file.name.substring(0, 5)}`;
+      this.selectedImages.push({
+        id: uniqueId,
+        type: 'file',
+        file: file,
+        preview: preview,
+        name: file.name,
+        size: file.size
+      });
+      this.photoUploadError = '';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  openFileInput(): void {
+    this.showCamera = false;
+    const fileInput = document.getElementById('wir-photo-file-input') as HTMLInputElement;
+    if (fileInput) {
+      // Ensure multiple attribute is set to allow multi-select
+      if (!fileInput.hasAttribute('multiple')) {
+        fileInput.setAttribute('multiple', '');
+      }
+      // Clear previous selection to allow re-selecting the same files
+      fileInput.value = '';
+      // Trigger file picker
+      fileInput.click();
     }
   }
 
+  addImageFromUrl(): void {
+    const url = this.currentUrlInput?.trim();
+    if (url && url.trim()) {
+      // Validate URL format
+      try {
+        new URL(url);
+        this.selectedImages.push({
+          id: `url-${Date.now()}-${Math.random()}`,
+          type: 'url',
+          url: url.trim(),
+          preview: url.trim() // Use URL as preview
+        });
+        this.currentUrlInput = '';
+        this.photoInputMethod = 'url';
+        this.photoUploadError = '';
+      } catch {
+        this.photoUploadError = 'Please enter a valid URL';
+      }
+    }
+  }
+  
+  removeImage(imageId: string): void {
+    this.selectedImages = this.selectedImages.filter(img => img.id !== imageId);
+  }
+  
+  clearAllImages(): void {
+    this.selectedImages = [];
+    this.currentUrlInput = '';
+    this.photoUploadError = '';
+  }
+  
+  // Legacy methods for backward compatibility (deprecated)
+  previewImage(file: File): void {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.photoPreview = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  removeSelectedFile(): void {
+    this.selectedFile = null;
+    this.photoPreview = null;
+    this.uploadedPhotos = [];
+    this.photoPreviewUrls = [];
+  }
+
+  uploadPhoto(file: File): Observable<string> {
+    // Use WIRService to upload to the correct endpoint
+    // Note: This method uploads a single file, but we'll batch uploads in onSubmitReview
+    if (!this.wirRecord?.wirRecordId) {
+      return new Observable(observer => {
+        observer.error(new Error('WIR Record ID is not available'));
+        observer.complete();
+      });
+    }
+    
+    // Use the WIRService method which handles the correct endpoint
+    return this.wirService.uploadInspectionPhotos(this.wirRecord.wirRecordId, [file]).pipe(
+      map((urls: string[]) => {
+        // Return the first URL (since we uploaded one file)
+        return urls && urls.length > 0 ? urls[0] : '';
+      })
+    );
+  }
+
+  // Camera methods
+  async openCamera(): Promise<void> {
+    try {
+      // Stop any existing camera stream first
+      this.stopCamera();
+      
+      // Set showCamera to true first so video element is rendered
+      this.showCamera = true;
+      this.photoInputMethod = 'camera';
+      this.photoUploadError = '';
+      
+      // Get user media stream
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } // Use back camera on mobile
+      });
+      
+      this.cameraStream = stream;
+      
+      // Wait for video element to be rendered, then initialize
+      setTimeout(() => {
+        const video = document.getElementById('wir-camera-preview') as HTMLVideoElement;
+        if (video) {
+          video.srcObject = stream;
+          video.play().catch(err => {
+            console.error('Error playing video:', err);
+            this.photoUploadError = 'Unable to start camera preview.';
+            this.stopCamera();
+          });
+        } else {
+          // If video element not found, stop camera
+          this.stopCamera();
+        }
+      }, 100);
+    } catch (err) {
+      console.error('Error accessing camera:', err);
+      this.photoUploadError = 'Unable to access camera. Please check permissions.';
+      this.showCamera = false;
+    }
+  }
+
+  stopCamera(): void {
+    // Stop all tracks in the stream
+    if (this.cameraStream) {
+      this.cameraStream.getTracks().forEach(track => track.stop());
+      this.cameraStream = null;
+    }
+    
+    // Clear video element's srcObject
+    const video = document.getElementById('wir-camera-preview') as HTMLVideoElement;
+    if (video) {
+      const stream = video.srcObject as MediaStream;
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      video.srcObject = null;
+      video.pause();
+    }
+    
+    // Close camera UI
+    this.showCamera = false;
+  }
+
+  capturePhoto(): void {
+    const video = document.getElementById('wir-camera-preview') as HTMLVideoElement;
+    if (!video || !video.srcObject) return;
+
+    // Get the stream before stopping
+    const stream = video.srcObject as MediaStream;
+    
+    // Create canvas and capture image
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    // Draw the current video frame to canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    // Convert to base64 image data
+    const imageData = canvas.toDataURL('image/jpeg', 0.9);
+    
+    // Stop camera stream immediately BEFORE adding image to prevent black screen
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+    
+    // Clear video element
+    video.srcObject = null;
+    video.pause();
+    
+    // Close camera UI immediately
+    this.showCamera = false;
+    this.cameraStream = null;
+    
+    // Add captured image (this happens after UI is closed, so no black screen)
+    this.addImageFromDataUrl(imageData);
+  }
+  
+  addImageFromDataUrl(imageData: string): void {
+    // Convert data URL to File for consistency with existing structure
+    fetch(imageData)
+      .then(res => res.blob())
+      .then(blob => {
+        const file = new File([blob], `wir-inspection-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        this.selectedImages.push({
+          id: `camera-${Date.now()}-${Math.random()}`,
+          type: 'camera',
+          file: file,
+          preview: imageData,
+          name: file.name,
+          size: file.size
+        });
+        this.photoUploadError = '';
+      })
+      .catch(err => {
+        console.error('Error converting data URL to file:', err);
+        this.photoUploadError = 'Failed to process captured image.';
+      });
+  }
+
   removePhoto(index: number): void {
+    // Legacy method for backward compatibility
     this.uploadedPhotos.splice(index, 1);
     this.photoPreviewUrls.splice(index, 1);
+    if (index === 0 && this.uploadedPhotos.length === 0) {
+      this.selectedFile = null;
+      this.photoPreview = null;
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.stopCamera();
+    this.stopQualityIssueCamera();
+  }
+
+  // Quality Issue Image Methods
+  onQualityIssuePhotosSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    Array.from(input.files).forEach(file => {
+      this.addQualityIssueImageFromFile(file);
+    });
+
+    // Clear the input so the same file can be selected again
+    input.value = '';
+  }
+
+  addQualityIssueImageFromFile(file: File): void {
+    if (!file.type.startsWith('image/')) {
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const preview = e.target?.result as string;
+      if (preview) {
+        this.qualityIssueImages.push({
+          id: `file-${Date.now()}-${Math.random()}`,
+          type: 'file',
+          file: file,
+          preview: preview,
+          name: file.name,
+          size: file.size
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  }
+
+  openQualityIssueFileInput(): void {
+    const fileInput = document.getElementById('quality-issue-photo-file-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+      fileInput.click();
+    }
+  }
+
+  addQualityIssueImageFromUrl(): void {
+    const url = this.qualityIssueCurrentUrlInput.trim();
+    if (!url) return;
+
+    if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('data:image/')) {
+      return;
+    }
+
+    this.qualityIssueImages.push({
+      id: `url-${Date.now()}-${Math.random()}`,
+      type: 'url',
+      url: url.trim(),
+      preview: url.trim()
+    });
+
+    this.qualityIssueCurrentUrlInput = '';
+  }
+
+  removeQualityIssueImage(imageId: string): void {
+    this.qualityIssueImages = this.qualityIssueImages.filter(img => img.id !== imageId);
+  }
+
+  clearAllQualityIssueImages(): void {
+    this.qualityIssueImages = [];
+    this.qualityIssueCurrentUrlInput = '';
+    this.stopQualityIssueCamera();
+  }
+
+  openQualityIssueCamera(): void {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return;
+    }
+
+    this.showQualityIssueCamera = true;
+    this.qualityIssuePhotoInputMethod = 'camera';
+
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(stream => {
+        this.qualityIssueCameraStream = stream;
+        setTimeout(() => {
+          const video = document.getElementById('quality-issue-video') as HTMLVideoElement;
+          if (video) {
+            video.srcObject = stream;
+            video.play();
+          }
+        }, 100);
+      })
+      .catch(err => {
+        console.error('Error accessing camera:', err);
+        this.showQualityIssueCamera = false;
+      });
+  }
+
+  stopQualityIssueCamera(): void {
+    if (this.qualityIssueCameraStream) {
+      this.qualityIssueCameraStream.getTracks().forEach(track => track.stop());
+      this.qualityIssueCameraStream = null;
+    }
+    const video = document.getElementById('quality-issue-video') as HTMLVideoElement;
+    if (video) {
+      video.srcObject = null;
+      video.pause();
+    }
+    this.showQualityIssueCamera = false;
+  }
+
+  captureQualityIssuePhoto(): void {
+    const video = document.getElementById('quality-issue-video') as HTMLVideoElement;
+    if (!video || !this.qualityIssueCameraStream) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.drawImage(video, 0, 0);
+    const imageData = canvas.toDataURL('image/jpeg', 0.9);
+
+    // Stop camera first
+    this.qualityIssueCameraStream.getTracks().forEach(track => track.stop());
+    this.qualityIssueCameraStream = null;
+    video.srcObject = null;
+    video.pause();
+    this.showQualityIssueCamera = false;
+
+    // Add captured image
+    fetch(imageData)
+      .then(res => res.blob())
+      .then(blob => {
+        const file = new File([blob], `quality-issue-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        this.qualityIssueImages.push({
+          id: `camera-${Date.now()}-${Math.random()}`,
+          type: 'camera',
+          file: file,
+          preview: imageData,
+          name: file.name,
+          size: file.size
+        });
+      })
+      .catch(err => {
+        console.error('Error converting data URL to file:', err);
+      });
   }
 
   // Validation
@@ -1129,6 +2466,7 @@ export class QaQcChecklistComponent implements OnInit {
     const status = this.finalStatusControl.value as WIRCheckpointStatus;
     this.submitting = true;
     this.error = '';
+    this.photoUploadError = '';
 
     let missingChecklistId = false;
     const reviewItems = this.checklistItems.controls.map((control, index) => {
@@ -1150,11 +2488,29 @@ export class QaQcChecklistComponent implements OnInit {
       return;
     }
 
+    // Handle multiple images: send files directly in review request
+    const filesToUpload = this.selectedImages
+      .filter(img => (img.type === 'file' || img.type === 'camera') && img.file)
+      .map(img => img.file!)
+      .filter((file): file is File => file !== undefined);
+    
+    const urlImages = this.selectedImages
+      .filter(img => img.type === 'url' && img.url)
+      .map(img => img.url!.trim())
+      .filter((url): url is string => url !== '');
+
+    // Send files and URLs directly in the review request (no separate upload needed)
+    this.submitReviewWithFiles(filesToUpload, urlImages, status, reviewItems);
+  }
+
+  private submitReviewWithFiles(files: File[], imageUrls: string[], status: WIRCheckpointStatus, reviewItems: any[]): void {
     const request: ReviewWIRCheckpointRequest = {
-      wirId: this.wirCheckpoint.wirId,
+      wIRId: this.wirCheckpoint!.wirId,
       status,
       comment: this.checklistForm.value.inspectionNotes?.trim() || undefined,
       inspectorRole: this.checklistForm.value.inspectorRole?.trim() || undefined,
+      files: files.length > 0 ? files : undefined,
+      imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
       items: reviewItems
     };
 
@@ -1195,19 +2551,6 @@ export class QaQcChecklistComponent implements OnInit {
     console.error('Review error:', err);
   }
 
-  private buildQualityIssuesRequest(wirId: string): AddQualityIssuesRequest {
-    return {
-      wirId,
-      issues: this.qualityIssuesArray.value.map((issue: QualityIssueFormValue) => ({
-        issueType: issue.issueType,
-        severity: issue.severity,
-        issueDescription: issue.issueDescription?.trim() || '',
-        assignedTo: issue.assignedTo?.trim() || undefined,
-        dueDate: issue.dueDate ? new Date(issue.dueDate) : undefined,
-        photoPath: issue.photoPath?.trim() || undefined
-      }))
-    };
-  }
 
   private mapToCheckListItemStatus(status: CheckpointStatus): CheckListItemStatus {
     const statusMap: Record<string, CheckListItemStatus> = {
@@ -1216,6 +2559,65 @@ export class QaQcChecklistComponent implements OnInit {
       'Fail': CheckListItemStatus.Fail
     };
     return statusMap[status] || CheckListItemStatus.Pending;
+  }
+
+  /**
+   * Get image URLs from the current WIR checkpoint
+   */
+  getCheckpointImageUrls(): string[] {
+    if (!this.wirCheckpoint) {
+      console.log('getCheckpointImageUrls - no checkpoint');
+      return [];
+    }
+    
+    if (!this.wirCheckpoint.images) {
+      console.log('getCheckpointImageUrls - no images property');
+      return [];
+    }
+    
+    if (!Array.isArray(this.wirCheckpoint.images)) {
+      console.log('getCheckpointImageUrls - images is not an array:', typeof this.wirCheckpoint.images);
+      return [];
+    }
+    
+    if (this.wirCheckpoint.images.length === 0) {
+      console.log('getCheckpointImageUrls - images array is empty');
+      return [];
+    }
+    
+    console.log('getCheckpointImageUrls - found', this.wirCheckpoint.images.length, 'images');
+    
+    return this.wirCheckpoint.images
+      .sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
+      .map((img) => {
+        const imageData = img.imageData || '';
+        // If it's already a data URL, return as is
+        if (imageData.startsWith('data:image/')) {
+          return imageData;
+        }
+        // If it's a URL, return as is
+        if (imageData.startsWith('http://') || imageData.startsWith('https://')) {
+          return imageData;
+        }
+        // Otherwise, assume it's base64 and add data URI prefix
+        return `data:image/jpeg;base64,${imageData}`;
+      })
+      .filter((url: string) => url && url.trim().length > 0);
+  }
+
+  /**
+   * Open image in new tab
+   */
+  openCheckpointImageInNewTab(imageUrl: string): void {
+    window.open(imageUrl, '_blank', 'noopener,noreferrer');
+  }
+
+  /**
+   * Handle image load error
+   */
+  onCheckpointImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.style.display = 'none';
   }
 
   private markFormGroupTouched(formGroup: FormGroup): void {

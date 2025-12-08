@@ -89,6 +89,46 @@ export class ApiService {
   }
 
   /**
+   * POST request with FormData (for file uploads)
+   * FormData will automatically set Content-Type with boundary
+   * Important: Do NOT manually set Content-Type - let Angular/browser set it with boundary
+   */
+  postFormData<T>(endpoint: string, formData: FormData): Observable<T> {
+    return this.http.post<any>(`${this.baseUrl}/${endpoint}`, formData)
+      .pipe(
+        map(response => {
+          console.log('🌐 POST FormData API Response for', endpoint, ':', response);
+          const data = response.data || response.Data || response.value || response.Value || response;
+          console.log('✅ Extracted data:', data);
+          return data;
+        }),
+        catchError(this.handleError)
+      );
+  }
+
+  /**
+   * PUT request with FormData (for file uploads)
+   * FormData will automatically set Content-Type with boundary
+   * Important: Do NOT manually set Content-Type - let Angular/browser set it with boundary
+   */
+  putFormData<T>(endpoint: string, formData: FormData): Observable<T> {
+    // Angular's HttpClient automatically sets Content-Type for FormData with boundary
+    // We must NOT set it manually, otherwise the boundary won't be included
+    return this.http.put<any>(`${this.baseUrl}/${endpoint}`, formData)
+      .pipe(
+        map(response => {
+          console.log('🌐 PUT FormData API Response for', endpoint, ':', response);
+          
+          // Backend returns Result<T> with 'data' property (camelCase configured in Program.cs)
+          const data = response.data || response.Data || response.value || response.Value || response;
+          console.log('✅ Extracted data:', data);
+          return data;
+        }),
+        catchError(this.handleError)
+      );
+  }
+
+  /**
    * PATCH request
    */
   patch<T>(endpoint: string, body: any): Observable<T> {

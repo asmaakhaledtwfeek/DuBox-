@@ -10,6 +10,7 @@ export interface Project {
   plannedStartDate?: Date;
   plannedEndDate?: Date;
   actualStartDate?: Date;
+  compressionStartDate?: Date;
   duration?: number;
   status: ProjectStatus;
   totalBoxes: number;

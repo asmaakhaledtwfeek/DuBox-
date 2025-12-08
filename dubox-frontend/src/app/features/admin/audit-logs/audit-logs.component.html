@@ -120,74 +120,207 @@
         <p>No audit logs match your current filters. Try adjusting your search criteria.</p>
       </div>
 
-      <!-- Log Entries -->
-      <div
-        class="log-entry"
-        *ngFor="let log of filteredLogs"
-        role="button"
-        tabindex="0"
-        (click)="openLogDetails(log)"
-        (keydown.enter)="openLogDetails(log); $event.preventDefault()"
-        (keydown.space)="openLogDetails(log); $event.preventDefault()"
-      >
-        <div class="log-header">
-          <div class="log-icon">
-            <span class="action-icon">{{ DiffUtil.getActionIcon(log.action) }}</span>
+      <!-- Log Entries Timeline -->
+      <div class="logs-timeline" *ngIf="filteredLogs.length > 0">
+        <div
+          class="log-entry"
+          *ngFor="let log of filteredLogs; let last = last"
+          [class.last-entry]="last"
+          role="button"
+          tabindex="0"
+          (click)="openLogDetails(log)"
+          (keydown.enter)="openLogDetails(log); $event.preventDefault()"
+          (keydown.space)="openLogDetails(log); $event.preventDefault()"
+        >
+          <!-- Timeline Connector -->
+          <div class="timeline-connector" *ngIf="!last"></div>
+
+          <!-- Timeline Dot -->
+          <div class="timeline-dot" [class]="'dot-' + getActionType(log.action)">
+            <svg *ngIf="getActionType(log.action) === 'create'" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            <svg *ngIf="getActionType(log.action) === 'update'" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <svg *ngIf="getActionType(log.action) === 'delete'" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            <svg *ngIf="getActionType(log.action) === 'assignment'" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="8.5" cy="7" r="4"/>
+              <line x1="20" y1="8" x2="20" y2="14"/>
+              <line x1="23" y1="11" x2="17" y2="11"/>
+            </svg>
+            <svg *ngIf="getActionType(log.action) === 'default'" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
           </div>
-          <div class="log-main">
-            <div class="log-title">
-              <strong>{{ DiffUtil.getActionLabel(log.action) }}</strong>
-              <span class="entity-type">{{ DiffUtil.formatEntityName(log.tableName) }}</span>
-              <span class="entity-name" *ngIf="log.entityDisplayName">"{{ log.entityDisplayName }}"</span>
-              <span class="log-date">on {{ formatDate(log.timestamp) }}</span>
+
+          <!-- Log Content -->
+          <div class="log-content">
+            <div class="log-header">
+              <div class="log-title-row">
+                <div class="log-action-title">
+                  <span class="action-badge" [class]="'badge-' + getActionType(log.action)">
+                    {{ DiffUtil.getActionLabel(log.action) }}
+                  </span>
+                  <span class="entity-info">
+                    <span class="entity-type">{{ DiffUtil.formatEntityName(log.tableName) }}</span>
+                    <span class="entity-name" *ngIf="log.entityDisplayName">"{{ log.entityDisplayName }}"</span>
+                  </span>
+                </div>
+                <div class="log-meta-info">
+                  <span class="log-date">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    {{ formatDate(log.timestamp) }}
+                  </span>
+                </div>
+              </div>
+              
+              <p class="log-description" *ngIf="log.description">
+                {{ formatDescription(log.description) }}
+              </p>
+              
+              <div class="log-user" *ngIf="getLogAuthor(log) as author">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                <span>by {{ author }}</span>
+              </div>
             </div>
-            <p class="log-description" *ngIf="log.description">
-              {{ formatDescription(log.description) }}
-            </p>
-            <div class="log-meta" *ngIf="getLogAuthor(log) as author">
-              <span class="log-user">by {{ author }}</span>
+
+            <!-- Changes List -->
+            <div class="log-changes" *ngIf="log.changes && log.changes.length > 0">
+              <div class="changes-header">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 11 12 14 22 4"/>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+                <span>Field Changes</span>
+              </div>
+              <div class="changes-list">
+                <div 
+                  class="change-item" 
+                  *ngFor="let change of (isExpanded(log.auditLogId) ? log.changes : getVisibleChanges(log.changes))"
+                >
+                  <span class="change-field">{{ change.field }}</span>
+                  <div class="change-values">
+                    <span class="change-old">{{ DiffUtil.formatValue(change.oldValue) }}</span>
+                    <span class="change-arrow">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="5" y1="12" x2="19" y2="12"/>
+                        <polyline points="12 5 19 12 12 19"/>
+                      </svg>
+                    </span>
+                    <span class="change-new">{{ DiffUtil.formatValue(change.newValue) }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Expand/Collapse Button -->
+              <button 
+                class="btn-expand" 
+                *ngIf="shouldShowExpandButton(log.changes)"
+                (click)="toggleExpand(log.auditLogId); $event.stopPropagation()"
+              >
+                <span *ngIf="!isExpanded(log.auditLogId)">
+                  Show {{ getHiddenChanges(log.changes).length }} more changes
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </span>
+                <span *ngIf="isExpanded(log.auditLogId)">
+                  Show less
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="18 15 12 9 6 15"/>
+                  </svg>
+                </span>
+              </button>
+            </div>
+
+            <!-- No Changes Message -->
+            <div class="log-no-changes" *ngIf="(!log.changes || log.changes.length === 0) && !log.description">
+              <span class="no-changes-text">{{ getNoChangeSummary(log) }}</span>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Changes List -->
-        <div class="log-changes" *ngIf="log.changes && log.changes.length > 0">
-          <div class="changes-list">
-            <div 
-              class="change-item" 
-              *ngFor="let change of (isExpanded(log.auditLogId) ? log.changes : getVisibleChanges(log.changes))"
-            >
-              <span class="change-field">{{ change.field }}:</span>
-              <span class="change-old">{{ DiffUtil.formatValue(change.oldValue) }}</span>
-              <span class="change-arrow">→</span>
-              <span class="change-new">{{ DiffUtil.formatValue(change.newValue) }}</span>
-            </div>
+      <!-- Pagination Controls -->
+      <div class="pagination-container" *ngIf="!loading && !error && totalPages > 0">
+        <div class="pagination-info">
+          <span>Showing {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, totalCount) }} of {{ totalCount }} logs</span>
+          <div class="page-size-selector">
+            <label for="pageSize">Items per page:</label>
+            <select id="pageSize" [(ngModel)]="pageSize" (change)="changePageSize(pageSize)" class="page-size-select">
+              <option [value]="25">25</option>
+              <option [value]="50">50</option>
+              <option [value]="100">100</option>
+            </select>
           </div>
-
-          <!-- Expand/Collapse Button -->
+        </div>
+        <div class="pagination-controls">
           <button 
-            class="btn-expand" 
-            *ngIf="shouldShowExpandButton(log.changes)"
-            (click)="toggleExpand(log.auditLogId); $event.stopPropagation()"
+            class="pagination-btn" 
+            [disabled]="currentPage === 1"
+            (click)="goToPage(1)"
+            title="First page"
           >
-            <span *ngIf="!isExpanded(log.auditLogId)">
-              Show {{ getHiddenChanges(log.changes).length }} more changes
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="6 9 12 15 18 9"/>
-              </svg>
-            </span>
-            <span *ngIf="isExpanded(log.auditLogId)">
-              Show less
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="18 15 12 9 6 15"/>
-              </svg>
-            </span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="11 17 6 12 11 7"/>
+              <polyline points="18 17 13 12 18 7"/>
+            </svg>
           </button>
-        </div>
-
-        <!-- No Changes Message -->
-        <div class="log-no-changes" *ngIf="(!log.changes || log.changes.length === 0) && !log.description">
-          <span class="no-changes-text">{{ getNoChangeSummary(log) }}</span>
+          <button 
+            class="pagination-btn" 
+            [disabled]="currentPage === 1"
+            (click)="goToPage(currentPage - 1)"
+            title="Previous page"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
+          <div class="page-numbers">
+            <button 
+              *ngFor="let page of getPageNumbers()"
+              class="page-number"
+              [class.active]="page === currentPage"
+              (click)="goToPage(page)"
+            >
+              {{ page }}
+            </button>
+          </div>
+          <button 
+            class="pagination-btn" 
+            [disabled]="currentPage === totalPages"
+            (click)="goToPage(currentPage + 1)"
+            title="Next page"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+          <button 
+            class="pagination-btn" 
+            [disabled]="currentPage === totalPages"
+            (click)="goToPage(totalPages)"
+            title="Last page"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="13 17 18 12 13 7"/>
+              <polyline points="6 17 11 12 6 7"/>
+            </svg>
+          </button>
         </div>
       </div>
     </div>

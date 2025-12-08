@@ -10,6 +10,7 @@ using System.Text.Json.Serialization;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient(); // Register IHttpClientFactory
 builder.Services.AddAppServicesDIConfig();
 builder.Services.AddMapsterConfig();
 Dubox.Infrastructure.Bootstrap.AddInfrastructureStrapping(builder.Services);

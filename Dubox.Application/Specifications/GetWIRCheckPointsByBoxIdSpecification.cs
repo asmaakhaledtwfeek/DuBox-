@@ -10,7 +10,9 @@ namespace Dubox.Application.Specifications
             AddCriteria(w => w.BoxId == boxId);
             AddInclude(nameof(WIRCheckpoint.Box));
             AddInclude(nameof(WIRCheckpoint.ChecklistItems));
+            AddInclude($"{nameof(WIRCheckpoint.QualityIssues)}.{nameof(Domain.Entities.QualityIssue.Images)}");
             AddInclude(nameof(WIRCheckpoint.QualityIssues));
+            AddInclude(nameof(WIRCheckpoint.Images));
             AddOrderByDescending(w => w.CreatedDate);
         }
     }

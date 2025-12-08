@@ -46,11 +46,11 @@ public class ApproveWIRRecordCommandHandler : IRequestHandler<ApproveWIRRecordCo
         wirRecord.InspectionDate = DateTime.UtcNow;
         wirRecord.InspectionNotes = request.InspectionNotes;
 
-        if (!string.IsNullOrEmpty(request.PhotoUrls))
+        if (!string.IsNullOrEmpty(request.Photo))
         {
-            wirRecord.PhotoUrls = string.IsNullOrEmpty(wirRecord.PhotoUrls)
-                ? request.PhotoUrls
-                : $"{wirRecord.PhotoUrls},{request.PhotoUrls}";
+            wirRecord.Photo = string.IsNullOrEmpty(wirRecord.Photo)
+                ? request.Photo
+                : $"{wirRecord.Photo},{request.Photo}";
         }
 
         wirRecord.ModifiedDate = DateTime.UtcNow;

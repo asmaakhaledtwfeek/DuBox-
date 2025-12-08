@@ -141,6 +141,16 @@ export const routes: Routes = [
     loadComponent: () => import('./features/boxes/add-checklist-items/add-checklist-items.component').then(m => m.AddChecklistItemsComponent)
   },
   {
+    path: 'locations',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/locations/locations-management/locations-management.component').then(m => m.LocationsManagementComponent)
+  },
+  {
+    path: 'locations/:locationId',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/locations/location-details/location-details.component').then(m => m.LocationDetailsComponent)
+  },
+  {
     path: 'admin',
     canActivate: [authGuard, roleGuard],
     data: { 
@@ -156,6 +166,18 @@ export const routes: Routes = [
         canActivate: [roleGuard],
         data: { roles: [UserRole.SystemAdmin] },
         loadComponent: () => import('./features/admin/user-management/user-management.component').then(m => m.UserManagementComponent)
+      },
+      {
+        path: 'users/:userId',
+        canActivate: [roleGuard],
+        data: { roles: [UserRole.SystemAdmin] },
+        loadComponent: () => import('./features/admin/user-management/user-details-page/user-details-page.component').then(m => m.UserDetailsPageComponent)
+      },
+      {
+        path: 'users/:userId/audit-logs',
+        canActivate: [roleGuard],
+        data: { roles: [UserRole.SystemAdmin] },
+        loadComponent: () => import('./features/admin/user-management/user-audit-logs/user-audit-logs.component').then(m => m.UserAuditLogsComponent)
       },
       {
         path: 'audit-logs',
@@ -231,29 +253,34 @@ export const routes: Routes = [
     loadComponent: () => import('./features/notifications/notifications-center/notifications-center.component').then(m => m.NotificationsCenterComponent)
   },
   {
+    path: 'profile',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/user-profile/user-profile.component').then(m => m.UserProfileComponent)
+  },
+  {
     path: 'reports',
     canActivate: [authGuard],
     loadComponent: () => import('./features/reports/reports-dashboard/reports-dashboard.component').then(m => m.ReportsDashboardComponent)
   },
   {
-    path: 'reports/box-progress',
+    path: 'reports/projects',
     canActivate: [authGuard],
-    loadComponent: () => import('./features/reports/box-progress-report/box-progress-report.component').then(m => m.BoxProgressReportComponent)
+    loadComponent: () => import('./features/reports/projects-summary-report/projects-summary-report.component').then(m => m.ProjectsSummaryReportComponent)
   },
   {
-    path: 'reports/team-productivity',
+    path: 'reports/boxes',
     canActivate: [authGuard],
-    loadComponent: () => import('./features/reports/team-productivity-report/team-productivity-report.component').then(m => m.TeamProductivityReportComponent)
+    loadComponent: () => import('./features/reports/boxes-summary-report/boxes-summary-report.component').then(m => m.BoxesSummaryReportComponent)
   },
   {
-    path: 'reports/phase-readiness',
+    path: 'reports/activities',
     canActivate: [authGuard],
-    loadComponent: () => import('./features/reports/phase-readiness-report/phase-readiness-report.component').then(m => m.PhaseReadinessReportComponent)
+    loadComponent: () => import('./features/reports/activities-report/activities-report.component').then(m => m.ActivitiesReportComponent)
   },
   {
-    path: 'reports/missing-materials',
+    path: 'reports/teams-performance',
     canActivate: [authGuard],
-    loadComponent: () => import('./features/reports/missing-materials-report/missing-materials-report.component').then(m => m.MissingMaterialsReportComponent)
+    loadComponent: () => import('./features/reports/teams-performance-report/teams-performance-report.component').then(m => m.TeamsPerformanceReportComponent)
   },
   {
     path: 'unauthorized',

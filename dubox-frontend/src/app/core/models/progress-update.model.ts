@@ -2,20 +2,27 @@
 
 export interface ProgressUpdate {
   progressUpdateId?: string;
+  boxId?: string;
+  boxTag?: string;
   boxActivityId: string;
-  status: ActivityProgressStatus;
+  activityName?: string;
+  status: ActivityProgressStatus | string;
   progressPercentage: number;
   workDescription?: string;
   issuesEncountered?: string;
-  materialsAvailable: boolean;
-  qualityCheckPassed: boolean;
-  photoUrls?: string;
+  materialsAvailable?: boolean;
+  qualityCheckPassed?: boolean;
+  photo?: string; // Deprecated: Use images array instead
+  images?: ProgressUpdateImage[];
   teamId?: string;
   teamMemberId?: string;
   updatedBy?: string;
   updatedByName?: string;
   updateDate?: Date;
   createdDate?: Date;
+  locationDescription?: string;
+  updateMethod?: string;
+  boxProgressSnapshot?: number;
 }
 
 export enum ActivityProgressStatus {
@@ -35,7 +42,7 @@ export interface CreateProgressUpdateRequest {
   latitude?: number;
   longitude?: number;
   locationDescription?: string;
-  photoUrls?: string[];
+  imageUrl?: string; // For URL input method
   updateMethod: string; // "Web" or "Mobile"
   deviceInfo?: string;
 }
@@ -80,9 +87,10 @@ export interface BoxActivityDetail {
   actualStartDate?: Date;
   actualEndDate?: Date;
   duration?: number;
+  actualDuration?: number;
   workDescription?: string;
   issuesEncountered?: string;
-  teamId?: number;
+  teamId?: string;
   teamName?: string;
   assignedMemberId?: string;
   assignedMemberName?: string;
@@ -99,5 +107,32 @@ export interface BoxActivityDetail {
   // Additional frontend properties
   isWIRCheckpoint?: boolean;
   wirCode?: string;
+}
+
+export interface PaginatedProgressUpdatesResponse {
+  items: ProgressUpdate[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface ProgressUpdateImage {
+  progressUpdateImageId: string;
+  progressUpdateId: string;
+  imageData: string;
+  imageType: 'file' | 'url';
+  originalName?: string;
+  fileSize?: number;
+  sequence: number;
+  createdDate: Date;
+}
+
+export interface ProgressUpdatesSearchParams {
+  searchTerm?: string;
+  activityName?: string;
+  status?: string;
+  fromDate?: string;
+  toDate?: string;
 }
 

@@ -34,7 +34,7 @@ namespace Dubox.Domain.Entities
         public virtual TeamMember? TeamLeader { get; set; }
 
         [NotMapped]
-        public int TeamSize => Members.Count;
+        public int TeamSize => Members.Count(m => m.IsActive);
 
         public bool IsActive { get; set; } = true;
 

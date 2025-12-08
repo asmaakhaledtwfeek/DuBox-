@@ -76,28 +76,47 @@ namespace Dubox.Application.Features.Boxes.Commands
             RuleForEach(x => x.Assets)
                 .SetValidator(new CreateBoxAssetDtoValidator())
                 .When(x => x.Assets != null && x.Assets.Any());
-
             RuleFor(x => x)
-            .MustAsync(BeWithinProjectSchedule)
-            .WithMessage("Box schedule must fall within the project's planned start and end dates.")
-            .When(x => x.BoxPlannedStartDate.HasValue && x.BoxDuration.HasValue);
+                 .CustomAsync(async (command, context, cancellationToken) =>
+                  {
+                      if (!command.BoxPlannedStartDate.HasValue || !command.BoxDuration.HasValue)
+                          return;
+                      var result = await ValidateProjectScheduleAsync(command, cancellationToken);
+                      if (!result.IsValid)
+                          context.AddFailure(result.ErrorMessage!);
+
+                  });
+
         }
 
-        private async Task<bool> BeWithinProjectSchedule(CreateBoxCommand command, CancellationToken cancellationToken)
+        private async Task<(bool IsValid, string? ErrorMessage)> ValidateProjectScheduleAsync(CreateBoxCommand command, CancellationToken cancellationToken)
         {
-            var project = await _unitOfWork.Repository<Project>().GetByIdAsync(command.ProjectId, cancellationToken);
+            var project = await _unitOfWork.Repository<Project>()
+                .GetByIdAsync(command.ProjectId, cancellationToken);
 
-            if (project == null) return false;
+            if (project == null)
+                return (false, "Project not found.");
 
             if (!project.PlannedStartDate.HasValue || !project.PlannedEndDate.HasValue)
-                return true;
+                return (true, null);
 
-            var boxPlannedEndDate = command.BoxPlannedStartDate!.Value.AddDays(command.BoxDuration!.Value);
+            var boxStart = command.BoxPlannedStartDate!.Value;
+            var boxEnd = boxStart.AddDays(command.BoxDuration!.Value);
 
-            bool startsAfterProjectStart = command.BoxPlannedStartDate.Value >= project.PlannedStartDate.Value;
-            bool endsBeforeProjectEnd = boxPlannedEndDate <= project.PlannedEndDate.Value;
+            bool startsAfterProjectStart = boxStart >= project.PlannedStartDate.Value;
+            bool endsBeforeProjectEnd = boxEnd <= project.PlannedEndDate.Value;
 
-            return startsAfterProjectStart && endsBeforeProjectEnd;
+            if (startsAfterProjectStart && endsBeforeProjectEnd)
+                return (true, null);
+
+            var errorMessage =
+                $"Box schedule must be within the project range. " +
+                $"Project Start: {project.PlannedStartDate:yyyy-MM-dd}, " +
+                $"Project End: {project.PlannedEndDate:yyyy-MM-dd}. " +
+                $"Your box schedule: {boxStart:yyyy-MM-dd} → {boxEnd:yyyy-MM-dd}.";
+
+            return (false, errorMessage);
         }
+
     }
 }

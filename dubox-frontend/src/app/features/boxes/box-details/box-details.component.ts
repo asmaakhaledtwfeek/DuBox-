@@ -1,27 +1,33 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
-import { Box, BoxStatus } from '../../../core/models/box.model';
+import { Box, BoxStatus, BoxLog, getBoxStatusNumber } from '../../../core/models/box.model';
 import { WIRService } from '../../../core/services/wir.service';
-import { ProgressUpdate } from '../../../core/models/progress-update.model';
+import { ProgressUpdate, ProgressUpdatesSearchParams } from '../../../core/models/progress-update.model';
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
 import { ProgressUpdatesTableComponent } from '../../../shared/components/progress-updates-table/progress-updates-table.component';
 import { QualityIssueDetails, QualityIssueStatus, UpdateQualityIssueStatusRequest, WIRCheckpoint, WIRCheckpointStatus, WIRRecord } from '../../../core/models/wir.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { ActivityTableComponent } from '../../activities/activity-table/activity-table.component';
+import { LocationService, FactoryLocation, BoxLocationHistory } from '../../../core/services/location.service';
+import { ApiService } from '../../../core/services/api.service';
+import * as ExcelJS from 'exceljs';
+import { Subject, takeUntil } from 'rxjs';
+import { debounceTime, distinctUntilChanged, map } from 'rxjs/operators';
+import { DiffUtil } from '../../../core/utils/diff.util';
 
 @Component({
   selector: 'app-box-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, HeaderComponent, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, HeaderComponent, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent],
   templateUrl: './box-details.component.html',
   styleUrls: ['./box-details.component.scss']
 })
-export class BoxDetailsComponent implements OnInit {
+export class BoxDetailsComponent implements OnInit, OnDestroy {
   box: Box | null = null;
   boxId!: string;
   projectId!: string;
@@ -31,11 +37,12 @@ export class BoxDetailsComponent implements OnInit {
   showDeleteConfirm = false;
   deleteSuccess = false;
   
-  activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' = 'overview';
+  activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' | 'location-history' | 'progress-updates' = 'overview';
   
   canEdit = false;
   canDelete = false;
   BoxStatus = BoxStatus;
+  Math = Math;
   
   actualActivityCount: number = 0; // Actual count from activity table (excluding WIR rows)
   wirCheckpoints: WIRCheckpoint[] = [];
@@ -59,20 +66,94 @@ export class BoxDetailsComponent implements OnInit {
   statusUpdateForm: {
     status: QualityIssueStatus;
     resolutionDescription: string;
-    photoPath: string;
   } = {
     status: 'Open',
-    resolutionDescription: '',
-    photoPath: ''
+    resolutionDescription: ''
   };
   isDetailsModalOpen = false;
   selectedIssueDetails: QualityIssueDetails | null = null;
+  
+  // Multiple images state
+  selectedImages: Array<{
+    id: string;
+    type: 'file' | 'url' | 'camera';
+    file?: File;
+    url?: string;
+    preview: string;
+    name?: string;
+    size?: number;
+  }> = [];
+  currentImageInputMode: 'url' | 'upload' | 'camera' = 'url';
+  currentUrlInput: string = '';
+  isUploadingPhoto = false;
+  photoUploadError = '';
+  cameraStream: MediaStream | null = null;
+  showCamera = false;
 
   progressUpdates: ProgressUpdate[] = [];
   progressUpdatesLoading = false;
   progressUpdatesError = '';
   selectedProgressUpdate: ProgressUpdate | null = null;
   isProgressModalOpen = false;
+  
+  // All progress updates for attachments (images)
+  allProgressUpdatesForImages: ProgressUpdate[] = [];
+  loadingProgressUpdateImages = false;
+  
+  // Pagination for progress updates
+  progressUpdatesCurrentPage = 1;
+  progressUpdatesPageSize = 10;
+  progressUpdatesTotalCount = 0;
+  progressUpdatesTotalPages = 0;
+  
+  // Search filters for progress updates
+  progressUpdatesSearchTerm = '';
+  progressUpdatesActivityName = '';
+  progressUpdatesStatus = '';
+  progressUpdatesFromDate = '';
+  progressUpdatesToDate = '';
+  showProgressUpdatesSearch = false;
+
+  // Box Status Update
+  isBoxStatusModalOpen = false;
+  boxStatusUpdateLoading = false;
+  boxStatusUpdateError = '';
+  selectedBoxStatus: BoxStatus | null = null;
+  availableBoxStatuses: BoxStatus[] = [BoxStatus.Dispatched, BoxStatus.InProgress, BoxStatus.OnHold];
+
+  // Location Management
+  isMoveLocationModalOpen = false;
+  locations: FactoryLocation[] = [];
+  locationsLoading = false;
+  moveLocationLoading = false;
+  moveLocationError = '';
+  selectedLocationId = new FormControl<string>('', [Validators.required]);
+  moveReason = new FormControl<string>('');
+  locationHistory: BoxLocationHistory[] = [];
+  filteredLocationHistory: BoxLocationHistory[] = [];
+  locationHistoryLoading = false;
+  showLocationHistory = false;
+  locationHistorySearchControl = new FormControl('');
+  
+  // Box Logs
+  boxLogs: BoxLog[] = [];
+  boxLogsLoading = false;
+  boxLogsError = '';
+  boxLogsCurrentPage = 1;
+  boxLogsPageSize = 25;
+  boxLogsTotalCount = 0;
+  boxLogsTotalPages = 0;
+  boxLogsSearchTerm = '';
+  boxLogsAction = '';
+  boxLogsFromDate = '';
+  boxLogsToDate = '';
+  showBoxLogsSearch = false;
+  boxLogsSearchControl = new FormControl('');
+  availableBoxLogActions: string[] = [];
+  private boxLogActionSet = new Set<string>();
+  readonly DiffUtil = DiffUtil;
+  
+  private destroy$ = new Subject<void>();
 
   constructor(
     private route: ActivatedRoute,
@@ -80,7 +161,9 @@ export class BoxDetailsComponent implements OnInit {
     private boxService: BoxService,
     private permissionService: PermissionService,
     private wirService: WIRService,
-    private progressUpdateService: ProgressUpdateService
+    private progressUpdateService: ProgressUpdateService,
+    private locationService: LocationService,
+    private apiService: ApiService
   ) {}
 
   ngOnInit(): void {
@@ -90,7 +173,42 @@ export class BoxDetailsComponent implements OnInit {
     this.canEdit = this.permissionService.canEdit('boxes');
     this.canDelete = this.permissionService.canDelete('boxes');
     
+    this.setupLocationHistorySearch();
+    this.setupBoxLogsSearch();
     this.loadBox();
+  }
+
+  private setupLocationHistorySearch(): void {
+    this.locationHistorySearchControl.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(() => {
+        this.applyLocationHistoryFilters();
+      });
+  }
+
+  applyLocationHistoryFilters(): void {
+    const searchTerm = this.locationHistorySearchControl.value?.toLowerCase() || '';
+    
+    if (!searchTerm) {
+      this.filteredLocationHistory = [...this.locationHistory];
+      return;
+    }
+
+    this.filteredLocationHistory = this.locationHistory.filter(history =>
+      history.locationCode?.toLowerCase().includes(searchTerm) ||
+      history.locationName?.toLowerCase().includes(searchTerm) ||
+      history.movedFromLocationCode?.toLowerCase().includes(searchTerm) ||
+      history.movedFromLocationName?.toLowerCase().includes(searchTerm) ||
+      history.reason?.toLowerCase().includes(searchTerm) ||
+      history.movedByUsername?.toLowerCase().includes(searchTerm) ||
+      history.movedByFullName?.toLowerCase().includes(searchTerm) ||
+      history.boxTag?.toLowerCase().includes(searchTerm) ||
+      history.serialNumber?.toLowerCase().includes(searchTerm)
+    );
   }
 
   loadBox(): void {
@@ -112,6 +230,9 @@ export class BoxDetailsComponent implements OnInit {
         this.loadWIRCheckpoints();
         this.loadQualityIssues();
         this.loadProgressUpdates();
+        this.loadLocationHistory();
+        // Load logs count (with minimal page size to get total count quickly)
+        this.loadBoxLogsCount();
         
         this.loading = false;
       },
@@ -262,17 +383,92 @@ export class BoxDetailsComponent implements OnInit {
     });
   }
 
+  copiedSerialNumber = false;
+  private copyTimeout?: ReturnType<typeof setTimeout>;
+
+  formatSerialNumber(serialNumber: string | undefined): string {
+    if (!serialNumber) return '';
+    // Ensure consistent format: SN-YYYY-######
+    // If already in correct format, return as is
+    if (/^SN-\d{4}-\d{6}$/.test(serialNumber)) {
+      return serialNumber;
+    }
+    // If format is slightly different, try to normalize
+    return serialNumber;
+  }
+
+  copyToClipboard(text: string): void {
+    if (!text) return;
+
+    navigator.clipboard.writeText(text).then(() => {
+      this.copiedSerialNumber = true;
+      
+      // Clear any existing timeout
+      if (this.copyTimeout) {
+        clearTimeout(this.copyTimeout);
+      }
+      
+      // Reset the copied state after 2 seconds
+      this.copyTimeout = setTimeout(() => {
+        this.copiedSerialNumber = false;
+      }, 2000);
+    }).catch(err => {
+      console.error('Failed to copy to clipboard:', err);
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.opacity = '0';
+      document.body.appendChild(textArea);
+      textArea.select();
+      try {
+        document.execCommand('copy');
+        this.copiedSerialNumber = true;
+        if (this.copyTimeout) {
+          clearTimeout(this.copyTimeout);
+        }
+        this.copyTimeout = setTimeout(() => {
+          this.copiedSerialNumber = false;
+        }, 2000);
+      } catch (err) {
+        console.error('Fallback copy failed:', err);
+      }
+      document.body.removeChild(textArea);
+    });
+  }
+
+  ngOnDestroy(): void {
+    if (this.copyTimeout) {
+      clearTimeout(this.copyTimeout);
+    }
+  }
+
   downloadQRCode(): void {
     if (this.box?.qrCode) {
       const link = document.createElement('a');
       link.href = this.box.qrCode;
-      link.download = `QR-${this.box.code}.png`;
+      link.download = `QR-${this.box.code}${this.box.serialNumber ? '-' + this.box.serialNumber : ''}.png`;
       link.click();
     }
   }
 
-  setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments'): void {
+  setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' | 'location-history' | 'progress-updates'): void {
     this.activeTab = tab;
+    if (tab === 'location-history' && this.locationHistory.length === 0) {
+      this.loadLocationHistory();
+    }
+    if (tab === 'logs') {
+      // Always load logs when clicking the tab if logs haven't been loaded yet
+      if (this.boxLogs.length === 0 && !this.boxLogsLoading) {
+        this.loadBoxLogs(this.boxLogsCurrentPage, this.boxLogsPageSize);
+      }
+    }
+    if (tab === 'attachments') {
+      // Load all progress updates to get images when attachments tab is opened
+      if (this.allProgressUpdatesForImages.length === 0 && !this.loadingProgressUpdateImages) {
+        this.loadAllProgressUpdatesForImages();
+      }
+    }
   }
 
   getStatusClass(status: BoxStatus): string {
@@ -283,7 +479,8 @@ export class BoxDetailsComponent implements OnInit {
       [BoxStatus.Completed]: 'badge-success',
       [BoxStatus.ReadyForDelivery]: 'badge-primary',
       [BoxStatus.Delivered]: 'badge-success',
-      [BoxStatus.OnHold]: 'badge-danger'
+      [BoxStatus.OnHold]: 'badge-danger',
+      [BoxStatus.Dispatched]: 'badge-primary'
     };
     return statusMap[status] || 'badge-secondary';
   }
@@ -296,7 +493,8 @@ export class BoxDetailsComponent implements OnInit {
       [BoxStatus.Completed]: 'Completed',
       [BoxStatus.ReadyForDelivery]: 'Ready for Delivery',
       [BoxStatus.Delivered]: 'Delivered',
-      [BoxStatus.OnHold]: 'On Hold'
+      [BoxStatus.OnHold]: 'On Hold',
+      [BoxStatus.Dispatched]: 'Dispatched'
     };
     return labels[status] || status;
   }
@@ -466,6 +664,155 @@ export class BoxDetailsComponent implements OnInit {
     this.loadQualityIssues();
   }
 
+  async exportQualityIssuesToExcel(): Promise<void> {
+    if (this.qualityIssues.length === 0) {
+      alert('No quality issues to export. Please ensure there are quality issues available.');
+      return;
+    }
+
+    // Format dates properly
+    const formatDateForExcel = (date?: string | Date): string => {
+      if (!date) return '—';
+      const d = date instanceof Date ? date : new Date(date);
+      if (isNaN(d.getTime())) return '—';
+      return d.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      });
+    };
+
+    // Create a new workbook and worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Quality Issues');
+
+    // Define column headers
+    const headers = [
+      'No.',
+      'WIR Number',
+      'Box Tag',
+      'Box Name',
+      'Status',
+      'Issue Type',
+      'Severity',
+      'Issue Description',
+      'Assigned To',
+      'Reported By',
+      'Issue Date',
+      'Due Date',
+      'Resolution Description',
+      'Resolution Date',
+      'Photo Path'
+    ];
+
+    // Set column widths
+    worksheet.columns = [
+      { width: 5 },   // No.
+      { width: 15 },  // WIR Number
+      { width: 15 },  // Box Tag
+      { width: 20 },  // Box Name
+      { width: 12 },  // Status
+      { width: 15 },  // Issue Type
+      { width: 10 },  // Severity
+      { width: 40 },  // Issue Description
+      { width: 15 },  // Assigned To
+      { width: 15 },  // Reported By
+      { width: 12 },  // Issue Date
+      { width: 12 },  // Due Date
+      { width: 40 },  // Resolution Description
+      { width: 12 },  // Resolution Date
+      { width: 30 }   // Photo Path
+    ];
+
+    // Add header row with styling
+    const headerRow = worksheet.addRow(headers);
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4472C4' } // Blue background
+      };
+      cell.font = {
+        bold: true,
+        color: { argb: 'FFFFFFFF' }, // White text
+        size: 11
+      };
+      cell.alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+        wrapText: true
+      };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF000000' } },
+        bottom: { style: 'thin', color: { argb: 'FF000000' } },
+        left: { style: 'thin', color: { argb: 'FF000000' } },
+        right: { style: 'thin', color: { argb: 'FF000000' } }
+      };
+    });
+    headerRow.height = 25; // Set header row height
+
+    // Add data rows
+    this.qualityIssues.forEach((issue, index) => {
+      const row = worksheet.addRow([
+        index + 1,
+        this.getQualityIssueWir(issue),
+        issue.boxTag || '—',
+        issue.boxName || '—',
+        this.getQualityIssueStatusLabel(issue.status),
+        issue.issueType || '—',
+        issue.severity || '—',
+        issue.issueDescription || '—',
+        issue.assignedTo || '—',
+        issue.reportedBy || '—',
+        formatDateForExcel(issue.issueDate),
+        formatDateForExcel(issue.dueDate),
+        issue.resolutionDescription || '—',
+        formatDateForExcel(issue.resolutionDate),
+        issue.photoPath || '—'
+      ]);
+
+      // Style data rows
+      row.eachCell((cell, colNumber) => {
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          left: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          right: { style: 'thin', color: { argb: 'FFE0E0E0' } }
+        };
+        cell.alignment = {
+          vertical: 'middle',
+          wrapText: true
+        };
+        // Alternate row colors
+        if (index % 2 === 0) {
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFF9F9F9' }
+          };
+        }
+      });
+    });
+
+    // Freeze header row
+    worksheet.views = [{ state: 'frozen', ySplit: 1 }];
+
+    // Generate filename with current date
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0];
+    const fileName = `Quality_Issues_${dateStr}.xlsx`;
+
+    // Generate Excel file and download
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  }
+
   formatIssueDate(date?: string | Date): string {
     if (!date) {
       return '—';
@@ -514,6 +861,57 @@ export class BoxDetailsComponent implements OnInit {
     this.selectedIssueDetails = null;
   }
 
+  getQualityIssueImageUrls(issue: QualityIssueDetails | null): string[] {
+    if (!issue) return [];
+    
+    // First, try to use the new Images array
+    if (issue.images && Array.isArray(issue.images) && issue.images.length > 0) {
+      return issue.images
+        .sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
+        .map((img) => {
+          const imageData = img.imageData || '';
+          // If it's already a data URL, return as is
+          if (imageData.startsWith('data:image/')) {
+            return imageData;
+          }
+          // If it's a URL, return as is
+          if (imageData.startsWith('http://') || imageData.startsWith('https://')) {
+            return imageData;
+          }
+          // Otherwise, assume it's base64 and add data URI prefix
+          return `data:image/jpeg;base64,${imageData}`;
+        })
+        .filter((url: string) => url && url.trim().length > 0);
+    }
+    
+    // Fallback to old PhotoPath field (backward compatibility)
+    if (issue.photoPath) {
+      return [issue.photoPath];
+    }
+    
+    return [];
+  }
+
+  openImageInNewTab(imageUrl: string): void {
+    window.open(imageUrl, '_blank', 'noopener,noreferrer');
+  }
+
+  downloadImage(imageUrl: string): void {
+    try {
+      const link = document.createElement('a');
+      link.href = imageUrl;
+      link.download = `quality-issue-image-${Date.now()}.jpg`;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading image:', error);
+      // Fallback: open in new tab
+      this.openImageInNewTab(imageUrl);
+    }
+  }
+
   openStatusModal(issue: QualityIssueDetails): void {
     if (this.isDetailsModalOpen) {
       this.closeIssueDetails();
@@ -522,15 +920,24 @@ export class BoxDetailsComponent implements OnInit {
     this.selectedIssueForStatus = issue;
     this.statusUpdateForm = {
       status: issue.status || 'Open',
-      resolutionDescription: issue.resolutionDescription || '',
-      photoPath: issue.photoPath || ''
+      resolutionDescription: issue.resolutionDescription || ''
     };
     this.statusUpdateError = '';
+    this.selectedImages = [];
+    this.currentImageInputMode = 'url';
+    this.currentUrlInput = '';
+    this.showCamera = false;
+    this.stopCamera();
     this.isStatusModalOpen = true;
   }
 
   closeStatusModal(): void {
     this.isStatusModalOpen = false;
+    this.selectedImages = [];
+    this.currentImageInputMode = 'url';
+    this.currentUrlInput = '';
+    this.showCamera = false;
+    this.stopCamera();
     this.selectedIssueForStatus = null;
     this.statusUpdateLoading = false;
     this.statusUpdateError = '';
@@ -546,26 +953,247 @@ export class BoxDetailsComponent implements OnInit {
     this.selectedProgressUpdate = null;
   }
 
-  loadProgressUpdates(): void {
+  getProgressStatusClass(status: string | any): string {
+    if (!status) return 'status-unknown';
+    
+    const statusStr = typeof status === 'string' ? status : String(status);
+    const normalized = statusStr.toLowerCase();
+    
+    switch (normalized) {
+      case 'notstarted':
+        return 'status-not-started';
+      case 'inprogress':
+        return 'status-in-progress';
+      case 'completed':
+        return 'status-completed';
+      case 'onhold':
+        return 'status-on-hold';
+      case 'delayed':
+        return 'status-delayed';
+      default:
+        return 'status-unknown';
+    }
+  }
+
+  getProgressStatusLabel(status: string | any): string {
+    if (!status) return '—';
+    
+    const statusStr = typeof status === 'string' ? status : String(status);
+    const normalized = statusStr.toLowerCase();
+    
+    switch (normalized) {
+      case 'notstarted':
+        return 'Not Started';
+      case 'inprogress':
+        return 'In Progress';
+      case 'completed':
+        return 'Completed';
+      case 'onhold':
+        return 'On Hold';
+      case 'delayed':
+        return 'Delayed';
+      default:
+        return statusStr;
+    }
+  }
+
+  getPhotoUrls(progressUpdate: any): string[] {
+    // First, try to use the new Images array
+    if (progressUpdate.images && Array.isArray(progressUpdate.images) && progressUpdate.images.length > 0) {
+      return progressUpdate.images
+        .sort((a: any, b: any) => (a.sequence || 0) - (b.sequence || 0))
+        .map((img: any) => img.imageData || img.ImageData || '')
+        .filter((url: string) => url && url.trim().length > 0);
+    }
+    
+    // Fallback to old Photo field (backward compatibility)
+    const photoUrls = progressUpdate.photo || progressUpdate.photoUrls;
+    if (!photoUrls) return [];
+    
+    // Check if it's a base64 string (starts with data:image or is a long base64 string)
+    if (typeof photoUrls === 'string' && photoUrls.startsWith('data:image/')) {
+      return [photoUrls];
+    }
+    
+    // Check if it's a base64 string without data URI prefix
+    const base64Pattern = /^[A-Za-z0-9+/=]+$/;
+    if (typeof photoUrls === 'string' && photoUrls.length > 100 && base64Pattern.test(photoUrls)) {
+      return [`data:image/jpeg;base64,${photoUrls}`];
+    }
+    
+    try {
+      const parsed = JSON.parse(photoUrls);
+      if (Array.isArray(parsed)) {
+        return parsed.map((url: any) => {
+          if (typeof url === 'string') {
+            if (url.startsWith('data:image/')) {
+              return url;
+            }
+            const base64Pattern = /^[A-Za-z0-9+/=]+$/;
+            if (url.length > 100 && base64Pattern.test(url)) {
+              return `data:image/jpeg;base64,${url}`;
+            }
+            return url;
+          }
+          return '';
+        }).filter((url: string) => url && url.trim().length > 0);
+      }
+    } catch {
+      // If not JSON, try splitting by comma
+      if (typeof photoUrls === 'string') {
+        return photoUrls.split(',').map((url: string) => {
+          const trimmed = url.trim();
+          if (!trimmed) return '';
+          if (trimmed.startsWith('data:image/')) {
+            return trimmed;
+          }
+          const base64Pattern = /^[A-Za-z0-9+/=]+$/;
+          if (trimmed.length > 100 && base64Pattern.test(trimmed)) {
+            return `data:image/jpeg;base64,${trimmed}`;
+          }
+          return trimmed;
+        }).filter((url: string) => url.length > 0);
+      }
+    }
+    
+    return [];
+  }
+
+  openPhotoInNewTab(photoUrl: string): void {
+    // For base64 images, create a new window with the image
+    if (photoUrl.startsWith('data:image/')) {
+      const newWindow = window.open();
+      if (newWindow) {
+        newWindow.document.write(`<img src="${photoUrl}" style="max-width: 100%; height: auto;" />`);
+      }
+    } else {
+      window.open(photoUrl, '_blank', 'noopener,noreferrer');
+    }
+  }
+
+  downloadPhoto(photoUrl: string): void {
+    const link = document.createElement('a');
+    
+    if (photoUrl.startsWith('data:image/')) {
+      // Handle base64 image
+      link.href = photoUrl;
+      // Extract format from data URI or default to jpg
+      const formatMatch = photoUrl.match(/data:image\/([^;]+)/);
+      const format = formatMatch ? formatMatch[1] : 'jpg';
+      link.download = `progress-photo-${Date.now()}.${format}`;
+    } else {
+      // Handle regular URL
+      link.href = photoUrl;
+      link.download = photoUrl.split('/').pop() || 'photo.jpg';
+    }
+    
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  onImageError(event: Event): void {
+    const img = event.target as HTMLImageElement;
+    img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2YxZjVmOSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5NDk4YjgiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pjwvc3ZnPg==';
+    img.style.objectFit = 'contain';
+    img.style.padding = '20px';
+  }
+
+  // Load all progress updates to extract images for attachments section
+  loadAllProgressUpdatesForImages(): void {
+    if (!this.boxId || this.loadingProgressUpdateImages) {
+      return;
+    }
+
+    this.loadingProgressUpdateImages = true;
+    // Load with a large page size to get all progress updates
+    this.progressUpdateService.getProgressUpdatesByBox(this.boxId, 1, 1000, {}).subscribe({
+      next: (response) => {
+        this.allProgressUpdatesForImages = (response.items || [])
+          .map(update => ({
+            ...update,
+            updateDate: update.updateDate ? new Date(update.updateDate) : undefined
+          }));
+        this.loadingProgressUpdateImages = false;
+      },
+      error: (err) => {
+        console.error('Error loading progress updates for images:', err);
+        this.loadingProgressUpdateImages = false;
+      }
+    });
+  }
+
+  // Get all images from all progress updates
+  getAllProgressUpdateImages(): Array<{ imageUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number }> {
+    const allImages: Array<{ imageUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number }> = [];
+    
+    this.allProgressUpdatesForImages.forEach(update => {
+      const photoUrls = this.getPhotoUrls(update);
+      photoUrls.forEach(imageUrl => {
+        allImages.push({
+          imageUrl,
+          updateDate: update.updateDate,
+          activityName: update.activityName,
+          progressPercentage: update.progressPercentage
+        });
+      });
+    });
+    
+    return allImages;
+  }
+
+  // Check if there are any images from progress updates
+  hasProgressUpdateImages(): boolean {
+    return this.getAllProgressUpdateImages().length > 0;
+  }
+
+  // Get total attachments count (files + images)
+  getTotalAttachmentsCount(): number {
+    const fileCount = this.box?.attachments?.length || 0;
+    const imageCount = this.hasProgressUpdateImages() ? this.getAllProgressUpdateImages().length : 0;
+    return fileCount + imageCount;
+  }
+
+  loadProgressUpdates(page: number = 1, pageSize: number = 10): void {
     if (!this.boxId) {
       return;
     }
 
     this.progressUpdatesLoading = true;
     this.progressUpdatesError = '';
+    this.progressUpdatesCurrentPage = page;
+    this.progressUpdatesPageSize = pageSize;
 
-    this.progressUpdateService.getProgressUpdatesByBox(this.boxId).subscribe({
-      next: (updates) => {
-        this.progressUpdates = (updates || [])
+    // Build search parameters
+    const searchParams: ProgressUpdatesSearchParams = {};
+    if (this.progressUpdatesSearchTerm?.trim()) {
+      searchParams.searchTerm = this.progressUpdatesSearchTerm.trim();
+    }
+    if (this.progressUpdatesActivityName?.trim()) {
+      searchParams.activityName = this.progressUpdatesActivityName.trim();
+    }
+    if (this.progressUpdatesStatus?.trim()) {
+      searchParams.status = this.progressUpdatesStatus.trim();
+    }
+    if (this.progressUpdatesFromDate) {
+      searchParams.fromDate = this.progressUpdatesFromDate;
+    }
+    if (this.progressUpdatesToDate) {
+      searchParams.toDate = this.progressUpdatesToDate;
+    }
+
+    this.progressUpdateService.getProgressUpdatesByBox(this.boxId, page, pageSize, searchParams).subscribe({
+      next: (response) => {
+        this.progressUpdates = (response.items || [])
           .map(update => ({
             ...update,
             updateDate: update.updateDate ? new Date(update.updateDate) : undefined
-          }))
-          .sort((a, b) => {
-            const aTime = a.updateDate ? new Date(a.updateDate).getTime() : 0;
-            const bTime = b.updateDate ? new Date(b.updateDate).getTime() : 0;
-            return bTime - aTime;
-          });
+          }));
+        this.progressUpdatesTotalCount = response.totalCount;
+        this.progressUpdatesTotalPages = response.totalPages;
+        this.progressUpdatesCurrentPage = response.pageNumber;
+        this.progressUpdatesPageSize = response.pageSize;
         this.progressUpdatesLoading = false;
       },
       error: (err) => {
@@ -574,6 +1202,43 @@ export class BoxDetailsComponent implements OnInit {
         this.progressUpdatesLoading = false;
       }
     });
+  }
+
+  applyProgressUpdatesSearch(): void {
+    this.progressUpdatesCurrentPage = 1; // Reset to first page when searching
+    this.loadProgressUpdates(1, this.progressUpdatesPageSize);
+  }
+
+  clearProgressUpdatesSearch(): void {
+    this.progressUpdatesSearchTerm = '';
+    this.progressUpdatesActivityName = '';
+    this.progressUpdatesStatus = '';
+    this.progressUpdatesFromDate = '';
+    this.progressUpdatesToDate = '';
+    this.progressUpdatesCurrentPage = 1;
+    this.loadProgressUpdates(1, this.progressUpdatesPageSize);
+  }
+
+  toggleProgressUpdatesSearch(): void {
+    this.showProgressUpdatesSearch = !this.showProgressUpdatesSearch;
+    if (!this.showProgressUpdatesSearch) {
+      this.clearProgressUpdatesSearch();
+    }
+  }
+
+  onProgressUpdatesSearchChange(searchParams: {
+    searchTerm: string;
+    activityName: string;
+    status: string;
+    fromDate: string;
+    toDate: string;
+  }): void {
+    this.progressUpdatesSearchTerm = searchParams.searchTerm;
+    this.progressUpdatesActivityName = searchParams.activityName;
+    this.progressUpdatesStatus = searchParams.status;
+    this.progressUpdatesFromDate = searchParams.fromDate;
+    this.progressUpdatesToDate = searchParams.toDate;
+    this.applyProgressUpdatesSearch();
   }
 
   requiresResolutionDescription(status: QualityIssueStatus | string | undefined): boolean {
@@ -601,19 +1266,35 @@ export class BoxDetailsComponent implements OnInit {
       return;
     }
 
+    this.statusUpdateLoading = true;
+    this.statusUpdateError = '';
+    this.photoUploadError = '';
+
+    // Prepare files and URLs
+    const files = this.selectedImages
+      .filter(img => img.type === 'file' || img.type === 'camera')
+      .map(img => img.file!)
+      .filter((file): file is File => file !== undefined);
+
+    const imageUrls = this.selectedImages
+      .filter(img => img.type === 'url' && img.url)
+      .map(img => img.url!)
+      .filter((url): url is string => url !== undefined && url.trim() !== '');
+
     const payload: UpdateQualityIssueStatusRequest = {
       issueId: this.selectedIssueForStatus.issueId,
       status: this.statusUpdateForm.status,
       resolutionDescription: this.requiresResolutionDescription(this.statusUpdateForm.status)
         ? this.statusUpdateForm.resolutionDescription?.trim()
-        : null,
-      photoPath: this.statusUpdateForm.photoPath?.trim() || null
+        : null
     };
 
-    this.statusUpdateLoading = true;
-    this.statusUpdateError = '';
-
-    this.wirService.updateQualityIssueStatus(payload.issueId, payload).subscribe({
+    this.wirService.updateQualityIssueStatus(
+      payload.issueId, 
+      payload,
+      files.length > 0 ? files : undefined,
+      imageUrls.length > 0 ? imageUrls : undefined
+    ).subscribe({
       next: (updatedIssue) => {
         this.statusUpdateLoading = false;
         this.applyUpdatedQualityIssue(updatedIssue);
@@ -627,11 +1308,449 @@ export class BoxDetailsComponent implements OnInit {
     });
   }
 
+  // Multiple images methods
+  setImageInputMode(mode: 'url' | 'upload' | 'camera'): void {
+    this.currentImageInputMode = mode;
+    if (mode !== 'camera') {
+      this.showCamera = false;
+      this.stopCamera();
+    }
+  }
+
+  openFileInput(): void {
+    this.currentImageInputMode = 'upload';
+    this.showCamera = false;
+    this.stopCamera();
+    const fileInput = document.getElementById('box-details-photo-file-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      Array.from(input.files).forEach(file => {
+        if (file.type.startsWith('image/')) {
+          this.addImageFromFile(file);
+        } else {
+          this.photoUploadError = 'Please select image files only';
+        }
+      });
+      // Reset input to allow selecting the same file again
+      input.value = '';
+    }
+  }
+
+  addImageFromFile(file: File): void {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const preview = e.target?.result as string;
+      this.selectedImages.push({
+        id: `file-${Date.now()}-${Math.random()}`,
+        type: 'file',
+        file: file,
+        preview: preview,
+        name: file.name,
+        size: file.size
+      });
+      this.photoUploadError = '';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  addImageFromUrl(): void {
+    const url = this.currentUrlInput?.trim();
+    if (!url) {
+      this.photoUploadError = 'Please enter a valid URL';
+      return;
+    }
+
+    // Validate URL format
+    try {
+      new URL(url);
+    } catch {
+      this.photoUploadError = 'Please enter a valid URL';
+      return;
+    }
+
+    // Check if it's a data URL (base64)
+    if (url.startsWith('data:image/')) {
+      this.selectedImages.push({
+        id: `url-${Date.now()}-${Math.random()}`,
+        type: 'url',
+        url: url,
+        preview: url,
+        name: 'Base64 Image'
+      });
+    } else {
+      // For external URLs, we'll use the URL as preview (backend will download it)
+      this.selectedImages.push({
+        id: `url-${Date.now()}-${Math.random()}`,
+        type: 'url',
+        url: url,
+        preview: url, // Will be replaced by actual image if URL is valid
+        name: url.length > 50 ? url.substring(0, 50) + '...' : url
+      });
+    }
+
+    this.currentUrlInput = '';
+    this.photoUploadError = '';
+  }
+
+  removeImage(imageId: string): void {
+    this.selectedImages = this.selectedImages.filter(img => img.id !== imageId);
+  }
+
+  trackByImageId(index: number, image: { id: string }): string {
+    return image.id;
+  }
+
+  // Camera methods
+  async openCamera(): Promise<void> {
+    try {
+      this.currentImageInputMode = 'camera';
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } // Use back camera on mobile
+      });
+      this.cameraStream = stream;
+      this.showCamera = true;
+      
+      // Wait for video element to be rendered
+      setTimeout(() => {
+        const video = document.getElementById('box-details-camera-preview') as HTMLVideoElement;
+        if (video) {
+          video.srcObject = stream;
+          video.play();
+        }
+      }, 100);
+    } catch (err) {
+      console.error('Error accessing camera:', err);
+      this.photoUploadError = 'Unable to access camera. Please check permissions.';
+      this.showCamera = false;
+      this.currentImageInputMode = 'url';
+    }
+  }
+
+  stopCamera(): void {
+    if (this.cameraStream) {
+      this.cameraStream.getTracks().forEach(track => track.stop());
+      this.cameraStream = null;
+    }
+    this.showCamera = false;
+    if (this.currentImageInputMode === 'camera') {
+      this.currentImageInputMode = 'url';
+    }
+  }
+
+  capturePhoto(): void {
+    const video = document.getElementById('box-details-camera-preview') as HTMLVideoElement;
+    if (!video) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(video, 0, 0);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' });
+          this.addImageFromFile(file);
+          this.stopCamera();
+        }
+      }, 'image/jpeg', 0.9);
+    }
+  }
+
+  // Box Status Update Methods
+  openBoxStatusModal(): void {
+    this.isBoxStatusModalOpen = true;
+    this.boxStatusUpdateError = '';
+    this.selectedBoxStatus = null;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeBoxStatusModal(): void {
+    this.isBoxStatusModalOpen = false;
+    this.selectedBoxStatus = null;
+    this.boxStatusUpdateError = '';
+    document.body.style.overflow = '';
+  }
+
+  updateBoxStatus(): void {
+    if (!this.box || !this.selectedBoxStatus) {
+      return;
+    }
+
+    this.boxStatusUpdateLoading = true;
+    this.boxStatusUpdateError = '';
+
+    // Convert status to number for backend
+    const statusNumber = getBoxStatusNumber(this.selectedBoxStatus);
+
+    this.boxService.updateBoxStatus(this.boxId, statusNumber).subscribe({
+      next: (updatedBox) => {
+        this.box = updatedBox;
+        this.boxStatusUpdateLoading = false;
+        this.closeBoxStatusModal();
+        // Optionally show success message
+        console.log('✅ Box status updated successfully');
+      },
+      error: (err) => {
+        console.error('❌ Failed to update box status:', err);
+        this.boxStatusUpdateLoading = false;
+        this.boxStatusUpdateError = err?.error?.message || err?.message || 'Failed to update box status';
+      }
+    });
+  }
+
+  getStatusLabelForModal(status: BoxStatus): string {
+    return this.getStatusLabel(status);
+  }
+
+  // Location Management Methods
+  openMoveLocationModal(): void {
+    this.isMoveLocationModalOpen = true;
+    this.moveLocationError = '';
+    this.selectedLocationId.setValue('');
+    this.moveReason.setValue('');
+    this.loadLocations();
+  }
+
+  closeMoveLocationModal(): void {
+    this.isMoveLocationModalOpen = false;
+    this.selectedLocationId.setValue('');
+    this.moveReason.setValue('');
+    this.moveLocationError = '';
+  }
+
+  loadLocations(): void {
+    this.locationsLoading = true;
+    this.locationService.getLocations().subscribe({
+      next: (locations) => {
+        this.locations = locations.filter(l => l.isActive);
+        this.locationsLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading locations:', err);
+        this.locationsLoading = false;
+        this.moveLocationError = 'Failed to load locations';
+      }
+    });
+  }
+
+  moveBoxToLocation(): void {
+    if (!this.selectedLocationId.value || !this.box) {
+      return;
+    }
+
+    this.moveLocationLoading = true;
+    this.moveLocationError = '';
+
+    this.locationService.moveBoxToLocation({
+      boxId: this.boxId,
+      toLocationId: this.selectedLocationId.value,
+      reason: this.moveReason.value || undefined
+    }).subscribe({
+      next: (history) => {
+        this.moveLocationLoading = false;
+        this.closeMoveLocationModal();
+        this.loadBox(); // Reload box to get updated location
+        this.loadLocationHistory(); // Refresh history
+        console.log('✅ Box moved to location successfully');
+      },
+      error: (err) => {
+        console.error('❌ Failed to move box to location:', err);
+        this.moveLocationLoading = false;
+        this.moveLocationError = err?.error?.message || err?.message || 'Failed to move box to location';
+      }
+    });
+  }
+
+  loadLocationHistory(): void {
+    this.locationHistoryLoading = true;
+    this.locationService.getBoxLocationHistory(this.boxId).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (history) => {
+        this.locationHistory = history;
+        this.applyLocationHistoryFilters();
+        this.locationHistoryLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading location history:', err);
+        this.locationHistoryLoading = false;
+      }
+    });
+  }
+
+  toggleLocationHistory(): void {
+    this.showLocationHistory = !this.showLocationHistory;
+    if (this.showLocationHistory && this.locationHistory.length === 0) {
+      this.loadLocationHistory();
+    }
+  }
+
+  private setupBoxLogsSearch(): void {
+    this.boxLogsSearchControl.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        takeUntil(this.destroy$)
+      )
+      .subscribe(() => {
+        this.boxLogsSearchTerm = this.boxLogsSearchControl.value || '';
+        this.boxLogsCurrentPage = 1;
+        this.loadBoxLogs(this.boxLogsCurrentPage, this.boxLogsPageSize);
+      });
+  }
+
+  loadBoxLogsCount(): void {
+    if (!this.boxId) {
+      return;
+    }
+
+    // Load just the count with minimal page size
+    this.boxService.getBoxLogs(this.boxId, 1, 1).subscribe({
+      next: (response) => {
+        this.boxLogsTotalCount = response.totalCount || 0;
+        this.boxLogsTotalPages = response.totalPages || 0;
+      },
+      error: (err) => {
+        // Silently fail - count will be loaded when tab is clicked
+        console.error('Error loading box logs count:', err);
+      }
+    });
+  }
+
+  loadBoxLogs(page: number = 1, pageSize: number = 25): void {
+    if (!this.boxId) {
+      return;
+    }
+
+    this.boxLogsLoading = true;
+    this.boxLogsError = '';
+    this.boxLogsCurrentPage = page;
+    this.boxLogsPageSize = pageSize;
+
+    const searchTerm = this.boxLogsSearchTerm?.trim() || undefined;
+    const action = this.boxLogsAction?.trim() || undefined;
+    const fromDate = this.boxLogsFromDate || undefined;
+    const toDate = this.boxLogsToDate || undefined;
+
+    this.boxService.getBoxLogs(this.boxId, page, pageSize, searchTerm, action, fromDate, toDate).subscribe({
+      next: (response) => {
+        this.boxLogs = (response.items || []).map(log => ({
+          ...log,
+          performedAt: log.performedAt ? new Date(log.performedAt) : new Date()
+        }));
+        this.boxLogsTotalCount = response.totalCount || 0;
+        this.boxLogsTotalPages = response.totalPages || 0;
+        this.boxLogsCurrentPage = response.pageNumber || page;
+        this.boxLogsPageSize = response.pageSize || pageSize;
+        
+        // Update available actions from current page
+        this.boxLogActionSet.clear();
+        this.boxLogs.forEach(log => {
+          if (log.action) {
+            this.boxLogActionSet.add(log.action);
+          }
+        });
+        this.availableBoxLogActions = Array.from(this.boxLogActionSet).sort((a, b) => a.localeCompare(b));
+        
+        this.boxLogsLoading = false;
+      },
+      error: (err) => {
+        console.error('Error loading box logs:', err);
+        this.boxLogsError = err?.error?.message || err?.message || 'Failed to load box logs';
+        this.boxLogsLoading = false;
+      }
+    });
+  }
+
+  applyBoxLogsSearch(): void {
+    this.boxLogsCurrentPage = 1;
+    this.loadBoxLogs(1, this.boxLogsPageSize);
+  }
+
+  applyBoxLogsFilters(): void {
+    this.boxLogsCurrentPage = 1;
+    this.loadBoxLogs(1, this.boxLogsPageSize);
+  }
+
+  resetBoxLogsFilters(): void {
+    this.boxLogsSearchTerm = '';
+    this.boxLogsAction = '';
+    this.boxLogsFromDate = '';
+    this.boxLogsToDate = '';
+    this.boxLogsSearchControl.setValue('');
+    this.boxLogsCurrentPage = 1;
+    this.loadBoxLogs(1, this.boxLogsPageSize);
+  }
+
+  clearBoxLogsSearch(): void {
+    this.resetBoxLogsFilters();
+  }
+
+  toggleBoxLogsSearch(): void {
+    this.showBoxLogsSearch = !this.showBoxLogsSearch;
+    if (!this.showBoxLogsSearch) {
+      this.clearBoxLogsSearch();
+    }
+  }
+
+  onBoxLogsPageChange(page: number): void {
+    this.loadBoxLogs(page, this.boxLogsPageSize);
+  }
+
+  onBoxLogsPageSizeChange(pageSize: number): void {
+    this.loadBoxLogs(1, pageSize);
+  }
+
+  getBoxLogsPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPages = Math.min(this.boxLogsTotalPages, 7);
+    let startPage = Math.max(1, this.boxLogsCurrentPage - 3);
+    let endPage = Math.min(this.boxLogsTotalPages, startPage + maxPages - 1);
+    
+    if (endPage - startPage < maxPages - 1) {
+      startPage = Math.max(1, endPage - maxPages + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
+  }
+
   private applyUpdatedQualityIssue(updated: QualityIssueDetails): void {
     this.qualityIssues = this.qualityIssues.map(issue =>
       issue.issueId === updated.issueId ? { ...issue, ...updated } : issue
     );
     const count = this.qualityIssues.length;
     this.qualityIssueCount = count;
+  }
+
+  trackByLogId(index: number, log: BoxLog): string {
+    return log.id;
+  }
+
+  getActionIcon(action: string): string {
+    return DiffUtil.getActionIcon(action);
+  }
+
+  getActionType(action: string): string {
+    const upperAction = action.toUpperCase();
+    if (upperAction.includes('INSERT') || upperAction.includes('CREATE')) {
+      return 'create';
+    } else if (upperAction.includes('UPDATE') || upperAction.includes('MODIFY') || upperAction.includes('CHANGE')) {
+      return 'update';
+    } else if (upperAction.includes('DELETE') || upperAction.includes('REMOVE')) {
+      return 'delete';
+    }
+    return 'other';
+  }
+
+  trackByAction(index: number, action: string): string {
+    return action;
   }
 }

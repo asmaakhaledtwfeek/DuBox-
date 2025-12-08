@@ -27,6 +27,17 @@ export interface AuditLogQueryParams {
   searchTerm?: string;
   fromDate?: string;
   toDate?: string;
+  changedBy?: string;
+  pageNumber?: number;
+  pageSize?: number;
+}
+
+export interface PaginatedAuditLogsResponse {
+  items: AuditLog[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 export type AuditAction = 'INSERT' | 'UPDATE' | 'DELETE';

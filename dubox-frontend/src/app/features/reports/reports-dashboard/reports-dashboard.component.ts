@@ -1,10 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
-import { ReportsService, ReportSummary, BoxProgressData, TeamProductivityData, MissingMaterialsData, PhaseReadinessData } from '../../../core/services/reports.service';
+import { ReportsService, ReportSummary } from '../../../core/services/reports.service';
 import { ProjectService } from '../../../core/services/project.service';
 import { Project } from '../../../core/models/project.model';
 import * as XLSX from 'xlsx';
@@ -35,10 +35,6 @@ export class ReportsDashboardComponent implements OnInit {
 
   // Active report tracking
   activeReport: string | null = null;
-  boxProgressData: BoxProgressData[] = [];
-  teamProductivityData: TeamProductivityData[] = [];
-  missingMaterialsData: MissingMaterialsData[] = [];
-  phaseReadinessData: PhaseReadinessData[] = [];
   
   // Projects for filtering
   projects: Project[] = [];
@@ -46,38 +42,39 @@ export class ReportsDashboardComponent implements OnInit {
 
   reports: ReportCard[] = [
     {
-      id: 'box-progress',
-      title: 'Box Progress Report',
-      description: 'Track the progress of all boxes across different phases and stages',
-      icon: 'box',
+      id: 'projects-summary',
+      title: 'Projects Summary Report',
+      description: 'Aggregated information about all projects with KPIs, status distribution, and project details',
+      icon: 'projects',
+      color: 'indigo'
+    },
+    {
+      id: 'boxes-summary',
+      title: 'Boxes Summary Report',
+      description: 'Comprehensive report with filtering, KPIs, charts, and detailed box information',
+      icon: 'boxes',
+      color: 'teal'
+    },
+    {
+      id: 'activities',
+      title: 'Activities Report',
+      description: 'Detailed activities report with filtering, pagination, KPIs, and export capabilities',
+      icon: 'activities',
       color: 'blue'
     },
     {
-      id: 'team-productivity',
-      title: 'Team Productivity Report',
-      description: 'Monitor the productivity and performance of deployed teams',
-      icon: 'team',
-      color: 'green'
-    },
-    {
-      id: 'phase-readiness',
-      title: 'Phase Readiness Report',
-      description: 'Check readiness of phases and activities to launch successors',
-      icon: 'phases',
+      id: 'teams-performance',
+      title: 'Teams Performance Report',
+      description: 'Analyze the performance of all teams across all project activities with detailed metrics and drill-down capabilities',
+      icon: 'team-performance',
       color: 'purple'
-    },
-    {
-      id: 'missing-materials',
-      title: 'Missing Materials Report',
-      description: 'Identify missing materials related to any activity or phase',
-      icon: 'materials',
-      color: 'orange'
     }
   ];
 
   constructor(
     private reportsService: ReportsService,
-    private projectService: ProjectService
+    private projectService: ProjectService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -111,17 +108,25 @@ export class ReportsDashboardComponent implements OnInit {
   }
 
   showReport(reportId: string): void {
-    this.activeReport = reportId;
-    
-    if (reportId === 'box-progress') {
-      this.loadBoxProgressReport();
-    } else if (reportId === 'team-productivity') {
-      this.loadTeamProductivityReport();
-    } else if (reportId === 'missing-materials') {
-      this.loadMissingMaterialsReport();
-    } else if (reportId === 'phase-readiness') {
-      this.loadPhaseReadinessReport();
+    // Navigate to separate report pages instead of inline display
+    if (reportId === 'projects-summary') {
+      this.router.navigate(['/reports/projects']);
+      return;
     }
+    if (reportId === 'boxes-summary') {
+      this.router.navigate(['/reports/boxes']);
+      return;
+    }
+    if (reportId === 'activities') {
+      this.router.navigate(['/reports/activities']);
+      return;
+    }
+    if (reportId === 'teams-performance') {
+      this.router.navigate(['/reports/teams-performance']);
+      return;
+    }
+    
+    this.activeReport = reportId;
   }
 
   closeReport(): void {
@@ -130,214 +135,16 @@ export class ReportsDashboardComponent implements OnInit {
   }
 
   onProjectChange(): void {
-    if (this.activeReport === 'box-progress') {
-      this.loadBoxProgressReport();
-    } else if (this.activeReport === 'team-productivity') {
-      this.loadTeamProductivityReport();
-    } else if (this.activeReport === 'missing-materials') {
-      this.loadMissingMaterialsReport();
-    } else if (this.activeReport === 'phase-readiness') {
-      this.loadPhaseReadinessReport();
-    }
-  }
-
-  loadBoxProgressReport(): void {
-    this.loading = true;
-    this.reportsService.getBoxProgressReport(this.selectedProject || undefined).subscribe({
-      next: (data) => {
-        this.boxProgressData = data;
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Failed to load box progress:', err);
-        this.loading = false;
-      }
-    });
-  }
-
-  loadTeamProductivityReport(): void {
-    this.loading = true;
-    this.reportsService.getTeamProductivityReport(this.selectedProject || undefined).subscribe({
-      next: (data) => {
-        this.teamProductivityData = data;
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Failed to load team productivity:', err);
-        this.loading = false;
-      }
-    });
-  }
-
-  loadMissingMaterialsReport(): void {
-    this.loading = true;
-    this.reportsService.getMissingMaterialsReport(this.selectedProject || undefined).subscribe({
-      next: (data) => {
-        this.missingMaterialsData = data;
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Failed to load missing materials:', err);
-        this.loading = false;
-      }
-    });
-  }
-
-  loadPhaseReadinessReport(): void {
-    this.loading = true;
-    this.reportsService.getPhaseReadinessReport(this.selectedProject || undefined).subscribe({
-      next: (data) => {
-        this.phaseReadinessData = data;
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('Failed to load phase readiness:', err);
-        this.loading = false;
-      }
-    });
-  }
-
-  // Box Progress Report methods
-  getBoxProgressPercentage(building: BoxProgressData): number {
-    const completed = building.released1stFix + building.released2ndFix + building.released3rdFix;
-    return building.total > 0 ? Math.round((completed / building.total) * 100) : 0;
-  }
-
-  getProgressColor(percentage: number): string {
-    if (percentage >= 80) return 'green';
-    if (percentage >= 50) return 'blue';
-    if (percentage >= 25) return 'orange';
-    return 'red';
-  }
-
-  exportBoxProgressToExcel(): void {
-    if (!this.boxProgressData || this.boxProgressData.length === 0) {
-      alert('No data to export');
-      return;
-    }
-
-    const exportData = this.boxProgressData.map(building => ({
-      'Building': building.building,
-      'Non-Assembled': building.nonAssembled,
-      'Backing (Due Boxes)': building.backing,
-      'Released 1st Fix': building.released1stFix,
-      'Released 2nd Fix': building.released2ndFix,
-      'Released 3rd Fix': building.released3rdFix,
-      'Total': building.total,
-      'Progress %': this.getBoxProgressPercentage(building)
-    }));
-
-    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook: XLSX.WorkBook = {
-      Sheets: { 'Box Progress Report': worksheet },
-      SheetNames: ['Box Progress Report']
-    };
-
-    const today = new Date();
-    const dateStr = today.toISOString().split('T')[0];
-    XLSX.writeFile(workbook, `Box_Progress_Report_${dateStr}.xlsx`);
-  }
-
-  // Team Productivity methods
-  getEfficiencyColor(efficiency: number): string {
-    if (efficiency >= 85) return 'green';
-    if (efficiency >= 70) return 'blue';
-    if (efficiency >= 50) return 'orange';
-    return 'red';
-  }
-
-  exportTeamProductivityToExcel(): void {
-    if (!this.teamProductivityData || this.teamProductivityData.length === 0) {
-      alert('No data to export');
-      return;
-    }
-
-    const exportData = this.teamProductivityData.map(team => ({
-      'Team Name': team.teamName,
-      'Total Activities': team.totalActivities,
-      'Completed Activities': team.completedActivities,
-      'In Progress': team.inProgress,
-      'Avg Completion Time (days)': team.averageCompletionTime,
-      'Efficiency %': team.efficiency
-    }));
-
-    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook: XLSX.WorkBook = {
-      Sheets: { 'Team Productivity': worksheet },
-      SheetNames: ['Team Productivity']
-    };
-
-    const today = new Date();
-    const dateStr = today.toISOString().split('T')[0];
-    XLSX.writeFile(workbook, `Team_Productivity_Report_${dateStr}.xlsx`);
-  }
-
-  exportMissingMaterialsToExcel(): void {
-    if (!this.missingMaterialsData || this.missingMaterialsData.length === 0) {
-      alert('No data to export');
-      return;
-    }
-
-    const exportData = this.missingMaterialsData.map(material => ({
-      'Material Name': material.materialName,
-      'Material Code': material.materialCode,
-      'Required Qty': material.requiredQuantity,
-      'Available Qty': material.availableQuantity,
-      'Shortage Qty': material.shortageQuantity,
-      'Unit': material.unit,
-      'Affected Boxes': material.affectedBoxes
-    }));
-
-    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook: XLSX.WorkBook = {
-      Sheets: { 'Missing Materials': worksheet },
-      SheetNames: ['Missing Materials']
-    };
-
-    const today = new Date();
-    const dateStr = today.toISOString().split('T')[0];
-    XLSX.writeFile(workbook, `Missing_Materials_Report_${dateStr}.xlsx`);
-  }
-
-  exportPhaseReadinessToExcel(): void {
-    if (!this.phaseReadinessData || this.phaseReadinessData.length === 0) {
-      alert('No data to export');
-      return;
-    }
-
-    const exportData = this.phaseReadinessData.map(phase => ({
-      'Phase Name': phase.phaseName,
-      'Total Boxes': phase.totalBoxes,
-      'Ready Boxes': phase.readyBoxes,
-      'Pending Boxes': phase.pendingBoxes,
-      'Readiness %': phase.readinessPercentage,
-      'Blocking Issues': phase.blockingIssues.join('; ')
-    }));
-
-    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook: XLSX.WorkBook = {
-      Sheets: { 'Phase Readiness': worksheet },
-      SheetNames: ['Phase Readiness']
-    };
-
-    const today = new Date();
-    const dateStr = today.toISOString().split('T')[0];
-    XLSX.writeFile(workbook, `Phase_Readiness_Report_${dateStr}.xlsx`);
-  }
-
-  getReadinessColor(percentage: number): string {
-    if (percentage >= 90) return 'green';
-    if (percentage >= 70) return 'blue';
-    if (percentage >= 50) return 'orange';
-    return 'red';
+    // Handle project change for other reports if needed
   }
 
   getIconSvg(icon: string): string {
     const icons: Record<string, string> = {
-      box: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>',
+      projects: '<path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><path d="M9 14l2 2 4-4"/>',
+      boxes: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/><circle cx="7" cy="8" r="1"/><circle cx="17" cy="8" r="1"/><circle cx="7" cy="16" r="1"/><circle cx="17" cy="16" r="1"/>',
+      activities: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>',
       team: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
-      phases: '<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/>',
-      materials: '<line x1="16.5" y1="9.4" x2="7.5" y2="4.21"/><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>'
+      'team-performance': '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/><path d="M9 11l2 2 4-4"/>'
     };
     return icons[icon] || '';
   }

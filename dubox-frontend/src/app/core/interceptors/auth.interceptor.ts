@@ -14,11 +14,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const isPublicEndpoint = publicEndpoints.some(endpoint => req.url.includes(endpoint));
 
   // Clone the request and add authorization header if token exists
+  // Important: Don't modify Content-Type for FormData - let browser set it with boundary
   let authReq = req;
   if (token && !isPublicEndpoint) {
+    const isFormData = req.body instanceof FormData;
     authReq = req.clone({
       setHeaders: {
         Authorization: `Bearer ${token}`
+        // Don't set Content-Type for FormData - Angular/browser will set it automatically with boundary
       }
     });
   }

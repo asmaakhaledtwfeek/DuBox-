@@ -11,12 +11,16 @@ import {
   WIRCheckpoint,
   CreateWIRCheckpointRequest,
   AddChecklistItemsRequest,
+  UpdateChecklistItemRequest,
+  PredefinedChecklistItem,
   ReviewWIRCheckpointRequest,
-  AddQualityIssuesRequest,
+  AddQualityIssueRequest,
   QualityIssueItem,
   QualityIssueDetails,
+  QualityIssueImage,
   UpdateQualityIssueStatusRequest,
-  WIRCheckpointFilter
+  WIRCheckpointFilter,
+  WIRCheckpointChecklistItem
 } from '../models/wir.model';
 
 @Injectable({
@@ -192,28 +196,162 @@ export class WIRService {
   }
 
   /**
-   * Add checklist items to WIR checkpoint
+   * Get all predefined checklist items
+   */
+  getPredefinedChecklistItems(): Observable<PredefinedChecklistItem[]> {
+    return this.apiService.get<any[]>('wircheckpoints/predefined-checklist-items').pipe(
+      map(response => {
+        const items = Array.isArray(response) ? response : (response as any)?.data || [];
+        return items.map((item: any) => ({
+          predefinedItemId: item.predefinedItemId || item.PredefinedItemId,
+          checkpointDescription: item.checkpointDescription || item.CheckpointDescription,
+          referenceDocument: item.referenceDocument || item.ReferenceDocument,
+          sequence: item.sequence || item.Sequence || 0,
+          category: item.category || item.Category,
+          isActive: item.isActive ?? item.IsActive ?? true
+        }));
+      })
+    );
+  }
+
+  /**
+   * Add predefined checklist items to WIR checkpoint
    */
   addChecklistItems(request: AddChecklistItemsRequest): Observable<WIRCheckpoint> {
-    return this.apiService.post<any>(`wircheckpoints/${request.wirId}/checklist-items`, request).pipe(
+    return this.apiService.post<any>(`wircheckpoints/${request.wirId}/checklist-items`, {
+      wirId: request.wirId,
+      predefinedItemIds: request.predefinedItemIds
+    }).pipe(
       map(data => this.transformWIRCheckpoint(data))
     );
+  }
+
+  /**
+   * Update a checklist item
+   */
+  updateChecklistItem(request: UpdateChecklistItemRequest): Observable<WIRCheckpointChecklistItem> {
+    return this.apiService.put<any>(`wircheckpoints/checklist-items/${request.checklistItemId}`, {
+      checklistItemId: request.checklistItemId,
+      checkpointDescription: request.checkpointDescription,
+      referenceDocument: request.referenceDocument,
+      status: request.status,
+      remarks: request.remarks,
+      sequence: request.sequence
+    }).pipe(
+      map((item: any) => ({
+        checklistItemId: item.checklistItemId || item.ChecklistItemId,
+        wirId: item.wirId || item.WIRId,
+        checkpointDescription: item.checkpointDescription || item.CheckpointDescription,
+        referenceDocument: item.referenceDocument || item.ReferenceDocument,
+        status: item.status || item.Status || 'Pending',
+        remarks: item.remarks || item.Remarks,
+        sequence: item.sequence || item.Sequence || 0,
+        predefinedItemId: item.predefinedItemId || item.PredefinedItemId
+      }))
+    );
+  }
+
+  /**
+   * Delete a checklist item
+   */
+  deleteChecklistItem(checklistItemId: string): Observable<boolean> {
+    return this.apiService.delete<boolean>(`wircheckpoints/checklist-items/${checklistItemId}`);
   }
 
   /**
    * Add quality issues to WIR checkpoint
    */
-  addQualityIssues(request: AddQualityIssuesRequest): Observable<WIRCheckpoint> {
-    return this.apiService.post<any>(`wircheckpoints/${request.wirId}/quality-issues`, request).pipe(
-      map(data => this.transformWIRCheckpoint(data))
-    );
+  /**
+   * Add a single quality issue (new approach - one issue at a time)
+   */
+  addQualityIssue(request: AddQualityIssueRequest): Observable<WIRCheckpoint> {
+    // Send as FormData if files are present, otherwise as JSON
+    if (request.files && request.files.length > 0) {
+      const formData = new FormData();
+      formData.append('IssueType', request.issueType);
+      formData.append('Severity', request.severity);
+      formData.append('IssueDescription', request.issueDescription);
+      
+      if (request.assignedTo) {
+        formData.append('AssignedTo', request.assignedTo);
+      }
+      
+      if (request.dueDate) {
+        const dueDateStr = request.dueDate instanceof Date 
+          ? request.dueDate.toISOString() 
+          : request.dueDate;
+        formData.append('DueDate', dueDateStr);
+      }
+      
+      // Append image URLs if any
+      if (request.imageUrls && request.imageUrls.length > 0) {
+        request.imageUrls.forEach(url => {
+          formData.append('ImageUrls', url);
+        });
+      }
+      
+      // Append files
+      request.files.forEach(file => {
+        formData.append('Files', file);
+      });
+      
+      return this.apiService.postFormData<any>(`wircheckpoints/${request.wirId}/quality-issue`, formData).pipe(
+        map(data => this.transformWIRCheckpoint(data))
+      );
+    } else {
+      // Send as JSON if no files
+      const jsonRequest = {
+        wirId: request.wirId,
+        issueType: request.issueType,
+        severity: request.severity,
+        issueDescription: request.issueDescription,
+        assignedTo: request.assignedTo,
+        dueDate: request.dueDate,
+        imageUrls: request.imageUrls
+      };
+      
+      return this.apiService.post<any>(`wircheckpoints/${request.wirId}/quality-issue`, jsonRequest).pipe(
+        map(data => this.transformWIRCheckpoint(data))
+      );
+    }
   }
+
 
   /**
    * Review WIR checkpoint (approve/reject)
    */
   reviewWIRCheckpoint(request: ReviewWIRCheckpointRequest): Observable<WIRCheckpoint> {
-    return this.apiService.put<any>(`wircheckpoints/${request.wirId}/review`, request).pipe(
+    // Always send as multipart/form-data to match backend signature
+    const formData = new FormData();
+    formData.append('Status', request.status.toString());
+    
+    if (request.comment) {
+      formData.append('Comment', request.comment);
+    }
+    
+    if (request.inspectorRole) {
+      formData.append('InspectorRole', request.inspectorRole);
+    }
+    
+    // Append files if any
+    if (request.files && request.files.length > 0) {
+      request.files.forEach(file => {
+        formData.append('Files', file);
+      });
+    }
+    
+    // Append image URLs if any
+    if (request.imageUrls && request.imageUrls.length > 0) {
+      request.imageUrls.forEach(url => {
+        formData.append('ImageUrls', url);
+      });
+    }
+    
+    // Append items as JSON string
+    formData.append('ItemsJson', JSON.stringify(request.items));
+    
+    // Use putFormData for FormData to ensure proper Content-Type handling
+    return this.apiService.putFormData<any>(`wircheckpoints/${request.wIRId}/review`, formData).pipe(
       map(data => this.transformWIRCheckpoint(data))
     );
   }
@@ -230,13 +368,53 @@ export class WIRService {
     );
   }
 
-  updateQualityIssueStatus(issueId: string, payload: UpdateQualityIssueStatusRequest): Observable<QualityIssueDetails> {
-    return this.apiService.put<any>(`qualityissues/${issueId}/status`, payload).pipe(
-      map(response => {
-        const issue = response?.data || response;
-        return this.transformQualityIssueDetails(issue);
-      })
-    );
+  updateQualityIssueStatus(
+    issueId: string, 
+    payload: UpdateQualityIssueStatusRequest,
+    files?: File[],
+    imageUrls?: string[]
+  ): Observable<QualityIssueDetails> {
+    const hasFiles = files && files.length > 0;
+    const hasUrls = imageUrls && imageUrls.length > 0;
+    
+    // If files or URLs are provided, send as multipart/form-data
+    if (hasFiles || hasUrls) {
+      const formData = new FormData();
+      formData.append('Status', payload.status);
+      
+      if (payload.resolutionDescription) {
+        formData.append('ResolutionDescription', payload.resolutionDescription);
+      }
+      
+      // Append multiple files
+      if (hasFiles) {
+        files.forEach((file) => {
+          formData.append('Files', file);
+        });
+      }
+      
+      // Append multiple image URLs
+      if (hasUrls) {
+        imageUrls.forEach((url) => {
+          formData.append('ImageUrls', url);
+        });
+      }
+
+      return this.apiService.put<any>(`qualityissues/${issueId}/status`, formData).pipe(
+        map(response => {
+          const issue = response?.data || response;
+          return this.transformQualityIssueDetails(issue);
+        })
+      );
+    } else {
+      // No files/URLs, send as JSON (backward compatibility)
+      return this.apiService.put<any>(`qualityissues/${issueId}/status`, payload).pipe(
+        map(response => {
+          const issue = response?.data || response;
+          return this.transformQualityIssueDetails(issue);
+        })
+      );
+    }
   }
 
   /**
@@ -297,7 +475,8 @@ export class WIRService {
             referenceDocument: item.referenceDocument || item.ReferenceDocument,
             status: item.status || item.Status || 'Pending',
             remarks: item.remarks || item.Remarks || item.comments || item.Comments,
-            sequence: item.sequence || item.Sequence || 0
+            sequence: item.sequence || item.Sequence || 0,
+            predefinedItemId: item.predefinedItemId || item.PredefinedItemId
           };
           console.log(`Transformed item ${index + 1}:`, transformedItem);
           return transformedItem;
@@ -318,7 +497,25 @@ export class WIRService {
           normalizedStatus = 'Open';
         }
         
-        const transformed: QualityIssueItem & { issueId?: string } = {
+        // Transform images array if present
+        const rawImages = issue.images || issue.Images || [];
+        const transformedImages = Array.isArray(rawImages) ? rawImages.map((img: any) => ({
+          qualityIssueImageId: img.qualityIssueImageId || img.QualityIssueImageId || '',
+          issueId: img.issueId || img.IssueId || issue.issueId || issue.IssueId || '',
+          imageData: img.imageData || img.ImageData || '',
+          imageType: (img.imageType || img.ImageType || 'file') as 'file' | 'url',
+          originalName: img.originalName || img.OriginalName,
+          fileSize: img.fileSize ?? img.FileSize,
+          sequence: img.sequence ?? img.Sequence ?? 0,
+          createdDate: img.createdDate ? new Date(img.createdDate) : (img.CreatedDate ? new Date(img.CreatedDate) : new Date())
+        })) : [];
+        
+        // Debug logging
+        if (transformedImages.length > 0) {
+          console.log(`[WIR Service] Quality Issue ${issue.issueId || issue.IssueId} has ${transformedImages.length} images`);
+        }
+        
+        const transformed: QualityIssueItem & { issueId?: string; images?: QualityIssueImage[] } = {
           issueId: issue.issueId || issue.IssueId || '',
           issueType: issue.issueType || issue.IssueType || 'Defect',
           severity: issue.severity || issue.Severity || 'Minor',
@@ -328,14 +525,43 @@ export class WIRService {
           photoPath: issue.photoPath || issue.PhotoPath,
           reportedBy: issue.reportedBy || issue.ReportedBy,
           issueDate: issue.issueDate ? new Date(issue.issueDate) : undefined,
-          status: normalizedStatus
+          status: normalizedStatus,
+          images: transformedImages.length > 0 ? transformedImages : undefined
         };
         return transformed;
-      })
+      }),
+      images: (() => {
+        const rawImages = backendCheckpoint.images || backendCheckpoint.Images || [];
+        console.log('transformWIRCheckpoint - raw images:', rawImages);
+        console.log('transformWIRCheckpoint - images count:', rawImages.length);
+        return rawImages.map((img: any) => ({
+          wirCheckpointImageId: img.wirCheckpointImageId || img.WIRCheckpointImageId || '',
+          wirId: img.wirId || img.WIRId || backendCheckpoint.wirId || backendCheckpoint.WIRId,
+          imageData: img.imageData || img.ImageData || '',
+          imageType: img.imageType || img.ImageType || 'file',
+          originalName: img.originalName || img.OriginalName,
+          fileSize: img.fileSize ?? img.FileSize,
+          sequence: img.sequence ?? img.Sequence ?? 0,
+          createdDate: img.createdDate ? new Date(img.createdDate) : (img.CreatedDate ? new Date(img.CreatedDate) : new Date())
+        }));
+      })()
     };
   }
 
   private transformQualityIssueDetails(issue: any): QualityIssueDetails {
+    // Transform images array if present
+    const images = issue.images || issue.Images || [];
+    const transformedImages = Array.isArray(images) ? images.map((img: any) => ({
+      qualityIssueImageId: img.qualityIssueImageId || img.QualityIssueImageId,
+      issueId: img.issueId || img.IssueId,
+      imageData: img.imageData || img.ImageData,
+      imageType: (img.imageType || img.ImageType || 'file') as 'file' | 'url',
+      originalName: img.originalName || img.OriginalName,
+      fileSize: img.fileSize || img.FileSize,
+      sequence: img.sequence ?? img.Sequence ?? 0,
+      createdDate: img.createdDate ? new Date(img.createdDate) : (img.CreatedDate ? new Date(img.CreatedDate) : new Date())
+    })) : [];
+
     return {
       issueId: issue.issueId || issue.IssueId,
       issueType: issue.issueType || issue.IssueType,
@@ -359,7 +585,8 @@ export class WIRService {
       wirRequestedDate: issue.wirRequestedDate ? new Date(issue.wirRequestedDate) : undefined,
       inspectorName: issue.inspectorName || issue.InspectorName,
       isOverdue: issue.isOverdue ?? issue.IsOverdue,
-      overdueDays: issue.overdueDays ?? issue.OverdueDays
+      overdueDays: issue.overdueDays ?? issue.OverdueDays,
+      images: transformedImages
     };
   }
 }

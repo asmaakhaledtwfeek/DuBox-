@@ -28,12 +28,16 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<BoxActivity> BoxActivities { get; set; } = null!;
     public DbSet<ActivityDependency> ActivityDependencies { get; set; } = null!;
     public DbSet<ProgressUpdate> ProgressUpdates { get; set; } = null!;
+    public DbSet<ProgressUpdateImage> ProgressUpdateImages { get; set; } = null!;
     public DbSet<WIRRecord> WIRRecords { get; set; } = null!;
     public DbSet<DailyProductionLog> DailyProductionLogs { get; set; } = null!;
     public DbSet<WIRCheckpoint> WIRCheckpoints { get; set; } = null!;
     public DbSet<WIRChecklistItem> WIRChecklistItems { get; set; } = null!;
-    public DbSet<QualityIssue> QualityIssues { get; set; } = null!;
-    public DbSet<Team> Teams { get; set; } = null!;
+    public DbSet<WIRCheckpointImage> WIRCheckpointImages { get; set; } = null!;
+    public DbSet<PredefinedChecklistItem> PredefinedChecklistItems { get; set; } = null!;
+        public DbSet<QualityIssue> QualityIssues { get; set; } = null!;
+        public DbSet<QualityIssueImage> QualityIssueImages { get; set; } = null!;
+        public DbSet<Team> Teams { get; set; } = null!;
     public DbSet<TeamMember> TeamMembers { get; set; } = null!;
     public DbSet<Material> Materials { get; set; } = null!;
     public DbSet<BoxMaterial> BoxMaterials { get; set; } = null!;
@@ -62,6 +66,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         ActivityMasterSeedData.SeedActivityMaster(modelBuilder);
         RoleAndUserSeedData.SeedRolesGroupsAndUsers(modelBuilder);
         DepartmentSeesData.SeedDepartmnts(modelBuilder);
+        PredefinedChecklistItemSeedData.SeedPredefinedChecklistItems(modelBuilder);
         base.OnModelCreating(modelBuilder);
     }
 
@@ -98,6 +103,12 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .WithMany()
             .HasForeignKey(h => h.MovedFromLocationId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<BoxLocationHistory>()
+            .HasOne(h => h.MovedByUser)
+            .WithMany()
+            .HasForeignKey(h => h.MovedBy)
+            .OnDelete(DeleteBehavior.SetNull);
 
         // 4. User and Role Management (Cascade for join tables)
         modelBuilder.Entity<UserRole>()
@@ -189,6 +200,27 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(p => p.UpdatedBy)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // ProgressUpdateImage relationships
+        modelBuilder.Entity<ProgressUpdateImage>()
+            .HasOne(img => img.ProgressUpdate)
+            .WithMany(pu => pu.Images)
+            .HasForeignKey(img => img.ProgressUpdateId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // QualityIssueImage relationships
+        modelBuilder.Entity<QualityIssueImage>()
+            .HasOne(img => img.QualityIssue)
+            .WithMany(qi => qi.Images)
+            .HasForeignKey(img => img.IssueId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // WIRCheckpointImage relationships
+        modelBuilder.Entity<WIRCheckpointImage>()
+            .HasOne(img => img.WIRCheckpoint)
+            .WithMany(wir => wir.Images)
+            .HasForeignKey(img => img.WIRId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<BoxActivity>()
             .HasOne(ba => ba.Box)
             .WithMany(b => b.BoxActivities)
@@ -270,6 +302,32 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasOne(am => am.BoxActivity)
             .WithMany(ba => ba.RequiredMaterials)
             .HasForeignKey(am => am.BoxActivityId);
+
+        modelBuilder.Entity<Box>()
+            .HasOne(b => b.CurrentLocation)
+            .WithMany()
+            .HasForeignKey(b => b.CurrentLocationId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<BoxLocationHistory>()
+            .HasOne(h => h.Box)
+            .WithMany(b => b.BoxLocationHistory)
+            .HasForeignKey(h => h.BoxId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<BoxLocationHistory>()
+            .HasOne(h => h.Location)
+            .WithMany(l => l.BoxLocationHistory)
+            .HasForeignKey(h => h.LocationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<BoxLocationHistory>()
+            .HasOne(h => h.MovedFromLocation)
+            .WithMany()
+            .HasForeignKey(h => h.MovedFromLocationId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 
     private void ConfigureIndexes(ModelBuilder modelBuilder)
@@ -318,6 +376,18 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
 
         modelBuilder.Entity<ProgressUpdate>()
             .HasIndex(pu => new { pu.BoxId, pu.UpdateDate });
+
+        // ProgressUpdateImage indexes
+        modelBuilder.Entity<ProgressUpdateImage>()
+            .HasIndex(img => new { img.ProgressUpdateId, img.Sequence });
+
+        // QualityIssueImage indexes
+        modelBuilder.Entity<QualityIssueImage>()
+            .HasIndex(img => new { img.IssueId, img.Sequence });
+
+        // WIRCheckpointImage indexes
+        modelBuilder.Entity<WIRCheckpointImage>()
+            .HasIndex(img => new { img.WIRId, img.Sequence });
 
         modelBuilder.Entity<DailyProductionLog>()
             .HasIndex(dpl => new { dpl.LogDate, dpl.TeamId });

@@ -13,11 +13,16 @@ namespace Dubox.Application.Features.QualityIssues.Commands
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IImageProcessingService _imageProcessingService;
 
-        public UpdateQualityIssueStatusCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+        public UpdateQualityIssueStatusCommandHandler(
+            IUnitOfWork unitOfWork, 
+            ICurrentUserService currentUserService,
+            IImageProcessingService imageProcessingService)
         {
             _unitOfWork = unitOfWork;
             _currentUserService = currentUserService;
+            _imageProcessingService = imageProcessingService;
         }
 
         public async Task<Result<QualityIssueDetailsDto>> Handle(UpdateQualityIssueStatusCommand request, CancellationToken cancellationToken)
@@ -26,6 +31,7 @@ namespace Dubox.Application.Features.QualityIssues.Commands
 
             if (issue == null)
                 return Result.Failure<QualityIssueDetailsDto>("Quality issue not found.");
+            
             issue.Status = request.Status;
 
             if (request.Status == QualityIssueStatusEnum.Resolved ||
@@ -40,13 +46,143 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                 issue.ResolutionDate = null;
             }
 
-            if (!string.IsNullOrWhiteSpace(request.PhotoPath))
-                issue.PhotoPath = request.PhotoPath;
-
             _unitOfWork.Repository<QualityIssue>().Update(issue);
-            await _unitOfWork.CompleteAsync(cancellationToken);
+            await _unitOfWork.CompleteAsync(cancellationToken); // Save to ensure IssueId is available
+
+            // Process images
+            int sequence = 0;
+            var imagesToAdd = new List<QualityIssueImage>();
+
+            // Get existing images to determine next sequence
+            var existingImages = await _unitOfWork.Repository<QualityIssueImage>()
+                .FindAsync(img => img.IssueId == issue.IssueId, cancellationToken);
+            if (existingImages.Any())
+            {
+                sequence = existingImages.Max(img => img.Sequence) + 1;
+            }
+
+            // Process uploaded files - convert to base64
+            if (request.Files != null && request.Files.Count > 0)
+            {
+                try
+                {
+                    foreach (var fileBytes in request.Files.Where(f => f != null && f.Length > 0))
+                    {
+                        var base64 = Convert.ToBase64String(fileBytes);
+                        var imageData = $"data:image/jpeg;base64,{base64}";
+
+                        var image = new QualityIssueImage
+                        {
+                            IssueId = issue.IssueId,
+                            ImageData = imageData,
+                            ImageType = "file",
+                            FileSize = fileBytes.Length,
+                            Sequence = sequence++,
+                            CreatedDate = DateTime.UtcNow
+                        };
+
+                        imagesToAdd.Add(image);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    return Result.Failure<QualityIssueDetailsDto>("Error processing uploaded files: " + ex.Message);
+                }
+            }
+
+            // Process image URLs - download and convert to base64
+            if (request.ImageUrls != null && request.ImageUrls.Count > 0)
+            {
+                foreach (var url in request.ImageUrls.Where(url => !string.IsNullOrWhiteSpace(url)))
+                {
+                    try
+                    {
+                        string imageData;
+                        long fileSize;
+                        byte[]? imageBytes = null;
+
+                        var trimmedUrl = url.Trim();
+
+                        if (trimmedUrl.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase))
+                        {
+                            imageData = trimmedUrl;
+
+                            var base64Index = trimmedUrl.IndexOf(',');
+                            if (base64Index >= 0 && base64Index < trimmedUrl.Length - 1)
+                            {
+                                var base64Part = trimmedUrl.Substring(base64Index + 1);
+                                imageBytes = Convert.FromBase64String(base64Part);
+                                fileSize = imageBytes.Length;
+                            }
+                            else
+                            {
+                                fileSize = 0;
+                            }
+                        }
+                        else
+                        {
+                            imageBytes = await _imageProcessingService.DownloadImageFromUrlAsync(trimmedUrl, cancellationToken);
+
+                            if (imageBytes == null || imageBytes.Length == 0)
+                            {
+                                return Result.Failure<QualityIssueDetailsDto>($"Failed to download image from URL: {trimmedUrl}");
+                            }
+
+                            var base64 = Convert.ToBase64String(imageBytes);
+                            imageData = $"data:image/jpeg;base64,{base64}";
+                            fileSize = imageBytes.Length;
+                        }
+
+                        var image = new QualityIssueImage
+                        {
+                            IssueId = issue.IssueId,
+                            ImageData = imageData,
+                            ImageType = "url",
+                            OriginalName = trimmedUrl,
+                            FileSize = fileSize,
+                            Sequence = sequence++,
+                            CreatedDate = DateTime.UtcNow
+                        };
+
+                        imagesToAdd.Add(image);
+                    }
+                    catch (Exception ex)
+                    {
+                        return Result.Failure<QualityIssueDetailsDto>($"Error processing image from URL '{url}': {ex.Message}");
+                    }
+                }
+            }
+
+            // Add all images
+            if (imagesToAdd.Count > 0)
+            {
+                foreach (var image in imagesToAdd)
+                {
+                    await _unitOfWork.Repository<QualityIssueImage>().AddAsync(image, cancellationToken);
+                }
+                await _unitOfWork.CompleteAsync(cancellationToken);
+            }
+
+            // Reload the issue with images to ensure the DTO has the updated data
+            issue = _unitOfWork.Repository<QualityIssue>().GetEntityWithSpec(new GetQualityIssueByIdSpecification(request.IssueId));
+            if (issue == null)
+                return Result.Failure<QualityIssueDetailsDto>("Quality issue not found after update.");
 
             var dto = issue.Adapt<QualityIssueDetailsDto>();
+            // Manually map images to ensure they're included
+            dto.Images = issue.Images
+                .OrderBy(img => img.Sequence)
+                .Select(img => new QualityIssueImageDto
+                {
+                    QualityIssueImageId = img.QualityIssueImageId,
+                    IssueId = img.IssueId,
+                    ImageData = img.ImageData,
+                    ImageType = img.ImageType,
+                    OriginalName = img.OriginalName,
+                    FileSize = img.FileSize,
+                    Sequence = img.Sequence,
+                    CreatedDate = img.CreatedDate
+                }).ToList();
 
             return Result.Success(dto);
         }

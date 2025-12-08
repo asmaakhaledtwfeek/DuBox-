@@ -15,15 +15,18 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
     private readonly IUnitOfWork _unitOfWork;
     private readonly IDbContext _dbContext;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IImageProcessingService _imageProcessingService;
 
     public CreateProgressUpdateCommandHandler(
         IUnitOfWork unitOfWork,
         IDbContext dbContext,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IImageProcessingService imageProcessingService)
     {
         _unitOfWork = unitOfWork;
         _dbContext = dbContext;
         _currentUserService = currentUserService;
+        _imageProcessingService = imageProcessingService;
     }
 
     public async Task<Result<ProgressUpdateDto>> Handle(CreateProgressUpdateCommand request, CancellationToken cancellationToken)
@@ -67,13 +70,116 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         progressUpdate.UpdateDate = DateTime.UtcNow;
         progressUpdate.CreatedDate = DateTime.UtcNow;
 
-        // Truncate DeviceInfo to max 100 characters to prevent database truncation error
         if (!string.IsNullOrEmpty(progressUpdate.DeviceInfo) && progressUpdate.DeviceInfo.Length > 100)
         {
             progressUpdate.DeviceInfo = progressUpdate.DeviceInfo.Substring(0, 100);
         }
 
         await _unitOfWork.Repository<ProgressUpdate>().AddAsync(progressUpdate, cancellationToken);
+        await _unitOfWork.CompleteAsync(cancellationToken); // Save to get ProgressUpdateId
+
+        int sequence = 0;
+        var imagesToAdd = new List<ProgressUpdateImage>();
+
+        // Process uploaded files - convert to base64
+        if (request.Files != null && request.Files.Count > 0)
+        {
+            try
+            {
+                foreach (var fileBytes in request.Files.Where(f => f != null && f.Length > 0))
+                {
+                    var base64 = Convert.ToBase64String(fileBytes);
+                    var imageData = $"data:image/jpeg;base64,{base64}";
+
+                    var image = new ProgressUpdateImage
+                    {
+                        ProgressUpdateId = progressUpdate.ProgressUpdateId,
+                        ImageData = imageData,
+                        ImageType = "file",
+                        FileSize = fileBytes.Length,
+                        Sequence = sequence++,
+                        CreatedDate = DateTime.UtcNow
+                    };
+
+                    imagesToAdd.Add(image);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Result.Failure<ProgressUpdateDto>("Error processing uploaded files: " + ex.Message);
+            }
+        }
+
+        // Process image URLs - download and convert to base64
+        if (request.ImageUrls != null && request.ImageUrls.Count > 0)
+        {
+            foreach (var url in request.ImageUrls.Where(url => !string.IsNullOrWhiteSpace(url)))
+            {
+                try
+                {
+                    string imageData;
+                    long fileSize;
+                    byte[]? imageBytes = null;
+
+                    var trimmedUrl = url.Trim();
+
+                    if (trimmedUrl.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        imageData = trimmedUrl;
+
+                        var base64Index = trimmedUrl.IndexOf(',');
+                        if (base64Index >= 0 && base64Index < trimmedUrl.Length - 1)
+                        {
+                            var base64Part = trimmedUrl.Substring(base64Index + 1);
+                            imageBytes = Convert.FromBase64String(base64Part);
+                            fileSize = imageBytes.Length;
+                        }
+                        else
+                        {
+                            fileSize = 0;
+                        }
+                    }
+                    else
+                    {
+                        imageBytes = await _imageProcessingService.DownloadImageFromUrlAsync(trimmedUrl, cancellationToken);
+
+                        if (imageBytes == null || imageBytes.Length == 0)
+                        {
+                            return Result.Failure<ProgressUpdateDto>($"Failed to download image from URL: {trimmedUrl}");
+                        }
+
+                        var base64 = Convert.ToBase64String(imageBytes);
+                        imageData = $"data:image/jpeg;base64,{base64}";
+                        fileSize = imageBytes.Length;
+                    }
+
+                    var image = new ProgressUpdateImage
+                    {
+                        ProgressUpdateId = progressUpdate.ProgressUpdateId,
+                        ImageData = imageData,
+                        ImageType = "url",
+                        OriginalName = trimmedUrl,
+                        FileSize = fileSize,
+                        Sequence = sequence++,
+                        CreatedDate = DateTime.UtcNow
+                    };
+
+                    imagesToAdd.Add(image);
+                }
+                catch (Exception ex)
+                {
+                    return Result.Failure<ProgressUpdateDto>($"Error processing image from URL '{url}': {ex.Message}");
+                }
+            }
+        }
+
+        if (imagesToAdd.Count > 0)
+        {
+            foreach (var image in imagesToAdd)
+            {
+                await _unitOfWork.Repository<ProgressUpdateImage>().AddAsync(image, cancellationToken);
+            }
+        }
 
         const string dateFormat = "yyyy-MM-dd HH:mm:ss";
         var oldStatus = boxActivity.Status;
@@ -100,6 +206,7 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         var newActualEndDateString = boxActivity.ActualEndDate?.ToString(dateFormat) ?? "N/A";
 
         _unitOfWork.Repository<BoxActivity>().Update(boxActivity);
+
         var log = new AuditLog
         {
             TableName = nameof(BoxActivity),
@@ -113,11 +220,10 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         };
         await _unitOfWork.Repository<AuditLog>().AddAsync(log, cancellationToken);
 
-        await UpdateBoxProgress(request.BoxId, currentUserId, cancellationToken);
-
+        progressUpdate.BoxProgressSnapshot = await UpdateBoxProgress(request.BoxId, currentUserId, cancellationToken);
+        _unitOfWork.Repository<ProgressUpdate>().Update(progressUpdate);
         if (boxActivity.Box != null)
             await UpdateProjectProgress(boxActivity.Box.ProjectId, currentUserId, cancellationToken);
-
 
         if (inferredStatus == BoxStatusEnum.Completed && boxActivity.ActivityMaster.IsWIRCheckpoint)
         {
@@ -126,6 +232,12 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
 
             if (!wirExists)
             {
+                // Get image data from ProgressUpdateImage entities for WIR record
+                var imageDataList = imagesToAdd.Select(img => img.ImageData).ToList();
+                var photoJson = imageDataList.Count > 0
+                    ? System.Text.Json.JsonSerializer.Serialize(imageDataList)
+                    : null;
+
                 var wirRecord = new WIRRecord
                 {
                     BoxActivityId = request.BoxActivityId,
@@ -133,7 +245,7 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
                     Status = WIRRecordStatusEnum.Pending,
                     RequestedDate = DateTime.UtcNow,
                     RequestedBy = currentUserId,
-                    PhotoUrls = progressUpdate.PhotoUrls,
+                    Photo = photoJson, // JSON array of image data from ProgressUpdateImage entities
                     CreatedDate = DateTime.UtcNow
                 };
 
@@ -141,25 +253,44 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             }
         }
 
+        // Complete all changes (ProgressUpdate, Images, BoxActivity, AuditLog, Box, WIRRecord)
         await _unitOfWork.CompleteAsync(cancellationToken);
+
+        // Reload ProgressUpdate with Images to include them in DTO
+        var images = await _dbContext.ProgressUpdateImages
+            .Where(img => img.ProgressUpdateId == progressUpdate.ProgressUpdateId)
+            .OrderBy(img => img.Sequence)
+            .ToListAsync(cancellationToken);
 
         var dto = progressUpdate.Adapt<ProgressUpdateDto>() with
         {
             BoxTag = boxActivity.Box.BoxTag,
             ActivityName = boxActivity.ActivityMaster.ActivityName,
-            UpdatedByName = user.FullName ?? user.Email
+            UpdatedByName = user.FullName ?? user.Email,
+            Photo = null, // No longer storing images in Photo field
+            Images = images.Select(img => new ProgressUpdateImageDto
+            {
+                ProgressUpdateImageId = img.ProgressUpdateImageId,
+                ProgressUpdateId = img.ProgressUpdateId,
+                ImageData = img.ImageData,
+                ImageType = img.ImageType,
+                OriginalName = img.OriginalName,
+                FileSize = img.FileSize,
+                Sequence = img.Sequence,
+                CreatedDate = img.CreatedDate
+            }).ToList()
         };
 
         return Result.Success(dto);
     }
 
-    private async Task UpdateBoxProgress(Guid boxId, Guid currentUserId, CancellationToken cancellationToken)
+    private async Task<decimal> UpdateBoxProgress(Guid boxId, Guid currentUserId, CancellationToken cancellationToken)
     {
         var boxActivities = await _unitOfWork.Repository<BoxActivity>()
             .FindAsync(ba => ba.BoxId == boxId && ba.IsActive, cancellationToken);
 
         if (!boxActivities.Any())
-            return;
+            return 0;
 
         var averageProgress = boxActivities.Average(ba => ba.ProgressPercentage);
         var allCompleted = boxActivities.All(ba => ba.Status == BoxStatusEnum.Completed);
@@ -214,7 +345,11 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
                 await _unitOfWork.Repository<AuditLog>().AddAsync(log, cancellationToken);
             }
 
+            return box.ProgressPercentage;
+
         }
+        return 0;
+
     }
 
     private async Task UpdateProjectProgress(Guid projectId, Guid currentUserId, CancellationToken cancellationToken)

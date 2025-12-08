@@ -5,9 +5,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Dubox.Api.Controllers;
 
-/// <summary>
-/// Controller for generating various reports
-/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 [Authorize]
@@ -20,12 +17,6 @@ public class ReportsController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
-    /// Get box progress report - Shows progress distribution across buildings
-    /// </summary>
-    /// <param name="projectId">Optional project ID to filter results</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>List of box progress data grouped by building</returns>
     [HttpGet("box-progress")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -35,27 +26,8 @@ public class ReportsController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>
-    /// Get team productivity report - Shows team performance metrics
-    /// </summary>
-    /// <param name="projectId">Optional project ID to filter results</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>List of team productivity metrics</returns>
-    [HttpGet("team-productivity")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetTeamProductivityReport([FromQuery] Guid? projectId, CancellationToken cancellationToken)
-    {
-        var result = await _mediator.Send(new GetTeamProductivityReportQuery(projectId), cancellationToken);
-        return result.IsSuccess ? Ok(result) : BadRequest(result);
-    }
 
-    /// <summary>
-    /// Get report summary - Overall dashboard statistics
-    /// </summary>
-    /// <param name="projectId">Optional project ID to filter results</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Summary statistics for reports dashboard</returns>
+
     [HttpGet("summary")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -65,12 +37,6 @@ public class ReportsController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>
-    /// Get missing materials report - Identifies material shortages
-    /// </summary>
-    /// <param name="projectId">Optional project ID to filter results</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>List of missing materials with shortage details</returns>
     [HttpGet("missing-materials")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -80,12 +46,6 @@ public class ReportsController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>
-    /// Get phase readiness report - Tracks phase completion and blocking issues
-    /// </summary>
-    /// <param name="projectId">Optional project ID to filter results</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>List of phases with readiness status</returns>
     [HttpGet("phase-readiness")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -94,5 +54,119 @@ public class ReportsController : ControllerBase
         var result = await _mediator.Send(new GetPhaseReadinessReportQuery(projectId), cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+
+    [HttpGet("boxes")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetBoxesSummaryReport([FromQuery] GetBoxesSummaryReportQuery query, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("projects")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetProjectsSummaryReport([FromQuery] GetProjectsSummaryReportQuery query, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("activities")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetActivitiesReport([FromQuery] GetActivitiesReportQuery query, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("activities/summary")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetActivitiesSummary([FromQuery] GetActivitiesSummaryQuery query, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("activities/export/excel")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ExportActivitiesReportToExcel(
+        [FromQuery] ExportActivitiesReportQuery query,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(query, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(result);
+        }
+
+        var stream = result.Data!;
+        var fileName = $"activities_report_{DateTime.UtcNow:yyyyMMddHHmmss}.xlsx";
+
+        return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+    }
+
+    [HttpGet("teams-performance")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetTeamsPerformanceReport([FromQuery] GetTeamsPerformanceReportQuery query, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("teams-performance/summary")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetTeamsPerformanceSummary([FromQuery] GetTeamsPerformanceSummaryQuery query, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("teams-performance/{teamId}/activities")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetTeamActivities(
+        Guid teamId,
+        [FromQuery] Guid? projectId,
+        [FromQuery] int? status,
+        CancellationToken cancellationToken)
+    {
+        var query = new GetTeamActivitiesQuery
+        {
+            TeamId = teamId,
+            ProjectId = projectId,
+            Status = status
+        };
+        var result = await _mediator.Send(query, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("teams-performance/export/excel")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ExportTeamsPerformanceReportToExcel(
+        [FromQuery] ExportTeamsPerformanceReportQuery query,
+        CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(query, cancellationToken);
+
+        if (!result.IsSuccess)
+        {
+            return BadRequest(result);
+        }
+
+        var stream = result.Data!;
+        var fileName = $"teams_performance_report_{DateTime.UtcNow:yyyyMMddHHmmss}.xlsx";
+
+        return File(stream, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+    }
+
 }
 

@@ -59,6 +59,16 @@ public class ProjectsController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
+    [HttpPut("{projectId}/compression-start-date")]
+    public async Task<IActionResult> UpdateCompressionStartDate(Guid projectId, [FromBody] UpdateCompressionStartDateCommand command, CancellationToken cancellationToken)
+    {
+        if (projectId != command.ProjectId)
+            return BadRequest("Project ID mismatch");
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
     [HttpDelete("{projectId}")]
     public async Task<IActionResult> DeleteProject(Guid projectId, CancellationToken cancellationToken)
     {

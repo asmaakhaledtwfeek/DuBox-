@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiService, PaginatedResponse } from './api.service';
-import { Box, BoxActivity, BoxAttachment, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview } from '../models/box.model';
+import { Box, BoxActivity, BoxAttachment, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview, BoxTypeStatsByProject } from '../models/box.model';
 
 @Injectable({
   providedIn: 'root'
@@ -18,7 +18,7 @@ export class BoxService {
   private mapStatus(status: any): string {
     // If already a string, check if it's valid
     if (typeof status === 'string') {
-      const validStatuses = ['NotStarted', 'InProgress', 'Completed', 'OnHold', 'Delayed', 'QAReview', 'ReadyForDelivery', 'Delivered'];
+      const validStatuses = ['NotStarted', 'InProgress', 'Completed', 'OnHold', 'Delayed', 'Dispatched', 'QAReview', 'ReadyForDelivery', 'Delivered'];
       if (validStatuses.includes(status)) {
         return status;
       }
@@ -30,7 +30,8 @@ export class BoxService {
       2: 'InProgress',
       3: 'Completed',
       4: 'OnHold',
-      5: 'Delayed'
+      5: 'Delayed',
+      6: 'Dispatched'
     };
 
     const numericStatus = typeof status === 'number' ? status : parseInt(status, 10);
@@ -63,6 +64,7 @@ export class BoxService {
       id: backendBox.boxId || backendBox.id,
       name: backendBox.boxName || backendBox.name,
       code: backendBox.boxTag || backendBox.boxCode || backendBox.code,
+      serialNumber: backendBox.serialNumber || backendBox.SerialNumber,
       projectId: backendBox.projectId,
       status: mappedStatus as any,
       type: backendBox.boxType || backendBox.type,
@@ -93,6 +95,9 @@ export class BoxService {
       logs: backendBox.logs || [],
       notes: backendBox.notes ?? backendBox.Notes,
       qrCode: qrCode,
+      currentLocationId: backendBox.currentLocationId,
+      currentLocationCode: backendBox.currentLocationCode,
+      currentLocationName: backendBox.currentLocationName,
       createdBy: backendBox.createdBy,
       updatedBy: backendBox.modifiedBy || backendBox.updatedBy,
       createdAt: this.parseDate(backendBox.createdDate ?? backendBox.CreatedDate),
@@ -191,8 +196,13 @@ export class BoxService {
   /**
    * Update box status
    */
-  updateBoxStatus(id: string, status: string): Observable<Box> {
-    return this.apiService.patch<any>(`${this.endpoint}/${id}/status`, { status }).pipe(
+  updateBoxStatus(id: string, status: string | number): Observable<Box> {
+    // Backend expects: { boxId: Guid, status: int }
+    const statusNumber = typeof status === 'string' ? parseInt(status, 10) : status;
+    return this.apiService.patch<any>(`${this.endpoint}/${id}/status`, { 
+      boxId: id, 
+      status: statusNumber 
+    }).pipe(
       map(response => this.transformBox(response))
     );
   }
@@ -351,10 +361,27 @@ export class BoxService {
   }
 
   /**
-   * Get box logs
+   * Get box logs with pagination and search
    */
-  getBoxLogs(boxId: string): Observable<BoxLog[]> {
-    return this.apiService.get<BoxLog[]>(`${this.endpoint}/${boxId}/logs`);
+  getBoxLogs(
+    boxId: string, 
+    page: number = 1, 
+    pageSize: number = 25,
+    searchTerm?: string,
+    action?: string,
+    fromDate?: string,
+    toDate?: string
+  ): Observable<PaginatedResponse<BoxLog>> {
+    const params: any = {
+      pageNumber: page,
+      pageSize: pageSize
+    };
+    if (searchTerm) params.searchTerm = searchTerm;
+    if (action) params.action = action;
+    if (fromDate) params.fromDate = fromDate;
+    if (toDate) params.toDate = toDate;
+    
+    return this.apiService.get<PaginatedResponse<BoxLog>>(`${this.endpoint}/${boxId}/logs`, params);
   }
 
   /**
@@ -386,5 +413,12 @@ export class BoxService {
     return this.apiService.upload<any>(endpoint, file).pipe(
       map(result => this.transformImportResult(result))
     );
+  }
+
+  /**
+   * Get box type statistics by project
+   */
+  getBoxTypeStatsByProject(projectId: string): Observable<BoxTypeStatsByProject> {
+    return this.apiService.get<BoxTypeStatsByProject>(`${this.endpoint}/project/${projectId}/box-type-stats`);
   }
 }

@@ -173,6 +173,17 @@ export class AuthService {
   }
 
   /**
+   * Change password for authenticated user
+   */
+  changePassword(userId: string, currentPassword: string, newPassword: string): Observable<any> {
+    return this.apiService.post('auth/change-password', {
+      userId,
+      currentPassword,
+      newPassword
+    });
+  }
+
+  /**
    * Refresh authentication token
    */
   refreshToken(): Observable<LoginResponse> {

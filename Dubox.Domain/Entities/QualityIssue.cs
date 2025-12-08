@@ -45,12 +45,11 @@ namespace Dubox.Domain.Entities
 
         public string? ResolutionDescription { get; set; }
 
-        [MaxLength(500)]
-        public string? PhotoPath { get; set; }
-
         // Navigation properties
         public virtual Box Box { get; set; } = null!;
         public virtual WIRCheckpoint? WIRCheckpoint { get; set; }
+
+        public List<QualityIssueImage> Images { get; set; } = new();
 
         // Calculated properties
         [NotMapped]

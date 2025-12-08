@@ -26,8 +26,8 @@ namespace Dubox.Domain.Entities
 
         public DateTime MovedDate { get; set; } = DateTime.UtcNow;
 
-        [MaxLength(200)]
-        public string? MovedBy { get; set; }
+        [ForeignKey(nameof(MovedByUser))]
+        public Guid? MovedBy { get; set; }
 
         [MaxLength(500)]
         public string? Reason { get; set; }
@@ -38,5 +38,6 @@ namespace Dubox.Domain.Entities
         public virtual Box Box { get; set; } = null!;
         public virtual FactoryLocation Location { get; set; } = null!;
         public virtual FactoryLocation? MovedFromLocation { get; set; }
+        public virtual User? MovedByUser { get; set; }
     }
 }

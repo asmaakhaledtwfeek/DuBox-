@@ -1,0 +1,237 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="details-page">
+  <div class="page-content" *ngIf="!loadingUser && user; else loadingState">
+    <div class="page-header">
+      <button class="btn btn-ghost" type="button" (click)="goBack()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Back to users
+      </button>
+      <div class="title-block">
+        <p class="eyebrow">Admin • Users</p>
+        <h1>{{ user?.fullName || 'User Details' }}</h1>
+        <p class="email">{{ user?.email }}</p>
+      </div>
+      <div class="header-actions"></div>
+
+  <div class="modal-backdrop" *ngIf="rolesModalOpen">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3>Manage Roles</h3>
+          <p>Select direct roles for this user.</p>
+        </div>
+        <button class="icon-button" (click)="closeRolesModal()">&times;</button>
+      </div>
+      <div class="modal-body list-body">
+        <label class="option-row" *ngFor="let role of roles">
+          <input type="checkbox"
+                 [checked]="roleSelection.includes(role.roleId)"
+                 (change)="onRoleToggle(role.roleId, $any($event.target).checked)" />
+          <span>
+            <strong>{{ role.roleName }}</strong>
+            <small>{{ role.description || 'No description provided' }}</small>
+          </span>
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="closeRolesModal()">Cancel</button>
+        <button class="btn btn-primary" (click)="applyRoleSelection()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="groupsModalOpen">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3>Manage Groups</h3>
+          <p>Select which groups this user belongs to.</p>
+        </div>
+        <button class="icon-button" (click)="closeGroupsModal()">&times;</button>
+      </div>
+      <div class="modal-body list-body">
+        <label class="option-row" *ngFor="let group of groups">
+          <input type="checkbox"
+                 [checked]="groupSelection.includes(group.groupId)"
+                 (change)="onGroupToggle(group.groupId, $any($event.target).checked)" />
+          <span>
+            <strong>{{ group.groupName }}</strong>
+            <small>{{ group.description || '—' }}</small>
+          </span>
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="closeGroupsModal()">Cancel</button>
+        <button class="btn btn-primary" (click)="applyGroupSelection()">Save</button>
+      </div>
+    </div>
+  </div>
+    </div>
+
+    <section class="summary-grid">
+      <article class="summary-card">
+        <span>Status</span>
+        <strong [class.active]="user?.isActive">{{ user?.isActive ? 'Active' : 'Inactive' }}</strong>
+        <small>User can sign in to DuBox</small>
+      </article>
+      <article class="summary-card">
+        <span>Department</span>
+        <strong>{{ user?.department || '—' }}</strong>
+        <small>Reporting structure</small>
+      </article>
+      <article class="summary-card">
+        <span>Created</span>
+        <strong>{{ user?.createdDate | date: 'mediumDate' }}</strong>
+        <small>Invitation accepted</small>
+      </article>
+      <article class="summary-card">
+        <span>Last login</span>
+        <strong>{{ user?.lastLoginDate ? (user?.lastLoginDate | date:'mediumDate') : 'Never' }}</strong>
+        <small>Last activity</small>
+      </article>
+    </section>
+
+    <section class="card form-card full-width">
+      <div class="card-header">
+        <h2>Manage access</h2>
+        <p>Update profile information and assignment.</p>
+      </div>
+
+      <form [formGroup]="userForm" class="form-grid">
+        <div class="form-toolbar">
+          <button class="btn btn-primary" type="button" (click)="onSave()" [disabled]="saving">
+            <span *ngIf="!saving">Save Changes</span>
+            <span *ngIf="saving">Saving…</span>
+          </button>
+        </div>
+
+        <div class="core-fields">
+          <label>
+            <span>Full name <sup>*</sup></span>
+            <input type="text" formControlName="fullName" placeholder="Full name" />
+          </label>
+
+          <label>
+            <span>Email</span>
+            <input type="text" formControlName="email" [disabled]="true" />
+          </label>
+
+          <label>
+            <span>Department <sup>*</sup></span>
+            <select formControlName="departmentId">
+              <option value="">Select department</option>
+              <option *ngFor="let dept of departments" [value]="dept.departmentId">{{ dept.departmentName }}</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="selection-field">
+          <div class="selection-info">
+            <label>Assign roles</label>
+            <input type="text" class="readonly-input" [value]="selectedRoleNames" readonly />
+            <small>Direct roles immediately grant permissions.</small>
+          </div>
+          <button type="button" class="btn btn-secondary light" (click)="openRolesModal()">Manage</button>
+        </div>
+
+        <div class="selection-field">
+          <div class="selection-info">
+            <label>Assign groups</label>
+            <input type="text" class="readonly-input" [value]="selectedGroupNames" readonly />
+            <small>Groups include bundled roles.</small>
+          </div>
+          <button type="button" class="btn btn-secondary light" (click)="openGroupsModal()">Manage</button>
+        </div>
+
+        <label class="switch-field">
+          <input type="checkbox" formControlName="isActive" />
+          <span>User is active</span>
+        </label>
+      </form>
+    </section>
+
+    <section class="card access-card full-width">
+        <div class="card-header">
+          <h2>Access overview</h2>
+          <p>Everything this user can do in the platform.</p>
+        </div>
+
+        <div class="roles-panels">
+          <article class="role-panel">
+            <div class="panel-head">
+              <h4>Direct roles</h4>
+              <span>{{ (user?.directRoleSummaries?.length || user?.directRoles?.length || 0) }}</span>
+            </div>
+            <div class="pill-column" *ngIf="user?.directRoleSummaries?.length; else fallbackDirectRoles">
+              <div class="role-pill" *ngFor="let role of user?.directRoleSummaries">
+                <strong>{{ role.roleName || 'Role' }}</strong>
+                <p>{{ role.description || 'No description provided.' }}</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="role-panel">
+          <div class="panel-head">
+            <h4>All roles</h4>
+            <span>{{ userAllRoleSummaries.length }}</span>
+            </div>
+          <div class="pill-column" *ngIf="userAllRoleSummaries.length; else noAllRoles">
+            <div class="role-pill" *ngFor="let role of userAllRoleSummaries">
+              <strong>{{ role.roleName || 'Role' }}</strong>
+              <p>{{ role.description || 'No description provided.' }}</p>
+            </div>
+            </div>
+          </article>
+        </div>
+
+        <ng-template #noDirectRoles>
+          <p class="empty-text">No direct roles assigned.</p>
+        </ng-template>
+
+        <ng-template #fallbackDirectRoles>
+          <div class="chip-row" *ngIf="user?.directRoles?.length; else noDirectRoles">
+            <span class="chip" *ngFor="let role of user?.directRoles">{{ role }}</span>
+          </div>
+        </ng-template>
+
+        <ng-template #noAllRoles>
+          <p class="empty-text">No roles available.</p>
+        </ng-template>
+
+        <div class="group-section">
+          <h3>Group memberships</h3>
+          <div class="group-grid" *ngIf="user?.groups?.length; else noGroups">
+            <article class="group-card" *ngFor="let membership of user?.groups">
+              <header>
+                <div>
+                  <strong>{{ membership.groupName || 'Untitled group' }}</strong>
+                </div>
+                <span class="badge">{{ getGroupRoles(membership.groupId).length }} roles</span>
+              </header>
+              <div class="chip-row">
+                <span class="chip tiny" *ngFor="let role of getGroupRoles(membership.groupId)">{{ role }}</span>
+                <span class="empty-text" *ngIf="!getGroupRoles(membership.groupId).length">No roles inherited.</span>
+              </div>
+            </article>
+          </div>
+          <ng-template #noGroups>
+            <p class="empty-text">This user is not assigned to any groups yet.</p>
+          </ng-template>
+        </div>
+    </section>
+  </div>
+
+  <ng-template #loadingState>
+    <div class="loading-state">
+      <p>Loading user details…</p>
+    </div>
+  </ng-template>
+</div>
+
+
+
+

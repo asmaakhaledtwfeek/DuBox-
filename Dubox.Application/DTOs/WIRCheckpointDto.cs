@@ -40,17 +40,30 @@ namespace Dubox.Application.DTOs
         public BoxDto? Box { get; set; }
         public List<WIRChecklistItemDto> ChecklistItems { get; set; } = new();
         public List<QualityIssueDto> QualityIssues { get; set; } = new();
+        public List<WIRCheckpointImageDto> Images { get; set; } = new();
+    }
+    
+    public class WIRCheckpointImageDto
+    {
+        public Guid WIRCheckpointImageId { get; set; }
+        public Guid WIRId { get; set; }
+        public string ImageData { get; set; } = string.Empty;
+        public string ImageType { get; set; } = "file";
+        public string? OriginalName { get; set; }
+        public long? FileSize { get; set; }
+        public int Sequence { get; set; }
+        public DateTime CreatedDate { get; set; }
     }
     public class WIRChecklistItemDto
     {
         public Guid ChecklistItemId { get; set; }
-        public string ItemName { get; set; } = string.Empty;
-        public bool IsChecked { get; set; }
+        public Guid WIRId { get; set; }
+        public string CheckpointDescription { get; set; } = string.Empty;
         public string? ReferenceDocument { get; set; }
         public string? Remarks { get; set; }
         public CheckListItemStatusEnum Status { get; set; }
         public int Sequence { get; set; }
-
+        public Guid? PredefinedItemId { get; set; } // Reference to the predefined item this was cloned from
     }
     public class QualityIssueDto
     {
@@ -62,6 +75,17 @@ namespace Dubox.Application.DTOs
         public DateTime DueDate { get; set; }
         public string? ReportedBy { get; set; }
         public QualityIssueStatusEnum Status { get; set; }
+        public List<QualityIssueImageDto> Images { get; set; } = new();
+    }
+
+    public class PredefinedChecklistItemDto
+    {
+        public Guid PredefinedItemId { get; set; }
+        public string CheckpointDescription { get; set; } = string.Empty;
+        public string? ReferenceDocument { get; set; }
+        public int Sequence { get; set; }
+        public string? Category { get; set; }
+        public bool IsActive { get; set; }
     }
     public class CreateWIRCheckpointDto
     {

@@ -19,6 +19,13 @@ export class CreateBoxComponent implements OnInit {
   error = '';
   successMessage = '';
   projectId!: string;
+  currentStep = 1;
+  totalSteps = 2;
+
+  // Asset modal state
+  isAssetModalOpen = false;
+  editingAssetIndex: number | null = null;
+  assetForm!: FormGroup;
 
   boxTypes = [
     'Living Room',
@@ -49,6 +56,7 @@ export class CreateBoxComponent implements OnInit {
       this.error = 'Project ID is required';
     }
     this.initForm();
+    this.initAssetForm();
   }
 
   private initForm(): void {
@@ -74,16 +82,57 @@ export class CreateBoxComponent implements OnInit {
     return this.boxForm.get('assets') as FormArray;
   }
 
-  addAsset(): void {
-    this.assets.push(this.createAssetGroup());
+  // Step navigation
+  goToStep(step: number): void {
+    if (step >= 1 && step <= this.totalSteps) {
+      // Validate step 1 before moving to step 2
+      if (step === 2 && this.currentStep === 1) {
+        if (!this.validateStep1()) {
+          return;
+        }
+      }
+      this.currentStep = step;
+    }
   }
 
-  removeAsset(index: number): void {
-    this.assets.removeAt(index);
+  nextStep(): void {
+    if (this.currentStep < this.totalSteps) {
+      if (this.currentStep === 1 && !this.validateStep1()) {
+        return;
+      }
+      this.currentStep++;
+    }
   }
 
-  private createAssetGroup(): FormGroup {
-    return this.fb.group({
+  previousStep(): void {
+    if (this.currentStep > 1) {
+      this.currentStep--;
+    }
+  }
+
+  private validateStep1(): boolean {
+    const step1Fields = ['boxTag', 'boxType', 'floor'];
+    let isValid = true;
+
+    step1Fields.forEach(field => {
+      const control = this.boxForm.get(field);
+      if (control && control.invalid) {
+        control.markAsTouched();
+        isValid = false;
+      }
+    });
+
+    if (!isValid) {
+      this.error = 'Please fill in all required fields in Step 1 before proceeding.';
+      setTimeout(() => this.error = '', 5000);
+    }
+
+    return isValid;
+  }
+
+  // Asset modal methods
+  initAssetForm(): void {
+    this.assetForm = this.fb.group({
       assetType: ['', Validators.required],
       assetCode: [''],
       assetName: [''],
@@ -94,7 +143,89 @@ export class CreateBoxComponent implements OnInit {
     });
   }
 
+  openAssetModal(index?: number): void {
+    this.editingAssetIndex = index !== undefined ? index : null;
+    
+    if (index !== undefined && this.assets.at(index)) {
+      // Edit existing asset
+      const asset = this.assets.at(index).value;
+      this.assetForm.patchValue(asset);
+    } else {
+      // Add new asset
+      this.assetForm.reset({
+        assetType: '',
+        assetCode: '',
+        assetName: '',
+        quantity: 1,
+        unit: '',
+        specifications: '',
+        notes: ''
+      });
+    }
+    
+    this.isAssetModalOpen = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeAssetModal(): void {
+    this.isAssetModalOpen = false;
+    this.editingAssetIndex = null;
+    this.assetForm.reset({
+      assetType: '',
+      assetCode: '',
+      assetName: '',
+      quantity: 1,
+      unit: '',
+      specifications: '',
+      notes: ''
+    });
+    document.body.style.overflow = '';
+  }
+
+  saveAsset(): void {
+    if (this.assetForm.invalid) {
+      this.markFormGroupTouched(this.assetForm);
+      return;
+    }
+
+    const assetValue = this.assetForm.value;
+    
+    if (this.editingAssetIndex !== null) {
+      // Update existing asset
+      const assetGroup = this.assets.at(this.editingAssetIndex) as FormGroup;
+      assetGroup.patchValue(assetValue);
+    } else {
+      // Add new asset
+      this.assets.push(this.fb.group({
+        assetType: [assetValue.assetType, Validators.required],
+        assetCode: [assetValue.assetCode || ''],
+        assetName: [assetValue.assetName || ''],
+        quantity: [assetValue.quantity || 1, [Validators.required, Validators.min(1)]],
+        unit: [assetValue.unit || ''],
+        specifications: [assetValue.specifications || ''],
+        notes: [assetValue.notes || '']
+      }));
+    }
+
+    this.closeAssetModal();
+  }
+
+  removeAsset(index: number): void {
+    this.assets.removeAt(index);
+  }
+
+  editAsset(index: number): void {
+    this.openAssetModal(index);
+  }
+
+
   onSubmit(): void {
+    // Validate step 1 before submission
+    if (!this.validateStep1()) {
+      this.currentStep = 1;
+      return;
+    }
+
     if (this.boxForm.invalid) {
       this.markFormGroupTouched(this.boxForm);
       return;

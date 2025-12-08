@@ -36,66 +36,49 @@
           <!-- Checklist Items Header -->
           <div class="checklist-header">
             <div>
-              <h3>Checklist Items</h3>
-              <p>Add checklist items for this WIR checkpoint</p>
+              <h3>Select Predefined Checklist Items</h3>
+              <p>Select items from the predefined checklist to add to this checkpoint</p>
             </div>
-            <button type="button" class="btn btn-link" (click)="addChecklistItem()">
-              + Add Item
-            </button>
+            <div *ngIf="selectedPredefinedItemIds.length > 0" class="selection-count">
+              {{ selectedPredefinedItemIds.length }} item(s) selected
+            </div>
           </div>
 
-          <!-- Checklist Items -->
-          <div class="checklist-items-container" formArrayName="checklistItems">
-            <div class="empty-checklist" *ngIf="checklistItems.length === 0">
-              No checklist items added yet. Click "Add Item" to include checklist items for this checkpoint.
+          <!-- Loading State for Predefined Items -->
+          <div class="loading-container" *ngIf="loadingPredefinedItems">
+            <div class="spinner"></div>
+            <p>Loading predefined checklist items...</p>
+          </div>
+
+          <!-- Predefined Checklist Items -->
+          <div class="predefined-items-container" *ngIf="!loadingPredefinedItems">
+            <div class="empty-checklist" *ngIf="availablePredefinedItems.length === 0">
+              <p>All predefined checklist items have been added to this checkpoint.</p>
             </div>
 
-            <div *ngFor="let item of checklistItems.controls; let i = index" [formGroupName]="i" class="checklist-item-form">
-              <div class="item-header">
-                <span class="item-sequence">Item {{ i + 1 }}</span>
-                <button type="button" class="btn btn-icon" (click)="removeChecklistItem(i)">
-                  Remove
-                </button>
+            <div 
+              *ngFor="let item of availablePredefinedItems" 
+              class="predefined-item-card"
+              [class.selected]="isPredefinedItemSelected(item.predefinedItemId)"
+              (click)="togglePredefinedItemSelection(item.predefinedItemId)"
+            >
+              <div class="item-checkbox">
+                <input 
+                  type="checkbox" 
+                  [checked]="isPredefinedItemSelected(item.predefinedItemId)"
+                  (change)="togglePredefinedItemSelection(item.predefinedItemId)"
+                  (click)="$event.stopPropagation()"
+                />
               </div>
-              
-              <div class="form-grid">
-                <div class="form-group full-width">
-                  <label>Checkpoint Description <span class="required">*</span></label>
-                  <textarea 
-                    formControlName="checkpointDescription" 
-                    class="form-control"
-                    [class.invalid]="item.get('checkpointDescription')?.invalid && item.get('checkpointDescription')?.touched"
-                    rows="2"
-                    placeholder="Enter checkpoint description"
-                  ></textarea>
-                  <div *ngIf="item.get('checkpointDescription')?.invalid && item.get('checkpointDescription')?.touched" class="error-text">
-                    Checkpoint description is required.
-                  </div>
+              <div class="item-content">
+                <div class="item-header">
+                  <span class="item-sequence">#{{ item.sequence }}</span>
+                  <span class="item-category" *ngIf="item.category">{{ item.category }}</span>
                 </div>
-
-                <div class="form-group">
-                  <label>Reference Document</label>
-                  <input 
-                    type="text" 
-                    formControlName="referenceDocument" 
-                    class="form-control"
-                    placeholder="e.g., Drawing No., Specification"
-                  >
-                </div>
-
-                <div class="form-group">
-                  <label>Sequence <span class="required">*</span></label>
-                  <input 
-                    type="number" 
-                    formControlName="sequence" 
-                    class="form-control"
-                    [class.invalid]="item.get('sequence')?.invalid && item.get('sequence')?.touched"
-                    min="1"
-                  >
-                  <div *ngIf="item.get('sequence')?.invalid && item.get('sequence')?.touched" class="error-text">
-                    Sequence is required.
-                  </div>
-                </div>
+                <p class="item-description">{{ item.checkpointDescription }}</p>
+                <p class="item-reference" *ngIf="item.referenceDocument">
+                  <strong>Reference:</strong> {{ item.referenceDocument }}
+                </p>
               </div>
             </div>
           </div>
@@ -104,9 +87,14 @@
             <button type="button" class="btn btn-secondary" (click)="goBack()" [disabled]="submitting">
               Cancel
             </button>
-            <button type="submit" class="btn btn-primary" [disabled]="submitting || checklistForm.invalid">
-              <span *ngIf="submitting">Adding Items...</span>
-              <span *ngIf="!submitting">Add Checklist Items</span>
+            <button type="submit" class="btn btn-primary" [disabled]="submitting || selectedPredefinedItemIds.length === 0">
+              <span *ngIf="!submitting">Add Selected Items ({{ selectedPredefinedItemIds.length }})</span>
+              <span *ngIf="submitting">
+                <span class="spinner-inline">
+                  <span class="spinner small"></span>
+                </span>
+                Adding...
+              </span>
             </button>
           </div>
         </form>

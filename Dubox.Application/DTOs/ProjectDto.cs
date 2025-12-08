@@ -12,6 +12,7 @@ public record ProjectDto
     public DateTime? StartDate { get; init; }
     public DateTime? PlannedEndDate { get; init; }
     public DateTime? ActualEndDate { get; init; }
+    public DateTime? CompressionStartDate { get; init; }
     public string Status { get; init; } = string.Empty;
     public string? Description { get; init; }
     public int TotalBoxes { get; init; }

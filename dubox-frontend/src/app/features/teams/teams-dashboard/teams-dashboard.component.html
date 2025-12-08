@@ -170,7 +170,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let team of filteredTeams" [class.inactive]="!team.isActive">
+            <tr *ngFor="let team of paginatedTeams" [class.inactive]="!team.isActive">
               <td class="code-cell">
                 <strong>{{ team.teamCode }}</strong>
               </td>
@@ -189,22 +189,31 @@
               <td>{{ team.createdDate | date:'short' }}</td>
               <td class="actions-cell">
                 <button 
-                  class="btn-icon"
-                  (click)="viewDetails(team.teamId)"
+                  class="btn-icon btn-view-details"
+                  (click)="viewDetails(team.teamId); $event.stopPropagation()"
                   title="View Details"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                     <circle cx="12" cy="12" r="3"/>
                   </svg>
                 </button>
                 <button 
+                  class="btn-icon btn-view-activities"
+                  (click)="viewTeamActivities(team); $event.stopPropagation()"
+                  title="View Activities"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/>
+                  </svg>
+                </button>
+                <button 
                   *ngIf="canEdit"
-                  class="btn-icon"
-                  (click)="editTeam(team.teamId)"
+                  class="btn-icon btn-edit"
+                  (click)="editTeam(team.teamId); $event.stopPropagation()"
                   title="Edit"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
                     <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
                   </svg>
@@ -215,7 +224,7 @@
         </table>
 
           <!-- Empty State -->
-          <div *ngIf="filteredTeams.length === 0" class="empty-state">
+          <div *ngIf="paginatedTeams.length === 0 && !loading" class="empty-state">
             <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/>
             </svg>
@@ -229,6 +238,159 @@
               Create Team
             </button>
           </div>
+        </div>
+
+        <!-- Pagination Section -->
+        <div class="pagination-section" *ngIf="totalCount > 0">
+          <div class="pagination-info">
+            <span class="pagination-text">
+              Showing <strong>{{ getStartIndex() }}</strong> - 
+              <strong>{{ getEndIndex() }}</strong> of 
+              <strong>{{ totalCount }}</strong> teams
+            </span>
+            <span class="page-info">
+              (Page {{ currentPage }} of {{ totalPages }})
+            </span>
+          </div>
+          
+          <div class="pagination-controls-wrapper" *ngIf="totalPages > 1">
+            <div class="pagination-controls">
+              <button 
+                class="btn-pagination btn-first" 
+                (click)="onPageChange(1)" 
+                [disabled]="currentPage === 1"
+                title="First page">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="11 17 6 12 11 7"/>
+                  <polyline points="18 17 13 12 18 7"/>
+                </svg>
+              </button>
+              <button 
+                class="btn-pagination btn-prev" 
+                (click)="onPageChange(currentPage - 1)" 
+                [disabled]="currentPage === 1"
+                title="Previous page">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="15 18 9 12 15 6"/>
+                </svg>
+              </button>
+              
+              <div class="page-numbers">
+                <button 
+                  *ngFor="let page of getPageNumbers()" 
+                  class="btn-page" 
+                  [class.active]="page !== '...' && page === currentPage"
+                  (click)="onPageChangePage(page)"
+                  [disabled]="page === '...'">
+                  {{ page }}
+                </button>
+              </div>
+
+              <button 
+                class="btn-pagination btn-next" 
+                (click)="onPageChange(currentPage + 1)" 
+                [disabled]="currentPage === totalPages"
+                title="Next page">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </button>
+              <button 
+                class="btn-pagination btn-last" 
+                (click)="onPageChange(totalPages)" 
+                [disabled]="currentPage === totalPages"
+                title="Last page">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="13 17 18 12 13 7"/>
+                  <polyline points="6 17 11 12 6 7"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="page-size-selector">
+            <label>Items per page:</label>
+            <select [(ngModel)]="pageSize" (change)="onPageSizeChange()" [ngModelOptions]="{standalone: true}">
+              <option [value]="10">10</option>
+              <option [value]="25">25</option>
+              <option [value]="50">50</option>
+              <option [value]="100">100</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Team Activities Modal -->
+<div class="modal-overlay" *ngIf="showActivitiesModal" (click)="closeActivitiesModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Team Activities - {{ selectedTeam?.teamName }}</h2>
+      <button class="btn-close-modal" (click)="closeActivitiesModal()" title="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="loading-state" *ngIf="loadingActivities">
+        <div class="spinner"></div>
+        <p>Loading activities...</p>
+      </div>
+
+      <div *ngIf="!loadingActivities && teamActivities">
+        <div class="activities-summary" *ngIf="teamActivities.activities.length > 0">
+          <p class="summary-text">Total Activities: <strong>{{ teamActivities.totalCount }}</strong></p>
+        </div>
+
+        <div class="activities-table-wrapper" *ngIf="teamActivities.activities.length > 0">
+          <table class="activities-table">
+            <thead>
+              <tr>
+                <th>Activity Name</th>
+                <th>Box Tag</th>
+                <th>Project</th>
+                <th>Status</th>
+                <th>Progress</th>
+                <th>Planned Start</th>
+                <th>Planned End</th>
+                <th>Actual Start</th>
+                <th>Actual End</th>
+                <th>Duration</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let activity of teamActivities.activities" class="activity-row" (click)="navigateToActivityDetails(activity)">
+                <td class="activity-name">{{ activity.activityName }}</td>
+                <td class="box-tag">{{ activity.boxTag }}</td>
+                <td class="project-name">{{ activity.projectName }}</td>
+                <td>
+                  <span class="status-badge" [ngClass]="getStatusClass(activity.status)">
+                    {{ getStatusLabel(activity.status) }}
+                  </span>
+                </td>
+                <td class="progress-cell">
+                  <div class="progress-bar-container">
+                    <div class="progress-bar" [style.width.%]="activity.progressPercentage"></div>
+                    <span class="progress-text">{{ formatProgress(activity.progressPercentage) }}</span>
+                  </div>
+                </td>
+                <td class="date-cell">{{ formatDate(activity.plannedStartDate) }}</td>
+                <td class="date-cell">{{ formatDate(activity.plannedEndDate) }}</td>
+                <td class="date-cell">{{ formatDate(activity.actualStartDate) }}</td>
+                <td class="date-cell">{{ formatDate(activity.actualEndDate) }}</td>
+                <td class="duration-cell">{{ activity.duration ? activity.duration + ' days' : 'N/A' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="empty-state" *ngIf="teamActivities.activities.length === 0">
+          <p>No activities found for this team.</p>
         </div>
       </div>
     </div>

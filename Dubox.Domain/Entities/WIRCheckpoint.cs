@@ -48,8 +48,7 @@ namespace Dubox.Domain.Entities
 
         public string? Comments { get; set; }
 
-        [MaxLength(500)]
-        public string? AttachmentPath { get; set; }
+        public string? Photo { get; set; }
 
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
@@ -57,6 +56,7 @@ namespace Dubox.Domain.Entities
         public virtual Box Box { get; set; } = null!;
         public virtual ICollection<WIRChecklistItem> ChecklistItems { get; set; } = new List<WIRChecklistItem>();
         public virtual ICollection<QualityIssue> QualityIssues { get; set; } = new List<QualityIssue>();
+        public virtual ICollection<WIRCheckpointImage> Images { get; set; } = new List<WIRCheckpointImage>();
 
         // Calculated properties
         [NotMapped]

@@ -185,6 +185,7 @@ export class ProjectsListComponent implements OnInit {
           break;
         case BoxStatus.Completed:
         case BoxStatus.Delivered:
+        case BoxStatus.Dispatched:
           counts.completedBoxes++;
           break;
         case BoxStatus.ReadyForDelivery:
@@ -314,5 +315,54 @@ export class ProjectsListComponent implements OnInit {
     // Use the value directly for the bar width (no conversion needed)
     // Ensure it doesn't exceed 100%
     return Math.min(progress, 100);
+  }
+
+  /**
+   * Get the priority start date for a project based on: ActualStartDate > CompressionStartDate > PlannedStartDate
+   */
+  getProjectStartDate(project: Project): Date | undefined {
+    if (!project) return undefined;
+    
+    // Priority: ActualStartDate > CompressionStartDate > PlannedStartDate
+    if (project.actualStartDate) {
+      const date = project.actualStartDate instanceof Date ? project.actualStartDate : new Date(project.actualStartDate);
+      if (!isNaN(date.getTime())) return date;
+    }
+    
+    if (project.compressionStartDate) {
+      const date = project.compressionStartDate instanceof Date ? project.compressionStartDate : new Date(project.compressionStartDate);
+      if (!isNaN(date.getTime())) return date;
+    }
+    
+    if (project.plannedStartDate) {
+      const date = project.plannedStartDate instanceof Date ? project.plannedStartDate : new Date(project.plannedStartDate);
+      if (!isNaN(date.getTime())) return date;
+    }
+    
+    return undefined;
+  }
+
+  /**
+   * Get the label for the priority start date
+   */
+  getProjectStartDateLabel(project: Project): string {
+    if (!project) return 'Not Scheduled';
+    
+    if (project.actualStartDate) {
+      const date = project.actualStartDate instanceof Date ? project.actualStartDate : new Date(project.actualStartDate);
+      if (!isNaN(date.getTime())) return 'Started:';
+    }
+    
+    if (project.compressionStartDate) {
+      const date = project.compressionStartDate instanceof Date ? project.compressionStartDate : new Date(project.compressionStartDate);
+      if (!isNaN(date.getTime())) return 'Compression Start:';
+    }
+    
+    if (project.plannedStartDate) {
+      const date = project.plannedStartDate instanceof Date ? project.plannedStartDate : new Date(project.plannedStartDate);
+      if (!isNaN(date.getTime())) return 'Planned Start:';
+    }
+    
+    return 'Not Scheduled';
   }
 }

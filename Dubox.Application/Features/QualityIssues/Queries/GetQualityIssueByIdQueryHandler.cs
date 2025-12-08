@@ -24,7 +24,22 @@ namespace Dubox.Application.Features.QualityIssues.Queries
             if (issue is null)
                 return Result.Failure<QualityIssueDetailsDto>("Quality Issue not found.");
 
-            return Result.Success(issue.Adapt<QualityIssueDetailsDto>());
+            var dto = issue.Adapt<QualityIssueDetailsDto>();
+            dto.Images = issue.Images
+                .OrderBy(img => img.Sequence)
+                .Select(img => new QualityIssueImageDto
+                {
+                    QualityIssueImageId = img.QualityIssueImageId,
+                    IssueId = img.IssueId,
+                    ImageData = img.ImageData,
+                    ImageType = img.ImageType,
+                    OriginalName = img.OriginalName,
+                    FileSize = img.FileSize,
+                    Sequence = img.Sequence,
+                    CreatedDate = img.CreatedDate
+                }).ToList();
+
+            return Result.Success(dto);
         }
     }
 

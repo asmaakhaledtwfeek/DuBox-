@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
 import { WIRService } from '../../../core/services/wir.service';
-import { WIRCheckpoint, AddChecklistItemsRequest, WIR_CHECKLIST_TEMPLATES } from '../../../core/models/wir.model';
+import { WIRCheckpoint, AddChecklistItemsRequest, PredefinedChecklistItem } from '../../../core/models/wir.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 
@@ -25,6 +25,12 @@ export class AddChecklistItemsComponent implements OnInit {
   loading = true;
   error = '';
   submitting = false;
+  
+  // Predefined checklist items
+  predefinedChecklistItems: PredefinedChecklistItem[] = [];
+  availablePredefinedItems: PredefinedChecklistItem[] = [];
+  loadingPredefinedItems = false;
+  selectedPredefinedItemIds: string[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -41,16 +47,11 @@ export class AddChecklistItemsComponent implements OnInit {
     
     this.initForm();
     this.loadWIRCheckpoint();
+    this.loadPredefinedChecklistItems();
   }
 
   private initForm(): void {
-    this.checklistForm = this.fb.group({
-      checklistItems: this.fb.array([])
-    });
-  }
-
-  get checklistItems(): FormArray {
-    return this.checklistForm.get('checklistItems') as FormArray;
+    this.checklistForm = this.fb.group({});
   }
 
   loadWIRCheckpoint(): void {
@@ -60,7 +61,7 @@ export class AddChecklistItemsComponent implements OnInit {
     this.wirService.getWIRCheckpointById(this.wirId).subscribe({
       next: (checkpoint) => {
         this.wirCheckpoint = checkpoint;
-        this.loadChecklistTemplate();
+        this.updateAvailablePredefinedItems();
         this.loading = false;
       },
       error: (err) => {
@@ -71,45 +72,56 @@ export class AddChecklistItemsComponent implements OnInit {
     });
   }
 
-  loadChecklistTemplate(): void {
-    if (!this.wirCheckpoint) return;
-
-    // Clear existing items
-    this.checklistItems.clear();
-    
-    // Always start with one empty item by default
-    this.addChecklistItem();
-  }
-
-  addChecklistItem(): void {
-    const newItem = this.createChecklistItemGroup();
-    this.checklistItems.push(newItem);
-    this.updateSequenceNumbers();
-  }
-
-  removeChecklistItem(index: number): void {
-    this.checklistItems.removeAt(index);
-    this.updateSequenceNumbers();
-  }
-
-  private createChecklistItemGroup(templateItem?: any): FormGroup {
-    return this.fb.group({
-      checkpointDescription: [templateItem?.checkpointDescription || '', Validators.required],
-      referenceDocument: [templateItem?.referenceDocument || ''],
-      sequence: [templateItem?.sequence || (this.checklistItems.length + 1), Validators.required]
+  private loadPredefinedChecklistItems(): void {
+    this.loadingPredefinedItems = true;
+    this.wirService.getPredefinedChecklistItems().subscribe({
+      next: (items) => {
+        this.predefinedChecklistItems = items;
+        this.updateAvailablePredefinedItems();
+        this.loadingPredefinedItems = false;
+      },
+      error: (err) => {
+        console.error('Error loading predefined checklist items:', err);
+        this.loadingPredefinedItems = false;
+      }
     });
   }
 
-  private updateSequenceNumbers(): void {
-    // Update sequence numbers to be sequential (1, 2, 3, ...)
-    this.checklistItems.controls.forEach((control, index) => {
-      control.get('sequence')?.setValue(index + 1, { emitEvent: false });
-    });
+  private updateAvailablePredefinedItems(): void {
+    if (!this.wirCheckpoint || !this.predefinedChecklistItems.length) {
+      this.availablePredefinedItems = [...this.predefinedChecklistItems];
+      return;
+    }
+
+    // Get IDs of items already added to this checkpoint
+    const addedPredefinedIds = new Set(
+      (this.wirCheckpoint.checklistItems || [])
+        .map(item => item.predefinedItemId)
+        .filter(id => id != null) as string[]
+    );
+
+    // Filter out items that are already added
+    this.availablePredefinedItems = this.predefinedChecklistItems.filter(
+      item => !addedPredefinedIds.has(item.predefinedItemId)
+    );
+  }
+
+  togglePredefinedItemSelection(itemId: string): void {
+    const index = this.selectedPredefinedItemIds.indexOf(itemId);
+    if (index > -1) {
+      this.selectedPredefinedItemIds.splice(index, 1);
+    } else {
+      this.selectedPredefinedItemIds.push(itemId);
+    }
+  }
+
+  isPredefinedItemSelected(itemId: string): boolean {
+    return this.selectedPredefinedItemIds.includes(itemId);
   }
 
   onSubmit(): void {
-    if (this.checklistForm.invalid || !this.wirCheckpoint) {
-      this.markFormGroupTouched(this.checklistForm);
+    if (!this.wirCheckpoint || this.selectedPredefinedItemIds.length === 0) {
+      this.error = 'Please select at least one predefined checklist item to add.';
       return;
     }
 
@@ -118,11 +130,7 @@ export class AddChecklistItemsComponent implements OnInit {
 
     const request: AddChecklistItemsRequest = {
       wirId: this.wirId,
-      items: this.checklistItems.value.map((item: any) => ({
-        checkpointDescription: item.checkpointDescription.trim(),
-        referenceDocument: item.referenceDocument?.trim() || undefined,
-        sequence: item.sequence
-      }))
+      predefinedItemIds: this.selectedPredefinedItemIds
     };
 
     this.wirService.addChecklistItems(request).subscribe({

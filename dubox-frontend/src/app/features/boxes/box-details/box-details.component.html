@@ -36,6 +36,19 @@
           <p class="page-subtitle">{{ box.code }} • {{ box.type }}</p>
         </div>
         <div class="header-right">
+          <button class="btn btn-secondary" (click)="openMoveLocationModal()" *ngIf="canEdit">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            Move to Location
+          </button>
+          <button class="btn btn-primary" (click)="openBoxStatusModal()" *ngIf="canEdit">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v20M2 12h20"/>
+            </svg>
+            Update Status
+          </button>
           <button class="btn btn-secondary" (click)="editBox()" *ngIf="canEdit">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -88,14 +101,28 @@
           [class.active]="activeTab === 'logs'"
           (click)="setActiveTab('logs')"
         >
-          Logs ({{ box.logs.length || 0 }})
+          Logs ({{ boxLogsTotalCount || 0 }})
         </button>
         <button 
           class="tab" 
           [class.active]="activeTab === 'attachments'"
           (click)="setActiveTab('attachments')"
         >
-          Attachments ({{ box.attachments.length || 0 }})
+          Attachments ({{ getTotalAttachmentsCount() }})
+        </button>
+        <button 
+          class="tab" 
+          [class.active]="activeTab === 'location-history'"
+          (click)="setActiveTab('location-history')"
+        >
+          Location History ({{ locationHistory.length }})
+        </button>
+        <button 
+          class="tab" 
+          [class.active]="activeTab === 'progress-updates'"
+          (click)="setActiveTab('progress-updates')"
+        >
+          Progress History ({{ progressUpdatesTotalCount }})
         </button>
       </div>
 
@@ -104,6 +131,54 @@
         <!-- Overview Tab -->
         <div *ngIf="activeTab === 'overview'" class="overview-tab">
           <div class="content-grid">
+            <!-- Serial Number & QR Code Card -->
+            <div class="info-card serial-qr-card" *ngIf="box.serialNumber || box.qrCode">
+              <h3 class="card-title">Serial Number & QR Code</h3>
+              
+              <!-- Serial Number Section -->
+              <div class="serial-number-section" *ngIf="box.serialNumber">
+                <div class="serial-label">Serial Number</div>
+                <div class="serial-value-container">
+                  <span class="serial-value">{{ formatSerialNumber(box.serialNumber) }}</span>
+                  <button 
+                    class="btn-copy" 
+                    (click)="copyToClipboard(box.serialNumber)"
+                    [class.copied]="copiedSerialNumber"
+                    [attr.aria-label]="copiedSerialNumber ? 'Copied!' : 'Copy serial number to clipboard'"
+                    title="{{ copiedSerialNumber ? 'Copied!' : 'Copy to clipboard' }}">
+                    <svg *ngIf="!copiedSerialNumber" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    <svg *ngIf="copiedSerialNumber" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                    <span class="copy-text">{{ copiedSerialNumber ? 'Copied!' : 'Copy' }}</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- QR Code Section -->
+              <div class="qr-code-section" *ngIf="box.qrCode">
+                <div class="qr-label">QR Code</div>
+                <div class="qr-container">
+                  <div class="qr-image-wrapper">
+                    <img [src]="box.qrCode" alt="QR Code" class="qr-code-image">
+                  </div>
+                  <div class="qr-actions">
+                    <button class="btn btn-primary btn-sm" (click)="downloadQRCode()">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                      </svg>
+                      Download QR Code
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Box Information Card -->
             <div class="info-card">
               <h3 class="card-title">Box Information</h3>
@@ -128,26 +203,22 @@
                     </span>
                   </span>
                 </div>
+                <div class="info-item" *ngIf="box.currentLocationCode">
+                  <span class="label">Current Location</span>
+                  <span class="value">
+                    <a [routerLink]="['/locations', box.currentLocationId]" class="location-link">
+                      {{ box.currentLocationCode }} - {{ box.currentLocationName }}
+                    </a>
+                  </span>
+                </div>
+                <div class="info-item" *ngIf="!box.currentLocationCode">
+                  <span class="label">Current Location</span>
+                  <span class="value text-muted">Not assigned</span>
+                </div>
                 <div class="info-item" *ngIf="box.description">
                   <span class="label">Description</span>
                   <span class="value">{{ box.description }}</span>
                 </div>
-              </div>
-            </div>
-
-            <!-- QR Code Card -->
-            <div class="info-card qr-card" *ngIf="box.qrCode">
-              <h3 class="card-title">QR Code</h3>
-              <div class="qr-container">
-                <img [src]="box.qrCode" alt="QR Code" class="qr-code-image">
-                <button class="btn btn-primary btn-sm" (click)="downloadQRCode()">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                    <polyline points="7 10 12 15 17 10"/>
-                    <line x1="12" y1="15" x2="12" y2="3"/>
-                  </svg>
-                  Download
-                </button>
               </div>
             </div>
           </div>
@@ -158,7 +229,7 @@
             <div class="progress-container">
               <div class="progress-header">
                 <span class="progress-label">Overall Completion</span>
-                <span class="progress-value">{{ box.progress }}%</span>
+                <span class="progress-value">{{ box.progress | number:'1.2-2' }}%</span>
               </div>
               <div class="progress-bar">
                 <div class="progress-fill" [style.width.%]="box.progress"></div>
@@ -333,6 +404,19 @@
                 {{ qualityIssueCount }} total
               </span>
               <button 
+                class="btn btn-primary btn-sm" 
+                (click)="exportQualityIssuesToExcel()" 
+                [disabled]="qualityIssuesLoading || qualityIssues.length === 0"
+                title="Export quality issues to Excel"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Export to Excel
+              </button>
+              <button 
                 class="btn btn-secondary btn-sm" 
                 (click)="refreshQualityIssues()" 
                 [disabled]="qualityIssuesLoading"
@@ -463,15 +547,179 @@
               name="resolutionDescription"
             ></textarea>
 
-            <label class="modal-label" for="photoPath">Photo URL</label>
-            <input
-              id="photoPath"
-              class="modal-input"
-              type="text"
-              placeholder="Optional photo/document link"
-              [(ngModel)]="statusUpdateForm.photoPath"
-              name="photoPath"
-            />
+            <!-- Multiple Images Upload Section -->
+            <div class="photo-upload-section">
+              <label class="modal-label">Photos / Documents</label>
+              <p class="photo-upload-hint">Upload multiple images from device, camera, or URLs</p>
+              
+              <!-- Tabs for different input methods -->
+              <div class="photo-input-tabs">
+                <button 
+                  type="button"
+                  class="tab-button"
+                  [class.active]="currentImageInputMode === 'url' && !showCamera"
+                  (click)="setImageInputMode('url')"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                  </svg>
+                  URL
+                </button>
+                <button 
+                  type="button"
+                  class="tab-button"
+                  [class.active]="currentImageInputMode === 'upload' && !showCamera"
+                  (click)="openFileInput()"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                  Upload
+                </button>
+                <button 
+                  type="button"
+                  class="tab-button"
+                  [class.active]="currentImageInputMode === 'camera' && showCamera"
+                  (click)="openCamera()"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                  Camera
+                </button>
+              </div>
+
+              <!-- URL Input -->
+              <div *ngIf="currentImageInputMode === 'url' && !showCamera" class="photo-input-content">
+                <div class="url-input-group">
+                  <div class="url-input-wrapper">
+                    <svg class="url-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                    </svg>
+                    <input
+                      id="photoUrl"
+                      class="modal-input url-input"
+                      type="text"
+                      placeholder="Enter image URL (e.g., https://example.com/photo.jpg)"
+                      [(ngModel)]="currentUrlInput"
+                      name="currentUrlInput"
+                      (keyup.enter)="addImageFromUrl()"
+                      [disabled]="statusUpdateLoading"
+                    />
+                  </div>
+                  <button 
+                    type="button" 
+                    class="btn btn-primary btn-add-url"
+                    (click)="addImageFromUrl()"
+                    [disabled]="!currentUrlInput?.trim() || statusUpdateLoading"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="12" y1="5" x2="12" y2="19"/>
+                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    </svg>
+                    Add
+                  </button>
+                </div>
+              </div>
+
+              <!-- File Upload Input (hidden, supports multiple) -->
+              <input
+                id="box-details-photo-file-input"
+                type="file"
+                accept="image/*"
+                multiple
+                style="display: none"
+                (change)="onFileSelected($event)"
+                [disabled]="statusUpdateLoading"
+              />
+
+              <!-- Full Screen Camera Preview -->
+              <div *ngIf="showCamera" class="camera-fullscreen-overlay" (click)="stopCamera()">
+                <div class="camera-fullscreen-container" (click)="$event.stopPropagation()">
+                  <div class="camera-header">
+                    <h4>Camera</h4>
+                    <button type="button" class="camera-close-btn" (click)="stopCamera()" title="Close Camera">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
+                  </div>
+                  <video id="box-details-camera-preview" autoplay playsinline></video>
+                  <div class="camera-controls-fullscreen">
+                    <button type="button" class="btn btn-secondary btn-lg" (click)="stopCamera()">
+                      Cancel
+                    </button>
+                    <button type="button" class="btn-capture" (click)="capturePhoto()" title="Capture Photo">
+                      <div class="capture-button-inner"></div>
+                    </button>
+                    <button type="button" class="btn btn-primary btn-lg" (click)="capturePhoto()">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                      Capture
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Selected Images Preview List -->
+              <div *ngIf="selectedImages.length > 0 && !showCamera" class="images-preview-list">
+                <div class="images-preview-header">
+                  <span class="images-count">{{ selectedImages.length }} {{ selectedImages.length === 1 ? 'image' : 'images' }} selected</span>
+                </div>
+                <div class="images-grid">
+                  <div *ngFor="let image of selectedImages; trackBy: trackByImageId" class="image-preview-item">
+                    <div class="image-preview-wrapper">
+                      <div class="image-overlay">
+                        <button 
+                          type="button" 
+                          class="remove-image-btn" 
+                          (click)="removeImage(image.id)"
+                          [disabled]="statusUpdateLoading"
+                          title="Remove image"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <line x1="18" y1="6" x2="6" y2="18"/>
+                            <line x1="6" y1="6" x2="18" y2="18"/>
+                          </svg>
+                        </button>
+                      </div>
+                      <img [src]="image.preview" [alt]="image.name || 'Preview'" />
+                    </div>
+                    <div class="image-preview-info">
+                      <span class="image-name" *ngIf="image.name" [title]="image.name">{{ image.name.length > 25 ? (image.name.substring(0, 25) + '...') : image.name }}</span>
+                      <div class="image-meta">
+                        <span class="image-size" *ngIf="image.size">{{ (image.size / 1024).toFixed(1) }} KB</span>
+                        <span class="image-type-badge" [class]="'type-' + image.type">
+                          <svg *ngIf="image.type === 'file'" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                            <polyline points="13 2 13 9 20 9"/>
+                          </svg>
+                          <svg *ngIf="image.type === 'url'" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                          </svg>
+                          <svg *ngIf="image.type === 'camera'" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                            <circle cx="12" cy="13" r="4"/>
+                          </svg>
+                          {{ image.type }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Errors -->
+              <p class="modal-error" *ngIf="photoUploadError">{{ photoUploadError }}</p>
+            </div>
 
             <p class="modal-error" *ngIf="statusUpdateError">{{ statusUpdateError }}</p>
           </div>
@@ -541,14 +789,42 @@
               <span class="label">Resolution Date</span>
               <span class="value">{{ formatIssueDate(selectedIssueDetails.resolutionDate) }}</span>
             </div>
-            <div class="details-row">
-              <span class="label">Photo</span>
+            <div class="details-row" *ngIf="getQualityIssueImageUrls(selectedIssueDetails).length > 0">
+              <span class="label">Images</span>
               <span class="value">
-                <a *ngIf="selectedIssueDetails.photoPath" [href]="selectedIssueDetails.photoPath" target="_blank" rel="noopener">
-                  View attachment
-                </a>
-                <span *ngIf="!selectedIssueDetails.photoPath">—</span>
+                <div class="quality-issue-images-gallery">
+                  <div class="image-item" *ngFor="let imageUrl of getQualityIssueImageUrls(selectedIssueDetails); let i = index">
+                    <div class="image-wrapper">
+                      <img [src]="imageUrl" 
+                           [alt]="'Quality issue image ' + (i + 1)"
+                           class="image-thumbnail"
+                           (click)="openImageInNewTab(imageUrl)"
+                           (error)="onImageError($event)"
+                           loading="lazy" />
+                      <div class="image-overlay">
+                        <button class="image-view-btn" (click)="openImageInNewTab(imageUrl); $event.stopPropagation()" title="View full size">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                          </svg>
+                        </button>
+                        <button class="image-download-btn" (click)="downloadImage(imageUrl); $event.stopPropagation()" title="Download image">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                          </svg>
+                        </button>
+                      </div>
+                      <div class="image-number">{{ i + 1 }}</div>
+                    </div>
+                  </div>
+                </div>
               </span>
+            </div>
+            <div class="details-row" *ngIf="getQualityIssueImageUrls(selectedIssueDetails).length === 0">
+              <span class="label">Images</span>
+              <span class="value">—</span>
             </div>
             <div class="details-row">
               <span class="label">Inspector</span>
@@ -581,33 +857,289 @@
 
         <!-- Logs Tab -->
         <div *ngIf="activeTab === 'logs'" class="logs-tab">
-          <div class="empty-state" *ngIf="!box.logs || box.logs.length === 0">
-            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/>
-              <line x1="16" y1="17" x2="8" y2="17"/>
-              <polyline points="10 9 9 9 8 9"/>
-            </svg>
-            <h3>No Logs</h3>
-            <p>No activity logs recorded for this box</p>
-          </div>
-
-          <div class="logs-list" *ngIf="box.logs && box.logs.length > 0">
-            <div class="log-item" *ngFor="let log of box.logs">
-              <div class="log-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <polyline points="12 6 12 12 16 14"/>
-                </svg>
+          <div class="box-logs-card">
+            <div class="card-header">
+              <div>
+                <h3>Box Logs</h3>
+                <p class="subtitle">Complete audit trail of all actions performed on this box</p>
               </div>
-              <div class="log-content">
-                <div class="log-header">
-                  <strong>{{ log.action }}</strong>
-                  <span class="log-time">{{ log.performedAt | date: 'MMM d, yyyy h:mm a' }}</span>
+              <div class="card-header-actions">
+                <button 
+                  class="btn btn-secondary btn-sm" 
+                  (click)="toggleBoxLogsSearch()"
+                  [class.active]="showBoxLogsSearch"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <path d="m21 21-4.35-4.35"/>
+                  </svg>
+                  {{ showBoxLogsSearch ? 'Hide Search' : 'Search' }}
+                </button>
+                <button 
+                  class="btn btn-primary btn-sm" 
+                  (click)="loadBoxLogs(boxLogsCurrentPage, boxLogsPageSize)" 
+                  [disabled]="boxLogsLoading"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <polyline points="1 20 1 14 7 14"/>
+                    <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"/>
+                    <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"/>
+                  </svg>
+                  Refresh
+                </button>
+              </div>
+            </div>
+
+            <!-- Filters Section (matching Audit Logs) -->
+            <div class="filters-section" *ngIf="showBoxLogsSearch">
+              <div class="filter-row">
+                <div class="filter-field">
+                  <label for="boxLogsAction">Action</label>
+                  <select id="boxLogsAction" [(ngModel)]="boxLogsAction" class="filter-input">
+                    <option value="">All Actions</option>
+                    <option *ngFor="let action of availableBoxLogActions; trackBy: trackByAction" [value]="action">
+                      {{ action }}
+                    </option>
+                  </select>
                 </div>
-                <p class="log-description">{{ log.description }}</p>
-                <span class="log-user">by {{ log.performedBy }}</span>
+
+                <div class="filter-field">
+                  <label for="boxLogsSearchTerm">Search</label>
+                  <input 
+                    type="text" 
+                    id="boxLogsSearchTerm" 
+                    [(ngModel)]="boxLogsSearchTerm" 
+                    placeholder="Search in logs..."
+                    class="filter-input"
+                  />
+                </div>
+
+                <div class="filter-field">
+                  <label for="boxLogsFromDate">From Date</label>
+                  <input 
+                    type="date" 
+                    id="boxLogsFromDate" 
+                    [(ngModel)]="boxLogsFromDate" 
+                    class="filter-input"
+                  />
+                </div>
+
+                <div class="filter-field">
+                  <label for="boxLogsToDate">To Date</label>
+                  <input 
+                    type="date" 
+                    id="boxLogsToDate" 
+                    [(ngModel)]="boxLogsToDate" 
+                    class="filter-input"
+                  />
+                </div>
+              </div>
+
+              <div class="filter-actions">
+                <button class="btn btn-secondary" (click)="resetBoxLogsFilters()">Reset</button>
+                <button class="btn btn-primary" (click)="applyBoxLogsFilters()">Apply Filters</button>
+              </div>
+            </div>
+
+            <!-- Search Toggle Button -->
+            <div class="search-toggle-container" *ngIf="!showBoxLogsSearch">
+              <button type="button" class="btn btn-outline btn-sm" (click)="toggleBoxLogsSearch()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="11" cy="11" r="8"/>
+                  <path d="m21 21-4.35-4.35"/>
+                </svg>
+                Search & Filter
+              </button>
+            </div>
+
+            <div *ngIf="boxLogsError" class="alert alert-error">
+              <span>{{ boxLogsError }}</span>
+            </div>
+
+            <div *ngIf="boxLogsLoading && !boxLogsError" class="loading-state">
+              <span class="spinner large"></span>
+              <p>Loading box logs...</p>
+            </div>
+
+            <!-- Logs Container (matching Audit Logs) -->
+            <div class="logs-container" *ngIf="!boxLogsLoading && !boxLogsError">
+              <!-- Empty State -->
+              <div class="empty-state" *ngIf="boxLogs.length === 0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+                <h3>No Box Logs Found</h3>
+                <p>No logs match your current filters. Try adjusting your search criteria.</p>
+              </div>
+
+              <!-- Log Entries (Timeline Format) -->
+              <div class="logs-timeline">
+                <div
+                  class="log-entry"
+                  *ngFor="let log of boxLogs; trackBy: trackByLogId; let last = last"
+                  [class.last-entry]="last"
+                >
+                  <!-- Timeline Connector -->
+                  <div class="timeline-connector" *ngIf="!last"></div>
+                  
+                  <!-- Timeline Dot -->
+                  <div class="timeline-dot" [class]="'dot-' + getActionType(log.action)">
+                    <svg *ngIf="getActionType(log.action) === 'create'" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                    <svg *ngIf="getActionType(log.action) === 'update'" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    <svg *ngIf="getActionType(log.action) === 'delete'" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                    <svg *ngIf="getActionType(log.action) === 'other'" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="16" x2="12" y2="12"/>
+                      <line x1="12" y1="8" x2="12.01" y2="8"/>
+                    </svg>
+                  </div>
+
+                  <!-- Log Content -->
+                  <div class="log-content">
+                    <div class="log-header">
+                      <div class="log-title-row">
+                        <span class="action-badge" [class]="'badge-' + getActionType(log.action)">
+                          {{ DiffUtil.getActionLabel(log.action) }}
+                        </span>
+                        <span class="log-date">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <polyline points="12 6 12 12 16 14"/>
+                          </svg>
+                          {{ log.performedAt | date: 'MMM d, y' }} at {{ log.performedAt | date: 'h:mm a' }}
+                        </span>
+                      </div>
+                      
+                      <p class="log-description" *ngIf="log.description">
+                        {{ log.description }}
+                      </p>
+                      
+                      <div class="log-meta" *ngIf="log.performedBy">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                          <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        <span class="log-user">{{ log.performedBy }}</span>
+                      </div>
+                    </div>
+
+                    <!-- Changes List -->
+                    <div class="log-changes" *ngIf="log.field || log.oldValue || log.newValue">
+                      <div class="changes-header">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="9 11 12 14 22 4"/>
+                          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                        </svg>
+                        <span>Changes</span>
+                      </div>
+                      <div class="changes-list">
+                        <div class="change-item">
+                          <span class="change-field" *ngIf="log.field">
+                            <strong>{{ log.field }}</strong>
+                          </span>
+                          <div class="change-values" *ngIf="log.oldValue || log.newValue">
+                            <span class="change-old" *ngIf="log.oldValue">
+                              <span class="change-label">From:</span>
+                              {{ log.oldValue }}
+                            </span>
+                            <span class="change-arrow" *ngIf="log.oldValue && log.newValue">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="5" y1="12" x2="19" y2="12"/>
+                                <polyline points="12 5 19 12 12 19"/>
+                              </svg>
+                            </span>
+                            <span class="change-new" *ngIf="log.newValue">
+                              <span class="change-label">To:</span>
+                              {{ log.newValue }}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pagination Controls -->
+            <div class="pagination-container" *ngIf="!boxLogsLoading && !boxLogsError && boxLogsTotalPages > 0">
+              <div class="pagination-info">
+                <span>Showing {{ (boxLogsCurrentPage - 1) * boxLogsPageSize + 1 }} - {{ Math.min(boxLogsCurrentPage * boxLogsPageSize, boxLogsTotalCount) }} of {{ boxLogsTotalCount }} logs</span>
+                <div class="page-size-selector">
+                  <label for="boxLogsPageSize">Items per page:</label>
+                  <select id="boxLogsPageSize" [ngModel]="boxLogsPageSize" (ngModelChange)="onBoxLogsPageSizeChange($event)" class="page-size-select">
+                    <option [value]="10">10</option>
+                    <option [value]="25">25</option>
+                    <option [value]="50">50</option>
+                    <option [value]="100">100</option>
+                  </select>
+                </div>
+              </div>
+              <div class="pagination-controls">
+                <button 
+                  class="pagination-btn" 
+                  [disabled]="boxLogsCurrentPage === 1"
+                  (click)="onBoxLogsPageChange(1)"
+                  title="First page"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="11 17 6 12 11 7"/>
+                    <polyline points="18 17 13 12 18 7"/>
+                  </svg>
+                </button>
+                <button 
+                  class="pagination-btn" 
+                  [disabled]="boxLogsCurrentPage === 1"
+                  (click)="onBoxLogsPageChange(boxLogsCurrentPage - 1)"
+                  title="Previous page"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+                <div class="page-numbers">
+                  <button 
+                    *ngFor="let page of getBoxLogsPageNumbers()"
+                    class="page-number"
+                    [class.active]="page === boxLogsCurrentPage"
+                    (click)="onBoxLogsPageChange(page)"
+                  >
+                    {{ page }}
+                  </button>
+                </div>
+                <button 
+                  class="pagination-btn" 
+                  [disabled]="boxLogsCurrentPage === boxLogsTotalPages"
+                  (click)="onBoxLogsPageChange(boxLogsCurrentPage + 1)"
+                  title="Next page"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+                <button 
+                  class="pagination-btn" 
+                  [disabled]="boxLogsCurrentPage === boxLogsTotalPages"
+                  (click)="onBoxLogsPageChange(boxLogsTotalPages)"
+                  title="Last page"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="13 17 18 12 13 7"/>
+                    <polyline points="6 17 11 12 6 7"/>
+                  </svg>
+                </button>
               </div>
             </div>
           </div>
@@ -615,66 +1147,474 @@
 
         <!-- Attachments Tab -->
         <div *ngIf="activeTab === 'attachments'" class="attachments-tab">
-          <div class="empty-state" *ngIf="!box.attachments || box.attachments.length === 0">
+          <!-- Loading State -->
+          <div class="loading-state" *ngIf="loadingProgressUpdateImages">
+            <div class="spinner"></div>
+            <p>Loading images from progress updates...</p>
+          </div>
+
+          <!-- Empty State -->
+          <div class="empty-state" *ngIf="!loadingProgressUpdateImages && (!box.attachments || box.attachments.length === 0) && !hasProgressUpdateImages()">
             <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
             </svg>
             <h3>No Attachments</h3>
-            <p>No files attached to this box</p>
+            <p>No files or images attached to this box</p>
           </div>
 
-          <div class="attachments-grid" *ngIf="box.attachments && box.attachments.length > 0">
-            <div class="attachment-card" *ngFor="let attachment of box.attachments">
-              <div class="attachment-icon">
-                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <!-- Regular Attachments Section -->
+          <div *ngIf="!loadingProgressUpdateImages && box.attachments && box.attachments.length > 0" class="attachments-section">
+            <div class="section-header">
+              <h3 class="section-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
                   <polyline points="13 2 13 9 20 9"/>
                 </svg>
-              </div>
-              <div class="attachment-info">
-                <h4>{{ attachment.fileName }}</h4>
-                <p class="attachment-meta">{{ attachment.fileSize | number }} KB • {{ attachment.uploadedAt | date: 'MMM d, yyyy' }}</p>
+                File Attachments
+              </h3>
+              <span class="section-count">{{ box.attachments.length }} file(s)</span>
+            </div>
+            <div class="attachments-grid">
+              <div class="attachment-card" *ngFor="let attachment of box.attachments">
+                <div class="attachment-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                    <polyline points="13 2 13 9 20 9"/>
+                  </svg>
+                </div>
+                <div class="attachment-info">
+                  <h4>{{ attachment.fileName }}</h4>
+                  <p class="attachment-meta">{{ attachment.fileSize | number }} KB • {{ attachment.uploadedAt | date: 'MMM d, yyyy' }}</p>
+                </div>
               </div>
             </div>
           </div>
+
+          <!-- Progress Update Images Section -->
+          <div *ngIf="!loadingProgressUpdateImages && hasProgressUpdateImages()" class="progress-images-section">
+            <div class="section-header">
+              <h3 class="section-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                Images from Progress Updates
+              </h3>
+              <span class="section-count">{{ getAllProgressUpdateImages().length }} image(s)</span>
+            </div>
+            <div class="progress-images-gallery">
+              <div class="image-gallery-item" *ngFor="let image of getAllProgressUpdateImages(); let i = index">
+                <div class="image-wrapper" (click)="openPhotoInNewTab(image.imageUrl)">
+                  <img 
+                    [src]="image.imageUrl" 
+                    [alt]="'Progress update image ' + (i + 1)"
+                    class="gallery-image"
+                    (error)="onImageError($event)"
+                    loading="lazy"
+                  />
+                  <div class="image-overlay">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </div>
+                  <div class="image-number-badge">{{ i + 1 }}</div>
+                </div>
+                <div class="image-info" *ngIf="image.activityName || image.updateDate">
+                  <p class="image-activity" *ngIf="image.activityName">{{ image.activityName }}</p>
+                  <p class="image-date" *ngIf="image.updateDate">{{ image.updateDate | date: 'MMM d, yyyy' }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Location History Tab -->
+        <div *ngIf="activeTab === 'location-history'" class="location-history-tab">
+          <div class="location-history-header">
+            <div>
+              <h2 class="card-title">Location History</h2>
+              <p class="card-subtitle">Complete movement history of this box across different factory locations</p>
+            </div>
+            <button 
+              class="btn btn-secondary btn-sm" 
+              (click)="loadLocationHistory()" 
+              [disabled]="locationHistoryLoading"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"/>
+                <polyline points="1 20 1 14 7 14"/>
+                <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"/>
+                <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"/>
+              </svg>
+              Refresh
+            </button>
+          </div>
+
+          <!-- Search Box -->
+          <div class="location-history-search-container" *ngIf="!locationHistoryLoading && locationHistory.length > 0">
+            <div class="search-box">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+              </svg>
+              <input 
+                type="text" 
+                [formControl]="locationHistorySearchControl"
+                placeholder="Search by location, reason, moved by, box tag, or serial number..."
+                class="search-input"
+              />
+              <button 
+                type="button"
+                class="clear-search" 
+                *ngIf="locationHistorySearchControl.value"
+                (click)="locationHistorySearchControl.setValue('')"
+                title="Clear search"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+            <div class="search-results-info" *ngIf="locationHistorySearchControl.value">
+              <span class="results-count">
+                Showing {{ filteredLocationHistory.length }} of {{ locationHistory.length }} entr{{ locationHistory.length !== 1 ? 'ies' : 'y' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="location-history-content">
+            <div class="loading-state" *ngIf="locationHistoryLoading">
+              <div class="spinner"></div>
+              <p>Loading location history...</p>
+            </div>
+
+            <div class="empty-state" *ngIf="!locationHistoryLoading && locationHistory.length === 0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              <h3>No Location History</h3>
+              <p>This box has not been moved to any location yet</p>
+            </div>
+
+            <div class="empty-state" *ngIf="!locationHistoryLoading && locationHistory.length > 0 && filteredLocationHistory.length === 0 && locationHistorySearchControl.value">
+              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="m21 21-4.35-4.35"/>
+              </svg>
+              <h3>No results found</h3>
+              <p>No location history entries match your search criteria. Try adjusting your search terms.</p>
+              <button class="btn btn-secondary" (click)="locationHistorySearchControl.setValue('')">Clear Search</button>
+            </div>
+
+            <div class="location-history-timeline" *ngIf="!locationHistoryLoading && filteredLocationHistory.length > 0">
+              <div class="history-item" *ngFor="let history of filteredLocationHistory; let i = index">
+                <div class="history-timeline-marker">
+                  <div class="marker-dot"></div>
+                  <div class="marker-line" *ngIf="i < locationHistory.length - 1"></div>
+                </div>
+                <div class="history-content">
+                  <div class="history-header">
+                    <div class="history-location-info">
+                      <div class="location-badge">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                          <circle cx="12" cy="10" r="3"/>
+                        </svg>
+                        <span class="location-code">{{ history.locationCode }}</span>
+                      </div>
+                      <div class="location-name">{{ history.locationName }}</div>
+                    </div>
+                    <div class="history-date">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                      </svg>
+                      <span>{{ history.movedDate | date: 'MMM d, yyyy' }}</span>
+                      <span class="time">{{ history.movedDate | date: 'h:mm a' }}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="history-details" *ngIf="history.movedFromLocationCode || history.reason || history.movedBy || history.movedByUsername || history.movedByFullName">
+                    <div class="detail-row" *ngIf="history.movedFromLocationCode">
+                      <span class="detail-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                        Moved from:
+                      </span>
+                      <span class="detail-value">
+                        <a [routerLink]="['/locations', history.movedFromLocationId]" class="location-link">
+                          {{ history.movedFromLocationCode }} - {{ history.movedFromLocationName }}
+                        </a>
+                      </span>
+                    </div>
+                    <div class="detail-row" *ngIf="history.reason">
+                      <span class="detail-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/>
+                          <line x1="16" y1="13" x2="8" y2="13"/>
+                          <line x1="16" y1="17" x2="8" y2="17"/>
+                        </svg>
+                        Reason:
+                      </span>
+                      <span class="detail-value">{{ history.reason }}</span>
+                    </div>
+                    <div class="detail-row" *ngIf="history.movedBy || history.movedByUsername || history.movedByFullName">
+                      <span class="detail-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                          <circle cx="12" cy="7" r="4"/>
+                        </svg>
+                        Moved by:
+                      </span>
+                      <span class="detail-value">{{ history.movedByFullName || history.movedByUsername || 'Unknown User' }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Updates Tab -->
+        <div *ngIf="activeTab === 'progress-updates'" class="progress-updates-tab">
+          <app-progress-updates-table
+            [updates]="progressUpdates"
+            [loading]="progressUpdatesLoading"
+            [error]="progressUpdatesError"
+            [currentPage]="progressUpdatesCurrentPage"
+            [pageSize]="progressUpdatesPageSize"
+            [totalCount]="progressUpdatesTotalCount"
+            [totalPages]="progressUpdatesTotalPages"
+            [showSearch]="showProgressUpdatesSearch"
+            [searchTerm]="progressUpdatesSearchTerm"
+            [activityName]="progressUpdatesActivityName"
+            [status]="progressUpdatesStatus"
+            [fromDate]="progressUpdatesFromDate"
+            [toDate]="progressUpdatesToDate"
+            (refresh)="loadProgressUpdates(progressUpdatesCurrentPage, progressUpdatesPageSize)"
+            (viewDetails)="openProgressDetails($event)"
+            (pageChange)="loadProgressUpdates($event, progressUpdatesPageSize)"
+            (pageSizeChange)="loadProgressUpdates(1, $event)"
+            (searchChange)="onProgressUpdatesSearchChange($event)"
+            (clearSearch)="clearProgressUpdatesSearch()"
+            (toggleSearch)="toggleProgressUpdatesSearch()"
+          ></app-progress-updates-table>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<div class="progress-modal-backdrop" *ngIf="isProgressModalOpen && selectedProgressUpdate">
-  <div class="progress-modal">
+<div class="progress-modal-backdrop" *ngIf="isProgressModalOpen && selectedProgressUpdate" (click)="closeProgressDetails()">
+  <div class="progress-modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <div>
-        <h2>Progress Update</h2>
-        <p>{{ selectedProgressUpdate.updateDate | date: 'MMM d, y, h:mm a' }}</p>
+      <div class="header-content">
+        <div class="header-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+        </div>
+        <div>
+          <h2>Progress Update Details</h2>
+          <p class="header-subtitle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            {{ selectedProgressUpdate.updateDate | date: 'MMM d, yyyy' }} at {{ selectedProgressUpdate.updateDate | date: 'h:mm a' }}
+          </p>
+        </div>
       </div>
-      <button class="icon-button" (click)="closeProgressDetails()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <button class="icon-button" (click)="closeProgressDetails()" title="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18"/>
           <line x1="6" y1="6" x2="18" y2="18"/>
         </svg>
       </button>
     </div>
     <div class="modal-body">
-      <div class="modal-grid">
-        <div>
-          <label>Updated By</label>
-          <p>{{ selectedProgressUpdate.updatedByName || selectedProgressUpdate.updatedBy || '—' }}</p>
+      <!-- Key Metrics Section -->
+      <div class="metrics-section">
+        <div class="metric-card primary">
+          <div class="metric-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
+          <div class="metric-content">
+            <label>Activity Progress</label>
+            <div class="metric-value">
+              <span class="progress-pill-large" [ngClass]="{
+                'pill-low': selectedProgressUpdate.progressPercentage < 25,
+                'pill-medium': selectedProgressUpdate.progressPercentage >= 25 && selectedProgressUpdate.progressPercentage < 75,
+                'pill-high': selectedProgressUpdate.progressPercentage >= 75
+              }">
+                {{ selectedProgressUpdate.progressPercentage | number:'1.2-2' }}%
+              </span>
+            </div>
+          </div>
         </div>
-        <div>
-          <label>Progress</label>
-          <p>{{ selectedProgressUpdate.progressPercentage | number:'1.0-2' }}%</p>
+        <div class="metric-card" *ngIf="selectedProgressUpdate.boxProgressSnapshot !== undefined && selectedProgressUpdate.boxProgressSnapshot !== null">
+          <div class="metric-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <line x1="9" y1="3" x2="9" y2="21"/>
+              <line x1="3" y1="9" x2="21" y2="9"/>
+            </svg>
+          </div>
+          <div class="metric-content">
+            <label>Box Progress</label>
+            <div class="metric-value">
+              <span class="progress-pill-large box-progress" [ngClass]="{
+                'pill-low': (selectedProgressUpdate.boxProgressSnapshot ?? 0) < 25,
+                'pill-medium': (selectedProgressUpdate.boxProgressSnapshot ?? 0) >= 25 && (selectedProgressUpdate.boxProgressSnapshot ?? 0) < 75,
+                'pill-high': (selectedProgressUpdate.boxProgressSnapshot ?? 0) >= 75
+              }">
+                {{ (selectedProgressUpdate.boxProgressSnapshot ?? 0) | number:'1.2-2' }}%
+              </span>
+            </div>
+          </div>
         </div>
       </div>
-      <div>
-        <label>Notes</label>
-        <p>{{ selectedProgressUpdate.workDescription || 'No notes provided.' }}</p>
+
+      <!-- Details Grid -->
+      <div class="details-section">
+        <div class="detail-item">
+          <div class="detail-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v20M2 12h20"/>
+            </svg>
+            Activity
+          </div>
+          <div class="detail-value">{{ selectedProgressUpdate.activityName || '—' }}</div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            Status
+          </div>
+          <div class="detail-value">
+            <span class="status-badge-modal" [ngClass]="getProgressStatusClass(selectedProgressUpdate.status)">
+              {{ getProgressStatusLabel(selectedProgressUpdate.status) }}
+            </span>
+          </div>
+        </div>
+        <div class="detail-item">
+          <div class="detail-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            Updated By
+          </div>
+          <div class="detail-value">{{ selectedProgressUpdate.updatedByName || selectedProgressUpdate.updatedBy || '—' }}</div>
+        </div>
+        <div class="detail-item" *ngIf="selectedProgressUpdate.updateMethod">
+          <div class="detail-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+              <line x1="8" y1="21" x2="16" y2="21"/>
+              <line x1="12" y1="17" x2="12" y2="21"/>
+            </svg>
+            Update Method
+          </div>
+          <div class="detail-value">{{ selectedProgressUpdate.updateMethod }}</div>
+        </div>
+        <div class="detail-item" *ngIf="selectedProgressUpdate.locationDescription">
+          <div class="detail-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            Location
+          </div>
+          <div class="detail-value">{{ selectedProgressUpdate.locationDescription }}</div>
+        </div>
       </div>
-      <div *ngIf="selectedProgressUpdate.issuesEncountered">
-        <label>Issues Encountered</label>
-        <p>{{ selectedProgressUpdate.issuesEncountered }}</p>
+
+      <!-- Work Description -->
+      <div class="text-section" *ngIf="selectedProgressUpdate.workDescription">
+        <div class="section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          <h3>Work Description</h3>
+        </div>
+        <div class="section-content">
+          <p>{{ selectedProgressUpdate.workDescription }}</p>
+        </div>
+      </div>
+
+      <!-- Issues Encountered -->
+      <div class="text-section issues-section" *ngIf="selectedProgressUpdate.issuesEncountered">
+        <div class="section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <h3>Issues Encountered</h3>
+        </div>
+        <div class="section-content">
+          <p>{{ selectedProgressUpdate.issuesEncountered }}</p>
+        </div>
+      </div>
+
+      <!-- Photos -->
+      <div class="photo-section" *ngIf="getPhotoUrls(selectedProgressUpdate).length > 0">
+        <div class="section-header">
+          <div class="header-icon-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+          </div>
+          <div>
+            <h3>Photos</h3>
+            <p class="section-subtitle">{{ getPhotoUrls(selectedProgressUpdate).length }} photo{{ getPhotoUrls(selectedProgressUpdate).length !== 1 ? 's' : '' }} attached</p>
+          </div>
+        </div>
+        <div class="photo-gallery">
+          <div class="photo-item" *ngFor="let photoUrl of getPhotoUrls(selectedProgressUpdate); let i = index">
+            <div class="photo-wrapper">
+              <img [src]="photoUrl" 
+                   [alt]="'Progress photo ' + (i + 1)"
+                   class="photo-thumbnail"
+                   (click)="openPhotoInNewTab(photoUrl)"
+                   (error)="onImageError($event)"
+                   loading="lazy" />
+              <div class="photo-overlay">
+                <button class="photo-view-btn" (click)="openPhotoInNewTab(photoUrl); $event.stopPropagation()" title="View full size">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                </button>
+                <button class="photo-download-btn" (click)="downloadPhoto(photoUrl); $event.stopPropagation()" title="Download photo">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="photo-number">{{ i + 1 }}</div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -723,6 +1663,254 @@
         <span class="spinner" *ngIf="deleting"></span>
         <span *ngIf="!deleting">Delete</span>
         <span *ngIf="deleting">Deleting...</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Box Status Update Modal -->
+<div class="modal-backdrop" *ngIf="isBoxStatusModalOpen" (click)="closeBoxStatusModal()">
+  <div class="box-status-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M2 12h20"/>
+          </svg>
+        </div>
+        <div>
+          <h3>Update Box Status</h3>
+          <p class="modal-subtitle">{{ box?.name || box?.code }}</p>
+        </div>
+      </div>
+      <button class="icon-button" (click)="closeBoxStatusModal()" [disabled]="boxStatusUpdateLoading" title="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <!-- Status Transition Display -->
+      <div class="status-transition" *ngIf="box">
+        <div class="status-item current">
+          <div class="status-label">Current Status</div>
+          <div class="status-badge-wrapper">
+            <span class="status-badge" [ngClass]="getStatusClass(box.status)">
+              <span class="status-dot"></span>
+              {{ getStatusLabel(box.status) }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="status-arrow" *ngIf="selectedBoxStatus">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </div>
+        
+        <div class="status-item new" *ngIf="selectedBoxStatus">
+          <div class="status-label">New Status</div>
+          <div class="status-badge-wrapper">
+            <span class="status-badge" [ngClass]="getStatusClass(selectedBoxStatus)">
+              <span class="status-dot"></span>
+              {{ getStatusLabelForModal(selectedBoxStatus) }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Selection -->
+      <div class="status-selection-wrapper">
+        <label class="form-label" for="boxStatusSelect">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          Select New Status
+        </label>
+        <div class="select-wrapper">
+          <select 
+            id="boxStatusSelect" 
+            class="status-select" 
+            [(ngModel)]="selectedBoxStatus"
+            [disabled]="boxStatusUpdateLoading"
+          >
+            <option [value]="null">Choose a status...</option>
+            <option *ngFor="let status of availableBoxStatuses" [value]="status">
+              {{ getStatusLabelForModal(status) }}
+            </option>
+          </select>
+          <svg class="select-arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div class="error-message" *ngIf="boxStatusUpdateError">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>{{ boxStatusUpdateError }}</span>
+      </div>
+    </div>
+    
+    <div class="modal-actions">
+      <button 
+        class="btn btn-secondary" 
+        (click)="closeBoxStatusModal()" 
+        [disabled]="boxStatusUpdateLoading"
+      >
+        Cancel
+      </button>
+      <button 
+        class="btn btn-primary" 
+        (click)="updateBoxStatus()" 
+        [disabled]="boxStatusUpdateLoading || !selectedBoxStatus"
+      >
+        <svg *ngIf="!boxStatusUpdateLoading" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span class="spinner-small" *ngIf="boxStatusUpdateLoading"></span>
+        <span>{{ boxStatusUpdateLoading ? 'Updating...' : 'Update Status' }}</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Move Box to Location Modal -->
+<div class="modal-backdrop" *ngIf="isMoveLocationModalOpen" (click)="closeMoveLocationModal()">
+  <div class="box-status-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+        </div>
+        <div>
+          <h3>Move Box to Location</h3>
+          <p class="modal-subtitle">{{ box?.name || box?.code }}</p>
+        </div>
+      </div>
+      <button class="icon-button" (click)="closeMoveLocationModal()" [disabled]="moveLocationLoading" title="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <!-- Current Location Card -->
+      <div class="current-location-card" *ngIf="box">
+        <div class="location-card-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          <span class="location-card-label">Current Location</span>
+        </div>
+        <div class="location-card-content" *ngIf="box.currentLocationCode">
+          <div class="location-code-badge">{{ box.currentLocationCode }}</div>
+          <div class="location-name">{{ box.currentLocationName }}</div>
+        </div>
+        <div class="location-card-content no-location" *ngIf="!box.currentLocationCode">
+          <div class="no-location-text">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            <span>Not assigned to any location</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Location Selection -->
+      <div class="form-group">
+        <label for="locationSelect" class="form-label">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          Select New Location
+          <span class="required">*</span>
+        </label>
+        <div *ngIf="locationsLoading" class="loading-state">
+          <div class="spinner-small"></div>
+          <p>Loading locations...</p>
+        </div>
+        <div class="select-wrapper" *ngIf="!locationsLoading">
+          <select 
+            id="locationSelect"
+            [formControl]="selectedLocationId"
+            class="form-select"
+          >
+            <option value="">-- Select a location --</option>
+            <option *ngFor="let location of locations" [value]="location.locationId" [disabled]="location.isFull">
+              {{ location.locationCode }} - {{ location.locationName }}
+              <span *ngIf="location.isFull"> (Full)</span>
+              <span *ngIf="!location.isFull && location.capacity"> ({{ location.availableCapacity }} available)</span>
+            </option>
+          </select>
+          <svg class="select-arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Reason (Optional) -->
+      <div class="form-group">
+        <label for="moveReason" class="form-label">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          Reason (Optional)
+        </label>
+        <textarea 
+          id="moveReason"
+          [formControl]="moveReason"
+          class="form-textarea"
+          placeholder="Enter reason for moving this box (e.g., Quality check, Storage reorganization, etc.)..."
+          rows="4"
+        ></textarea>
+        <div class="form-hint">Provide additional context about why this box is being moved</div>
+      </div>
+
+      <!-- Error Message -->
+      <div class="error-message" *ngIf="moveLocationError">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>{{ moveLocationError }}</span>
+      </div>
+    </div>
+    
+    <div class="modal-actions">
+      <button 
+        class="btn btn-secondary" 
+        (click)="closeMoveLocationModal()" 
+        [disabled]="moveLocationLoading"
+      >
+        Cancel
+      </button>
+      <button 
+        class="btn btn-primary" 
+        (click)="moveBoxToLocation()" 
+        [disabled]="moveLocationLoading || !selectedLocationId.value"
+      >
+        <span *ngIf="!moveLocationLoading">Move Box</span>
+        <span *ngIf="moveLocationLoading">Moving...</span>
       </button>
     </div>
   </div>

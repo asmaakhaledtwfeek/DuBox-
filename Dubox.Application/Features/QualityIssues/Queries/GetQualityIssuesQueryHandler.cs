@@ -48,6 +48,7 @@ namespace Dubox.Application.Features.QualityIssues.Queries
             var issueIds = issues.Select(i => i.IssueId).ToList();
             
             // Load image metadata (without ImageData) in a separate lightweight query
+            // Use /file endpoint so browser can load images directly as <img src>
             var images = await _dbContext.Set<QualityIssueImage>()
                 .AsNoTracking()
                 .Where(img => issueIds.Contains(img.IssueId))
@@ -61,7 +62,7 @@ namespace Dubox.Application.Features.QualityIssues.Queries
                     FileSize = img.FileSize,
                     Sequence = img.Sequence,
                     CreatedDate = img.CreatedDate,
-                    ImageUrl = $"/api/images/QualityIssue/{img.QualityIssueImageId}"
+                    ImageUrl = $"/api/images/QualityIssue/{img.QualityIssueImageId}/file"
                 })
                 .ToListAsync(cancellationToken);
             

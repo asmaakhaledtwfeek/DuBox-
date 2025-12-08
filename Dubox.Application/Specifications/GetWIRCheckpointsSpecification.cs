@@ -16,7 +16,7 @@
             // Image metadata is loaded separately with lightweight query
             
             // Enable split query to avoid Cartesian explosion with multiple collection includes
-            EnableSplitQuery();
+            
 
             if (!string.IsNullOrWhiteSpace(query.ProjectCode))
                 AddCriteria(x => x.Box.Project.ProjectCode == query.ProjectCode);

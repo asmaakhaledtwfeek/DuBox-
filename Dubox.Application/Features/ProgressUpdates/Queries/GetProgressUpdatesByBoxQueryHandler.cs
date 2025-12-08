@@ -76,6 +76,7 @@ public class GetProgressUpdatesByBoxQueryHandler : IRequestHandler<GetProgressUp
         var progressUpdateIds = updates.Select(u => u.ProgressUpdateId).ToList();
         
         // Load image metadata (without ImageData) in a separate lightweight query
+        // Use /file endpoint so browser can load images directly as <img src>
         var images = await _dbContext.Set<ProgressUpdateImage>()
             .AsNoTracking()
             .Where(img => progressUpdateIds.Contains(img.ProgressUpdateId))
@@ -89,7 +90,7 @@ public class GetProgressUpdatesByBoxQueryHandler : IRequestHandler<GetProgressUp
                 FileSize = img.FileSize,
                 Sequence = img.Sequence,
                 CreatedDate = img.CreatedDate,
-                ImageUrl = $"/api/images/ProgressUpdate/{img.ProgressUpdateImageId}"
+                ImageUrl = $"/api/images/ProgressUpdate/{img.ProgressUpdateImageId}/file"
             })
             .ToListAsync(cancellationToken);
         

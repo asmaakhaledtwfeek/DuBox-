@@ -38,7 +38,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
 
             // Load image metadata separately (without base64 ImageData) for performance
             await PopulateImageMetadata(checkpointDtos, cancellationToken);
-            
+
             await PopulateActivityMetadata(checkpointDtos, cancellationToken);
 
             return Result.Success(checkpointDtos);
@@ -51,6 +51,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
             var wirIds = checkpoints.Select(c => c.WIRId).ToList();
             
             // Load WIR checkpoint images metadata (without ImageData)
+            // Use /file endpoint so browser can load images directly as <img src>
             var wirImages = await _dbContext.Set<WIRCheckpointImage>()
                 .AsNoTracking()
                 .Where(img => wirIds.Contains(img.WIRId))
@@ -64,7 +65,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
                     FileSize = img.FileSize,
                     Sequence = img.Sequence,
                     CreatedDate = img.CreatedDate,
-                    ImageUrl = $"/api/images/WIRCheckpoint/{img.WIRCheckpointImageId}"
+                    ImageUrl = $"/api/images/WIRCheckpoint/{img.WIRCheckpointImageId}/file"
                 })
                 .ToListAsync(cancellationToken);
             
@@ -72,6 +73,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
             var issueIds = checkpoints.SelectMany(c => c.QualityIssues.Select(q => q.IssueId)).ToList();
             
             // Load quality issue images metadata (without ImageData)
+            // Use /file endpoint so browser can load images directly as <img src>
             var qualityImages = await _dbContext.Set<QualityIssueImage>()
                 .AsNoTracking()
                 .Where(img => issueIds.Contains(img.IssueId))
@@ -85,7 +87,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
                     FileSize = img.FileSize,
                     Sequence = img.Sequence,
                     CreatedDate = img.CreatedDate,
-                    ImageUrl = $"/api/images/QualityIssue/{img.QualityIssueImageId}"
+                    ImageUrl = $"/api/images/QualityIssue/{img.QualityIssueImageId}/file"
                 })
                 .ToListAsync(cancellationToken);
             

@@ -15,7 +15,7 @@ namespace Dubox.Application.Specifications
             AddOrderByDescending(q => q.IssueDate);
             
             // Enable split query to avoid Cartesian explosion
-            EnableSplitQuery();
+            
         }
     }
 }

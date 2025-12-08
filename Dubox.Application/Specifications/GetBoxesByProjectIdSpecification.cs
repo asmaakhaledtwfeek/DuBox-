@@ -12,7 +12,7 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(Box.Project));
             
             // Enable split query to avoid Cartesian explosion with BoxActivities collection
-            EnableSplitQuery();
+            
         }
     }
 }

@@ -9,6 +9,7 @@ import { PermissionService } from '../../../core/services/permission.service';
 import { ApiService } from '../../../core/services/api.service';
 import { Observable, forkJoin } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { environment } from '../../../../environments/environment';
 import { 
   WIRRecord, 
   CheckpointStatus, 
@@ -2629,11 +2630,11 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   }
   
   /**
-   * Get the API base URL
+   * Get the API base URL (without /api suffix, since imageUrl already includes /api)
    */
   private getApiBaseUrl(): string {
-    // Get base URL from environment or current location
-    return (window as any).__env?.apiUrl || 'https://localhost:7098';
+    // Use environment.apiUrl and remove /api suffix if present
+    return environment.apiUrl.replace(/\/api\/?$/, '');
   }
 
   /**

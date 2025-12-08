@@ -14,7 +14,7 @@ namespace Dubox.Application.Specifications
             // Image metadata is loaded separately with lightweight query
             
             // Enable split query to avoid Cartesian explosion
-            EnableSplitQuery();
+            
 
             if (!string.IsNullOrWhiteSpace(query.SearchTerm))
             {

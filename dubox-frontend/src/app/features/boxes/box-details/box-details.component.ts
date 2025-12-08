@@ -19,6 +19,7 @@ import * as ExcelJS from 'exceljs';
 import { Subject, takeUntil } from 'rxjs';
 import { debounceTime, distinctUntilChanged, map } from 'rxjs/operators';
 import { DiffUtil } from '../../../core/utils/diff.util';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-box-details',
@@ -912,11 +913,11 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   }
   
   /**
-   * Get the API base URL
+   * Get the API base URL (without /api suffix, since imageUrl already includes /api)
    */
   private getApiBaseUrl(): string {
-    // Get base URL from environment or current location
-    return (window as any).__env?.apiUrl || 'https://localhost:7098';
+    // Use environment.apiUrl and remove /api suffix if present
+    return environment.apiUrl.replace(/\/api\/?$/, '');
   }
 
   openImageInNewTab(imageUrl: string): void {

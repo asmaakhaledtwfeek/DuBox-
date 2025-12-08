@@ -211,26 +211,6 @@ export class UserManagementComponent implements OnInit, OnDestroy {
     return this.permissionService.hasPermission('audit-logs', 'view');
   }
 
-  get canDeleteUser(): boolean {
-    return this.permissionService.canDelete('users');
-  }
-
-  get canAssignRoles(): boolean {
-    return this.permissionService.hasPermission('users', 'assign-roles');
-  }
-
-  get canAssignGroups(): boolean {
-    return this.permissionService.hasPermission('users', 'assign-groups');
-  }
-
-  get canCreateUser(): boolean {
-    return this.permissionService.canCreate('users');
-  }
-
-  get canEditUser(): boolean {
-    return this.permissionService.canEdit('users');
-  }
-
   ngOnInit(): void {
     this.registerFilterListeners();
     this.bootstrap();
@@ -324,6 +304,16 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   openGroupModal(mode: ModalMode, group?: GroupDto): void {
+    // Permission check: Can create or edit groups
+    if (mode === 'create' && !this.canCreateGroup) {
+      this.showAlert('You do not have permission to create groups.', 'error');
+      return;
+    }
+    if (mode === 'edit' && !this.canEditGroup) {
+      this.showAlert('You do not have permission to edit groups.', 'error');
+      return;
+    }
+    
     this.modalMode = mode;
     this.groupModalOpen = true;
 
@@ -345,6 +335,16 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   openRoleModal(mode: ModalMode, role?: RoleDto): void {
+    // Permission check: Can create or edit roles
+    if (mode === 'create' && !this.canCreateRole) {
+      this.showAlert('You do not have permission to create roles.', 'error');
+      return;
+    }
+    if (mode === 'edit' && !this.canEditRole) {
+      this.showAlert('You do not have permission to edit roles.', 'error');
+      return;
+    }
+    
     this.modalMode = mode;
     this.roleModalOpen = true;
 
@@ -379,6 +379,16 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   saveGroup(): void {
+    // Permission check: Can create or edit groups
+    if (this.modalMode === 'create' && !this.canCreateGroup) {
+      this.showAlert('You do not have permission to create groups.', 'error');
+      return;
+    }
+    if (this.modalMode === 'edit' && !this.canEditGroup) {
+      this.showAlert('You do not have permission to edit groups.', 'error');
+      return;
+    }
+    
     if (this.groupForm.invalid) {
       this.groupForm.markAllAsTouched();
       return;
@@ -392,6 +402,16 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   saveRole(): void {
+    // Permission check: Can create or edit roles
+    if (this.modalMode === 'create' && !this.canCreateRole) {
+      this.showAlert('You do not have permission to create roles.', 'error');
+      return;
+    }
+    if (this.modalMode === 'edit' && !this.canEditRole) {
+      this.showAlert('You do not have permission to edit roles.', 'error');
+      return;
+    }
+    
     if (this.roleForm.invalid) {
       this.roleForm.markAllAsTouched();
       return;
@@ -423,6 +443,12 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   requestGroupDeletion(group: GroupDto): void {
+    // Permission check: Can delete groups
+    if (!this.canDeleteGroup) {
+      this.showAlert('You do not have permission to delete groups.', 'error');
+      return;
+    }
+    
     this.openConfirmation({
       title: 'Delete group',
       message: `Delete ${group.groupName}? Members will keep their direct roles.`,
@@ -442,6 +468,12 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   requestRoleDeletion(role: RoleDto): void {
+    // Permission check: Can delete roles
+    if (!this.canDeleteRole) {
+      this.showAlert('You do not have permission to delete roles.', 'error');
+      return;
+    }
+    
     this.openConfirmation({
       title: 'Delete role',
       message: `Are you sure you want to delete ${role.roleName}?`,
@@ -1050,6 +1082,12 @@ export class UserManagementComponent implements OnInit, OnDestroy {
 
   // Audit Logs Methods
   openAuditLogsModal(user: UserDto): void {
+    // Permission check: Can view audit logs
+    if (!this.canViewAuditLogs) {
+      console.warn('🔐 Access denied. You do not have permission to view audit logs.');
+      return;
+    }
+    
     this.router.navigate(['/admin/users', user.userId, 'audit-logs']);
   }
 
@@ -1077,6 +1115,12 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   }
 
   openPermissionMatrixModal(role: RoleDto): void {
+    // Permission check: Can manage permissions
+    if (!this.canManagePermissions) {
+      this.showAlert('You do not have permission to manage permissions.', 'error');
+      return;
+    }
+    
     this.selectedRoleForPermissions = role;
     this.permissionMatrixModalOpen = true;
     

@@ -6,6 +6,7 @@ import { Team, TeamMembersDto, TeamMember, CompleteTeamMemberProfile } from '../
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
+import { PermissionService } from '../../../core/services/permission.service';
 
 @Component({
   selector: 'app-team-details',
@@ -33,16 +34,22 @@ export class TeamDetailsComponent implements OnInit {
   memberToRemove: TeamMember | null = null;
   removingMember = false;
   removeMemberError = '';
+  canManageMembers = false;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private teamService: TeamService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private permissionService: PermissionService
   ) {}
 
   ngOnInit(): void {
     this.teamId = this.route.snapshot.paramMap.get('id') || '';
+    
+    // Check permission to manage team members
+    this.canManageMembers = this.permissionService.hasPermission('teams', 'manage-members') || 
+                            this.permissionService.hasPermission('teams', 'manage');
     
     this.completeProfileForm = this.fb.group({
       employeeCode: ['', [Validators.required, Validators.maxLength(50)]],
@@ -171,6 +178,12 @@ export class TeamDetailsComponent implements OnInit {
   }
 
   openRemoveMemberModal(member: TeamMember): void {
+    // Permission check: Can manage team members
+    if (!this.canManageMembers) {
+      this.removeMemberError = 'You do not have permission to remove team members.';
+      return;
+    }
+    
     this.memberToRemove = member;
     this.removeMemberError = '';
     this.showRemoveConfirmModal = true;
@@ -184,6 +197,12 @@ export class TeamDetailsComponent implements OnInit {
 
   confirmRemoveMember(): void {
     if (!this.memberToRemove || !this.teamId) {
+      return;
+    }
+
+    // Permission check: Can manage team members
+    if (!this.canManageMembers) {
+      this.removeMemberError = 'You do not have permission to remove team members.';
       return;
     }
 

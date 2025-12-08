@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
+import { PermissionService } from '../../../core/services/permission.service';
 
 @Component({
   selector: 'app-admin-panel',
@@ -28,7 +29,7 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
             <h3>Settings</h3>
             <p>System configuration</p>
           </div>
-          <a routerLink="/admin/audit-logs" class="admin-card">
+          <a *ngIf="canViewAuditLogs" routerLink="/admin/audit-logs" class="admin-card">
             <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
             </svg>
@@ -97,4 +98,13 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
     }
   `]
 })
-export class AdminPanelComponent {}
+export class AdminPanelComponent implements OnInit {
+  canViewAuditLogs = false;
+
+  constructor(private permissionService: PermissionService) {}
+
+  ngOnInit(): void {
+    // Check if user has permission to view audit logs
+    this.canViewAuditLogs = this.permissionService.hasPermission('audit-logs', 'view');
+  }
+}

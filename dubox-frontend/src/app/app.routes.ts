@@ -134,20 +134,20 @@ export const routes: Routes = [
       },
       {
         path: 'users',
-        canActivate: [roleGuard],
-        data: { roles: [UserRole.SystemAdmin] },
+        canActivate: [permissionGuard],
+        data: { permission: { module: 'users', action: 'view' } },
         loadComponent: () => import('./features/admin/user-management/user-management.component').then(m => m.UserManagementComponent)
       },
       {
         path: 'users/:userId',
-        canActivate: [roleGuard],
-        data: { roles: [UserRole.SystemAdmin] },
+        canActivate: [permissionGuard],
+        data: { permission: { module: 'users', action: 'view' } },
         loadComponent: () => import('./features/admin/user-management/user-details-page/user-details-page.component').then(m => m.UserDetailsPageComponent)
       },
       {
         path: 'users/:userId/audit-logs',
-        canActivate: [roleGuard],
-        data: { roles: [UserRole.SystemAdmin] },
+        canActivate: [permissionGuard],
+        data: { permission: { module: 'audit-logs', action: 'view' } },
         loadComponent: () => import('./features/admin/user-management/user-audit-logs/user-audit-logs.component').then(m => m.UserAuditLogsComponent)
       },
       {

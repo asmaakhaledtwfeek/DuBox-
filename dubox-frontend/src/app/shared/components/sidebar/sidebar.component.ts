@@ -70,11 +70,14 @@ export class SidebarComponent implements OnInit, OnDestroy {
         this.menuLoaded = true;
         this.buildMenuItems();
       },
+
       error: (err) => {
         console.warn('⚠️ Failed to load menu items, using fallback:', err);
         this.menuLoaded = true;
         this.buildMenuItems();
       }
+
+     
     });
   }
 

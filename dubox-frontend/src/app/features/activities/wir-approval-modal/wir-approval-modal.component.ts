@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { WIRRecord, ApproveWIRRequest, RejectWIRRequest, WIRStatus } from '../../../core/models/wir.model';
 import { WIRService } from '../../../core/services/wir.service';
+import { PermissionService } from '../../../core/services/permission.service';
 
 @Component({
   selector: 'app-wir-approval-modal',
@@ -31,7 +32,8 @@ export class WIRApprovalModalComponent implements OnInit, OnChanges {
 
   constructor(
     private fb: FormBuilder,
-    private wirService: WIRService
+    private wirService: WIRService,
+    private permissionService: PermissionService
   ) {}
 
   ngOnInit(): void {
@@ -95,6 +97,12 @@ export class WIRApprovalModalComponent implements OnInit, OnChanges {
   }
 
   onApprove(): void {
+    // Permission check
+    if (!this.canApprove()) {
+      this.error = 'You do not have permission to approve WIR records.';
+      return;
+    }
+
     if (this.approvalForm.invalid || !this.wirRecord) {
       this.markFormGroupTouched(this.approvalForm);
       return;
@@ -128,6 +136,12 @@ export class WIRApprovalModalComponent implements OnInit, OnChanges {
   }
 
   onReject(): void {
+    // Permission check
+    if (!this.canReject()) {
+      this.error = 'You do not have permission to reject WIR records.';
+      return;
+    }
+
     if (this.rejectionForm.invalid || !this.wirRecord) {
       this.markFormGroupTouched(this.rejectionForm);
       return;
@@ -173,11 +187,19 @@ export class WIRApprovalModalComponent implements OnInit, OnChanges {
   }
 
   canApprove(): boolean {
-    return this.wirRecord?.status !== WIRStatus.Approved;
+    // Check both permission and status
+    const hasPermission = this.permissionService.hasPermission('wir', 'approve') || 
+                         this.permissionService.hasPermission('wir', 'manage');
+    const isNotApproved = this.wirRecord?.status !== WIRStatus.Approved;
+    return hasPermission && isNotApproved;
   }
 
   canReject(): boolean {
-    return this.wirRecord?.status !== WIRStatus.Rejected;
+    // Check both permission and status
+    const hasPermission = this.permissionService.hasPermission('wir', 'reject') || 
+                         this.permissionService.hasPermission('wir', 'manage');
+    const isNotRejected = this.wirRecord?.status !== WIRStatus.Rejected;
+    return hasPermission && isNotRejected;
   }
 
   private markFormGroupTouched(formGroup: FormGroup): void {

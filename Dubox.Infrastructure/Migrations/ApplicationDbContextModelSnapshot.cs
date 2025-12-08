@@ -1697,7 +1697,7 @@ namespace Dubox.Infrastructure.Migrations
                         {
                             MenuItemId = new Guid("20000000-0000-0000-0001-000000000001"),
                             CreatedBy = "System",
-                            CreatedDate = new DateTime(2025, 12, 8, 15, 49, 3, 146, DateTimeKind.Utc).AddTicks(6380),
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 10,
                             Icon = "projects",
                             IsActive = true,
@@ -1711,7 +1711,7 @@ namespace Dubox.Infrastructure.Migrations
                         {
                             MenuItemId = new Guid("20000000-0000-0000-0001-000000000002"),
                             CreatedBy = "System",
-                            CreatedDate = new DateTime(2025, 12, 8, 15, 49, 3, 146, DateTimeKind.Utc).AddTicks(6380),
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 20,
                             Icon = "materials",
                             IsActive = true,
@@ -1725,7 +1725,7 @@ namespace Dubox.Infrastructure.Migrations
                         {
                             MenuItemId = new Guid("20000000-0000-0000-0001-000000000003"),
                             CreatedBy = "System",
-                            CreatedDate = new DateTime(2025, 12, 8, 15, 49, 3, 146, DateTimeKind.Utc).AddTicks(6380),
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 30,
                             Icon = "location",
                             IsActive = true,
@@ -1739,7 +1739,7 @@ namespace Dubox.Infrastructure.Migrations
                         {
                             MenuItemId = new Guid("20000000-0000-0000-0001-000000000004"),
                             CreatedBy = "System",
-                            CreatedDate = new DateTime(2025, 12, 8, 15, 49, 3, 146, DateTimeKind.Utc).AddTicks(6380),
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 40,
                             Icon = "teams",
                             IsActive = true,
@@ -1754,7 +1754,7 @@ namespace Dubox.Infrastructure.Migrations
                             MenuItemId = new Guid("20000000-0000-0000-0001-000000000005"),
                             Aliases = "/quality",
                             CreatedBy = "System",
-                            CreatedDate = new DateTime(2025, 12, 8, 15, 49, 3, 146, DateTimeKind.Utc).AddTicks(6380),
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 50,
                             Icon = "qc",
                             IsActive = true,
@@ -1768,7 +1768,7 @@ namespace Dubox.Infrastructure.Migrations
                         {
                             MenuItemId = new Guid("20000000-0000-0000-0001-000000000006"),
                             CreatedBy = "System",
-                            CreatedDate = new DateTime(2025, 12, 8, 15, 49, 3, 146, DateTimeKind.Utc).AddTicks(6380),
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 60,
                             Icon = "reports",
                             IsActive = true,
@@ -1782,7 +1782,7 @@ namespace Dubox.Infrastructure.Migrations
                         {
                             MenuItemId = new Guid("20000000-0000-0000-0001-000000000007"),
                             CreatedBy = "System",
-                            CreatedDate = new DateTime(2025, 12, 8, 15, 49, 3, 146, DateTimeKind.Utc).AddTicks(6380),
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 70,
                             Icon = "notifications",
                             IsActive = true,
@@ -1797,7 +1797,7 @@ namespace Dubox.Infrastructure.Migrations
                             MenuItemId = new Guid("20000000-0000-0000-0001-000000000008"),
                             Aliases = "/admin/users",
                             CreatedBy = "System",
-                            CreatedDate = new DateTime(2025, 12, 8, 15, 49, 3, 146, DateTimeKind.Utc).AddTicks(6380),
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             DisplayOrder = 100,
                             Icon = "admin",
                             IsActive = true,

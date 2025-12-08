@@ -15,9 +15,11 @@ public static class NavigationMenuSeedData
     private static readonly Guid NotificationsMenuId = new("20000000-0000-0000-0001-000000000007");
     private static readonly Guid AdminMenuId = new("20000000-0000-0000-0001-000000000008");
 
+    // Static seed date to prevent EF Core model changes warning
+    private static readonly DateTime SeedDate = new(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
     public static void SeedNavigationMenuItems(ModelBuilder modelBuilder)
     {
-        var now = DateTime.UtcNow;
 
         var menuItems = new List<NavigationMenuItem>
         {
@@ -33,7 +35,7 @@ public static class NavigationMenuSeedData
                 DisplayOrder = 10,
                 IsActive = true,
                 IsVisible = true,
-                CreatedDate = now,
+                CreatedDate = SeedDate,
                 CreatedBy = "System"
             },
             new()
@@ -48,7 +50,7 @@ public static class NavigationMenuSeedData
                 DisplayOrder = 20,
                 IsActive = true,
                 IsVisible = true,
-                CreatedDate = now,
+                CreatedDate = SeedDate,
                 CreatedBy = "System"
             },
             new()
@@ -63,7 +65,7 @@ public static class NavigationMenuSeedData
                 DisplayOrder = 30,
                 IsActive = true,
                 IsVisible = true,
-                CreatedDate = now,
+                CreatedDate = SeedDate,
                 CreatedBy = "System"
             },
             new()
@@ -78,7 +80,7 @@ public static class NavigationMenuSeedData
                 DisplayOrder = 40,
                 IsActive = true,
                 IsVisible = true,
-                CreatedDate = now,
+                CreatedDate = SeedDate,
                 CreatedBy = "System"
             },
             new()
@@ -93,7 +95,7 @@ public static class NavigationMenuSeedData
                 DisplayOrder = 50,
                 IsActive = true,
                 IsVisible = true,
-                CreatedDate = now,
+                CreatedDate = SeedDate,
                 CreatedBy = "System"
             },
             new()
@@ -108,7 +110,7 @@ public static class NavigationMenuSeedData
                 DisplayOrder = 60,
                 IsActive = true,
                 IsVisible = true,
-                CreatedDate = now,
+                CreatedDate = SeedDate,
                 CreatedBy = "System"
             },
             new()
@@ -123,7 +125,7 @@ public static class NavigationMenuSeedData
                 DisplayOrder = 70,
                 IsActive = true,
                 IsVisible = true,
-                CreatedDate = now,
+                CreatedDate = SeedDate,
                 CreatedBy = "System"
             },
             new()
@@ -138,7 +140,7 @@ public static class NavigationMenuSeedData
                 DisplayOrder = 100,
                 IsActive = true,
                 IsVisible = true,
-                CreatedDate = now,
+                CreatedDate = SeedDate,
                 CreatedBy = "System"
             }
         };

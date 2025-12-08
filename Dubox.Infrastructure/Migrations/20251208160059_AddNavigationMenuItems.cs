@@ -48,14 +48,14 @@ namespace Dubox.Infrastructure.Migrations
                 columns: new[] { "MenuItemId", "Aliases", "CreatedBy", "CreatedDate", "DisplayOrder", "Icon", "IsActive", "IsVisible", "Label", "ModifiedBy", "ModifiedDate", "ParentMenuItemId", "PermissionAction", "PermissionModule", "Route" },
                 values: new object[,]
                 {
-                    { new Guid("20000000-0000-0000-0001-000000000001"), null, "System", new DateTime(2025, 12, 8, 15, 49, 3, 146, DateTimeKind.Utc).AddTicks(6380), 10, "projects", true, true, "Projects", null, null, null, "view", "projects", "/projects" },
-                    { new Guid("20000000-0000-0000-0001-000000000002"), null, "System", new DateTime(2025, 12, 8, 15, 49, 3, 146, DateTimeKind.Utc).AddTicks(6380), 20, "materials", true, true, "Materials", null, null, null, "view", "materials", "/materials" },
-                    { new Guid("20000000-0000-0000-0001-000000000003"), null, "System", new DateTime(2025, 12, 8, 15, 49, 3, 146, DateTimeKind.Utc).AddTicks(6380), 30, "location", true, true, "Locations", null, null, null, "view", "locations", "/locations" },
-                    { new Guid("20000000-0000-0000-0001-000000000004"), null, "System", new DateTime(2025, 12, 8, 15, 49, 3, 146, DateTimeKind.Utc).AddTicks(6380), 40, "teams", true, true, "Teams", null, null, null, "view", "teams", "/teams" },
-                    { new Guid("20000000-0000-0000-0001-000000000005"), "/quality", "System", new DateTime(2025, 12, 8, 15, 49, 3, 146, DateTimeKind.Utc).AddTicks(6380), 50, "qc", true, true, "Quality Control", null, null, null, "view", "wir", "/qc" },
-                    { new Guid("20000000-0000-0000-0001-000000000006"), null, "System", new DateTime(2025, 12, 8, 15, 49, 3, 146, DateTimeKind.Utc).AddTicks(6380), 60, "reports", true, true, "Reports", null, null, null, "view", "reports", "/reports" },
-                    { new Guid("20000000-0000-0000-0001-000000000007"), null, "System", new DateTime(2025, 12, 8, 15, 49, 3, 146, DateTimeKind.Utc).AddTicks(6380), 70, "notifications", true, true, "Notifications", null, null, null, "view", "notifications", "/notifications" },
-                    { new Guid("20000000-0000-0000-0001-000000000008"), "/admin/users", "System", new DateTime(2025, 12, 8, 15, 49, 3, 146, DateTimeKind.Utc).AddTicks(6380), 100, "admin", true, true, "Admin", null, null, null, "view", "users", "/admin" }
+                    { new Guid("20000000-0000-0000-0001-000000000001"), null, "System", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), 10, "projects", true, true, "Projects", null, null, null, "view", "projects", "/projects" },
+                    { new Guid("20000000-0000-0000-0001-000000000002"), null, "System", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), 20, "materials", true, true, "Materials", null, null, null, "view", "materials", "/materials" },
+                    { new Guid("20000000-0000-0000-0001-000000000003"), null, "System", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), 30, "location", true, true, "Locations", null, null, null, "view", "locations", "/locations" },
+                    { new Guid("20000000-0000-0000-0001-000000000004"), null, "System", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), 40, "teams", true, true, "Teams", null, null, null, "view", "teams", "/teams" },
+                    { new Guid("20000000-0000-0000-0001-000000000005"), "/quality", "System", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), 50, "qc", true, true, "Quality Control", null, null, null, "view", "wir", "/qc" },
+                    { new Guid("20000000-0000-0000-0001-000000000006"), null, "System", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), 60, "reports", true, true, "Reports", null, null, null, "view", "reports", "/reports" },
+                    { new Guid("20000000-0000-0000-0001-000000000007"), null, "System", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), 70, "notifications", true, true, "Notifications", null, null, null, "view", "notifications", "/notifications" },
+                    { new Guid("20000000-0000-0000-0001-000000000008"), "/admin/users", "System", new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), 100, "admin", true, true, "Admin", null, null, null, "view", "users", "/admin" }
                 });
 
             migrationBuilder.CreateIndex(

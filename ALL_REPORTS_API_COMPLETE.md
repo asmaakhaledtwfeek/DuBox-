@@ -389,3 +389,4 @@ Frontend displays in table with badges
 
 © 2024 Group AMANA - DuBox Platform
 
+

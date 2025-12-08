@@ -127,10 +127,16 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
-  // Permission getter for template
+  // Permission getters for template
   get canUpdateQualityIssueStatus(): boolean {
     return this.permissionService.hasPermission('quality-issues', 'edit') || 
            this.permissionService.hasPermission('quality-issues', 'resolve');
+  }
+
+  get canManageWIRCheckpoints(): boolean {
+    return this.permissionService.hasPermission('wir', 'create') || 
+           this.permissionService.hasPermission('wir', 'review') ||
+           this.permissionService.hasPermission('wir', 'manage');
   }
 
   ngOnInit(): void {

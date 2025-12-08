@@ -43,6 +43,7 @@ export class ProjectDashboardComponent implements OnInit {
   deleting = false;
   canEdit = false;
   canDelete = false;
+  canChangeStatus = false;
   canImportBoxes = false;
   templateDownloading = false;
   isDraggingFile = false;
@@ -93,6 +94,8 @@ export class ProjectDashboardComponent implements OnInit {
     }
     this.canEdit = this.permissionService.canEdit('projects');
     this.canDelete = this.permissionService.canDelete('projects');
+    this.canChangeStatus = this.permissionService.hasPermission('projects', 'manage') || 
+                           this.permissionService.canEdit('projects');
     this.canImportBoxes = this.permissionService.hasPermission('boxes', 'import');
     this.loadProject();
   }

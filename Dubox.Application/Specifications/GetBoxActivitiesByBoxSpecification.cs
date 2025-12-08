@@ -16,7 +16,7 @@ public class GetBoxActivitiesByBoxSpecification : Specification<BoxActivity>
         AddOrderBy(ba => ba.Sequence);
         
         // Enable split query to avoid Cartesian explosion with multiple includes
-        
+        EnableSplitQuery();
     }
 }
 

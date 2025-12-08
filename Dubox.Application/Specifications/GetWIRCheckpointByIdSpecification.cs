@@ -15,7 +15,7 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(WIRCheckpoint.Box));
             
             // Enable split query to avoid Cartesian explosion with collection includes
-            
+            EnableSplitQuery();
         }
     }
 }

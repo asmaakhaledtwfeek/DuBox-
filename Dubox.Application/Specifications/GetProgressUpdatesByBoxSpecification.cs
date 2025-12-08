@@ -15,7 +15,8 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(ProgressUpdate.BoxActivity));
             AddInclude($"{nameof(ProgressUpdate.BoxActivity)}.{nameof(ProgressUpdate.BoxActivity.ActivityMaster)}");
             AddInclude(nameof(ProgressUpdate.UpdatedByUser));
-            AddInclude(nameof(ProgressUpdate.Images));
+            // NOTE: Don't include Images - base64 ImageData is too large
+            // Image metadata is loaded separately with lightweight query
 
             // Search by activity name
             if (!string.IsNullOrWhiteSpace(query.ActivityName))

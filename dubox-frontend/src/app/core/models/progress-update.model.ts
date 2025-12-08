@@ -120,12 +120,13 @@ export interface PaginatedProgressUpdatesResponse {
 export interface ProgressUpdateImage {
   progressUpdateImageId: string;
   progressUpdateId: string;
-  imageData: string;
+  imageData?: string; // May be null for lightweight responses - use imageUrl instead
   imageType: 'file' | 'url';
   originalName?: string;
   fileSize?: number;
   sequence: number;
   createdDate: Date;
+  imageUrl?: string; // URL to fetch image on-demand: /api/images/ProgressUpdate/{progressUpdateImageId}
 }
 
 export interface ProgressUpdatesSearchParams {

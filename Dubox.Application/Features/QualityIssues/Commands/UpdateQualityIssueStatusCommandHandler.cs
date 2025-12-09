@@ -151,12 +151,18 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                             fileSize = imageBytes.Length;
                         }
 
+                        // Cap original name length to avoid DB truncation issues
+                        // Use a fallback name for data URLs to keep it short
+                        var originalName = trimmedUrl.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase)
+                            ? "data-url-image"
+                            : (trimmedUrl.Length > 500 ? trimmedUrl.Substring(0, 500) : trimmedUrl);
+
                         var image = new QualityIssueImage
                         {
                             IssueId = issue.IssueId,
                             ImageData = imageData,
                             ImageType = "url",
-                            OriginalName = trimmedUrl,
+                            OriginalName = originalName,
                             FileSize = fileSize,
                             Sequence = sequence++,
                             CreatedDate = DateTime.UtcNow

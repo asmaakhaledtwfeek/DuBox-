@@ -431,47 +431,32 @@ export class WIRService {
     files?: File[],
     imageUrls?: string[]
   ): Observable<QualityIssueDetails> {
-    const hasFiles = files && files.length > 0;
-    const hasUrls = imageUrls && imageUrls.length > 0;
+    // Always send multipart/form-data because backend endpoint [Consumes("multipart/form-data")]
+    const formData = new FormData();
+    formData.append('Status', payload.status);
     
-    // If files or URLs are provided, send as multipart/form-data
-    if (hasFiles || hasUrls) {
-      const formData = new FormData();
-      formData.append('Status', payload.status);
-      
-      if (payload.resolutionDescription) {
-        formData.append('ResolutionDescription', payload.resolutionDescription);
-      }
-      
-      // Append multiple files
-      if (hasFiles) {
-        files.forEach((file) => {
-          formData.append('Files', file);
-        });
-      }
-      
-      // Append multiple image URLs
-      if (hasUrls) {
-        imageUrls.forEach((url) => {
-          formData.append('ImageUrls', url);
-        });
-      }
-
-      return this.apiService.put<any>(`qualityissues/${issueId}/status`, formData).pipe(
-        map(response => {
-          const issue = response?.data || response;
-          return this.transformQualityIssueDetails(issue);
-        })
-      );
-    } else {
-      // No files/URLs, send as JSON (backward compatibility)
-      return this.apiService.put<any>(`qualityissues/${issueId}/status`, payload).pipe(
-        map(response => {
-          const issue = response?.data || response;
-          return this.transformQualityIssueDetails(issue);
-        })
-      );
+    if (payload.resolutionDescription) {
+      formData.append('ResolutionDescription', payload.resolutionDescription);
     }
+    
+    if (files && files.length > 0) {
+      files.forEach((file) => {
+        formData.append('Files', file);
+      });
+    }
+    
+    if (imageUrls && imageUrls.length > 0) {
+      imageUrls.forEach((url) => {
+        formData.append('ImageUrls', url);
+      });
+    }
+
+    return this.apiService.put<any>(`qualityissues/${issueId}/status`, formData).pipe(
+      map(response => {
+        const issue = response?.data || response;
+        return this.transformQualityIssueDetails(issue);
+      })
+    );
   }
 
   /**

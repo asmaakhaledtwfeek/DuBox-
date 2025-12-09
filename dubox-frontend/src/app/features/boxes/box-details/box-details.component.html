@@ -834,7 +834,14 @@
               <span class="value">{{ formatIssueDate(selectedIssueDetails.resolutionDate) }}</span>
             </div>
             <div class="details-row" *ngIf="getQualityIssueImageUrls(selectedIssueDetails).length > 0">
-              <span class="label">Images</span>
+              <span class="label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+                Images ({{ getQualityIssueImageUrls(selectedIssueDetails).length }})
+              </span>
               <span class="value">
                 <div class="quality-issue-images-gallery">
                   <div class="image-item" *ngFor="let imageUrl of getQualityIssueImageUrls(selectedIssueDetails); let i = index">

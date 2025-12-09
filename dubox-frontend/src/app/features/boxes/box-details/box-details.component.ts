@@ -42,6 +42,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   
   canEdit = false;
   canDelete = false;
+  canUpdateBoxStatus = false;
   canUpdateQualityIssueStatus = false;
   BoxStatus = BoxStatus;
   Math = Math;
@@ -204,6 +205,8 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     
     this.canEdit = this.permissionService.canEdit('boxes');
     this.canDelete = this.permissionService.canDelete('boxes');
+    this.canUpdateBoxStatus = this.permissionService.canEdit('boxes') || 
+                              this.permissionService.hasPermission('boxes', 'update-status');
     this.canUpdateQualityIssueStatus = this.permissionService.hasPermission('quality-issues', 'edit') || 
                                        this.permissionService.hasPermission('quality-issues', 'resolve');
     this.canCreateQualityIssue = this.permissionService.canCreate('quality-issues');
@@ -622,7 +625,13 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   }
 
   canNavigateToAddChecklist(checkpoint: WIRCheckpoint | null): boolean {
-    return !!checkpoint?.wirId && !!checkpoint.boxActivityId;
+    // Check if checkpoint exists and has required data
+    if (!checkpoint?.wirId || !checkpoint?.boxActivityId) {
+      return false;
+    }
+    // Check if user has permission to create/manage WIR checkpoints
+    return this.permissionService.hasPermission('wir', 'create') || 
+           this.permissionService.hasPermission('wir', 'manage');
   }
 
   canNavigateToReview(checkpoint: WIRCheckpoint | null): boolean {
@@ -631,7 +640,26 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       return false;
     }
     // Check if user has permission to review WIR checkpoints
-    return this.permissionService.hasPermission('wir', 'review');
+    return this.permissionService.hasPermission('wir', 'review') || 
+           this.permissionService.hasPermission('wir', 'manage');
+  }
+
+  getApprovedCheckpointsCount(): number {
+    return this.wirCheckpoints.filter(cp => 
+      cp.status?.toLowerCase() === WIRCheckpointStatus.Approved.toLowerCase()
+    ).length;
+  }
+
+  getPendingCheckpointsCount(): number {
+    return this.wirCheckpoints.filter(cp => 
+      cp.status?.toLowerCase() === WIRCheckpointStatus.Pending.toLowerCase()
+    ).length;
+  }
+
+  getRejectedCheckpointsCount(): number {
+    return this.wirCheckpoints.filter(cp => 
+      cp.status?.toLowerCase() === WIRCheckpointStatus.Rejected.toLowerCase()
+    ).length;
   }
 
   navigateToAddChecklist(checkpoint: WIRCheckpoint): void {

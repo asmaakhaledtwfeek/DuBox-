@@ -190,22 +190,40 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   }
 
   canNavigateToAddChecklist(checkpoint: EnrichedCheckpoint | null): boolean {
-    return !!(
+    // Check if checkpoint exists and has required data
+    const hasRequiredData = !!(
       checkpoint &&
       checkpoint.wirId &&
       checkpoint.boxActivityId &&
       checkpoint.boxId &&
       (checkpoint.projectId || checkpoint.box?.projectId)
     );
+    
+    if (!hasRequiredData) {
+      return false;
+    }
+    
+    // Check if user has permission to create/manage WIR checkpoints
+    return this.permissionService.hasPermission('wir', 'create') || 
+           this.permissionService.hasPermission('wir', 'manage');
   }
 
   canNavigateToReview(checkpoint: EnrichedCheckpoint | null): boolean {
-    return !!(
+    // Check if checkpoint exists and has required data
+    const hasRequiredData = !!(
       checkpoint &&
       checkpoint.boxActivityId &&
       checkpoint.boxId &&
       (checkpoint.projectId || checkpoint.box?.projectId)
     );
+    
+    if (!hasRequiredData) {
+      return false;
+    }
+    
+    // Check if user has permission to review WIR checkpoints
+    return this.permissionService.hasPermission('wir', 'review') || 
+           this.permissionService.hasPermission('wir', 'manage');
   }
 
   onAddChecklist(checkpoint: EnrichedCheckpoint): void {

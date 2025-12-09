@@ -2,6 +2,7 @@
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
@@ -13,15 +14,27 @@ namespace Dubox.Application.Features.Boxes.Commands
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IProjectTeamVisibilityService _visibilityService;
 
-        public UpdateBoxStatusCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+        public UpdateBoxStatusCommandHandler(
+            IUnitOfWork unitOfWork, 
+            ICurrentUserService currentUserService,
+            IProjectTeamVisibilityService visibilityService)
         {
             _unitOfWork = unitOfWork;
             _currentUserService = currentUserService;
+            _visibilityService = visibilityService;
         }
 
         public async Task<Result<BoxDto>> Handle(UpdateBoxStatusCommand request, CancellationToken cancellationToken)
         {
+            // Check if user can modify data (Viewer role cannot)
+            var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
+            if (!canModify)
+            {
+                return Result.Failure<BoxDto>("Access denied. Viewer role has read-only access and cannot update box status.");
+            }
+
             var box = await _unitOfWork.Repository<Box>().GetByIdAsync(request.BoxId, cancellationToken);
 
             if (box == null)

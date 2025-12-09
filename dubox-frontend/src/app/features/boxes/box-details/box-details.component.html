@@ -43,7 +43,7 @@
             </svg>
             Move to Location
           </button>
-          <button class="btn btn-primary" (click)="openBoxStatusModal()" *ngIf="canEdit">
+          <button class="btn btn-primary" (click)="openBoxStatusModal()" *ngIf="canUpdateBoxStatus">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 2v20M2 12h20"/>
             </svg>
@@ -278,9 +278,39 @@
         <!-- WIR Tab -->
         <div *ngIf="activeTab === 'wir'" class="wir-tab">
           <div class="wir-card-header">
-            <div>
-              <h2 class="card-title">WIR Checkpoints</h2>
-              <p class="card-subtitle">Inspection milestones generated whenever a checkpoint activity is completed.</p>
+            <div class="wir-header-content">
+              <div class="title-row">
+                <h2 class="card-title">WIR Checkpoints</h2>
+                <span class="info-badge">Work Inspection Request</span>
+              </div>
+              <p class="card-subtitle">
+                Quality control inspection points automatically created when checkpoint activities are completed. 
+                Each checkpoint requires review and approval before proceeding to the next stage of work.
+              </p>
+              <div class="wir-info-chips" *ngIf="!wirLoading && !wirError && wirCheckpoints.length > 0">
+                <div class="info-chip">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 11l3 3L22 4"/>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                  </svg>
+                  <span>{{ getApprovedCheckpointsCount() }} Approved</span>
+                </div>
+                <div class="info-chip pending" *ngIf="getPendingCheckpointsCount() > 0">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  <span>{{ getPendingCheckpointsCount() }} Pending Review</span>
+                </div>
+                <div class="info-chip rejected" *ngIf="getRejectedCheckpointsCount() > 0">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="15" y1="9" x2="9" y2="15"/>
+                    <line x1="9" y1="9" x2="15" y2="15"/>
+                  </svg>
+                  <span>{{ getRejectedCheckpointsCount() }} Rejected</span>
+                </div>
+              </div>
             </div>
             <div class="wir-card-actions">
               <span class="badge badge-info" *ngIf="!wirLoading && !wirError">
@@ -363,9 +393,9 @@
                   </div>
                   <div class="wir-actions">
                     <button 
+                      *ngIf="canNavigateToAddChecklist(checkpoint)"
                       class="btn btn-secondary btn-sm" 
                       (click)="navigateToAddChecklist(checkpoint)"
-                      [disabled]="!canNavigateToAddChecklist(checkpoint)"
                       title="Add or edit checklist items"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -375,9 +405,9 @@
                       Add Checklist
                     </button>
                     <button 
+                      *ngIf="canNavigateToReview(checkpoint)"
                       class="btn btn-primary btn-sm" 
                       (click)="navigateToReview(checkpoint)"
-                      [disabled]="!canNavigateToReview(checkpoint)"
                       title="Open QA/QC review workflow"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

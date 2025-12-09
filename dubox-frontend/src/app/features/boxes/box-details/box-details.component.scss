@@ -1066,24 +1066,97 @@
   .wir-card-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    gap: 16px;
+    align-items: flex-start;
+    gap: 20px;
     flex-wrap: wrap;
 
+    .wir-header-content {
+      flex: 1;
+      min-width: 300px;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
     .card-title {
-      margin-bottom: 4px;
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .info-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, rgba(27, 154, 170, 0.1) 0%, rgba(25, 118, 210, 0.1) 100%);
+      border: 1px solid rgba(27, 154, 170, 0.25);
+      color: var(--amana-blue, #1b9aaa);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     .card-subtitle {
-      margin: 0;
-      font-size: 13px;
+      margin: 0 0 16px 0;
+      font-size: 0.9rem;
+      line-height: 1.5;
       color: var(--text-secondary);
+    }
+
+    .wir-info-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .info-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      background: rgba(34, 197, 94, 0.1);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      color: #16a34a;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+
+      svg {
+        flex-shrink: 0;
+      }
+
+      &.pending {
+        background: rgba(251, 191, 36, 0.1);
+        border-color: rgba(251, 191, 36, 0.3);
+        color: #d97706;
+      }
+
+      &.rejected {
+        background: rgba(239, 68, 68, 0.1);
+        border-color: rgba(239, 68, 68, 0.3);
+        color: #dc2626;
+      }
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
     }
 
     .wir-card-actions {
       display: flex;
       align-items: center;
       gap: 12px;
+      flex-shrink: 0;
     }
   }
 

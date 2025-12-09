@@ -35,9 +35,9 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<WIRChecklistItem> WIRChecklistItems { get; set; } = null!;
     public DbSet<WIRCheckpointImage> WIRCheckpointImages { get; set; } = null!;
     public DbSet<PredefinedChecklistItem> PredefinedChecklistItems { get; set; } = null!;
-        public DbSet<QualityIssue> QualityIssues { get; set; } = null!;
-        public DbSet<QualityIssueImage> QualityIssueImages { get; set; } = null!;
-        public DbSet<Team> Teams { get; set; } = null!;
+    public DbSet<QualityIssue> QualityIssues { get; set; } = null!;
+    public DbSet<QualityIssueImage> QualityIssueImages { get; set; } = null!;
+    public DbSet<Team> Teams { get; set; } = null!;
     public DbSet<TeamMember> TeamMembers { get; set; } = null!;
     public DbSet<Material> Materials { get; set; } = null!;
     public DbSet<BoxMaterial> BoxMaterials { get; set; } = null!;

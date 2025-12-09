@@ -4,6 +4,7 @@ using Dubox.Infrastructure.ApplicationContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Dubox.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251209135639_permission-seeding-data")]
+    partial class permissionseedingdata
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1427,6 +1430,13 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
+                            GroupRoleId = new Guid("b4444444-4444-4444-4444-444444444444"),
+                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            GroupId = new Guid("a2222222-2222-2222-2222-222222222222"),
+                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
+                        },
+                        new
+                        {
                             GroupRoleId = new Guid("b5555555-5555-5555-5555-555555555555"),
                             AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             GroupId = new Guid("a2222222-2222-2222-2222-222222222222"),
@@ -1490,10 +1500,24 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
+                            GroupRoleId = new Guid("beeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
+                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            GroupId = new Guid("a7777777-7777-7777-7777-777777777777"),
+                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
+                        },
+                        new
+                        {
                             GroupRoleId = new Guid("bfffffff-ffff-ffff-ffff-ffffffffffff"),
                             AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             GroupId = new Guid("a7777777-7777-7777-7777-777777777777"),
                             RoleId = new Guid("22222222-2222-2222-2222-222222222222")
+                        },
+                        new
+                        {
+                            GroupRoleId = new Guid("b0000001-0000-0000-0000-000000000001"),
+                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            GroupId = new Guid("a8888888-8888-8888-8888-888888888888"),
+                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
                         },
                         new
                         {
@@ -3659,6 +3683,14 @@ namespace Dubox.Infrastructure.Migrations
                             Description = "Health, Safety, and Environment oversight",
                             IsActive = true,
                             RoleName = "HSEOfficer"
+                        },
+                        new
+                        {
+                            RoleId = new Guid("88888888-8888-8888-8888-888888888888"),
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Design and BIM modeling",
+                            IsActive = true,
+                            RoleName = "DesignEngineer"
                         },
                         new
                         {

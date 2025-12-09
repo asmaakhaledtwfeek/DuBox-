@@ -13,7 +13,6 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
     // Role names as constants
     private const string SystemAdminRole = "SystemAdmin";
     private const string ProjectManagerRole = "ProjectManager";
-    private const string DesignEngineerRole = "DesignEngineer";
     private const string ViewerRole = "Viewer";
 
     public ProjectTeamVisibilityService(
@@ -38,10 +37,10 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
             return false;
         }
 
-        // SystemAdmin, ProjectManager, and DesignEngineer can create projects/teams
+        // SystemAdmin and ProjectManager can create projects/teams
         return await _userRoleService.UserHasAnyRoleAsync(
             userId,
-            new[] { SystemAdminRole, ProjectManagerRole, DesignEngineerRole },
+            new[] { SystemAdminRole, ProjectManagerRole },
             cancellationToken);
     }
 
@@ -70,44 +69,21 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
         var isProjectManager = await _userRoleService.UserHasRoleAsync(userId, ProjectManagerRole, cancellationToken);
         if (isProjectManager)
         {
-            // PM sees: own projects + Design Engineer projects from their team members
+            // PM sees: own projects + System Admin projects
             var pmOwnProjects = await _context.Projects
                 .Where(p => p.CreatedBy == userId.ToString())
                 .Select(p => p.ProjectId)
                 .ToListAsync(cancellationToken);
 
-            // Find Design Engineers in teams created by this PM
-            var designEngineersInMyTeams = await _context.TeamMembers
-                .Where(tm => tm.Team.CreatedBy == userId && tm.IsActive)
-                .Select(tm => tm.UserId)
-                .Distinct()
-                .ToListAsync(cancellationToken);
-
-            // Get projects created by those Design Engineers
-            var designEngineerProjectIds = new List<Guid>();
-            foreach (var designEngineerId in designEngineersInMyTeams)
-            {
-                var isTeamMemberDesignEngineer = await _userRoleService.UserHasRoleAsync(designEngineerId, DesignEngineerRole, cancellationToken);
-                if (isTeamMemberDesignEngineer)
-                {
-                    var deProjects = await _context.Projects
-                        .Where(p => p.CreatedBy == designEngineerId.ToString())
-                        .Select(p => p.ProjectId)
-                        .ToListAsync(cancellationToken);
-
-                    designEngineerProjectIds.AddRange(deProjects);
-                }
-            }
-
             // Add System Admin projects if user is in their teams
             var systemAdminProjects = await GetSystemAdminProjectsForUserAsync(userId, cancellationToken);
 
             // Combine all lists
-            var pmAccessibleProjects = pmOwnProjects.Union(designEngineerProjectIds).Union(systemAdminProjects).Distinct().ToList();
+            var pmAccessibleProjects = pmOwnProjects.Union(systemAdminProjects).Distinct().ToList();
             return pmAccessibleProjects;
         }
 
-        // For all other roles (including Design Engineers):
+        // For all other roles:
         // Get own projects + projects created by ANY team creator the user belongs to
         var ownProjects = await _context.Projects
             .Where(p => p.CreatedBy == userId.ToString())
@@ -250,7 +226,7 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
             return allPMTeams;
         }
 
-        // For all other users (Design Engineers, Site Engineers, etc.):
+        // For all other users (Site Engineers, etc.):
         // Return ONLY teams where the user is a direct member
         var memberTeamIds = await _context.TeamMembers
             .Where(tm => tm.UserId == userId && tm.IsActive)

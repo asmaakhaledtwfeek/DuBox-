@@ -250,6 +250,17 @@ export interface AddQualityIssueRequest {
   files?: File[];
 }
 
+export interface CreateQualityIssueForBoxRequest {
+  boxId: string;
+  issueType: IssueType;
+  severity: SeverityType;
+  issueDescription: string;
+  assignedTo?: string;
+  dueDate?: string | Date;
+  imageUrls?: string[];
+  files?: File[];
+}
+
 export interface UpdateQualityIssueStatusRequest {
   issueId: string;
   status: QualityIssueStatus;

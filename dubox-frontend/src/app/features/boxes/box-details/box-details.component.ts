@@ -9,7 +9,7 @@ import { WIRService } from '../../../core/services/wir.service';
 import { ProgressUpdate, ProgressUpdatesSearchParams } from '../../../core/models/progress-update.model';
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
 import { ProgressUpdatesTableComponent } from '../../../shared/components/progress-updates-table/progress-updates-table.component';
-import { QualityIssueDetails, QualityIssueStatus, UpdateQualityIssueStatusRequest, WIRCheckpoint, WIRCheckpointStatus, WIRRecord } from '../../../core/models/wir.model';
+import { QualityIssueDetails, QualityIssueStatus, UpdateQualityIssueStatusRequest, WIRCheckpoint, WIRCheckpointStatus, WIRRecord, CreateQualityIssueForBoxRequest, IssueType, SeverityType } from '../../../core/models/wir.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { ActivityTableComponent } from '../../activities/activity-table/activity-table.component';
@@ -91,6 +91,36 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   photoUploadError = '';
   cameraStream: MediaStream | null = null;
   showCamera = false;
+
+  // Create Quality Issue
+  isCreateQualityIssueModalOpen = false;
+  createQualityIssueLoading = false;
+  createQualityIssueError = '';
+  issueTypes: IssueType[] = ['Defect', 'NonConformance', 'Observation'];
+  severityLevels: SeverityType[] = ['Critical', 'Major', 'Minor'];
+  newQualityIssueForm: {
+    issueType: IssueType;
+    severity: SeverityType;
+    issueDescription: string;
+    assignedTo: string;
+    dueDate: string;
+  } = {
+    issueType: 'Defect',
+    severity: 'Major',
+    issueDescription: '',
+    assignedTo: '',
+    dueDate: ''
+  };
+  qualityIssueImages: Array<{
+    id: string;
+    type: 'file' | 'url' | 'camera';
+    file?: File;
+    url?: string;
+    preview: string;
+    name?: string;
+    size?: number;
+  }> = [];
+  canCreateQualityIssue = false;
 
   progressUpdates: ProgressUpdate[] = [];
   progressUpdatesLoading = false;
@@ -176,6 +206,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.canDelete = this.permissionService.canDelete('boxes');
     this.canUpdateQualityIssueStatus = this.permissionService.hasPermission('quality-issues', 'edit') || 
                                        this.permissionService.hasPermission('quality-issues', 'resolve');
+    this.canCreateQualityIssue = this.permissionService.canCreate('quality-issues');
     
     this.setupLocationHistorySearch();
     this.setupBoxLogsSearch();
@@ -671,6 +702,266 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   refreshQualityIssues(): void {
     this.loadQualityIssues();
+  }
+
+  // Create Quality Issue Methods
+  openCreateQualityIssueModal(): void {
+    this.isCreateQualityIssueModalOpen = true;
+    this.createQualityIssueError = '';
+    this.newQualityIssueForm = {
+      issueType: 'Defect',
+      severity: 'Major',
+      issueDescription: '',
+      assignedTo: '',
+      dueDate: ''
+    };
+    this.qualityIssueImages = [];
+    this.currentImageInputMode = 'url';
+    this.currentUrlInput = '';
+    this.showCamera = false;
+  }
+
+  closeCreateQualityIssueModal(): void {
+    this.isCreateQualityIssueModalOpen = false;
+    this.newQualityIssueForm = {
+      issueType: 'Defect',
+      severity: 'Major',
+      issueDescription: '',
+      assignedTo: '',
+      dueDate: ''
+    };
+    this.qualityIssueImages = [];
+    this.createQualityIssueError = '';
+    if (this.cameraStream) {
+      this.cameraStream.getTracks().forEach(track => track.stop());
+      this.cameraStream = null;
+    }
+    this.showCamera = false;
+  }
+
+  createQualityIssue(): void {
+    // Validate form
+    if (!this.newQualityIssueForm.issueDescription?.trim()) {
+      this.createQualityIssueError = 'Issue description is required.';
+      return;
+    }
+
+    this.createQualityIssueLoading = true;
+    this.createQualityIssueError = '';
+
+    // Separate files from URLs
+    const files: File[] = [];
+    const imageUrls: string[] = [];
+
+    this.qualityIssueImages.forEach(img => {
+      if (img.type === 'url' && img.url) {
+        imageUrls.push(img.url.trim());
+      } else if ((img.type === 'file' || img.type === 'camera') && img.file) {
+        files.push(img.file);
+      } else if (img.preview && img.preview.startsWith('data:image/')) {
+        imageUrls.push(img.preview);
+      }
+    });
+
+    const request: CreateQualityIssueForBoxRequest = {
+      boxId: this.boxId,
+      issueType: this.newQualityIssueForm.issueType,
+      severity: this.newQualityIssueForm.severity,
+      issueDescription: this.newQualityIssueForm.issueDescription.trim(),
+      assignedTo: this.newQualityIssueForm.assignedTo?.trim() || undefined,
+      dueDate: this.newQualityIssueForm.dueDate || undefined,
+      imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+      files: files.length > 0 ? files : undefined
+    };
+
+    console.log('📤 Creating quality issue with request:', {
+      boxId: request.boxId,
+      issueType: request.issueType,
+      severity: request.severity,
+      descriptionLength: request.issueDescription.length,
+      assignedTo: request.assignedTo,
+      dueDate: request.dueDate,
+      imageUrlsCount: imageUrls.length,
+      filesCount: files.length
+    });
+
+    this.wirService.createQualityIssueForBox(request).subscribe({
+      next: (createdIssue) => {
+        console.log('✅ Quality issue created successfully:', createdIssue);
+        this.createQualityIssueLoading = false;
+        this.closeCreateQualityIssueModal();
+        
+        // Show success toast
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { message: 'Quality issue created successfully.', type: 'success' }
+        }));
+        
+        // Reload quality issues
+        this.loadQualityIssues();
+      },
+      error: (err) => {
+        console.error('❌ Error creating quality issue:', err);
+        console.error('Full error details:', {
+          status: err?.status,
+          statusText: err?.statusText,
+          error: err?.error,
+          message: err?.message
+        });
+        
+        // Extract the most useful error message
+        let errorMessage = 'Failed to create quality issue.';
+        
+        if (err?.error?.message) {
+          errorMessage = err.error.message;
+        } else if (err?.error?.title) {
+          errorMessage = err.error.title;
+        } else if (err?.error?.errors) {
+          // Handle validation errors
+          const errors = err.error.errors;
+          const errorList = Object.keys(errors).map(key => `${key}: ${errors[key].join(', ')}`);
+          errorMessage = errorList.join('; ');
+        } else if (err?.message) {
+          errorMessage = err.message;
+        }
+        
+        this.createQualityIssueError = errorMessage;
+        this.createQualityIssueLoading = false;
+      }
+    });
+  }
+
+  // Image management for create quality issue
+  addQualityIssueImageUrl(): void {
+    const url = this.currentUrlInput.trim();
+    if (!url) {
+      return;
+    }
+
+    const imageId = `url-${Date.now()}`;
+    
+    // Determine preview URL based on input format
+    let preview = url;
+    if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('data:image/')) {
+      // Assume it's base64 without the data URL prefix
+      preview = `data:image/jpeg;base64,${url}`;
+    }
+    
+    this.qualityIssueImages.push({
+      id: imageId,
+      type: 'url',
+      url: url,
+      preview: preview
+    });
+
+    this.currentUrlInput = '';
+  }
+
+  onQualityIssueFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) {
+      return;
+    }
+
+    Array.from(input.files).forEach((file) => {
+      if (!file.type.startsWith('image/')) {
+        alert(`${file.name} is not an image file.`);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+        const imageId = `file-${Date.now()}-${Math.random()}`;
+        this.qualityIssueImages.push({
+          id: imageId,
+          type: 'file',
+          file: file,
+          preview: e.target?.result as string,
+          name: file.name,
+          size: file.size
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Reset input
+    input.value = '';
+  }
+
+  openQualityIssueFileInput(): void {
+    const fileInput = document.getElementById('qualityIssueFileInput') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+    this.currentImageInputMode = 'upload';
+    this.showCamera = false;
+  }
+
+  async openQualityIssueCamera(): Promise<void> {
+    this.currentImageInputMode = 'camera';
+    this.showCamera = true;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      this.cameraStream = stream;
+
+      setTimeout(() => {
+        const videoElement = document.getElementById('qualityIssueCameraVideo') as HTMLVideoElement;
+        if (videoElement) {
+          videoElement.srcObject = stream;
+        }
+      }, 100);
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      alert('Unable to access camera. Please check permissions.');
+      this.showCamera = false;
+    }
+  }
+
+  captureQualityIssuePhoto(): void {
+    const videoElement = document.getElementById('qualityIssueCameraVideo') as HTMLVideoElement;
+    const canvas = document.createElement('canvas');
+    canvas.width = videoElement.videoWidth;
+    canvas.height = videoElement.videoHeight;
+    const context = canvas.getContext('2d');
+    if (context) {
+      context.drawImage(videoElement, 0, 0);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], `camera-capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
+          const imageId = `camera-${Date.now()}`;
+          this.qualityIssueImages.push({
+            id: imageId,
+            type: 'camera',
+            file: file,
+            preview: canvas.toDataURL('image/jpeg'),
+            name: file.name,
+            size: file.size
+          });
+        }
+      }, 'image/jpeg', 0.9);
+    }
+  }
+
+  closeQualityIssueCamera(): void {
+    if (this.cameraStream) {
+      this.cameraStream.getTracks().forEach(track => track.stop());
+      this.cameraStream = null;
+    }
+    this.showCamera = false;
+    this.currentImageInputMode = 'url';
+  }
+
+  removeQualityIssueImage(imageId: string): void {
+    this.qualityIssueImages = this.qualityIssueImages.filter(img => img.id !== imageId);
+  }
+
+  setQualityIssueImageInputMode(mode: 'url' | 'upload' | 'camera'): void {
+    this.currentImageInputMode = mode;
+    if (mode !== 'camera') {
+      this.closeQualityIssueCamera();
+    }
   }
 
   async exportQualityIssuesToExcel(): Promise<void> {

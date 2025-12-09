@@ -15,6 +15,7 @@ import {
   PredefinedChecklistItem,
   ReviewWIRCheckpointRequest,
   AddQualityIssueRequest,
+  CreateQualityIssueForBoxRequest,
   QualityIssueItem,
   QualityIssueDetails,
   QualityIssueImage,
@@ -366,6 +367,77 @@ export class WIRService {
         return issues.map((issue: any) => this.transformQualityIssueDetails(issue));
       })
     );
+  }
+
+  /**
+   * Create a quality issue directly for a box (without WIR checkpoint)
+   */
+  createQualityIssueForBox(request: CreateQualityIssueForBoxRequest): Observable<QualityIssueDetails> {
+    // Send as FormData if files are present, otherwise as JSON
+    if (request.files && request.files.length > 0) {
+      const formData = new FormData();
+      formData.append('BoxId', request.boxId);
+      formData.append('IssueType', request.issueType);
+      formData.append('Severity', request.severity);
+      formData.append('IssueDescription', request.issueDescription);
+      
+      if (request.assignedTo) {
+        formData.append('AssignedTo', request.assignedTo);
+      }
+      
+      if (request.dueDate) {
+        const dueDateStr = request.dueDate instanceof Date 
+          ? request.dueDate.toISOString() 
+          : request.dueDate;
+        formData.append('DueDate', dueDateStr);
+      }
+      
+      // Append image URLs if any
+      if (request.imageUrls && request.imageUrls.length > 0) {
+        request.imageUrls.forEach((url: string) => {
+          formData.append('ImageUrls', url);
+        });
+      }
+      
+      // Append files
+      request.files.forEach((file: File) => {
+        formData.append('Files', file);
+      });
+      
+      return this.apiService.postFormData<any>('qualityissues', formData).pipe(
+        map(response => {
+          const issue = response?.data || response;
+          return this.transformQualityIssueDetails(issue);
+        })
+      );
+    } else {
+      // Send as JSON if no files
+      const jsonRequest = {
+        boxId: request.boxId,
+        issueType: request.issueType,
+        severity: request.severity,
+        issueDescription: request.issueDescription,
+        assignedTo: request.assignedTo,
+        dueDate: request.dueDate,
+        imageUrls: request.imageUrls
+      };
+      
+      console.log('📤 Sending JSON request to API:', jsonRequest);
+      console.log('📤 Request details:', {
+        boxIdType: typeof jsonRequest.boxId,
+        issueTypeType: typeof jsonRequest.issueType,
+        issueTypeValue: jsonRequest.issueType,
+        severityType: typeof jsonRequest.severity,
+        severityValue: jsonRequest.severity
+      });
+      
+      return this.apiService.post<any>('qualityissues', jsonRequest).pipe(
+        map(response => {
+          const issue = response?.data || response;
+          return this.transformQualityIssueDetails(issue);
+        })
+      );
+    }
   }
 
   updateQualityIssueStatus(

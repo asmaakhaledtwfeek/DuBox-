@@ -116,11 +116,11 @@ export class PermissionService {
       [UserRole.ProjectManager]: ['view', 'create', 'edit', 'resolve', 'manage'], // Full quality issue management
       [UserRole.QCInspector]: ['view', 'create', 'edit', 'resolve'],
       [UserRole.SiteEngineer]: ['view', 'create'],
-      [UserRole.DesignEngineer]: ['view'],
-      [UserRole.Foreman]: ['view', 'create'],
+      [UserRole.DesignEngineer]: ['view'], // No 'create' - matches database
+      [UserRole.Foreman]: ['view'], // No 'create' - matches database
       [UserRole.CostEstimator]: ['view'],
       [UserRole.ProcurementOfficer]: ['view'],
-      [UserRole.HSEOfficer]: ['view'],
+      [UserRole.HSEOfficer]: ['view', 'create'], // HSE Officer can create quality issues per database
       [UserRole.Viewer]: ['view']
     },
     
@@ -131,10 +131,10 @@ export class PermissionService {
       [UserRole.QCInspector]: ['view', 'create', 'approve', 'reject', 'review'],
       [UserRole.SiteEngineer]: ['view', 'create'], // Can add checklist items and quality issues, but NOT review
       [UserRole.DesignEngineer]: ['view'],
-      [UserRole.Foreman]: ['view', 'create'],
+      [UserRole.Foreman]: ['view'], // No 'create' - matches database
       [UserRole.CostEstimator]: ['view'],
       [UserRole.ProcurementOfficer]: ['view'],
-      [UserRole.HSEOfficer]: ['view'],
+      [UserRole.HSEOfficer]: ['view', 'approve'], // HSE Officer can approve WIR per database
       [UserRole.Viewer]: ['view']
     },
     

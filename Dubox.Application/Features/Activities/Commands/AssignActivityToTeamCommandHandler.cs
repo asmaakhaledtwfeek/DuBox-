@@ -26,6 +26,13 @@ namespace Dubox.Application.Features.Activities.Commands
 
         public async Task<Result<AssignBoxActivityTeamDto>> Handle(AssignActivityToTeamCommand request, CancellationToken cancellationToken)
         {
+            // Check if user can modify data (Viewer role cannot)
+            var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
+            if (!canModify)
+            {
+                return Result.Failure<AssignBoxActivityTeamDto>("Access denied. Viewer role has read-only access and cannot assign activities.");
+            }
+
             var activity = _unitOfWork.Repository<BoxActivity>().GetEntityWithSpec(new GetBoxActivityByIdSpecification(request.BoxActivityId));
 
             if (activity == null)

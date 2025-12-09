@@ -13,11 +13,16 @@ public class GetBoxByIdQueryHandler : IRequestHandler<GetBoxByIdQuery, Result<Bo
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IQRCodeService _qrCodeService;
+    private readonly IProjectTeamVisibilityService _visibilityService;
 
-    public GetBoxByIdQueryHandler(IUnitOfWork unitOfWork, IQRCodeService qRCodeService)
+    public GetBoxByIdQueryHandler(
+        IUnitOfWork unitOfWork, 
+        IQRCodeService qRCodeService,
+        IProjectTeamVisibilityService visibilityService)
     {
         _unitOfWork = unitOfWork;
         _qrCodeService = qRCodeService;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<BoxDto>> Handle(GetBoxByIdQuery request, CancellationToken cancellationToken)
@@ -26,6 +31,13 @@ public class GetBoxByIdQueryHandler : IRequestHandler<GetBoxByIdQuery, Result<Bo
 
         if (box == null)
             return Result.Failure<BoxDto>("Box not found");
+
+        // Verify user has access to the project this box belongs to
+        var canAccessProject = await _visibilityService.CanAccessProjectAsync(box.ProjectId, cancellationToken);
+        if (!canAccessProject)
+        {
+            return Result.Failure<BoxDto>("Access denied. You do not have permission to view this box.");
+        }
 
         var boxDto = box.Adapt<BoxDto>() with
         {

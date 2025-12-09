@@ -2,6 +2,7 @@
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
@@ -14,18 +15,26 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IDbContext _dbContext;
+        private readonly IProjectTeamVisibilityService _visibilityService;
 
-        public GetWIRCheckpointsQueryHandler(IUnitOfWork unitOfWork, IDbContext dbContext)
+        public GetWIRCheckpointsQueryHandler(
+            IUnitOfWork unitOfWork, 
+            IDbContext dbContext,
+            IProjectTeamVisibilityService visibilityService)
         {
             _unitOfWork = unitOfWork;
             _dbContext = dbContext;
+            _visibilityService = visibilityService;
         }
 
         public async Task<Result<List<WIRCheckpointDto>>> Handle(GetWIRCheckpointsQuery request, CancellationToken cancellationToken)
         {
+            // Get accessible project IDs based on user role
+            var accessibleProjectIds = await _visibilityService.GetAccessibleProjectIdsAsync(cancellationToken);
+            
             // Use AsNoTracking and ToListAsync for better performance
             var checkPoints = await _unitOfWork.Repository<WIRCheckpoint>()
-                 .GetWithSpec(new GetWIRCheckpointsSpecification(request)).Data
+                 .GetWithSpec(new GetWIRCheckpointsSpecification(request, accessibleProjectIds)).Data
                  .AsNoTracking()
                  .ToListAsync(cancellationToken);
 

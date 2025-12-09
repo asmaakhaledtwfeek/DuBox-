@@ -51,6 +51,9 @@ public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand,
 
         project.ActualStartDate = null;
         project.ActualEndDate = null;
+        
+        // Set CreatedBy to track who created this project (critical for Project Manager visibility)
+        project.CreatedBy = currentUserId.ToString();
 
         await _unitOfWork.Repository<Project>().AddAsync(project, cancellationToken);
 

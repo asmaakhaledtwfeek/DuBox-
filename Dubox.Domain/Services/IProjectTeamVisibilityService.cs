@@ -34,5 +34,11 @@ public interface IProjectTeamVisibilityService
     /// Check if the current user can access a specific team
     /// </summary>
     Task<bool> CanAccessTeamAsync(Guid teamId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Check if the current user can modify data (create, update, delete)
+    /// Viewer role has read-only access and cannot modify data
+    /// </summary>
+    Task<bool> CanModifyDataAsync(CancellationToken cancellationToken = default);
 }
 

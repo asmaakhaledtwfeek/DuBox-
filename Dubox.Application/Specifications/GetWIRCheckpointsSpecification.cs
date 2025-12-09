@@ -6,7 +6,7 @@
 
     public class GetWIRCheckpointsSpecification : Specification<WIRCheckpoint>
     {
-        public GetWIRCheckpointsSpecification(GetWIRCheckpointsQuery query)
+        public GetWIRCheckpointsSpecification(GetWIRCheckpointsQuery query, List<Guid>? accessibleProjectIds = null)
         {
             AddInclude(nameof(WIRCheckpoint.Box));
             AddInclude($"{nameof(WIRCheckpoint.Box)}.{nameof(WIRCheckpoint.Box.Project)}");
@@ -17,6 +17,13 @@
             
             // Enable split query to avoid Cartesian explosion with multiple collection includes
             EnableSplitQuery();
+
+            // Apply visibility filtering based on accessible projects
+            // null means access to all projects (SystemAdmin/Viewer)
+            if (accessibleProjectIds != null)
+            {
+                AddCriteria(x => accessibleProjectIds.Contains(x.Box.ProjectId));
+            }
 
             if (!string.IsNullOrWhiteSpace(query.ProjectCode))
                 AddCriteria(x => x.Box.Project.ProjectCode == query.ProjectCode);

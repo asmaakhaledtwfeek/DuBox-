@@ -15,23 +15,45 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
     private readonly IDbContext _dbContext;
     private readonly IBoxActivityService _boxActivityService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IProjectTeamVisibilityService _visibilityService;
 
-    public UpdateBoxCommandHandler(IUnitOfWork unitOfWork, IQRCodeService qrCodeService, IDbContext dbContext, IBoxActivityService boxActivityService, ICurrentUserService currentUserService)
+    public UpdateBoxCommandHandler(
+        IUnitOfWork unitOfWork, 
+        IQRCodeService qrCodeService, 
+        IDbContext dbContext, 
+        IBoxActivityService boxActivityService, 
+        ICurrentUserService currentUserService,
+        IProjectTeamVisibilityService visibilityService)
     {
         _unitOfWork = unitOfWork;
         _qrCodeService = qrCodeService;
         _dbContext = dbContext;
         _boxActivityService = boxActivityService;
         _currentUserService = currentUserService;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<BoxDto>> Handle(UpdateBoxCommand request, CancellationToken cancellationToken)
     {
+        // Check if user can modify data (Viewer role cannot)
+        var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
+        if (!canModify)
+        {
+            return Result.Failure<BoxDto>("Access denied. Viewer role has read-only access and cannot update boxes.");
+        }
+
         var box = await _unitOfWork.Repository<Box>()
             .GetByIdAsync(request.BoxId, cancellationToken);
 
         if (box == null)
             return Result.Failure<BoxDto>("Box not found");
+
+        // Verify user has access to the project this box belongs to
+        var canAccessProject = await _visibilityService.CanAccessProjectAsync(box.ProjectId, cancellationToken);
+        if (!canAccessProject)
+        {
+            return Result.Failure<BoxDto>("Access denied. You do not have permission to update this box.");
+        }
 
         if (!string.IsNullOrEmpty(request.BoxTag) && box.BoxTag != request.BoxTag)
         {

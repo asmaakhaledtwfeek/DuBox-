@@ -14,6 +14,7 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
     // Role names as constants
     private const string SystemAdminRole = "SystemAdmin";
     private const string ProjectManagerRole = "ProjectManager";
+    private const string ViewerRole = "Viewer";
 
     public ProjectTeamVisibilityService(
         ICurrentUserService currentUserService,
@@ -56,9 +57,11 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
             return new List<Guid>(); // No access
         }
 
-        // Check if user is SystemAdmin
+        // Check if user is SystemAdmin or Viewer (both have full visibility)
         var isSystemAdmin = await _userRoleService.UserHasRoleAsync(userId, SystemAdminRole, cancellationToken);
-        if (isSystemAdmin)
+        var isViewer = await _userRoleService.UserHasRoleAsync(userId, ViewerRole, cancellationToken);
+        
+        if (isSystemAdmin || isViewer)
         {
             return null; // null means access to ALL projects
         }
@@ -108,9 +111,11 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
             return new List<Guid>(); // No access
         }
 
-        // Check if user is SystemAdmin
+        // Check if user is SystemAdmin or Viewer (both have full visibility)
         var isSystemAdmin = await _userRoleService.UserHasRoleAsync(userId, SystemAdminRole, cancellationToken);
-        if (isSystemAdmin)
+        var isViewer = await _userRoleService.UserHasRoleAsync(userId, ViewerRole, cancellationToken);
+        
+        if (isSystemAdmin || isViewer)
         {
             return null; // null means access to ALL teams
         }
@@ -172,6 +177,25 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
         }
 
         return accessibleTeamIds.Contains(teamId);
+    }
+
+    public async Task<bool> CanModifyDataAsync(CancellationToken cancellationToken = default)
+    {
+        if (!_currentUserService.IsAuthenticated || string.IsNullOrEmpty(_currentUserService.UserId))
+        {
+            return false;
+        }
+
+        if (!Guid.TryParse(_currentUserService.UserId, out var userId))
+        {
+            return false;
+        }
+
+        // Check if user is Viewer (read-only role)
+        var isViewer = await _userRoleService.UserHasRoleAsync(userId, ViewerRole, cancellationToken);
+        
+        // Viewer cannot modify data
+        return !isViewer;
     }
 }
 

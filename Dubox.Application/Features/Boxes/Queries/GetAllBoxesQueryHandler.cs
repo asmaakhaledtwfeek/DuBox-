@@ -14,18 +14,26 @@ public class GetAllBoxesQueryHandler : IRequestHandler<GetAllBoxesQuery, Result<
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IQRCodeService _qrCodeService;
+    private readonly IProjectTeamVisibilityService _visibilityService;
 
-    public GetAllBoxesQueryHandler(IUnitOfWork unitOfWork, IQRCodeService qRCodeService)
+    public GetAllBoxesQueryHandler(
+        IUnitOfWork unitOfWork, 
+        IQRCodeService qRCodeService,
+        IProjectTeamVisibilityService visibilityService)
     {
         _unitOfWork = unitOfWork;
         _qrCodeService = qRCodeService;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<List<BoxDto>>> Handle(GetAllBoxesQuery request, CancellationToken cancellationToken)
     {
+        // Get accessible project IDs based on user role
+        var accessibleProjectIds = await _visibilityService.GetAccessibleProjectIdsAsync(cancellationToken);
+        
         // Use AsNoTracking and ToListAsync for better performance
         var boxes = await _unitOfWork.Repository<Box>()
-            .GetWithSpec(new GetAllBoxesWithIncludesSpecification()).Data
+            .GetWithSpec(new GetAllBoxesWithIncludesSpecification(accessibleProjectIds)).Data
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 

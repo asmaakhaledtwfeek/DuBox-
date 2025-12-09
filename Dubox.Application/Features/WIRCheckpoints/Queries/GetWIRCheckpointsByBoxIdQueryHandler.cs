@@ -2,6 +2,7 @@
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
@@ -15,11 +16,16 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IDbContext _dbContext;
+        private readonly IProjectTeamVisibilityService _visibilityService;
 
-        public GetWIRCheckpointsByBoxIdQueryHandler(IUnitOfWork unitOfWork, IDbContext dbContext)
+        public GetWIRCheckpointsByBoxIdQueryHandler(
+            IUnitOfWork unitOfWork, 
+            IDbContext dbContext,
+            IProjectTeamVisibilityService visibilityService)
         {
             _unitOfWork = unitOfWork;
             _dbContext = dbContext;
+            _visibilityService = visibilityService;
         }
 
         public async Task<Result<List<WIRCheckpointDto>>> Handle(GetWIRCheckpointsByBoxIdQuery request, CancellationToken cancellationToken)
@@ -27,6 +33,13 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
             var box = await _unitOfWork.Repository<Box>().GetByIdAsync(request.BoxId);
             if (box == null)
                 return Result.Failure<List<WIRCheckpointDto>>("Box not found");
+
+            // Verify user has access to the project this box belongs to
+            var canAccessProject = await _visibilityService.CanAccessProjectAsync(box.ProjectId, cancellationToken);
+            if (!canAccessProject)
+            {
+                return Result.Failure<List<WIRCheckpointDto>>("Access denied. You do not have permission to view WIR checkpoints for this box.");
+            }
 
             // Use AsNoTracking and ToListAsync for better performance
             var checkpoints = await _unitOfWork.Repository<WIRCheckpoint>()

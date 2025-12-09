@@ -3,6 +3,7 @@ using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
@@ -14,23 +15,40 @@ namespace Dubox.Application.Features.QualityIssues.Commands
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserService _currentUserService;
         private readonly IImageProcessingService _imageProcessingService;
+        private readonly IProjectTeamVisibilityService _visibilityService;
 
         public UpdateQualityIssueStatusCommandHandler(
             IUnitOfWork unitOfWork, 
             ICurrentUserService currentUserService,
-            IImageProcessingService imageProcessingService)
+            IImageProcessingService imageProcessingService,
+            IProjectTeamVisibilityService visibilityService)
         {
             _unitOfWork = unitOfWork;
             _currentUserService = currentUserService;
             _imageProcessingService = imageProcessingService;
+            _visibilityService = visibilityService;
         }
 
         public async Task<Result<QualityIssueDetailsDto>> Handle(UpdateQualityIssueStatusCommand request, CancellationToken cancellationToken)
         {
+            // Check if user can modify data (Viewer role cannot)
+            var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
+            if (!canModify)
+            {
+                return Result.Failure<QualityIssueDetailsDto>("Access denied. Viewer role has read-only access and cannot modify quality issues.");
+            }
+
             var issue = _unitOfWork.Repository<QualityIssue>().GetEntityWithSpec(new GetQualityIssueByIdSpecification(request.IssueId));
 
             if (issue == null)
                 return Result.Failure<QualityIssueDetailsDto>("Quality issue not found.");
+
+            // Verify user has access to the project this quality issue belongs to
+            var canAccessProject = await _visibilityService.CanAccessProjectAsync(issue.Box.ProjectId, cancellationToken);
+            if (!canAccessProject)
+            {
+                return Result.Failure<QualityIssueDetailsDto>("Access denied. You do not have permission to modify this quality issue.");
+            }
             
             issue.Status = request.Status;
 

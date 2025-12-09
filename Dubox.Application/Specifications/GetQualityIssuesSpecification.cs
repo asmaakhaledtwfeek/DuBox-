@@ -6,7 +6,7 @@ namespace Dubox.Application.Specifications
 {
     public class GetQualityIssuesSpecification : Specification<QualityIssue>
     {
-        public GetQualityIssuesSpecification(GetQualityIssuesQuery query)
+        public GetQualityIssuesSpecification(GetQualityIssuesQuery query, List<Guid>? accessibleProjectIds = null)
         {
             AddInclude(nameof(QualityIssue.Box));
             AddInclude(nameof(QualityIssue.WIRCheckpoint));
@@ -15,6 +15,13 @@ namespace Dubox.Application.Specifications
             
             // Enable split query to avoid Cartesian explosion
             EnableSplitQuery();
+
+            // Apply visibility filtering based on accessible projects
+            // null means access to all projects (SystemAdmin/Viewer)
+            if (accessibleProjectIds != null)
+            {
+                AddCriteria(q => accessibleProjectIds.Contains(q.Box.ProjectId));
+            }
 
             if (!string.IsNullOrWhiteSpace(query.SearchTerm))
             {

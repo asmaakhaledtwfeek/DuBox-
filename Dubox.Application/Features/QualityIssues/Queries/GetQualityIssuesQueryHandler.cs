@@ -2,6 +2,7 @@
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
@@ -13,18 +14,26 @@ namespace Dubox.Application.Features.QualityIssues.Queries
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IDbContext _dbContext;
+        private readonly IProjectTeamVisibilityService _visibilityService;
         
-        public GetQualityIssuesQueryHandler(IUnitOfWork unitOfWork, IDbContext dbContext)
+        public GetQualityIssuesQueryHandler(
+            IUnitOfWork unitOfWork, 
+            IDbContext dbContext,
+            IProjectTeamVisibilityService visibilityService)
         {
             _unitOfWork = unitOfWork;
             _dbContext = dbContext;
+            _visibilityService = visibilityService;
         }
 
         public async Task<Result<List<QualityIssueDetailsDto>>> Handle(GetQualityIssuesQuery request, CancellationToken cancellationToken)
         {
+            // Get accessible project IDs based on user role
+            var accessibleProjectIds = await _visibilityService.GetAccessibleProjectIdsAsync(cancellationToken);
+            
             // Use AsNoTracking and ToListAsync for better performance
             var qualityIssues = await _unitOfWork.Repository<QualityIssue>()
-                .GetWithSpec(new GetQualityIssuesSpecification(request)).Data
+                .GetWithSpec(new GetQualityIssuesSpecification(request, accessibleProjectIds)).Data
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
 

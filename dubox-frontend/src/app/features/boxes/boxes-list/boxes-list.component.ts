@@ -25,6 +25,7 @@ export class BoxesListComponent implements OnInit, OnDestroy {
   boxes: Box[] = [];
   filteredBoxes: Box[] = [];
   boxTypes: BoxTypeStat[] = [];
+  filteredBoxTypes: BoxTypeStat[] = [];
   selectedBoxType: string | null = null;
   showBoxTypes = true;
   loading = true;
@@ -32,6 +33,7 @@ export class BoxesListComponent implements OnInit, OnDestroy {
   canCreate = false;
   
   searchControl = new FormControl('');
+  boxTypeSearchControl = new FormControl('');
   selectedStatus: BoxStatus | 'All' = 'All';
   BoxStatus = BoxStatus;
   
@@ -109,6 +111,16 @@ export class BoxesListComponent implements OnInit, OnDestroy {
       .subscribe(() => {
         this.applyFilters();
       });
+
+    // Setup box type search
+    this.boxTypeSearchControl.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged()
+      )
+      .subscribe(() => {
+        this.applyBoxTypeFilters();
+      });
   }
 
   loadBoxTypes(): void {
@@ -120,6 +132,8 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     this.boxService.getBoxTypeStatsByProject(this.projectId).subscribe({
       next: (response) => {
         this.boxTypes = response.boxTypeStats || [];
+        this.filteredBoxTypes = [...this.boxTypes];
+        this.applyBoxTypeFilters();
         this.loading = false;
       },
       error: (err) => {
@@ -206,6 +220,7 @@ export class BoxesListComponent implements OnInit, OnDestroy {
   viewBoxType(boxType: string): void {
     this.selectedBoxType = boxType;
     this.showBoxTypes = false;
+    this.boxTypeSearchControl.setValue('');
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { boxType: boxType },
@@ -219,6 +234,8 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     this.showBoxTypes = true;
     this.boxes = [];
     this.filteredBoxes = [];
+    this.searchControl.setValue('');
+    this.selectedStatus = 'All';
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {},
@@ -292,6 +309,19 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     }
 
     this.filteredBoxes = filtered;
+  }
+
+  private applyBoxTypeFilters(): void {
+    const searchTerm = this.boxTypeSearchControl.value?.toLowerCase() || '';
+    
+    if (!searchTerm) {
+      this.filteredBoxTypes = [...this.boxTypes];
+      return;
+    }
+
+    this.filteredBoxTypes = this.boxTypes.filter(boxType => 
+      boxType.boxType?.toLowerCase().includes(searchTerm)
+    );
   }
 
   private formatDateForSearch(date?: Date): string | null {

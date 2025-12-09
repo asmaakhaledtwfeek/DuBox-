@@ -1985,6 +1985,27 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     }
   }
 
+  canReviewItem(status: CheckpointStatus | string | undefined): boolean {
+    if (!status) return true; // Pending items can be reviewed
+    const statusStr = typeof status === 'string' ? status : String(status);
+    // Only allow review for Fail or Pending status
+    return statusStr === CheckpointStatus.Fail || 
+           statusStr === 'Fail' || 
+           statusStr === CheckpointStatus.Pending || 
+           statusStr === 'Pending';
+  }
+
+  getReviewButtonTitle(status: CheckpointStatus | string | undefined, isLocked: boolean): string {
+    if (isLocked) {
+      return 'Checklist is locked after review';
+    }
+    const statusStr = typeof status === 'string' ? status : String(status);
+    if (statusStr === CheckpointStatus.Pass || statusStr === 'Pass') {
+      return 'Cannot review passed items';
+    }
+    return 'Review item';
+  }
+
   get addChecklistItemsArray(): FormArray {
     return this.addChecklistItemsForm.get('checklistItems') as FormArray;
   }

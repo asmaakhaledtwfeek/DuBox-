@@ -46,6 +46,25 @@
       </div>
     </div>
 
+    <!-- Filters for Box Types -->
+    <div class="filters-section" *ngIf="showBoxTypes && boxTypes.length > 0">
+      <div class="search-box">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input 
+          type="text" 
+          placeholder="Search box types..." 
+          [formControl]="boxTypeSearchControl"
+          class="search-input"
+        />
+      </div>
+      <div class="results-count" *ngIf="boxTypeSearchControl.value">
+        <span class="count-badge">{{ filteredBoxTypes.length }} of {{ boxTypes.length }} box types</span>
+      </div>
+    </div>
+
     <!-- Filters (only show when viewing boxes) -->
     <div class="filters-section" *ngIf="!showBoxTypes">
       <div class="search-box">
@@ -114,7 +133,7 @@
 
     <!-- Box Types Grid -->
     <div class="boxes-grid" *ngIf="showBoxTypes && !loading && !error">
-      <!-- Empty State -->
+      <!-- Empty State - No box types at all -->
       <div class="empty-state" *ngIf="boxTypes.length === 0">
         <div class="empty-state-icon">
           <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -139,8 +158,22 @@
         </div>
       </div>
 
+      <!-- Empty State - No filtered results -->
+      <div class="empty-state" *ngIf="boxTypes.length > 0 && filteredBoxTypes.length === 0">
+        <div class="empty-state-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+        </div>
+        <div class="empty-state-content">
+          <h3 class="empty-state-title">No Box Types Found</h3>
+          <p class="empty-state-description">No box types match your search criteria. Try adjusting your search term.</p>
+        </div>
+      </div>
+
       <!-- Box Type Cards -->
-      <div class="box-card" *ngFor="let boxType of boxTypes" (click)="viewBoxType(boxType.boxType)">
+      <div class="box-card" *ngFor="let boxType of filteredBoxTypes" (click)="viewBoxType(boxType.boxType)">
         <div class="card-header">
           <div class="box-info">
             <h3 class="box-name">{{ boxType.boxType }}</h3>

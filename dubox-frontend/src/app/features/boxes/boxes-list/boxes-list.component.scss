@@ -149,6 +149,20 @@
   flex-wrap: wrap;
 }
 
+.results-count {
+  display: flex;
+  align-items: center;
+
+  .count-badge {
+    padding: var(--spacing-sm) var(--spacing-md);
+    background: rgba(27, 154, 170, 0.1);
+    color: var(--amana-teal);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+  }
+}
+
 .filter-btn {
   padding: var(--spacing-sm) var(--spacing-lg);
   border: 1px solid var(--gray-300);

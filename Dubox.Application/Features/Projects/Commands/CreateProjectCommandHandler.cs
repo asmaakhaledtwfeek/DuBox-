@@ -30,11 +30,11 @@ public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand,
 
     public async Task<Result<ProjectDto>> Handle(CreateProjectCommand request, CancellationToken cancellationToken)
     {
-        // Authorization: Only SystemAdmin and ProjectManager can create projects
+        // Authorization: Only SystemAdmin, ProjectManager, and DesignEngineer can create projects
         var canCreate = await _visibilityService.CanCreateProjectOrTeamAsync(cancellationToken);
         if (!canCreate)
         {
-            return Result.Failure<ProjectDto>("Access denied. Only System Administrators and Project Managers can create projects.");
+            return Result.Failure<ProjectDto>("Access denied. Only System Administrators, Project Managers, and Design Engineers can create projects.");
         }
 
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());

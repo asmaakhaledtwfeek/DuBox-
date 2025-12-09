@@ -31,6 +31,9 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
 
     public async Task<Result<ProgressUpdateDto>> Handle(CreateProgressUpdateCommand request, CancellationToken cancellationToken)
     {
+        // Note: Progress updates don't require specific role checks beyond authentication
+        // Design Engineers and other roles can create progress updates for activities they have access to
+        // Access is controlled via project visibility rules in the visibility service
 
         var boxActivity = _unitOfWork.Repository<BoxActivity>().
             GetEntityWithSpec(new BoxActivitiesWithIncludesSpecification(request.BoxActivityId, request.BoxId));

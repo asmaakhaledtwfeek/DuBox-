@@ -170,7 +170,7 @@ export class PermissionService {
     notifications: {
       [UserRole.SystemAdmin]: ['view', 'send', 'manage'],
       [UserRole.ProjectManager]: ['view', 'send'],
-      [UserRole.DesignEngineer]: ['view'],
+      [UserRole.DesignEngineer]: [], // Design Engineer has no notification permissions
       [UserRole.SiteEngineer]: ['view'],
       [UserRole.Foreman]: ['view'],
       [UserRole.QCInspector]: ['view'],
@@ -186,7 +186,7 @@ export class PermissionService {
       [UserRole.ProjectManager]: ['view', 'create', 'approve'],
       [UserRole.ProcurementOfficer]: ['view', 'create', 'edit', 'approve'],
       [UserRole.CostEstimator]: ['view', 'create'],
-      [UserRole.DesignEngineer]: ['view'],
+      [UserRole.DesignEngineer]: [], // Design Engineer has no procurement permissions
       [UserRole.SiteEngineer]: ['view'],
       [UserRole.Foreman]: ['view'],
       [UserRole.QCInspector]: ['view'],
@@ -202,7 +202,7 @@ export class PermissionService {
       [UserRole.SiteEngineer]: ['view', 'create'],
       [UserRole.Foreman]: ['view', 'create'],
       [UserRole.QCInspector]: ['view'],
-      [UserRole.DesignEngineer]: ['view'],
+      [UserRole.DesignEngineer]: [], // Design Engineer has no HSE permissions
       [UserRole.ProcurementOfficer]: ['view'],
       [UserRole.CostEstimator]: ['view'],
       [UserRole.Viewer]: ['view']
@@ -213,7 +213,7 @@ export class PermissionService {
       [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'approve', 'manage'],
       [UserRole.ProjectManager]: ['view', 'create', 'edit', 'approve'],
       [UserRole.CostEstimator]: ['view', 'create', 'edit', 'approve'],
-      [UserRole.DesignEngineer]: ['view', 'create'],
+      [UserRole.DesignEngineer]: [], // Design Engineer has no costing permissions
       [UserRole.SiteEngineer]: ['view'],
       [UserRole.ProcurementOfficer]: ['view'],
       [UserRole.Foreman]: [],
@@ -242,7 +242,7 @@ export class PermissionService {
       [UserRole.ProjectManager]: ['view', 'create', 'edit', 'restock', 'import'], // Material management with restock and import
       [UserRole.ProcurementOfficer]: ['view', 'create', 'edit', 'restock', 'import'],
       [UserRole.CostEstimator]: ['view', 'create', 'edit'],
-      [UserRole.DesignEngineer]: ['view', 'create', 'edit'],
+      [UserRole.DesignEngineer]: ['view'], // Design Engineer can only view materials
       [UserRole.SiteEngineer]: ['view', 'edit'],
       [UserRole.Foreman]: ['view'],
       [UserRole.QCInspector]: ['view'],
@@ -254,7 +254,7 @@ export class PermissionService {
     locations: {
       [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage'],
       [UserRole.ProjectManager]: ['view', 'create', 'edit'], // Location management (no delete)
-      [UserRole.DesignEngineer]: ['view', 'create', 'edit'],
+      [UserRole.DesignEngineer]: [], // Design Engineer has no location permissions
       [UserRole.SiteEngineer]: ['view', 'edit'],
       [UserRole.Foreman]: ['view'],
       [UserRole.QCInspector]: ['view'],
@@ -270,7 +270,7 @@ export class PermissionService {
       [UserRole.ProjectManager]: ['view', 'create', 'edit', 'manage'], // Full progress update management
       [UserRole.SiteEngineer]: ['view', 'create', 'edit'],
       [UserRole.Foreman]: ['view', 'create'],
-      [UserRole.DesignEngineer]: ['view'],
+      [UserRole.DesignEngineer]: ['view', 'create'], // Design Engineer can create progress updates
       [UserRole.QCInspector]: ['view'],
       [UserRole.ProcurementOfficer]: ['view'],
       [UserRole.CostEstimator]: ['view'],
@@ -282,7 +282,7 @@ export class PermissionService {
     dashboard: {
       [UserRole.SystemAdmin]: ['view', 'export'],
       [UserRole.ProjectManager]: ['view', 'export'], // View and export dashboard
-      [UserRole.DesignEngineer]: ['view', 'export'],
+      [UserRole.DesignEngineer]: ['view'], // Design Engineer can view dashboard (export via reports module)
       [UserRole.SiteEngineer]: ['view', 'export'],
       [UserRole.CostEstimator]: ['view', 'export'],
       [UserRole.QCInspector]: ['view'],
@@ -296,7 +296,7 @@ export class PermissionService {
     roles: {
       [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage'],
       [UserRole.ProjectManager]: ['view'], // View only for roles
-      [UserRole.DesignEngineer]: [],
+      [UserRole.DesignEngineer]: [], // Design Engineer has no roles permissions
       [UserRole.SiteEngineer]: [],
       [UserRole.Foreman]: [],
       [UserRole.QCInspector]: [],

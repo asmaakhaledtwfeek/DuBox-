@@ -1,5 +1,4 @@
 using Dubox.Domain.Abstraction;
-using Dubox.Domain.Entities;
 using Dubox.Domain.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,6 +13,7 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
     // Role names as constants
     private const string SystemAdminRole = "SystemAdmin";
     private const string ProjectManagerRole = "ProjectManager";
+    private const string DesignEngineerRole = "DesignEngineer";
     private const string ViewerRole = "Viewer";
 
     public ProjectTeamVisibilityService(
@@ -38,10 +38,10 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
             return false;
         }
 
-        // Only SystemAdmin and ProjectManager can create projects/teams
+        // SystemAdmin, ProjectManager, and DesignEngineer can create projects/teams
         return await _userRoleService.UserHasAnyRoleAsync(
-            userId, 
-            new[] { SystemAdminRole, ProjectManagerRole }, 
+            userId,
+            new[] { SystemAdminRole, ProjectManagerRole, DesignEngineerRole },
             cancellationToken);
     }
 
@@ -60,7 +60,7 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
         // Check if user is SystemAdmin or Viewer (both have full visibility)
         var isSystemAdmin = await _userRoleService.UserHasRoleAsync(userId, SystemAdminRole, cancellationToken);
         var isViewer = await _userRoleService.UserHasRoleAsync(userId, ViewerRole, cancellationToken);
-        
+
         if (isSystemAdmin || isViewer)
         {
             return null; // null means access to ALL projects
@@ -70,33 +70,143 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
         var isProjectManager = await _userRoleService.UserHasRoleAsync(userId, ProjectManagerRole, cancellationToken);
         if (isProjectManager)
         {
-            // Return only projects created by this user
-            var projectIds = await _context.Projects
+            // PM sees: own projects + Design Engineer projects from their team members
+            var pmOwnProjects = await _context.Projects
                 .Where(p => p.CreatedBy == userId.ToString())
                 .Select(p => p.ProjectId)
                 .ToListAsync(cancellationToken);
-            
-            return projectIds;
+
+            // Find Design Engineers in teams created by this PM
+            var designEngineersInMyTeams = await _context.TeamMembers
+                .Where(tm => tm.Team.CreatedBy == userId && tm.IsActive)
+                .Select(tm => tm.UserId)
+                .Distinct()
+                .ToListAsync(cancellationToken);
+
+            // Get projects created by those Design Engineers
+            var designEngineerProjectIds = new List<Guid>();
+            foreach (var designEngineerId in designEngineersInMyTeams)
+            {
+                var isTeamMemberDesignEngineer = await _userRoleService.UserHasRoleAsync(designEngineerId, DesignEngineerRole, cancellationToken);
+                if (isTeamMemberDesignEngineer)
+                {
+                    var deProjects = await _context.Projects
+                        .Where(p => p.CreatedBy == designEngineerId.ToString())
+                        .Select(p => p.ProjectId)
+                        .ToListAsync(cancellationToken);
+
+                    designEngineerProjectIds.AddRange(deProjects);
+                }
+            }
+
+            // Add System Admin projects if user is in their teams
+            var systemAdminProjects = await GetSystemAdminProjectsForUserAsync(userId, cancellationToken);
+
+            // Combine all lists
+            var pmAccessibleProjects = pmOwnProjects.Union(designEngineerProjectIds).Union(systemAdminProjects).Distinct().ToList();
+            return pmAccessibleProjects;
         }
 
-        // For all other roles: find projects created by the PM who created the user's team
-        var userTeam = await _context.TeamMembers
-            .Where(tm => tm.UserId == userId)
-            .Select(tm => tm.Team)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (userTeam == null || !userTeam.CreatedBy.HasValue)
-        {
-            return new List<Guid>(); // User not in any team or team has no creator
-        }
-
-        // Get projects created by the PM who created the team
-        var accessibleProjectIds = await _context.Projects
-            .Where(p => p.CreatedBy == userTeam.CreatedBy.Value.ToString())
+        // For all other roles (including Design Engineers):
+        // Get own projects + projects created by ANY team creator the user belongs to
+        var ownProjects = await _context.Projects
+            .Where(p => p.CreatedBy == userId.ToString())
             .Select(p => p.ProjectId)
             .ToListAsync(cancellationToken);
 
-        return accessibleProjectIds;
+        // Get projects from ALL team creators (PM, SA, or anyone who created teams the user belongs to)
+        var teamCreatorProjects = await GetAllTeamCreatorProjectsForUserAsync(userId, cancellationToken);
+
+        // Combine own projects with team creator projects
+        var allAccessibleProjects = ownProjects.Union(teamCreatorProjects).Distinct().ToList();
+        return allAccessibleProjects;
+    }
+
+    /// <summary>
+    /// Gets ALL projects created by ANY creator of teams the user belongs to
+    /// This includes System Admins, Project Managers, and any other role that created a team
+    /// </summary>
+    private async Task<List<Guid>> GetAllTeamCreatorProjectsForUserAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        // Find all teams the user belongs to
+        var userTeams = await _context.TeamMembers
+            .Where(tm => tm.UserId == userId && tm.IsActive)
+            .Select(tm => tm.Team)
+            .ToListAsync(cancellationToken);
+
+        if (!userTeams.Any())
+        {
+            return new List<Guid>();
+        }
+
+        // Get all unique creator IDs from these teams
+        var teamCreatorIds = userTeams
+            .Where(t => t.CreatedBy.HasValue)
+            .Select(t => t.CreatedBy!.Value)
+            .Distinct()
+            .ToList();
+
+        if (!teamCreatorIds.Any())
+        {
+            return new List<Guid>();
+        }
+
+        // Get all projects created by any of these team creators
+        var creatorIdStrings = teamCreatorIds.Select(id => id.ToString()).ToList();
+        var projectIds = await _context.Projects
+            .Where(p => creatorIdStrings.Contains(p.CreatedBy))
+            .Select(p => p.ProjectId)
+            .ToListAsync(cancellationToken);
+
+        return projectIds;
+    }
+
+    /// <summary>
+    /// Gets projects created by System Admins for users who belong to teams created by those System Admins
+    /// DEPRECATED: Use GetAllTeamCreatorProjectsForUserAsync instead for comprehensive coverage
+    /// Kept for backward compatibility with Project Manager logic
+    /// </summary>
+    private async Task<List<Guid>> GetSystemAdminProjectsForUserAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        // Find all teams the user belongs to
+        var userTeams = await _context.TeamMembers
+            .Where(tm => tm.UserId == userId && tm.IsActive)
+            .Select(tm => tm.Team)
+            .ToListAsync(cancellationToken);
+
+        if (!userTeams.Any())
+        {
+            return new List<Guid>();
+        }
+
+        // Get unique System Admin IDs who created these teams
+        var systemAdminIds = new List<Guid>();
+        foreach (var team in userTeams)
+        {
+            if (team.CreatedBy.HasValue)
+            {
+                // Check if the team creator is a System Admin
+                var isSystemAdmin = await _userRoleService.UserHasRoleAsync(team.CreatedBy.Value, SystemAdminRole, cancellationToken);
+                if (isSystemAdmin)
+                {
+                    systemAdminIds.Add(team.CreatedBy.Value);
+                }
+            }
+        }
+
+        if (!systemAdminIds.Any())
+        {
+            return new List<Guid>();
+        }
+
+        // Get all projects created by those System Admins
+        var systemAdminCreatedByStrings = systemAdminIds.Select(id => id.ToString()).ToList();
+        var projectIds = await _context.Projects
+            .Where(p => systemAdminCreatedByStrings.Contains(p.CreatedBy))
+            .Select(p => p.ProjectId)
+            .ToListAsync(cancellationToken);
+
+        return projectIds;
     }
 
     public async Task<List<Guid>?> GetAccessibleTeamIdsAsync(CancellationToken cancellationToken = default)
@@ -114,7 +224,7 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
         // Check if user is SystemAdmin or Viewer (both have full visibility)
         var isSystemAdmin = await _userRoleService.UserHasRoleAsync(userId, SystemAdminRole, cancellationToken);
         var isViewer = await _userRoleService.UserHasRoleAsync(userId, ViewerRole, cancellationToken);
-        
+
         if (isSystemAdmin || isViewer)
         {
             return null; // null means access to ALL teams
@@ -124,33 +234,30 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
         var isProjectManager = await _userRoleService.UserHasRoleAsync(userId, ProjectManagerRole, cancellationToken);
         if (isProjectManager)
         {
-            // Return only teams created by this user
-            var teamIds = await _context.Teams
+            // PM sees: teams they created + teams they are members of
+            var createdTeams = await _context.Teams
                 .Where(t => t.CreatedBy == userId)
                 .Select(t => t.TeamId)
                 .ToListAsync(cancellationToken);
-            
-            return teamIds;
+
+            var memberTeams = await _context.TeamMembers
+                .Where(tm => tm.UserId == userId && tm.IsActive)
+                .Select(tm => tm.TeamId)
+                .ToListAsync(cancellationToken);
+
+            // Combine and return unique team IDs
+            var allPMTeams = createdTeams.Union(memberTeams).Distinct().ToList();
+            return allPMTeams;
         }
 
-        // For all other roles: find teams created by the PM who created the user's team
-        var userTeam = await _context.TeamMembers
-            .Where(tm => tm.UserId == userId)
-            .Select(tm => tm.Team)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (userTeam == null || !userTeam.CreatedBy.HasValue)
-        {
-            return new List<Guid>(); // User not in any team or team has no creator
-        }
-
-        // Get teams created by the PM who created the user's team
-        var accessibleTeamIds = await _context.Teams
-            .Where(t => t.CreatedBy == userTeam.CreatedBy.Value)
-            .Select(t => t.TeamId)
+        // For all other users (Design Engineers, Site Engineers, etc.):
+        // Return ONLY teams where the user is a direct member
+        var memberTeamIds = await _context.TeamMembers
+            .Where(tm => tm.UserId == userId && tm.IsActive)
+            .Select(tm => tm.TeamId)
             .ToListAsync(cancellationToken);
 
-        return accessibleTeamIds;
+        return memberTeamIds;
     }
 
     public async Task<bool> CanAccessProjectAsync(Guid projectId, CancellationToken cancellationToken = default)
@@ -193,7 +300,7 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
 
         // Check if user is Viewer (read-only role)
         var isViewer = await _userRoleService.UserHasRoleAsync(userId, ViewerRole, cancellationToken);
-        
+
         // Viewer cannot modify data
         return !isViewer;
     }

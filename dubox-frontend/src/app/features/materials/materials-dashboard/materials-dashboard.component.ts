@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormControl, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, skip } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 import { MaterialService } from '../../../core/services/material.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { Material } from '../../../core/models/material.model';
@@ -16,7 +17,7 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
   templateUrl: './materials-dashboard.component.html',
   styleUrls: ['./materials-dashboard.component.scss']
 })
-export class MaterialsDashboardComponent implements OnInit {
+export class MaterialsDashboardComponent implements OnInit, OnDestroy {
   materials: Material[] = [];
   filteredMaterials: Material[] = [];
   loading = true;
@@ -35,6 +36,8 @@ export class MaterialsDashboardComponent implements OnInit {
     needsReorder: 0,
     active: 0
   };
+  
+  private subscriptions: Subscription[] = [];
 
   constructor(
     private router: Router,
@@ -43,11 +46,31 @@ export class MaterialsDashboardComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.canCreate = this.permissionService.canCreate('materials');
-    this.canEdit = this.permissionService.canEdit('materials');
+    // Check permissions immediately
+    this.checkPermissions();
+    
+    // Subscribe to permission changes to update UI when permissions are loaded
+    this.subscriptions.push(
+      this.permissionService.permissions$
+        .pipe(skip(1)) // Skip initial empty value
+        .subscribe(() => {
+          console.log('🔄 Permissions updated, re-checking materials permissions');
+          this.checkPermissions();
+        })
+    );
     
     this.loadMaterials();
     this.setupSearch();
+  }
+  
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+  
+  private checkPermissions(): void {
+    this.canCreate = this.permissionService.canCreate('materials');
+    this.canEdit = this.permissionService.canEdit('materials');
+    console.log('✅ Materials permissions checked:', { canCreate: this.canCreate, canEdit: this.canEdit });
   }
 
   private setupSearch(): void {

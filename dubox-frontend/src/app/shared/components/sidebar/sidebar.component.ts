@@ -29,6 +29,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
   private allMenuItemsFromDb: NavigationMenuItemDto[] = [];
   private subscriptions: Subscription[] = [];
   private menuLoaded = false;
+  private menuBuilt = false; // Track if menu has been built
 
   constructor(
     private router: Router,
@@ -44,16 +45,22 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // Load menu items from database
+    // Load menu items from database only once
     this.loadMenuItems();
 
     // Subscribe to permission changes and rebuild menu when permissions are loaded
+    // Only rebuild once when permissions first load
     this.subscriptions.push(
       this.permissionService.permissions$
-        .pipe(skip(1)) // Skip initial empty value
+        .pipe(
+          skip(1), // Skip initial empty value
+          filter(() => !this.menuBuilt) // Only rebuild if not already built
+        )
         .subscribe(() => {
-          console.log('🔄 Permissions loaded, rebuilding sidebar menu');
-          this.buildMenuItems();
+          if (this.menuLoaded && !this.menuBuilt) {
+            this.buildMenuItems();
+            this.menuBuilt = true;
+          }
         })
     );
   }
@@ -63,25 +70,40 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   loadMenuItems(): void {
+    // Only load if not already loaded
+    if (this.menuLoaded) {
+      return;
+    }
+
     this.permissionService.getNavigationMenuItems().subscribe({
       next: (items) => {
-        console.log('📋 Loaded menu items from database:', items);
         this.allMenuItemsFromDb = items;
         this.menuLoaded = true;
-        this.buildMenuItems();
+        // Only build if permissions are already loaded
+        if (this.permissionService.arePermissionsLoaded() && !this.menuBuilt) {
+          this.buildMenuItems();
+          this.menuBuilt = true;
+        }
       },
 
       error: (err) => {
         console.warn('⚠️ Failed to load menu items, using fallback:', err);
         this.menuLoaded = true;
-        this.buildMenuItems();
+        // Only build if permissions are already loaded
+        if (this.permissionService.arePermissionsLoaded() && !this.menuBuilt) {
+          this.buildMenuItems();
+          this.menuBuilt = true;
+        }
       }
-
-     
     });
   }
 
   buildMenuItems(): void {
+    // Don't rebuild if already built
+    if (this.menuBuilt) {
+      return;
+    }
+
     let allMenuItems: MenuItem[];
 
     // Use database menu items if loaded, otherwise use fallback
@@ -107,13 +129,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
       allMenuItems = this.getFallbackMenuItems();
     }
 
-    // Filter menu items based on user permissions
+    // Filter menu items based on user permissions (done once)
     this.menuItems = allMenuItems.filter(item => {
-      const hasPermission = this.permissionService.hasPermission(item.permissionModule, item.permissionAction);
-      return hasPermission;
+      return this.permissionService.hasPermission(item.permissionModule, item.permissionAction);
     });
-
-    console.log('🎯 Filtered menu items:', this.menuItems.map(m => m.label));
   }
 
   private getFallbackMenuItems(): MenuItem[] {
@@ -125,7 +144,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       { label: 'Quality Control', icon: 'qc', route: '/qc', aliases: ['/quality'], permissionModule: 'wir', permissionAction: 'view' },
       { label: 'Reports', icon: 'reports', route: '/reports', permissionModule: 'reports', permissionAction: 'view' },
       { label: 'Notifications', icon: 'notifications', route: '/notifications', permissionModule: 'notifications', permissionAction: 'view' },
-      { label: 'Admin', icon: 'admin', route: '/admin', permissionModule: 'users', permissionAction: 'manage' }
+      { label: 'Admin', icon: 'admin', route: '/admin', permissionModule: 'users', permissionAction: 'view' }
     ];
   }
 

@@ -60,6 +60,7 @@ export interface NavigationMenuItemDto {
 })
 export class PermissionService {
   private readonly permissionsEndpoint = 'permissions';
+  private readonly PERMISSIONS_STORAGE_KEY = 'user_permissions';
   
   // Cache for user permissions loaded from backend
   private userPermissionsCache = new BehaviorSubject<string[]>([]);
@@ -69,7 +70,10 @@ export class PermissionService {
   constructor(
     private authService: AuthService,
     private apiService: ApiService
-  ) {}
+  ) {
+    // Load permissions from localStorage immediately on service creation
+    this.loadPermissionsFromStorage();
+  }
 
   /**
    * Check if user has permission for a specific module and action
@@ -83,13 +87,11 @@ export class PermissionService {
     const user = this.authService.getCurrentUser();
     
     if (!user || !user.allRoles || user.allRoles.length === 0) {
-      console.warn('🔐 Permission check: No user or roles found');
       return false;
     }
 
     // SystemAdmin has all permissions
     if (user.allRoles.includes(UserRole.SystemAdmin)) {
-      console.log(`🔐 Permission check: ${module}.${action} = true (SystemAdmin)`);
       return true;
     }
 
@@ -99,7 +101,6 @@ export class PermissionService {
     
     // Check if permissions are loaded from backend
     if (!this.permissionsLoaded) {
-      console.warn(`🔐 Permission check: ${permissionKey} - Permissions not yet loaded from backend`);
       return false;
     }
 
@@ -108,7 +109,6 @@ export class PermissionService {
       p.toLowerCase() === permissionKey
     );
     
-    console.log(`🔐 Permission check: ${permissionKey} = ${hasPermission}`);
     return hasPermission;
   }
 
@@ -317,50 +317,80 @@ export class PermissionService {
   }
 
   /**
+   * Load permissions from localStorage (synchronous)
+   * Called on service initialization to restore cached permissions
+   */
+  private loadPermissionsFromStorage(): void {
+    try {
+      const storedPermissions = localStorage.getItem(this.PERMISSIONS_STORAGE_KEY);
+      if (storedPermissions) {
+        const permissions = JSON.parse(storedPermissions);
+        if (Array.isArray(permissions)) {
+          this.userPermissionsCache.next(permissions);
+          this.permissionsLoaded = true;
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load permissions from storage:', err);
+    }
+  }
+
+  /**
+   * Save permissions to localStorage (synchronous)
+   */
+  private savePermissionsToStorage(permissions: string[]): void {
+    try {
+      localStorage.setItem(this.PERMISSIONS_STORAGE_KEY, JSON.stringify(permissions));
+    } catch (err) {
+      console.error('Failed to save permissions to storage:', err);
+    }
+  }
+
+  /**
+   * Remove permissions from localStorage
+   */
+  private clearPermissionsFromStorage(): void {
+    try {
+      localStorage.removeItem(this.PERMISSIONS_STORAGE_KEY);
+    } catch (err) {
+      console.error('Failed to clear permissions from storage:', err);
+    }
+  }
+
+  /**
    * Load and cache current user's permissions from backend
    * This is the ONLY source of truth for permissions
    */
   loadCurrentUserPermissions(): Observable<string[]> {
     const user = this.authService.getCurrentUser();
     if (!user) {
-      console.warn('⚠️ Cannot load permissions: No user logged in');
       this.permissionsLoaded = true;
       return of([]);
     }
 
     // Prevent multiple simultaneous loads
     if (this.permissionsLoading) {
-      console.log('🔄 Permissions already loading, returning cached observable');
       return this.userPermissionsCache.asObservable();
     }
 
-    console.log('🔄 Loading permissions from backend for user:', user.email);
     this.permissionsLoading = true;
 
     return this.getUserPermissionsFromBackend(user.id).pipe(
       map(result => result?.permissionKeys || []),
       tap(permissions => {
-        console.log('✅ Successfully loaded user permissions from backend:', permissions);
-        console.log(`✅ Total permissions: ${permissions.length}`);
         this.userPermissionsCache.next(permissions);
+        this.savePermissionsToStorage(permissions); // Save to localStorage
         this.permissionsLoaded = true;
         this.permissionsLoading = false;
       }),
       catchError(err => {
-        console.error('❌ CRITICAL: Failed to load permissions from backend!', err);
-        console.error('❌ User will have NO permissions except SystemAdmin override');
-        console.error('❌ Please ensure:');
-        console.error('   1. Backend is running');
-        console.error('   2. User has been assigned roles');
-        console.error('   3. Roles have permissions assigned');
-        console.error('   4. API endpoint /api/permissions/user/{userId} is working');
+        console.error('Failed to load permissions from backend:', err);
         
         this.permissionsLoaded = true;
         this.permissionsLoading = false;
         
-        // Return empty array - user will have no permissions (except SystemAdmin)
-        // This is intentional to force proper backend configuration
-        return of([]);
+        // Return cached permissions if available, otherwise empty array
+        return of(this.userPermissionsCache.value);
       })
     );
   }
@@ -377,6 +407,7 @@ export class PermissionService {
    */
   clearPermissions(): void {
     this.userPermissionsCache.next([]);
+    this.clearPermissionsFromStorage(); // Clear from localStorage
     this.permissionsLoaded = false;
     this.permissionsLoading = false;
   }

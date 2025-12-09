@@ -1,9 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, map } from 'rxjs/operators';
-import { forkJoin } from 'rxjs';
+import { debounceTime, distinctUntilChanged, map, skip } from 'rxjs/operators';
+import { forkJoin, Subscription } from 'rxjs';
 import { ProjectService } from '../../../core/services/project.service';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
@@ -19,7 +19,7 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
   templateUrl: './projects-list.component.html',
   styleUrl: './projects-list.component.scss'
 })
-export class ProjectsListComponent implements OnInit {
+export class ProjectsListComponent implements OnInit, OnDestroy {
   projects: Project[] = [];
   filteredProjects: Project[] = [];
   loading = true;
@@ -30,6 +30,8 @@ export class ProjectsListComponent implements OnInit {
   
   ProjectStatus = ProjectStatus;
   canCreateProject = false;
+  
+  private subscriptions: Subscription[] = [];
 
   constructor(
     private projectService: ProjectService,
@@ -40,10 +42,31 @@ export class ProjectsListComponent implements OnInit {
 
   ngOnInit(): void {
     console.log('🚀 Projects List Component Initialized');
-    this.canCreateProject = this.permissionService.canCreate('projects');
-    console.log('✅ Can create project:', this.canCreateProject);
+    
+    // Check permissions immediately
+    this.checkPermissions();
+    
+    // Subscribe to permission changes to update UI when permissions are loaded
+    this.subscriptions.push(
+      this.permissionService.permissions$
+        .pipe(skip(1)) // Skip initial empty value
+        .subscribe(() => {
+          console.log('🔄 Permissions updated, re-checking create project permission');
+          this.checkPermissions();
+        })
+    );
+    
     this.loadProjects();
     this.setupSearch();
+  }
+  
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+  
+  private checkPermissions(): void {
+    this.canCreateProject = this.permissionService.canCreate('projects');
+    console.log('✅ Can create project:', this.canCreateProject);
   }
 
   loadProjects(): void {

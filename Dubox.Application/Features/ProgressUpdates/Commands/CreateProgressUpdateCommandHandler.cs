@@ -73,13 +73,38 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         progressUpdate.UpdateDate = DateTime.UtcNow;
         progressUpdate.CreatedDate = DateTime.UtcNow;
 
+        // Validate and sanitize UpdateMethod
+        if (string.IsNullOrEmpty(progressUpdate.UpdateMethod))
+        {
+            progressUpdate.UpdateMethod = "Web";
+        }
+        else if (progressUpdate.UpdateMethod.Length > 50)
+        {
+            progressUpdate.UpdateMethod = progressUpdate.UpdateMethod.Substring(0, 50);
+        }
+
+        // Validate DeviceInfo length
         if (!string.IsNullOrEmpty(progressUpdate.DeviceInfo) && progressUpdate.DeviceInfo.Length > 100)
         {
             progressUpdate.DeviceInfo = progressUpdate.DeviceInfo.Substring(0, 100);
         }
 
-        await _unitOfWork.Repository<ProgressUpdate>().AddAsync(progressUpdate, cancellationToken);
-        await _unitOfWork.CompleteAsync(cancellationToken); // Save to get ProgressUpdateId
+        // Validate required Guid fields
+        if (progressUpdate.BoxId == Guid.Empty)
+            return Result.Failure<ProgressUpdateDto>("Invalid BoxId");
+        
+        if (progressUpdate.BoxActivityId == Guid.Empty)
+            return Result.Failure<ProgressUpdateDto>("Invalid BoxActivityId");
+
+        try
+        {
+            await _unitOfWork.Repository<ProgressUpdate>().AddAsync(progressUpdate, cancellationToken);
+            await _unitOfWork.CompleteAsync(cancellationToken); // Save to get ProgressUpdateId
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure<ProgressUpdateDto>($"Failed to save progress update: {ex.Message}");
+        }
 
         int sequence = 0;
         var imagesToAdd = new List<ProgressUpdateImage>();
@@ -156,12 +181,25 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
                         fileSize = imageBytes.Length;
                     }
 
+                    // Truncate OriginalName if it's a data URL (max 500 chars in database)
+                    var originalName = trimmedUrl;
+                    if (trimmedUrl.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // For data URLs, use a descriptive name instead of the full URL
+                        originalName = $"Captured Image {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}";
+                    }
+                    else if (originalName.Length > 500)
+                    {
+                        // Truncate regular URLs to 500 chars
+                        originalName = originalName.Substring(0, 500);
+                    }
+
                     var image = new ProgressUpdateImage
                     {
                         ProgressUpdateId = progressUpdate.ProgressUpdateId,
                         ImageData = imageData,
                         ImageType = "url",
-                        OriginalName = trimmedUrl,
+                        OriginalName = originalName,
                         FileSize = fileSize,
                         Sequence = sequence++,
                         CreatedDate = DateTime.UtcNow
@@ -257,7 +295,14 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         }
 
         // Complete all changes (ProgressUpdate, Images, BoxActivity, AuditLog, Box, WIRRecord)
-        await _unitOfWork.CompleteAsync(cancellationToken);
+        try
+        {
+            await _unitOfWork.CompleteAsync(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            return Result.Failure<ProgressUpdateDto>($"Failed to save changes: {ex.Message}. Inner: {ex.InnerException?.Message}");
+        }
 
         // Reload ProgressUpdate with Images to include them in DTO
         var images = await _dbContext.ProgressUpdateImages

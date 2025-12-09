@@ -17,7 +17,7 @@ import { LocationService, FactoryLocation, BoxLocationHistory } from '../../../c
 import { ApiService } from '../../../core/services/api.service';
 import * as ExcelJS from 'exceljs';
 import { Subject, takeUntil } from 'rxjs';
-import { debounceTime, distinctUntilChanged, map } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, map, skip } from 'rxjs/operators';
 import { DiffUtil } from '../../../core/utils/diff.util';
 import { environment } from '../../../../environments/environment';
 
@@ -203,6 +203,26 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.boxId = this.route.snapshot.params['boxId'];
     this.projectId = this.route.snapshot.params['projectId'];
     
+    // Check permissions immediately
+    this.checkPermissions();
+    
+    // Subscribe to permission changes to update UI when permissions are loaded
+    this.permissionService.permissions$
+      .pipe(
+        skip(1), // Skip initial empty value
+        takeUntil(this.destroy$)
+      )
+      .subscribe(() => {
+        console.log('🔄 Permissions updated, re-checking box permissions');
+        this.checkPermissions();
+      });
+    
+    this.setupLocationHistorySearch();
+    this.setupBoxLogsSearch();
+    this.loadBox();
+  }
+  
+  private checkPermissions(): void {
     this.canEdit = this.permissionService.canEdit('boxes');
     this.canDelete = this.permissionService.canDelete('boxes');
     this.canUpdateBoxStatus = this.permissionService.canEdit('boxes') || 
@@ -210,10 +230,12 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.canUpdateQualityIssueStatus = this.permissionService.hasPermission('quality-issues', 'edit') || 
                                        this.permissionService.hasPermission('quality-issues', 'resolve');
     this.canCreateQualityIssue = this.permissionService.canCreate('quality-issues');
-    
-    this.setupLocationHistorySearch();
-    this.setupBoxLogsSearch();
-    this.loadBox();
+    console.log('✅ Box permissions checked:', {
+      canEdit: this.canEdit,
+      canDelete: this.canDelete,
+      canUpdateBoxStatus: this.canUpdateBoxStatus,
+      canCreateQualityIssue: this.canCreateQualityIssue
+    });
   }
 
   private setupLocationHistorySearch(): void {
@@ -1291,8 +1313,25 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   }
 
   openProgressDetails(update: ProgressUpdate): void {
-    this.selectedProgressUpdate = update;
-    this.isProgressModalOpen = true;
+    // Fetch the full details from the backend using the new endpoint
+    if (update.progressUpdateId) {
+      this.progressUpdateService.getProgressUpdateById(update.progressUpdateId).subscribe({
+        next: (fullUpdate) => {
+          this.selectedProgressUpdate = fullUpdate;
+          this.isProgressModalOpen = true;
+        },
+        error: (err) => {
+          console.error('Error fetching progress update details:', err);
+          // Fallback to the update object we already have
+          this.selectedProgressUpdate = update;
+          this.isProgressModalOpen = true;
+        }
+      });
+    } else {
+      // If no ID is available, use the update object we have
+      this.selectedProgressUpdate = update;
+      this.isProgressModalOpen = true;
+    }
   }
 
   closeProgressDetails(): void {
@@ -1349,7 +1388,19 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     if (progressUpdate.images && Array.isArray(progressUpdate.images) && progressUpdate.images.length > 0) {
       return progressUpdate.images
         .sort((a: any, b: any) => (a.sequence || 0) - (b.sequence || 0))
-        .map((img: any) => img.imageData || img.ImageData || '')
+        .map((img: any) => {
+          // Try imageData first (full base64), then imageUrl (for on-demand loading)
+          let url = img.imageData || img.ImageData || img.imageUrl || img.ImageUrl || '';
+          
+          // If it's a relative URL (starts with /api/), prepend the base URL
+          if (url && url.startsWith('/api/')) {
+            // Get base URL from current location
+            const baseUrl = `${window.location.protocol}//${window.location.host}`;
+            url = baseUrl + url;
+          }
+          
+          return url;
+        })
         .filter((url: string) => url && url.trim().length > 0);
     }
     

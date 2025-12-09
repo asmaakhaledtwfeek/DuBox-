@@ -136,7 +136,7 @@ public static class NavigationMenuSeedData
                 Route = "/admin",
                 Aliases = "/admin/users",
                 PermissionModule = "users",
-                PermissionAction = "manage",
+                PermissionAction = "view", // Changed from "manage" to "view" so Project Managers can see admin panel
                 DisplayOrder = 100,
                 IsActive = true,
                 IsVisible = true,

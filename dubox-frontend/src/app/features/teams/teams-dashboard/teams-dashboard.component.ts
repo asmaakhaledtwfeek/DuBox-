@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormControl, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, skip } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 import { TeamService } from '../../../core/services/team.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { ReportsService } from '../../../core/services/reports.service';
@@ -18,7 +19,7 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
   templateUrl: './teams-dashboard.component.html',
   styleUrls: ['./teams-dashboard.component.scss']
 })
-export class TeamsDashboardComponent implements OnInit {
+export class TeamsDashboardComponent implements OnInit, OnDestroy {
   teams: Team[] = [];
   paginatedTeams: Team[] = [];
   loading = true;
@@ -51,6 +52,8 @@ export class TeamsDashboardComponent implements OnInit {
   selectedTeam: Team | null = null;
   teamActivities: TeamActivitiesResponse | null = null;
   loadingActivities = false;
+  
+  private subscriptions: Subscription[] = [];
 
   constructor(
     private router: Router,
@@ -60,12 +63,32 @@ export class TeamsDashboardComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.canCreate = this.permissionService.canCreate('teams');
-    this.canEdit = this.permissionService.canEdit('teams');
+    // Check permissions immediately
+    this.checkPermissions();
+    
+    // Subscribe to permission changes to update UI when permissions are loaded
+    this.subscriptions.push(
+      this.permissionService.permissions$
+        .pipe(skip(1)) // Skip initial empty value
+        .subscribe(() => {
+          console.log('🔄 Permissions updated, re-checking teams permissions');
+          this.checkPermissions();
+        })
+    );
     
     this.loadTeams();
     this.loadTeamsPaginated();
     this.setupSearch();
+  }
+  
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+  
+  private checkPermissions(): void {
+    this.canCreate = this.permissionService.canCreate('teams');
+    this.canEdit = this.permissionService.canEdit('teams');
+    console.log('✅ Teams permissions checked:', { canCreate: this.canCreate, canEdit: this.canEdit });
   }
 
   private setupSearch(): void {

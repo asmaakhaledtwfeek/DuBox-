@@ -27,68 +27,67 @@ export class ProgressUpdateService {
     files?: File[], 
     imageUrls?: string[]
   ): Observable<ProgressUpdateResponse> {
-    const hasFiles = files && files.length > 0;
-    const hasUrls = imageUrls && imageUrls.length > 0;
+    // ALWAYS send as multipart/form-data because backend API expects it
+    // Backend has [Consumes("multipart/form-data")] attribute
+    const formData = new FormData();
+    formData.append('BoxId', request.boxId);
+    formData.append('BoxActivityId', request.boxActivityId);
+    formData.append('ProgressPercentage', request.progressPercentage.toString());
     
-    // If files or URLs are provided, send as multipart/form-data
-    if (hasFiles || hasUrls) {
-      const formData = new FormData();
-      formData.append('BoxId', request.boxId);
-      formData.append('BoxActivityId', request.boxActivityId);
-      formData.append('ProgressPercentage', request.progressPercentage.toString());
-      
-      if (request.workDescription) {
-        formData.append('WorkDescription', request.workDescription);
-      }
-      if (request.issuesEncountered) {
-        formData.append('IssuesEncountered', request.issuesEncountered);
-      }
-      if (request.latitude !== undefined) {
-        formData.append('Latitude', request.latitude.toString());
-      }
-      if (request.longitude !== undefined) {
-        formData.append('Longitude', request.longitude.toString());
-      }
-      if (request.locationDescription) {
-        formData.append('LocationDescription', request.locationDescription);
-      }
-      
-      // Append multiple files - ASP.NET Core expects Files parameter name
-      if (hasFiles) {
-        files.forEach((file) => {
-          formData.append('Files', file);
-        });
-      }
-      
-      // Append multiple image URLs - ASP.NET Core expects ImageUrls parameter name
-      if (hasUrls) {
-        imageUrls.forEach((url) => {
-          formData.append('ImageUrls', url);
-        });
-      }
-      
-      formData.append('UpdateMethod', request.updateMethod);
-      if (request.deviceInfo) {
-        formData.append('DeviceInfo', request.deviceInfo);
-      }
-
-      return this.apiService.post<ProgressUpdateResponse>(this.endpoint, formData).pipe(
-        tap(response => {
-          console.log('✅ Progress update created:', response);
-          if (response.wirCreated) {
-            console.log('🎯 WIR automatically created:', response.wirCode);
-          }
-        })
-      );
+    if (request.workDescription) {
+      formData.append('WorkDescription', request.workDescription);
+    }
+    if (request.issuesEncountered) {
+      formData.append('IssuesEncountered', request.issuesEncountered);
+    }
+    if (request.latitude !== undefined) {
+      formData.append('Latitude', request.latitude.toString());
+    }
+    if (request.longitude !== undefined) {
+      formData.append('Longitude', request.longitude.toString());
+    }
+    if (request.locationDescription) {
+      formData.append('LocationDescription', request.locationDescription);
+    }
+    
+    // Append multiple files if provided - ASP.NET Core expects Files parameter name
+    if (files && files.length > 0) {
+      files.forEach((file) => {
+        formData.append('Files', file);
+      });
+    }
+    
+    // Append multiple image URLs if provided - ASP.NET Core expects ImageUrls parameter name
+    if (imageUrls && imageUrls.length > 0) {
+      imageUrls.forEach((url) => {
+        formData.append('ImageUrls', url);
+      });
+    }
+    
+    formData.append('UpdateMethod', request.updateMethod);
+    if (request.deviceInfo) {
+      formData.append('DeviceInfo', request.deviceInfo);
     }
 
-    // Otherwise, send as JSON (no images)
-    return this.apiService.post<ProgressUpdateResponse>(this.endpoint, request).pipe(
+    return this.apiService.post<ProgressUpdateResponse>(this.endpoint, formData).pipe(
       tap(response => {
         console.log('✅ Progress update created:', response);
         if (response.wirCreated) {
           console.log('🎯 WIR automatically created:', response.wirCode);
         }
+      })
+    );
+  }
+
+  /**
+   * Get a single progress update by ID
+   */
+  getProgressUpdateById(progressUpdateId: string): Observable<ProgressUpdate> {
+    return this.apiService.get<any>(`${this.endpoint}/${progressUpdateId}`).pipe(
+      map((response: any) => {
+        // Handle both direct data and wrapped response
+        const data = response.data || response.Data || response;
+        return data;
       })
     );
   }

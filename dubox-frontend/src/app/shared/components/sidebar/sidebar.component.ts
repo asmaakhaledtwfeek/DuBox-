@@ -1,8 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
-import { filter, skip } from 'rxjs/operators';
-import { Subscription, forkJoin } from 'rxjs';
+import { filter } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 import { PermissionService, NavigationMenuItemDto } from '../../../core/services/permission.service';
 
 interface MenuItem {
@@ -29,7 +29,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
   private allMenuItemsFromDb: NavigationMenuItemDto[] = [];
   private subscriptions: Subscription[] = [];
   private menuLoaded = false;
-  private menuBuilt = false; // Track if menu has been built
 
   constructor(
     private router: Router,
@@ -48,20 +47,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
     // Load menu items from database only once
     this.loadMenuItems();
 
-    // Subscribe to permission changes and rebuild menu when permissions are loaded
-    // Only rebuild once when permissions first load
+    // Rebuild whenever permissions change (e.g., on first load or role switch)
     this.subscriptions.push(
-      this.permissionService.permissions$
-        .pipe(
-          skip(1), // Skip initial empty value
-          filter(() => !this.menuBuilt) // Only rebuild if not already built
-        )
-        .subscribe(() => {
-          if (this.menuLoaded && !this.menuBuilt) {
-            this.buildMenuItems();
-            this.menuBuilt = true;
-          }
-        })
+      this.permissionService.permissions$.subscribe(() => {
+        if (this.menuLoaded) {
+          this.buildMenuItems();
+        }
+      })
     );
   }
 
@@ -79,28 +71,26 @@ export class SidebarComponent implements OnInit, OnDestroy {
       next: (items) => {
         this.allMenuItemsFromDb = items;
         this.menuLoaded = true;
-        // Only build if permissions are already loaded
-        if (this.permissionService.arePermissionsLoaded() && !this.menuBuilt) {
+        // Build as soon as permissions are ready
+        if (this.permissionService.arePermissionsLoaded()) {
           this.buildMenuItems();
-          this.menuBuilt = true;
         }
       },
 
       error: (err) => {
         console.warn('⚠️ Failed to load menu items, using fallback:', err);
         this.menuLoaded = true;
-        // Only build if permissions are already loaded
-        if (this.permissionService.arePermissionsLoaded() && !this.menuBuilt) {
+        // Build as soon as permissions are ready
+        if (this.permissionService.arePermissionsLoaded()) {
           this.buildMenuItems();
-          this.menuBuilt = true;
         }
       }
     });
   }
 
   buildMenuItems(): void {
-    // Don't rebuild if already built
-    if (this.menuBuilt) {
+    // If permissions aren't loaded yet, skip to avoid empty menu; a later emission will rebuild.
+    if (!this.permissionService.arePermissionsLoaded()) {
       return;
     }
 
@@ -129,9 +119,41 @@ export class SidebarComponent implements OnInit, OnDestroy {
       allMenuItems = this.getFallbackMenuItems();
     }
 
+    // Ensure Admin menu exists for users with users.view, even if backend filtered it out
+    const hasAdmin = allMenuItems.some(
+      item => item.route?.startsWith('/admin')
+    );
+    if (!hasAdmin && this.permissionService.hasPermission('users', 'view')) {
+      allMenuItems = [
+        ...allMenuItems,
+        {
+          label: 'Admin',
+          icon: 'admin',
+          route: '/admin',
+          permissionModule: 'users',
+          permissionAction: 'view',
+          aliases: ['/admin/users']
+        }
+      ];
+    }
+
     // Filter menu items based on user permissions (done once)
     this.menuItems = allMenuItems.filter(item => {
-      return this.permissionService.hasPermission(item.permissionModule, item.permissionAction);
+      const hasExactPermission = this.permissionService.hasPermission(
+        item.permissionModule,
+        item.permissionAction
+      );
+
+      // Special case: allow users with 'users.view' to see the Admin menu
+      // even if the menu item action is still 'manage' in the DB seed data.
+      if (item.permissionModule === 'users' && item.route?.startsWith('/admin')) {
+        return (
+          hasExactPermission ||
+          this.permissionService.hasPermission('users', 'view')
+        );
+      }
+
+      return hasExactPermission;
     });
   }
 

@@ -1202,8 +1202,21 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   }
 
   openIssueDetails(issue: QualityIssueDetails): void {
+    // Show existing data immediately
     this.selectedIssueDetails = issue;
     this.isDetailsModalOpen = true;
+
+    // Refresh from backend to get latest details (including images)
+    if (issue.issueId) {
+      this.wirService.getQualityIssueById(issue.issueId).subscribe({
+        next: (freshIssue) => {
+          this.selectedIssueDetails = freshIssue;
+        },
+        error: (err) => {
+          console.error('Failed to load quality issue details', err);
+        }
+      });
+    }
   }
 
   closeIssueDetails(): void {

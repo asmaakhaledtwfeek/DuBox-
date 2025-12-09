@@ -2345,19 +2345,54 @@
 }
 
 .details-modal {
-  width: min(640px, 100%);
+  width: min(760px, 96%);
 
   .details-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 12px 18px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px 18px;
+  }
+
+  .details-row {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+    min-height: 56px;
+
+    .label {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: var(--text-secondary);
+      flex: 0 0 38%;
+    }
+
+    .value {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      text-align: right;
+      flex: 1;
+      word-break: break-word;
+
+      &.multiline {
+        white-space: pre-line;
+        text-align: left;
+      }
+    }
   }
 
   .quality-issue-images-gallery {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 16px;
-    margin-top: 8px;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 14px;
+    margin-top: 6px;
 
     @media (max-width: 640px) {
       grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -2371,8 +2406,8 @@
       .image-wrapper {
         position: relative;
         width: 100%;
-        aspect-ratio: 1;
-        border-radius: 12px;
+        aspect-ratio: 4 / 3;
+        border-radius: 14px;
         overflow: hidden;
         border: 2px solid var(--gray-200);
         background: var(--gray-50);

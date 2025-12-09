@@ -464,9 +464,7 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.router.navigate(['/projects/create'], {
-      queryParams: { mode: 'edit', projectId: this.projectId }
-    });
+    this.router.navigate(['/projects', this.projectId, 'edit']);
   }
 
   openDeleteConfirm(): void {

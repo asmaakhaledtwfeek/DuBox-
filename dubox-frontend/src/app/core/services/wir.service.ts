@@ -358,6 +358,18 @@ export class WIRService {
   }
 
   /**
+   * Get all quality issues (with optional filters)
+   */
+  getAllQualityIssues(params?: any): Observable<QualityIssueDetails[]> {
+    return this.apiService.get<any>('qualityissues', params).pipe(
+      map(response => {
+        const issues = response?.data || response || [];
+        return issues.map((issue: any) => this.transformQualityIssueDetails(issue));
+      })
+    );
+  }
+
+  /**
    * Get quality issues for a box
    */
   getQualityIssuesByBox(boxId: string): Observable<QualityIssueDetails[]> {

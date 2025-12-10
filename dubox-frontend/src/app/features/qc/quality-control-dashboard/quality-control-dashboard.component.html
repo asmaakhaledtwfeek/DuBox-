@@ -526,176 +526,127 @@
   <div class="details-modal" (click)="$event.stopPropagation()">
     <!-- Header -->
     <div class="modal-header">
-      <div class="header-main">
-        <h2 class="modal-title">Quality Issue Details</h2>
-        <div class="header-badges">
-          <span class="issue-type-badge">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-              <path d="M2 17l10 5 10-5"/>
-              <path d="M2 12l10 5 10-5"/>
-            </svg>
-            {{ selectedIssueDetails.issueType || 'Issue' }}
-          </span>
-          <span class="severity-badge" [ngClass]="'severity-' + (selectedIssueDetails.severity?.toLowerCase() || '')">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" *ngIf="selectedIssueDetails.severity?.toLowerCase() === 'critical'">
-              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-              <path d="M2 17l10 5 10-5"/>
-              <path d="M2 12l10 5 10-5"/>
-            </svg>
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" *ngIf="selectedIssueDetails.severity?.toLowerCase() === 'major'">
-              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-            </svg>
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" *ngIf="selectedIssueDetails.severity?.toLowerCase() === 'minor'">
-              <circle cx="12" cy="12" r="10"/>
-            </svg>
-            {{ selectedIssueDetails.severity || '—' }}
-          </span>
-        </div>
+      <div>
+        <h3>Quality Issue Details</h3>
+        <p class="modal-subtitle">{{ selectedIssueDetails.issueType || 'Issue' }} • {{ selectedIssueDetails.severity || '—' }}</p>
       </div>
-      <button class="icon-button" (click)="closeIssueDetails()" aria-label="Close modal">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <line x1="18" y1="6" x2="6" y2="18"/>
-          <line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
+      <button class="icon-button" (click)="closeIssueDetails()">&times;</button>
     </div>
-    <div class="header-divider"></div>
 
     <!-- Content -->
-    <div class="modal-body">
-      <div class="modal-columns">
-        <!-- Left Column -->
-        <div class="column-left">
-          <!-- Details Section -->
-          <div class="content-section">
-            <h3 class="section-label">DETAILS</h3>
-            <div class="section-content">
-              <div class="field-group">
-                <label class="field-label">STATUS</label>
-                <div class="field-value">
-                  <span class="status-pill" [ngClass]="getQualityIssueStatusClass(selectedIssueDetails.status)">
-                    {{ getQualityIssueStatusLabel(selectedIssueDetails.status) }}
-                  </span>
-                </div>
-              </div>
-              <div class="field-group">
-                <label class="field-label">ISSUE DATE</label>
-                <div class="field-value">{{ formatIssueDate(selectedIssueDetails.issueDate) }}</div>
-              </div>
-              <div class="field-group">
-                <label class="field-label">DUE DATE</label>
-                <div class="field-value">{{ formatIssueDate(selectedIssueDetails.dueDate) }}</div>
-              </div>
-              <div class="field-group" *ngIf="selectedIssueDetails.isOverdue">
-                <label class="field-label text-danger">OVERDUE</label>
-                <div class="field-value text-danger">{{ selectedIssueDetails.overdueDays || 0 }} days</div>
-              </div>
-            </div>
-          </div>
+    <div class="details-grid">
+      <div class="details-row">
+        <span class="label">Status</span>
+        <span class="value">
+          <span class="status-pill" [ngClass]="getQualityIssueStatusClass(selectedIssueDetails.status)">
+            {{ getQualityIssueStatusLabel(selectedIssueDetails.status) }}
+          </span>
+        </span>
+      </div>
+      <div class="details-row">
+        <span class="label">Reported By</span>
+        <span class="value">{{ selectedIssueDetails.reportedBy || '—' }}</span>
+      </div>
+      <div class="details-row">
+        <span class="label">Issue Date</span>
+        <span class="value">{{ formatIssueDate(selectedIssueDetails.issueDate) }}</span>
+      </div>
+      <div class="details-row">
+        <span class="label">Assigned To</span>
+        <span class="value">{{ selectedIssueDetails.assignedTo || '—' }}</span>
+      </div>
+      <div class="details-row">
+        <span class="label">Due Date</span>
+        <span class="value">{{ formatIssueDate(selectedIssueDetails.dueDate) }}</span>
+      </div>
+      <div class="details-row" *ngIf="selectedIssueDetails.isOverdue">
+        <span class="label text-danger">Overdue</span>
+        <span class="value text-danger">{{ selectedIssueDetails.overdueDays || 0 }} days</span>
+      </div>
+      <div class="details-row">
+        <span class="label">Description</span>
+        <span class="value multiline">{{ selectedIssueDetails.issueDescription || '—' }}</span>
+      </div>
+      <div class="details-row">
+        <span class="label">Resolution Notes</span>
+        <span class="value multiline">{{ selectedIssueDetails.resolutionDescription || '—' }}</span>
+      </div>
+      <div class="details-row">
+        <span class="label">Resolution Date</span>
+        <span class="value">{{ formatIssueDate(selectedIssueDetails.resolutionDate) }}</span>
+      </div>
+      <div class="details-row">
+        <span class="label">Inspector</span>
+        <span class="value">{{ selectedIssueDetails.inspectorName || '—' }}</span>
+      </div>
+      <div class="details-row">
+        <span class="label">Box</span>
+        <span class="value">{{ selectedIssueDetails.boxName || selectedIssueDetails.boxTag || '—' }}</span>
+      </div>
+      <div class="details-row">
+        <span class="label">WIR</span>
+        <span class="value">
+          {{ selectedIssueDetails.wirNumber || '—' }}
+          <small *ngIf="selectedIssueDetails.wirStatus">
+            • {{ selectedIssueDetails.wirStatus }}
+          </small>
+        </span>
+      </div>
+      <div class="details-row">
+        <span class="label">WIR Requested</span>
+        <span class="value">{{ formatIssueDate(selectedIssueDetails.wirRequestedDate) }}</span>
+      </div>
+    </div>
 
-          <!-- Description Section -->
-          <div class="content-section" *ngIf="selectedIssueDetails.issueDescription">
-            <h3 class="section-label">DESCRIPTION</h3>
-            <div class="section-content">
-              <div class="description-text">{{ selectedIssueDetails.issueDescription }}</div>
-            </div>
-          </div>
-
-          <!-- Resolution Section -->
-          <div class="content-section" *ngIf="selectedIssueDetails.resolutionDescription || selectedIssueDetails.resolutionDate">
-            <h3 class="section-label">RESOLUTION</h3>
-            <div class="section-content">
-              <div class="field-group" *ngIf="selectedIssueDetails.resolutionDescription">
-                <label class="field-label">RESOLUTION NOTES</label>
-                <div class="field-value multiline">{{ selectedIssueDetails.resolutionDescription }}</div>
-              </div>
-              <div class="field-group" *ngIf="selectedIssueDetails.resolutionDate">
-                <label class="field-label">RESOLUTION DATE</label>
-                <div class="field-value">{{ formatIssueDate(selectedIssueDetails.resolutionDate) }}</div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Column Separator -->
-        <div class="column-separator"></div>
-
-        <!-- Right Column -->
-        <div class="column-right">
-          <!-- Assigned Section -->
-          <div class="content-section">
-            <h3 class="section-label">ASSIGNED</h3>
-            <div class="section-content">
-              <div class="field-group">
-                <label class="field-label">REPORTED BY</label>
-                <div class="field-value">{{ selectedIssueDetails.reportedBy || '—' }}</div>
-              </div>
-              <div class="field-group">
-                <label class="field-label">ASSIGNED TO</label>
-                <div class="field-value">{{ selectedIssueDetails.assignedTo || '—' }}</div>
-              </div>
-              <div class="field-group">
-                <label class="field-label">INSPECTOR</label>
-                <div class="field-value">{{ selectedIssueDetails.inspectorName || '—' }}</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Box Info Section -->
-          <div class="content-section">
-            <h3 class="section-label">BOX INFO</h3>
-            <div class="section-content">
-              <div class="field-group">
-                <label class="field-label">BOX</label>
-                <div class="field-value">{{ selectedIssueDetails.boxName || selectedIssueDetails.boxTag || '—' }}</div>
-              </div>
-              <div class="field-group">
-                <label class="field-label">WIR</label>
-                <div class="field-value">
-                  {{ selectedIssueDetails.wirNumber || '—' }}
-                  <span class="wir-status" *ngIf="selectedIssueDetails?.wirStatus"> • {{ selectedIssueDetails.wirStatus }}</span>
-                </div>
-              </div>
-              <div class="field-group">
-                <label class="field-label">WIR REQUESTED</label>
-                <div class="field-value">{{ formatIssueDate(selectedIssueDetails.wirRequestedDate) }}</div>
-              </div>
-            </div>
-          </div>
+    <!-- Images Section (Bottom of Modal) -->
+    <div class="images-section-bottom" *ngIf="getQualityIssueImageUrls(selectedIssueDetails).length > 0">
+      <div class="images-header">
+        <div class="images-title-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="images-icon">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+            <circle cx="8.5" cy="8.5" r="1.5"/>
+            <polyline points="21 15 16 10 5 21"/>
+          </svg>
+          <span class="images-label">ATTACHMENTS</span>
+          <span class="images-count-badge">{{ getQualityIssueImageUrls(selectedIssueDetails).length }}</span>
         </div>
       </div>
-
-      <!-- Images Section (Full Width) -->
-      <div class="content-section images-section" *ngIf="getQualityIssueImageUrls(selectedIssueDetails).length > 0">
-        <div class="images-header">
-          <h3 class="section-label">IMAGES</h3>
-          <span class="images-count">({{ getQualityIssueImageUrls(selectedIssueDetails).length }})</span>
-        </div>
-        <div class="images-container">
-          <div class="images-scroll" [class.has-many]="getQualityIssueImageUrls(selectedIssueDetails).length > 4">
-            <div class="image-card" *ngFor="let imageUrl of getQualityIssueImageUrls(selectedIssueDetails); let i = index" (click)="openLightbox(imageUrl, getQualityIssueImageUrls(selectedIssueDetails))">
-              <div class="image-card-inner">
-                <img [src]="imageUrl" 
-                     [alt]="'Quality issue image ' + (i + 1)"
-                     class="image-thumbnail"
-                     (error)="onImageError($event)"
-                     loading="lazy" />
-                <div class="image-number-badge">{{ i + 1 }}</div>
-                <div class="image-hover-overlay">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+      <div class="quality-issue-images-gallery">
+        <div class="image-item" *ngFor="let imageUrl of getQualityIssueImageUrls(selectedIssueDetails); let i = index">
+          <div class="image-wrapper" (click)="openLightbox(imageUrl, getQualityIssueImageUrls(selectedIssueDetails))">
+            <img [src]="imageUrl" 
+                 [alt]="'Quality issue image ' + (i + 1)"
+                 class="image-thumbnail"
+                 (error)="onImageError($event)"
+                 loading="lazy" />
+            <div class="image-overlay">
+              <div class="overlay-actions">
+                <button class="overlay-btn view-btn" (click)="openImageInNewTab(imageUrl); $event.stopPropagation()"  title="View full size">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                     <circle cx="12" cy="12" r="3"/>
                   </svg>
-                </div>
+                </button>
+                <button class="overlay-btn download-btn" (click)="downloadImage(imageUrl); $event.stopPropagation()" title="Download image">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                </button>
+               
               </div>
             </div>
+            <div class="image-badge">
+              <span class="image-number">{{ i + 1 }}</span>
+            </div>
           </div>
-          <button class="view-all-images-btn" *ngIf="getQualityIssueImageUrls(selectedIssueDetails).length > 4" (click)="openLightbox(getQualityIssueImageUrls(selectedIssueDetails)[0], getQualityIssueImageUrls(selectedIssueDetails))">
-            View All Images
-          </button>
         </div>
       </div>
+    </div>
+
+    <div class="modal-actions single">
+      <button class="btn btn-secondary" (click)="closeIssueDetails()">Close</button>
     </div>
   </div>
 </div>

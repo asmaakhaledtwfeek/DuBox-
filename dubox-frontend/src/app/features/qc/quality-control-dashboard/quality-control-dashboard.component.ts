@@ -303,9 +303,9 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
         const checkpoints = (data || []) as EnrichedCheckpoint[];
         this.checkpoints = checkpoints;
         this.updateSummary(checkpoints);
-        this.buildQualityIssuesList(checkpoints);
+        // Now fetch ALL quality issues separately
+        this.fetchAllQualityIssues();
         this.checkpointsLoading = false;
-        this.qualityIssuesLoading = false;
       },
       error: (err) => {
         console.error('❌ Failed to load WIR checkpoints:', err);
@@ -313,6 +313,27 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
         this.checkpointsError = err?.error?.message || err?.message || 'Failed to load WIR checkpoints';
         this.qualityIssuesLoading = false;
         this.qualityIssuesError = this.checkpointsError;
+      }
+    });
+  }
+
+  /**
+   * Fetch all quality issues (both linked and not linked to checkpoints)
+   */
+  fetchAllQualityIssues(): void {
+    this.qualityIssuesLoading = true;
+    this.qualityIssuesError = '';
+
+    this.wirService.getAllQualityIssues().subscribe({
+      next: (allIssues) => {
+        console.log('✅ Fetched all quality issues:', allIssues.length);
+        this.buildQualityIssuesListFromAllSources(allIssues);
+        this.qualityIssuesLoading = false;
+      },
+      error: (err) => {
+        console.error('❌ Failed to load quality issues:', err);
+        this.qualityIssuesError = err?.error?.message || err?.message || 'Failed to load quality issues';
+        this.qualityIssuesLoading = false;
       }
     });
   }
@@ -354,6 +375,57 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     );
     // Apply filters after building the list
     this.applyQualityIssuesFilters();
+  }
+
+  /**
+   * Build quality issues list from all quality issues (both checkpoint-linked and standalone)
+   */
+  private buildQualityIssuesListFromAllSources(allIssues: QualityIssueDetails[]): void {
+    this.qualityIssues = allIssues.map(issue => ({
+      issueId: issue.issueId,
+      issueType: issue.issueType,
+      severity: issue.severity,
+      issueDescription: issue.issueDescription,
+      assignedTo: issue.assignedTo,
+      dueDate: issue.dueDate,
+      photoPath: issue.photoPath,
+      reportedBy: issue.reportedBy,
+      issueDate: issue.issueDate,
+      status: issue.status,
+      boxId: issue.boxId,
+      wirNumber: issue.wirNumber || undefined,
+      wirName: issue.wirName || undefined,
+      boxTag: issue.boxTag,
+      boxName: issue.boxName,
+      projectCode: undefined, // Not included in QualityIssueDetails
+      projectId: undefined, // Not included in QualityIssueDetails
+      checkpointStatus: issue.wirStatus as WIRCheckpointStatus | undefined,
+      issueStatus: issue.status
+    }));
+    
+    console.log(`✅ Built quality issues list: ${this.qualityIssues.length} total issues`);
+    console.log(`   - Issues with checkpoint: ${this.qualityIssues.filter(i => i.wirNumber).length}`);
+    console.log(`   - Issues without checkpoint: ${this.qualityIssues.filter(i => !i.wirNumber).length}`);
+    
+    // Update summary cards with all quality issues
+    this.updateSummaryWithAllIssues();
+    
+    // Apply filters after building the list
+    this.applyQualityIssuesFilters();
+  }
+
+  /**
+   * Update summary cards to include all quality issues (not just from checkpoints)
+   */
+  private updateSummaryWithAllIssues(): void {
+    const loggedIssues = this.qualityIssues.length;
+    const resolvedIssues = this.qualityIssues.filter(issue => 
+      issue.status === 'Resolved' || issue.status === 'Closed'
+    ).length;
+
+    // Update only the issue-related cards, keep checkpoint counts from updateSummary
+    this.summaryCards[2] = { label: 'Logged Issues', value: loggedIssues, tone: 'danger' };
+    this.summaryCards[3] = { label: 'Resolved Issues', value: resolvedIssues, tone: 'success' };
   }
 
   applyQualityIssuesFilters(): void {
@@ -420,29 +492,25 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   openIssueDetails(issue: AggregatedQualityIssue): void {
     const boxId = issue.boxId;
 
-    // If we have issueId and boxId, fetch full details; otherwise use aggregated data
-    if (issue.issueId && boxId) {
-      // Fetch full details for better information
-      this.wirService.getQualityIssuesByBox(boxId).subscribe({
-        next: (issues) => {
-          const fullIssue = issues.find(i => i.issueId === issue.issueId);
-          if (fullIssue) {
-            this.selectedIssueDetails = fullIssue;
-          } else {
-            // Fallback to aggregated data converted to QualityIssueDetails
-            this.selectedIssueDetails = this.convertToQualityIssueDetails(issue, boxId);
-          }
-          this.isDetailsModalOpen = true;
+    // If we have issueId, fetch full details using GetQualityIssueById to get images
+    if (issue.issueId) {
+      // Show modal immediately with existing data
+      this.selectedIssueDetails = this.convertToQualityIssueDetails(issue, boxId);
+      this.isDetailsModalOpen = true;
+
+      // Fetch fresh details from backend (including images)
+      this.wirService.getQualityIssueById(issue.issueId).subscribe({
+        next: (fullIssue) => {
+          console.log('✅ Loaded quality issue details with images:', fullIssue);
+          this.selectedIssueDetails = fullIssue;
         },
         error: (err) => {
-          console.error('Failed to fetch issue details:', err);
-          // Fallback to aggregated data
-          this.selectedIssueDetails = this.convertToQualityIssueDetails(issue, boxId);
-          this.isDetailsModalOpen = true;
+          console.error('❌ Failed to fetch quality issue details:', err);
+          // Keep showing the initial data if fetch fails
         }
       });
     } else {
-      // Use aggregated data directly
+      // Use aggregated data directly (no issueId available)
       this.selectedIssueDetails = this.convertToQualityIssueDetails(issue, boxId);
       this.isDetailsModalOpen = true;
     }
@@ -504,7 +572,55 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   }
 
   openImageInNewTab(imageUrl: string): void {
-    window.open(imageUrl, '_blank', 'noopener,noreferrer');
+    if (!imageUrl) {
+      console.error('No image URL provided');
+      return;
+    }
+
+    // Ensure URL is absolute
+    let absoluteUrl = imageUrl;
+    
+    // If it's a relative URL, make it absolute
+    if (imageUrl.startsWith('/')) {
+      const baseUrl = this.getApiBaseUrl();
+      absoluteUrl = `${baseUrl}${imageUrl}`;
+    }
+    // If it's a data URL, we can't open it in a new tab - create a blob URL instead
+    else if (imageUrl.startsWith('data:image/')) {
+      // For data URLs, convert to blob URL
+      fetch(imageUrl)
+        .then(response => response.blob())
+        .then(blob => {
+          const blobUrl = URL.createObjectURL(blob);
+          const newWindow = window.open(blobUrl, '_blank', 'noopener,noreferrer');
+          if (!newWindow) {
+            console.error('Failed to open image in new tab. Popup may be blocked.');
+            this.downloadImage(imageUrl);
+          }
+        })
+        .catch(error => {
+          console.error('Error converting data URL to blob:', error);
+          // Fallback: try to open data URL directly (may not work in all browsers)
+          window.open(imageUrl, '_blank', 'noopener,noreferrer');
+        });
+      return;
+    }
+    // If it's already an absolute URL (http/https), use as is
+    else if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+      // Relative URL without leading slash - prepend base URL
+      const baseUrl = this.getApiBaseUrl();
+      absoluteUrl = `${baseUrl}/${imageUrl}`;
+    }
+
+    // Open in new tab
+    console.log('Opening image URL:', absoluteUrl);
+    const newWindow = window.open(absoluteUrl, '_blank', 'noopener,noreferrer');
+    
+    if (!newWindow) {
+      console.error('Failed to open image in new tab. Popup may be blocked.');
+      // Fallback: try to download instead
+      this.downloadImage(imageUrl);
+    }
   }
 
   downloadImage(imageUrl: string): void {

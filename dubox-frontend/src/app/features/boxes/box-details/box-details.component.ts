@@ -1282,7 +1282,55 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   }
 
   openImageInNewTab(imageUrl: string): void {
-    window.open(imageUrl, '_blank', 'noopener,noreferrer');
+    if (!imageUrl) {
+      console.error('No image URL provided');
+      return;
+    }
+
+    // Ensure URL is absolute
+    let absoluteUrl = imageUrl;
+    
+    // If it's a relative URL, make it absolute
+    if (imageUrl.startsWith('/')) {
+      const baseUrl = this.getApiBaseUrl();
+      absoluteUrl = `${baseUrl}${imageUrl}`;
+    }
+    // If it's a data URL, we can't open it in a new tab - create a blob URL instead
+    else if (imageUrl.startsWith('data:image/')) {
+      // For data URLs, convert to blob URL
+      fetch(imageUrl)
+        .then(response => response.blob())
+        .then(blob => {
+          const blobUrl = URL.createObjectURL(blob);
+          const newWindow = window.open(blobUrl, '_blank', 'noopener,noreferrer');
+          if (!newWindow) {
+            console.error('Failed to open image in new tab. Popup may be blocked.');
+            this.downloadImage(imageUrl);
+          }
+        })
+        .catch(error => {
+          console.error('Error converting data URL to blob:', error);
+          // Fallback: try to open data URL directly (may not work in all browsers)
+          window.open(imageUrl, '_blank', 'noopener,noreferrer');
+        });
+      return;
+    }
+    // If it's already an absolute URL (http/https), use as is
+    else if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+      // Relative URL without leading slash - prepend base URL
+      const baseUrl = this.getApiBaseUrl();
+      absoluteUrl = `${baseUrl}/${imageUrl}`;
+    }
+
+    // Open in new tab
+    console.log('Opening image URL:', absoluteUrl);
+    const newWindow = window.open(absoluteUrl, '_blank', 'noopener,noreferrer');
+    
+    if (!newWindow) {
+      console.error('Failed to open image in new tab. Popup may be blocked.');
+      // Fallback: try to download instead
+      this.downloadImage(imageUrl);
+    }
   }
 
   downloadImage(imageUrl: string): void {

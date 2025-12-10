@@ -1,4 +1,4 @@
-<app-header></app-header>
+
 <app-sidebar></app-sidebar>
 
 <div class="page-container">
@@ -447,16 +447,16 @@
               </svg>
               {{ selectedIssueForStatus.issueType || 'Issue' }}
             </span>
-            <span class="severity-badge-small" [ngClass]="'severity-' + (selectedIssueForStatus.severity?.toLowerCase() || '')">
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" *ngIf="selectedIssueForStatus.severity?.toLowerCase() === 'critical'">
+            <span class="severity-badge-small" [ngClass]="'severity-' + (selectedIssueForStatus.severity ? selectedIssueForStatus.severity.toLowerCase() : '')">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" *ngIf="selectedIssueForStatus.severity && selectedIssueForStatus.severity.toLowerCase() === 'critical'">
                 <path d="M12 2L2 7l10 5 10-5-10-5z"/>
                 <path d="M2 17l10 5 10-5"/>
                 <path d="M2 12l10 5 10-5"/>
               </svg>
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" *ngIf="selectedIssueForStatus.severity?.toLowerCase() === 'major'">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" *ngIf="selectedIssueForStatus.severity && selectedIssueForStatus.severity.toLowerCase() === 'major'">
                 <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
               </svg>
-              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" *ngIf="selectedIssueForStatus.severity?.toLowerCase() === 'minor'">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" *ngIf="selectedIssueForStatus.severity && selectedIssueForStatus.severity.toLowerCase() === 'minor'">
                 <circle cx="12" cy="12" r="10"/>
               </svg>
               {{ selectedIssueForStatus.severity || '—' }}
@@ -598,7 +598,7 @@
               type="button" 
               class="btn-add-url" 
               (click)="addImageFromUrl()"
-              [disabled]="isUploadingPhoto || statusUpdateLoading || !currentUrlInput?.trim()"
+              [disabled]="isUploadingPhoto || statusUpdateLoading || !currentUrlInput || !currentUrlInput.trim()"
             >
               Add URL
             </button>

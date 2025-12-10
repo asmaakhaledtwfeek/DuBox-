@@ -1,4 +1,4 @@
-<app-header></app-header>
+
 <app-sidebar></app-sidebar>
 
 <div class="page-container">
@@ -528,7 +528,7 @@
                       <span class="issue-type-badge">{{ issue.issueType || '—' }}</span>
                     </td>
                     <td class="severity-cell">
-                      <span class="severity-badge" [ngClass]="'severity-' + (issue.severity?.toLowerCase() || 'none')">
+                      <span class="severity-badge" [ngClass]="'severity-' + (issue.severity ? issue.severity.toLowerCase() : 'none')">
                         {{ issue.severity || '—' }}
                       </span>
                     </td>
@@ -677,7 +677,7 @@
                     type="button" 
                     class="btn btn-primary btn-add-url"
                     (click)="addImageFromUrl()"
-                    [disabled]="!currentUrlInput?.trim() || statusUpdateLoading"
+                    [disabled]="!currentUrlInput || !currentUrlInput.trim() || statusUpdateLoading"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <line x1="12" y1="5" x2="12" y2="19"/>
@@ -929,7 +929,7 @@
             <div class="modal-header">
               <div>
                 <h3>Create Quality Issue</h3>
-                <p class="modal-subtitle">{{ box?.name || box?.code }}</p>
+                <p class="modal-subtitle">{{ box && (box.name || box.code) }}</p>
               </div>
               <button class="icon-button" (click)="closeCreateQualityIssueModal()" [disabled]="createQualityIssueLoading">
                 &times;
@@ -1054,7 +1054,7 @@
                       type="button" 
                       class="btn btn-primary btn-add-url"
                       (click)="addQualityIssueImageUrl()"
-                      [disabled]="!currentUrlInput?.trim() || createQualityIssueLoading"
+                      [disabled]="!currentUrlInput || !currentUrlInput.trim() || createQualityIssueLoading"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="5" x2="12" y2="19"/>
@@ -1166,7 +1166,7 @@
               <button 
                 class="btn btn-primary" 
                 (click)="createQualityIssue()" 
-                [disabled]="!newQualityIssueForm.issueDescription?.trim() || createQualityIssueLoading"
+                [disabled]="!newQualityIssueForm.issueDescription || !newQualityIssueForm.issueDescription.trim() || createQualityIssueLoading"
               >
                 <span *ngIf="createQualityIssueLoading">Creating...</span>
                 <span *ngIf="!createQualityIssueLoading">Create Issue</span>
@@ -1714,6 +1714,7 @@
 
         <!-- Progress Updates Tab -->
         <div *ngIf="activeTab === 'progress-updates'" class="progress-updates-tab">
+         
           <app-progress-updates-table
             [updates]="progressUpdates"
             [loading]="progressUpdatesLoading"
@@ -1730,9 +1731,9 @@
             [toDate]="progressUpdatesToDate"
             (refresh)="loadProgressUpdates(progressUpdatesCurrentPage, progressUpdatesPageSize)"
             (viewDetails)="openProgressDetails($event)"
-            (pageChange)="loadProgressUpdates($event, progressUpdatesPageSize)"
-            (pageSizeChange)="loadProgressUpdates(1, $event)"
-            (searchChange)="onProgressUpdatesSearchChange($event)"
+            (pageChange)="loadProgressUpdates($any($event), progressUpdatesPageSize)"
+            (pageSizeChange)="loadProgressUpdates(1, $any($event))"
+            (searchChange)="onProgressUpdatesSearchChange($any($event))"
             (clearSearch)="clearProgressUpdatesSearch()"
             (toggleSearch)="toggleProgressUpdatesSearch()"
           ></app-progress-updates-table>

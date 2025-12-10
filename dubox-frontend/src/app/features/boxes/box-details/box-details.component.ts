@@ -25,7 +25,7 @@ import { environment } from '../../../../environments/environment';
 @Component({
   selector: 'app-box-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, HttpClientModule, HeaderComponent, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, HttpClientModule, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent],
   providers: [LocationService],
   templateUrl: './box-details.component.html',
   styleUrls: ['./box-details.component.scss']

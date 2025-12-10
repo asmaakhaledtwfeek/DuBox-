@@ -1504,18 +1504,29 @@
                 </svg>
                 Images from Progress Updates
               </h3>
-              <span class="section-count">{{ getAllProgressUpdateImages().length }} image(s)</span>
+              <span class="section-count">{{ resolvedProgressImages.length }} image(s)</span>
             </div>
             <div class="progress-images-gallery">
-              <div class="image-gallery-item" *ngFor="let image of getAllProgressUpdateImages(); let i = index">
-                <div class="image-wrapper" (click)="openPhotoInNewTab(image.imageUrl)">
+              <div class="image-gallery-item" *ngFor="let image of resolvedProgressImages; let i = index">
+                <div class="image-wrapper" (click)="openPhotoInNewTab(image.displayUrl || image.imageUrl)">
                   <img 
-                    [src]="image.imageUrl" 
+                    *ngIf="image.displayUrl || image.imageUrl"
+                    [src]="image.displayUrl || image.imageUrl" 
                     [alt]="'Progress update image ' + (i + 1)"
                     class="gallery-image"
                     (error)="onImageError($event)"
                     loading="lazy"
                   />
+                  <div *ngIf="!image.displayUrl && !image.imageUrl" style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-size: 12px; text-align: center; padding: 20px;">
+                    <div>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                      <p style="margin-top: 8px;">No URL</p>
+                    </div>
+                  </div>
                   <div class="image-overlay">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>

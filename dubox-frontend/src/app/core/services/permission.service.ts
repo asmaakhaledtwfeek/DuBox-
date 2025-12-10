@@ -410,6 +410,7 @@ export class PermissionService {
     this.clearPermissionsFromStorage(); // Clear from localStorage
     this.permissionsLoaded = false;
     this.permissionsLoading = false;
+    this.clearNavigationMenuCache(); // Clear navigation menu cache
   }
 
   /**
@@ -453,15 +454,58 @@ export class PermissionService {
 
   // ============= Navigation Menu Items =============
 
+  private navigationMenuCache: NavigationMenuItemDto[] | null = null;
+  private navigationMenuLoading = false;
+
   /**
-   * Get navigation menu items from database
+   * Get navigation menu items from database (cached)
+   * This ensures the API is called only ONCE even if sidebar component is recreated
    */
   getNavigationMenuItems(): Observable<NavigationMenuItemDto[]> {
+    // Return cached menu if available
+    if (this.navigationMenuCache !== null) {
+      console.log('📋 Returning cached navigation menu items (no API call)');
+      return of(this.navigationMenuCache);
+    }
+
+    // Prevent multiple simultaneous API calls
+    if (this.navigationMenuLoading) {
+      console.log('📋 Navigation menu already loading, waiting...');
+      // Wait a bit and retry (menu will be cached by then)
+      return new Observable<NavigationMenuItemDto[]>(observer => {
+        const checkInterval = setInterval(() => {
+          if (this.navigationMenuCache !== null) {
+            clearInterval(checkInterval);
+            observer.next(this.navigationMenuCache);
+            observer.complete();
+          }
+        }, 100);
+      });
+    }
+
+    console.log('📋 Loading navigation menu items from backend (one-time API call)');
+    this.navigationMenuLoading = true;
+
     return this.apiService.get<NavigationMenuItemDto[]>('navigation/menu').pipe(
+      tap(items => {
+        this.navigationMenuCache = items;
+        this.navigationMenuLoading = false;
+        console.log('✅ Navigation menu cached successfully:', items.length, 'items');
+      }),
       catchError(err => {
         console.warn('⚠️ Failed to load navigation menu from backend:', err);
+        this.navigationMenuCache = []; // Cache empty array to prevent retries
+        this.navigationMenuLoading = false;
         return of([]);
       })
     );
+  }
+
+  /**
+   * Clear navigation menu cache (call on logout)
+   */
+  clearNavigationMenuCache(): void {
+    this.navigationMenuCache = null;
+    this.navigationMenuLoading = false;
   }
 }

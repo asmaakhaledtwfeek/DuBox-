@@ -1,5 +1,6 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
 import { BoxService } from '../../../core/services/box.service';
@@ -16,15 +17,16 @@ import { ActivityTableComponent } from '../../activities/activity-table/activity
 import { LocationService, FactoryLocation, BoxLocationHistory } from '../../../core/services/location.service';
 import { ApiService } from '../../../core/services/api.service';
 import * as ExcelJS from 'exceljs';
-import { Subject, takeUntil } from 'rxjs';
-import { debounceTime, distinctUntilChanged, map, skip } from 'rxjs/operators';
+import { Observable, Subject, takeUntil, forkJoin, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, map, skip, catchError } from 'rxjs/operators';
 import { DiffUtil } from '../../../core/utils/diff.util';
 import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-box-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, HeaderComponent, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, HttpClientModule, HeaderComponent, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent],
+  providers: [LocationService],
   templateUrl: './box-details.component.html',
   styleUrls: ['./box-details.component.scss']
 })
@@ -132,6 +134,8 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   // All progress updates for attachments (images)
   allProgressUpdatesForImages: ProgressUpdate[] = [];
   loadingProgressUpdateImages = false;
+  resolvedProgressImages: Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number }> = [];
+  resolvingProgressImages = false;
   
   // Pagination for progress updates
   progressUpdatesCurrentPage = 1;
@@ -195,8 +199,9 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     private permissionService: PermissionService,
     private wirService: WIRService,
     private progressUpdateService: ProgressUpdateService,
-    private locationService: LocationService,
-    private apiService: ApiService
+    @Inject(LocationService) private locationService: LocationService,
+    private apiService: ApiService,
+    private http: HttpClient
   ) {}
 
   ngOnInit(): void {
@@ -527,6 +532,8 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       // Load all progress updates to get images when attachments tab is opened
       if (this.allProgressUpdatesForImages.length === 0 && !this.loadingProgressUpdateImages) {
         this.loadAllProgressUpdatesForImages();
+      } else if (this.allProgressUpdatesForImages.length > 0 && this.resolvedProgressImages.length === 0 && !this.resolvingProgressImages) {
+        this.resolveProgressUpdateImages();
       }
     }
   }
@@ -1405,11 +1412,19 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
           // Try imageData first (full base64), then imageUrl (for on-demand loading)
           let url = img.imageData || img.ImageData || img.imageUrl || img.ImageUrl || '';
           
-          // If it's a relative URL (starts with /api/), prepend the base URL
-          if (url && url.startsWith('/api/')) {
+          console.log('📸 Progress Update Image:', {
+            hasImageData: !!(img.imageData || img.ImageData),
+            hasImageUrl: !!(img.imageUrl || img.ImageUrl),
+            rawUrl: url,
+            imageObject: img
+          });
+          
+          // If it's a relative URL (starts with /api/ or just /), prepend the base URL
+          if (url && (url.startsWith('/api/') || (url.startsWith('/') && !url.startsWith('http')))) {
             // Get base URL from current location
             const baseUrl = `${window.location.protocol}//${window.location.host}`;
             url = baseUrl + url;
+            console.log('🔗 Converted relative URL to absolute:', url);
           }
           
           return url;
@@ -1470,6 +1485,112 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     return [];
   }
 
+  private buildAbsoluteImageUrl(url: string): string {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    if (url.startsWith('/')) {
+      const baseUrl = `${window.location.protocol}//${window.location.host}`;
+      return baseUrl + url;
+    }
+    return url;
+  }
+
+  private isDataUri(url: string): boolean {
+    return /^data:image\//i.test(url);
+  }
+
+  private isBareBase64Image(url: string): boolean {
+    // Heuristic: long base64 string without scheme, may contain +/=
+    return !!url && !url.startsWith('http') && !url.startsWith('/') && url.length > 100 && /^[A-Za-z0-9+/=]+$/i.test(url);
+  }
+
+  private createObjectUrlFromBase64(data: string): string {
+    if (!data) return '';
+
+    let base64Part = data;
+    let contentType = 'image/jpeg';
+
+    const dataUriMatch = data.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/i);
+    if (dataUriMatch) {
+      contentType = dataUriMatch[1];
+      base64Part = dataUriMatch[2];
+    }
+
+    try {
+      const byteCharacters = atob(base64Part);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: contentType });
+      return URL.createObjectURL(blob);
+    } catch (err) {
+      console.error('❌ Failed to convert base64 to blob URL', err);
+      // Fallback to data URI
+      if (this.isDataUri(data)) {
+        return data;
+      }
+      return `data:${contentType};base64,${base64Part}`;
+    }
+  }
+
+  private fetchImageAsObjectUrl(url: string, imageData?: string): Observable<string> {
+    // Prefer base64 when available
+    const base64Source = imageData || url;
+    if (base64Source && (this.isDataUri(base64Source) || this.isBareBase64Image(base64Source))) {
+      const display = this.createObjectUrlFromBase64(base64Source);
+      return of(display);
+    }
+
+    const absoluteUrl = this.buildAbsoluteImageUrl(url);
+    return this.http.get(absoluteUrl, { responseType: 'blob' }).pipe(
+      map(blob => URL.createObjectURL(blob))
+    );
+  }
+
+  private resolveProgressUpdateImages(): void {
+    const rawImages = this.getAllProgressUpdateImages();
+    if (rawImages.length === 0) {
+      this.resolvedProgressImages = [];
+      return;
+    }
+
+    this.resolvingProgressImages = true;
+
+    const requests = rawImages.map(img =>
+      this.fetchImageAsObjectUrl(img.imageUrl, (img as any).imageData).pipe(
+        map(displayUrl => ({
+          ...img,
+          displayUrl
+        })),
+        catchError(err => {
+          console.error('❌ Failed to fetch image with auth header, falling back to raw URL:', img.imageUrl, err);
+          return of({
+            ...img,
+            displayUrl: this.isBareBase64Image((img as any).imageData) || this.isDataUri((img as any).imageData)
+              ? this.createObjectUrlFromBase64((img as any).imageData)
+              : this.buildAbsoluteImageUrl(img.imageUrl)
+          });
+        })
+      )
+    );
+
+    forkJoin(requests).subscribe({
+      next: (resolved) => {
+        this.resolvedProgressImages = resolved;
+        this.resolvingProgressImages = false;
+      },
+      error: (err) => {
+        console.error('❌ Failed to resolve progress update images:', err);
+        this.resolvedProgressImages = [];
+        this.resolvingProgressImages = false;
+      }
+    });
+  }
+
   openPhotoInNewTab(photoUrl: string): void {
     // For base64 images, create a new window with the image
     if (photoUrl.startsWith('data:image/')) {
@@ -1517,19 +1638,28 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       return;
     }
 
+    console.log('📋 Loading progress updates for attachments tab...');
     this.loadingProgressUpdateImages = true;
     // Load with a large page size to get all progress updates
     this.progressUpdateService.getProgressUpdatesByBox(this.boxId, 1, 1000, {}).subscribe({
       next: (response) => {
+        console.log('✅ Progress updates loaded:', response.items?.length || 0, 'updates');
         this.allProgressUpdatesForImages = (response.items || [])
           .map(update => ({
             ...update,
             updateDate: update.updateDate ? new Date(update.updateDate) : undefined
           }));
+        
+        // Log image counts
+        const totalImages = this.getAllProgressUpdateImages().length;
+        console.log('🖼️ Total images found:', totalImages);
+        // Resolve images with authenticated requests to avoid 401/Mixed Content
+        this.resolveProgressUpdateImages();
+        
         this.loadingProgressUpdateImages = false;
       },
       error: (err) => {
-        console.error('Error loading progress updates for images:', err);
+        console.error('❌ Error loading progress updates for images:', err);
         this.loadingProgressUpdateImages = false;
       }
     });
@@ -1537,26 +1667,43 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   // Get all images from all progress updates
   getAllProgressUpdateImages(): Array<{ imageUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number }> {
-    const allImages: Array<{ imageUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number }> = [];
+    const allImages: Array<{ imageUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageData?: string }> = [];
     
-    this.allProgressUpdatesForImages.forEach(update => {
+    console.log('🔍 Processing progress updates for images:', this.allProgressUpdatesForImages.length);
+    
+    this.allProgressUpdatesForImages.forEach((update, index) => {
       const photoUrls = this.getPhotoUrls(update);
+      console.log(`Update #${index + 1} (${update.activityName}):`, {
+        hasImages: !!update.images,
+        imagesCount: update.images?.length || 0,
+        photoUrlsFound: photoUrls.length,
+        photoUrls: photoUrls
+      });
+      
       photoUrls.forEach(imageUrl => {
-        allImages.push({
-          imageUrl,
-          updateDate: update.updateDate,
-          activityName: update.activityName,
-          progressPercentage: update.progressPercentage
-        });
+        if (imageUrl && imageUrl.trim()) {
+          allImages.push({
+            imageUrl,
+            updateDate: update.updateDate,
+            activityName: update.activityName,
+            progressPercentage: update.progressPercentage,
+            imageData: (update as any).images && Array.isArray((update as any).images) && (update as any).images.length > 0
+              ? (update as any).images[0].imageData || (update as any).images[0].ImageData
+              : undefined
+          });
+        }
       });
     });
+    
+    console.log('✅ Total images to display:', allImages.length);
+    console.log('📸 Image URLs:', allImages.map(img => img.imageUrl));
     
     return allImages;
   }
 
   // Check if there are any images from progress updates
   hasProgressUpdateImages(): boolean {
-    return this.getAllProgressUpdateImages().length > 0;
+    return this.resolvedProgressImages.length > 0;
   }
 
   // Get total attachments count (files + images)

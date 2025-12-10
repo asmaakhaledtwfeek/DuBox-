@@ -84,7 +84,8 @@ public class GetProgressUpdatesByBoxQueryHandler : IRequestHandler<GetProgressUp
             {
                 ProgressUpdateImageId = img.ProgressUpdateImageId,
                 ProgressUpdateId = img.ProgressUpdateId,
-                ImageData = null, // Don't load base64 data!
+                // Include base64 so frontend can render even if file URL fails
+                ImageData = img.ImageData,
                 ImageType = img.ImageType,
                 OriginalName = img.OriginalName,
                 FileSize = img.FileSize,

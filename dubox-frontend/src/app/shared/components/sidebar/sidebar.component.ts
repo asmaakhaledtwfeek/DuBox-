@@ -29,6 +29,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
   private allMenuItemsFromDb: NavigationMenuItemDto[] = [];
   private subscriptions: Subscription[] = [];
   private menuLoaded = false;
+  private menuBuilt = false; // Flag to prevent unnecessary rebuilds
+  private isLoadingMenu = false; // Flag to prevent multiple API calls
 
   constructor(
     private router: Router,
@@ -39,6 +41,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
         .pipe(filter(event => event instanceof NavigationEnd))
         .subscribe((event: any) => {
           this.activeRoute = event.url;
+          // Don't rebuild menu on navigation - just update active route
         })
     );
   }
@@ -47,10 +50,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
     // Load menu items from database only once
     this.loadMenuItems();
 
-    // Rebuild whenever permissions change (e.g., on first load or role switch)
+    // Rebuild only on first permission load (not on every emission)
     this.subscriptions.push(
       this.permissionService.permissions$.subscribe(() => {
-        if (this.menuLoaded) {
+        // Only rebuild if menu is loaded but not yet built
+        if (this.menuLoaded && !this.menuBuilt && this.permissionService.arePermissionsLoaded()) {
           this.buildMenuItems();
         }
       })
@@ -61,16 +65,33 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
+  /**
+   * Reset menu state (useful for testing or when user switches roles)
+   * Call this only if you need to force a reload (e.g., after logout/login)
+   */
+  resetMenu(): void {
+    this.menuLoaded = false;
+    this.menuBuilt = false;
+    this.isLoadingMenu = false;
+    this.allMenuItemsFromDb = [];
+    this.menuItems = [];
+    this.loadMenuItems();
+  }
+
   loadMenuItems(): void {
-    // Only load if not already loaded
-    if (this.menuLoaded) {
+    // Only load if not already loaded and not currently loading
+    if (this.menuLoaded || this.isLoadingMenu) {
       return;
     }
 
+    this.isLoadingMenu = true;
+
+    // The service now handles caching, so this won't make duplicate API calls
     this.permissionService.getNavigationMenuItems().subscribe({
       next: (items) => {
         this.allMenuItemsFromDb = items;
         this.menuLoaded = true;
+        this.isLoadingMenu = false;
         // Build as soon as permissions are ready
         if (this.permissionService.arePermissionsLoaded()) {
           this.buildMenuItems();
@@ -80,6 +101,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.warn('⚠️ Failed to load menu items, using fallback:', err);
         this.menuLoaded = true;
+        this.isLoadingMenu = false;
         // Build as soon as permissions are ready
         if (this.permissionService.arePermissionsLoaded()) {
           this.buildMenuItems();
@@ -91,6 +113,11 @@ export class SidebarComponent implements OnInit, OnDestroy {
   buildMenuItems(): void {
     // If permissions aren't loaded yet, skip to avoid empty menu; a later emission will rebuild.
     if (!this.permissionService.arePermissionsLoaded()) {
+      return;
+    }
+
+    // Skip if menu is already built (prevents rebuilds on navigation)
+    if (this.menuBuilt) {
       return;
     }
 
@@ -155,6 +182,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
       return hasExactPermission;
     });
+
+    // Mark menu as built to prevent rebuilds
+    this.menuBuilt = true;
   }
 
   private getFallbackMenuItems(): MenuItem[] {

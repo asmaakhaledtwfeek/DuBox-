@@ -62,6 +62,7 @@ public class GetProgressUpdatesByActivityQueryHandler : IRequestHandler<GetProgr
             {
                 ProgressUpdateImageId = img.ProgressUpdateImageId,
                 ProgressUpdateId = img.ProgressUpdateId,
+                // Include base64 so detail and list views can render without extra round-trips
                 ImageData = img.ImageData,
                 ImageType = img.ImageType,
                 OriginalName = img.OriginalName,

@@ -21,7 +21,9 @@ import {
   QualityIssueImage,
   UpdateQualityIssueStatusRequest,
   WIRCheckpointFilter,
-  WIRCheckpointChecklistItem
+  WIRCheckpointChecklistItem,
+  PaginatedQualityIssuesResponse,
+  PaginatedWIRCheckpointsResponse
 } from '../models/wir.model';
 
 @Injectable({
@@ -157,11 +159,30 @@ export class WIRService {
     );
   }
 
-  getWIRCheckpoints(params?: WIRCheckpointFilter): Observable<WIRCheckpoint[]> {
+  getWIRCheckpoints(params?: WIRCheckpointFilter): Observable<PaginatedWIRCheckpointsResponse> {
     return this.apiService.get<any>(`wircheckpoints`, params).pipe(
       map(response => {
-        const checkpoints = response || [];
-        return (checkpoints as any[]).map(c => this.transformWIRCheckpoint(c));
+        const data = response?.data || response;
+        if (data?.items) {
+          // Paginated response
+          return {
+            items: data.items.map((c: any) => this.transformWIRCheckpoint(c)),
+            totalCount: data.totalCount || 0,
+            page: data.page || 1,
+            pageSize: data.pageSize || 25,
+            totalPages: data.totalPages || 0
+          };
+        } else {
+          // Fallback for non-paginated response (backward compatibility)
+          const checkpoints = Array.isArray(data) ? data : [];
+          return {
+            items: checkpoints.map((c: any) => this.transformWIRCheckpoint(c)),
+            totalCount: checkpoints.length,
+            page: 1,
+            pageSize: checkpoints.length || 25,
+            totalPages: 1
+          };
+        }
       })
     );
   }
@@ -358,13 +379,39 @@ export class WIRService {
   }
 
   /**
-   * Get all quality issues (with optional filters)
+   * Get all quality issues (with optional filters and pagination)
    */
-  getAllQualityIssues(params?: any): Observable<QualityIssueDetails[]> {
+  getAllQualityIssues(params?: {
+    searchTerm?: string;
+    status?: string;
+    severity?: string;
+    issueType?: string;
+    page?: number;
+    pageSize?: number;
+  }): Observable<PaginatedQualityIssuesResponse> {
     return this.apiService.get<any>('qualityissues', params).pipe(
       map(response => {
-        const issues = response?.data || response || [];
-        return issues.map((issue: any) => this.transformQualityIssueDetails(issue));
+        const data = response?.data || response;
+        if (data?.items) {
+          // Paginated response
+          return {
+            items: data.items.map((issue: any) => this.transformQualityIssueDetails(issue)),
+            totalCount: data.totalCount || 0,
+            page: data.page || 1,
+            pageSize: data.pageSize || 25,
+            totalPages: data.totalPages || 0
+          };
+        } else {
+          // Fallback for non-paginated response (backward compatibility)
+          const issues = Array.isArray(data) ? data : [];
+          return {
+            items: issues.map((issue: any) => this.transformQualityIssueDetails(issue)),
+            totalCount: issues.length,
+            page: 1,
+            pageSize: issues.length || 25,
+            totalPages: 1
+          };
+        }
       })
     );
   }

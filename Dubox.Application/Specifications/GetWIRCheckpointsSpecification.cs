@@ -1,5 +1,6 @@
 ﻿namespace Dubox.Application.Specifications
 {
+    using Dubox.Application.DTOs;
     using Dubox.Application.Features.WIRCheckpoints.Queries;
     using Dubox.Domain.Entities;
     using Dubox.Domain.Specification;
@@ -12,14 +13,18 @@
             AddInclude($"{nameof(WIRCheckpoint.Box)}.{nameof(WIRCheckpoint.Box.Project)}");
             AddInclude(nameof(WIRCheckpoint.ChecklistItems));
             AddInclude(nameof(WIRCheckpoint.QualityIssues));
-            // NOTE: Don't include Images or QualityIssues.Images - base64 ImageData is too large
-            // Image metadata is loaded separately with lightweight query
-            
-            // Enable split query to avoid Cartesian explosion with multiple collection includes
+
             EnableSplitQuery();
 
-            // Apply visibility filtering based on accessible projects
-            // null means access to all projects (SystemAdmin/Viewer)
+            // Enable pagination
+            var (page, pageSize) = new PaginatedRequest
+            {
+                Page = query.Page,
+                PageSize = query.PageSize
+            }.GetNormalizedPagination();
+
+            ApplyPaging(pageSize, page);
+
             if (accessibleProjectIds != null)
             {
                 AddCriteria(x => accessibleProjectIds.Contains(x.Box.ProjectId));

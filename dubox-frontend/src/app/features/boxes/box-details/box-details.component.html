@@ -425,53 +425,60 @@
         <!-- Quality Issues Tab -->
         <div *ngIf="activeTab === 'quality-issues'" class="quality-tab">
           <div class="quality-card-header">
-            <div>
-              <h2 class="card-title">Quality Issues</h2>
-              <p class="card-subtitle">List of every quality issue logged for this box.</p>
-            </div>
-            <div class="quality-card-actions">
-              <span class="badge badge-info" *ngIf="!qualityIssuesLoading && !qualityIssuesError">
-                {{ qualityIssueCount }} total
-              </span>
-              <button 
-                class="btn btn-success btn-sm" 
-                (click)="openCreateQualityIssueModal()" 
-                [disabled]="qualityIssuesLoading"
-                *ngIf="canCreateQualityIssue"
-                title="Create new quality issue"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
-                  <line x1="12" y1="5" x2="12" y2="19"/>
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
-                Create Issue
-              </button>
-              <button 
-                class="btn btn-primary btn-sm" 
-                (click)="exportQualityIssuesToExcel()" 
-                [disabled]="qualityIssuesLoading || qualityIssues.length === 0"
-                title="Export quality issues to Excel"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="17 8 12 3 7 8"/>
-                  <line x1="12" y1="3" x2="12" y2="15"/>
-                </svg>
-                Export to Excel
-              </button>
-              <button 
-                class="btn btn-secondary btn-sm" 
-                (click)="refreshQualityIssues()" 
-                [disabled]="qualityIssuesLoading"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="23 4 23 10 17 10"/>
-                  <polyline points="1 20 1 14 7 14"/>
-                  <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"/>
-                  <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"/>
-                </svg>
-                Refresh
-              </button>
+            <div class="quality-header-content">
+              <div class="quality-title-section">
+                <h2 class="card-title">Quality Issues</h2>
+                <p class="card-subtitle">List of every quality issue logged for this box.</p>
+              </div>
+              <div class="quality-card-actions">
+                <span class="quality-count-badge" *ngIf="!qualityIssuesLoading && !qualityIssuesError">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 11l3 3L22 4"/>
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                  </svg>
+                  {{ qualityIssueCount }} total
+                </span>
+                <button 
+                  class="btn btn-success btn-sm quality-action-btn" 
+                  (click)="openCreateQualityIssueModal()" 
+                  [disabled]="qualityIssuesLoading"
+                  *ngIf="canCreateQualityIssue"
+                  title="Create new quality issue"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Create Issue
+                </button>
+                <button 
+                  class="btn btn-primary btn-sm quality-action-btn" 
+                  (click)="exportQualityIssuesToExcel()" 
+                  [disabled]="qualityIssuesLoading || qualityIssues.length === 0"
+                  title="Export quality issues to Excel"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="17 8 12 3 7 8"/>
+                    <line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>
+                  Export to Excel
+                </button>
+                <button 
+                  class="btn btn-secondary btn-sm quality-action-btn" 
+                  (click)="refreshQualityIssues()" 
+                  [disabled]="qualityIssuesLoading"
+                  title="Refresh quality issues"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <polyline points="1 20 1 14 7 14"/>
+                    <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"/>
+                    <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"/>
+                  </svg>
+                  Refresh
+                </button>
+              </div>
             </div>
           </div>
 
@@ -492,7 +499,7 @@
             </div>
 
             <div class="quality-table-wrapper" *ngIf="!qualityIssuesLoading && !qualityIssuesError && qualityIssues.length > 0">
-              <table class="designer-table">
+              <table class="designer-table quality-issues-table">
                 <thead>
                   <tr>
                     <th class="col-seq">Seq</th>
@@ -508,18 +515,28 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let issue of qualityIssues; let i = index">
-                    <td class="text-center">{{ i + 1 }}</td>
-                    <td class="wir-cell">
-                      <span class="wir-badge">{{ getQualityIssueWir(issue) }}</span>
+                  <tr *ngFor="let issue of qualityIssues; let i = index" class="quality-issue-row">
+                    <td class="text-center seq-cell">
+                      <span class="seq-number">{{ i + 1 }}</span>
                     </td>
-                    <td>{{ issue.issueType || '—' }}</td>
-                    <td>{{ issue.severity || '—' }}</td>
-                    <td>{{ issue.assignedTo || '—' }}</td>
-                    <td>{{ formatIssueDate(issue.dueDate) }}</td>
-                    <td>{{ issue.reportedBy || '—' }}</td>
-                    <td>{{ formatIssueDate(issue.issueDate) }}</td>
-                    <td>
+                    <td class="wir-cell">
+                      <span class="wir-badge" [class.has-wir]="getQualityIssueWir(issue) !== '—'">
+                        {{ getQualityIssueWir(issue) }}
+                      </span>
+                    </td>
+                    <td class="issue-type-cell">
+                      <span class="issue-type-badge">{{ issue.issueType || '—' }}</span>
+                    </td>
+                    <td class="severity-cell">
+                      <span class="severity-badge" [ngClass]="'severity-' + (issue.severity?.toLowerCase() || 'none')">
+                        {{ issue.severity || '—' }}
+                      </span>
+                    </td>
+                    <td class="assigned-cell">{{ issue.assignedTo || '—' }}</td>
+                    <td class="due-date-cell">{{ formatIssueDate(issue.dueDate) }}</td>
+                    <td class="reported-cell">{{ issue.reportedBy || '—' }}</td>
+                    <td class="issue-date-cell">{{ formatIssueDate(issue.issueDate) }}</td>
+                    <td class="status-cell">
                       <span class="status-pill" [ngClass]="getQualityIssueStatusClass(issue.status)">
                         {{ getQualityIssueStatusLabel(issue.status) }}
                       </span>

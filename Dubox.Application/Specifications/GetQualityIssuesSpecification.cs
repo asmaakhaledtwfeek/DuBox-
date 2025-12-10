@@ -1,4 +1,5 @@
-﻿using Dubox.Application.Features.QualityIssues.Queries;
+﻿using Dubox.Application.DTOs;
+using Dubox.Application.Features.QualityIssues.Queries;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Specification;
 
@@ -12,9 +13,19 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(QualityIssue.WIRCheckpoint));
             // NOTE: Don't include Images - base64 ImageData is too large
             // Image metadata is loaded separately with lightweight query
-            
+
             // Enable split query to avoid Cartesian explosion
             EnableSplitQuery();
+
+            // Enable pagination
+            var (page, pageSize) = new PaginatedRequest
+            {
+                Page = query.Page,
+                PageSize = query.PageSize
+            }.GetNormalizedPagination();
+
+            ApplyPaging(pageSize, page);
+            // IsTotalCountEnable = true;
 
             // Apply visibility filtering based on accessible projects
             // null means access to all projects (SystemAdmin/Viewer)

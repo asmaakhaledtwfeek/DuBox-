@@ -146,6 +146,76 @@
         <div class="table-state" *ngIf="!checkpointsLoading && !checkpointsError && checkpoints.length === 0">
           <p>No checkpoints found.</p>
         </div>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-container" *ngIf="!checkpointsLoading && !checkpointsError && checkpointsTotalPages > 0">
+          <div class="pagination-info">
+            <span>Showing {{ (checkpointsCurrentPage - 1) * checkpointsPageSize + 1 }} - {{ Math.min(checkpointsCurrentPage * checkpointsPageSize, checkpointsTotalCount) }} of {{ checkpointsTotalCount }} checkpoints</span>
+            <div class="page-size-selector">
+              <label for="checkpointsPageSize">Items per page:</label>
+              <select id="checkpointsPageSize" [ngModel]="checkpointsPageSize" (ngModelChange)="onCheckpointsPageSizeChange($event)" class="page-size-select" [ngModelOptions]="{standalone: true}">
+                <option [value]="10">10</option>
+                <option [value]="25">25</option>
+                <option [value]="50">50</option>
+                <option [value]="100">100</option>
+              </select>
+            </div>
+          </div>
+          <div class="pagination-controls">
+            <button 
+              class="pagination-btn" 
+              [disabled]="checkpointsCurrentPage === 1"
+              (click)="onCheckpointsPageChange(1)"
+              title="First page"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="11 17 6 12 11 7"/>
+                <polyline points="18 17 13 12 18 7"/>
+              </svg>
+            </button>
+            <button 
+              class="pagination-btn" 
+              [disabled]="checkpointsCurrentPage === 1"
+              (click)="onCheckpointsPageChange(checkpointsCurrentPage - 1)"
+              title="Previous page"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+            </button>
+            <div class="page-numbers">
+              <button 
+                *ngFor="let page of getCheckpointsPageNumbers()"
+                class="page-number"
+                [class.active]="page === checkpointsCurrentPage"
+                (click)="onCheckpointsPageChange(page)"
+              >
+                {{ page }}
+              </button>
+            </div>
+            <button 
+              class="pagination-btn" 
+              [disabled]="checkpointsCurrentPage === checkpointsTotalPages"
+              (click)="onCheckpointsPageChange(checkpointsCurrentPage + 1)"
+              title="Next page"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+            <button 
+              class="pagination-btn" 
+              [disabled]="checkpointsCurrentPage === checkpointsTotalPages"
+              (click)="onCheckpointsPageChange(checkpointsTotalPages)"
+              title="Last page"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="13 17 18 12 13 7"/>
+                <polyline points="6 17 11 12 6 7"/>
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -207,7 +277,7 @@
           <button class="btn btn-primary" (click)="fetchCheckpoints()">Retry</button>
         </div>
 
-        <div class="table-header-actions" *ngIf="!qualityIssuesLoading && !qualityIssuesError && filteredQualityIssues.length > 0">
+        <div class="table-header-actions" *ngIf="!qualityIssuesLoading && !qualityIssuesError && qualityIssues.length > 0">
           <button class="btn btn-primary" (click)="exportQualityIssuesToExcel()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -218,7 +288,7 @@
           </button>
         </div>
 
-        <table class="designer-table" *ngIf="!qualityIssuesLoading && !qualityIssuesError && filteredQualityIssues.length > 0">
+        <table class="designer-table" *ngIf="!qualityIssuesLoading && !qualityIssuesError && qualityIssues.length > 0">
           <thead>
             <tr>
               <th>Status</th>
@@ -232,7 +302,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let issue of filteredQualityIssues">
+            <tr *ngFor="let issue of qualityIssues">
               <td>
                 <span class="status-pill" [ngClass]="getQualityIssueStatusClass(issue.issueStatus || issue.status)">
                   {{ getQualityIssueStatusLabel(issue.issueStatus || issue.status) }}
@@ -283,8 +353,78 @@
           </tbody>
         </table>
 
-        <div class="table-state" *ngIf="!qualityIssuesLoading && !qualityIssuesError && filteredQualityIssues.length === 0">
+        <div class="table-state" *ngIf="!qualityIssuesLoading && !qualityIssuesError && qualityIssues.length === 0">
           <p>No quality issues found.</p>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-container" *ngIf="!qualityIssuesLoading && !qualityIssuesError && qualityIssuesTotalPages > 0">
+          <div class="pagination-info">
+            <span>Showing {{ (qualityIssuesCurrentPage - 1) * qualityIssuesPageSize + 1 }} - {{ Math.min(qualityIssuesCurrentPage * qualityIssuesPageSize, qualityIssuesTotalCount) }} of {{ qualityIssuesTotalCount }} issues</span>
+            <div class="page-size-selector">
+              <label for="qualityIssuesPageSize">Items per page:</label>
+              <select id="qualityIssuesPageSize" [ngModel]="qualityIssuesPageSize" (ngModelChange)="onQualityIssuesPageSizeChange($event)" class="page-size-select" [ngModelOptions]="{standalone: true}">
+                <option [value]="10">10</option>
+                <option [value]="25">25</option>
+                <option [value]="50">50</option>
+                <option [value]="100">100</option>
+              </select>
+            </div>
+          </div>
+          <div class="pagination-controls">
+            <button 
+              class="pagination-btn" 
+              [disabled]="qualityIssuesCurrentPage === 1"
+              (click)="onQualityIssuesPageChange(1)"
+              title="First page"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="11 17 6 12 11 7"/>
+                <polyline points="18 17 13 12 18 7"/>
+              </svg>
+            </button>
+            <button 
+              class="pagination-btn" 
+              [disabled]="qualityIssuesCurrentPage === 1"
+              (click)="onQualityIssuesPageChange(qualityIssuesCurrentPage - 1)"
+              title="Previous page"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+            </button>
+            <div class="page-numbers">
+              <button 
+                *ngFor="let page of getQualityIssuesPageNumbers()"
+                class="page-number"
+                [class.active]="page === qualityIssuesCurrentPage"
+                (click)="onQualityIssuesPageChange(page)"
+              >
+                {{ page }}
+              </button>
+            </div>
+            <button 
+              class="pagination-btn" 
+              [disabled]="qualityIssuesCurrentPage === qualityIssuesTotalPages"
+              (click)="onQualityIssuesPageChange(qualityIssuesCurrentPage + 1)"
+              title="Next page"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+            <button 
+              class="pagination-btn" 
+              [disabled]="qualityIssuesCurrentPage === qualityIssuesTotalPages"
+              (click)="onQualityIssuesPageChange(qualityIssuesTotalPages)"
+              title="Last page"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="13 17 18 12 13 7"/>
+                <polyline points="6 17 11 12 6 7"/>
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -34,6 +34,8 @@ namespace Dubox.Application.DTOs
         public string? InspectorName { get; set; }
     }
 
+    public record PaginatedQualityIssuesResponseDto : PaginatedResponse<QualityIssueDetailsDto>;
+
     /// <summary>
     /// Quality issue image info - ImageData is only populated in detail views.
     /// Use /api/images/QualityIssue/{QualityIssueImageId} to fetch full image.

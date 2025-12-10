@@ -115,6 +115,16 @@ export interface WIRCheckpointFilter {
   wirNumber?: string;
   from?: string;
   to?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface PaginatedWIRCheckpointsResponse {
+  items: WIRCheckpoint[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 export interface WIRCheckpointChecklistItem {
@@ -237,6 +247,14 @@ export interface QualityIssueDetails extends QualityIssueItem {
   isOverdue?: boolean;
   overdueDays?: number;
   images?: QualityIssueImage[];
+}
+
+export interface PaginatedQualityIssuesResponse {
+  items: QualityIssueDetails[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }
 
 export interface AddQualityIssueRequest {

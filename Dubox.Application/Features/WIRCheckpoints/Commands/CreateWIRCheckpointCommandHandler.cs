@@ -63,28 +63,8 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             checkpoint.RequestedBy = currentUserName;
             await _unitOfWork.Repository<WIRCheckpoint>().AddAsync(checkpoint);
             
-            // Clone all active predefined checklist items to this checkpoint
-            var predefinedItems = await _unitOfWork.Repository<PredefinedChecklistItem>()
-                .FindAsync(x => x.IsActive, cancellationToken);
-            
-            var checklistItems = predefinedItems
-                .OrderBy(x => x.Sequence)
-                .Select((predefined, index) => new WIRChecklistItem
-                {
-                    WIRId = checkpoint.WIRId,
-                    CheckpointDescription = predefined.CheckpointDescription,
-                    ReferenceDocument = predefined.ReferenceDocument,
-                    Sequence = index + 1,
-                    Status = CheckListItemStatusEnum.Pending,
-                    Remarks = null,
-                    PredefinedItemId = predefined.PredefinedItemId
-                })
-                .ToList();
-            
-            if (checklistItems.Any())
-            {
-                await _unitOfWork.Repository<WIRChecklistItem>().AddRangeAsync(checklistItems, cancellationToken);
-            }
+            // Do NOT automatically add predefined checklist items
+            // Users will select which items they need via the "Add Predefined Items" feature
             
             await _unitOfWork.CompleteAsync(cancellationToken);
             var dto = checkpoint.Adapt<CreateWIRCheckpointDto>();

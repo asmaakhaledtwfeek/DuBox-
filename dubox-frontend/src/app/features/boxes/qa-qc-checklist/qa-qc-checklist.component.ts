@@ -665,7 +665,8 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
             checklistItemId: item.checklistItemId,
             checkpointDescription: item.checkpointDescription,
             referenceDocument: item.referenceDocument,
-            sequence: item.sequence
+            sequence: item.sequence,
+            predefinedItemId: item.predefinedItemId
           }));
         });
       console.log('Form array after building:', itemsArray.length, 'items');
@@ -822,12 +823,13 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     this.resetQualityIssuesForm();
   }
 
-  private createChecklistItemGroup(item?: Partial<{ checklistItemId?: string; checkpointDescription: string; referenceDocument?: string; sequence?: number }>): FormGroup {
+  private createChecklistItemGroup(item?: Partial<{ checklistItemId?: string; checkpointDescription: string; referenceDocument?: string; sequence?: number; predefinedItemId?: string }>): FormGroup {
     return this.fb.group({
       checklistItemId: [item?.checklistItemId || null],
       checkpointDescription: [item?.checkpointDescription || '', Validators.required],
       referenceDocument: [item?.referenceDocument || ''],
-      sequence: [item?.sequence || 1, [Validators.required, Validators.min(1)]]
+      sequence: [item?.sequence || 1, [Validators.required, Validators.min(1)]],
+      predefinedItemId: [item?.predefinedItemId || null]
     });
   }
 
@@ -1635,9 +1637,10 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   canNavigateToStep(step: ReviewStep): boolean {
     const stepIndex = this.getStepIndex(step);
     
-    // Step 1: Always accessible if checkpoint doesn't exist
+    // Step 1: Accessible if checkpoint doesn't exist OR if checkpoint exists but hasn't been reviewed yet
+    // (i.e., status is still Pending - not Approved, Rejected, or ConditionalApproval)
     if (step === 'create-checkpoint') {
-      return !this.wirCheckpoint;
+      return !this.wirCheckpoint || !this.isStep3Completed();
     }
     
     // Step 2: Only accessible if Step 1 is completed
@@ -2008,6 +2011,64 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
 
   get addChecklistItemsArray(): FormArray {
     return this.addChecklistItemsForm.get('checklistItems') as FormArray;
+  }
+
+  /**
+   * Get the category for a checklist item by looking it up from predefined items
+   */
+  getCategoryForChecklistItem(item: any): string {
+    const predefinedItemId = item.get('predefinedItemId')?.value;
+    if (!predefinedItemId) {
+      return 'Other';
+    }
+    
+    const predefinedItem = this.predefinedChecklistItems.find(
+      p => p.predefinedItemId === predefinedItemId
+    );
+    
+    return predefinedItem?.category || 'Other';
+  }
+
+  /**
+   * Group checklist items by category for display in the table
+   */
+  getGroupedChecklistItems(): { category: string; items: { index: number; control: any }[] }[] {
+    const grouped = new Map<string, { index: number; control: any }[]>();
+    const categoryOrder = ['General', 'Setting Out', 'Installation Activity'];
+    
+    // Group items by category
+    this.addChecklistItemsArray.controls.forEach((control, index) => {
+      const category = this.getCategoryForChecklistItem(control);
+      if (!grouped.has(category)) {
+        grouped.set(category, []);
+      }
+      grouped.get(category)!.push({ index, control });
+    });
+
+    // Convert to array and sort by predefined category order
+    const result: { category: string; items: { index: number; control: any }[] }[] = [];
+    
+    // Add categories in order
+    categoryOrder.forEach(cat => {
+      if (grouped.has(cat)) {
+        result.push({
+          category: cat,
+          items: grouped.get(cat)!
+        });
+      }
+    });
+
+    // Add any remaining categories
+    grouped.forEach((items, category) => {
+      if (!categoryOrder.includes(category)) {
+        result.push({
+          category,
+          items
+        });
+      }
+    });
+
+    return result;
   }
 
   private mapCheckListItemStatus(status: string): CheckpointStatus {

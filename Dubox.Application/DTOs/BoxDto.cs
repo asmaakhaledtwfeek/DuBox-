@@ -107,6 +107,8 @@ public record BoxLogDto
     public string? Field { get; init; }
     public string? OldValue { get; init; }
     public string? NewValue { get; init; }
+    public string? OldValues { get; init; } // JSON string of all old values
+    public string? NewValues { get; init; } // JSON string of all new values
     public string PerformedBy { get; init; } = string.Empty;
     public DateTime PerformedAt { get; init; }
 }

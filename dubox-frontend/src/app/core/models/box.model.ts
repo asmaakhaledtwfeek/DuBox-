@@ -129,6 +129,8 @@ export interface BoxLog {
   field?: string;
   oldValue?: string;
   newValue?: string;
+  oldValues?: string; // JSON string of all old values (like audit logs)
+  newValues?: string; // JSON string of all new values (like audit logs)
   performedBy: string;
   performedAt: Date;
 }

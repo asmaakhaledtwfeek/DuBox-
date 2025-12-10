@@ -14,10 +14,11 @@ import { QualityIssueDetails, QualityIssueStatus, UpdateQualityIssueStatusReques
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { ActivityTableComponent } from '../../activities/activity-table/activity-table.component';
+import { BoxLogDetailsModalComponent } from '../box-log-details-modal/box-log-details-modal.component';
 import { LocationService, FactoryLocation, BoxLocationHistory } from '../../../core/services/location.service';
 import { ApiService } from '../../../core/services/api.service';
 import * as ExcelJS from 'exceljs';
-import { Observable, Subject, takeUntil, forkJoin, of } from 'rxjs';
+import { Observable, Subject, takeUntil, forkJoin, of, firstValueFrom } from 'rxjs';
 import { debounceTime, distinctUntilChanged, map, skip, catchError } from 'rxjs/operators';
 import { DiffUtil } from '../../../core/utils/diff.util';
 import { environment } from '../../../../environments/environment';
@@ -25,7 +26,7 @@ import { environment } from '../../../../environments/environment';
 @Component({
   selector: 'app-box-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, HttpClientModule, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, HttpClientModule, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent, HeaderComponent, BoxLogDetailsModalComponent],
   providers: [LocationService],
   templateUrl: './box-details.component.html',
   styleUrls: ['./box-details.component.scss']
@@ -188,6 +189,10 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   boxLogsSearchControl = new FormControl('');
   availableBoxLogActions: string[] = [];
   private boxLogActionSet = new Set<string>();
+  
+  // Box Log Details Modal
+  selectedBoxLog: BoxLog | null = null;
+  isBoxLogDetailsModalOpen = false;
   readonly DiffUtil = DiffUtil;
   
   private destroy$ = new Subject<void>();
@@ -1019,6 +1024,290 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     if (mode !== 'camera') {
       this.closeQualityIssueCamera();
     }
+  }
+
+  async exportBoxLogsToExcel(): Promise<void> {
+    // Use the same pattern as audit logs export - export filtered logs
+    if (!this.boxLogs || this.boxLogs.length === 0) {
+      alert('No data to export');
+      return;
+    }
+
+    // Helper function to parse raw values (pipe-separated, JSON, or object)
+    const parseRawValues = (raw: any): Record<string, any> => {
+      if (!raw) {
+        return {};
+      }
+
+      if (typeof raw === 'object' && raw !== null && !Array.isArray(raw)) {
+        return raw;
+      }
+
+      if (typeof raw === 'string') {
+        const trimmed = raw.trim();
+        if (!trimmed) {
+          return {};
+        }
+
+        try {
+          // Try JSON first
+          if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+            return JSON.parse(trimmed);
+          }
+        } catch {
+          // Not JSON, continue to parse as delimited format
+        }
+
+        // Parse pipe-separated, comma-separated, or newline-separated format
+        // Format: "Key: Value | Key: Value | Key: Value"
+        const fallback: Record<string, string> = {};
+        
+        let segments: string[] = [];
+        if (trimmed.includes('|')) {
+          segments = trimmed.split(/\s*\|\s*/);
+        } else if (trimmed.includes('\n')) {
+          segments = trimmed.split(/\r?\n/);
+        } else {
+          segments = trimmed.split(/,(?=\s*[A-Za-z][A-Za-z0-9]*\s*:)/);
+        }
+
+        segments.forEach((segment) => {
+          const cleanSegment = segment.trim();
+          if (!cleanSegment) {
+            return;
+          }
+
+          const separatorIndex = cleanSegment.indexOf(':');
+          if (separatorIndex === -1) {
+            return;
+          }
+
+          const key = cleanSegment.slice(0, separatorIndex).trim();
+          const value = cleanSegment.slice(separatorIndex + 1).trim();
+
+          if (key) {
+            fallback[key] = value || '—';
+          }
+        });
+
+        return fallback;
+      }
+
+      return {};
+    };
+
+    // Helper function to get all changes from log (similar to audit logs)
+    const getChangesFromLog = (log: BoxLog): Array<{ field: string; oldValue: string | null; newValue: string | null }> => {
+      const changes: Array<{ field: string; oldValue: string | null; newValue: string | null }> = [];
+
+      // First, try to parse oldValues and newValues (preferred method)
+      if (log.oldValues || log.newValues) {
+        const oldVals = parseRawValues(log.oldValues);
+        const newVals = parseRawValues(log.newValues);
+
+        const allKeys = new Set<string>([
+          ...Object.keys(oldVals),
+          ...Object.keys(newVals)
+        ]);
+
+        allKeys.forEach(key => {
+          // Skip internal/system fields
+          const skipFields = ['Id', 'CreatedDate', 'ModifiedDate', 'CreatedBy', 'ModifiedBy', 'AuditId', 'ChangedBy', 'ChangedDate'];
+          if (skipFields.some(f => key.toLowerCase().includes(f.toLowerCase()))) {
+            return;
+          }
+
+          const oldVal = oldVals[key];
+          const newVal = newVals[key];
+          
+          // Convert to strings for comparison
+          const oldStr = oldVal !== null && oldVal !== undefined ? String(oldVal) : null;
+          const newStr = newVal !== null && newVal !== undefined ? String(newVal) : null;
+          
+          // Only include if values are different
+          if (oldStr !== newStr) {
+            changes.push({
+              field: key,
+              oldValue: oldStr,
+              newValue: newStr
+            });
+          }
+        });
+      }
+
+      // Fallback: use single field/oldValue/newValue if no oldValues/newValues
+      if (changes.length === 0 && (log.field || log.oldValue || log.newValue)) {
+        const oldVal = log.oldValue !== null && log.oldValue !== undefined 
+          ? String(log.oldValue) 
+          : null;
+        const newVal = log.newValue !== null && log.newValue !== undefined 
+          ? String(log.newValue) 
+          : null;
+        
+        if (oldVal !== newVal) {
+          changes.push({
+            field: log.field || 'Field',
+            oldValue: oldVal,
+            newValue: newVal
+          });
+        }
+      }
+
+      return changes;
+    };
+
+    // Helper function to format changes text (similar to audit logs)
+    const formatChangesText = (log: BoxLog): string => {
+      const changes = getChangesFromLog(log);
+      
+      if (changes.length === 0) {
+        return 'No changes';
+      }
+
+      try {
+        const formatted = changes
+          .map(change => {
+            const fieldName = change.field || 'Unknown Field';
+            const oldVal = change.oldValue !== null && change.oldValue !== undefined 
+              ? DiffUtil.formatValue(change.oldValue) 
+              : '—';
+            const newVal = change.newValue !== null && change.newValue !== undefined 
+              ? DiffUtil.formatValue(change.newValue) 
+              : '—';
+            return `${fieldName}: ${oldVal} → ${newVal}`;
+          })
+          .join('; ');
+        
+        return formatted || 'No changes';
+      } catch (e) {
+        console.error('Error formatting changes:', e, changes);
+        return 'Error formatting changes';
+      }
+    };
+
+    // Format dates using the same format as audit logs
+    const formatDateForExcel = (date?: string | Date): string => {
+      if (!date) return '—';
+      const d = typeof date === 'string' ? new Date(date) : date;
+      if (isNaN(d.getTime())) return '—';
+      return d.toLocaleString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    };
+
+    // Create a new workbook and worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Box Logs');
+
+    // Define column headers (similar structure to audit logs)
+    const headers = [
+      'Timestamp',
+      'Action',
+      'Description',
+      'Changed By',
+      'Changes'
+    ];
+
+    // Set column widths (matching audit logs pattern)
+    worksheet.columns = [
+      { width: 20 }, // Timestamp
+      { width: 12 }, // Action
+      { width: 50 }, // Description
+      { width: 20 }, // Changed By
+      { width: 60 }  // Changes
+    ];
+
+    // Add header row with styling (same as audit logs)
+    const headerRow = worksheet.addRow(headers);
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4472C4' } // Blue background (same as audit logs)
+      };
+      cell.font = {
+        bold: true,
+        color: { argb: 'FFFFFFFF' }, // White text
+        size: 11
+      };
+      cell.alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+        wrapText: true
+      };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF000000' } },
+        bottom: { style: 'thin', color: { argb: 'FF000000' } },
+        left: { style: 'thin', color: { argb: 'FF000000' } },
+        right: { style: 'thin', color: { argb: 'FF000000' } }
+      };
+    });
+    headerRow.height = 25; // Set header row height
+
+    // Add data rows - use the same logs that are displayed in the UI (filtered logs)
+    this.boxLogs.forEach((log, index) => {
+      const changesText = formatChangesText(log);
+      const actionLabel = DiffUtil.getActionLabel(log.action);
+
+      const row = worksheet.addRow([
+        formatDateForExcel(log.performedAt),
+        actionLabel || log.action || '',
+        log.description || '',
+        log.performedBy || 'System',
+        changesText
+      ]);
+
+      // Style data rows (same as audit logs)
+      row.eachCell((cell, colNumber) => {
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          left: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          right: { style: 'thin', color: { argb: 'FFE0E0E0' } }
+        };
+        cell.alignment = {
+          vertical: 'middle',
+          wrapText: true
+        };
+        // Alternate row colors for better readability (same as audit logs)
+        if (index % 2 === 0) {
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFF9F9F9' } // Very light gray
+          };
+        }
+      });
+    });
+
+    // Freeze header row (same as audit logs)
+    worksheet.views = [
+      {
+        state: 'frozen',
+        ySplit: 1 // Freeze first row
+      }
+    ];
+
+    // Generate filename with current date (same pattern as audit logs)
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0];
+    const boxCode = this.box?.code || 'Box';
+    const fileName = `Box_Logs_${boxCode}_${dateStr}.xlsx`;
+
+    // Export to Excel (same as audit logs)
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    window.URL.revokeObjectURL(url);
   }
 
   async exportQualityIssuesToExcel(): Promise<void> {
@@ -2344,19 +2633,85 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     return DiffUtil.getActionIcon(action);
   }
 
-  getActionType(action: string): string {
+  getActionType(action: string): 'create' | 'update' | 'delete' | 'assignment' | 'default' {
     const upperAction = action.toUpperCase();
-    if (upperAction.includes('INSERT') || upperAction.includes('CREATE')) {
+    if (upperAction.includes('CREATE') || upperAction.includes('INSERT')) {
       return 'create';
-    } else if (upperAction.includes('UPDATE') || upperAction.includes('MODIFY') || upperAction.includes('CHANGE')) {
+    } else if (upperAction.includes('UPDATE') || upperAction.includes('MODIFY')) {
       return 'update';
     } else if (upperAction.includes('DELETE') || upperAction.includes('REMOVE')) {
       return 'delete';
+    } else if (upperAction.includes('ASSIGN')) {
+      return 'assignment';
     }
-    return 'other';
+    return 'default';
+  }
+
+  formatBoxLogDate(date?: string | Date): string {
+    if (!date) return '—';
+    const d = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  }
+
+  formatBoxLogDescription(description?: string | null): string {
+    if (!description) {
+      return '';
+    }
+    // Format numeric values similar to audit logs
+    const numericValueRegex = /([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)(%?)/g;
+    return description.replace(numericValueRegex, (_match, valuePart: string, percentPart: string) => {
+      const parsedValue = Number(valuePart);
+      if (!isFinite(parsedValue)) {
+        return _match;
+      }
+
+      const absValue = Math.abs(parsedValue);
+      const decimals = absValue >= 1 ? 2 : 4;
+      let formatted: string;
+
+      if (parsedValue !== 0 && absValue < Math.pow(10, -decimals)) {
+        formatted = parsedValue.toExponential(2);
+      } else {
+        formatted = parsedValue.toFixed(decimals);
+        formatted = parseFloat(formatted).toString();
+      }
+
+      return percentPart ? `${formatted}${percentPart}` : formatted;
+    });
+  }
+
+  getBoxLogNoChangeSummary(log: BoxLog): string {
+    if (log.description) {
+      return this.formatBoxLogDescription(log.description);
+    }
+
+    const actionLabel = DiffUtil.getActionLabel(log.action);
+    const boxName = this.box?.name || this.box?.code || 'Box';
+
+    return `${actionLabel} Box "${boxName}" with no tracked field changes.`;
   }
 
   trackByAction(index: number, action: string): string {
     return action;
+  }
+
+  openBoxLogDetails(log: BoxLog): void {
+    this.selectedBoxLog = log;
+    this.isBoxLogDetailsModalOpen = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeBoxLogDetails(): void {
+    this.isBoxLogDetailsModalOpen = false;
+    this.selectedBoxLog = null;
+    document.body.style.overflow = '';
   }
 }

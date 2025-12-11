@@ -790,4 +790,20 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   refreshCheckpoints(): void {
     this.loadWIRCheckpoints();
   }
+
+  /**
+   * Navigate to activity details page with returnTo query param
+   */
+  navigateToActivityDetails(activity: BoxActivityDetail | null): void {
+    if (!activity || !this.projectId || !this.boxId || !activity.boxActivityId) {
+      console.error('Missing required IDs for navigation');
+      return;
+    }
+    
+    // Navigate to activity details with returnTo query param to indicate coming from activities table
+    this.router.navigate(
+      ['/projects', this.projectId, 'boxes', this.boxId, 'activities', activity.boxActivityId],
+      { queryParams: { returnTo: 'activities' } }
+    );
+  }
 }

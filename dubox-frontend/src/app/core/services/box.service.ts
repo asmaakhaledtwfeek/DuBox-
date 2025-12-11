@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { ApiService, PaginatedResponse } from './api.service';
-import { Box, BoxActivity, BoxAttachment, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview, BoxTypeStatsByProject } from '../models/box.model';
+import { Box, BoxActivity, BoxAttachment, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview, BoxTypeStatsByProject, BoxAttachmentsResponse, BoxAttachmentImage } from '../models/box.model';
 
 @Injectable({
   providedIn: 'root'
@@ -382,6 +382,54 @@ export class BoxService {
     if (toDate) params.toDate = toDate;
     
     return this.apiService.get<PaginatedResponse<BoxLog>>(`${this.endpoint}/${boxId}/logs`, params);
+  }
+
+  /**
+   * Get box attachment images (file and URL types) from progress updates
+   */
+  getBoxAttachmentImages(boxId: string): Observable<BoxAttachmentsResponse> {
+    console.log('🔍 Fetching box attachments for boxId:', boxId);
+    console.log('🔗 Full URL:', `${this.endpoint}/${boxId}/attachement`);
+    
+    return this.apiService.get<any>(`${this.endpoint}/${boxId}/attachement`).pipe(
+      map(response => {
+      
+        const data = response.data || response.Data || response;
+        const images = data;
+        
+        const mappedImages = images.map((img: any) => {
+          const mapped = {
+            progressUpdateImageId: img.progressUpdateImageId || img.ProgressUpdateImageId || img.id || img.Id,
+            progressUpdateId: img.progressUpdateId || img.ProgressUpdateId,
+            imageUrl: img.imageUrl || img.ImageUrl,
+            imageData: img.imageData || img.ImageData,
+            imageType: (img.imageType || img.ImageType || 'file') as 'file' | 'url',
+            originalName: img.originalName || img.OriginalName, // Original URL for URL-type images
+            fileSize: img.fileSize || img.FileSize,
+            sequence: img.sequence || img.Sequence || 0,
+            createdDate: new Date(img.createdDate || img.CreatedDate),
+            activityName: img.activityName || img.ActivityName,
+            progressPercentage: img.progressPercentage || img.ProgressPercentage,
+            updateDate: img.updateDate || img.UpdateDate ? new Date(img.updateDate || img.UpdateDate) : undefined
+          };
+          return mapped;
+        });
+
+        const result = {
+          images: mappedImages,
+          totalCount: data.totalCount || data.TotalCount || images.length
+        };
+        
+        return result;
+      }),
+      catchError(err => {
+        console.error('❌ Error in getBoxAttachmentImages:', err);
+        console.error('❌ Error status:', err.status);
+        console.error('❌ Error message:', err.message);
+        console.error('❌ Error body:', err.error);
+        throw err;
+      })
+    );
   }
 
   /**

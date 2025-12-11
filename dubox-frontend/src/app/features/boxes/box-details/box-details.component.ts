@@ -41,7 +41,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   showDeleteConfirm = false;
   deleteSuccess = false;
   
-  activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' | 'location-history' | 'progress-updates' = 'overview';
+  activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments'  | 'progress-updates' = 'overview';
   
   canEdit = false;
   canDelete = false;
@@ -135,8 +135,16 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   // All progress updates for attachments (images)
   allProgressUpdatesForImages: ProgressUpdate[] = [];
   loadingProgressUpdateImages = false;
-  resolvedProgressImages: Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number }> = [];
+  resolvedProgressImages: Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType?: 'file' | 'url' }> = [];
   resolvingProgressImages = false;
+  
+  // Box attachments from dedicated endpoint
+  boxAttachments: Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType: 'file' | 'url'; originalUrl?: string }> = [];
+  loadingBoxAttachments = false;
+  boxAttachmentsError = '';
+  
+  // Sub-tab for Drowning (Attachments) section
+  activeDrawingTab: 'file' | 'url' = 'file';
   
   // Pagination for progress updates
   progressUpdatesCurrentPage = 1;
@@ -212,6 +220,12 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.boxId = this.route.snapshot.params['boxId'];
     this.projectId = this.route.snapshot.params['projectId'];
+    
+    // Check for tab query parameter to set active tab
+    const tabParam = this.route.snapshot.queryParams['tab'];
+    if (tabParam && ['overview', 'activities', 'wir', 'quality-issues', 'logs', 'attachments', 'progress-updates'].includes(tabParam)) {
+      this.activeTab = tabParam as any;
+    }
     
     // Check permissions immediately
     this.checkPermissions();
@@ -295,16 +309,16 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
           this.generateQRCode();
         }
         
-        // Load activities separately
-        this.loadActivities();
-        this.loadWIRCheckpoints();
-        this.loadQualityIssues();
-        this.loadProgressUpdates();
-        this.loadLocationHistory();
-        // Load logs count (with minimal page size to get total count quickly)
-        this.loadBoxLogsCount();
-        
         this.loading = false;
+        
+        // After box is loaded, if we have a tab query parameter, trigger data loading for that tab
+        const tabParam = this.route.snapshot.queryParams['tab'];
+        if (tabParam && ['activities', 'wir', 'quality-issues', 'logs', 'attachments', 'progress-updates'].includes(tabParam)) {
+          // Use setTimeout to ensure the component is fully initialized
+          setTimeout(() => {
+            this.setActiveTab(tabParam as any);
+          }, 0);
+        }
       },
       error: (err) => {
         this.error = err.message || 'Failed to load box details';
@@ -522,23 +536,45 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' | 'location-history' | 'progress-updates'): void {
+  setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' | 'progress-updates'): void {
     this.activeTab = tab;
-    if (tab === 'location-history' && this.locationHistory.length === 0) {
-      this.loadLocationHistory();
+    
+    // Lazy load data when tab is clicked
+    if (tab === 'activities') {
+      // Load activities when Activities tab is clicked
+      if (!this.box?.activities || this.box.activities.length === 0) {
+        this.loadActivities();
+      }
+    }
+    if (tab === 'wir') {
+      // Load WIR checkpoints when WIR tab is clicked
+      if (this.wirCheckpoints.length === 0 && !this.wirLoading) {
+        this.loadWIRCheckpoints();
+      }
+    }
+    if (tab === 'quality-issues') {
+      // Load quality issues when Quality Issues tab is clicked
+      if (this.qualityIssues.length === 0 && !this.qualityIssuesLoading) {
+        this.loadQualityIssues();
+      }
     }
     if (tab === 'logs') {
-      // Always load logs when clicking the tab if logs haven't been loaded yet
+      // Load logs when clicking the tab if logs haven't been loaded yet
       if (this.boxLogs.length === 0 && !this.boxLogsLoading) {
         this.loadBoxLogs(this.boxLogsCurrentPage, this.boxLogsPageSize);
       }
     }
     if (tab === 'attachments') {
-      // Load all progress updates to get images when attachments tab is opened
-      if (this.allProgressUpdatesForImages.length === 0 && !this.loadingProgressUpdateImages) {
-        this.loadAllProgressUpdatesForImages();
-      } else if (this.allProgressUpdatesForImages.length > 0 && this.resolvedProgressImages.length === 0 && !this.resolvingProgressImages) {
-        this.resolveProgressUpdateImages();
+      // Load box attachments when attachments/drowning tab is opened
+      if (this.boxAttachments.length === 0 && !this.loadingBoxAttachments) {
+        this.loadBoxAttachments();
+      }
+    }
+    if (tab === 'progress-updates') {
+      // Load progress updates when Progress History tab is clicked
+      // Service-level cache will handle whether to fetch from API or use cached data
+      if (this.progressUpdates.length === 0 && !this.progressUpdatesLoading) {
+        this.loadProgressUpdates(1, this.progressUpdatesPageSize);
       }
     }
   }
@@ -1670,24 +1706,15 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   }
 
   openProgressDetails(update: ProgressUpdate): void {
-    // Fetch the full details from the backend using the new endpoint
-    if (update.progressUpdateId) {
-      this.progressUpdateService.getProgressUpdateById(update.progressUpdateId).subscribe({
-        next: (fullUpdate) => {
-          this.selectedProgressUpdate = fullUpdate;
-          this.isProgressModalOpen = true;
-        },
-        error: (err) => {
-          console.error('Error fetching progress update details:', err);
-          // Fallback to the update object we already have
-          this.selectedProgressUpdate = update;
-          this.isProgressModalOpen = true;
-        }
-      });
+    // Navigate to activity details page instead of opening modal
+    if (update.boxActivityId) {
+      // Navigate to activity details with returnTo query param to indicate coming from progress history
+      this.router.navigate(
+        ['/projects', this.projectId, 'boxes', this.boxId, 'activities', update.boxActivityId],
+        { queryParams: { returnTo: 'progress-history' } }
+      );
     } else {
-      // If no ID is available, use the update object we have
-      this.selectedProgressUpdate = update;
-      this.isProgressModalOpen = true;
+      console.error('Cannot navigate: boxActivityId is missing from progress update');
     }
   }
 
@@ -2003,37 +2030,62 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   }
 
   // Get all images from all progress updates
-  getAllProgressUpdateImages(): Array<{ imageUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number }> {
-    const allImages: Array<{ imageUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageData?: string }> = [];
+  getAllProgressUpdateImages(): Array<{ imageUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType?: 'file' | 'url' }> {
+    const allImages: Array<{ imageUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageData?: string; imageType?: 'file' | 'url' }> = [];
     
     console.log('🔍 Processing progress updates for images:', this.allProgressUpdatesForImages.length);
     
     this.allProgressUpdatesForImages.forEach((update, index) => {
-      const photoUrls = this.getPhotoUrls(update);
       console.log(`Update #${index + 1} (${update.activityName}):`, {
         hasImages: !!update.images,
         imagesCount: update.images?.length || 0,
-        photoUrlsFound: photoUrls.length,
-        photoUrls: photoUrls
       });
       
-      photoUrls.forEach(imageUrl => {
-        if (imageUrl && imageUrl.trim()) {
-          allImages.push({
-            imageUrl,
-            updateDate: update.updateDate,
-            activityName: update.activityName,
-            progressPercentage: update.progressPercentage,
-            imageData: (update as any).images && Array.isArray((update as any).images) && (update as any).images.length > 0
-              ? (update as any).images[0].imageData || (update as any).images[0].ImageData
-              : undefined
-          });
-        }
-      });
+      // Use the images array which contains imageType info
+      if (update.images && Array.isArray(update.images) && update.images.length > 0) {
+        update.images.forEach((img: any) => {
+          let imageUrl = img.imageData || img.ImageData || img.imageUrl || img.ImageUrl || '';
+          
+          // Convert relative URLs to absolute
+          if (imageUrl && (imageUrl.startsWith('/api/') || (imageUrl.startsWith('/') && !imageUrl.startsWith('http')))) {
+            const baseUrl = `${window.location.protocol}//${window.location.host}`;
+            imageUrl = baseUrl + imageUrl;
+          }
+          
+          if (imageUrl && imageUrl.trim()) {
+            allImages.push({
+              imageUrl,
+              updateDate: update.updateDate,
+              activityName: update.activityName,
+              progressPercentage: update.progressPercentage,
+              imageData: img.imageData || img.ImageData,
+              imageType: img.imageType || 'file' // Default to 'file' if not specified
+            });
+          }
+        });
+      } else {
+        // Fallback for old format without images array
+        const photoUrls = this.getPhotoUrls(update);
+        photoUrls.forEach(imageUrl => {
+          if (imageUrl && imageUrl.trim()) {
+            allImages.push({
+              imageUrl,
+              updateDate: update.updateDate,
+              activityName: update.activityName,
+              progressPercentage: update.progressPercentage,
+              imageData: undefined,
+              imageType: 'file' // Default to 'file' for legacy images
+            });
+          }
+        });
+      }
     });
     
     console.log('✅ Total images to display:', allImages.length);
-    console.log('📸 Image URLs:', allImages.map(img => img.imageUrl));
+    console.log('📸 Image types distribution:', {
+      file: allImages.filter(img => img.imageType === 'file').length,
+      url: allImages.filter(img => img.imageType === 'url').length
+    });
     
     return allImages;
   }
@@ -2043,14 +2095,147 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     return this.resolvedProgressImages.length > 0;
   }
 
-  // Get total attachments count (files + images)
-  getTotalAttachmentsCount(): number {
-    const fileCount = this.box?.attachments?.length || 0;
-    const imageCount = this.hasProgressUpdateImages() ? this.getAllProgressUpdateImages().length : 0;
-    return fileCount + imageCount;
+  // Set active drawing/attachment sub-tab
+  setActiveDrawingTab(tab: 'file' | 'url'): void {
+    this.activeDrawingTab = tab;
   }
 
-  loadProgressUpdates(page: number = 1, pageSize: number = 10): void {
+  // Get file-type images (uploaded images)
+  getFileTypeImages(): Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType: 'file' | 'url'; originalUrl?: string }> {
+    return this.boxAttachments.filter(img => img.imageType === 'file');
+  }
+
+  // Get URL-type images
+  getUrlTypeImages(): Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType: 'file' | 'url'; originalUrl?: string }> {
+    return this.boxAttachments.filter(img => img.imageType === 'url');
+  }
+
+  // Open image - for URL-type images, open original URL, otherwise open the display URL
+  openImage(image: { imageUrl: string; displayUrl: string; imageType: 'file' | 'url'; originalUrl?: string }): void {
+    if (image.imageType === 'url' && image.originalUrl) {
+      // For URL-type images, open the original URL stored in originalName
+      console.log('🔗 Opening original URL:', image.originalUrl);
+      window.open(image.originalUrl, '_blank');
+    } else {
+      // For file-type images, open the display URL
+      console.log('🖼️ Opening image URL:', image.displayUrl || image.imageUrl);
+      this.openPhotoInNewTab(image.displayUrl || image.imageUrl);
+    }
+  }
+
+  // Load box attachments from dedicated endpoint
+  loadBoxAttachments(): void {
+    if (!this.boxId) {
+      return;
+    }
+
+    this.loadingBoxAttachments = true;
+    this.boxAttachmentsError = '';
+
+    console.log('📦 Loading box attachments for box:', this.boxId);
+
+    this.boxService.getBoxAttachmentImages(this.boxId).subscribe({
+      next: (response) => {
+        console.log('✅ Box attachments loaded in component:', response);
+        console.log('✅ Response.images:', response.images);
+        console.log('✅ Response.images length:', response.images?.length || 0);
+        console.log('✅ Response.totalCount:', response.totalCount);
+        
+        // Process images and resolve URLs
+        type ResolvedImage = { 
+          imageUrl: string; 
+          displayUrl: string; 
+          updateDate?: Date; 
+          activityName?: string; 
+          progressPercentage?: number; 
+          imageType: 'file' | 'url';
+          originalUrl?: string; // Store original URL for URL-type images
+        };
+
+        const imageRequests = response.images.map((img, index) => {
+          console.log(`🖼️ Processing image ${index + 1}:`, img);
+          const imageUrl = img.imageUrl || img.imageData || '';
+          
+          // Convert relative URLs to absolute
+          let absoluteUrl = imageUrl;
+          if (imageUrl && (imageUrl.startsWith('/api/') || (imageUrl.startsWith('/') && !imageUrl.startsWith('http')))) {
+            const baseUrl = `${window.location.protocol}//${window.location.host}`;
+            absoluteUrl = baseUrl + imageUrl;
+          }
+          
+          // For URL-type images, originalName contains the actual original URL
+          const originalUrl = img.imageType === 'url' ? img.originalName : undefined;
+          
+          return this.fetchImageAsObjectUrl(absoluteUrl, img.imageData).pipe(
+            map(displayUrl => ({
+              imageUrl: absoluteUrl,
+              displayUrl: displayUrl,
+              updateDate: img.updateDate,
+              activityName: img.activityName,
+              progressPercentage: img.progressPercentage,
+              imageType: img.imageType,
+              originalUrl: originalUrl // Store the original URL
+            } as ResolvedImage)),
+            catchError(err => {
+              console.error('❌ Failed to fetch image:', absoluteUrl, err);
+              return of({
+                imageUrl: absoluteUrl,
+                displayUrl: absoluteUrl,
+                updateDate: img.updateDate,
+                activityName: img.activityName,
+                progressPercentage: img.progressPercentage,
+                imageType: img.imageType,
+                originalUrl: originalUrl
+              } as ResolvedImage);
+            })
+          );
+        });
+
+        if (imageRequests.length > 0) {
+          forkJoin(imageRequests).subscribe({
+            next: (resolvedImages: ResolvedImage[]) => {
+              this.boxAttachments = resolvedImages;
+              this.loadingBoxAttachments = false;
+              console.log('🎨 Resolved box attachments:', {
+                total: resolvedImages.length,
+                fileType: resolvedImages.filter((img: ResolvedImage) => img.imageType === 'file').length,
+                urlType: resolvedImages.filter((img: ResolvedImage) => img.imageType === 'url').length
+              });
+            },
+            error: (err) => {
+              console.error('❌ Error resolving images:', err);
+              this.boxAttachmentsError = 'Failed to load some images';
+              this.loadingBoxAttachments = false;
+            }
+          });
+        } else {
+          this.boxAttachments = [];
+          this.loadingBoxAttachments = false;
+          console.warn('⚠️ No attachments found for this box. Response had no images.');
+          console.log('⚠️ Empty response details:', {
+            responseImages: response.images,
+            responseImagesLength: response.images?.length,
+            totalCount: response.totalCount
+          });
+        }
+      },
+      error: (err) => {
+        console.error('❌ Error loading box attachments:', err);
+        console.error('❌ Error details:', {
+          status: err.status,
+          statusText: err.statusText,
+          error: err.error,
+          message: err.message,
+          url: err.url
+        });
+        this.boxAttachmentsError = err.error?.message || err.message || 'Failed to load attachments';
+        this.loadingBoxAttachments = false;
+      }
+    });
+  }
+
+
+  loadProgressUpdates(page: number = 1, pageSize: number = 10, forceRefresh: boolean = false): void {
     if (!this.boxId) {
       return;
     }
@@ -2078,7 +2263,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       searchParams.toDate = this.progressUpdatesToDate;
     }
 
-    this.progressUpdateService.getProgressUpdatesByBox(this.boxId, page, pageSize, searchParams).subscribe({
+    this.progressUpdateService.getProgressUpdatesByBox(this.boxId, page, pageSize, searchParams, forceRefresh).subscribe({
       next: (response) => {
         this.progressUpdates = (response.items || [])
           .map(update => ({
@@ -2101,7 +2286,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   applyProgressUpdatesSearch(): void {
     this.progressUpdatesCurrentPage = 1; // Reset to first page when searching
-    this.loadProgressUpdates(1, this.progressUpdatesPageSize);
+    this.loadProgressUpdates(1, this.progressUpdatesPageSize, true); // Force refresh with new search params
   }
 
   clearProgressUpdatesSearch(): void {
@@ -2111,7 +2296,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.progressUpdatesFromDate = '';
     this.progressUpdatesToDate = '';
     this.progressUpdatesCurrentPage = 1;
-    this.loadProgressUpdates(1, this.progressUpdatesPageSize);
+    this.loadProgressUpdates(1, this.progressUpdatesPageSize, true); // Force refresh after clearing search
   }
 
   toggleProgressUpdatesSearch(): void {
@@ -2452,7 +2637,6 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         this.moveLocationLoading = false;
         this.closeMoveLocationModal();
         this.loadBox(); // Reload box to get updated location
-        this.loadLocationHistory(); // Refresh history
         console.log('✅ Box moved to location successfully');
       },
       error: (err) => {

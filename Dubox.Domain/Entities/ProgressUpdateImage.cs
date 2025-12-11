@@ -18,7 +18,8 @@ public class ProgressUpdateImage
 
     [Required]
     [MaxLength(10)]
-    public string ImageType { get; set; } = "file"; // "file" or "url"
+    public string ImageType { get; set; } = "file";
+
 
     [MaxLength(500)]
     public string? OriginalName { get; set; }

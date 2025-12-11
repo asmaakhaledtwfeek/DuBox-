@@ -106,10 +106,15 @@ export class ActivityDetailsComponent implements OnInit {
     private auditLogService: AuditLogService
   ) {}
 
+  returnTo: string | null = null; // Store return context
+
   ngOnInit(): void {
     this.projectId = this.route.snapshot.params['projectId'];
     this.boxId = this.route.snapshot.params['boxId'];
     this.activityId = this.route.snapshot.params['activityId'];
+    
+    // Get returnTo query parameter to determine where to navigate back
+    this.returnTo = this.route.snapshot.queryParams['returnTo'] || null;
     
     if (!this.projectId || !this.boxId || !this.activityId) {
       this.error = 'Missing required parameters';
@@ -666,7 +671,18 @@ export class ActivityDetailsComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/projects', this.projectId, 'boxes', this.boxId]);
+    // Navigate back based on returnTo context
+    if (this.returnTo === 'progress-history') {
+      // Navigate back to box details page with progress-updates tab active
+      this.router.navigate(['/projects', this.projectId, 'boxes', this.boxId], {
+        queryParams: { tab: 'progress-updates' }
+      });
+    } else {
+      // Default: navigate back to activities table (box details page with activities tab)
+      this.router.navigate(['/projects', this.projectId, 'boxes', this.boxId], {
+        queryParams: { tab: 'activities' }
+      });
+    }
   }
 
   getStatusClass(status: string): string {

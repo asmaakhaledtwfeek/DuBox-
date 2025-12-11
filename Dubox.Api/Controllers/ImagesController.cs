@@ -18,10 +18,7 @@ public class ImagesController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
-    /// Get image data by category and ID.
-    /// Categories: ProgressUpdate, QualityIssue, WIRCheckpoint
-    /// </summary>
+
     [HttpGet("{category}/{imageId}")]
     public async Task<IActionResult> GetImage(ImageCategory category, Guid imageId, CancellationToken cancellationToken)
     {
@@ -29,21 +26,18 @@ public class ImagesController : ControllerBase
         return result.IsSuccess ? Ok(result) : NotFound(result);
     }
 
-    /// <summary>
-    /// Get raw image file by category and ID (returns actual image bytes, not JSON)
-    /// </summary>
     [HttpGet("{category}/{imageId}/file")]
     public async Task<IActionResult> GetImageFile(ImageCategory category, Guid imageId, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetImageQuery(category, imageId), cancellationToken);
-        
+
         if (!result.IsSuccess || result.Data == null)
         {
             return NotFound();
         }
 
         var imageData = result.Data;
-        
+
         // Parse base64 data
         var base64Data = imageData.ImageData;
         if (base64Data.Contains(","))
@@ -70,7 +64,7 @@ public class ImagesController : ControllerBase
         {
             if (imageType.StartsWith("image/"))
                 return imageType;
-            
+
             return imageType.ToLowerInvariant() switch
             {
                 "jpg" or "jpeg" => "image/jpeg",

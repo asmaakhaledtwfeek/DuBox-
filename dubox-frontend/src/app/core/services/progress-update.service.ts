@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, tap, map } from 'rxjs';
+import { Observable, tap, map, of } from 'rxjs';
 import { ApiService } from './api.service';
 import { 
   ProgressUpdate, 
@@ -15,6 +15,14 @@ import {
 })
 export class ProgressUpdateService {
   private readonly endpoint = 'progressupdates';
+  
+  // Cache for box progress updates (keyed by boxId)
+  private progressUpdatesCache = new Map<string, {
+    data: PaginatedProgressUpdatesResponse;
+    params: string; // stringified search params for cache key
+    timestamp: number;
+  }>();
+  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
   constructor(private apiService: ApiService) {}
 
@@ -106,7 +114,8 @@ export class ProgressUpdateService {
     boxId: string, 
     pageNumber: number = 1, 
     pageSize: number = 10,
-    searchParams?: ProgressUpdatesSearchParams
+    searchParams?: ProgressUpdatesSearchParams,
+    forceRefresh: boolean = false
   ): Observable<PaginatedProgressUpdatesResponse> {
     const params = new URLSearchParams();
     params.set('pageNumber', pageNumber.toString());
@@ -130,6 +139,19 @@ export class ProgressUpdateService {
       }
     }
     
+    // Create cache key from boxId and all parameters
+    const cacheKey = `${boxId}_${params.toString()}`;
+    
+    // Check cache if not forcing refresh
+    if (!forceRefresh) {
+      const cached = this.progressUpdatesCache.get(cacheKey);
+      if (cached && (Date.now() - cached.timestamp) < this.CACHE_DURATION) {
+        console.log('📋 Returning cached progress updates for box', boxId);
+        return of(cached.data);
+      }
+    }
+    
+    console.log('🔄 Loading progress updates from API for box', boxId);
     return this.apiService.get<any>(`${this.endpoint}/box/${boxId}?${params.toString()}`).pipe(
       map((response: any) => {
         const data = response.data || response.Data || response;
@@ -139,15 +161,45 @@ export class ProgressUpdateService {
         const responsePageSize = data.pageSize ?? data.PageSize ?? pageSize;
         const totalPages = data.totalPages ?? data.TotalPages ?? 0;
         
-        return {
+        const result = {
           items: items,
           totalCount,
           pageNumber: responsePageNumber,
           pageSize: responsePageSize,
           totalPages
         };
+        
+        // Cache the result
+        this.progressUpdatesCache.set(cacheKey, {
+          data: result,
+          params: params.toString(),
+          timestamp: Date.now()
+        });
+        
+        return result;
       })
     );
+  }
+  
+  /**
+   * Clear cache for a specific box or all boxes
+   */
+  clearCache(boxId?: string): void {
+    if (boxId) {
+      // Clear all cache entries for this box
+      const keysToDelete: string[] = [];
+      this.progressUpdatesCache.forEach((_, key) => {
+        if (key.startsWith(boxId + '_')) {
+          keysToDelete.push(key);
+        }
+      });
+      keysToDelete.forEach(key => this.progressUpdatesCache.delete(key));
+      console.log('🗑️ Cleared progress updates cache for box', boxId);
+    } else {
+      // Clear all cache
+      this.progressUpdatesCache.clear();
+      console.log('🗑️ Cleared all progress updates cache');
+    }
   }
 
   /**

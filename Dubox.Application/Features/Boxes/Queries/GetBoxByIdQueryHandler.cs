@@ -16,7 +16,7 @@ public class GetBoxByIdQueryHandler : IRequestHandler<GetBoxByIdQuery, Result<Bo
     private readonly IProjectTeamVisibilityService _visibilityService;
 
     public GetBoxByIdQueryHandler(
-        IUnitOfWork unitOfWork, 
+        IUnitOfWork unitOfWork,
         IQRCodeService qRCodeService,
         IProjectTeamVisibilityService visibilityService)
     {
@@ -32,7 +32,6 @@ public class GetBoxByIdQueryHandler : IRequestHandler<GetBoxByIdQuery, Result<Bo
         if (box == null)
             return Result.Failure<BoxDto>("Box not found");
 
-        // Verify user has access to the project this box belongs to
         var canAccessProject = await _visibilityService.CanAccessProjectAsync(box.ProjectId, cancellationToken);
         if (!canAccessProject)
         {

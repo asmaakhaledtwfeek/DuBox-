@@ -32,7 +32,7 @@ type AggregatedQualityIssue = QualityIssueItem & {
 @Component({
   selector: 'app-quality-control-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule,SidebarComponent, ReactiveFormsModule, FormsModule],
+  imports: [HeaderComponent, CommonModule, RouterModule,SidebarComponent, ReactiveFormsModule, FormsModule],
   templateUrl: './quality-control-dashboard.component.html',
   styleUrl: './quality-control-dashboard.component.scss'
 })

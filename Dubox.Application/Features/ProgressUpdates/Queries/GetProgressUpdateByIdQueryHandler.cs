@@ -22,11 +22,9 @@ public class GetProgressUpdateByIdQueryHandler : IRequestHandler<GetProgressUpda
 
     public async Task<Result<ProgressUpdateDto>> Handle(GetProgressUpdateByIdQuery request, CancellationToken cancellationToken)
     {
-        // Use AsNoTracking for better performance
-        var update = await _unitOfWork.Repository<ProgressUpdate>()
-            .GetWithSpec(new GetProgressUpdateByIdSpecification(request.ProgressUpdateId)).Data
-            .AsNoTracking()
-            .FirstOrDefaultAsync(cancellationToken);
+        var update = _unitOfWork.Repository<ProgressUpdate>()
+            .GetEntityWithSpec(new GetProgressUpdateByIdSpecification(request.ProgressUpdateId));
+
 
         if (update == null)
             return Result.Failure<ProgressUpdateDto>("Progress update not found.");
@@ -50,8 +48,6 @@ public class GetProgressUpdateByIdQueryHandler : IRequestHandler<GetProgressUpda
 
     private async Task<List<ProgressUpdateImageDto>> PopulateImageMetadata(Guid progressUpdateId, CancellationToken cancellationToken)
     {
-        // Load image metadata (without ImageData) in a separate lightweight query
-        // Use /file endpoint so browser can load images directly as <img src>
         var images = await _dbContext.Set<ProgressUpdateImage>()
             .AsNoTracking()
             .Where(img => img.ProgressUpdateId == progressUpdateId)
@@ -65,7 +61,6 @@ public class GetProgressUpdateByIdQueryHandler : IRequestHandler<GetProgressUpda
                 FileSize = img.FileSize,
                 Sequence = img.Sequence,
                 CreatedDate = img.CreatedDate,
-                ImageUrl = $"/api/images/ProgressUpdate/{img.ProgressUpdateImageId}/file"
             })
             .OrderBy(i => i.Sequence)
             .ToListAsync(cancellationToken);

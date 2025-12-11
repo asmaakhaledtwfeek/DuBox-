@@ -68,8 +68,9 @@
 
               <!-- View Details Button -->
               <button 
+                *ngIf="getActivity(row)"
                 class="btn-view-details"
-                [routerLink]="['/projects', projectId, 'boxes', boxId, 'activities', getActivity(row)?.boxActivityId]"
+                (click)="navigateToActivityDetails(getActivity(row))"
                 title="View Activity Details"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

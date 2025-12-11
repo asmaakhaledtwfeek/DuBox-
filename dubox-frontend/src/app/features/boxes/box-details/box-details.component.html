@@ -80,35 +80,35 @@
           [class.active]="activeTab === 'activities'"
           (click)="setActiveTab('activities')"
         >
-          Activities ({{ actualActivityCount || box.activities.length || 0 }})
+          Activities
         </button>
         <button 
           class="tab"
           [class.active]="activeTab === 'wir'"
           (click)="setActiveTab('wir')"
         >
-          WIR Checkpoints ({{ wirCheckpoints.length }})
+          WIR Checkpoints
         </button>
         <button 
           class="tab"
           [class.active]="activeTab === 'quality-issues'"
           (click)="setActiveTab('quality-issues')"
         >
-          Quality Issues ({{ qualityIssueCount }})
+          Quality Issues
         </button>
         <button 
           class="tab" 
           [class.active]="activeTab === 'logs'"
           (click)="setActiveTab('logs')"
         >
-          Logs ({{ boxLogsTotalCount || 0 }})
+          Logs
         </button>
         <button 
           class="tab" 
           [class.active]="activeTab === 'attachments'"
           (click)="setActiveTab('attachments')"
         >
-          Attachments ({{ getTotalAttachmentsCount() }})
+          Drowning
         </button>
       
         <button 
@@ -116,7 +116,7 @@
           [class.active]="activeTab === 'progress-updates'"
           (click)="setActiveTab('progress-updates')"
         >
-          Progress History ({{ progressUpdatesTotalCount }})
+          Progress History
         </button>
       </div>
 
@@ -177,25 +177,52 @@
             <div class="info-card">
               <h3 class="card-title">Box Information</h3>
               <div class="info-grid">
-                <div class="info-item">
-                  <span class="label">Box Code</span>
-                  <span class="value">{{ box.code }}</span>
+              
+                
+               
+                <div class="info-item" *ngIf="box.floor">
+                  <span class="label">Floor</span>
+                  <span class="value">{{ box.floor }}</span>
                 </div>
-                <div class="info-item">
-                  <span class="label">Box Name</span>
-                  <span class="value">{{ box.name || 'N/A' }}</span>
+                <div class="info-item" *ngIf="box.building">
+                  <span class="label">Building</span>
+                  <span class="value">{{ box.building }}</span>
                 </div>
-                <div class="info-item">
-                  <span class="label">Type</span>
-                  <span class="value">{{ box.type || 'N/A' }}</span>
+                <div class="info-item" *ngIf="box.zone">
+                  <span class="label">Zone</span>
+                  <span class="value">{{ box.zone }}</span>
                 </div>
-                <div class="info-item">
-                  <span class="label">Status</span>
-                  <span class="value">
-                    <span class="badge" [ngClass]="getStatusClass(box.status)">
-                      {{ getStatusLabel(box.status) }}
-                    </span>
-                  </span>
+                <div class="info-item" *ngIf="box.length">
+                  <span class="label">Length</span>
+                  <span class="value">{{ box.length }} m</span>
+                </div>
+                <div class="info-item" *ngIf="box.width">
+                  <span class="label">Width</span>
+                  <span class="value">{{ box.width }} m</span>
+                </div>
+                <div class="info-item" *ngIf="box.height">
+                  <span class="label">Height</span>
+                  <span class="value">{{ box.height }} m</span>
+                </div>
+                <div class="info-item" *ngIf="box.assignedTeam">
+                  <span class="label">Assigned Team</span>
+                  <span class="value">{{ box.assignedTeam }}</span>
+                </div>
+                <div class="info-item" *ngIf="box.assignedTo">
+                  <span class="label">Assigned To</span>
+                  <span class="value">{{ box.assignedTo }}</span>
+                </div>
+                <div class="info-item" *ngIf="box.duration">
+                  <span class="label">Duration</span>
+                  <span class="value">{{ box.duration }} days</span>
+                </div>
+                <div class="info-item" *ngIf="box.bimModelReference">
+                  <span class="label">BIM Model Reference</span>
+                  <span class="value">{{ box.bimModelReference }}</span>
+                </div>
+                <div class="info-item" *ngIf="box.revitElementId">
+                  <span class="label">Revit Element ID</span>
+                  <span class="value">{{ box.revitElementId }}</span>
                 </div>
                 <div class="info-item" *ngIf="box.currentLocationCode">
                   <span class="label">Current Location</span>
@@ -212,6 +239,10 @@
                 <div class="info-item" *ngIf="box.description">
                   <span class="label">Description</span>
                   <span class="value">{{ box.description }}</span>
+                </div>
+                <div class="info-item" *ngIf="box.notes">
+                  <span class="label">Notes</span>
+                  <span class="value">{{ box.notes }}</span>
                 </div>
               </div>
             </div>
@@ -1488,53 +1519,73 @@
           </div>
         </div>
 
-        <!-- Attachments Tab -->
+        <!-- Drowning (Attachments) Tab -->
         <div *ngIf="activeTab === 'attachments'" class="attachments-tab">
           <!-- Loading State -->
-          <div class="loading-state" *ngIf="loadingProgressUpdateImages">
+          <div class="loading-state" *ngIf="loadingBoxAttachments">
             <div class="spinner"></div>
-            <p>Loading images from progress updates...</p>
+            <p>Loading attachments...</p>
+          </div>
+
+          <!-- Error State -->
+          <div class="error-state" *ngIf="!loadingBoxAttachments && boxAttachmentsError">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <h3>Error Loading Attachments</h3>
+            <p>{{ boxAttachmentsError }}</p>
+            <button class="btn btn-primary" (click)="loadBoxAttachments()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 4 23 10 17 10"/>
+                <polyline points="1 20 1 14 7 14"/>
+                <path d="M3.51 9a9 9 0 0 1 14.13-3.36L23 10"/>
+                <path d="M20.49 15a9 9 0 0 1-14.13 3.36L1 14"/>
+              </svg>
+              Retry
+            </button>
+          </div>
+
+          <!-- Sub-navigation for Drowning/Attachments -->
+          <div *ngIf="!loadingBoxAttachments && !boxAttachmentsError" class="drowning-sub-nav">
+            <button 
+              class="sub-tab-btn" 
+              [class.active]="activeDrawingTab === 'file'"
+              (click)="setActiveDrawingTab('file')"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                <polyline points="13 2 13 9 20 9"/>
+              </svg>
+              File Images
+              <span class="count-badge">{{ getFileTypeImages().length }}</span>
+            </button>
+            <button 
+              class="sub-tab-btn" 
+              [class.active]="activeDrawingTab === 'url'"
+              (click)="setActiveDrawingTab('url')"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+              URL Images
+              <span class="count-badge">{{ getUrlTypeImages().length }}</span>
+            </button>
           </div>
 
           <!-- Empty State -->
-          <div class="empty-state" *ngIf="!loadingProgressUpdateImages && (!box.attachments || box.attachments.length === 0) && !hasProgressUpdateImages()">
+          <div class="empty-state" *ngIf="!loadingBoxAttachments && !boxAttachmentsError && boxAttachments.length === 0">
             <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
             </svg>
-            <h3>No Attachments</h3>
-            <p>No files or images attached to this box</p>
+            <h3>No Images</h3>
+            <p>No images attached to this box</p>
           </div>
 
-          <!-- Regular Attachments Section -->
-          <div *ngIf="!loadingProgressUpdateImages && box.attachments && box.attachments.length > 0" class="attachments-section">
-            <div class="section-header">
-              <h3 class="section-title">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
-                  <polyline points="13 2 13 9 20 9"/>
-                </svg>
-                File Attachments
-              </h3>
-              <span class="section-count">{{ box.attachments.length }} file(s)</span>
-            </div>
-            <div class="attachments-grid">
-              <div class="attachment-card" *ngFor="let attachment of box.attachments">
-                <div class="attachment-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
-                    <polyline points="13 2 13 9 20 9"/>
-                  </svg>
-                </div>
-                <div class="attachment-info">
-                  <h4>{{ attachment.fileName }}</h4>
-                  <p class="attachment-meta">{{ attachment.fileSize | number }} KB • {{ attachment.uploadedAt | date: 'MMM d, yyyy' }}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Progress Update Images Section -->
-          <div *ngIf="!loadingProgressUpdateImages && hasProgressUpdateImages()" class="progress-images-section">
+          <!-- File Images Section -->
+          <div *ngIf="!loadingBoxAttachments && !boxAttachmentsError && activeDrawingTab === 'file' && getFileTypeImages().length > 0" class="progress-images-section">
             <div class="section-header">
               <h3 class="section-title">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1542,29 +1593,29 @@
                   <circle cx="8.5" cy="8.5" r="1.5"/>
                   <polyline points="21 15 16 10 5 21"/>
                 </svg>
-                Images from Progress Updates
+                Uploaded File Images
               </h3>
-              <span class="section-count">{{ resolvedProgressImages.length }} image(s)</span>
+              <span class="section-count">{{ getFileTypeImages().length }} image(s)</span>
             </div>
-            <div class="progress-images-gallery">
-              <div class="image-gallery-item" *ngFor="let image of resolvedProgressImages; let i = index">
-                <div class="image-wrapper" (click)="openPhotoInNewTab(image.displayUrl || image.imageUrl)">
+              <div class="progress-images-gallery">
+                <div class="image-gallery-item" *ngFor="let image of getFileTypeImages(); let i = index">
+                  <div class="image-wrapper" (click)="openImage(image)">
                   <img 
                     *ngIf="image.displayUrl || image.imageUrl"
                     [src]="image.displayUrl || image.imageUrl" 
-                    [alt]="'Progress update image ' + (i + 1)"
+                    [alt]="'File image ' + (i + 1)"
                     class="gallery-image"
                     (error)="onImageError($event)"
                     loading="lazy"
                   />
-                  <div *ngIf="!image.displayUrl && !image.imageUrl" style="display: flex; align-items: center; justify-content: center; height: 100%; color: #999; font-size: 12px; text-align: center; padding: 20px;">
+                  <div *ngIf="!image.displayUrl && !image.imageUrl" class="image-placeholder">
                     <div>
                       <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
                         <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                         <circle cx="8.5" cy="8.5" r="1.5"/>
                         <polyline points="21 15 16 10 5 21"/>
                       </svg>
-                      <p style="margin-top: 8px;">No URL</p>
+                      <p>No URL</p>
                     </div>
                   </div>
                   <div class="image-overlay">
@@ -1581,6 +1632,74 @@
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- File Images Empty State -->
+          <div class="empty-state" *ngIf="!loadingBoxAttachments && !boxAttachmentsError && activeDrawingTab === 'file' && getFileTypeImages().length === 0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+              <polyline points="13 2 13 9 20 9"/>
+            </svg>
+            <h3>No File Images</h3>
+            <p>No uploaded file images found for this box</p>
+          </div>
+
+          <!-- URL Images Section -->
+          <div *ngIf="!loadingBoxAttachments && !boxAttachmentsError && activeDrawingTab === 'url' && getUrlTypeImages().length > 0" class="progress-images-section">
+            <div class="section-header">
+              <h3 class="section-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+                URL-based Images
+              </h3>
+              <span class="section-count">{{ getUrlTypeImages().length }} image(s)</span>
+            </div>
+            <div class="progress-images-gallery">
+              <div class="image-gallery-item" *ngFor="let image of getUrlTypeImages(); let i = index">
+                <div class="image-wrapper" (click)="openImage(image)">
+                  <img 
+                    *ngIf="image.displayUrl || image.imageUrl"
+                    [src]="image.displayUrl || image.imageUrl" 
+                    [alt]="'URL image ' + (i + 1)"
+                    class="gallery-image"
+                    (error)="onImageError($event)"
+                    loading="lazy"
+                  />
+                  <div *ngIf="!image.displayUrl && !image.imageUrl" class="image-placeholder">
+                    <div>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                      </svg>
+                      <p>No URL</p>
+                    </div>
+                  </div>
+                  <div class="image-overlay">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </div>
+                  <div class="image-number-badge">{{ i + 1 }}</div>
+                </div>
+                <div class="image-info" *ngIf="image.activityName || image.updateDate">
+                  <p class="image-activity" *ngIf="image.activityName">{{ image.activityName }}</p>
+                  <p class="image-date" *ngIf="image.updateDate">{{ image.updateDate | date: 'MMM d, yyyy' }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- URL Images Empty State -->
+          <div class="empty-state" *ngIf="!loadingBoxAttachments && !boxAttachmentsError && activeDrawingTab === 'url' && getUrlTypeImages().length === 0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+            <h3>No URL Images</h3>
+            <p>No URL-based images found for this box</p>
           </div>
         </div>
 
@@ -1602,7 +1721,7 @@
             [status]="progressUpdatesStatus"
             [fromDate]="progressUpdatesFromDate"
             [toDate]="progressUpdatesToDate"
-            (refresh)="loadProgressUpdates(progressUpdatesCurrentPage, progressUpdatesPageSize)"
+            (refresh)="loadProgressUpdates(progressUpdatesCurrentPage, progressUpdatesPageSize, true)"
             (viewDetails)="openProgressDetails($event)"
             (pageChange)="loadProgressUpdates($any($event), progressUpdatesPageSize)"
             (pageSizeChange)="loadProgressUpdates(1, $any($event))"
@@ -2127,3 +2246,4 @@
   [boxName]="box?.name || box?.code"
   (closed)="closeBoxLogDetails()"
 ></app-box-log-details-modal>
+

@@ -1,10 +1,11 @@
+using Dubox.Domain.Abstractions;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Dubox.Domain.Entities;
 
 [Table("QualityIssueImages")]
-public class QualityIssueImage
+public class QualityIssueImage : BaseImageEntity
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

@@ -1,5 +1,4 @@
 ﻿using Dubox.Application.DTOs;
-using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
@@ -18,7 +17,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
         private readonly IProjectTeamVisibilityService _visibilityService;
 
         public CreateWIRCheckpointCommandHandler(
-            IUnitOfWork unitOfWork, 
+            IUnitOfWork unitOfWork,
             ICurrentUserService currentUserService,
             IProjectTeamVisibilityService visibilityService)
         {
@@ -62,10 +61,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             checkpoint.RequestedDate = DateTime.UtcNow;
             checkpoint.RequestedBy = currentUserName;
             await _unitOfWork.Repository<WIRCheckpoint>().AddAsync(checkpoint);
-            
-            // Do NOT automatically add predefined checklist items
-            // Users will select which items they need via the "Add Predefined Items" feature
-            
+
             await _unitOfWork.CompleteAsync(cancellationToken);
             var dto = checkpoint.Adapt<CreateWIRCheckpointDto>();
 

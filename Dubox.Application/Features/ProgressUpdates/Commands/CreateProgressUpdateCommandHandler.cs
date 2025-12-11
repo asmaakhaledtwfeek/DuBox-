@@ -100,7 +100,7 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             return Result.Failure<ProgressUpdateDto>($"Failed to save progress update: {ex.Message}");
         }
 
-        (bool, string) imagesProcessResult = await ImagesProcessing(progressUpdate.ProgressUpdateId, request.Files, request.ImageUrls, cancellationToken);
+        (bool, string) imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<ProgressUpdateImage>(progressUpdate.ProgressUpdateId, request.Files, request.ImageUrls, cancellationToken);
         if (!imagesProcessResult.Item1)
         {
             return Result.Failure<ProgressUpdateDto>(imagesProcessResult.Item2);

@@ -68,10 +68,9 @@ namespace Dubox.Infrastructure.Services
                 throw new Exception($"Failed to download image from URL: {imageUrl}. Error: {ex.Message}", ex);
             }
         }
-        public async Task<(bool IsSuccess, string ErrorMessage)> ProcessImagesAsync<TEntity>(Guid parentId, List<byte[]>? files, List<string>? imageUrls, CancellationToken ct) where TEntity : BaseImageEntity, new()
+        public async Task<(bool IsSuccess, string ErrorMessage)> ProcessImagesAsync<TEntity>(Guid parentId, List<byte[]>? files, List<string>? imageUrls, CancellationToken ct, int sequence = 0) where TEntity : BaseImageEntity, new()
         {
             var images = new List<TEntity>();
-            int sequence = 0;
 
             if (files?.Any() == true)
             {

@@ -20,6 +20,7 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
     private readonly ICurrentUserService _currentUserService;
     private readonly IProjectProgressService _projectProgressService;
     private readonly ISerialNumberService _serialNumberService;
+    private readonly IProjectTeamVisibilityService _visibilityService;
 
     public CreateBoxCommandHandler(
         IUnitOfWork unitOfWork,
@@ -29,7 +30,8 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
         IBoxActivityService boxActivityService,
         ICurrentUserService currentUserService,
         IProjectProgressService projectProgressService,
-        ISerialNumberService serialNumberService)
+        ISerialNumberService serialNumberService,
+        IProjectTeamVisibilityService visibilityService)
     {
         _unitOfWork = unitOfWork;
         _dbContext = dbContext;
@@ -39,15 +41,30 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
         _currentUserService = currentUserService;
         _projectProgressService = projectProgressService;
         _serialNumberService = serialNumberService;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<BoxDto>> Handle(CreateBoxCommand request, CancellationToken cancellationToken)
     {
+        // Check if user can modify data (Viewer role cannot)
+        var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
+        if (!canModify)
+        {
+            return Result.Failure<BoxDto>("Access denied. Viewer role has read-only access and cannot create boxes.");
+        }
+
         var project = await _unitOfWork.Repository<Project>()
             .GetByIdAsync(request.ProjectId, cancellationToken);
 
         if (project == null)
             return Result.Failure<BoxDto>("Project not found");
+
+        // Verify user has access to the project
+        var canAccessProject = await _visibilityService.CanAccessProjectAsync(request.ProjectId, cancellationToken);
+        if (!canAccessProject)
+        {
+            return Result.Failure<BoxDto>("Access denied. You do not have permission to create boxes for this project.");
+        }
 
         var boxExists = await _unitOfWork.Repository<Box>()
             .IsExistAsync(b => b.ProjectId == request.ProjectId && b.BoxTag == request.BoxTag, cancellationToken);

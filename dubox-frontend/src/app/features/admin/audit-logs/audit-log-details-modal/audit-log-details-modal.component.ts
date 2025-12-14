@@ -68,9 +68,20 @@ export class AuditLogDetailsModalComponent {
       try {
         return JSON.parse(trimmed);
       } catch {
-        // fallback for delimited key:value entries (comma or newline separated)
+        // fallback for delimited key:value entries (pipe, comma, or newline separated)
+        // Format: "Key: Value | Key: Value | Key: Value"
         const fallback: Record<string, string> = {};
-        const segments = trimmed.split(/(?:\r?\n|,(?=(?:[^"]*"[^"]*")*[^"]*$))/);
+        
+        // First try pipe separator (most common for box logs)
+        let segments: string[] = [];
+        if (trimmed.includes('|')) {
+          segments = trimmed.split(/\s*\|\s*/);
+        } else if (trimmed.includes('\n')) {
+          segments = trimmed.split(/\r?\n/);
+        } else {
+          // Try comma, but be careful with commas in values (like dates)
+          segments = trimmed.split(/,(?=\s*[A-Za-z][A-Za-z0-9]*\s*:)/);
+        }
 
         segments.forEach((segment) => {
           const cleanSegment = segment.trim();

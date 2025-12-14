@@ -2,6 +2,7 @@ using Dubox.Application.DTOs;
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Enums;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -11,19 +12,26 @@ namespace Dubox.Application.Features.Reports.Queries;
 public class GetTeamsPerformanceSummaryQueryHandler : IRequestHandler<GetTeamsPerformanceSummaryQuery, Result<TeamsPerformanceSummaryDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IProjectTeamVisibilityService _visibilityService;
 
-    public GetTeamsPerformanceSummaryQueryHandler(IUnitOfWork unitOfWork)
+    public GetTeamsPerformanceSummaryQueryHandler(IUnitOfWork unitOfWork, IProjectTeamVisibilityService visibilityService)
     {
         _unitOfWork = unitOfWork;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<TeamsPerformanceSummaryDto>> Handle(GetTeamsPerformanceSummaryQuery request, CancellationToken cancellationToken)
     {
         try
         {
+            // Apply visibility filtering
+            var accessibleProjectIds = await _visibilityService.GetAccessibleProjectIdsAsync(cancellationToken);
+            var accessibleTeamIds = await _visibilityService.GetAccessibleTeamIdsAsync(cancellationToken);
+
             var activitiesSpec = new ActivitiesReportSpecification(
                 projectId: request.ProjectId,
                 status: request.Status,
+                accessibleProjectIds: accessibleProjectIds,
                 enablePaging: false,
                 onlyWithTeamId: true
             );
@@ -33,7 +41,7 @@ public class GetTeamsPerformanceSummaryQueryHandler : IRequestHandler<GetTeamsPe
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
 
-            var teamsSpec = new TeamsPerformanceReportSpecification(request);
+            var teamsSpec = new TeamsPerformanceReportSpecification(request, accessibleTeamIds);
             var teamsResult = _unitOfWork.Repository<Domain.Entities.Team>().GetWithSpec(teamsSpec);
             var teams = await teamsResult.Data
                 .Include(t => t.Members)

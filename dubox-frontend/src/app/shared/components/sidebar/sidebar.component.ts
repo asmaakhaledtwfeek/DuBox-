@@ -1,8 +1,8 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
-import { filter, skip } from 'rxjs/operators';
-import { Subscription, forkJoin } from 'rxjs';
+import { filter } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 import { PermissionService, NavigationMenuItemDto } from '../../../core/services/permission.service';
 
 interface MenuItem {
@@ -29,6 +29,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
   private allMenuItemsFromDb: NavigationMenuItemDto[] = [];
   private subscriptions: Subscription[] = [];
   private menuLoaded = false;
+  private menuBuilt = false; // Flag to prevent unnecessary rebuilds
+  private isLoadingMenu = false; // Flag to prevent multiple API calls
 
   constructor(
     private router: Router,
@@ -39,22 +41,23 @@ export class SidebarComponent implements OnInit, OnDestroy {
         .pipe(filter(event => event instanceof NavigationEnd))
         .subscribe((event: any) => {
           this.activeRoute = event.url;
+          // Don't rebuild menu on navigation - just update active route
         })
     );
   }
 
   ngOnInit(): void {
-    // Load menu items from database
+    // Load menu items from database only once
     this.loadMenuItems();
 
-    // Subscribe to permission changes and rebuild menu when permissions are loaded
+    // Rebuild only on first permission load (not on every emission)
     this.subscriptions.push(
-      this.permissionService.permissions$
-        .pipe(skip(1)) // Skip initial empty value
-        .subscribe(() => {
-          console.log('🔄 Permissions loaded, rebuilding sidebar menu');
+      this.permissionService.permissions$.subscribe(() => {
+        // Only rebuild if menu is loaded but not yet built
+        if (this.menuLoaded && !this.menuBuilt && this.permissionService.arePermissionsLoaded()) {
           this.buildMenuItems();
-        })
+        }
+      })
     );
   }
 
@@ -62,26 +65,62 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
+  /**
+   * Reset menu state (useful for testing or when user switches roles)
+   * Call this only if you need to force a reload (e.g., after logout/login)
+   */
+  resetMenu(): void {
+    this.menuLoaded = false;
+    this.menuBuilt = false;
+    this.isLoadingMenu = false;
+    this.allMenuItemsFromDb = [];
+    this.menuItems = [];
+    this.loadMenuItems();
+  }
+
   loadMenuItems(): void {
+    // Only load if not already loaded and not currently loading
+    if (this.menuLoaded || this.isLoadingMenu) {
+      return;
+    }
+
+    this.isLoadingMenu = true;
+
+    // The service now handles caching, so this won't make duplicate API calls
     this.permissionService.getNavigationMenuItems().subscribe({
       next: (items) => {
-        console.log('📋 Loaded menu items from database:', items);
         this.allMenuItemsFromDb = items;
         this.menuLoaded = true;
-        this.buildMenuItems();
+        this.isLoadingMenu = false;
+        // Build as soon as permissions are ready
+        if (this.permissionService.arePermissionsLoaded()) {
+          this.buildMenuItems();
+        }
       },
 
       error: (err) => {
         console.warn('⚠️ Failed to load menu items, using fallback:', err);
         this.menuLoaded = true;
-        this.buildMenuItems();
+        this.isLoadingMenu = false;
+        // Build as soon as permissions are ready
+        if (this.permissionService.arePermissionsLoaded()) {
+          this.buildMenuItems();
+        }
       }
-
-     
     });
   }
 
   buildMenuItems(): void {
+    // If permissions aren't loaded yet, skip to avoid empty menu; a later emission will rebuild.
+    if (!this.permissionService.arePermissionsLoaded()) {
+      return;
+    }
+
+    // Skip if menu is already built (prevents rebuilds on navigation)
+    if (this.menuBuilt) {
+      return;
+    }
+
     let allMenuItems: MenuItem[];
 
     // Use database menu items if loaded, otherwise use fallback
@@ -107,13 +146,45 @@ export class SidebarComponent implements OnInit, OnDestroy {
       allMenuItems = this.getFallbackMenuItems();
     }
 
-    // Filter menu items based on user permissions
+    // Ensure Admin menu exists for users with users.view, even if backend filtered it out
+    const hasAdmin = allMenuItems.some(
+      item => item.route?.startsWith('/admin')
+    );
+    if (!hasAdmin && this.permissionService.hasPermission('users', 'view')) {
+      allMenuItems = [
+        ...allMenuItems,
+        {
+          label: 'Admin',
+          icon: 'admin',
+          route: '/admin',
+          permissionModule: 'users',
+          permissionAction: 'view',
+          aliases: ['/admin/users']
+        }
+      ];
+    }
+
+    // Filter menu items based on user permissions (done once)
     this.menuItems = allMenuItems.filter(item => {
-      const hasPermission = this.permissionService.hasPermission(item.permissionModule, item.permissionAction);
-      return hasPermission;
+      const hasExactPermission = this.permissionService.hasPermission(
+        item.permissionModule,
+        item.permissionAction
+      );
+
+      // Special case: allow users with 'users.view' to see the Admin menu
+      // even if the menu item action is still 'manage' in the DB seed data.
+      if (item.permissionModule === 'users' && item.route?.startsWith('/admin')) {
+        return (
+          hasExactPermission ||
+          this.permissionService.hasPermission('users', 'view')
+        );
+      }
+
+      return hasExactPermission;
     });
 
-    console.log('🎯 Filtered menu items:', this.menuItems.map(m => m.label));
+    // Mark menu as built to prevent rebuilds
+    this.menuBuilt = true;
   }
 
   private getFallbackMenuItems(): MenuItem[] {
@@ -125,7 +196,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       { label: 'Quality Control', icon: 'qc', route: '/qc', aliases: ['/quality'], permissionModule: 'wir', permissionAction: 'view' },
       { label: 'Reports', icon: 'reports', route: '/reports', permissionModule: 'reports', permissionAction: 'view' },
       { label: 'Notifications', icon: 'notifications', route: '/notifications', permissionModule: 'notifications', permissionAction: 'view' },
-      { label: 'Admin', icon: 'admin', route: '/admin', permissionModule: 'users', permissionAction: 'manage' }
+      { label: 'Admin', icon: 'admin', route: '/admin', permissionModule: 'users', permissionAction: 'view' }
     ];
   }
 

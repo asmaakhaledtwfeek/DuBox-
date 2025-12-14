@@ -9,8 +9,16 @@ namespace Dubox.Application.Specifications;
 /// </summary>
 public class ProjectsSummaryReportSpecification : Specification<Project>
 {
-    public ProjectsSummaryReportSpecification(GetProjectsSummaryReportQuery query, bool enablePaging = true)
+    public ProjectsSummaryReportSpecification(GetProjectsSummaryReportQuery query, List<Guid>? accessibleProjectIds, bool enablePaging = true)
     {
+        // Apply visibility filtering
+        // If accessibleProjectIds is null, user can access all projects (SystemAdmin)
+        // If list is provided, filter to only those projects
+        if (accessibleProjectIds != null)
+        {
+            AddCriteria(p => accessibleProjectIds.Contains(p.ProjectId));
+        }
+
         // IsActive filter
         if (query.IsActive.HasValue)
         {

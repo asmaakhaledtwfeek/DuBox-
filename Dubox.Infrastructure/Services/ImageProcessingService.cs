@@ -1,4 +1,6 @@
 ﻿using Dubox.Domain.Abstraction;
+using Dubox.Domain.Abstractions;
+using Dubox.Domain.Services.ImageEntityConfig;
 using Microsoft.AspNetCore.Http;
 
 namespace Dubox.Infrastructure.Services
@@ -6,10 +8,15 @@ namespace Dubox.Infrastructure.Services
     public class ImageProcessingService : IImageProcessingService
     {
         private readonly IHttpClientFactory _httpClientFactory;
-
-        public ImageProcessingService(IHttpClientFactory httpClientFactory)
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IDbContext _dbContext;
+        private readonly IImageEntityConfigFactory _factory;
+        public ImageProcessingService(IHttpClientFactory httpClientFactory, IUnitOfWork unitOfWork, IDbContext dbContext, IImageEntityConfigFactory factory)
         {
             _httpClientFactory = httpClientFactory;
+            _unitOfWork = unitOfWork;
+            _dbContext = dbContext;
+            _factory = factory;
         }
 
         public async Task<byte[]?> GetImageBytesAsync(IFormFile? file, string? imageUrl, CancellationToken cancellationToken)
@@ -25,7 +32,7 @@ namespace Dubox.Infrastructure.Services
             {
                 using var httpClient = _httpClientFactory.CreateClient();
                 httpClient.Timeout = TimeSpan.FromSeconds(30);
-                
+
                 var response = await httpClient.GetAsync(imageUrl, cancellationToken);
                 response.EnsureSuccessStatusCode();
 
@@ -49,7 +56,7 @@ namespace Dubox.Infrastructure.Services
             {
                 using var httpClient = _httpClientFactory.CreateClient();
                 httpClient.Timeout = TimeSpan.FromSeconds(30);
-                
+
                 var response = await httpClient.GetAsync(imageUrl, cancellationToken);
                 response.EnsureSuccessStatusCode();
 
@@ -65,5 +72,89 @@ namespace Dubox.Infrastructure.Services
                 throw new Exception($"Failed to download image from URL: {imageUrl}. Error: {ex.Message}", ex);
             }
         }
+        public async Task<(bool IsSuccess, string ErrorMessage)> ProcessImagesAsync<TEntity>(Guid parentId, List<byte[]>? files, List<string>? imageUrls, CancellationToken ct, int sequence = 0) where TEntity : BaseImageEntity, new()
+        {
+            var images = new List<TEntity>();
+
+            if (files?.Any() == true)
+            {
+                foreach (var fileBytes in files)
+                {
+                    var base64 = Convert.ToBase64String(fileBytes);
+                    var imageData = $"data:image/jpeg;base64,{base64}";
+
+                    var entity = new TEntity
+                    {
+                        ImageData = imageData,
+                        ImageType = "file",
+                        FileSize = fileBytes.Length,
+                        Sequence = sequence++,
+                        CreatedDate = DateTime.UtcNow
+                    };
+
+                    SetForeignKey(entity, parentId);
+                    images.Add(entity);
+                }
+            }
+
+            if (imageUrls?.Any() == true)
+            {
+                foreach (var url in imageUrls)
+                {
+                    var trimmed = url.Trim();
+                    byte[] bytes;
+
+                    if (trimmed.StartsWith("data:image/"))
+                    {
+                        var commaIndex = trimmed.IndexOf(',');
+                        bytes = Convert.FromBase64String(trimmed.Substring(commaIndex + 1));
+
+                        var entity = new TEntity
+                        {
+                            ImageData = trimmed,
+                            ImageType = "file",
+                            FileSize = bytes.Length,
+                            Sequence = sequence++,
+                            CreatedDate = DateTime.UtcNow
+                        };
+
+                        SetForeignKey(entity, parentId);
+                        images.Add(entity);
+                    }
+                    else
+                    {
+                        bytes = await DownloadImageFromUrlAsync(trimmed, ct);
+
+                        var base64 = Convert.ToBase64String(bytes);
+                        var entity = new TEntity
+                        {
+                            ImageData = $"data:image/jpeg;base64,{base64}",
+                            ImageType = "url",
+                            FileSize = bytes.Length,
+                            OriginalName = trimmed.Length > 500 ? trimmed[..500] : trimmed,
+                            Sequence = sequence++,
+                            CreatedDate = DateTime.UtcNow
+                        };
+
+                        SetForeignKey(entity, parentId);
+                        images.Add(entity);
+                    }
+                }
+            }
+
+            if (images.Any())
+                await _unitOfWork.Repository<TEntity>().AddRangeAsync(images, ct);
+
+            return (true, string.Empty);
+        }
+        private void SetForeignKey<TEntity>(TEntity entity, Guid parentId)
+        {
+            var config = _factory.GetConfig<TEntity>();
+            var fkProp = typeof(TEntity).GetProperty(config.ForeignKeyName);
+
+            fkProp?.SetValue(entity, parentId);
+        }
+
+
     }
 }

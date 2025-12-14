@@ -2,6 +2,7 @@
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
@@ -10,24 +11,43 @@ using System.Linq;
 
 namespace Dubox.Application.Features.WIRCheckpoints.Queries
 {
-    public class GetWIRCheckpointsQueryHandler : IRequestHandler<GetWIRCheckpointsQuery, Result<List<WIRCheckpointDto>>>
+    public class GetWIRCheckpointsQueryHandler : IRequestHandler<GetWIRCheckpointsQuery, Result<PaginatedWIRCheckpointsResponseDto>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IDbContext _dbContext;
+        private readonly IProjectTeamVisibilityService _visibilityService;
 
-        public GetWIRCheckpointsQueryHandler(IUnitOfWork unitOfWork, IDbContext dbContext)
+        public GetWIRCheckpointsQueryHandler(
+            IUnitOfWork unitOfWork, 
+            IDbContext dbContext,
+            IProjectTeamVisibilityService visibilityService)
         {
             _unitOfWork = unitOfWork;
             _dbContext = dbContext;
+            _visibilityService = visibilityService;
         }
 
-        public async Task<Result<List<WIRCheckpointDto>>> Handle(GetWIRCheckpointsQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PaginatedWIRCheckpointsResponseDto>> Handle(GetWIRCheckpointsQuery request, CancellationToken cancellationToken)
         {
-            // Use AsNoTracking and ToListAsync for better performance
-            var checkPoints = await _unitOfWork.Repository<WIRCheckpoint>()
-                 .GetWithSpec(new GetWIRCheckpointsSpecification(request)).Data
-                 .AsNoTracking()
-                 .ToListAsync(cancellationToken);
+            // Get accessible project IDs based on user role
+            var accessibleProjectIds = await _visibilityService.GetAccessibleProjectIdsAsync(cancellationToken);
+            
+            // Normalize pagination parameters
+            var (page, pageSize) = new PaginatedRequest
+            {
+                Page = request.Page,
+                PageSize = request.PageSize
+            }.GetNormalizedPagination();
+            
+            // Get checkpoints with specification (includes pagination)
+            var checkpointsResult = _unitOfWork.Repository<WIRCheckpoint>()
+                .GetWithSpec(new GetWIRCheckpointsSpecification(request, accessibleProjectIds));
+            
+            var checkPoints = await checkpointsResult.Data
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+            
+            var totalCount = checkpointsResult.Count;
 
             var checkpointDtos = checkPoints.Adapt<List<WIRCheckpointDto>>();
 
@@ -36,7 +56,19 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
 
             await PopulateActivityMetadata(checkpointDtos, cancellationToken);
 
-            return Result.Success(checkpointDtos);
+            // Calculate total pages
+            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+            var response = new PaginatedWIRCheckpointsResponseDto
+            {
+                Items = checkpointDtos,
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                TotalPages = totalPages
+            };
+
+            return Result.Success(response);
         }
         
         private async Task PopulateImageMetadata(List<WIRCheckpointDto> checkpoints, CancellationToken cancellationToken)

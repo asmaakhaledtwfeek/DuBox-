@@ -26,7 +26,6 @@ public class ProgressUpdate
     public decimal BoxProgressSnapshot { get; set; } = 0;
 
     [Required]
-    [MaxLength(50)]
     public BoxStatusEnum Status { get; set; } = BoxStatusEnum.NotStarted;
 
     [MaxLength(1000)]

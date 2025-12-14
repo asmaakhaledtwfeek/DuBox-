@@ -8,27 +8,27 @@ namespace Dubox.Application.Specifications;
 
 public class ActivitiesReportSpecification : Specification<BoxActivity>
 {
-    public ActivitiesReportSpecification(GetActivitiesReportQuery query, bool enablePaging = true)
+    public ActivitiesReportSpecification(GetActivitiesReportQuery query, List<Guid>? accessibleProjectIds, bool enablePaging = true)
         : this(query.ProjectId, query.TeamId, query.Status,
                query.PlannedStartDateFrom, query.PlannedStartDateTo,
                query.PlannedEndDateFrom, query.PlannedEndDateTo,
-               query.Search, enablePaging, query.Page, query.PageSize, onlyWithTeamId: false)
+               query.Search, accessibleProjectIds, enablePaging, query.Page, query.PageSize, onlyWithTeamId: false)
     {
     }
 
-    public ActivitiesReportSpecification(GetActivitiesSummaryQuery query)
+    public ActivitiesReportSpecification(GetActivitiesSummaryQuery query, List<Guid>? accessibleProjectIds)
         : this(query.ProjectId, query.TeamId, query.Status,
                query.PlannedStartDateFrom, query.PlannedStartDateTo,
                query.PlannedEndDateFrom, query.PlannedEndDateTo,
-               query.Search, enablePaging: false, page: 1, pageSize: 1, onlyWithTeamId: false)
+               query.Search, accessibleProjectIds, enablePaging: false, page: 1, pageSize: 1, onlyWithTeamId: false)
     {
     }
 
-    public ActivitiesReportSpecification(ExportActivitiesReportQuery query)
+    public ActivitiesReportSpecification(ExportActivitiesReportQuery query, List<Guid>? accessibleProjectIds)
         : this(query.ProjectId, query.TeamId, query.Status,
                query.PlannedStartDateFrom, query.PlannedStartDateTo,
                query.PlannedEndDateFrom, query.PlannedEndDateTo,
-               query.Search, enablePaging: false, page: 1, pageSize: 1, onlyWithTeamId: false)
+               query.Search, accessibleProjectIds, enablePaging: false, page: 1, pageSize: 1, onlyWithTeamId: false)
     {
     }
 
@@ -36,12 +36,13 @@ public class ActivitiesReportSpecification : Specification<BoxActivity>
     public ActivitiesReportSpecification(
         Guid? projectId,
         int? status,
+        List<Guid>? accessibleProjectIds = null,
         bool enablePaging = false,
         bool onlyWithTeamId = false)
         : this(projectId, teamId: null, status,
                plannedStartDateFrom: null, plannedStartDateTo: null,
                plannedEndDateFrom: null, plannedEndDateTo: null,
-               search: null, enablePaging, page: 1, pageSize: int.MaxValue, onlyWithTeamId)
+               search: null, accessibleProjectIds, enablePaging, page: 1, pageSize: int.MaxValue, onlyWithTeamId)
     {
     }
 
@@ -54,6 +55,7 @@ public class ActivitiesReportSpecification : Specification<BoxActivity>
         DateTime? plannedEndDateFrom,
         DateTime? plannedEndDateTo,
         string? search,
+        List<Guid>? accessibleProjectIds,
         bool enablePaging,
         int page = 1,
         int pageSize = 1,
@@ -68,6 +70,12 @@ public class ActivitiesReportSpecification : Specification<BoxActivity>
         EnableSplitQuery();
 
         AddCriteria(ba => ba.IsActive);
+
+        // Apply project visibility filtering
+        if (accessibleProjectIds != null)
+        {
+            AddCriteria(ba => accessibleProjectIds.Contains(ba.Box.ProjectId));
+        }
 
         if (projectId.HasValue && projectId.Value != Guid.Empty)
             AddCriteria(ba => ba.Box.ProjectId == projectId.Value);

@@ -1,6 +1,7 @@
 using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
@@ -11,15 +12,27 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IProjectTeamVisibilityService _visibilityService;
 
-    public UpdateProjectCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public UpdateProjectCommandHandler(
+        IUnitOfWork unitOfWork, 
+        ICurrentUserService currentUserService,
+        IProjectTeamVisibilityService visibilityService)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<ProjectDto>> Handle(UpdateProjectCommand request, CancellationToken cancellationToken)
     {
+        // Check if user can modify data (Viewer role cannot)
+        var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
+        if (!canModify)
+        {
+            return Result.Failure<ProjectDto>("Access denied. Viewer role has read-only access and cannot update projects.");
+        }
+
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
 
         var project = await _unitOfWork.Repository<Project>()
@@ -27,6 +40,13 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
 
         if (project == null)
             return Result.Failure<ProjectDto>("Project not found.");
+
+        // Verify user has access to the project
+        var canAccessProject = await _visibilityService.CanAccessProjectAsync(request.ProjectId, cancellationToken);
+        if (!canAccessProject)
+        {
+            return Result.Failure<ProjectDto>("Access denied. You do not have permission to update this project.");
+        }
 
         if (!string.IsNullOrEmpty(request.ProjectCode) && project.ProjectCode != request.ProjectCode)
         {
@@ -55,6 +75,7 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
             project.PlannedEndDate = project.PlannedStartDate.Value.AddDays(project.Duration.Value);
 
         project.ModifiedDate = DateTime.UtcNow;
+        project.ModifiedBy = currentUserId.ToString();
 
         var (oldValues, newValues, description) = GetProjectChanges(oldProjectState, project);
 

@@ -32,7 +32,7 @@ type AggregatedQualityIssue = QualityIssueItem & {
 @Component({
   selector: 'app-quality-control-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, HeaderComponent, SidebarComponent, ReactiveFormsModule, FormsModule],
+  imports: [HeaderComponent, CommonModule, RouterModule,SidebarComponent, ReactiveFormsModule, FormsModule],
   templateUrl: './quality-control-dashboard.component.html',
   styleUrl: './quality-control-dashboard.component.scss'
 })
@@ -58,11 +58,26 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   qualityIssuesFilterForm: FormGroup;
   checkpoints: EnrichedCheckpoint[] = [];
   qualityIssues: AggregatedQualityIssue[] = [];
-  filteredQualityIssues: AggregatedQualityIssue[] = [];
   checkpointsLoading = false;
   checkpointsError = '';
   qualityIssuesLoading = false;
   qualityIssuesError = '';
+  
+  // Pagination for checkpoints (backend pagination)
+  checkpointsCurrentPage = 1;
+  checkpointsPageSize = 25;
+  checkpointsTotalCount = 0;
+  checkpointsTotalPages = 0;
+  
+  // Pagination for quality issues (backend pagination)
+  qualityIssuesCurrentPage = 1;
+  qualityIssuesPageSize = 25;
+  qualityIssuesTotalCount = 0;
+  qualityIssuesTotalPages = 0;
+  
+  // Flag to prevent double API calls when resetting filters
+  private isResettingFilters = false;
+  private isResettingCheckpointFilters = false;
 
   // Modal state
   isDetailsModalOpen = false;
@@ -122,9 +137,14 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
       severity: ['']
     });
 
-    // Apply filters when form values change
+    // Apply filters when form values change - trigger API call with backend pagination
+    // Use debounce to avoid too many API calls while user is typing
     this.qualityIssuesFilterForm.valueChanges.subscribe(() => {
-      this.applyQualityIssuesFilters();
+      // Skip if form is being reset programmatically
+      if (!this.isResettingFilters) {
+        this.qualityIssuesCurrentPage = 1; // Reset to first page when filters change
+        this.fetchAllQualityIssues();
+      }
     });
   }
 
@@ -149,12 +169,58 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   }
 
   applyFilters(): void {
+    this.checkpointsCurrentPage = 1;
     this.fetchCheckpoints();
   }
 
   resetFilters(): void {
+    this.isResettingCheckpointFilters = true;
     this.filterForm.reset();
+    this.checkpointsCurrentPage = 1;
     this.fetchCheckpoints();
+    // Reset flag after a short delay to allow form reset to complete
+    setTimeout(() => {
+      this.isResettingCheckpointFilters = false;
+    }, 100);
+  }
+  
+  onCheckpointsPageChange(page: number): void {
+    if (page >= 1 && page <= this.checkpointsTotalPages) {
+      this.checkpointsCurrentPage = page;
+      this.fetchCheckpoints();
+      // Scroll to top of table
+      const tableElement = document.querySelector('.quality-table-wrapper');
+      if (tableElement) {
+        tableElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  }
+  
+  onCheckpointsPageSizeChange(pageSize: number): void {
+    this.checkpointsPageSize = pageSize;
+    this.checkpointsCurrentPage = 1;
+    this.fetchCheckpoints();
+  }
+  
+  getCheckpointsPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 7;
+    const current = this.checkpointsCurrentPage;
+    const total = this.checkpointsTotalPages;
+    
+    if (total === 0) return [];
+    
+    let startPage = Math.max(1, current - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(total, startPage + maxPagesToShow - 1);
+    
+    if (endPage - startPage < maxPagesToShow - 1) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
   }
 
   getStatusLabel(status?: WIRCheckpointStatus | string): string {
@@ -190,22 +256,40 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   }
 
   canNavigateToAddChecklist(checkpoint: EnrichedCheckpoint | null): boolean {
-    return !!(
+    // Check if checkpoint exists and has required data
+    const hasRequiredData = !!(
       checkpoint &&
       checkpoint.wirId &&
       checkpoint.boxActivityId &&
       checkpoint.boxId &&
       (checkpoint.projectId || checkpoint.box?.projectId)
     );
+    
+    if (!hasRequiredData) {
+      return false;
+    }
+    
+    // Check if user has permission to create/manage WIR checkpoints
+    return this.permissionService.hasPermission('wir', 'create') || 
+           this.permissionService.hasPermission('wir', 'manage');
   }
 
   canNavigateToReview(checkpoint: EnrichedCheckpoint | null): boolean {
-    return !!(
+    // Check if checkpoint exists and has required data
+    const hasRequiredData = !!(
       checkpoint &&
       checkpoint.boxActivityId &&
       checkpoint.boxId &&
       (checkpoint.projectId || checkpoint.box?.projectId)
     );
+    
+    if (!hasRequiredData) {
+      return false;
+    }
+    
+    // Check if user has permission to review WIR checkpoints
+    return this.permissionService.hasPermission('wir', 'review') || 
+           this.permissionService.hasPermission('wir', 'manage');
   }
 
   onAddChecklist(checkpoint: EnrichedCheckpoint): void {
@@ -271,23 +355,40 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     this.qualityIssuesError = '';
 
     const filters = this.filterForm.value;
-    const params = {
+    const params: any = {
       projectCode: filters.projectCode || undefined,
       boxTag: filters.boxTag || undefined,
       status: filters.status || undefined,
       wirNumber: filters.wirNumber || undefined,
       from: filters.from || undefined,
-      to: filters.to || undefined
+      to: filters.to || undefined,
+      page: this.checkpointsCurrentPage,
+      pageSize: this.checkpointsPageSize
     };
 
     this.wirService.getWIRCheckpoints(params).subscribe({
-      next: (data) => {
-        const checkpoints = (data || []) as EnrichedCheckpoint[];
-        this.checkpoints = checkpoints;
-        this.updateSummary(checkpoints);
-        this.buildQualityIssuesList(checkpoints);
+      next: (response) => {
+        // Handle paginated response
+        if (response.items) {
+          this.checkpoints = response.items as EnrichedCheckpoint[];
+          this.checkpointsTotalCount = response.totalCount || 0;
+          this.checkpointsCurrentPage = response.page || 1;
+          this.checkpointsPageSize = response.pageSize || 25;
+          this.checkpointsTotalPages = response.totalPages || 0;
+        } else {
+          // Fallback for non-paginated response (backward compatibility)
+          const checkpoints = (response as any) || [];
+          this.checkpoints = Array.isArray(checkpoints) ? checkpoints as EnrichedCheckpoint[] : [];
+          this.checkpointsTotalCount = this.checkpoints.length;
+          this.checkpointsTotalPages = 1;
+        }
+        
+        // Update summary - note: we use totalCount from backend for accurate counts
+        this.updateSummaryFromBackend(response.totalCount || this.checkpoints.length);
+        
+        // Now fetch ALL quality issues separately
+        this.fetchAllQualityIssues();
         this.checkpointsLoading = false;
-        this.qualityIssuesLoading = false;
       },
       error: (err) => {
         console.error('❌ Failed to load WIR checkpoints:', err);
@@ -295,6 +396,72 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
         this.checkpointsError = err?.error?.message || err?.message || 'Failed to load WIR checkpoints';
         this.qualityIssuesLoading = false;
         this.qualityIssuesError = this.checkpointsError;
+      }
+    });
+  }
+  
+  /**
+   * Update summary cards using backend total count
+   */
+  private updateSummaryFromBackend(totalCheckpoints: number): void {
+    // For now, we'll calculate pending reviews from current page
+    // In a full implementation, you might want separate API calls for summary counts
+    const pendingReviews = this.checkpoints.filter(cp => 
+      cp.status === WIRCheckpointStatus.Pending || 
+      cp.status === WIRCheckpointStatus.ConditionalApproval
+    ).length;
+    const loggedIssues = this.checkpoints.reduce((total, cp) => total + (cp.qualityIssues?.length || 0), 0);
+    const resolvedIssues = this.checkpoints.reduce((total, cp) => {
+      const resolved = (cp.qualityIssues || []).filter(issue => (issue as any)?.status === 'Resolved').length;
+      return total + resolved;
+    }, 0);
+
+    this.summaryCards = [
+      { label: 'All WIR Checkpoints', value: totalCheckpoints, tone: 'info' },
+      { label: 'Pending Reviews', value: pendingReviews, tone: 'warning' },
+      { label: 'Logged Issues', value: loggedIssues, tone: 'danger' },
+      { label: 'Resolved Issues', value: resolvedIssues, tone: 'success' }
+    ];
+  }
+
+  /**
+   * Fetch all quality issues with backend pagination and filters
+   */
+  fetchAllQualityIssues(): void {
+    this.qualityIssuesLoading = true;
+    this.qualityIssuesError = '';
+
+    const filters = this.qualityIssuesFilterForm.value;
+    
+    // Map filter form values to API parameters
+    const params: any = {
+      page: this.qualityIssuesCurrentPage,
+      pageSize: this.qualityIssuesPageSize
+    };
+
+    // Add filters if they have values
+    if (filters.status && filters.status.trim()) {
+      params.status = filters.status;
+    }
+    if (filters.severity && filters.severity.trim()) {
+      params.severity = filters.severity;
+    }
+    if (filters.issueType && filters.issueType.trim()) {
+      params.issueType = filters.issueType;
+    }
+    // Note: WIR Number, Box Tag, and Project Code filters are client-side only
+    // as they're not part of the backend API filter options
+
+    this.wirService.getAllQualityIssues(params).subscribe({
+      next: (response) => {
+        console.log('✅ Fetched paginated quality issues:', response.items.length, 'of', response.totalCount);
+        this.buildQualityIssuesListFromPaginatedResponse(response);
+        this.qualityIssuesLoading = false;
+      },
+      error: (err) => {
+        console.error('❌ Failed to load quality issues:', err);
+        this.qualityIssuesError = err?.error?.message || err?.message || 'Failed to load quality issues';
+        this.qualityIssuesLoading = false;
       }
     });
   }
@@ -319,74 +486,144 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     ];
   }
 
-  private buildQualityIssuesList(checkpoints: EnrichedCheckpoint[]): void {
-    this.qualityIssues = checkpoints.flatMap(checkpoint =>
-      (checkpoint.qualityIssues || []).map(issue => ({
-        ...issue,
-        boxId: checkpoint.boxId,
-        wirNumber: checkpoint.wirNumber,
-        wirName: checkpoint.wirName,
-        boxTag: checkpoint.box?.boxTag,
-        boxName: checkpoint.box?.boxName,
-        projectCode: checkpoint.projectCode || checkpoint.box?.projectCode,
-        projectId: checkpoint.projectId || checkpoint.box?.projectId,
-        checkpointStatus: checkpoint.status,
-        issueStatus: issue.status
-      }))
-    );
-    // Apply filters after building the list
-    this.applyQualityIssuesFilters();
-  }
-
-  applyQualityIssuesFilters(): void {
-    const filters = this.qualityIssuesFilterForm.value;
+  /**
+   * Build quality issues list from paginated response
+   */
+  private buildQualityIssuesListFromPaginatedResponse(response: any): void {
+    const issues = response.items || [];
     
-    this.filteredQualityIssues = this.qualityIssues.filter(issue => {
-      // Filter by WIR Number
-      if (filters.wirNumber && filters.wirNumber.trim()) {
+    this.qualityIssues = issues.map((issue: QualityIssueDetails) => ({
+      issueId: issue.issueId,
+      issueType: issue.issueType,
+      severity: issue.severity,
+      issueDescription: issue.issueDescription,
+      assignedTo: issue.assignedTo,
+      dueDate: issue.dueDate,
+      photoPath: issue.photoPath,
+      reportedBy: issue.reportedBy,
+      issueDate: issue.issueDate,
+      status: issue.status,
+      boxId: issue.boxId,
+      wirNumber: issue.wirNumber || undefined,
+      wirName: issue.wirName || undefined,
+      boxTag: issue.boxTag,
+      boxName: issue.boxName,
+      projectCode: undefined, // Not included in QualityIssueDetails
+      projectId: undefined, // Not included in QualityIssueDetails
+      checkpointStatus: issue.wirStatus as WIRCheckpointStatus | undefined,
+      issueStatus: issue.status
+    }));
+    
+    // Update pagination info from response
+    this.qualityIssuesTotalCount = response.totalCount || 0;
+    this.qualityIssuesCurrentPage = response.page || 1;
+    this.qualityIssuesPageSize = response.pageSize || 25;
+    this.qualityIssuesTotalPages = response.totalPages || 0;
+    
+    // Apply client-side filters for WIR Number, Box Tag, and Project Code
+    // (these are not supported by backend API)
+    this.applyClientSideFilters();
+  }
+  
+  /**
+   * Apply client-side filters (WIR Number, Box Tag, Project Code)
+   * These filters are applied after receiving data from backend
+   */
+  private applyClientSideFilters(): void {
+    const filters = this.qualityIssuesFilterForm.value;
+    let filtered = [...this.qualityIssues];
+    
+    // Filter by WIR Number (client-side only)
+    if (filters.wirNumber && filters.wirNumber.trim()) {
+      filtered = filtered.filter(issue => {
         const wirMatch = (issue.wirNumber || '').toLowerCase().includes(filters.wirNumber.toLowerCase().trim()) ||
                         (issue.wirName || '').toLowerCase().includes(filters.wirNumber.toLowerCase().trim());
-        if (!wirMatch) return false;
-      }
+        return wirMatch;
+      });
+    }
 
-      // Filter by Box Tag
-      if (filters.boxTag && filters.boxTag.trim()) {
+    // Filter by Box Tag (client-side only)
+    if (filters.boxTag && filters.boxTag.trim()) {
+      filtered = filtered.filter(issue => {
         const boxTagMatch = (issue.boxTag || '').toLowerCase().includes(filters.boxTag.toLowerCase().trim());
-        if (!boxTagMatch) return false;
-      }
+        return boxTagMatch;
+      });
+    }
 
-      // Filter by Project Code
-      if (filters.projectCode && filters.projectCode.trim()) {
+    // Filter by Project Code (client-side only)
+    if (filters.projectCode && filters.projectCode.trim()) {
+      filtered = filtered.filter(issue => {
         const projectMatch = (issue.projectCode || '').toLowerCase().includes(filters.projectCode.toLowerCase().trim());
-        if (!projectMatch) return false;
-      }
+        return projectMatch;
+      });
+    }
+    
+    // Update the displayed list (note: pagination counts are from backend)
+    this.qualityIssues = filtered;
+  }
 
-      // Filter by Status
-      if (filters.status && filters.status.trim()) {
-        const issueStatus = (issue.issueStatus || issue.status || '').toString().toLowerCase();
-        const filterStatus = filters.status.toLowerCase();
-        if (issueStatus !== filterStatus) return false;
-      }
+  /**
+   * Update summary cards to include all quality issues (not just from checkpoints)
+   */
+  private updateSummaryWithAllIssues(): void {
+    const loggedIssues = this.qualityIssues.length;
+    const resolvedIssues = this.qualityIssues.filter(issue => 
+      issue.status === 'Resolved' || issue.status === 'Closed'
+    ).length;
 
-      // Filter by Issue Type
-      if (filters.issueType && filters.issueType.trim()) {
-        const typeMatch = (issue.issueType || '').toLowerCase().includes(filters.issueType.toLowerCase().trim());
-        if (!typeMatch) return false;
-      }
+    // Update only the issue-related cards, keep checkpoint counts from updateSummary
+    this.summaryCards[2] = { label: 'Logged Issues', value: loggedIssues, tone: 'danger' };
+    this.summaryCards[3] = { label: 'Resolved Issues', value: resolvedIssues, tone: 'success' };
+  }
 
-      // Filter by Severity
-      if (filters.severity && filters.severity.trim()) {
-        const severityMatch = (issue.severity || '').toLowerCase() === filters.severity.toLowerCase().trim();
-        if (!severityMatch) return false;
+  onQualityIssuesPageChange(page: number): void {
+    if (page >= 1 && page <= this.qualityIssuesTotalPages) {
+      this.qualityIssuesCurrentPage = page;
+      this.fetchAllQualityIssues();
+      // Scroll to top of table
+      const tableElement = document.querySelector('.quality-table-wrapper');
+      if (tableElement) {
+        tableElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
-
-      return true;
-    });
+    }
+  }
+  
+  onQualityIssuesPageSizeChange(pageSize: number): void {
+    this.qualityIssuesPageSize = pageSize;
+    this.qualityIssuesCurrentPage = 1;
+    this.fetchAllQualityIssues();
+  }
+  
+  getQualityIssuesPageNumbers(): number[] {
+    const pages: number[] = [];
+    const maxPagesToShow = 7;
+    const current = this.qualityIssuesCurrentPage;
+    const total = this.qualityIssuesTotalPages;
+    
+    if (total === 0) return [];
+    
+    let startPage = Math.max(1, current - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(total, startPage + maxPagesToShow - 1);
+    
+    if (endPage - startPage < maxPagesToShow - 1) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    return pages;
   }
 
   resetQualityIssuesFilters(): void {
+    this.isResettingFilters = true;
     this.qualityIssuesFilterForm.reset();
-    this.applyQualityIssuesFilters();
+    this.qualityIssuesCurrentPage = 1;
+    this.fetchAllQualityIssues();
+    // Reset flag after a short delay to allow form reset to complete
+    setTimeout(() => {
+      this.isResettingFilters = false;
+    }, 100);
   }
 
   getQualityIssueStatusLabel(status?: QualityIssueStatus | string): string {
@@ -402,29 +639,25 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   openIssueDetails(issue: AggregatedQualityIssue): void {
     const boxId = issue.boxId;
 
-    // If we have issueId and boxId, fetch full details; otherwise use aggregated data
-    if (issue.issueId && boxId) {
-      // Fetch full details for better information
-      this.wirService.getQualityIssuesByBox(boxId).subscribe({
-        next: (issues) => {
-          const fullIssue = issues.find(i => i.issueId === issue.issueId);
-          if (fullIssue) {
-            this.selectedIssueDetails = fullIssue;
-          } else {
-            // Fallback to aggregated data converted to QualityIssueDetails
-            this.selectedIssueDetails = this.convertToQualityIssueDetails(issue, boxId);
-          }
-          this.isDetailsModalOpen = true;
+    // If we have issueId, fetch full details using GetQualityIssueById to get images
+    if (issue.issueId) {
+      // Show modal immediately with existing data
+      this.selectedIssueDetails = this.convertToQualityIssueDetails(issue, boxId);
+      this.isDetailsModalOpen = true;
+
+      // Fetch fresh details from backend (including images)
+      this.wirService.getQualityIssueById(issue.issueId).subscribe({
+        next: (fullIssue) => {
+          console.log('✅ Loaded quality issue details with images:', fullIssue);
+          this.selectedIssueDetails = fullIssue;
         },
         error: (err) => {
-          console.error('Failed to fetch issue details:', err);
-          // Fallback to aggregated data
-          this.selectedIssueDetails = this.convertToQualityIssueDetails(issue, boxId);
-          this.isDetailsModalOpen = true;
+          console.error('❌ Failed to fetch quality issue details:', err);
+          // Keep showing the initial data if fetch fails
         }
       });
     } else {
-      // Use aggregated data directly
+      // Use aggregated data directly (no issueId available)
       this.selectedIssueDetails = this.convertToQualityIssueDetails(issue, boxId);
       this.isDetailsModalOpen = true;
     }
@@ -486,7 +719,55 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   }
 
   openImageInNewTab(imageUrl: string): void {
-    window.open(imageUrl, '_blank', 'noopener,noreferrer');
+    if (!imageUrl) {
+      console.error('No image URL provided');
+      return;
+    }
+
+    // Ensure URL is absolute
+    let absoluteUrl = imageUrl;
+    
+    // If it's a relative URL, make it absolute
+    if (imageUrl.startsWith('/')) {
+      const baseUrl = this.getApiBaseUrl();
+      absoluteUrl = `${baseUrl}${imageUrl}`;
+    }
+    // If it's a data URL, we can't open it in a new tab - create a blob URL instead
+    else if (imageUrl.startsWith('data:image/')) {
+      // For data URLs, convert to blob URL
+      fetch(imageUrl)
+        .then(response => response.blob())
+        .then(blob => {
+          const blobUrl = URL.createObjectURL(blob);
+          const newWindow = window.open(blobUrl, '_blank', 'noopener,noreferrer');
+          if (!newWindow) {
+            console.error('Failed to open image in new tab. Popup may be blocked.');
+            this.downloadImage(imageUrl);
+          }
+        })
+        .catch(error => {
+          console.error('Error converting data URL to blob:', error);
+          // Fallback: try to open data URL directly (may not work in all browsers)
+          window.open(imageUrl, '_blank', 'noopener,noreferrer');
+        });
+      return;
+    }
+    // If it's already an absolute URL (http/https), use as is
+    else if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+      // Relative URL without leading slash - prepend base URL
+      const baseUrl = this.getApiBaseUrl();
+      absoluteUrl = `${baseUrl}/${imageUrl}`;
+    }
+
+    // Open in new tab
+    console.log('Opening image URL:', absoluteUrl);
+    const newWindow = window.open(absoluteUrl, '_blank', 'noopener,noreferrer');
+    
+    if (!newWindow) {
+      console.error('Failed to open image in new tab. Popup may be blocked.');
+      // Fallback: try to download instead
+      this.downloadImage(imageUrl);
+    }
   }
 
   downloadImage(imageUrl: string): void {
@@ -1005,10 +1286,9 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
       return checkpoint;
     });
     
-    // Update filtered list to reflect changes in the UI
-    this.applyQualityIssuesFilters();
-    // Update summary with updated checkpoints
-    this.updateSummary(this.checkpoints);
+    // Refresh the list to reflect changes
+    this.fetchAllQualityIssues();
+    // Note: Summary will be updated when checkpoints are refreshed
   }
 
   private convertToQualityIssueDetails(issue: AggregatedQualityIssue, boxId?: string): QualityIssueDetails {
@@ -1040,7 +1320,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   }
 
   async exportQualityIssuesToExcel(): Promise<void> {
-    if (this.filteredQualityIssues.length === 0) {
+    if (this.qualityIssues.length === 0) {
       alert('No quality issues to export. Please adjust your filters or ensure there are quality issues available.');
       return;
     }
@@ -1129,7 +1409,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     headerRow.height = 25; // Set header row height
 
     // Add data rows
-    this.filteredQualityIssues.forEach((issue, index) => {
+    this.qualityIssues.forEach((issue, index) => {
       const row = worksheet.addRow([
         index + 1,
         issue.wirNumber || issue.wirName || '—',
@@ -1194,5 +1474,8 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     link.click();
     window.URL.revokeObjectURL(url);
   }
+  
+  // Expose Math for template
+  readonly Math = Math;
 }
 

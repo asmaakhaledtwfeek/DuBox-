@@ -21,14 +21,19 @@ export class AppComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    // Initialize permissions when app loads (if user is already logged in)
+    // Permissions are automatically loaded from localStorage in PermissionService constructor
+    // This ensures they're available immediately before any component initializes
+    
+    // Refresh permissions from backend if user is authenticated
+    // This ensures we have the latest permissions
     if (this.authService.isAuthenticated()) {
       this.permissionService.initializePermissions();
     }
 
     // Subscribe to auth state changes to load/clear permissions
     this.authSubscription = this.authService.authState$.subscribe(state => {
-      if (state.isAuthenticated && state.user && !this.permissionService.arePermissionsLoaded()) {
+      if (state.isAuthenticated && state.user) {
+        // Always refresh permissions from backend after login
         this.permissionService.initializePermissions();
       } else if (!state.isAuthenticated) {
         this.permissionService.clearPermissions();

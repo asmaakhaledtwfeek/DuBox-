@@ -3,6 +3,7 @@ using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Interfaces;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MapsterMapper;
@@ -15,30 +16,45 @@ public class CreateTeamCommandHandler : IRequestHandler<CreateTeamCommand, Resul
     private readonly IUnitOfWork _unitOfWork;
     private readonly IMapper _mapper;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IProjectTeamVisibilityService _visibilityService;
 
-    public CreateTeamCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserService currentUserService)
+    public CreateTeamCommandHandler(
+        IUnitOfWork unitOfWork, 
+        IMapper mapper, 
+        ICurrentUserService currentUserService,
+        IProjectTeamVisibilityService visibilityService)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _currentUserService = currentUserService;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<TeamDto>> Handle(CreateTeamCommand request, CancellationToken cancellationToken)
     {
+        // Authorization: Only SystemAdmin and ProjectManager can create teams
+        var canCreate = await _visibilityService.CanCreateProjectOrTeamAsync(cancellationToken);
+        if (!canCreate)
+        {
+            return Result.Failure<TeamDto>("Access denied. Only System Administrators and Project Managers can create teams.");
+        }
+
         var teamExists = await _unitOfWork.Repository<Team>()
             .IsExistAsync(t => t.TeamCode == request.TeamCode, cancellationToken);
 
         if (teamExists)
             return Result.Failure<TeamDto>("Team with this code already exists");
 
+        var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
+
         var team = request.Adapt<Team>();
         team.IsActive = true;
         team.CreatedDate = DateTime.UtcNow;
+        team.CreatedBy = currentUserId; // Track who created this team
 
         await _unitOfWork.Repository<Team>().AddAsync(team, cancellationToken);
         
         // Create audit log
-        var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
         var auditLog = new AuditLog
         {
             TableName = nameof(Team),

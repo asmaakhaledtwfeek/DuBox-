@@ -13,12 +13,14 @@ public class ExportActivitiesReportQueryHandler : IRequestHandler<ExportActiviti
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IExcelService _excelService;
+    private readonly IProjectTeamVisibilityService _visibilityService;
     private const int BatchSize = 1000;
 
-    public ExportActivitiesReportQueryHandler(IUnitOfWork unitOfWork, IExcelService excelService)
+    public ExportActivitiesReportQueryHandler(IUnitOfWork unitOfWork, IExcelService excelService, IProjectTeamVisibilityService visibilityService)
     {
         _unitOfWork = unitOfWork;
         _excelService = excelService;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<Stream>> Handle(ExportActivitiesReportQuery request, CancellationToken cancellationToken)
@@ -35,7 +37,10 @@ public class ExportActivitiesReportQueryHandler : IRequestHandler<ExportActiviti
 
     private async Task<Result<Stream>> ExportToExcelAsync(ExportActivitiesReportQuery request, CancellationToken cancellationToken)
     {
-        var baseQuery = _unitOfWork.Repository<BoxActivity>().GetWithSpec(new ActivitiesReportSpecification(request)).Data;
+        // Apply visibility filtering
+        var accessibleProjectIds = await _visibilityService.GetAccessibleProjectIdsAsync(cancellationToken);
+
+        var baseQuery = _unitOfWork.Repository<BoxActivity>().GetWithSpec(new ActivitiesReportSpecification(request, accessibleProjectIds)).Data;
 
         var allActivities = new List<ActivityExportDto>();
         int skip = 0;

@@ -49,6 +49,8 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   // Permission flags
   canUpdateProgress: boolean = false;
   canReviewWIR: boolean = false;
+  canViewWIR: boolean = false;
+  canManageCheckpoint: boolean = false;
 
   constructor(
     private progressUpdateService: ProgressUpdateService,
@@ -59,7 +61,23 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   ) {
     // Check permissions
     this.canUpdateProgress = this.permissionService.hasPermission('activities', 'update-progress');
-    this.canReviewWIR = this.permissionService.hasPermission('wir', 'review');
+    
+    // Can view WIR (QA/QC button) - for viewing WIR status and details
+    this.canViewWIR = this.permissionService.hasPermission('wir', 'view') ||
+                      this.permissionService.hasPermission('wir', 'approve') || 
+                      this.permissionService.hasPermission('wir', 'reject') ||
+                      this.permissionService.hasPermission('wir', 'review') ||
+                      this.permissionService.hasPermission('wir', 'manage');
+    
+    // Can review WIR - for approval/rejection workflow
+    this.canReviewWIR = this.permissionService.hasPermission('wir', 'review') || 
+                        this.permissionService.hasPermission('wir', 'manage');
+    
+    // Can manage checkpoints (view/add checkpoint button) - requires create, review, or manage permission
+    // NOT just wir.view - users need higher permissions to access checkpoints
+    this.canManageCheckpoint = this.permissionService.hasPermission('wir', 'create') ||
+                               this.permissionService.hasPermission('wir', 'review') ||
+                               this.permissionService.hasPermission('wir', 'manage');
   }
 
   ngOnInit(): void {
@@ -709,6 +727,16 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
+   * Check if user can view or add checkpoint for a WIR record
+   * Requires create, review, or manage permission (NOT just view)
+   */
+  canViewOrAddCheckpoint(wirRecord: WIRRecord): boolean {
+    // User needs create, review, or manage permission to access checkpoints
+    // wir.view permission alone is NOT sufficient
+    return this.canManageCheckpoint;
+  }
+
+  /**
    * Navigate to create or view WIR checkpoint page
    */
   navigateToCreateWIRCheckpoint(wirRecord: WIRRecord): void {
@@ -761,5 +789,21 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
    */
   refreshCheckpoints(): void {
     this.loadWIRCheckpoints();
+  }
+
+  /**
+   * Navigate to activity details page with returnTo query param
+   */
+  navigateToActivityDetails(activity: BoxActivityDetail | null): void {
+    if (!activity || !this.projectId || !this.boxId || !activity.boxActivityId) {
+      console.error('Missing required IDs for navigation');
+      return;
+    }
+    
+    // Navigate to activity details with returnTo query param to indicate coming from activities table
+    this.router.navigate(
+      ['/projects', this.projectId, 'boxes', this.boxId, 'activities', activity.boxActivityId],
+      { queryParams: { returnTo: 'activities' } }
+    );
   }
 }

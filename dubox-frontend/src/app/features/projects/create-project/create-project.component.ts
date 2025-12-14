@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
@@ -27,7 +27,7 @@ export class CreateProjectComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private projectService: ProjectService,
+    @Inject(ProjectService) private projectService: ProjectService,
     private router: Router,
     private route: ActivatedRoute
   ) {}
@@ -50,11 +50,12 @@ export class CreateProjectComponent implements OnInit {
   }
 
   private detectModeAndLoadProject(): void {
-    const mode = this.route.snapshot.queryParamMap.get('mode');
-    const projectId = this.route.snapshot.queryParamMap.get('projectId');
+    const modeQuery = this.route.snapshot.queryParamMap.get('mode');
+    const projectIdQuery = this.route.snapshot.queryParamMap.get('projectId');
+    const projectIdParam = this.route.snapshot.params['projectId'];
 
-    this.isEdit = mode === 'edit';
-    this.projectId = projectId;
+    this.projectId = projectIdParam || projectIdQuery;
+    this.isEdit = modeQuery === 'edit' || !!projectIdParam;
 
     if (this.isEdit) {
       if (!this.projectId) {

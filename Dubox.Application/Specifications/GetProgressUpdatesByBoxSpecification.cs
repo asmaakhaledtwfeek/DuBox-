@@ -9,35 +9,25 @@ namespace Dubox.Application.Specifications
         public GetProgressUpdatesByBoxSpecification(GetProgressUpdatesByBoxQuery query)
         {
             AddCriteria(pu => pu.BoxId == query.BoxId);
-            // Exclude "NotStarted" status - progress updates should never have this status
-            AddCriteria(pu => pu.Status != Domain.Enums.BoxStatusEnum.NotStarted);
-            AddInclude(nameof(ProgressUpdate.Box));
             AddInclude(nameof(ProgressUpdate.BoxActivity));
-            AddInclude($"{nameof(ProgressUpdate.BoxActivity)}.{nameof(ProgressUpdate.BoxActivity.ActivityMaster)}");
             AddInclude(nameof(ProgressUpdate.UpdatedByUser));
-            // NOTE: Don't include Images - base64 ImageData is too large
-            // Image metadata is loaded separately with lightweight query
-
-            // Search by activity name
+            AddInclude($"{nameof(ProgressUpdate.BoxActivity)}.{(nameof(BoxActivity.ActivityMaster))}");
             if (!string.IsNullOrWhiteSpace(query.ActivityName))
             {
                 var activityNameLower = query.ActivityName.ToLower().Trim();
                 AddCriteria(pu => pu.BoxActivity.ActivityMaster.ActivityName.ToLower().Contains(activityNameLower));
             }
 
-            // Search by status
             if (!string.IsNullOrWhiteSpace(query.Status))
             {
                 AddCriteria(pu => pu.Status.ToString().ToLower() == query.Status.ToLower().Trim());
             }
 
-            // Search by updated by user
             if (query.UpdatedBy.HasValue)
             {
                 AddCriteria(pu => pu.UpdatedBy == query.UpdatedBy.Value);
             }
 
-            // Date range filter
             if (query.FromDate.HasValue)
             {
                 var fromDate = query.FromDate.Value.Date;
@@ -50,7 +40,6 @@ namespace Dubox.Application.Specifications
                 AddCriteria(pu => pu.UpdateDate <= toDate);
             }
 
-            // General search term (searches in work description, issues, activity name, updated by name)
             if (!string.IsNullOrWhiteSpace(query.SearchTerm))
             {
                 var searchTermLower = query.SearchTerm.ToLower().Trim();
@@ -65,8 +54,7 @@ namespace Dubox.Application.Specifications
             }
 
             AddOrderByDescending(pu => pu.UpdateDate);
-            
-            // Enable split query to avoid Cartesian explosion with collection includes (Images)
+
             EnableSplitQuery();
 
             if (query.PageSize > 0 && query.PageNumber > 0)

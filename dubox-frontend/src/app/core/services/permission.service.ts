@@ -60,289 +60,28 @@ export interface NavigationMenuItemDto {
 })
 export class PermissionService {
   private readonly permissionsEndpoint = 'permissions';
+  private readonly PERMISSIONS_STORAGE_KEY = 'user_permissions';
   
   // Cache for user permissions loaded from backend
   private userPermissionsCache = new BehaviorSubject<string[]>([]);
   private permissionsLoaded = false;
   private permissionsLoading = false;
-  
-  // Define module permissions based on Group AMANA roles (fallback if backend not available)
-  private readonly modulePermissions: Record<string, Record<UserRole, string[]>> = {
-    // Projects Module
-    projects: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage', 'export'],
-      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'delete', 'manage', 'export'], // Full project management permissions
-      [UserRole.DesignEngineer]: ['view', 'create', 'edit', 'export'],
-      [UserRole.SiteEngineer]: ['view', 'edit', 'export'],
-      [UserRole.CostEstimator]: ['view', 'export'],
-      [UserRole.Foreman]: ['view'],
-      [UserRole.QCInspector]: ['view'],
-      [UserRole.ProcurementOfficer]: ['view'],
-      [UserRole.HSEOfficer]: ['view'],
-      [UserRole.Viewer]: ['view']
-    },
-    
-    // Boxes Module
-    boxes: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'update-status', 'manage', 'export', 'import'],
-      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'delete', 'update-status', 'manage', 'export', 'import'], // Full box management with import
-      [UserRole.DesignEngineer]: ['view', 'create', 'edit', 'update-status', 'export'],
-      [UserRole.SiteEngineer]: ['view', 'edit', 'update-status', 'export'],
-      [UserRole.Foreman]: ['view', 'update-status'],
-      [UserRole.QCInspector]: ['view', 'update-status'],
-      [UserRole.CostEstimator]: ['view', 'export'],
-      [UserRole.ProcurementOfficer]: ['view'],
-      [UserRole.HSEOfficer]: ['view'],
-      [UserRole.Viewer]: ['view']
-    },
-    
-    // Activities Module
-    activities: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage', 'assign-team', 'update-progress'],
-      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'delete', 'manage', 'assign-team', 'update-progress'], // Full activity management
-      [UserRole.DesignEngineer]: ['view', 'create', 'edit', 'submit'],
-      [UserRole.SiteEngineer]: ['view', 'create', 'edit', 'update-progress'],
-      [UserRole.Foreman]: ['view', 'edit', 'submit', 'update-progress'],
-      [UserRole.QCInspector]: ['view'],
-      [UserRole.CostEstimator]: ['view'],
-      [UserRole.ProcurementOfficer]: ['view'],
-      [UserRole.HSEOfficer]: ['view'],
-      [UserRole.Viewer]: ['view']
-    },
-    
-    // QA/QC Module (mapped to quality-issues)
-    'quality-issues': {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'resolve', 'manage'],
-      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'resolve', 'manage'], // Full quality issue management
-      [UserRole.QCInspector]: ['view', 'create', 'edit', 'resolve'],
-      [UserRole.SiteEngineer]: ['view', 'create'],
-      [UserRole.DesignEngineer]: ['view'],
-      [UserRole.Foreman]: ['view', 'create'],
-      [UserRole.CostEstimator]: ['view'],
-      [UserRole.ProcurementOfficer]: ['view'],
-      [UserRole.HSEOfficer]: ['view'],
-      [UserRole.Viewer]: ['view']
-    },
-    
-    // WIR Module
-    wir: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'approve', 'reject', 'review', 'manage'],
-      [UserRole.ProjectManager]: ['view', 'create', 'approve', 'reject', 'review', 'manage'], // Full WIR management
-      [UserRole.QCInspector]: ['view', 'create', 'approve', 'reject', 'review'],
-      [UserRole.SiteEngineer]: ['view', 'create'], // Can add checklist items and quality issues, but NOT review
-      [UserRole.DesignEngineer]: ['view'],
-      [UserRole.Foreman]: ['view', 'create'],
-      [UserRole.CostEstimator]: ['view'],
-      [UserRole.ProcurementOfficer]: ['view'],
-      [UserRole.HSEOfficer]: ['view'],
-      [UserRole.Viewer]: ['view']
-    },
-    
-    // Users & Admin Module
-    users: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage', 'assign-roles', 'assign-groups'],
-      [UserRole.ProjectManager]: ['view', 'create', 'edit'], // NO delete, assign-roles, or assign-groups
-      [UserRole.DesignEngineer]: [],
-      [UserRole.SiteEngineer]: [],
-      [UserRole.Foreman]: [],
-      [UserRole.QCInspector]: [],
-      [UserRole.ProcurementOfficer]: [],
-      [UserRole.CostEstimator]: [],
-      [UserRole.HSEOfficer]: [],
-      [UserRole.Viewer]: []
-    },
-    
-    // Reports Module
-    reports: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'export', 'manage'],
-      [UserRole.ProjectManager]: ['view', 'create', 'export'],
-      [UserRole.CostEstimator]: ['view', 'create', 'export'],
-      [UserRole.DesignEngineer]: ['view', 'export'],
-      [UserRole.SiteEngineer]: ['view', 'export'],
-      [UserRole.QCInspector]: ['view', 'export'],
-      [UserRole.Foreman]: ['view'],
-      [UserRole.ProcurementOfficer]: ['view', 'export'],
-      [UserRole.HSEOfficer]: ['view', 'export'],
-      [UserRole.Viewer]: ['view']
-    },
-    
-    // Notifications Module
-    notifications: {
-      [UserRole.SystemAdmin]: ['view', 'send', 'manage'],
-      [UserRole.ProjectManager]: ['view', 'send'],
-      [UserRole.DesignEngineer]: ['view'],
-      [UserRole.SiteEngineer]: ['view'],
-      [UserRole.Foreman]: ['view'],
-      [UserRole.QCInspector]: ['view'],
-      [UserRole.ProcurementOfficer]: ['view'],
-      [UserRole.CostEstimator]: ['view'],
-      [UserRole.HSEOfficer]: ['view'],
-      [UserRole.Viewer]: ['view']
-    },
-    
-    // Procurement Module
-    procurement: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'approve', 'manage'],
-      [UserRole.ProjectManager]: ['view', 'create', 'approve'],
-      [UserRole.ProcurementOfficer]: ['view', 'create', 'edit', 'approve'],
-      [UserRole.CostEstimator]: ['view', 'create'],
-      [UserRole.DesignEngineer]: ['view'],
-      [UserRole.SiteEngineer]: ['view'],
-      [UserRole.Foreman]: ['view'],
-      [UserRole.QCInspector]: ['view'],
-      [UserRole.HSEOfficer]: ['view'],
-      [UserRole.Viewer]: ['view']
-    },
-    
-    // HSE (Health, Safety, Environment) Module
-    hse: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage'],
-      [UserRole.ProjectManager]: ['view', 'create', 'edit'],
-      [UserRole.HSEOfficer]: ['view', 'create', 'edit', 'approve'],
-      [UserRole.SiteEngineer]: ['view', 'create'],
-      [UserRole.Foreman]: ['view', 'create'],
-      [UserRole.QCInspector]: ['view'],
-      [UserRole.DesignEngineer]: ['view'],
-      [UserRole.ProcurementOfficer]: ['view'],
-      [UserRole.CostEstimator]: ['view'],
-      [UserRole.Viewer]: ['view']
-    },
-    
-    // Cost Estimation Module
-    costing: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'approve', 'manage'],
-      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'approve'],
-      [UserRole.CostEstimator]: ['view', 'create', 'edit', 'approve'],
-      [UserRole.DesignEngineer]: ['view', 'create'],
-      [UserRole.SiteEngineer]: ['view'],
-      [UserRole.ProcurementOfficer]: ['view'],
-      [UserRole.Foreman]: [],
-      [UserRole.QCInspector]: [],
-      [UserRole.HSEOfficer]: [],
-      [UserRole.Viewer]: ['view']
-    },
-    
-    // Teams Module
-    teams: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'manage', 'manage-members'],
-      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'manage', 'manage-members'], // Full team management
-      [UserRole.SiteEngineer]: ['view', 'edit'],
-      [UserRole.Foreman]: ['view'],
-      [UserRole.DesignEngineer]: ['view'],
-      [UserRole.QCInspector]: ['view'],
-      [UserRole.ProcurementOfficer]: ['view'],
-      [UserRole.HSEOfficer]: ['view'],
-      [UserRole.CostEstimator]: ['view'],
-      [UserRole.Viewer]: ['view']
-    },
-
-    // Materials Module
-    materials: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'restock', 'import', 'manage'],
-      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'restock', 'import'], // Material management with restock and import
-      [UserRole.ProcurementOfficer]: ['view', 'create', 'edit', 'restock', 'import'],
-      [UserRole.CostEstimator]: ['view', 'create', 'edit'],
-      [UserRole.DesignEngineer]: ['view', 'create', 'edit'],
-      [UserRole.SiteEngineer]: ['view', 'edit'],
-      [UserRole.Foreman]: ['view'],
-      [UserRole.QCInspector]: ['view'],
-      [UserRole.HSEOfficer]: ['view'],
-      [UserRole.Viewer]: ['view']
-    },
-
-    // Locations Module
-    locations: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage'],
-      [UserRole.ProjectManager]: ['view', 'create', 'edit'], // Location management (no delete)
-      [UserRole.DesignEngineer]: ['view', 'create', 'edit'],
-      [UserRole.SiteEngineer]: ['view', 'edit'],
-      [UserRole.Foreman]: ['view'],
-      [UserRole.QCInspector]: ['view'],
-      [UserRole.ProcurementOfficer]: ['view'],
-      [UserRole.HSEOfficer]: ['view'],
-      [UserRole.CostEstimator]: ['view'],
-      [UserRole.Viewer]: ['view']
-    },
-    
-    // Progress Updates Module
-    'progress-updates': {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'manage'],
-      [UserRole.ProjectManager]: ['view', 'create', 'edit', 'manage'], // Full progress update management
-      [UserRole.SiteEngineer]: ['view', 'create', 'edit'],
-      [UserRole.Foreman]: ['view', 'create'],
-      [UserRole.DesignEngineer]: ['view'],
-      [UserRole.QCInspector]: ['view'],
-      [UserRole.ProcurementOfficer]: ['view'],
-      [UserRole.CostEstimator]: ['view'],
-      [UserRole.HSEOfficer]: ['view'],
-      [UserRole.Viewer]: ['view']
-    },
-    
-    // Dashboard Module
-    dashboard: {
-      [UserRole.SystemAdmin]: ['view', 'export'],
-      [UserRole.ProjectManager]: ['view', 'export'], // View and export dashboard
-      [UserRole.DesignEngineer]: ['view', 'export'],
-      [UserRole.SiteEngineer]: ['view', 'export'],
-      [UserRole.CostEstimator]: ['view', 'export'],
-      [UserRole.QCInspector]: ['view'],
-      [UserRole.Foreman]: ['view'],
-      [UserRole.ProcurementOfficer]: ['view'],
-      [UserRole.HSEOfficer]: ['view'],
-      [UserRole.Viewer]: ['view']
-    },
-    
-    // Roles Module
-    roles: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage'],
-      [UserRole.ProjectManager]: ['view'], // View only for roles
-      [UserRole.DesignEngineer]: [],
-      [UserRole.SiteEngineer]: [],
-      [UserRole.Foreman]: [],
-      [UserRole.QCInspector]: [],
-      [UserRole.ProcurementOfficer]: [],
-      [UserRole.CostEstimator]: [],
-      [UserRole.HSEOfficer]: [],
-      [UserRole.Viewer]: []
-    },
-    
-    // Groups Module
-    groups: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage'],
-      [UserRole.ProjectManager]: ['view'], // View only for groups
-      [UserRole.DesignEngineer]: [],
-      [UserRole.SiteEngineer]: [],
-      [UserRole.Foreman]: [],
-      [UserRole.QCInspector]: [],
-      [UserRole.ProcurementOfficer]: [],
-      [UserRole.CostEstimator]: [],
-      [UserRole.HSEOfficer]: [],
-      [UserRole.Viewer]: []
-    },
-    
-    // Departments Module
-    departments: {
-      [UserRole.SystemAdmin]: ['view', 'create', 'edit', 'delete', 'manage'],
-      [UserRole.ProjectManager]: ['view'], // View only for departments
-      [UserRole.DesignEngineer]: [],
-      [UserRole.SiteEngineer]: [],
-      [UserRole.Foreman]: [],
-      [UserRole.QCInspector]: [],
-      [UserRole.ProcurementOfficer]: [],
-      [UserRole.CostEstimator]: [],
-      [UserRole.HSEOfficer]: [],
-      [UserRole.Viewer]: []
-    }
-  };
 
   constructor(
     private authService: AuthService,
     private apiService: ApiService
-  ) {}
+  ) {
+    // Load permissions from localStorage immediately on service creation
+    this.loadPermissionsFromStorage();
+  }
 
   /**
    * Check if user has permission for a specific module and action
-   * Checks backend permissions first, then falls back to hardcoded role-based permissions
+   * ONLY uses backend permissions - no fallback
+   * 
+   * @param module - The permission module (e.g., 'projects', 'boxes')
+   * @param action - The permission action (e.g., 'view', 'create', 'edit')
+   * @returns true if user has the permission, false otherwise
    */
   hasPermission(module: string, action: string): boolean {
     const user = this.authService.getCurrentUser();
@@ -360,33 +99,17 @@ export class PermissionService {
     const permissionKey = `${module.toLowerCase()}.${action.toLowerCase()}`;
     const cachedPermissions = this.userPermissionsCache.value;
     
-    // If backend permissions are loaded, use them
-    if (this.permissionsLoaded && cachedPermissions.length > 0) {
-      const hasPermission = cachedPermissions.some(p => 
-        p.toLowerCase() === permissionKey
-      );
-      console.log(`🔐 Permission check (backend): ${permissionKey} = ${hasPermission}`);
-      return hasPermission;
-    }
-
-    // Fallback to hardcoded role-based permissions
-    const modulePerms = this.modulePermissions[module.toLowerCase()];
-    if (!modulePerms) {
-      console.log(`🔐 Permission check (fallback): Module "${module}" not found`);
+    // Check if permissions are loaded from backend
+    if (!this.permissionsLoaded) {
       return false;
     }
 
-    // Check if any of the user's roles grants the permission
-    for (const role of user.allRoles) {
-      const rolePerms = modulePerms[role];
-      if (rolePerms && rolePerms.includes(action.toLowerCase())) {
-        console.log(`🔐 Permission check (fallback): ${permissionKey} = true (via role ${role})`);
-        return true;
-      }
-    }
-
-    console.log(`🔐 Permission check (fallback): ${permissionKey} = false`);
-    return false;
+    // Check backend permissions
+    const hasPermission = cachedPermissions.some(p => 
+      p.toLowerCase() === permissionKey
+    );
+    
+    return hasPermission;
   }
 
   /**
@@ -453,7 +176,7 @@ export class PermissionService {
   }
 
   /**
-   * Get allowed actions for module
+   * Get allowed actions for a specific module from backend permissions
    */
   getAllowedActions(module: string): string[] {
     const user = this.authService.getCurrentUser();
@@ -464,22 +187,23 @@ export class PermissionService {
 
     // SystemAdmin has all actions
     if (user.allRoles.includes(UserRole.SystemAdmin)) {
-      return ['view', 'create', 'edit', 'delete', 'manage', 'approve', 'reject', 'export'];
+      return ['view', 'create', 'edit', 'delete', 'manage', 'approve', 'reject', 'export', 'import', 'review', 'resolve', 'assign-team', 'assign-roles', 'assign-groups', 'update-progress', 'update-status', 'restock', 'manage-members', 'change-status', 'send'];
     }
 
-    const modulePerms = this.modulePermissions[module];
-    if (!modulePerms) {
-      return [];
-    }
-
-    // Combine all permissions from all user roles
+    // Extract actions from cached permissions for the specified module
+    const cachedPermissions = this.userPermissionsCache.value;
+    const modulePrefix = `${module.toLowerCase()}.`;
     const allActions = new Set<string>();
-    for (const role of user.allRoles) {
-      const rolePerms = modulePerms[role];
-      if (rolePerms) {
-        rolePerms.forEach(action => allActions.add(action));
+
+    cachedPermissions.forEach(permissionKey => {
+      const lowerKey = permissionKey.toLowerCase();
+      if (lowerKey.startsWith(modulePrefix)) {
+        const action = lowerKey.substring(modulePrefix.length);
+        if (action) {
+          allActions.add(action);
+        }
       }
-    }
+    });
 
     return Array.from(allActions);
   }
@@ -593,7 +317,49 @@ export class PermissionService {
   }
 
   /**
+   * Load permissions from localStorage (synchronous)
+   * Called on service initialization to restore cached permissions
+   */
+  private loadPermissionsFromStorage(): void {
+    try {
+      const storedPermissions = localStorage.getItem(this.PERMISSIONS_STORAGE_KEY);
+      if (storedPermissions) {
+        const permissions = JSON.parse(storedPermissions);
+        if (Array.isArray(permissions)) {
+          this.userPermissionsCache.next(permissions);
+          this.permissionsLoaded = true;
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load permissions from storage:', err);
+    }
+  }
+
+  /**
+   * Save permissions to localStorage (synchronous)
+   */
+  private savePermissionsToStorage(permissions: string[]): void {
+    try {
+      localStorage.setItem(this.PERMISSIONS_STORAGE_KEY, JSON.stringify(permissions));
+    } catch (err) {
+      console.error('Failed to save permissions to storage:', err);
+    }
+  }
+
+  /**
+   * Remove permissions from localStorage
+   */
+  private clearPermissionsFromStorage(): void {
+    try {
+      localStorage.removeItem(this.PERMISSIONS_STORAGE_KEY);
+    } catch (err) {
+      console.error('Failed to clear permissions from storage:', err);
+    }
+  }
+
+  /**
    * Load and cache current user's permissions from backend
+   * This is the ONLY source of truth for permissions
    */
   loadCurrentUserPermissions(): Observable<string[]> {
     const user = this.authService.getCurrentUser();
@@ -612,16 +378,19 @@ export class PermissionService {
     return this.getUserPermissionsFromBackend(user.id).pipe(
       map(result => result?.permissionKeys || []),
       tap(permissions => {
-        console.log('✅ Loaded user permissions from backend:', permissions);
         this.userPermissionsCache.next(permissions);
+        this.savePermissionsToStorage(permissions); // Save to localStorage
         this.permissionsLoaded = true;
         this.permissionsLoading = false;
       }),
       catchError(err => {
-        console.warn('⚠️ Failed to load permissions from backend, using role-based fallback:', err);
+        console.error('Failed to load permissions from backend:', err);
+        
         this.permissionsLoaded = true;
         this.permissionsLoading = false;
-        return of([]);
+        
+        // Return cached permissions if available, otherwise empty array
+        return of(this.userPermissionsCache.value);
       })
     );
   }
@@ -638,8 +407,10 @@ export class PermissionService {
    */
   clearPermissions(): void {
     this.userPermissionsCache.next([]);
+    this.clearPermissionsFromStorage(); // Clear from localStorage
     this.permissionsLoaded = false;
     this.permissionsLoading = false;
+    this.clearNavigationMenuCache(); // Clear navigation menu cache
   }
 
   /**
@@ -651,18 +422,20 @@ export class PermissionService {
 
   /**
    * Check if user has a specific permission key (from backend)
+   * 
+   * @param permissionKey - The full permission key (e.g., "projects.view")
+   * @returns true if user has the permission, false otherwise
    */
   hasPermissionKey(permissionKey: string): boolean {
-    const cachedPermissions = this.userPermissionsCache.value;
-    if (cachedPermissions.length > 0) {
-      return cachedPermissions.includes(permissionKey);
-    }
+    const user = this.authService.getCurrentUser();
     
-    // Fallback to role-based check
-    return this.hasPermission(
-      permissionKey.split('.')[0], 
-      permissionKey.split('.')[1] || 'view'
-    );
+    // SystemAdmin has all permissions
+    if (user?.allRoles?.includes(UserRole.SystemAdmin)) {
+      return true;
+    }
+
+    const cachedPermissions = this.userPermissionsCache.value;
+    return cachedPermissions.some(p => p.toLowerCase() === permissionKey.toLowerCase());
   }
 
   /**
@@ -681,15 +454,58 @@ export class PermissionService {
 
   // ============= Navigation Menu Items =============
 
+  private navigationMenuCache: NavigationMenuItemDto[] | null = null;
+  private navigationMenuLoading = false;
+
   /**
-   * Get navigation menu items from database
+   * Get navigation menu items from database (cached)
+   * This ensures the API is called only ONCE even if sidebar component is recreated
    */
   getNavigationMenuItems(): Observable<NavigationMenuItemDto[]> {
+    // Return cached menu if available
+    if (this.navigationMenuCache !== null) {
+      console.log('📋 Returning cached navigation menu items (no API call)');
+      return of(this.navigationMenuCache);
+    }
+
+    // Prevent multiple simultaneous API calls
+    if (this.navigationMenuLoading) {
+      console.log('📋 Navigation menu already loading, waiting...');
+      // Wait a bit and retry (menu will be cached by then)
+      return new Observable<NavigationMenuItemDto[]>(observer => {
+        const checkInterval = setInterval(() => {
+          if (this.navigationMenuCache !== null) {
+            clearInterval(checkInterval);
+            observer.next(this.navigationMenuCache);
+            observer.complete();
+          }
+        }, 100);
+      });
+    }
+
+    console.log('📋 Loading navigation menu items from backend (one-time API call)');
+    this.navigationMenuLoading = true;
+
     return this.apiService.get<NavigationMenuItemDto[]>('navigation/menu').pipe(
+      tap(items => {
+        this.navigationMenuCache = items;
+        this.navigationMenuLoading = false;
+        console.log('✅ Navigation menu cached successfully:', items.length, 'items');
+      }),
       catchError(err => {
         console.warn('⚠️ Failed to load navigation menu from backend:', err);
+        this.navigationMenuCache = []; // Cache empty array to prevent retries
+        this.navigationMenuLoading = false;
         return of([]);
       })
     );
+  }
+
+  /**
+   * Clear navigation menu cache (call on logout)
+   */
+  clearNavigationMenuCache(): void {
+    this.navigationMenuCache = null;
+    this.navigationMenuLoading = false;
   }
 }

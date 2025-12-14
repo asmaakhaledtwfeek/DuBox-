@@ -4,6 +4,7 @@ using Dubox.Application.Utilities;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
@@ -15,24 +16,29 @@ public class GetBoxesSummaryReportQueryHandler : IRequestHandler<GetBoxesSummary
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IDbContext _dbContext;
+    private readonly IProjectTeamVisibilityService _visibilityService;
 
-    public GetBoxesSummaryReportQueryHandler(IUnitOfWork unitOfWork, IDbContext dbContext)
+    public GetBoxesSummaryReportQueryHandler(IUnitOfWork unitOfWork, IDbContext dbContext, IProjectTeamVisibilityService visibilityService)
     {
         _unitOfWork = unitOfWork;
         _dbContext = dbContext;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<PaginatedBoxSummaryReportResponseDto>> Handle(GetBoxesSummaryReportQuery request, CancellationToken cancellationToken)
     {
         try
         {
+            // Apply visibility filtering
+            var accessibleProjectIds = await _visibilityService.GetAccessibleProjectIdsAsync(cancellationToken);
+
             var pageNumber = request.PageNumber < 1 ? 1 : request.PageNumber;
             var pageSize = request.PageSize < 1 ? 25 : (request.PageSize > 100 ? 100 : request.PageSize);
 
-            var paginatedSpec = new BoxesSummaryReportSpecification(request, enablePaging: true);
+            var paginatedSpec = new BoxesSummaryReportSpecification(request, accessibleProjectIds, enablePaging: true);
             var paginatedResult = _unitOfWork.Repository<Box>().GetWithSpec(paginatedSpec);
 
-            var countSpec = new BoxesSummaryReportSpecification(request, enablePaging: false);
+            var countSpec = new BoxesSummaryReportSpecification(request, accessibleProjectIds, enablePaging: false);
             var countResult = _unitOfWork.Repository<Box>().GetWithSpec(countSpec);
             var totalCount = countResult.Count > 0 ? countResult.Count : await countResult.Data.CountAsync(cancellationToken);
 

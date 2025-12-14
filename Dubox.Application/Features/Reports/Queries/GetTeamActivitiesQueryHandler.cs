@@ -1,6 +1,7 @@
 using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Enums;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
@@ -11,16 +12,28 @@ namespace Dubox.Application.Features.Reports.Queries;
 public class GetTeamActivitiesQueryHandler : IRequestHandler<GetTeamActivitiesQuery, Result<TeamActivitiesResponseDto>>
 {
     private readonly IDbContext _dbContext;
+    private readonly IProjectTeamVisibilityService _visibilityService;
 
-    public GetTeamActivitiesQueryHandler(IDbContext dbContext)
+    public GetTeamActivitiesQueryHandler(IDbContext dbContext, IProjectTeamVisibilityService visibilityService)
     {
         _dbContext = dbContext;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<TeamActivitiesResponseDto>> Handle(GetTeamActivitiesQuery request, CancellationToken cancellationToken)
     {
         try
         {
+            // Check if user has access to this team
+            var canAccessTeam = await _visibilityService.CanAccessTeamAsync(request.TeamId, cancellationToken);
+            if (!canAccessTeam)
+            {
+                return Result.Failure<TeamActivitiesResponseDto>("Access denied. You do not have permission to view this team's activities.");
+            }
+
+            // Get accessible project IDs for filtering
+            var accessibleProjectIds = await _visibilityService.GetAccessibleProjectIdsAsync(cancellationToken);
+
             // Get team
             var team = await _dbContext.Teams
                 .AsNoTracking()
@@ -40,6 +53,12 @@ public class GetTeamActivitiesQueryHandler : IRequestHandler<GetTeamActivitiesQu
                     .ThenInclude(b => b.Project)
                 .Include(ba => ba.ActivityMaster)
                 .AsQueryable();
+
+            // Apply project visibility filter
+            if (accessibleProjectIds != null)
+            {
+                activitiesQuery = activitiesQuery.Where(ba => accessibleProjectIds.Contains(ba.Box.ProjectId));
+            }
 
             // Apply project filter
             if (request.ProjectId.HasValue && request.ProjectId.Value != Guid.Empty)

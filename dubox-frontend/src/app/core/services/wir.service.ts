@@ -15,12 +15,15 @@ import {
   PredefinedChecklistItem,
   ReviewWIRCheckpointRequest,
   AddQualityIssueRequest,
+  CreateQualityIssueForBoxRequest,
   QualityIssueItem,
   QualityIssueDetails,
   QualityIssueImage,
   UpdateQualityIssueStatusRequest,
   WIRCheckpointFilter,
-  WIRCheckpointChecklistItem
+  WIRCheckpointChecklistItem,
+  PaginatedQualityIssuesResponse,
+  PaginatedWIRCheckpointsResponse
 } from '../models/wir.model';
 
 @Injectable({
@@ -156,11 +159,30 @@ export class WIRService {
     );
   }
 
-  getWIRCheckpoints(params?: WIRCheckpointFilter): Observable<WIRCheckpoint[]> {
+  getWIRCheckpoints(params?: WIRCheckpointFilter): Observable<PaginatedWIRCheckpointsResponse> {
     return this.apiService.get<any>(`wircheckpoints`, params).pipe(
       map(response => {
-        const checkpoints = response || [];
-        return (checkpoints as any[]).map(c => this.transformWIRCheckpoint(c));
+        const data = response?.data || response;
+        if (data?.items) {
+          // Paginated response
+          return {
+            items: data.items.map((c: any) => this.transformWIRCheckpoint(c)),
+            totalCount: data.totalCount || 0,
+            page: data.page || 1,
+            pageSize: data.pageSize || 25,
+            totalPages: data.totalPages || 0
+          };
+        } else {
+          // Fallback for non-paginated response (backward compatibility)
+          const checkpoints = Array.isArray(data) ? data : [];
+          return {
+            items: checkpoints.map((c: any) => this.transformWIRCheckpoint(c)),
+            totalCount: checkpoints.length,
+            page: 1,
+            pageSize: checkpoints.length || 25,
+            totalPages: 1
+          };
+        }
       })
     );
   }
@@ -357,6 +379,44 @@ export class WIRService {
   }
 
   /**
+   * Get all quality issues (with optional filters and pagination)
+   */
+  getAllQualityIssues(params?: {
+    searchTerm?: string;
+    status?: string;
+    severity?: string;
+    issueType?: string;
+    page?: number;
+    pageSize?: number;
+  }): Observable<PaginatedQualityIssuesResponse> {
+    return this.apiService.get<any>('qualityissues', params).pipe(
+      map(response => {
+        const data = response?.data || response;
+        if (data?.items) {
+          // Paginated response
+          return {
+            items: data.items.map((issue: any) => this.transformQualityIssueDetails(issue)),
+            totalCount: data.totalCount || 0,
+            page: data.page || 1,
+            pageSize: data.pageSize || 25,
+            totalPages: data.totalPages || 0
+          };
+        } else {
+          // Fallback for non-paginated response (backward compatibility)
+          const issues = Array.isArray(data) ? data : [];
+          return {
+            items: issues.map((issue: any) => this.transformQualityIssueDetails(issue)),
+            totalCount: issues.length,
+            page: 1,
+            pageSize: issues.length || 25,
+            totalPages: 1
+          };
+        }
+      })
+    );
+  }
+
+  /**
    * Get quality issues for a box
    */
   getQualityIssuesByBox(boxId: string): Observable<QualityIssueDetails[]> {
@@ -368,53 +428,94 @@ export class WIRService {
     );
   }
 
+  /**
+   * Get a single quality issue by id
+   */
+  getQualityIssueById(issueId: string): Observable<QualityIssueDetails> {
+    return this.apiService.get<any>(`qualityissues/${issueId}`).pipe(
+      map(response => {
+        const issue = response?.data || response;
+        return this.transformQualityIssueDetails(issue);
+      })
+    );
+  }
+
+  /**
+   * Create a quality issue directly for a box (without WIR checkpoint)
+   */
+  createQualityIssueForBox(request: CreateQualityIssueForBoxRequest): Observable<QualityIssueDetails> {
+    // Always send multipart/form-data to match backend expectations and avoid JSON parsing issues
+    const formData = new FormData();
+    formData.append('BoxId', request.boxId);
+    formData.append('IssueType', request.issueType);
+    formData.append('Severity', request.severity);
+    formData.append('IssueDescription', request.issueDescription);
+    
+    if (request.assignedTo) {
+      formData.append('AssignedTo', request.assignedTo);
+    }
+    
+    if (request.dueDate) {
+      const dueDateStr = request.dueDate instanceof Date 
+        ? request.dueDate.toISOString() 
+        : request.dueDate;
+      formData.append('DueDate', dueDateStr);
+    }
+    
+    // Append image URLs if any
+    if (request.imageUrls && request.imageUrls.length > 0) {
+      request.imageUrls.forEach((url: string) => {
+        formData.append('ImageUrls', url);
+      });
+    }
+    
+    // Append files if any
+    if (request.files && request.files.length > 0) {
+      request.files.forEach((file: File) => {
+        formData.append('Files', file);
+      });
+    }
+    
+    return this.apiService.postFormData<any>('qualityissues', formData).pipe(
+      map(response => {
+        const issue = response?.data || response;
+        return this.transformQualityIssueDetails(issue);
+      })
+    );
+  }
+
   updateQualityIssueStatus(
     issueId: string, 
     payload: UpdateQualityIssueStatusRequest,
     files?: File[],
     imageUrls?: string[]
   ): Observable<QualityIssueDetails> {
-    const hasFiles = files && files.length > 0;
-    const hasUrls = imageUrls && imageUrls.length > 0;
+    // Always send multipart/form-data because backend endpoint [Consumes("multipart/form-data")]
+    const formData = new FormData();
+    formData.append('Status', payload.status);
     
-    // If files or URLs are provided, send as multipart/form-data
-    if (hasFiles || hasUrls) {
-      const formData = new FormData();
-      formData.append('Status', payload.status);
-      
-      if (payload.resolutionDescription) {
-        formData.append('ResolutionDescription', payload.resolutionDescription);
-      }
-      
-      // Append multiple files
-      if (hasFiles) {
-        files.forEach((file) => {
-          formData.append('Files', file);
-        });
-      }
-      
-      // Append multiple image URLs
-      if (hasUrls) {
-        imageUrls.forEach((url) => {
-          formData.append('ImageUrls', url);
-        });
-      }
-
-      return this.apiService.put<any>(`qualityissues/${issueId}/status`, formData).pipe(
-        map(response => {
-          const issue = response?.data || response;
-          return this.transformQualityIssueDetails(issue);
-        })
-      );
-    } else {
-      // No files/URLs, send as JSON (backward compatibility)
-      return this.apiService.put<any>(`qualityissues/${issueId}/status`, payload).pipe(
-        map(response => {
-          const issue = response?.data || response;
-          return this.transformQualityIssueDetails(issue);
-        })
-      );
+    if (payload.resolutionDescription) {
+      formData.append('ResolutionDescription', payload.resolutionDescription);
     }
+    
+    if (files && files.length > 0) {
+      files.forEach((file) => {
+        formData.append('Files', file);
+      });
+    }
+    
+    if (imageUrls && imageUrls.length > 0) {
+      imageUrls.forEach((url) => {
+        formData.append('ImageUrls', url);
+      });
+    }
+
+    return this.apiService.put<any>(`qualityissues/${issueId}/status`, formData).pipe(
+      map(response => {
+        const issue = response?.data || response;
+        return this.transformQualityIssueDetails(issue);
+      })
+    );
   }
 
   /**
@@ -555,6 +656,7 @@ export class WIRService {
       qualityIssueImageId: img.qualityIssueImageId || img.QualityIssueImageId,
       issueId: img.issueId || img.IssueId,
       imageData: img.imageData || img.ImageData,
+      imageUrl: img.imageUrl || img.ImageUrl, // backend may return url for on-demand fetch
       imageType: (img.imageType || img.ImageType || 'file') as 'file' | 'url',
       originalName: img.originalName || img.OriginalName,
       fileSize: img.fileSize || img.FileSize,

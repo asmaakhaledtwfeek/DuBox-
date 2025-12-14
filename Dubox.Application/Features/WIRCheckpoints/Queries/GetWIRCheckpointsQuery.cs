@@ -11,7 +11,9 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
      WIRCheckpointStatusEnum? Status,
      string? WIRNumber,
      DateTime? From,
-     DateTime? To
- ) : IRequest<Result<List<WIRCheckpointDto>>>;
+     DateTime? To,
+     int Page = 1,
+     int PageSize = 25
+ ) : IRequest<Result<PaginatedWIRCheckpointsResponseDto>>;
 
 }

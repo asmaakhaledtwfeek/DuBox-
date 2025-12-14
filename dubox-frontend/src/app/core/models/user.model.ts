@@ -20,7 +20,6 @@ export enum UserRole {
   QCInspector = 'QCInspector',
   ProcurementOfficer = 'ProcurementOfficer',
   HSEOfficer = 'HSEOfficer',
-  DesignEngineer = 'DesignEngineer',
   CostEstimator = 'CostEstimator',
   Viewer = 'Viewer'
 }
@@ -92,7 +91,6 @@ export function getUserPrimaryRole(user: User | null): UserRole | null {
   const rolePriority = [
     UserRole.SystemAdmin,
     UserRole.ProjectManager,
-    UserRole.DesignEngineer,
     UserRole.SiteEngineer,
     UserRole.CostEstimator,
     UserRole.QCInspector,

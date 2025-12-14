@@ -1,198 +1,342 @@
 <app-header></app-header>
 <app-sidebar></app-sidebar>
 
-<div class="page-container">
-  <div class="page-content">
-    <!-- Page Header -->
-    <div class="page-header">
-      <div class="header-left">
-        <button class="btn-back" (click)="onCancel()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="19" y1="12" x2="5" y2="12"/>
-            <polyline points="12 19 5 12 12 5"/>
+<div class="create-project-page">
+  <div class="page-container">
+    <main class="main-content">
+      <!-- Breadcrumb -->
+      <nav class="breadcrumb">
+        <a routerLink="/projects" class="breadcrumb-item">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
           </svg>
-          Back to Projects
-        </button>
-        <h1 class="page-title">
-          {{ isEdit ? 'Update Project' : 'Create New Project' }}
-        </h1>
-        <p class="page-subtitle">
-          {{ isEdit ? 'Modify the project details and save your changes' : 'Add a new construction project to the system' }}
-        </p>
-      </div>
-    </div>
+          Projects
+        </a>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="breadcrumb-separator">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        <span class="breadcrumb-item active">{{ isEdit ? 'Edit Project' : 'Create Project' }}</span>
+      </nav>
 
-    <!-- Success Message -->
-    <div class="alert alert-success" *ngIf="successMessage">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-        <polyline points="22 4 12 14.01 9 11.01"/>
-      </svg>
-      {{ successMessage }}
-    </div>
-
-    <!-- Error Message -->
-    <!-- Loading Project Message -->
-    <div class="alert alert-info" *ngIf="initializing">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <polyline points="12 6 12 12 16 14"/>
-      </svg>
-      Loading project details...
-    </div>
-
-    <div class="alert alert-error" *ngIf="error">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="15" y1="9" x2="9" y2="15"/>
-        <line x1="9" y1="9" x2="15" y2="15"/>
-      </svg>
-      {{ error }}
-    </div>
-
-    <!-- Form -->
-    <form [formGroup]="projectForm" (ngSubmit)="onSubmit()" class="project-form">
-      <div class="form-card">
-        <div class="card-header">
-          <h3>Project Information</h3>
-          <p>Enter the basic details about the project</p>
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="header-content">
+          <div class="header-icon">
+            <svg *ngIf="!isEdit" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="16"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+            <svg *ngIf="isEdit" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="page-title">{{ isEdit ? 'Edit Project' : 'Create New Project' }}</h1>
+            <p class="page-subtitle">{{ isEdit ? 'Update project information and settings' : 'Add a new construction project to the system' }}</p>
+          </div>
         </div>
+      </div>
 
-        <div class="card-body">
-          <!-- Project Name -->
-          <div class="form-group">
-            <label for="projectName" class="form-label required">Project Name</label>
-            <input
-              id="projectName"
-              type="text"
-              formControlName="projectName"
-              class="form-control"
-              [class.invalid]="isFieldInvalid('projectName')"
-              placeholder="e.g., Dubai Marina Tower Construction"
-            />
-            <div class="error-message" *ngIf="isFieldInvalid('projectName')">
-              {{ getFieldError('projectName') }}
-            </div>
-          </div>
+      <!-- Alerts -->
+      <div *ngIf="successMessage" class="alert alert-success">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        {{ successMessage }}
+      </div>
 
-          <!-- Project Code -->
-          <div class="form-group">
-            <label for="projectCode" class="form-label required">Project Code</label>
-            <input
-              id="projectCode"
-              type="text"
-              formControlName="projectCode"
-              class="form-control"
-              [class.invalid]="isFieldInvalid('projectCode')"
-              placeholder="e.g., DUB-2024-001"
-            />
-            <div class="error-message" *ngIf="isFieldInvalid('projectCode')">
-              {{ getFieldError('projectCode') }}
-            </div>
-          </div>
+      <div *ngIf="initializing" class="alert alert-info">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        Loading project details...
+      </div>
 
-          <!-- Client Name -->
-          <div class="form-group">
-            <label for="clientName" class="form-label">Client Name</label>
-            <input
-              id="clientName"
-              type="text"
-              formControlName="clientName"
-              class="form-control"
-              [class.invalid]="isFieldInvalid('clientName')"
-              placeholder="e.g., Amana Contracting"
-            />
-            <div class="error-message" *ngIf="isFieldInvalid('clientName')">
-              {{ getFieldError('clientName') }}
-            </div>
-          </div>
+      <div *ngIf="error" class="alert alert-error">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 8v4M12 16h.01"/>
+        </svg>
+        {{ error }}
+      </div>
 
-          <!-- Location -->
-          <div class="form-group">
-            <label for="location" class="form-label">Location</label>
-            <input
-              id="location"
-              type="text"
-              formControlName="location"
-              class="form-control"
-              [class.invalid]="isFieldInvalid('location')"
-              placeholder="e.g., Dubai, UAE"
-            />
-            <div class="error-message" *ngIf="isFieldInvalid('location')">
-              {{ getFieldError('location') }}
-            </div>
-          </div>
-
-          <!-- Planned Start Date & Duration -->
-          <div class="form-row">
-            <div class="form-group">
-              <label for="plannedStartDate" class="form-label required">Planned Start Date</label>
-              <input
-                id="plannedStartDate"
-                type="date"
-                formControlName="plannedStartDate"
-                class="form-control"
-                [class.invalid]="isFieldInvalid('plannedStartDate')"
-              />
-              <div class="error-message" *ngIf="isFieldInvalid('plannedStartDate')">
-                {{ getFieldError('plannedStartDate') }}
+      <!-- Form Container -->
+      <div class="form-container">
+        <form [formGroup]="projectForm" (ngSubmit)="onSubmit()">
+          
+          <!-- Basic Information Section -->
+          <div class="form-section">
+            <div class="section-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+              <div>
+                <h3 class="section-title">Project Information</h3>
+                <p class="section-description">Basic details and identification</p>
               </div>
             </div>
 
-            <div class="form-group">
-              <label for="duration" class="form-label required">Duration (days)</label>
-              <div class="duration-input">
+            <div class="form-grid">
+              <!-- Project Name -->
+              <div class="form-group">
+                <label for="projectName">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                  </svg>
+                  Project Name <span class="required">*</span>
+                </label>
+                <input
+                  id="projectName"
+                  type="text"
+                  formControlName="projectName"
+                  class="form-control"
+                  placeholder="e.g., Dubai Marina Tower Construction"
+                  [class.invalid]="isFieldInvalid('projectName')"
+                />
+                <div class="error-text" *ngIf="isFieldInvalid('projectName')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  {{ getFieldError('projectName') }}
+                </div>
+              </div>
+
+              <!-- Project Code -->
+              <div class="form-group">
+                <label for="projectCode">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 7V5c0-1.1.9-2 2-2h2"/>
+                    <path d="M17 3h2c1.1 0 2 .9 2 2v2"/>
+                    <path d="M21 17v2c0 1.1-.9 2-2 2h-2"/>
+                    <path d="M7 21H5c-1.1 0-2-.9-2-2v-2"/>
+                    <rect x="7" y="7" width="10" height="10" rx="1"/>
+                  </svg>
+                  Project Code <span class="required">*</span>
+                </label>
+                <input
+                  id="projectCode"
+                  type="text"
+                  formControlName="projectCode"
+                  class="form-control"
+                  placeholder="e.g., DUB-2024-001"
+                  [class.invalid]="isFieldInvalid('projectCode')"
+                />
+                <div class="error-text" *ngIf="isFieldInvalid('projectCode')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  {{ getFieldError('projectCode') }}
+                </div>
+              </div>
+
+              <!-- Client Name -->
+              <div class="form-group">
+                <label for="clientName">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  Client Name
+                </label>
+                <input
+                  id="clientName"
+                  type="text"
+                  formControlName="clientName"
+                  class="form-control"
+                  placeholder="e.g., Amana Contracting"
+                  [class.invalid]="isFieldInvalid('clientName')"
+                />
+                <div class="error-text" *ngIf="isFieldInvalid('clientName')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  {{ getFieldError('clientName') }}
+                </div>
+              </div>
+
+              <!-- Location -->
+              <div class="form-group">
+                <label for="location">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                    <circle cx="12" cy="10" r="3"/>
+                  </svg>
+                  Location
+                </label>
+                <input
+                  id="location"
+                  type="text"
+                  formControlName="location"
+                  class="form-control"
+                  placeholder="e.g., Dubai, UAE"
+                  [class.invalid]="isFieldInvalid('location')"
+                />
+                <div class="error-text" *ngIf="isFieldInvalid('location')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  {{ getFieldError('location') }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Timeline Section -->
+          <div class="form-section">
+            <div class="section-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <div>
+                <h3 class="section-title">Timeline & Schedule</h3>
+                <p class="section-description">Project start date and duration</p>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <!-- Planned Start Date -->
+              <div class="form-group">
+                <label for="plannedStartDate">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  Planned Start Date <span class="required">*</span>
+                </label>
+                <input
+                  id="plannedStartDate"
+                  type="date"
+                  formControlName="plannedStartDate"
+                  class="form-control"
+                  [class.invalid]="isFieldInvalid('plannedStartDate')"
+                />
+                <div class="error-text" *ngIf="isFieldInvalid('plannedStartDate')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  {{ getFieldError('plannedStartDate') }}
+                </div>
+              </div>
+
+              <!-- Duration -->
+              <div class="form-group">
+                <label for="duration">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                  </svg>
+                  Duration (days) <span class="required">*</span>
+                </label>
                 <input
                   id="duration"
                   type="number"
                   formControlName="duration"
                   class="form-control"
-                  [class.invalid]="isFieldInvalid('duration')"
                   min="1"
-                  placeholder="e.g., 120"
+                  placeholder="e.g., 180"
+                  [class.invalid]="isFieldInvalid('duration')"
                 />
-              </div>
-              <div class="error-message" *ngIf="isFieldInvalid('duration')">
-                {{ getFieldError('duration') }}
+                <div class="error-text" *ngIf="isFieldInvalid('duration')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  {{ getFieldError('duration') }}
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Description -->
-          <div class="form-group">
-            <label for="description" class="form-label">Description</label>
-            <textarea
-              id="description"
-              formControlName="description"
-              class="form-control"
-              [class.invalid]="isFieldInvalid('description')"
-              rows="4"
-              placeholder="Enter a detailed description of the project..."
-            ></textarea>
-            <div class="error-message" *ngIf="isFieldInvalid('description')">
-              {{ getFieldError('description') }}
+          <!-- Description Section -->
+          <div class="form-section">
+            <div class="section-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+              <div>
+                <h3 class="section-title">Additional Details</h3>
+                <p class="section-description">Description and notes about the project</p>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <!-- Description -->
+              <div class="form-group full-width">
+                <label for="description">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="17" y1="10" x2="3" y2="10"/>
+                    <line x1="21" y1="6" x2="3" y2="6"/>
+                    <line x1="21" y1="14" x2="3" y2="14"/>
+                    <line x1="17" y1="18" x2="3" y2="18"/>
+                  </svg>
+                  Project Description
+                </label>
+                <textarea
+                  id="description"
+                  formControlName="description"
+                  class="form-control"
+                  rows="4"
+                  placeholder="Enter a detailed description of the project scope, objectives, and key deliverables..."
+                  [class.invalid]="isFieldInvalid('description')"
+                ></textarea>
+                <div class="error-text" *ngIf="isFieldInvalid('description')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  {{ getFieldError('description') }}
+                </div>
+              </div>
             </div>
           </div>
 
-        </div>
+          <!-- Form Actions -->
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="loading || initializing">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="loading || initializing">
+              <span class="spinner" *ngIf="loading"></span>
+              <svg *ngIf="!loading" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+              </svg>
+              <span *ngIf="!loading">{{ isEdit ? 'Save Changes' : 'Create Project' }}</span>
+              <span *ngIf="loading">{{ isEdit ? 'Saving...' : 'Creating...' }}</span>
+            </button>
+          </div>
+        </form>
       </div>
-
-      <!-- Form Actions -->
-      <div class="form-actions">
-        <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="loading || initializing">
-          Cancel
-        </button>
-        <button type="submit" class="btn btn-primary" [disabled]="loading || initializing">
-          <span class="spinner" *ngIf="loading"></span>
-          <span *ngIf="!loading">
-            {{ isEdit ? 'Update Project' : 'Create Project' }}
-          </span>
-          <span *ngIf="loading">
-            {{ isEdit ? 'Updating...' : 'Creating...' }}
-          </span>
-        </button>
-      </div>
-    </form>
+    </main>
   </div>
 </div>
 

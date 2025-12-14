@@ -44,8 +44,24 @@ public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Applicati
     {
         public string? Username => "System";
         public string? UserId => "00000000-0000-0000-0000-000000000000";
-            public string? Role => "System";
+        public string? Role => "SystemAdmin";
+        public IEnumerable<string> Roles => new[] { "SystemAdmin" };
         public bool IsAuthenticated => false;
+
+        public Task<IEnumerable<string>> GetUserRolesAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<IEnumerable<string>>(new[] { "SystemAdmin" });
+        }
+
+        public Task<bool> HasRoleAsync(string roleName, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(roleName == "SystemAdmin");
+        }
+
+        public Task<bool> HasAnyRoleAsync(IEnumerable<string> roleNames, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(roleNames.Contains("SystemAdmin"));
+        }
     }
 }
 

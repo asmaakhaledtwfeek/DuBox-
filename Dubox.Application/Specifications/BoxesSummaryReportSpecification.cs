@@ -7,10 +7,18 @@ namespace Dubox.Application.Specifications;
 
 public class BoxesSummaryReportSpecification : Specification<Box>
 {
-    public BoxesSummaryReportSpecification(GetBoxesSummaryReportQuery query, bool enablePaging = true)
+    public BoxesSummaryReportSpecification(GetBoxesSummaryReportQuery query, List<Guid>? accessibleProjectIds, bool enablePaging = true)
     {
         AddInclude(nameof(Box.Project));
         AddInclude(nameof(Box.CurrentLocation));
+
+        // Apply visibility filtering
+        // If accessibleProjectIds is null, user can access all projects (SystemAdmin)
+        // If list is provided, filter to only those projects
+        if (accessibleProjectIds != null)
+        {
+            AddCriteria(b => accessibleProjectIds.Contains(b.ProjectId));
+        }
 
         if (query.ProjectId.HasValue && query.ProjectId.Value != Guid.Empty)
             AddCriteria(b => b.ProjectId == query.ProjectId.Value);

@@ -105,8 +105,14 @@
           <p *ngIf="usersError" class="text-error">{{ usersError }}</p>
         </div>
         <div class="toolbar-actions">
-          <button class="btn btn-primary" (click)="openUserModal('create')">
-            Add User
+          <button class="btn btn-add-user" (click)="openUserModal('create')">
+            <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <line x1="19" y1="8" x2="19" y2="14"></line>
+              <line x1="22" y1="11" x2="16" y2="11"></line>
+            </svg>
+            <span class="btn-text">Add User</span>
           </button>
         </div>
       </div>
@@ -289,9 +295,17 @@
         <div class="toolbar-actions">
           <button 
             *ngIf="canCreateGroup" 
-            class="btn btn-primary" 
+            class="btn btn-new-group" 
             (click)="openGroupModal('create')">
-            New Group
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="btn-icon">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              <line x1="12" y1="8" x2="12" y2="14"/>
+              <line x1="9" y1="11" x2="15" y2="11"/>
+            </svg>
+            <span class="btn-text">New Group</span>
           </button>
         </div>
       </div>
@@ -399,9 +413,14 @@
         <div class="toolbar-actions">
           <button 
             *ngIf="canCreateRole" 
-            class="btn btn-primary" 
+            class="btn btn-create-role" 
             (click)="openRoleModal('create')">
-            Create Role
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="btn-icon">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="16"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+            <span class="btn-text">Create Role</span>
           </button>
         </div>
       </div>

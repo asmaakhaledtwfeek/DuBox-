@@ -4,7 +4,6 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 import { BoxService } from '../../../core/services/box.service';
-import { PermissionService } from '../../../core/services/permission.service';
 import { BoxActivity } from '../../../core/models/box.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
@@ -46,12 +45,6 @@ export class ActivityDetailsComponent implements OnInit {
   loading = true;
   error = '';
   isModalOpen = false;
-  
-  // Permissions
-  canUpdateProgress = false;
-  canAssignTeam = false;
-  canIssueMaterial = false;
-  canSetSchedule = false;
 
   // Activity Logs
   activityLogs: AuditLog[] = [];
@@ -97,33 +90,37 @@ export class ActivityDetailsComponent implements OnInit {
   availableMembers: TeamMember[] = [];
   availableMaterials: any[] = [];
 
+  // Permission properties
+  canAssignTeam = true;
+  canIssueMaterial = true;
+  canSetSchedule = true;
+  canUpdateProgress = true;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private fb: FormBuilder,
     private boxService: BoxService,
-    private permissionService: PermissionService,
     private progressUpdateService: ProgressUpdateService,
     private teamService: TeamService,
     private auditLogService: AuditLogService
   ) {}
+
+  returnTo: string | null = null; // Store return context
 
   ngOnInit(): void {
     this.projectId = this.route.snapshot.params['projectId'];
     this.boxId = this.route.snapshot.params['boxId'];
     this.activityId = this.route.snapshot.params['activityId'];
     
+    // Get returnTo query parameter to determine where to navigate back
+    this.returnTo = this.route.snapshot.queryParams['returnTo'] || null;
+    
     if (!this.projectId || !this.boxId || !this.activityId) {
       this.error = 'Missing required parameters';
       this.loading = false;
       return;
     }
-    
-    // Check permissions
-    this.canUpdateProgress = this.permissionService.hasPermission('activities', 'update-progress');
-    this.canAssignTeam = this.permissionService.hasPermission('activities', 'assign-team');
-    this.canIssueMaterial = this.permissionService.hasPermission('materials', 'restock'); // Using restock permission for material issuing
-    this.canSetSchedule = this.permissionService.canEdit('activities');
     
     this.initForms();
     this.loadActivity();
@@ -462,18 +459,6 @@ export class ActivityDetailsComponent implements OnInit {
     return DiffUtil.getActionLabel(action);
   }
 
-  getActionType(action: string): string {
-    const upperAction = action.toUpperCase();
-    if (upperAction.includes('INSERT') || upperAction.includes('CREATE')) {
-      return 'create';
-    } else if (upperAction.includes('UPDATE') || upperAction.includes('MODIFY') || upperAction.includes('CHANGE')) {
-      return 'update';
-    } else if (upperAction.includes('DELETE') || upperAction.includes('REMOVE')) {
-      return 'delete';
-    }
-    return 'other';
-  }
-
   formatDescription(log: AuditLog): string {
     return log.description || log.entityDisplayName || `${log.action} on ${log.tableName}`;
   }
@@ -552,9 +537,28 @@ export class ActivityDetailsComponent implements OnInit {
   }
 
   openProgressDetails(update: ProgressUpdate): void {
-    this.selectedProgressUpdate = update;
-    this.isProgressModalOpen = true;
-    document.body.style.overflow = 'hidden';
+    // Fetch the full details from the backend using the new endpoint
+    if (update.progressUpdateId) {
+      this.progressUpdateService.getProgressUpdateById(update.progressUpdateId).subscribe({
+        next: (fullUpdate) => {
+          this.selectedProgressUpdate = fullUpdate;
+          this.isProgressModalOpen = true;
+          document.body.style.overflow = 'hidden';
+        },
+        error: (err) => {
+          console.error('Error fetching progress update details:', err);
+          // Fallback to the update object we already have
+          this.selectedProgressUpdate = update;
+          this.isProgressModalOpen = true;
+          document.body.style.overflow = 'hidden';
+        }
+      });
+    } else {
+      // If no ID is available, use the update object we have
+      this.selectedProgressUpdate = update;
+      this.isProgressModalOpen = true;
+      document.body.style.overflow = 'hidden';
+    }
   }
 
   closeProgressDetails(): void {
@@ -612,57 +616,35 @@ export class ActivityDetailsComponent implements OnInit {
     if (progressUpdate.images && Array.isArray(progressUpdate.images) && progressUpdate.images.length > 0) {
       return progressUpdate.images
         .sort((a: any, b: any) => (a.sequence || 0) - (b.sequence || 0))
-        .map((img: any) => img.imageData || img.ImageData || '')
+        .map((img: any) => {
+          // Try imageData first (full base64), then imageUrl (for on-demand loading)
+          let url = img.imageData || img.ImageData || img.imageUrl || img.ImageUrl || '';
+          
+          // If it's a relative URL (starts with /api/), prepend the base URL
+          if (url && url.startsWith('/api/')) {
+            // Get base URL from current location
+            const baseUrl = `${window.location.protocol}//${window.location.host}`;
+            url = baseUrl + url;
+          }
+          
+          return url;
+        })
         .filter((url: string) => url && url.trim().length > 0);
     }
     
-    // Fallback to old Photo field (backward compatibility)
-    const photoUrls = progressUpdate.photo || progressUpdate.photoUrls;
+    // Fallback to old photo field (deprecated but kept for backward compatibility)
+    const photoUrls = progressUpdate.photo || progressUpdate.Photo;
     if (!photoUrls) return [];
-    
-    // Check if it's a base64 string (starts with data:image or is a long base64 string)
-    if (typeof photoUrls === 'string' && photoUrls.startsWith('data:image/')) {
-      return [photoUrls];
-    }
-    
-    // Check if it's a base64 string without data URI prefix
-    const base64Pattern = /^[A-Za-z0-9+/=]+$/;
-    if (typeof photoUrls === 'string' && photoUrls.length > 100 && base64Pattern.test(photoUrls)) {
-      return [`data:image/jpeg;base64,${photoUrls}`];
-    }
     
     try {
       const parsed = JSON.parse(photoUrls);
       if (Array.isArray(parsed)) {
-        return parsed.map((url: any) => {
-          if (typeof url === 'string') {
-            if (url.startsWith('data:image/')) {
-              return url;
-            }
-            const base64Pattern = /^[A-Za-z0-9+/=]+$/;
-            if (url.length > 100 && base64Pattern.test(url)) {
-              return `data:image/jpeg;base64,${url}`;
-            }
-            return url;
-          }
-          return '';
-        }).filter((url: string) => url && url.trim().length > 0);
+        return parsed.filter((url: string) => url && typeof url === 'string' && url.trim().length > 0);
       }
     } catch {
       // If not JSON, try splitting by comma
       if (typeof photoUrls === 'string') {
-        return photoUrls.split(',').map((url: string) => {
-          const trimmed = url.trim();
-          if (!trimmed) return '';
-          if (trimmed.startsWith('data:image/')) {
-            return trimmed;
-          }
-          const base64Pattern = /^[A-Za-z0-9+/=]+$/;
-          if (trimmed.length > 100 && base64Pattern.test(trimmed)) {
-            return `data:image/jpeg;base64,${trimmed}`;
-          }
-          return trimmed;
-        }).filter((url: string) => url.length > 0);
+        return photoUrls.split(',').map((url: string) => url.trim()).filter((url: string) => url.length > 0);
       }
     }
     
@@ -670,33 +652,13 @@ export class ActivityDetailsComponent implements OnInit {
   }
 
   openPhotoInNewTab(photoUrl: string): void {
-    // For base64 images, create a new window with the image
-    if (photoUrl.startsWith('data:image/')) {
-      const newWindow = window.open();
-      if (newWindow) {
-        newWindow.document.write(`<img src="${photoUrl}" style="max-width: 100%; height: auto;" />`);
-      }
-    } else {
-      window.open(photoUrl, '_blank');
-    }
+    window.open(photoUrl, '_blank');
   }
 
   downloadPhoto(photoUrl: string): void {
     const link = document.createElement('a');
-    
-    if (photoUrl.startsWith('data:image/')) {
-      // Handle base64 image
-      link.href = photoUrl;
-      // Extract format from data URI or default to jpg
-      const formatMatch = photoUrl.match(/data:image\/([^;]+)/);
-      const format = formatMatch ? formatMatch[1] : 'jpg';
-      link.download = `progress-photo-${Date.now()}.${format}`;
-    } else {
-      // Handle regular URL
-      link.href = photoUrl;
-      link.download = photoUrl.split('/').pop() || 'photo.jpg';
-    }
-    
+    link.href = photoUrl;
+    link.download = photoUrl.split('/').pop() || 'photo.jpg';
     link.target = '_blank';
     document.body.appendChild(link);
     link.click();
@@ -709,7 +671,18 @@ export class ActivityDetailsComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/projects', this.projectId, 'boxes', this.boxId]);
+    // Navigate back based on returnTo context
+    if (this.returnTo === 'progress-history') {
+      // Navigate back to box details page with progress-updates tab active
+      this.router.navigate(['/projects', this.projectId, 'boxes', this.boxId], {
+        queryParams: { tab: 'progress-updates' }
+      });
+    } else {
+      // Default: navigate back to activities table (box details page with activities tab)
+      this.router.navigate(['/projects', this.projectId, 'boxes', this.boxId], {
+        queryParams: { tab: 'activities' }
+      });
+    }
   }
 
   getStatusClass(status: string): string {
@@ -1110,5 +1083,17 @@ export class ActivityDetailsComponent implements OnInit {
         console.error('Error setting schedule:', err);
       }
     });
+  }
+
+  getActionType(action: string): string {
+    const upperAction = action.toUpperCase();
+    if (upperAction.includes('INSERT') || upperAction.includes('CREATE')) {
+      return 'create';
+    } else if (upperAction.includes('UPDATE') || upperAction.includes('MODIFY') || upperAction.includes('CHANGE')) {
+      return 'update';
+    } else if (upperAction.includes('DELETE') || upperAction.includes('REMOVE')) {
+      return 'delete';
+    }
+    return 'other';
   }
 }

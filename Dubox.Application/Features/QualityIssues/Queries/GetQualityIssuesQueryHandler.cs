@@ -2,6 +2,7 @@
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
@@ -9,24 +10,43 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.QualityIssues.Queries
 {
-    public class GetQualityIssuesQueryHandler : IRequestHandler<GetQualityIssuesQuery, Result<List<QualityIssueDetailsDto>>>
+    public class GetQualityIssuesQueryHandler : IRequestHandler<GetQualityIssuesQuery, Result<PaginatedQualityIssuesResponseDto>>
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IDbContext _dbContext;
+        private readonly IProjectTeamVisibilityService _visibilityService;
         
-        public GetQualityIssuesQueryHandler(IUnitOfWork unitOfWork, IDbContext dbContext)
+        public GetQualityIssuesQueryHandler(
+            IUnitOfWork unitOfWork, 
+            IDbContext dbContext,
+            IProjectTeamVisibilityService visibilityService)
         {
             _unitOfWork = unitOfWork;
             _dbContext = dbContext;
+            _visibilityService = visibilityService;
         }
 
-        public async Task<Result<List<QualityIssueDetailsDto>>> Handle(GetQualityIssuesQuery request, CancellationToken cancellationToken)
+        public async Task<Result<PaginatedQualityIssuesResponseDto>> Handle(GetQualityIssuesQuery request, CancellationToken cancellationToken)
         {
-            // Use AsNoTracking and ToListAsync for better performance
-            var qualityIssues = await _unitOfWork.Repository<QualityIssue>()
-                .GetWithSpec(new GetQualityIssuesSpecification(request)).Data
+            // Get accessible project IDs based on user role
+            var accessibleProjectIds = await _visibilityService.GetAccessibleProjectIdsAsync(cancellationToken);
+            
+            // Normalize pagination parameters
+            var (page, pageSize) = new PaginatedRequest
+            {
+                Page = request.Page,
+                PageSize = request.PageSize
+            }.GetNormalizedPagination();
+            
+            // Get quality issues with specification (includes pagination)
+            var qualityIssuesResult = _unitOfWork.Repository<QualityIssue>()
+                .GetWithSpec(new GetQualityIssuesSpecification(request, accessibleProjectIds));
+            
+            var qualityIssues = await qualityIssuesResult.Data
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
+            
+            var totalCount = qualityIssuesResult.Count;
 
             var dtos = qualityIssues.Select(issue =>
             {
@@ -38,7 +58,19 @@ namespace Dubox.Application.Features.QualityIssues.Queries
             // Load image metadata separately (without base64 ImageData) for performance
             await PopulateImageMetadata(dtos, cancellationToken);
 
-            return Result.Success(dtos);
+            // Calculate total pages
+            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+            var response = new PaginatedQualityIssuesResponseDto
+            {
+                Items = dtos,
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+                TotalPages = totalPages
+            };
+
+            return Result.Success(response);
         }
         
         private async Task PopulateImageMetadata(List<QualityIssueDetailsDto> issues, CancellationToken cancellationToken)

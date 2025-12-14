@@ -439,6 +439,9 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
         next: (response) => {
           this.successMessage = 'Progress updated successfully!';
           
+          // Clear cache for this box so progress history shows updated data
+          this.progressUpdateService.clearCache(this.activity.boxId);
+          
           // Show WIR creation message if applicable
           if (response.wirCreated) {
             this.successMessage += ` WIR ${response.wirCode} has been automatically created for QC inspection.`;

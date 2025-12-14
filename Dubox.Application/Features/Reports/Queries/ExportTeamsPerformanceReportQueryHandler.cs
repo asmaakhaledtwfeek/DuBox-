@@ -13,21 +13,28 @@ public class ExportTeamsPerformanceReportQueryHandler : IRequestHandler<ExportTe
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IExcelService _excelService;
+    private readonly IProjectTeamVisibilityService _visibilityService;
 
-    public ExportTeamsPerformanceReportQueryHandler(IUnitOfWork unitOfWork, IExcelService excelService)
+    public ExportTeamsPerformanceReportQueryHandler(IUnitOfWork unitOfWork, IExcelService excelService, IProjectTeamVisibilityService visibilityService)
     {
         _unitOfWork = unitOfWork;
         _excelService = excelService;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<Stream>> Handle(ExportTeamsPerformanceReportQuery request, CancellationToken cancellationToken)
     {
         try
         {
+            // Apply visibility filtering
+            var accessibleProjectIds = await _visibilityService.GetAccessibleProjectIdsAsync(cancellationToken);
+            var accessibleTeamIds = await _visibilityService.GetAccessibleTeamIdsAsync(cancellationToken);
+
             // Use specification to get filtered activities at database level (only activities with TeamId)
             var activitiesSpec = new ActivitiesReportSpecification(
                 projectId: request.ProjectId,
                 status: request.Status,
+                accessibleProjectIds: accessibleProjectIds,
                 enablePaging: false,
                 onlyWithTeamId: true
             );
@@ -37,7 +44,7 @@ public class ExportTeamsPerformanceReportQueryHandler : IRequestHandler<ExportTe
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
 
-            var teamsResult = _unitOfWork.Repository<Domain.Entities.Team>().GetWithSpec(new TeamsPerformanceReportSpecification(request));
+            var teamsResult = _unitOfWork.Repository<Domain.Entities.Team>().GetWithSpec(new TeamsPerformanceReportSpecification(request, accessibleTeamIds));
             var teams = await teamsResult.Data
                 .Include(t => t.Members)
                 .AsNoTracking()

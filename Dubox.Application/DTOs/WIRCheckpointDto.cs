@@ -42,6 +42,8 @@ namespace Dubox.Application.DTOs
         public List<QualityIssueDto> QualityIssues { get; set; } = new();
         public List<WIRCheckpointImageDto> Images { get; set; } = new();
     }
+
+    public record PaginatedWIRCheckpointsResponseDto : PaginatedResponse<WIRCheckpointDto>;
     
     /// <summary>
     /// Lightweight image info without base64 data - used in listings.

@@ -1427,13 +1427,6 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            GroupRoleId = new Guid("b4444444-4444-4444-4444-444444444444"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            GroupId = new Guid("a2222222-2222-2222-2222-222222222222"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
-                        },
-                        new
-                        {
                             GroupRoleId = new Guid("b5555555-5555-5555-5555-555555555555"),
                             AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             GroupId = new Guid("a2222222-2222-2222-2222-222222222222"),
@@ -1497,24 +1490,10 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            GroupRoleId = new Guid("beeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            GroupId = new Guid("a7777777-7777-7777-7777-777777777777"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
-                        },
-                        new
-                        {
                             GroupRoleId = new Guid("bfffffff-ffff-ffff-ffff-ffffffffffff"),
                             AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             GroupId = new Guid("a7777777-7777-7777-7777-777777777777"),
                             RoleId = new Guid("22222222-2222-2222-2222-222222222222")
-                        },
-                        new
-                        {
-                            GroupRoleId = new Guid("b0000001-0000-0000-0000-000000000001"),
-                            AssignedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            GroupId = new Guid("a8888888-8888-8888-8888-888888888888"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
                         },
                         new
                         {
@@ -1803,7 +1782,7 @@ namespace Dubox.Infrastructure.Migrations
                             IsActive = true,
                             IsVisible = true,
                             Label = "Admin",
-                            PermissionAction = "manage",
+                            PermissionAction = "view",
                             PermissionModule = "users",
                             Route = "/admin"
                         });
@@ -3290,7 +3269,6 @@ namespace Dubox.Infrastructure.Migrations
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<int>("Status")
-                        .HasMaxLength(50)
                         .HasColumnType("int");
 
                     b.Property<Guid?>("TeamId")
@@ -3680,14 +3658,6 @@ namespace Dubox.Infrastructure.Migrations
                             Description = "Health, Safety, and Environment oversight",
                             IsActive = true,
                             RoleName = "HSEOfficer"
-                        },
-                        new
-                        {
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888"),
-                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Design and BIM modeling",
-                            IsActive = true,
-                            RoleName = "DesignEngineer"
                         },
                         new
                         {
@@ -5191,487 +5161,340 @@ namespace Dubox.Infrastructure.Migrations
                             RolePermissionId = new Guid("20000000-0000-0000-0000-000000000208"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0001-000000000001"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
+                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
                         },
                         new
                         {
                             RolePermissionId = new Guid("20000000-0000-0000-0000-000000000209"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0001-000000000002"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
+                            PermissionId = new Guid("10000000-0000-0000-0001-000000000005"),
+                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
                         },
                         new
                         {
                             RolePermissionId = new Guid("20000000-0000-0000-0000-000000000210"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0001-000000000003"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
+                            PermissionId = new Guid("10000000-0000-0000-0002-000000000001"),
+                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
                         },
                         new
                         {
                             RolePermissionId = new Guid("20000000-0000-0000-0000-000000000211"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0001-000000000005"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
+                            PermissionId = new Guid("10000000-0000-0000-0002-000000000007"),
+                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
                         },
                         new
                         {
                             RolePermissionId = new Guid("20000000-0000-0000-0000-000000000212"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0002-000000000001"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
+                            PermissionId = new Guid("10000000-0000-0000-0003-000000000001"),
+                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
                         },
                         new
                         {
                             RolePermissionId = new Guid("20000000-0000-0000-0000-000000000213"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0002-000000000002"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
+                            PermissionId = new Guid("10000000-0000-0000-0004-000000000001"),
+                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
                         },
                         new
                         {
                             RolePermissionId = new Guid("20000000-0000-0000-0000-000000000214"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0002-000000000003"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
+                            PermissionId = new Guid("10000000-0000-0000-0005-000000000001"),
+                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
                         },
                         new
                         {
                             RolePermissionId = new Guid("20000000-0000-0000-0000-000000000215"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0002-000000000005"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
+                            PermissionId = new Guid("10000000-0000-0000-0005-000000000002"),
+                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
                         },
                         new
                         {
                             RolePermissionId = new Guid("20000000-0000-0000-0000-000000000216"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0002-000000000007"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
+                            PermissionId = new Guid("10000000-0000-0000-0006-000000000001"),
+                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
                         },
                         new
                         {
                             RolePermissionId = new Guid("20000000-0000-0000-0000-000000000217"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0003-000000000001"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
+                            PermissionId = new Guid("10000000-0000-0000-0007-000000000001"),
+                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
                         },
                         new
                         {
                             RolePermissionId = new Guid("20000000-0000-0000-0000-000000000218"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0003-000000000002"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
+                            PermissionId = new Guid("10000000-0000-0000-0008-000000000001"),
+                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
                         },
                         new
                         {
                             RolePermissionId = new Guid("20000000-0000-0000-0000-000000000219"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0003-000000000003"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
+                            PermissionId = new Guid("10000000-0000-0000-0008-000000000002"),
+                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
                         },
                         new
                         {
                             RolePermissionId = new Guid("20000000-0000-0000-0000-000000000220"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0004-000000000001"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
+                            PermissionId = new Guid("10000000-0000-0000-0014-000000000001"),
+                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
                         },
                         new
                         {
                             RolePermissionId = new Guid("20000000-0000-0000-0000-000000000221"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0005-000000000001"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
+                            PermissionId = new Guid("10000000-0000-0000-0001-000000000001"),
+                            RoleId = new Guid("66666666-6666-6666-6666-666666666666")
                         },
                         new
                         {
                             RolePermissionId = new Guid("20000000-0000-0000-0000-000000000222"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0006-000000000001"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
+                            PermissionId = new Guid("10000000-0000-0000-0002-000000000001"),
+                            RoleId = new Guid("66666666-6666-6666-6666-666666666666")
                         },
                         new
                         {
                             RolePermissionId = new Guid("20000000-0000-0000-0000-000000000223"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0007-000000000001"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
+                            PermissionId = new Guid("10000000-0000-0000-0003-000000000001"),
+                            RoleId = new Guid("66666666-6666-6666-6666-666666666666")
                         },
                         new
                         {
                             RolePermissionId = new Guid("20000000-0000-0000-0000-000000000224"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0008-000000000001"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
+                            PermissionId = new Guid("10000000-0000-0000-0004-000000000001"),
+                            RoleId = new Guid("66666666-6666-6666-6666-666666666666")
                         },
                         new
                         {
                             RolePermissionId = new Guid("20000000-0000-0000-0000-000000000225"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0008-000000000002"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
+                            PermissionId = new Guid("10000000-0000-0000-0005-000000000001"),
+                            RoleId = new Guid("66666666-6666-6666-6666-666666666666")
                         },
                         new
                         {
                             RolePermissionId = new Guid("20000000-0000-0000-0000-000000000226"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0014-000000000001"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
+                            PermissionId = new Guid("10000000-0000-0000-0005-000000000002"),
+                            RoleId = new Guid("66666666-6666-6666-6666-666666666666")
                         },
                         new
                         {
                             RolePermissionId = new Guid("20000000-0000-0000-0000-000000000227"),
-                            GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0016-000000000001"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
-                        },
-                        new
-                        {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000228"),
-                            GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0016-000000000002"),
-                            RoleId = new Guid("88888888-8888-8888-8888-888888888888")
-                        },
-                        new
-                        {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000229"),
-                            GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0001-000000000001"),
-                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
-                        },
-                        new
-                        {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000230"),
-                            GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0001-000000000005"),
-                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
-                        },
-                        new
-                        {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000231"),
-                            GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0002-000000000001"),
-                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
-                        },
-                        new
-                        {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000232"),
-                            GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0002-000000000007"),
-                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
-                        },
-                        new
-                        {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000233"),
-                            GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0003-000000000001"),
-                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
-                        },
-                        new
-                        {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000234"),
-                            GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0004-000000000001"),
-                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
-                        },
-                        new
-                        {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000235"),
-                            GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0005-000000000001"),
-                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
-                        },
-                        new
-                        {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000236"),
-                            GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0005-000000000002"),
-                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
-                        },
-                        new
-                        {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000237"),
-                            GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0006-000000000001"),
-                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
-                        },
-                        new
-                        {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000238"),
-                            GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0007-000000000001"),
-                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
-                        },
-                        new
-                        {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000239"),
-                            GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0008-000000000001"),
-                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
-                        },
-                        new
-                        {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000240"),
-                            GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0008-000000000002"),
-                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
-                        },
-                        new
-                        {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000241"),
-                            GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0014-000000000001"),
-                            RoleId = new Guid("99999999-9999-9999-9999-999999999999")
-                        },
-                        new
-                        {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000242"),
-                            GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0001-000000000001"),
-                            RoleId = new Guid("66666666-6666-6666-6666-666666666666")
-                        },
-                        new
-                        {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000243"),
-                            GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0002-000000000001"),
-                            RoleId = new Guid("66666666-6666-6666-6666-666666666666")
-                        },
-                        new
-                        {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000244"),
-                            GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0003-000000000001"),
-                            RoleId = new Guid("66666666-6666-6666-6666-666666666666")
-                        },
-                        new
-                        {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000245"),
-                            GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0004-000000000001"),
-                            RoleId = new Guid("66666666-6666-6666-6666-666666666666")
-                        },
-                        new
-                        {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000246"),
-                            GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0005-000000000001"),
-                            RoleId = new Guid("66666666-6666-6666-6666-666666666666")
-                        },
-                        new
-                        {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000247"),
-                            GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            PermissionId = new Guid("10000000-0000-0000-0005-000000000002"),
-                            RoleId = new Guid("66666666-6666-6666-6666-666666666666")
-                        },
-                        new
-                        {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000248"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0005-000000000003"),
                             RoleId = new Guid("66666666-6666-6666-6666-666666666666")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000249"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000228"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0005-000000000005"),
                             RoleId = new Guid("66666666-6666-6666-6666-666666666666")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000250"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000229"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0005-000000000006"),
                             RoleId = new Guid("66666666-6666-6666-6666-666666666666")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000251"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000230"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0006-000000000001"),
                             RoleId = new Guid("66666666-6666-6666-6666-666666666666")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000252"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000231"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0007-000000000001"),
                             RoleId = new Guid("66666666-6666-6666-6666-666666666666")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000253"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000232"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0008-000000000001"),
                             RoleId = new Guid("66666666-6666-6666-6666-666666666666")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000254"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000233"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0008-000000000002"),
                             RoleId = new Guid("66666666-6666-6666-6666-666666666666")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000255"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000234"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0014-000000000001"),
                             RoleId = new Guid("66666666-6666-6666-6666-666666666666")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000256"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000235"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0001-000000000001"),
                             RoleId = new Guid("77777777-7777-7777-7777-777777777777")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000257"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000236"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0002-000000000001"),
                             RoleId = new Guid("77777777-7777-7777-7777-777777777777")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000258"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000237"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0003-000000000001"),
                             RoleId = new Guid("77777777-7777-7777-7777-777777777777")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000259"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000238"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0004-000000000001"),
                             RoleId = new Guid("77777777-7777-7777-7777-777777777777")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000260"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000239"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0005-000000000001"),
                             RoleId = new Guid("77777777-7777-7777-7777-777777777777")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000261"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000240"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0006-000000000001"),
                             RoleId = new Guid("77777777-7777-7777-7777-777777777777")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000262"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000241"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0006-000000000003"),
                             RoleId = new Guid("77777777-7777-7777-7777-777777777777")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000263"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000242"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0007-000000000001"),
                             RoleId = new Guid("77777777-7777-7777-7777-777777777777")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000264"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000243"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0007-000000000002"),
                             RoleId = new Guid("77777777-7777-7777-7777-777777777777")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000265"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000244"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0008-000000000001"),
                             RoleId = new Guid("77777777-7777-7777-7777-777777777777")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000266"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000245"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0008-000000000002"),
                             RoleId = new Guid("77777777-7777-7777-7777-777777777777")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000267"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000246"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0014-000000000001"),
                             RoleId = new Guid("77777777-7777-7777-7777-777777777777")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000268"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000247"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0001-000000000001"),
                             RoleId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000269"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000248"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0002-000000000001"),
                             RoleId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000270"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000249"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0003-000000000001"),
                             RoleId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000271"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000250"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0004-000000000001"),
                             RoleId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000272"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000251"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0005-000000000001"),
                             RoleId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000273"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000252"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0006-000000000001"),
                             RoleId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000274"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000253"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0007-000000000001"),
                             RoleId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000275"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000254"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0008-000000000001"),
                             RoleId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000276"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000255"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0014-000000000001"),
                             RoleId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
                         },
                         new
                         {
-                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000277"),
+                            RolePermissionId = new Guid("20000000-0000-0000-0000-000000000256"),
                             GrantedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             PermissionId = new Guid("10000000-0000-0000-0016-000000000001"),
                             RoleId = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
@@ -5682,6 +5505,9 @@ namespace Dubox.Infrastructure.Migrations
                 {
                     b.Property<Guid>("TeamId")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CreatedBy")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedDate")

@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormControl, FormGroup, ReactiveFormsModule, FormsModule, Validators } from '@angular/forms';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, skip } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 import { LocationService, FactoryLocation, CreateLocationRequest } from '../../../core/services/location.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
@@ -15,7 +16,7 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
   templateUrl: './locations-management.component.html',
   styleUrls: ['./locations-management.component.scss']
 })
-export class LocationsManagementComponent implements OnInit {
+export class LocationsManagementComponent implements OnInit, OnDestroy {
   locations: FactoryLocation[] = [];
   filteredLocations: FactoryLocation[] = [];
   loading = true;
@@ -46,6 +47,8 @@ export class LocationsManagementComponent implements OnInit {
     position: new FormControl('', [Validators.maxLength(50)]),
     capacity: new FormControl<number | null>(null)
   });
+  
+  private subscriptions: Subscription[] = [];
 
   constructor(
     private router: Router,
@@ -54,10 +57,31 @@ export class LocationsManagementComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.canCreate = this.permissionService.canCreate('locations') || this.permissionService.canEdit('locations');
+    // Check permissions immediately
+    this.checkPermissions();
+    
+    // Subscribe to permission changes to update UI when permissions are loaded
+    this.subscriptions.push(
+      this.permissionService.permissions$
+        .pipe(skip(1)) // Skip initial empty value
+        .subscribe(() => {
+          console.log('🔄 Permissions updated, re-checking locations permissions');
+          this.checkPermissions();
+        })
+    );
+    
     this.loadLocations();
     this.setupSearch();
     this.setupLocationCodeCheck();
+  }
+  
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+  
+  private checkPermissions(): void {
+    this.canCreate = this.permissionService.canCreate('locations') || this.permissionService.canEdit('locations');
+    console.log('✅ Can create location:', this.canCreate);
   }
 
   private setupSearch(): void {

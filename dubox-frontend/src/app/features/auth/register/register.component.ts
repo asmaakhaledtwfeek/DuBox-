@@ -5,7 +5,7 @@ import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { DepartmentService } from '../../../core/services/department.service';
 import { Department } from '../../../core/models/team.model';
-import { RegisterRequest } from '../../../core/models/user.model';
+import { RegisterRequest } from '@core/models/user.model';
 
 const disallowValueValidator = (value: string): ValidatorFn => {
   return (control: AbstractControl): ValidationErrors | null => {

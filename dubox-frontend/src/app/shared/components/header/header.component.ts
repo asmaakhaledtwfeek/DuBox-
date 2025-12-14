@@ -53,7 +53,6 @@ export class HeaderComponent implements OnInit {
       [UserRole.QCInspector]: 'QC Inspector',
       [UserRole.ProcurementOfficer]: 'Procurement Officer',
       [UserRole.HSEOfficer]: 'HSE Officer',
-      [UserRole.DesignEngineer]: 'Design Engineer',
       [UserRole.CostEstimator]: 'Cost Estimator',
       [UserRole.Viewer]: 'Viewer'
     };

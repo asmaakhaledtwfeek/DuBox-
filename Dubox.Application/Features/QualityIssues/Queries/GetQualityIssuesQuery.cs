@@ -6,9 +6,11 @@ using MediatR;
 namespace Dubox.Application.Features.QualityIssues.Queries
 {
     public record GetQualityIssuesQuery(
-    string? SearchTerm = null,
-    QualityIssueStatusEnum? Status = null,
-    SeverityEnum? Severity = null,
-    IssueTypeEnum? IssueType = null
-) : IRequest<Result<List<QualityIssueDetailsDto>>>;
+        string? SearchTerm = null,
+        QualityIssueStatusEnum? Status = null,
+        SeverityEnum? Severity = null,
+        IssueTypeEnum? IssueType = null,
+        int Page = 1,
+        int PageSize = 25
+    ) : IRequest<Result<PaginatedQualityIssuesResponseDto>>;
 }

@@ -1,0 +1,63 @@
+<div class="modal-backdrop" *ngIf="visible">
+  <div class="modal-container" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <div>
+        <h2>Box Log Details</h2>
+        <p *ngIf="log" class="modal-subtitle">
+          {{ DiffUtil.getActionLabel(log.action) }} Box
+        </p>
+      </div>
+      <button class="icon-button" aria-label="Close dialog" (click)="close()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body" *ngIf="log; else emptyState">
+      <div class="log-meta">
+        <div>
+          <span class="label">Entity</span>
+          <strong>{{ boxName || '—' }}</strong>
+        </div>
+        <div>
+          <span class="label">Performed By</span>
+          <strong>{{ log.performedBy || '—' }}</strong>
+        </div>
+        <div>
+          <span class="label">Timestamp</span>
+          <strong>{{ log.performedAt | date: 'MMM d, y, h:mm a' }}</strong>
+        </div>
+      </div>
+
+      <div class="values-table" *ngIf="valueRows.length > 0; else noValues">
+        <div class="table-header">
+          <span>Old Values</span>
+          <span>New Values</span>
+        </div>
+        <div class="table-row" *ngFor="let row of valueRows">
+          <div class="value-block">
+            <p class="field">{{ row.field }}</p>
+            <p class="value">{{ row.oldValue }}</p>
+          </div>
+          <div class="value-block">
+            <p class="field">{{ row.field }}</p>
+            <p class="value">{{ row.newValue }}</p>
+          </div>
+        </div>
+      </div>
+      <ng-template #noValues>
+        <div class="empty-message">
+          <p *ngIf="log.description">{{ log.description }}</p>
+          <p *ngIf="!log.description">No captured field values for this log entry.</p>
+        </div>
+      </ng-template>
+    </div>
+    <ng-template #emptyState>
+      <div class="empty-message">
+        <p>Unable to load details for this log entry.</p>
+      </div>
+    </ng-template>
+  </div>
+</div>

@@ -54,7 +54,6 @@ public static class RoleAndUserSeedData
             new Role { RoleId = Guid.Parse("55555555-5555-5555-5555-555555555555"), RoleName = "QCInspector", Description = "Quality control and inspection", IsActive = true, CreatedDate = seedDate },
             new Role { RoleId = Guid.Parse("66666666-6666-6666-6666-666666666666"), RoleName = "ProcurementOfficer", Description = "Handle material procurement", IsActive = true, CreatedDate = seedDate },
             new Role { RoleId = Guid.Parse("77777777-7777-7777-7777-777777777777"), RoleName = "HSEOfficer", Description = "Health, Safety, and Environment oversight", IsActive = true, CreatedDate = seedDate },
-            new Role { RoleId = Guid.Parse("88888888-8888-8888-8888-888888888888"), RoleName = "DesignEngineer", Description = "Design and BIM modeling", IsActive = true, CreatedDate = seedDate },
             new Role { RoleId = Guid.Parse("99999999-9999-9999-9999-999999999999"), RoleName = "CostEstimator", Description = "Cost estimation and budgeting", IsActive = true, CreatedDate = seedDate },
             new Role { RoleId = Guid.Parse("AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"), RoleName = "Viewer", Description = "Read-only access to projects", IsActive = true, CreatedDate = seedDate }
         };
@@ -124,7 +123,6 @@ public static class RoleAndUserSeedData
             new GroupRole { GroupRoleId = Guid.Parse("B2222222-2222-2222-2222-222222222222"), GroupId = Guid.Parse("A1111111-1111-1111-1111-111111111111"), RoleId = Guid.Parse("22222222-2222-2222-2222-222222222222"), AssignedDate = seedDate },
 
             new GroupRole { GroupRoleId = Guid.Parse("B3333333-3333-3333-3333-333333333333"), GroupId = Guid.Parse("A2222222-2222-2222-2222-222222222222"), RoleId = Guid.Parse("33333333-3333-3333-3333-333333333333"), AssignedDate = seedDate },
-            new GroupRole { GroupRoleId = Guid.Parse("B4444444-4444-4444-4444-444444444444"), GroupId = Guid.Parse("A2222222-2222-2222-2222-222222222222"), RoleId = Guid.Parse("88888888-8888-8888-8888-888888888888"), AssignedDate = seedDate },
             new GroupRole { GroupRoleId = Guid.Parse("B5555555-5555-5555-5555-555555555555"), GroupId = Guid.Parse("A2222222-2222-2222-2222-222222222222"), RoleId = Guid.Parse("AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"), AssignedDate = seedDate },
 
             new GroupRole { GroupRoleId = Guid.Parse("B6666666-6666-6666-6666-666666666666"), GroupId = Guid.Parse("A3333333-3333-3333-3333-333333333333"), RoleId = Guid.Parse("44444444-4444-4444-4444-444444444444"), AssignedDate = seedDate },
@@ -139,10 +137,8 @@ public static class RoleAndUserSeedData
             new GroupRole { GroupRoleId = Guid.Parse("BCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC"), GroupId = Guid.Parse("A6666666-6666-6666-6666-666666666666"), RoleId = Guid.Parse("77777777-7777-7777-7777-777777777777"), AssignedDate = seedDate },
             new GroupRole { GroupRoleId = Guid.Parse("BDDDDDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD"), GroupId = Guid.Parse("A6666666-6666-6666-6666-666666666666"), RoleId = Guid.Parse("AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA"), AssignedDate = seedDate },
 
-            new GroupRole { GroupRoleId = Guid.Parse("BEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE"), GroupId = Guid.Parse("A7777777-7777-7777-7777-777777777777"), RoleId = Guid.Parse("88888888-8888-8888-8888-888888888888"), AssignedDate = seedDate },
             new GroupRole { GroupRoleId = Guid.Parse("BFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF"), GroupId = Guid.Parse("A7777777-7777-7777-7777-777777777777"), RoleId = Guid.Parse("22222222-2222-2222-2222-222222222222"), AssignedDate = seedDate },
 
-            new GroupRole { GroupRoleId = Guid.Parse("B0000001-0000-0000-0000-000000000001"), GroupId = Guid.Parse("A8888888-8888-8888-8888-888888888888"), RoleId = Guid.Parse("88888888-8888-8888-8888-888888888888"), AssignedDate = seedDate },
             new GroupRole { GroupRoleId = Guid.Parse("B0000002-0000-0000-0000-000000000002"), GroupId = Guid.Parse("A8888888-8888-8888-8888-888888888888"), RoleId = Guid.Parse("22222222-2222-2222-2222-222222222222"), AssignedDate = seedDate }
         };
     }

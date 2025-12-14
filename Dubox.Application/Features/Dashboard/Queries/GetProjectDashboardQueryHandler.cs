@@ -1,6 +1,7 @@
 using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Enums;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -10,14 +11,23 @@ namespace Dubox.Application.Features.Dashboard.Queries;
 public class GetProjectDashboardQueryHandler : IRequestHandler<GetProjectDashboardQuery, Result<ProjectDashboardDto>>
 {
     private readonly IDbContext _dbContext;
+    private readonly IProjectTeamVisibilityService _visibilityService;
 
-    public GetProjectDashboardQueryHandler(IDbContext dbContext)
+    public GetProjectDashboardQueryHandler(IDbContext dbContext, IProjectTeamVisibilityService visibilityService)
     {
         _dbContext = dbContext;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<ProjectDashboardDto>> Handle(GetProjectDashboardQuery request, CancellationToken cancellationToken)
     {
+        // Check if user has access to this project
+        var canAccess = await _visibilityService.CanAccessProjectAsync(request.ProjectId, cancellationToken);
+        if (!canAccess)
+        {
+            return Result.Failure<ProjectDashboardDto>("Access denied. You do not have permission to view this project's dashboard.");
+        }
+
         var project = await _dbContext.Projects
             .FirstOrDefaultAsync(p => p.ProjectId == request.ProjectId, cancellationToken);
 

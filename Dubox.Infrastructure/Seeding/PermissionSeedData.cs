@@ -367,22 +367,6 @@ public static class PermissionSeedData
         foreach (var permId in qcPermissions)
             rolePermissions.Add(CreateRP(QCInspectorRoleId, permId));
 
-        // Design Engineer
-        var dePermissions = new[] {
-            ProjectsViewId, ProjectsCreateId, ProjectsEditId, ProjectsExportId,
-            BoxesViewId, BoxesCreateId, BoxesEditId, BoxesUpdateStatusId, BoxesExportId,
-            ActivitiesViewId, ActivitiesCreateId, ActivitiesEditId,
-            TeamsViewId,
-            MaterialsViewId,
-            WirViewId,
-            QualityIssuesViewId,
-            ReportsViewId, ReportsExportId,
-            DashboardViewId,
-            ProgressUpdatesViewId, ProgressUpdatesCreateId
-        };
-
-        foreach (var permId in dePermissions)
-            rolePermissions.Add(CreateRP(DesignEngineerRoleId, permId));
 
         // Cost Estimator
         var cePermissions = new[] {

@@ -162,5 +162,12 @@ public class BoxesController : ControllerBase
         var result = await _mediator.Send(command, cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+
+    [HttpGet("{boxId}/attachement")]
+    public async Task<IActionResult> GetBoxAttachements(Guid boxId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetBoxAttachmentsQuery(boxId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
 }
 

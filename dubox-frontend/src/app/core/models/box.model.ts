@@ -121,6 +121,26 @@ export interface BoxAttachment {
   uploadedAt: Date;
 }
 
+export interface BoxAttachmentImage {
+  progressUpdateImageId: string;
+  progressUpdateId: string;
+  imageUrl?: string;
+  imageData?: string;
+  imageType: 'file' | 'url';
+  originalName?: string;
+  fileSize?: number;
+  sequence: number;
+  createdDate: Date;
+  activityName?: string;
+  progressPercentage?: number;
+  updateDate?: Date;
+}
+
+export interface BoxAttachmentsResponse {
+  images: BoxAttachmentImage[];
+  totalCount: number;
+}
+
 export interface BoxLog {
   id: string;
   boxId: string;
@@ -129,6 +149,8 @@ export interface BoxLog {
   field?: string;
   oldValue?: string;
   newValue?: string;
+  oldValues?: string; // JSON string of all old values (like audit logs)
+  newValues?: string; // JSON string of all new values (like audit logs)
   performedBy: string;
   performedAt: Date;
 }

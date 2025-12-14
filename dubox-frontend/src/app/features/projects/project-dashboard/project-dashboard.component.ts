@@ -1,7 +1,9 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { Subscription } from 'rxjs';
+import { skip } from 'rxjs/operators';
 import { ProjectService } from '../../../core/services/project.service';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
@@ -29,7 +31,7 @@ import { trigger, style, animate, transition } from '@angular/animations';
     ])
   ]
 })
-export class ProjectDashboardComponent implements OnInit {
+export class ProjectDashboardComponent implements OnInit, OnDestroy {
   @ViewChild('fileInput') fileInputRef?: ElementRef<HTMLInputElement>;
   @ViewChild('excelSection') excelSectionRef?: ElementRef<HTMLDivElement>;
 
@@ -74,6 +76,8 @@ export class ProjectDashboardComponent implements OnInit {
     notStarted: 0,
     onHold: 0
   };
+  
+  private subscriptions: Subscription[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -92,12 +96,42 @@ export class ProjectDashboardComponent implements OnInit {
       this.loading = false;
       return;
     }
+    
+    // Check permissions immediately
+    this.checkPermissions();
+    
+    // Subscribe to permission changes to update UI when permissions are loaded
+    this.subscriptions.push(
+      this.permissionService.permissions$
+        .pipe(skip(1)) // Skip initial empty value
+        .subscribe(() => {
+          console.log('🔄 Permissions updated, re-checking project dashboard permissions');
+          this.checkPermissions();
+        })
+    );
+    
+    this.loadProject();
+  }
+  
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+    if (this.bannerTimeoutId) {
+      clearTimeout(this.bannerTimeoutId);
+    }
+  }
+  
+  private checkPermissions(): void {
     this.canEdit = this.permissionService.canEdit('projects');
     this.canDelete = this.permissionService.canDelete('projects');
     this.canChangeStatus = this.permissionService.hasPermission('projects', 'manage') || 
                            this.permissionService.canEdit('projects');
     this.canImportBoxes = this.permissionService.hasPermission('boxes', 'import');
-    this.loadProject();
+    console.log('✅ Project dashboard permissions checked:', {
+      canEdit: this.canEdit,
+      canDelete: this.canDelete,
+      canChangeStatus: this.canChangeStatus,
+      canImportBoxes: this.canImportBoxes
+    });
   }
 
   loadProject(): void {
@@ -430,9 +464,7 @@ export class ProjectDashboardComponent implements OnInit {
       return;
     }
 
-    this.router.navigate(['/projects/create'], {
-      queryParams: { mode: 'edit', projectId: this.projectId }
-    });
+    this.router.navigate(['/projects', this.projectId, 'edit']);
   }
 
   openDeleteConfirm(): void {

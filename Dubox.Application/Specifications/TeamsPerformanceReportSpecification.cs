@@ -6,22 +6,22 @@ namespace Dubox.Application.Specifications;
 
 public class TeamsPerformanceReportSpecification : Specification<Team>
 {
-    public TeamsPerformanceReportSpecification(GetTeamsPerformanceReportQuery query)
-        : this(query.TeamId, query.Search)
+    public TeamsPerformanceReportSpecification(GetTeamsPerformanceReportQuery query, List<Guid>? accessibleTeamIds)
+        : this(query.TeamId, query.Search, accessibleTeamIds)
     {
     }
 
-    public TeamsPerformanceReportSpecification(ExportTeamsPerformanceReportQuery query)
-        : this(query.TeamId, query.Search)
+    public TeamsPerformanceReportSpecification(ExportTeamsPerformanceReportQuery query, List<Guid>? accessibleTeamIds)
+        : this(query.TeamId, query.Search, accessibleTeamIds)
     {
     }
 
-    public TeamsPerformanceReportSpecification(GetTeamsPerformanceSummaryQuery query)
-        : this(query.TeamId, query.Search)
+    public TeamsPerformanceReportSpecification(GetTeamsPerformanceSummaryQuery query, List<Guid>? accessibleTeamIds)
+        : this(query.TeamId, query.Search, accessibleTeamIds)
     {
     }
 
-    private TeamsPerformanceReportSpecification(Guid? teamId, string? search)
+    private TeamsPerformanceReportSpecification(Guid? teamId, string? search, List<Guid>? accessibleTeamIds)
     {
         // Include necessary navigation properties
         AddInclude(nameof(Team.Members));
@@ -34,6 +34,12 @@ public class TeamsPerformanceReportSpecification : Specification<Team>
 
         // Base criteria: only active teams
         AddCriteria(t => t.IsActive);
+
+        // Apply team visibility filtering
+        if (accessibleTeamIds != null)
+        {
+            AddCriteria(t => accessibleTeamIds.Contains(t.TeamId));
+        }
 
         // Apply team filter
         if (teamId.HasValue && teamId.Value != Guid.Empty)

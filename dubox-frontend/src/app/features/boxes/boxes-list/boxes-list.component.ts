@@ -1,9 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, map, catchError } from 'rxjs/operators';
-import { forkJoin, of } from 'rxjs';
+import { debounceTime, distinctUntilChanged, map, catchError, skip } from 'rxjs/operators';
+import { forkJoin, of, Subscription } from 'rxjs';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { Box, BoxStatus, BoxTypeStat } from '../../../core/models/box.model';
@@ -18,13 +18,14 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
   templateUrl: './boxes-list.component.html',
   styleUrls: ['./boxes-list.component.scss']
 })
-export class BoxesListComponent implements OnInit {
+export class BoxesListComponent implements OnInit, OnDestroy {
   projectId: string = '';
   projectName = '';
   projectCode = '';
   boxes: Box[] = [];
   filteredBoxes: Box[] = [];
   boxTypes: BoxTypeStat[] = [];
+  filteredBoxTypes: BoxTypeStat[] = [];
   selectedBoxType: string | null = null;
   showBoxTypes = true;
   loading = true;
@@ -32,8 +33,11 @@ export class BoxesListComponent implements OnInit {
   canCreate = false;
   
   searchControl = new FormControl('');
+  boxTypeSearchControl = new FormControl('');
   selectedStatus: BoxStatus | 'All' = 'All';
   BoxStatus = BoxStatus;
+  
+  private subscriptions: Subscription[] = [];
 
   constructor(
     private route: ActivatedRoute,
@@ -47,7 +51,19 @@ export class BoxesListComponent implements OnInit {
     this.projectId = this.route.snapshot.params['id'];
     const boxType = this.route.snapshot.queryParams['boxType'];
     
-    this.canCreate = this.permissionService.canCreate('boxes');
+    // Check permissions immediately
+    this.checkPermissions();
+    
+    // Subscribe to permission changes to update UI when permissions are loaded
+    this.subscriptions.push(
+      this.permissionService.permissions$
+        .pipe(skip(1)) // Skip initial empty value
+        .subscribe(() => {
+          console.log('🔄 Permissions updated, re-checking boxes permissions');
+          this.checkPermissions();
+        })
+    );
+    
     this.loadProjectDetails();
     
     if (boxType) {
@@ -59,6 +75,15 @@ export class BoxesListComponent implements OnInit {
     }
     
     this.setupSearch();
+  }
+  
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+  
+  private checkPermissions(): void {
+    this.canCreate = this.permissionService.canCreate('boxes');
+    console.log('✅ Can create box:', this.canCreate);
   }
 
   loadProjectDetails(): void {
@@ -86,6 +111,16 @@ export class BoxesListComponent implements OnInit {
       .subscribe(() => {
         this.applyFilters();
       });
+
+    // Setup box type search
+    this.boxTypeSearchControl.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged()
+      )
+      .subscribe(() => {
+        this.applyBoxTypeFilters();
+      });
   }
 
   loadBoxTypes(): void {
@@ -97,6 +132,8 @@ export class BoxesListComponent implements OnInit {
     this.boxService.getBoxTypeStatsByProject(this.projectId).subscribe({
       next: (response) => {
         this.boxTypes = response.boxTypeStats || [];
+        this.filteredBoxTypes = [...this.boxTypes];
+        this.applyBoxTypeFilters();
         this.loading = false;
       },
       error: (err) => {
@@ -183,6 +220,7 @@ export class BoxesListComponent implements OnInit {
   viewBoxType(boxType: string): void {
     this.selectedBoxType = boxType;
     this.showBoxTypes = false;
+    this.boxTypeSearchControl.setValue('');
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { boxType: boxType },
@@ -196,6 +234,8 @@ export class BoxesListComponent implements OnInit {
     this.showBoxTypes = true;
     this.boxes = [];
     this.filteredBoxes = [];
+    this.searchControl.setValue('');
+    this.selectedStatus = 'All';
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {},
@@ -269,6 +309,19 @@ export class BoxesListComponent implements OnInit {
     }
 
     this.filteredBoxes = filtered;
+  }
+
+  private applyBoxTypeFilters(): void {
+    const searchTerm = this.boxTypeSearchControl.value?.toLowerCase() || '';
+    
+    if (!searchTerm) {
+      this.filteredBoxTypes = [...this.boxTypes];
+      return;
+    }
+
+    this.filteredBoxTypes = this.boxTypes.filter(boxType => 
+      boxType.boxType?.toLowerCase().includes(searchTerm)
+    );
   }
 
   private formatDateForSearch(date?: Date): string | null {

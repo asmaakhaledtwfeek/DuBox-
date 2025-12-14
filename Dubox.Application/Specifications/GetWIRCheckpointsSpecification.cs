@@ -1,22 +1,34 @@
 ﻿namespace Dubox.Application.Specifications
 {
+    using Dubox.Application.DTOs;
     using Dubox.Application.Features.WIRCheckpoints.Queries;
     using Dubox.Domain.Entities;
     using Dubox.Domain.Specification;
 
     public class GetWIRCheckpointsSpecification : Specification<WIRCheckpoint>
     {
-        public GetWIRCheckpointsSpecification(GetWIRCheckpointsQuery query)
+        public GetWIRCheckpointsSpecification(GetWIRCheckpointsQuery query, List<Guid>? accessibleProjectIds = null)
         {
             AddInclude(nameof(WIRCheckpoint.Box));
             AddInclude($"{nameof(WIRCheckpoint.Box)}.{nameof(WIRCheckpoint.Box.Project)}");
             AddInclude(nameof(WIRCheckpoint.ChecklistItems));
             AddInclude(nameof(WIRCheckpoint.QualityIssues));
-            // NOTE: Don't include Images or QualityIssues.Images - base64 ImageData is too large
-            // Image metadata is loaded separately with lightweight query
-            
-            // Enable split query to avoid Cartesian explosion with multiple collection includes
+
             EnableSplitQuery();
+
+            // Enable pagination
+            var (page, pageSize) = new PaginatedRequest
+            {
+                Page = query.Page,
+                PageSize = query.PageSize
+            }.GetNormalizedPagination();
+
+            ApplyPaging(pageSize, page);
+
+            if (accessibleProjectIds != null)
+            {
+                AddCriteria(x => accessibleProjectIds.Contains(x.Box.ProjectId));
+            }
 
             if (!string.IsNullOrWhiteSpace(query.ProjectCode))
                 AddCriteria(x => x.Box.Project.ProjectCode == query.ProjectCode);

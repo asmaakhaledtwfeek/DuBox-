@@ -116,5 +116,12 @@ public class ProgressUpdatesController : ControllerBase
         var result = await _mediator.Send(new GetProgressUpdatesByActivityQuery(boxActivityId), cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+
+    [HttpGet("{progressUpdateId}")]
+    public async Task<IActionResult> GetProgressUpdateById(Guid progressUpdateId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetProgressUpdateByIdQuery(progressUpdateId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : NotFound(result);
+    }
 }
 

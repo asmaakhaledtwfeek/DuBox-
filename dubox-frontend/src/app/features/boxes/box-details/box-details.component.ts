@@ -1,5 +1,6 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
 import { BoxService } from '../../../core/services/box.service';
@@ -9,22 +10,24 @@ import { WIRService } from '../../../core/services/wir.service';
 import { ProgressUpdate, ProgressUpdatesSearchParams } from '../../../core/models/progress-update.model';
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
 import { ProgressUpdatesTableComponent } from '../../../shared/components/progress-updates-table/progress-updates-table.component';
-import { QualityIssueDetails, QualityIssueStatus, UpdateQualityIssueStatusRequest, WIRCheckpoint, WIRCheckpointStatus, WIRRecord } from '../../../core/models/wir.model';
+import { QualityIssueDetails, QualityIssueStatus, UpdateQualityIssueStatusRequest, WIRCheckpoint, WIRCheckpointStatus, WIRRecord, CreateQualityIssueForBoxRequest, IssueType, SeverityType } from '../../../core/models/wir.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { ActivityTableComponent } from '../../activities/activity-table/activity-table.component';
+import { BoxLogDetailsModalComponent } from '../box-log-details-modal/box-log-details-modal.component';
 import { LocationService, FactoryLocation, BoxLocationHistory } from '../../../core/services/location.service';
 import { ApiService } from '../../../core/services/api.service';
 import * as ExcelJS from 'exceljs';
-import { Subject, takeUntil } from 'rxjs';
-import { debounceTime, distinctUntilChanged, map } from 'rxjs/operators';
+import { Observable, Subject, takeUntil, forkJoin, of, firstValueFrom } from 'rxjs';
+import { debounceTime, distinctUntilChanged, map, skip, catchError } from 'rxjs/operators';
 import { DiffUtil } from '../../../core/utils/diff.util';
 import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-box-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, HeaderComponent, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, HttpClientModule, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent, HeaderComponent, BoxLogDetailsModalComponent],
+  providers: [LocationService],
   templateUrl: './box-details.component.html',
   styleUrls: ['./box-details.component.scss']
 })
@@ -38,10 +41,11 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   showDeleteConfirm = false;
   deleteSuccess = false;
   
-  activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' | 'location-history' | 'progress-updates' = 'overview';
+  activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments'  | 'progress-updates' = 'overview';
   
   canEdit = false;
   canDelete = false;
+  canUpdateBoxStatus = false;
   canUpdateQualityIssueStatus = false;
   BoxStatus = BoxStatus;
   Math = Math;
@@ -92,6 +96,36 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   cameraStream: MediaStream | null = null;
   showCamera = false;
 
+  // Create Quality Issue
+  isCreateQualityIssueModalOpen = false;
+  createQualityIssueLoading = false;
+  createQualityIssueError = '';
+  issueTypes: IssueType[] = ['Defect', 'NonConformance', 'Observation'];
+  severityLevels: SeverityType[] = ['Critical', 'Major', 'Minor'];
+  newQualityIssueForm: {
+    issueType: IssueType;
+    severity: SeverityType;
+    issueDescription: string;
+    assignedTo: string;
+    dueDate: string;
+  } = {
+    issueType: 'Defect',
+    severity: 'Major',
+    issueDescription: '',
+    assignedTo: '',
+    dueDate: ''
+  };
+  qualityIssueImages: Array<{
+    id: string;
+    type: 'file' | 'url' | 'camera';
+    file?: File;
+    url?: string;
+    preview: string;
+    name?: string;
+    size?: number;
+  }> = [];
+  canCreateQualityIssue = false;
+
   progressUpdates: ProgressUpdate[] = [];
   progressUpdatesLoading = false;
   progressUpdatesError = '';
@@ -101,6 +135,16 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   // All progress updates for attachments (images)
   allProgressUpdatesForImages: ProgressUpdate[] = [];
   loadingProgressUpdateImages = false;
+  resolvedProgressImages: Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType?: 'file' | 'url' }> = [];
+  resolvingProgressImages = false;
+  
+  // Box attachments from dedicated endpoint
+  boxAttachments: Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType: 'file' | 'url'; originalUrl?: string }> = [];
+  loadingBoxAttachments = false;
+  boxAttachmentsError = '';
+  
+  // Sub-tab for Drowning (Attachments) section
+  activeDrawingTab: 'file' | 'url' = 'file';
   
   // Pagination for progress updates
   progressUpdatesCurrentPage = 1;
@@ -153,6 +197,10 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   boxLogsSearchControl = new FormControl('');
   availableBoxLogActions: string[] = [];
   private boxLogActionSet = new Set<string>();
+  
+  // Box Log Details Modal
+  selectedBoxLog: BoxLog | null = null;
+  isBoxLogDetailsModalOpen = false;
   readonly DiffUtil = DiffUtil;
   
   private destroy$ = new Subject<void>();
@@ -164,22 +212,54 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     private permissionService: PermissionService,
     private wirService: WIRService,
     private progressUpdateService: ProgressUpdateService,
-    private locationService: LocationService,
-    private apiService: ApiService
+    @Inject(LocationService) private locationService: LocationService,
+    private apiService: ApiService,
+    private http: HttpClient
   ) {}
 
   ngOnInit(): void {
     this.boxId = this.route.snapshot.params['boxId'];
     this.projectId = this.route.snapshot.params['projectId'];
     
-    this.canEdit = this.permissionService.canEdit('boxes');
-    this.canDelete = this.permissionService.canDelete('boxes');
-    this.canUpdateQualityIssueStatus = this.permissionService.hasPermission('quality-issues', 'edit') || 
-                                       this.permissionService.hasPermission('quality-issues', 'resolve');
+    // Check for tab query parameter to set active tab
+    const tabParam = this.route.snapshot.queryParams['tab'];
+    if (tabParam && ['overview', 'activities', 'wir', 'quality-issues', 'logs', 'attachments', 'progress-updates'].includes(tabParam)) {
+      this.activeTab = tabParam as any;
+    }
+    
+    // Check permissions immediately
+    this.checkPermissions();
+    
+    // Subscribe to permission changes to update UI when permissions are loaded
+    this.permissionService.permissions$
+      .pipe(
+        skip(1), // Skip initial empty value
+        takeUntil(this.destroy$)
+      )
+      .subscribe(() => {
+        console.log('🔄 Permissions updated, re-checking box permissions');
+        this.checkPermissions();
+      });
     
     this.setupLocationHistorySearch();
     this.setupBoxLogsSearch();
     this.loadBox();
+  }
+  
+  private checkPermissions(): void {
+    this.canEdit = this.permissionService.canEdit('boxes');
+    this.canDelete = this.permissionService.canDelete('boxes');
+    this.canUpdateBoxStatus = this.permissionService.canEdit('boxes') || 
+                              this.permissionService.hasPermission('boxes', 'update-status');
+    this.canUpdateQualityIssueStatus = this.permissionService.hasPermission('quality-issues', 'edit') || 
+                                       this.permissionService.hasPermission('quality-issues', 'resolve');
+    this.canCreateQualityIssue = this.permissionService.canCreate('quality-issues');
+    console.log('✅ Box permissions checked:', {
+      canEdit: this.canEdit,
+      canDelete: this.canDelete,
+      canUpdateBoxStatus: this.canUpdateBoxStatus,
+      canCreateQualityIssue: this.canCreateQualityIssue
+    });
   }
 
   private setupLocationHistorySearch(): void {
@@ -229,16 +309,16 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
           this.generateQRCode();
         }
         
-        // Load activities separately
-        this.loadActivities();
-        this.loadWIRCheckpoints();
-        this.loadQualityIssues();
-        this.loadProgressUpdates();
-        this.loadLocationHistory();
-        // Load logs count (with minimal page size to get total count quickly)
-        this.loadBoxLogsCount();
-        
         this.loading = false;
+        
+        // After box is loaded, if we have a tab query parameter, trigger data loading for that tab
+        const tabParam = this.route.snapshot.queryParams['tab'];
+        if (tabParam && ['activities', 'wir', 'quality-issues', 'logs', 'attachments', 'progress-updates'].includes(tabParam)) {
+          // Use setTimeout to ensure the component is fully initialized
+          setTimeout(() => {
+            this.setActiveTab(tabParam as any);
+          }, 0);
+        }
       },
       error: (err) => {
         this.error = err.message || 'Failed to load box details';
@@ -456,21 +536,45 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' | 'location-history' | 'progress-updates'): void {
+  setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' | 'progress-updates'): void {
     this.activeTab = tab;
-    if (tab === 'location-history' && this.locationHistory.length === 0) {
-      this.loadLocationHistory();
+    
+    // Lazy load data when tab is clicked
+    if (tab === 'activities') {
+      // Load activities when Activities tab is clicked
+      if (!this.box?.activities || this.box.activities.length === 0) {
+        this.loadActivities();
+      }
+    }
+    if (tab === 'wir') {
+      // Load WIR checkpoints when WIR tab is clicked
+      if (this.wirCheckpoints.length === 0 && !this.wirLoading) {
+        this.loadWIRCheckpoints();
+      }
+    }
+    if (tab === 'quality-issues') {
+      // Load quality issues when Quality Issues tab is clicked
+      if (this.qualityIssues.length === 0 && !this.qualityIssuesLoading) {
+        this.loadQualityIssues();
+      }
     }
     if (tab === 'logs') {
-      // Always load logs when clicking the tab if logs haven't been loaded yet
+      // Load logs when clicking the tab if logs haven't been loaded yet
       if (this.boxLogs.length === 0 && !this.boxLogsLoading) {
         this.loadBoxLogs(this.boxLogsCurrentPage, this.boxLogsPageSize);
       }
     }
     if (tab === 'attachments') {
-      // Load all progress updates to get images when attachments tab is opened
-      if (this.allProgressUpdatesForImages.length === 0 && !this.loadingProgressUpdateImages) {
-        this.loadAllProgressUpdatesForImages();
+      // Load box attachments when attachments/drowning tab is opened
+      if (this.boxAttachments.length === 0 && !this.loadingBoxAttachments) {
+        this.loadBoxAttachments();
+      }
+    }
+    if (tab === 'progress-updates') {
+      // Load progress updates when Progress History tab is clicked
+      // Service-level cache will handle whether to fetch from API or use cached data
+      if (this.progressUpdates.length === 0 && !this.progressUpdatesLoading) {
+        this.loadProgressUpdates(1, this.progressUpdatesPageSize);
       }
     }
   }
@@ -591,7 +695,13 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   }
 
   canNavigateToAddChecklist(checkpoint: WIRCheckpoint | null): boolean {
-    return !!checkpoint?.wirId && !!checkpoint.boxActivityId;
+    // Check if checkpoint exists and has required data
+    if (!checkpoint?.wirId || !checkpoint?.boxActivityId) {
+      return false;
+    }
+    // Check if user has permission to create/manage WIR checkpoints
+    return this.permissionService.hasPermission('wir', 'create') || 
+           this.permissionService.hasPermission('wir', 'manage');
   }
 
   canNavigateToReview(checkpoint: WIRCheckpoint | null): boolean {
@@ -600,7 +710,26 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       return false;
     }
     // Check if user has permission to review WIR checkpoints
-    return this.permissionService.hasPermission('wir', 'review');
+    return this.permissionService.hasPermission('wir', 'review') || 
+           this.permissionService.hasPermission('wir', 'manage');
+  }
+
+  getApprovedCheckpointsCount(): number {
+    return this.wirCheckpoints.filter(cp => 
+      cp.status?.toLowerCase() === WIRCheckpointStatus.Approved.toLowerCase()
+    ).length;
+  }
+
+  getPendingCheckpointsCount(): number {
+    return this.wirCheckpoints.filter(cp => 
+      cp.status?.toLowerCase() === WIRCheckpointStatus.Pending.toLowerCase()
+    ).length;
+  }
+
+  getRejectedCheckpointsCount(): number {
+    return this.wirCheckpoints.filter(cp => 
+      cp.status?.toLowerCase() === WIRCheckpointStatus.Rejected.toLowerCase()
+    ).length;
   }
 
   navigateToAddChecklist(checkpoint: WIRCheckpoint): void {
@@ -671,6 +800,550 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   refreshQualityIssues(): void {
     this.loadQualityIssues();
+  }
+
+  // Create Quality Issue Methods
+  openCreateQualityIssueModal(): void {
+    this.isCreateQualityIssueModalOpen = true;
+    this.createQualityIssueError = '';
+    this.newQualityIssueForm = {
+      issueType: 'Defect',
+      severity: 'Major',
+      issueDescription: '',
+      assignedTo: '',
+      dueDate: ''
+    };
+    this.qualityIssueImages = [];
+    this.currentImageInputMode = 'url';
+    this.currentUrlInput = '';
+    this.showCamera = false;
+  }
+
+  closeCreateQualityIssueModal(): void {
+    this.isCreateQualityIssueModalOpen = false;
+    this.newQualityIssueForm = {
+      issueType: 'Defect',
+      severity: 'Major',
+      issueDescription: '',
+      assignedTo: '',
+      dueDate: ''
+    };
+    this.qualityIssueImages = [];
+    this.createQualityIssueError = '';
+    if (this.cameraStream) {
+      this.cameraStream.getTracks().forEach(track => track.stop());
+      this.cameraStream = null;
+    }
+    this.showCamera = false;
+  }
+
+  createQualityIssue(): void {
+    // Validate form
+    if (!this.newQualityIssueForm.issueDescription?.trim()) {
+      this.createQualityIssueError = 'Issue description is required.';
+      return;
+    }
+
+    this.createQualityIssueLoading = true;
+    this.createQualityIssueError = '';
+
+    // Separate files from URLs
+    const files: File[] = [];
+    const imageUrls: string[] = [];
+
+    this.qualityIssueImages.forEach(img => {
+      if (img.type === 'url' && img.url) {
+        imageUrls.push(img.url.trim());
+      } else if ((img.type === 'file' || img.type === 'camera') && img.file) {
+        files.push(img.file);
+      } else if (img.preview && img.preview.startsWith('data:image/')) {
+        imageUrls.push(img.preview);
+      }
+    });
+
+    const request: CreateQualityIssueForBoxRequest = {
+      boxId: this.boxId,
+      issueType: this.newQualityIssueForm.issueType,
+      severity: this.newQualityIssueForm.severity,
+      issueDescription: this.newQualityIssueForm.issueDescription.trim(),
+      assignedTo: this.newQualityIssueForm.assignedTo?.trim() || undefined,
+      dueDate: this.newQualityIssueForm.dueDate || undefined,
+      imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+      files: files.length > 0 ? files : undefined
+    };
+
+    console.log('📤 Creating quality issue with request:', {
+      boxId: request.boxId,
+      issueType: request.issueType,
+      severity: request.severity,
+      descriptionLength: request.issueDescription.length,
+      assignedTo: request.assignedTo,
+      dueDate: request.dueDate,
+      imageUrlsCount: imageUrls.length,
+      filesCount: files.length
+    });
+
+    this.wirService.createQualityIssueForBox(request).subscribe({
+      next: (createdIssue) => {
+        console.log('✅ Quality issue created successfully:', createdIssue);
+        this.createQualityIssueLoading = false;
+        this.closeCreateQualityIssueModal();
+        
+        // Show success toast
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { message: 'Quality issue created successfully.', type: 'success' }
+        }));
+        
+        // Reload quality issues
+        this.loadQualityIssues();
+      },
+      error: (err) => {
+        console.error('❌ Error creating quality issue:', err);
+        console.error('Full error details:', {
+          status: err?.status,
+          statusText: err?.statusText,
+          error: err?.error,
+          message: err?.message
+        });
+        
+        // Extract the most useful error message
+        let errorMessage = 'Failed to create quality issue.';
+        
+        if (err?.error?.message) {
+          errorMessage = err.error.message;
+        } else if (err?.error?.title) {
+          errorMessage = err.error.title;
+        } else if (err?.error?.errors) {
+          // Handle validation errors
+          const errors = err.error.errors;
+          const errorList = Object.keys(errors).map(key => `${key}: ${errors[key].join(', ')}`);
+          errorMessage = errorList.join('; ');
+        } else if (err?.message) {
+          errorMessage = err.message;
+        }
+        
+        this.createQualityIssueError = errorMessage;
+        this.createQualityIssueLoading = false;
+      }
+    });
+  }
+
+  // Image management for create quality issue
+  addQualityIssueImageUrl(): void {
+    const url = this.currentUrlInput.trim();
+    if (!url) {
+      return;
+    }
+
+    const imageId = `url-${Date.now()}`;
+    
+    // Determine preview URL based on input format
+    let preview = url;
+    if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('data:image/')) {
+      // Assume it's base64 without the data URL prefix
+      preview = `data:image/jpeg;base64,${url}`;
+    }
+    
+    this.qualityIssueImages.push({
+      id: imageId,
+      type: 'url',
+      url: url,
+      preview: preview
+    });
+
+    this.currentUrlInput = '';
+  }
+
+  onQualityIssueFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) {
+      return;
+    }
+
+    Array.from(input.files).forEach((file) => {
+      if (!file.type.startsWith('image/')) {
+        alert(`${file.name} is not an image file.`);
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e: ProgressEvent<FileReader>) => {
+        const imageId = `file-${Date.now()}-${Math.random()}`;
+        this.qualityIssueImages.push({
+          id: imageId,
+          type: 'file',
+          file: file,
+          preview: e.target?.result as string,
+          name: file.name,
+          size: file.size
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Reset input
+    input.value = '';
+  }
+
+  openQualityIssueFileInput(): void {
+    const fileInput = document.getElementById('qualityIssueFileInput') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+    this.currentImageInputMode = 'upload';
+    this.showCamera = false;
+  }
+
+  async openQualityIssueCamera(): Promise<void> {
+    this.currentImageInputMode = 'camera';
+    this.showCamera = true;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      this.cameraStream = stream;
+
+      setTimeout(() => {
+        const videoElement = document.getElementById('qualityIssueCameraVideo') as HTMLVideoElement;
+        if (videoElement) {
+          videoElement.srcObject = stream;
+        }
+      }, 100);
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      alert('Unable to access camera. Please check permissions.');
+      this.showCamera = false;
+    }
+  }
+
+  captureQualityIssuePhoto(): void {
+    const videoElement = document.getElementById('qualityIssueCameraVideo') as HTMLVideoElement;
+    const canvas = document.createElement('canvas');
+    canvas.width = videoElement.videoWidth;
+    canvas.height = videoElement.videoHeight;
+    const context = canvas.getContext('2d');
+    if (context) {
+      context.drawImage(videoElement, 0, 0);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const file = new File([blob], `camera-capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
+          const imageId = `camera-${Date.now()}`;
+          this.qualityIssueImages.push({
+            id: imageId,
+            type: 'camera',
+            file: file,
+            preview: canvas.toDataURL('image/jpeg'),
+            name: file.name,
+            size: file.size
+          });
+        }
+      }, 'image/jpeg', 0.9);
+    }
+  }
+
+  closeQualityIssueCamera(): void {
+    if (this.cameraStream) {
+      this.cameraStream.getTracks().forEach(track => track.stop());
+      this.cameraStream = null;
+    }
+    this.showCamera = false;
+    this.currentImageInputMode = 'url';
+  }
+
+  removeQualityIssueImage(imageId: string): void {
+    this.qualityIssueImages = this.qualityIssueImages.filter(img => img.id !== imageId);
+  }
+
+  setQualityIssueImageInputMode(mode: 'url' | 'upload' | 'camera'): void {
+    this.currentImageInputMode = mode;
+    if (mode !== 'camera') {
+      this.closeQualityIssueCamera();
+    }
+  }
+
+  async exportBoxLogsToExcel(): Promise<void> {
+    // Use the same pattern as audit logs export - export filtered logs
+    if (!this.boxLogs || this.boxLogs.length === 0) {
+      alert('No data to export');
+      return;
+    }
+
+    // Helper function to parse raw values (pipe-separated, JSON, or object)
+    const parseRawValues = (raw: any): Record<string, any> => {
+      if (!raw) {
+        return {};
+      }
+
+      if (typeof raw === 'object' && raw !== null && !Array.isArray(raw)) {
+        return raw;
+      }
+
+      if (typeof raw === 'string') {
+        const trimmed = raw.trim();
+        if (!trimmed) {
+          return {};
+        }
+
+        try {
+          // Try JSON first
+          if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+            return JSON.parse(trimmed);
+          }
+        } catch {
+          // Not JSON, continue to parse as delimited format
+        }
+
+        // Parse pipe-separated, comma-separated, or newline-separated format
+        // Format: "Key: Value | Key: Value | Key: Value"
+        const fallback: Record<string, string> = {};
+        
+        let segments: string[] = [];
+        if (trimmed.includes('|')) {
+          segments = trimmed.split(/\s*\|\s*/);
+        } else if (trimmed.includes('\n')) {
+          segments = trimmed.split(/\r?\n/);
+        } else {
+          segments = trimmed.split(/,(?=\s*[A-Za-z][A-Za-z0-9]*\s*:)/);
+        }
+
+        segments.forEach((segment) => {
+          const cleanSegment = segment.trim();
+          if (!cleanSegment) {
+            return;
+          }
+
+          const separatorIndex = cleanSegment.indexOf(':');
+          if (separatorIndex === -1) {
+            return;
+          }
+
+          const key = cleanSegment.slice(0, separatorIndex).trim();
+          const value = cleanSegment.slice(separatorIndex + 1).trim();
+
+          if (key) {
+            fallback[key] = value || '—';
+          }
+        });
+
+        return fallback;
+      }
+
+      return {};
+    };
+
+    // Helper function to get all changes from log (similar to audit logs)
+    const getChangesFromLog = (log: BoxLog): Array<{ field: string; oldValue: string | null; newValue: string | null }> => {
+      const changes: Array<{ field: string; oldValue: string | null; newValue: string | null }> = [];
+
+      // First, try to parse oldValues and newValues (preferred method)
+      if (log.oldValues || log.newValues) {
+        const oldVals = parseRawValues(log.oldValues);
+        const newVals = parseRawValues(log.newValues);
+
+        const allKeys = new Set<string>([
+          ...Object.keys(oldVals),
+          ...Object.keys(newVals)
+        ]);
+
+        allKeys.forEach(key => {
+          // Skip internal/system fields
+          const skipFields = ['Id', 'CreatedDate', 'ModifiedDate', 'CreatedBy', 'ModifiedBy', 'AuditId', 'ChangedBy', 'ChangedDate'];
+          if (skipFields.some(f => key.toLowerCase().includes(f.toLowerCase()))) {
+            return;
+          }
+
+          const oldVal = oldVals[key];
+          const newVal = newVals[key];
+          
+          // Convert to strings for comparison
+          const oldStr = oldVal !== null && oldVal !== undefined ? String(oldVal) : null;
+          const newStr = newVal !== null && newVal !== undefined ? String(newVal) : null;
+          
+          // Only include if values are different
+          if (oldStr !== newStr) {
+            changes.push({
+              field: key,
+              oldValue: oldStr,
+              newValue: newStr
+            });
+          }
+        });
+      }
+
+      // Fallback: use single field/oldValue/newValue if no oldValues/newValues
+      if (changes.length === 0 && (log.field || log.oldValue || log.newValue)) {
+        const oldVal = log.oldValue !== null && log.oldValue !== undefined 
+          ? String(log.oldValue) 
+          : null;
+        const newVal = log.newValue !== null && log.newValue !== undefined 
+          ? String(log.newValue) 
+          : null;
+        
+        if (oldVal !== newVal) {
+          changes.push({
+            field: log.field || 'Field',
+            oldValue: oldVal,
+            newValue: newVal
+          });
+        }
+      }
+
+      return changes;
+    };
+
+    // Helper function to format changes text (similar to audit logs)
+    const formatChangesText = (log: BoxLog): string => {
+      const changes = getChangesFromLog(log);
+      
+      if (changes.length === 0) {
+        return 'No changes';
+      }
+
+      try {
+        const formatted = changes
+          .map(change => {
+            const fieldName = change.field || 'Unknown Field';
+            const oldVal = change.oldValue !== null && change.oldValue !== undefined 
+              ? DiffUtil.formatValue(change.oldValue) 
+              : '—';
+            const newVal = change.newValue !== null && change.newValue !== undefined 
+              ? DiffUtil.formatValue(change.newValue) 
+              : '—';
+            return `${fieldName}: ${oldVal} → ${newVal}`;
+          })
+          .join('; ');
+        
+        return formatted || 'No changes';
+      } catch (e) {
+        console.error('Error formatting changes:', e, changes);
+        return 'Error formatting changes';
+      }
+    };
+
+    // Format dates using the same format as audit logs
+    const formatDateForExcel = (date?: string | Date): string => {
+      if (!date) return '—';
+      const d = typeof date === 'string' ? new Date(date) : date;
+      if (isNaN(d.getTime())) return '—';
+      return d.toLocaleString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    };
+
+    // Create a new workbook and worksheet
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Box Logs');
+
+    // Define column headers (similar structure to audit logs)
+    const headers = [
+      'Timestamp',
+      'Action',
+      'Description',
+      'Changed By',
+      'Changes'
+    ];
+
+    // Set column widths (matching audit logs pattern)
+    worksheet.columns = [
+      { width: 20 }, // Timestamp
+      { width: 12 }, // Action
+      { width: 50 }, // Description
+      { width: 20 }, // Changed By
+      { width: 60 }  // Changes
+    ];
+
+    // Add header row with styling (same as audit logs)
+    const headerRow = worksheet.addRow(headers);
+    headerRow.eachCell((cell) => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF4472C4' } // Blue background (same as audit logs)
+      };
+      cell.font = {
+        bold: true,
+        color: { argb: 'FFFFFFFF' }, // White text
+        size: 11
+      };
+      cell.alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+        wrapText: true
+      };
+      cell.border = {
+        top: { style: 'thin', color: { argb: 'FF000000' } },
+        bottom: { style: 'thin', color: { argb: 'FF000000' } },
+        left: { style: 'thin', color: { argb: 'FF000000' } },
+        right: { style: 'thin', color: { argb: 'FF000000' } }
+      };
+    });
+    headerRow.height = 25; // Set header row height
+
+    // Add data rows - use the same logs that are displayed in the UI (filtered logs)
+    this.boxLogs.forEach((log, index) => {
+      const changesText = formatChangesText(log);
+      const actionLabel = DiffUtil.getActionLabel(log.action);
+
+      const row = worksheet.addRow([
+        formatDateForExcel(log.performedAt),
+        actionLabel || log.action || '',
+        log.description || '',
+        log.performedBy || 'System',
+        changesText
+      ]);
+
+      // Style data rows (same as audit logs)
+      row.eachCell((cell, colNumber) => {
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          left: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+          right: { style: 'thin', color: { argb: 'FFE0E0E0' } }
+        };
+        cell.alignment = {
+          vertical: 'middle',
+          wrapText: true
+        };
+        // Alternate row colors for better readability (same as audit logs)
+        if (index % 2 === 0) {
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFF9F9F9' } // Very light gray
+          };
+        }
+      });
+    });
+
+    // Freeze header row (same as audit logs)
+    worksheet.views = [
+      {
+        state: 'frozen',
+        ySplit: 1 // Freeze first row
+      }
+    ];
+
+    // Generate filename with current date (same pattern as audit logs)
+    const today = new Date();
+    const dateStr = today.toISOString().split('T')[0];
+    const boxCode = this.box?.code || 'Box';
+    const fileName = `Box_Logs_${boxCode}_${dateStr}.xlsx`;
+
+    // Export to Excel (same as audit logs)
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    window.URL.revokeObjectURL(url);
   }
 
   async exportQualityIssuesToExcel(): Promise<void> {
@@ -861,8 +1534,21 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   }
 
   openIssueDetails(issue: QualityIssueDetails): void {
+    // Show existing data immediately
     this.selectedIssueDetails = issue;
     this.isDetailsModalOpen = true;
+
+    // Refresh from backend to get latest details (including images)
+    if (issue.issueId) {
+      this.wirService.getQualityIssueById(issue.issueId).subscribe({
+        next: (freshIssue) => {
+          this.selectedIssueDetails = freshIssue;
+        },
+        error: (err) => {
+          console.error('Failed to load quality issue details', err);
+        }
+      });
+    }
   }
 
   closeIssueDetails(): void {
@@ -921,7 +1607,55 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   }
 
   openImageInNewTab(imageUrl: string): void {
-    window.open(imageUrl, '_blank', 'noopener,noreferrer');
+    if (!imageUrl) {
+      console.error('No image URL provided');
+      return;
+    }
+
+    // Ensure URL is absolute
+    let absoluteUrl = imageUrl;
+    
+    // If it's a relative URL, make it absolute
+    if (imageUrl.startsWith('/')) {
+      const baseUrl = this.getApiBaseUrl();
+      absoluteUrl = `${baseUrl}${imageUrl}`;
+    }
+    // If it's a data URL, we can't open it in a new tab - create a blob URL instead
+    else if (imageUrl.startsWith('data:image/')) {
+      // For data URLs, convert to blob URL
+      fetch(imageUrl)
+        .then(response => response.blob())
+        .then(blob => {
+          const blobUrl = URL.createObjectURL(blob);
+          const newWindow = window.open(blobUrl, '_blank', 'noopener,noreferrer');
+          if (!newWindow) {
+            console.error('Failed to open image in new tab. Popup may be blocked.');
+            this.downloadImage(imageUrl);
+          }
+        })
+        .catch(error => {
+          console.error('Error converting data URL to blob:', error);
+          // Fallback: try to open data URL directly (may not work in all browsers)
+          window.open(imageUrl, '_blank', 'noopener,noreferrer');
+        });
+      return;
+    }
+    // If it's already an absolute URL (http/https), use as is
+    else if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+      // Relative URL without leading slash - prepend base URL
+      const baseUrl = this.getApiBaseUrl();
+      absoluteUrl = `${baseUrl}/${imageUrl}`;
+    }
+
+    // Open in new tab
+    console.log('Opening image URL:', absoluteUrl);
+    const newWindow = window.open(absoluteUrl, '_blank', 'noopener,noreferrer');
+    
+    if (!newWindow) {
+      console.error('Failed to open image in new tab. Popup may be blocked.');
+      // Fallback: try to download instead
+      this.downloadImage(imageUrl);
+    }
   }
 
   downloadImage(imageUrl: string): void {
@@ -972,8 +1706,16 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   }
 
   openProgressDetails(update: ProgressUpdate): void {
-    this.selectedProgressUpdate = update;
-    this.isProgressModalOpen = true;
+    // Navigate to activity details page instead of opening modal
+    if (update.boxActivityId) {
+      // Navigate to activity details with returnTo query param to indicate coming from progress history
+      this.router.navigate(
+        ['/projects', this.projectId, 'boxes', this.boxId, 'activities', update.boxActivityId],
+        { queryParams: { returnTo: 'progress-history' } }
+      );
+    } else {
+      console.error('Cannot navigate: boxActivityId is missing from progress update');
+    }
   }
 
   closeProgressDetails(): void {
@@ -1030,7 +1772,27 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     if (progressUpdate.images && Array.isArray(progressUpdate.images) && progressUpdate.images.length > 0) {
       return progressUpdate.images
         .sort((a: any, b: any) => (a.sequence || 0) - (b.sequence || 0))
-        .map((img: any) => img.imageData || img.ImageData || '')
+        .map((img: any) => {
+          // Try imageData first (full base64), then imageUrl (for on-demand loading)
+          let url = img.imageData || img.ImageData || img.imageUrl || img.ImageUrl || '';
+          
+          console.log('📸 Progress Update Image:', {
+            hasImageData: !!(img.imageData || img.ImageData),
+            hasImageUrl: !!(img.imageUrl || img.ImageUrl),
+            rawUrl: url,
+            imageObject: img
+          });
+          
+          // If it's a relative URL (starts with /api/ or just /), prepend the base URL
+          if (url && (url.startsWith('/api/') || (url.startsWith('/') && !url.startsWith('http')))) {
+            // Get base URL from current location
+            const baseUrl = `${window.location.protocol}//${window.location.host}`;
+            url = baseUrl + url;
+            console.log('🔗 Converted relative URL to absolute:', url);
+          }
+          
+          return url;
+        })
         .filter((url: string) => url && url.trim().length > 0);
     }
     
@@ -1087,6 +1849,112 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     return [];
   }
 
+  private buildAbsoluteImageUrl(url: string): string {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    if (url.startsWith('/')) {
+      const baseUrl = `${window.location.protocol}//${window.location.host}`;
+      return baseUrl + url;
+    }
+    return url;
+  }
+
+  private isDataUri(url: string): boolean {
+    return /^data:image\//i.test(url);
+  }
+
+  private isBareBase64Image(url: string): boolean {
+    // Heuristic: long base64 string without scheme, may contain +/=
+    return !!url && !url.startsWith('http') && !url.startsWith('/') && url.length > 100 && /^[A-Za-z0-9+/=]+$/i.test(url);
+  }
+
+  private createObjectUrlFromBase64(data: string): string {
+    if (!data) return '';
+
+    let base64Part = data;
+    let contentType = 'image/jpeg';
+
+    const dataUriMatch = data.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/i);
+    if (dataUriMatch) {
+      contentType = dataUriMatch[1];
+      base64Part = dataUriMatch[2];
+    }
+
+    try {
+      const byteCharacters = atob(base64Part);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: contentType });
+      return URL.createObjectURL(blob);
+    } catch (err) {
+      console.error('❌ Failed to convert base64 to blob URL', err);
+      // Fallback to data URI
+      if (this.isDataUri(data)) {
+        return data;
+      }
+      return `data:${contentType};base64,${base64Part}`;
+    }
+  }
+
+  private fetchImageAsObjectUrl(url: string, imageData?: string): Observable<string> {
+    // Prefer base64 when available
+    const base64Source = imageData || url;
+    if (base64Source && (this.isDataUri(base64Source) || this.isBareBase64Image(base64Source))) {
+      const display = this.createObjectUrlFromBase64(base64Source);
+      return of(display);
+    }
+
+    const absoluteUrl = this.buildAbsoluteImageUrl(url);
+    return this.http.get(absoluteUrl, { responseType: 'blob' }).pipe(
+      map(blob => URL.createObjectURL(blob))
+    );
+  }
+
+  private resolveProgressUpdateImages(): void {
+    const rawImages = this.getAllProgressUpdateImages();
+    if (rawImages.length === 0) {
+      this.resolvedProgressImages = [];
+      return;
+    }
+
+    this.resolvingProgressImages = true;
+
+    const requests = rawImages.map(img =>
+      this.fetchImageAsObjectUrl(img.imageUrl, (img as any).imageData).pipe(
+        map(displayUrl => ({
+          ...img,
+          displayUrl
+        })),
+        catchError(err => {
+          console.error('❌ Failed to fetch image with auth header, falling back to raw URL:', img.imageUrl, err);
+          return of({
+            ...img,
+            displayUrl: this.isBareBase64Image((img as any).imageData) || this.isDataUri((img as any).imageData)
+              ? this.createObjectUrlFromBase64((img as any).imageData)
+              : this.buildAbsoluteImageUrl(img.imageUrl)
+          });
+        })
+      )
+    );
+
+    forkJoin(requests).subscribe({
+      next: (resolved) => {
+        this.resolvedProgressImages = resolved;
+        this.resolvingProgressImages = false;
+      },
+      error: (err) => {
+        console.error('❌ Failed to resolve progress update images:', err);
+        this.resolvedProgressImages = [];
+        this.resolvingProgressImages = false;
+      }
+    });
+  }
+
   openPhotoInNewTab(photoUrl: string): void {
     // For base64 images, create a new window with the image
     if (photoUrl.startsWith('data:image/')) {
@@ -1134,38 +2002,89 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       return;
     }
 
+    console.log('📋 Loading progress updates for attachments tab...');
     this.loadingProgressUpdateImages = true;
     // Load with a large page size to get all progress updates
     this.progressUpdateService.getProgressUpdatesByBox(this.boxId, 1, 1000, {}).subscribe({
       next: (response) => {
+        console.log('✅ Progress updates loaded:', response.items?.length || 0, 'updates');
         this.allProgressUpdatesForImages = (response.items || [])
           .map(update => ({
             ...update,
             updateDate: update.updateDate ? new Date(update.updateDate) : undefined
           }));
+        
+        // Log image counts
+        const totalImages = this.getAllProgressUpdateImages().length;
+        console.log('🖼️ Total images found:', totalImages);
+        // Resolve images with authenticated requests to avoid 401/Mixed Content
+        this.resolveProgressUpdateImages();
+        
         this.loadingProgressUpdateImages = false;
       },
       error: (err) => {
-        console.error('Error loading progress updates for images:', err);
+        console.error('❌ Error loading progress updates for images:', err);
         this.loadingProgressUpdateImages = false;
       }
     });
   }
 
   // Get all images from all progress updates
-  getAllProgressUpdateImages(): Array<{ imageUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number }> {
-    const allImages: Array<{ imageUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number }> = [];
+  getAllProgressUpdateImages(): Array<{ imageUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType?: 'file' | 'url' }> {
+    const allImages: Array<{ imageUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageData?: string; imageType?: 'file' | 'url' }> = [];
     
-    this.allProgressUpdatesForImages.forEach(update => {
-      const photoUrls = this.getPhotoUrls(update);
-      photoUrls.forEach(imageUrl => {
-        allImages.push({
-          imageUrl,
-          updateDate: update.updateDate,
-          activityName: update.activityName,
-          progressPercentage: update.progressPercentage
-        });
+    console.log('🔍 Processing progress updates for images:', this.allProgressUpdatesForImages.length);
+    
+    this.allProgressUpdatesForImages.forEach((update, index) => {
+      console.log(`Update #${index + 1} (${update.activityName}):`, {
+        hasImages: !!update.images,
+        imagesCount: update.images?.length || 0,
       });
+      
+      // Use the images array which contains imageType info
+      if (update.images && Array.isArray(update.images) && update.images.length > 0) {
+        update.images.forEach((img: any) => {
+          let imageUrl = img.imageData || img.ImageData || img.imageUrl || img.ImageUrl || '';
+          
+          // Convert relative URLs to absolute
+          if (imageUrl && (imageUrl.startsWith('/api/') || (imageUrl.startsWith('/') && !imageUrl.startsWith('http')))) {
+            const baseUrl = `${window.location.protocol}//${window.location.host}`;
+            imageUrl = baseUrl + imageUrl;
+          }
+          
+          if (imageUrl && imageUrl.trim()) {
+            allImages.push({
+              imageUrl,
+              updateDate: update.updateDate,
+              activityName: update.activityName,
+              progressPercentage: update.progressPercentage,
+              imageData: img.imageData || img.ImageData,
+              imageType: img.imageType || 'file' // Default to 'file' if not specified
+            });
+          }
+        });
+      } else {
+        // Fallback for old format without images array
+        const photoUrls = this.getPhotoUrls(update);
+        photoUrls.forEach(imageUrl => {
+          if (imageUrl && imageUrl.trim()) {
+            allImages.push({
+              imageUrl,
+              updateDate: update.updateDate,
+              activityName: update.activityName,
+              progressPercentage: update.progressPercentage,
+              imageData: undefined,
+              imageType: 'file' // Default to 'file' for legacy images
+            });
+          }
+        });
+      }
+    });
+    
+    console.log('✅ Total images to display:', allImages.length);
+    console.log('📸 Image types distribution:', {
+      file: allImages.filter(img => img.imageType === 'file').length,
+      url: allImages.filter(img => img.imageType === 'url').length
     });
     
     return allImages;
@@ -1173,17 +2092,150 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   // Check if there are any images from progress updates
   hasProgressUpdateImages(): boolean {
-    return this.getAllProgressUpdateImages().length > 0;
+    return this.resolvedProgressImages.length > 0;
   }
 
-  // Get total attachments count (files + images)
-  getTotalAttachmentsCount(): number {
-    const fileCount = this.box?.attachments?.length || 0;
-    const imageCount = this.hasProgressUpdateImages() ? this.getAllProgressUpdateImages().length : 0;
-    return fileCount + imageCount;
+  // Set active drawing/attachment sub-tab
+  setActiveDrawingTab(tab: 'file' | 'url'): void {
+    this.activeDrawingTab = tab;
   }
 
-  loadProgressUpdates(page: number = 1, pageSize: number = 10): void {
+  // Get file-type images (uploaded images)
+  getFileTypeImages(): Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType: 'file' | 'url'; originalUrl?: string }> {
+    return this.boxAttachments.filter(img => img.imageType === 'file');
+  }
+
+  // Get URL-type images
+  getUrlTypeImages(): Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType: 'file' | 'url'; originalUrl?: string }> {
+    return this.boxAttachments.filter(img => img.imageType === 'url');
+  }
+
+  // Open image - for URL-type images, open original URL, otherwise open the display URL
+  openImage(image: { imageUrl: string; displayUrl: string; imageType: 'file' | 'url'; originalUrl?: string }): void {
+    if (image.imageType === 'url' && image.originalUrl) {
+      // For URL-type images, open the original URL stored in originalName
+      console.log('🔗 Opening original URL:', image.originalUrl);
+      window.open(image.originalUrl, '_blank');
+    } else {
+      // For file-type images, open the display URL
+      console.log('🖼️ Opening image URL:', image.displayUrl || image.imageUrl);
+      this.openPhotoInNewTab(image.displayUrl || image.imageUrl);
+    }
+  }
+
+  // Load box attachments from dedicated endpoint
+  loadBoxAttachments(): void {
+    if (!this.boxId) {
+      return;
+    }
+
+    this.loadingBoxAttachments = true;
+    this.boxAttachmentsError = '';
+
+    console.log('📦 Loading box attachments for box:', this.boxId);
+
+    this.boxService.getBoxAttachmentImages(this.boxId).subscribe({
+      next: (response) => {
+        console.log('✅ Box attachments loaded in component:', response);
+        console.log('✅ Response.images:', response.images);
+        console.log('✅ Response.images length:', response.images?.length || 0);
+        console.log('✅ Response.totalCount:', response.totalCount);
+        
+        // Process images and resolve URLs
+        type ResolvedImage = { 
+          imageUrl: string; 
+          displayUrl: string; 
+          updateDate?: Date; 
+          activityName?: string; 
+          progressPercentage?: number; 
+          imageType: 'file' | 'url';
+          originalUrl?: string; // Store original URL for URL-type images
+        };
+
+        const imageRequests = response.images.map((img, index) => {
+          console.log(`🖼️ Processing image ${index + 1}:`, img);
+          const imageUrl = img.imageUrl || img.imageData || '';
+          
+          // Convert relative URLs to absolute
+          let absoluteUrl = imageUrl;
+          if (imageUrl && (imageUrl.startsWith('/api/') || (imageUrl.startsWith('/') && !imageUrl.startsWith('http')))) {
+            const baseUrl = `${window.location.protocol}//${window.location.host}`;
+            absoluteUrl = baseUrl + imageUrl;
+          }
+          
+          // For URL-type images, originalName contains the actual original URL
+          const originalUrl = img.imageType === 'url' ? img.originalName : undefined;
+          
+          return this.fetchImageAsObjectUrl(absoluteUrl, img.imageData).pipe(
+            map(displayUrl => ({
+              imageUrl: absoluteUrl,
+              displayUrl: displayUrl,
+              updateDate: img.updateDate,
+              activityName: img.activityName,
+              progressPercentage: img.progressPercentage,
+              imageType: img.imageType,
+              originalUrl: originalUrl // Store the original URL
+            } as ResolvedImage)),
+            catchError(err => {
+              console.error('❌ Failed to fetch image:', absoluteUrl, err);
+              return of({
+                imageUrl: absoluteUrl,
+                displayUrl: absoluteUrl,
+                updateDate: img.updateDate,
+                activityName: img.activityName,
+                progressPercentage: img.progressPercentage,
+                imageType: img.imageType,
+                originalUrl: originalUrl
+              } as ResolvedImage);
+            })
+          );
+        });
+
+        if (imageRequests.length > 0) {
+          forkJoin(imageRequests).subscribe({
+            next: (resolvedImages: ResolvedImage[]) => {
+              this.boxAttachments = resolvedImages;
+              this.loadingBoxAttachments = false;
+              console.log('🎨 Resolved box attachments:', {
+                total: resolvedImages.length,
+                fileType: resolvedImages.filter((img: ResolvedImage) => img.imageType === 'file').length,
+                urlType: resolvedImages.filter((img: ResolvedImage) => img.imageType === 'url').length
+              });
+            },
+            error: (err) => {
+              console.error('❌ Error resolving images:', err);
+              this.boxAttachmentsError = 'Failed to load some images';
+              this.loadingBoxAttachments = false;
+            }
+          });
+        } else {
+          this.boxAttachments = [];
+          this.loadingBoxAttachments = false;
+          console.warn('⚠️ No attachments found for this box. Response had no images.');
+          console.log('⚠️ Empty response details:', {
+            responseImages: response.images,
+            responseImagesLength: response.images?.length,
+            totalCount: response.totalCount
+          });
+        }
+      },
+      error: (err) => {
+        console.error('❌ Error loading box attachments:', err);
+        console.error('❌ Error details:', {
+          status: err.status,
+          statusText: err.statusText,
+          error: err.error,
+          message: err.message,
+          url: err.url
+        });
+        this.boxAttachmentsError = err.error?.message || err.message || 'Failed to load attachments';
+        this.loadingBoxAttachments = false;
+      }
+    });
+  }
+
+
+  loadProgressUpdates(page: number = 1, pageSize: number = 10, forceRefresh: boolean = false): void {
     if (!this.boxId) {
       return;
     }
@@ -1211,7 +2263,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       searchParams.toDate = this.progressUpdatesToDate;
     }
 
-    this.progressUpdateService.getProgressUpdatesByBox(this.boxId, page, pageSize, searchParams).subscribe({
+    this.progressUpdateService.getProgressUpdatesByBox(this.boxId, page, pageSize, searchParams, forceRefresh).subscribe({
       next: (response) => {
         this.progressUpdates = (response.items || [])
           .map(update => ({
@@ -1234,7 +2286,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   applyProgressUpdatesSearch(): void {
     this.progressUpdatesCurrentPage = 1; // Reset to first page when searching
-    this.loadProgressUpdates(1, this.progressUpdatesPageSize);
+    this.loadProgressUpdates(1, this.progressUpdatesPageSize, true); // Force refresh with new search params
   }
 
   clearProgressUpdatesSearch(): void {
@@ -1244,7 +2296,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.progressUpdatesFromDate = '';
     this.progressUpdatesToDate = '';
     this.progressUpdatesCurrentPage = 1;
-    this.loadProgressUpdates(1, this.progressUpdatesPageSize);
+    this.loadProgressUpdates(1, this.progressUpdatesPageSize, true); // Force refresh after clearing search
   }
 
   toggleProgressUpdatesSearch(): void {
@@ -1585,7 +2637,6 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         this.moveLocationLoading = false;
         this.closeMoveLocationModal();
         this.loadBox(); // Reload box to get updated location
-        this.loadLocationHistory(); // Refresh history
         console.log('✅ Box moved to location successfully');
       },
       error: (err) => {
@@ -1766,19 +2817,85 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     return DiffUtil.getActionIcon(action);
   }
 
-  getActionType(action: string): string {
+  getActionType(action: string): 'create' | 'update' | 'delete' | 'assignment' | 'default' {
     const upperAction = action.toUpperCase();
-    if (upperAction.includes('INSERT') || upperAction.includes('CREATE')) {
+    if (upperAction.includes('CREATE') || upperAction.includes('INSERT')) {
       return 'create';
-    } else if (upperAction.includes('UPDATE') || upperAction.includes('MODIFY') || upperAction.includes('CHANGE')) {
+    } else if (upperAction.includes('UPDATE') || upperAction.includes('MODIFY')) {
       return 'update';
     } else if (upperAction.includes('DELETE') || upperAction.includes('REMOVE')) {
       return 'delete';
+    } else if (upperAction.includes('ASSIGN')) {
+      return 'assignment';
     }
-    return 'other';
+    return 'default';
+  }
+
+  formatBoxLogDate(date?: string | Date): string {
+    if (!date) return '—';
+    const d = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
+  }
+
+  formatBoxLogDescription(description?: string | null): string {
+    if (!description) {
+      return '';
+    }
+    // Format numeric values similar to audit logs
+    const numericValueRegex = /([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)(%?)/g;
+    return description.replace(numericValueRegex, (_match, valuePart: string, percentPart: string) => {
+      const parsedValue = Number(valuePart);
+      if (!isFinite(parsedValue)) {
+        return _match;
+      }
+
+      const absValue = Math.abs(parsedValue);
+      const decimals = absValue >= 1 ? 2 : 4;
+      let formatted: string;
+
+      if (parsedValue !== 0 && absValue < Math.pow(10, -decimals)) {
+        formatted = parsedValue.toExponential(2);
+      } else {
+        formatted = parsedValue.toFixed(decimals);
+        formatted = parseFloat(formatted).toString();
+      }
+
+      return percentPart ? `${formatted}${percentPart}` : formatted;
+    });
+  }
+
+  getBoxLogNoChangeSummary(log: BoxLog): string {
+    if (log.description) {
+      return this.formatBoxLogDescription(log.description);
+    }
+
+    const actionLabel = DiffUtil.getActionLabel(log.action);
+    const boxName = this.box?.name || this.box?.code || 'Box';
+
+    return `${actionLabel} Box "${boxName}" with no tracked field changes.`;
   }
 
   trackByAction(index: number, action: string): string {
     return action;
+  }
+
+  openBoxLogDetails(log: BoxLog): void {
+    this.selectedBoxLog = log;
+    this.isBoxLogDetailsModalOpen = true;
+    document.body.style.overflow = 'hidden';
+  }
+
+  closeBoxLogDetails(): void {
+    this.isBoxLogDetailsModalOpen = false;
+    this.selectedBoxLog = null;
+    document.body.style.overflow = '';
   }
 }

@@ -46,6 +46,8 @@ public class GetBoxLogsQueryHandler : IRequestHandler<GetBoxLogsQuery, Result<Pa
             Field = log.Changes.FirstOrDefault()?.Field,
             OldValue = log.Changes.FirstOrDefault()?.OldValue,
             NewValue = log.Changes.FirstOrDefault()?.NewValue,
+            OldValues = log.OldValues, // Include full old values JSON
+            NewValues = log.NewValues, // Include full new values JSON
             PerformedBy = log.ChangedByFullName ?? "System",
             PerformedAt = log.Timestamp
         }).ToList();

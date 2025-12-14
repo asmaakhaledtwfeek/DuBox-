@@ -407,31 +407,35 @@
             <span>{{ error }}</span>
           </div>
           <div class="checklist-table-wrapper" formArrayName="checklistItems">
-            <table class="designer-table" *ngIf="addChecklistItemsArray.length > 0; else noChecklistPlaceholder">
-              <thead>
-                <tr>
-                  <th class="col-seq">Seq</th>
-                  <th>Description</th>
-                  <th class="col-actions text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let item of addChecklistItemsArray.controls; let i = index" [formGroupName]="i">
-                  <td class="text-center">{{ i + 1 }}</td>
-                  <td>{{ item.get('checkpointDescription')?.value }}</td>
-                  <td class="text-right actions-cell">
-                    <button 
-                      type="button" 
-                      class="icon-button" 
-                      (click)="confirmRemoveChecklistItem(i)"
-                      title="Delete item"
-                    >
-                      🗑️
-                    </button>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <div *ngIf="addChecklistItemsArray.length > 0; else noChecklistPlaceholder" class="grouped-checklist-table">
+              <ng-container *ngFor="let group of getGroupedChecklistItems()">
+                <div class="checklist-category-group" *ngIf="group.items.length > 0">
+                  <div class="category-header">
+                    <h4 class="category-title">{{ group.category }}</h4>
+                    <span class="category-count">{{ group.items.length }} item(s)</span>
+                  </div>
+                  <table class="designer-table">
+                   
+                    <tbody>
+                      <tr *ngFor="let itemData of group.items" [formGroupName]="itemData.index">
+                        <td class="text-center">{{ itemData.index + 1 }}</td>
+                        <td>{{ itemData.control.get('checkpointDescription')?.value }}</td>
+                        <td class="text-right actions-cell">
+                          <button 
+                            type="button" 
+                            class="icon-button" 
+                            (click)="confirmRemoveChecklistItem(itemData.index)"
+                            title="Delete item"
+                          >
+                            🗑️
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </ng-container>
+            </div>
             <ng-template #noChecklistPlaceholder>
               <div class="empty-checklist">
                 <p>No checklist items added yet.</p>
@@ -718,8 +722,8 @@
                     type="button" 
                     class="btn btn-primary btn-sm btn-review" 
                     (click)="openItemReviewModal(i)"
-                    [disabled]="isChecklistLocked"
-                    title="Review item"
+                    [disabled]="isChecklistLocked || !canReviewItem(item.value.status)"
+                    [title]="getReviewButtonTitle(item.value.status, isChecklistLocked)"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
                       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>

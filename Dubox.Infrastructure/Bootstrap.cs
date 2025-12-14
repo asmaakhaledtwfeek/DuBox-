@@ -1,6 +1,8 @@
 ﻿using Dubox.Application.Abstractions;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Services;
+using Dubox.Domain.Services.ImageEntityConfig;
+using Dubox.Domain.Services.ImageEntityConfig.ImageEntityConfigFactory;
 using Dubox.Infrastructure.ApplicationContext;
 using Dubox.Infrastructure.Authentication;
 using Dubox.Infrastructure.Repositories;
@@ -28,6 +30,8 @@ public static class Bootstrap
         services.AddScoped<IBoxActivityService, BoxActivityService>();
         services.AddScoped<ISerialNumberService, SerialNumberService>();
         services.AddScoped<IImageProcessingService, ImageProcessingService>();
+        services.AddScoped<IImageEntityConfigFactory, ImageEntityConfigFactory>();
+
 
 
         return services;

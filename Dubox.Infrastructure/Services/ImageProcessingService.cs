@@ -1,5 +1,6 @@
 ﻿using Dubox.Domain.Abstraction;
 using Dubox.Domain.Abstractions;
+using Dubox.Domain.Services.ImageEntityConfig;
 using Microsoft.AspNetCore.Http;
 
 namespace Dubox.Infrastructure.Services
@@ -8,11 +9,14 @@ namespace Dubox.Infrastructure.Services
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IUnitOfWork _unitOfWork;
-
-        public ImageProcessingService(IHttpClientFactory httpClientFactory, IUnitOfWork unitOfWork)
+        private readonly IDbContext _dbContext;
+        private readonly IImageEntityConfigFactory _factory;
+        public ImageProcessingService(IHttpClientFactory httpClientFactory, IUnitOfWork unitOfWork, IDbContext dbContext, IImageEntityConfigFactory factory)
         {
             _httpClientFactory = httpClientFactory;
             _unitOfWork = unitOfWork;
+            _dbContext = dbContext;
+            _factory = factory;
         }
 
         public async Task<byte[]?> GetImageBytesAsync(IFormFile? file, string? imageUrl, CancellationToken cancellationToken)
@@ -145,12 +149,12 @@ namespace Dubox.Infrastructure.Services
         }
         private void SetForeignKey<TEntity>(TEntity entity, Guid parentId)
         {
-            var fkProp = typeof(TEntity)
-                .GetProperties()
-                .FirstOrDefault(p => p.Name.EndsWith("Id") && p.PropertyType == typeof(Guid));
+            var config = _factory.GetConfig<TEntity>();
+            var fkProp = typeof(TEntity).GetProperty(config.ForeignKeyName);
 
             fkProp?.SetValue(entity, parentId);
         }
+
 
     }
 }

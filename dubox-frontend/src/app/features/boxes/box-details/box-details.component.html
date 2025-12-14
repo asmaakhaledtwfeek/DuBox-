@@ -157,7 +157,7 @@
                 <div class="qr-label">QR Code</div>
                 <div class="qr-container">
                   <div class="qr-image-wrapper">
-                    <img [src]="box.qrCode" alt="QR Code" class="qr-code-image">
+                    <img [src]="box.qrCode" alt="QR Code" class="qr-code-image" loading="lazy">
                   </div>
                   <div class="qr-actions">
                     <button class="btn btn-primary btn-sm" (click)="downloadQRCode()">
@@ -776,7 +776,7 @@
                           </svg>
                         </button>
                       </div>
-                      <img [src]="image.preview" [alt]="image.name || 'Preview'" />
+                      <img [src]="image.preview" [alt]="image.name || 'Preview'" loading="lazy" />
                     </div>
                     <div class="image-preview-info">
                       <span class="image-name" *ngIf="image.name" [title]="image.name">{{ image.name.length > 25 ? (image.name.substring(0, 25) + '...') : image.name }}</span>
@@ -1153,7 +1153,7 @@
                             </svg>
                           </button>
                         </div>
-                        <img [src]="image.preview" [alt]="image.name || 'Preview'" />
+                        <img [src]="image.preview" [alt]="image.name || 'Preview'" loading="lazy" />
                       </div>
                       <div class="image-preview-info">
                         <span class="image-name" *ngIf="image.name" [title]="image.name">{{ image.name.length > 25 ? (image.name.substring(0, 25) + '...') : image.name }}</span>

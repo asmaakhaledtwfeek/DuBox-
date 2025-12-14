@@ -14,14 +14,24 @@ public class PredefinedChecklistItem
     [MaxLength(500)]
     public string CheckpointDescription { get; set; } = string.Empty;
 
-    [MaxLength(200)]
-    public string? ReferenceDocument { get; set; }
+    [MaxLength(50)]
+    public string? ItemNumber { get; set; }
+
+    [MaxLength(50)]
+    public string? WIRNumber { get; set; }
+
+    public Guid? ReferenceId { get; set; }
+
+    [ForeignKey(nameof(ReferenceId))]
+    public virtual Reference? Reference { get; set; }
 
     [Required]
     public int Sequence { get; set; }
 
-    [MaxLength(50)]
-    public string? Category { get; set; } // e.g., "General", "Setting Out", "Installation Activity"
+    public Guid? CategoryId { get; set; }
+
+    [ForeignKey(nameof(CategoryId))]
+    public virtual Category? Category { get; set; }
 
     public bool IsActive { get; set; } = true;
 

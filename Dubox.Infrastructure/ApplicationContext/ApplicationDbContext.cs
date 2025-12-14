@@ -60,6 +60,8 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<Permission> Permissions { get; set; } = null!;
     public DbSet<RolePermission> RolePermissions { get; set; } = null!;
     public DbSet<NavigationMenuItem> NavigationMenuItems { get; set; } = null!;
+    public DbSet<Reference> References { get; set; } = null!;
+    public DbSet<Category> Categories { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -69,6 +71,8 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         ActivityMasterSeedData.SeedActivityMaster(modelBuilder);
         RoleAndUserSeedData.SeedRolesGroupsAndUsers(modelBuilder);
         DepartmentSeesData.SeedDepartmnts(modelBuilder);
+        ReferenceSeedData.SeedReferences(modelBuilder);
+        CategorySeedData.SeedCategories(modelBuilder);
         PredefinedChecklistItemSeedData.SeedPredefinedChecklistItems(modelBuilder);
         PermissionSeedData.SeedPermissions(modelBuilder);
         NavigationMenuSeedData.SeedNavigationMenuItems(modelBuilder);
@@ -353,6 +357,21 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(h => h.MovedFromLocationId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // PredefinedChecklistItem relationships
+        modelBuilder.Entity<PredefinedChecklistItem>()
+            .HasOne(p => p.Reference)
+            .WithMany()
+            .HasForeignKey(p => p.ReferenceId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<PredefinedChecklistItem>()
+            .HasOne(p => p.Category)
+            .WithMany()
+            .HasForeignKey(p => p.CategoryId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
     }
 
     private void ConfigureIndexes(ModelBuilder modelBuilder)
@@ -451,6 +470,16 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
 
         modelBuilder.Entity<RolePermission>()
             .HasIndex(rp => new { rp.RoleId, rp.PermissionId })
+            .IsUnique();
+
+        // Reference indexes
+        modelBuilder.Entity<Reference>()
+            .HasIndex(r => r.ReferenceName)
+            .IsUnique();
+
+        // Category indexes
+        modelBuilder.Entity<Category>()
+            .HasIndex(c => c.CategoryName)
             .IsUnique();
     }
 

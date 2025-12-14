@@ -65,7 +65,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                 {
                     WIRId = request.WIRId,
                     CheckpointDescription = predefined.CheckpointDescription,
-                    ReferenceDocument = predefined.ReferenceDocument,
+
                     Sequence = maxSequence + index + 1,
                     Status = CheckListItemStatusEnum.Pending,
                     Remarks = null,

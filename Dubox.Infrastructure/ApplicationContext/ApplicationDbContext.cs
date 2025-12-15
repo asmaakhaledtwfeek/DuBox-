@@ -60,9 +60,8 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<Permission> Permissions { get; set; } = null!;
     public DbSet<RolePermission> RolePermissions { get; set; } = null!;
     public DbSet<NavigationMenuItem> NavigationMenuItems { get; set; } = null!;
-    public DbSet<Reference> References { get; set; } = null!;
-    public DbSet<Category> Categories { get; set; } = null!;
-    public DbSet<WIRMaster> WIRMasters { get; set; } = null!;
+    public DbSet<ChecklistSection> ChecklistSections { get; set; } = null!;
+    public DbSet<Checklist> Checklists { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -72,19 +71,10 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         ActivityMasterSeedData.SeedActivityMaster(modelBuilder);
         RoleAndUserSeedData.SeedRolesGroupsAndUsers(modelBuilder);
         DepartmentSeesData.SeedDepartmnts(modelBuilder);
-        ReferenceSeedData.SeedReferences(modelBuilder);
-        CategorySeedData.SeedCategories(modelBuilder);
-        
-        // Seed WIR Masters and all Predefined Checklist Items
-        WIRMasterSeedData.SeedWIRMasters(modelBuilder);
         PredefinedChecklistItemSeedData.SeedPredefinedChecklistItems(modelBuilder); // WIR-2 and WIR-3
-        WIR1_MaterialVerificationSeedData.SeedWIR1Items(modelBuilder); // WIR-1
-       WIR4_StructuralAssemblySeedData.SeedWIR4Items(modelBuilder); // WIR-4
-        WIR5_FinishingWorksSeedData.SeedWIR5Items(modelBuilder); // WIR-5
-        WIR6_FinalInspectionSeedData.SeedWIR6Items(modelBuilder); // WIR-6
-        
         PermissionSeedData.SeedPermissions(modelBuilder);
         NavigationMenuSeedData.SeedNavigationMenuItems(modelBuilder);
+        ChecklistSeedData.SeedChecklists(modelBuilder);
         base.OnModelCreating(modelBuilder);
     }
 
@@ -367,20 +357,21 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .IsRequired(false)
             .OnDelete(DeleteBehavior.SetNull);
 
-        // PredefinedChecklistItem relationships
-        modelBuilder.Entity<PredefinedChecklistItem>()
-            .HasOne(p => p.Reference)
-            .WithMany()
-            .HasForeignKey(p => p.ReferenceId)
+        // ChecklistSection relationships
+        modelBuilder.Entity<ChecklistSection>()
+            .HasOne(cs => cs.Checklist)
+            .WithMany(c => c.Sections)
+            .HasForeignKey(cs => cs.ChecklistId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.SetNull);
 
         modelBuilder.Entity<PredefinedChecklistItem>()
-            .HasOne(p => p.Category)
-            .WithMany()
-            .HasForeignKey(p => p.CategoryId)
+            .HasOne(p => p.ChecklistSection)
+            .WithMany(cs => cs.Items)
+            .HasForeignKey(p => p.ChecklistSectionId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.SetNull);
+
     }
 
     private void ConfigureIndexes(ModelBuilder modelBuilder)
@@ -481,15 +472,9 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasIndex(rp => new { rp.RoleId, rp.PermissionId })
             .IsUnique();
 
-        // Reference indexes
-        modelBuilder.Entity<Reference>()
-            .HasIndex(r => r.ReferenceName)
-            .IsUnique();
-
-        // Category indexes
-        modelBuilder.Entity<Category>()
-            .HasIndex(c => c.CategoryName)
-            .IsUnique();
+        // CheckpointSection indexes
+        modelBuilder.Entity<ChecklistSection>()
+            .HasIndex(cs => cs.Order);
     }
 
     private void ConfigureDefaultValues(ModelBuilder modelBuilder)

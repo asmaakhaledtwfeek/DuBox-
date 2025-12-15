@@ -4,6 +4,7 @@ using Dubox.Infrastructure.ApplicationContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Dubox.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251215081707_checklistSeedData")]
+    partial class checklistSeedData
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1125,138 +1128,6 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000005"),
-                            Code = "ASA-IMS-FRM-13-036",
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Discipline = "CIVIL",
-                            IsActive = true,
-                            Name = "Bitumen Paint Application Checklist",
-                            PageNumber = 6,
-                            SignatureRolesJson = "[\"Civil Works\",\"Sub Contractor\"]",
-                            SubDiscipline = "Waterproofing"
-                        },
-                        new
-                        {
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000006"),
-                            Code = "ASA-IMS-FRM-13-054",
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Discipline = "CIVIL",
-                            IsActive = true,
-                            Name = "Gypsum Partition Installation Checklist",
-                            PageNumber = 7,
-                            SignatureRolesJson = "[\"Civil Works\",\"Sub Contractor\"]",
-                            SubDiscipline = "Drywall"
-                        },
-                        new
-                        {
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000007"),
-                            Code = "ASA-IMS-FRM-13-052",
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Discipline = "CIVIL",
-                            IsActive = true,
-                            Name = "False Ceiling Installation Checklist",
-                            PageNumber = 8,
-                            SignatureRolesJson = "[\"Civil Works\",\"Sub Contractor\"]",
-                            SubDiscipline = "False Ceiling"
-                        },
-                        new
-                        {
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000008"),
-                            Code = "ASA-IMS-FRM-13-046",
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Discipline = "CIVIL",
-                            IsActive = true,
-                            Name = "Wet Area Waterproofing Checklist",
-                            PageNumber = 9,
-                            SignatureRolesJson = "[\"Civil Works\",\"Sub Contractor\"]",
-                            SubDiscipline = "Waterproofing"
-                        },
-                        new
-                        {
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000009"),
-                            Code = "Epoxy-Work",
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Discipline = "CIVIL",
-                            IsActive = true,
-                            Name = "Epoxy Flooring Checklist",
-                            PageNumber = 10,
-                            SignatureRolesJson = "[\"Civil Engineer\",\"QC Engineer\"]",
-                            SubDiscipline = "Flooring"
-                        },
-                        new
-                        {
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000010"),
-                            Code = "Kitchen-Cabinet",
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Discipline = "CIVIL",
-                            IsActive = true,
-                            Name = "Kitchen Cabinets Installation Checklist",
-                            PageNumber = 11,
-                            SignatureRolesJson = "[\"Civil Engineer\",\"QC Engineer\"]",
-                            SubDiscipline = "Joinery"
-                        },
-                        new
-                        {
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000011"),
-                            Code = "Wardrobe-Installation",
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Discipline = "CIVIL",
-                            IsActive = true,
-                            Name = "Wardrobe Installation Checklist",
-                            PageNumber = 12,
-                            SignatureRolesJson = "[\"Civil Engineer\",\"QC Engineer\"]",
-                            SubDiscipline = "Joinery"
-                        },
-                        new
-                        {
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000012"),
-                            Code = "ASA-IMS-FRM-13-051",
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Discipline = "CIVIL",
-                            IsActive = true,
-                            Name = "Doors & Windows Installation Checklist",
-                            PageNumber = 13,
-                            SignatureRolesJson = "[\"Civil Works\",\"Sub Contractor\"]",
-                            SubDiscipline = "Doors & Windows"
-                        },
-                        new
-                        {
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000013"),
-                            Code = "ASA-IMS-FRM-13-069",
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Discipline = "CIVIL",
-                            IsActive = true,
-                            Name = "Fire Sealing Works Checklist",
-                            PageNumber = 15,
-                            SignatureRolesJson = "[\"Civil Works\",\"Sub Contractor\"]",
-                            SubDiscipline = "Fire Protection"
-                        },
-                        new
-                        {
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000014"),
-                            Code = "Aluminium-Glazing",
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Discipline = "CIVIL",
-                            IsActive = true,
-                            Name = "Aluminium & Glazing Checklist",
-                            PageNumber = 16,
-                            SignatureRolesJson = "[\"Civil Engineer\",\"QC Engineer\"]",
-                            SubDiscipline = "Aluminium Works"
-                        },
-                        new
-                        {
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000015"),
-                            Code = "Pre-Loading-Civil",
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Discipline = "CIVIL",
-                            IsActive = true,
-                            Name = "Check List for Pre-Loading of Completed Precast Modular",
-                            PageNumber = 17,
-                            SignatureRolesJson = "[\"Civil Works\",\"QC\",\"MEP Works\"]",
-                            SubDiscipline = "Pre-Loading"
-                        },
-                        new
-                        {
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000020"),
                             Code = "Material-Receiving-MEP",
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
@@ -1688,384 +1559,6 @@ namespace Dubox.Infrastructure.Migrations
                         new
                         {
                             ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000017"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000005"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 1,
-                            Title = "A. General"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000018"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000005"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 2,
-                            Title = "B. Surface Preparation"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000005"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 3,
-                            Title = "C. Application of Bitumen Paint"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000020"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000006"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 1,
-                            Title = "A. General"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000021"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000006"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 2,
-                            Title = "B. Setting Out"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000006"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 3,
-                            Title = "C. Installation Activity"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000023"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000007"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 1,
-                            Title = "A. General"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000024"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000007"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 2,
-                            Title = "B. Setting Out"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000025"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000007"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 3,
-                            Title = "C. Pre-Installation Activity"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000026"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000007"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 4,
-                            Title = "D. Installation of False Ceiling"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000027"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000008"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 1,
-                            Title = "A. General"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000028"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000008"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 2,
-                            Title = "B. Surface Preparation"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000029"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000008"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 3,
-                            Title = "C. Application of Waterproofing"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000030"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000009"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 1,
-                            Title = "A. General"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000009"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 2,
-                            Title = "B. Surface Preparation"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000032"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000009"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 3,
-                            Title = "C. Application of Epoxy"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000033"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000010"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 1,
-                            Title = "A. General"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000010"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 2,
-                            Title = "B. Surface Preparation"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000035"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000010"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 3,
-                            Title = "C. Cabinet Counter Top"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000036"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000011"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 1,
-                            Title = "A. General"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000037"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000011"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 2,
-                            Title = "B. Setting Out"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000038"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000011"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 3,
-                            Title = "C. Installation of Wardrobe"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000039"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000012"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 1,
-                            Title = "A. General"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000040"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000012"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 2,
-                            Title = "B. Setting Out"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000041"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000012"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 3,
-                            Title = "C. Installation of Doors"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000042"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000012"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 4,
-                            Title = "D. Installation of Windows"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000043"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000013"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 1,
-                            Title = "A. General"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000044"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000013"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 2,
-                            Title = "B. Preparation Works"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000045"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000013"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 3,
-                            Title = "C. Application"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000046"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000014"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 1,
-                            Title = "A. General"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000047"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000014"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 2,
-                            Title = "B. Surface Preparation"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000048"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000014"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 3,
-                            Title = "C. Installation of Aluminium and glazing"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000049"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000015"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 1,
-                            Title = "1. General"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000050"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000015"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 2,
-                            Title = "2. Final Inspection - Structural"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000051"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000015"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 3,
-                            Title = "3. Internal and External Painting"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000052"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000015"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 4,
-                            Title = "4. Floor and Wall Tiling"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000053"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000015"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 5,
-                            Title = "5. Dry wall"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000054"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000015"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 6,
-                            Title = "6. False Ceiling Work"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000055"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000015"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 7,
-                            Title = "7. Aluminium and Glazing Works"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000056"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000015"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 8,
-                            Title = "8. Wooden/Metal Doors and Wood Works"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000057"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000015"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 9,
-                            Title = "9. Other Finishes"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000058"),
-                            ChecklistId = new Guid("50000000-0000-0000-0000-000000000015"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            IsActive = true,
-                            Order = 10,
-                            Title = "10. Others"
-                        },
-                        new
-                        {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000059"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000020"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2074,7 +1567,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000060"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000018"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000021"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2083,7 +1576,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000061"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000022"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2092,7 +1585,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000062"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000020"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000023"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2101,7 +1594,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000063"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000021"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000024"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2110,7 +1603,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000064"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000025"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2119,7 +1612,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000065"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000023"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000026"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2128,7 +1621,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000066"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000024"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000027"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2137,7 +1630,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000067"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000025"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000028"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2146,7 +1639,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000068"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000026"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000029"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2155,7 +1648,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000069"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000027"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000030"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2164,7 +1657,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000070"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000028"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000031"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2173,7 +1666,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000071"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000029"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000032"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2182,7 +1675,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000072"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000030"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000033"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2191,7 +1684,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000073"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000034"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2200,7 +1693,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000074"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000032"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000035"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2209,7 +1702,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000075"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000033"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000036"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2218,7 +1711,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000076"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000040"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2227,7 +1720,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000077"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000035"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000041"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2236,7 +1729,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000078"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000036"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000042"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2245,7 +1738,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000079"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000037"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000042"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2254,7 +1747,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000080"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000038"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000042"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2263,7 +1756,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000081"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000039"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000042"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2272,7 +1765,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000082"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000040"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000042"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2281,7 +1774,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000083"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000041"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000042"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2290,7 +1783,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000084"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000042"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000042"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2299,7 +1792,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000085"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000043"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000042"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2308,7 +1801,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000086"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000044"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000042"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2317,7 +1810,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000087"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000045"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000042"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -2326,7 +1819,7 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000088"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000046"),
                             ChecklistId = new Guid("50000000-0000-0000-0000-000000000042"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             IsActive = true,
@@ -5209,9 +4702,9 @@ namespace Dubox.Infrastructure.Migrations
                             PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000084"),
                             ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000017"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure method statement and materials are approved.",
+                            Description = "Review documents for received materials",
                             IsActive = true,
-                            Reference = "Approved MTS",
+                            Reference = "General",
                             Sequence = 1
                         },
                         new
@@ -5219,7 +4712,7 @@ namespace Dubox.Infrastructure.Migrations
                             PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000085"),
                             ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000017"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure materials are stored under dry, clean, shaded area, away from sunlight and other sources of heat.",
+                            Description = "Materials outside visual checking",
                             IsActive = true,
                             Reference = "General",
                             Sequence = 2
@@ -5229,2486 +4722,6 @@ namespace Dubox.Infrastructure.Migrations
                             PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000086"),
                             ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000017"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the expiry date of the material prior to applications.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 3
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000087"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000018"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check substrate is clean, free from contaminants like dust, traces of curing compound, oil and greese.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 4
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000088"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000018"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check for repair of surface imperfection and protrusions (if any).",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 5
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000089"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000018"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the angle fillets and chamfering of all sharp edges (if required).",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 6
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000090"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000018"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the MEP clearance are obtained prior to start bitumen application.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 7
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000091"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure proper mixing as per the manufacturer recommandations.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 8
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000092"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the application of primer coat (if required).",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 9
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000093"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the rate of application as per the manufacturer recommendation and method statement.",
-                            IsActive = true,
-                            Reference = "Approved MTS",
-                            Sequence = 10
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000094"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the application of coats as per project requirements / manufacturer recommandations.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 11
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000095"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the application of subsequent coats are carried out at right angle to the previous coat.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 12
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000096"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the WFT as per the project specifications / manufacturer recommandations.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 13
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000097"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the curing of application as per manufacturer recommendation.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 14
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000098"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Approval obtained from Consultant/Client to proceed with further activities.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 15
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000099"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000020"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure method statement, material submittal and drawings are approved.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 1
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000100"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000020"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure materials (Gypsum board, cement board, insulation material, supporting system, etc.) are stored under dry, clean, shaded area, away from sunlight and other sources of heat.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 2
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000101"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000020"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the color, type, material, fire rating and thickness are as per approved material approval and project requirements.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 3
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000102"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000020"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify and record the DCL product confirmity certificate for the insulation materials.",
-                            IsActive = true,
-                            Reference = "DCL Certificate",
-                            Sequence = 4
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000103"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000021"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the marking and setting out of the partition walls as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 5
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000104"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the completion of the required finishes of the adjacent substrates.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 6
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000105"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the location, spacing and fixation of the supporting grid (vertical and horizontal channel, wall angle, etc.) as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 7
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000106"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the fixation of the board (on one side of the supports) as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 8
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000107"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the completion of all embedded MEP and other dicipline works prior to closure as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 9
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000108"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure additional supports are provided for the wall mounted fixtures as applicable.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 10
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000109"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the installation of insulation works (if applicable) as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 11
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000110"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Obtain approval (Civil / MEP) from consultant / Client to proceed with further works.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 12
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000111"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the fixation of the board as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 13
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000112"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the completion of MEP and other dicipline works above the false ceiling level and obtain clearance to proceed for futher works.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 14
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000113"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the marking, position and alignment of MEP & wall mounted fixtures in the wall as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 15
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000114"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the cutting of gypsum board on the marked locations as per the project requirements.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 16
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000115"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the jointing & taping as per the manufacturer recommendations.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 17
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000116"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Approval obtain from Consultant/Client to proceed with further activities.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 18
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000117"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000023"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure method statement, material submittal and drawings are approved.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 1
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000118"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000023"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure materials (Gypsum board, tiles, suspension systems, etc.,) are stored under dry, clean, shaded area, away from sunlight and other sources of heat.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 2
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000119"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000023"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the color, type, material, pattern and thickness are as per approved material approval and project requirements.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 3
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000120"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000024"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the marking of the false ceiling level on the walls as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 4
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000121"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000024"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the marking / location of suspension system supports at ceiling as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 5
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000122"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000025"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the completion of the required finishes above the false ceiling level.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 6
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000123"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000025"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the closing of shaft openings, MEP penetrations and other openings as per project requirements.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 7
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000124"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000025"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the application of fire sealant / fire protection works are carried out as per the project requirements (if applicable).",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 8
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000125"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000025"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the location, spacing and fixation of the grid (main channel, Furing channel, wall angle, hanging wire with adjustable clip, main tee, cross tee, etc.,) as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 9
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000126"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000025"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the suspension system supports are not in contact with the adjacent MEP services.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 10
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000127"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000025"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the completion of MEP and other dicipline works above the false ceiling level and obtain clearance to proceed for futher works.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 11
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000128"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000025"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure additional supports are provided for the ceiling mounted fixtures as applicable.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 12
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000129"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000025"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Obtain approval from consultant / Client to proceed with further works.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 13
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000130"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000026"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the type, fixation, level and alignment of the false ceiling board / tiles as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 14
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000131"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000026"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the marking, position and alignment of MEP & ceiling mounted fixtures (light, access panel, sprinklers, signages etc.) in the ceiling as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 15
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000132"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000026"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the cutting of gypsum board / tiles on the marked locations as per the project requirements.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 16
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000133"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000026"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the jointing & taping as per the manufacturer recommendations.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 17
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000134"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000026"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Approval obtained from Consultant/Client to proceed with further activites.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 18
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000135"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000027"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure method statement and materials are approved.",
-                            IsActive = true,
-                            Reference = "Approved MTS",
-                            Sequence = 1
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000136"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000027"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure materials are stored under dry, clean, shaded area, away from sunlight and other sources of heat.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 2
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000137"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000027"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the expiry date of the material prior to applications.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 3
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000138"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000028"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check substrate is clean, free from contaminants like dust, traces of curing compound, oil and greese.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 4
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000139"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000028"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure grouting, angle fillet provided all around the penetrations and the projected MEP services are neat and clean from any latiance.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 5
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000140"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000028"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the angle fillets are provided at the floor and wall junctions of the area that to be treated.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 6
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000141"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000028"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Obtain MEP clearance prior to start the wet area water proofing.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 7
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000142"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000028"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure check dam constructed at the entrance of the room for the stagnation of water for water leakage testing after the completion of the wet area water proofing.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 8
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000143"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000029"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure proper mixing of the material as per the manufacturer recommendations",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 9
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000144"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000029"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the application of primer coat (if required).",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 10
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000145"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000029"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the rate of application as per the manufacturer recommendation and method statement.",
-                            IsActive = true,
-                            Reference = "Approved MTS",
-                            Sequence = 11
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000146"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000029"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the application of coats as per project requirements / manufacturer recommandations.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 12
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000147"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000029"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the application of subsequent coats are carried out at right angle to the previous coat.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 13
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000148"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000029"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the application of waterproofing on the vertical face extended upto 300mm from FFL or as per approved drawing / project requirements.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 14
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000149"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000029"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the WFT as per the project specifications / manufacturer recommendations.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 15
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000150"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000029"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the curing of application as per manufacturer recommendation.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 16
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000151"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000029"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Obtain approval for the application of waterproofing to proceed water leakage test.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 17
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000152"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000029"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the filling of water and monitor the level of filled water during the leakage test.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 18
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000153"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000029"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check for any water seepage / leakage after 24 hours or as per the project requirements.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 19
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000154"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000029"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Approval obtained from Consultant/Client to proceed with further activities.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 20
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000155"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000030"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure method statement, materials and drawings (finishing schedule) are approved.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 1
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000156"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000030"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure materials are stored as per manufacturers recommendations.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 2
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000157"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000030"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the expiry date of the material prior to applications.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 3
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000158"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check substrate is clean, free from contaminants like dust, traces of curing compound, oil and greese.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 4
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000159"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check for repair of surface imperfection and protrusions (if any).",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 5
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000160"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Moisture content for the substrate and environmental conditions as per manufacturer recommendations.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 6
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000161"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Undulations or irregular corners are repaired and grinded as required.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 7
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000162"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the MEP clearance prior to start epoxy flooring works.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 8
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000163"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000032"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure application of primer as per manufecturers recommendation",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 9
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000164"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000032"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure application of Hardner as per manufecturers recommendation",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 10
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000165"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000032"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure Application of uniform base as per manufecturers recommendations.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 11
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000166"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000032"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Tuchup, grinding, undulations, corner repairs and pinholes are filled properly.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 12
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000167"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000032"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure proper mixing of material as per the manufacturer recommendations.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 13
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000168"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000032"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the Location, Colour, Type of Painting as per the approved shop drawings / material submittal.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 14
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000169"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000032"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the application of coats as per project requirements / manufacturer recommendations.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 15
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000170"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000032"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the rate of application as per the manufacturer recommendation and method statement.",
-                            IsActive = true,
-                            Reference = "Approved MTS",
-                            Sequence = 16
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000171"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000032"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the curing at every stages of application as per manufacturer recommendation.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 17
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000172"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000033"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure method statement, materials and drawings are approved.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 1
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000173"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000033"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure materials are stored as per manufacturers recommendations.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 2
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000174"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000033"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure method of statement is being followed.",
-                            IsActive = true,
-                            Reference = "Approved MTS",
-                            Sequence = 3
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000175"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000033"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check location,Size,Color and Thickness of the Cabinets",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 4
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000176"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check Height,Level and Alignment of cabinets",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 5
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000177"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check wethere Drawer and Shelf functioning properly",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 6
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000178"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check Opening Size and Direction of cabinets",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 7
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000179"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check Shelf Supports (Brackets or Pins)",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 8
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000180"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check Joints of the Cabinets",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 9
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000181"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Fixing of supports for the countertop is as per approved drawings",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 10
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000182"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check Ironmongery is installed as per drawing and free from damanges",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 11
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000183"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check Sink installed Properly and as per location on dwg.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 12
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000184"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check Level of the surface",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 13
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000185"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check Applied Sealant and its Color",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 14
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000186"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check Stove installed Properly",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 15
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000187"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Completion of Nearby Finishes",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 16
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000188"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000035"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check for any Surface joints visibility",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 17
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000189"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000035"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check location,Size,Color and Thickness",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 18
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000190"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000035"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check Opening Size and location for kitchen Accessories",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 19
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000191"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000036"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure method statement, material submittal and drawings are approved.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 1
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000192"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000036"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure materials (wardrobe, leaf, drawers , iron mongeries and accessories, etc.) are stored under dry, clean, shaded area, away from sunlight and other sources of heat.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 2
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000193"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000036"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the color, type, material, coating of leaf, materials are as per approved material approval and project requirements.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 3
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000194"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000036"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify and record the DCL product conformity certificate for the sealants to be used.",
-                            IsActive = true,
-                            Reference = "DCL Certificate",
-                            Sequence = 4
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000195"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000036"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the fire rating of the wardrobe are as per the project requirements.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 5
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000196"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000037"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the level and alignment of the wardrobe frame leaf opening with reference to the surrounding wall / cladding elevations.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 6
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000197"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000037"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the location and clear opening of leafs and drawers are as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 7
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000198"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000037"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the wardrobe jamb area are solid and rigid.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 8
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000199"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000038"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the fixation of subframe with applicable moisture resistant coating.(if required).",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 9
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000200"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000038"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verity the fixation, level and alignment of the wardrobe is as per the approved details / drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 10
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000201"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000038"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the wardrobe consolidated.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 11
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000202"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000038"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the location and No. of leaf hinges provided as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 12
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000203"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000038"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure required Iron mongery sets are provided as per drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 13
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000204"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000038"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the level, orientation and position of the iron mongery fixed as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 14
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000205"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000038"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure location/dimensions of drawers are per drawing",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 15
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000206"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000038"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the roller slides/drawer runners as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 16
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000207"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000038"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify Cloth Hangers/Tie Holders are installed as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 17
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000208"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000038"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the alignment, plumbness and protection of wardrobe to avoid any damages during activities.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 18
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000209"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000038"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure wardrobe hanging rail set is installed.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 19
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000210"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000038"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Approval obtained from Consultant/Client to proceed with further activities.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 20
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000211"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000039"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure method statement, material submittal and drawings are approved.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 1
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000212"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000039"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure materials (Door frame, leaf, window frame, window leaf, iron mongeries and accessories, etc.) are stored under dry, clean, shaded area, away from sunlight and other sources of heat.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 2
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000213"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000039"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the color, type, material, coating of door and window materials are as per approved material approval and project requirements.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 3
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000214"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000039"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify and record the DCL product confirmity certificate for the sealants to be used.",
-                            IsActive = true,
-                            Reference = "DCL Certificate",
-                            Sequence = 4
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000215"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000039"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the fire rating of the doors are as per the project requirements.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 5
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000216"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000040"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the location and clear opening of doors / windows are as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 6
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000217"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000040"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the level and alignment of the door / window frame opening with reference to the surrounding wall / cladding elevations.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 7
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000218"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000040"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the door / window jamb area are solid and rigid.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 8
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000219"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000041"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the fixation of subframe with applicable moisture resistant coating.(if required).",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 9
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000220"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000041"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verity the fixation, level and alignment of the door frame as per the approved details / drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 10
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000221"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000041"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the door frames are consolidated using foam as per the material approval and project requirements.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 11
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000222"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000041"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the location and No. of Door hinges provided as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 12
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000223"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000041"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure required Iron mongery sets are provided as per the door schedule drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 13
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000224"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000041"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the level, orientation and position of the iron mongery fixed as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 14
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000225"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000041"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the door stopper / door coordinator provided as per the approved door schedule.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 15
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000226"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000041"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the fire rated doors are provided with fire rated sealant & fire rating tags as per the project requirements.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 16
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000227"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000041"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the rubber gaskets are provided at the door jamb as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 17
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000228"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000041"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the undercut for the door leaves as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 18
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000229"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000041"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the alignment, plumbness and protection of door leafs to avoid any damages during construction activities.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 19
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000230"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000041"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the door architrave are fixed as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 20
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000231"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000041"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Approval obtained from Consultant/Client to proceed with further activities.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 21
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000232"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000042"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the completion of finishes around the jamb area prior to installation.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 22
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000233"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000042"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the drip flashings are provided properly around the frame as per the approved drawings",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 23
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000234"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000042"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the overlapping of the flashings around the frame are as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 24
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000235"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000042"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verity the fixation, level and alignment of the door frame as per the approved details / drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 25
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000236"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000042"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the location and No. of hinges, iron mongeries provided as per the approved drawings.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 26
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000237"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000042"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the alignment, plumbness, opening direction and protection of window shutters to avoid any damages during construction activities.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 27
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000238"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000042"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the uniform thickness, colour and application of the sealant all around the window frame.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 28
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000239"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000042"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Approval obtained from Consultant/Client to proceed with further activities.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 29
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000240"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000043"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure relevant shop drawing is approved.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 1
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000241"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000043"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure H&S method statement is submitted",
-                            IsActive = true,
-                            Reference = "Approved MTS",
-                            Sequence = 2
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000242"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000043"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check all the materials are approved by consultant.",
-                            IsActive = true,
-                            Reference = "MA",
-                            Sequence = 3
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000243"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000043"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the availablity mockup approval for the fire sealing works (around penetrations, partitions, etc.).",
-                            IsActive = true,
-                            Reference = "Mockup Approval",
-                            Sequence = 4
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000244"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000044"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the MEP penetrations are installed, inspected and approved.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 5
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000245"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000044"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the surface for any latiance, dirt, loose materials around the penetrations.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 6
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000246"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000044"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the dampness of the substrate prior to application (if required as per manufaturer recommendations)",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 7
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000247"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000044"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the mixing of materials as per the manufacturer recommandations",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 8
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000248"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000045"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the application covers the whole penetrations without any gap.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 9
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000249"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000045"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Finishing of the openings shall be as per the approved mockup.",
-                            IsActive = true,
-                            Reference = "Mockup Approval",
-                            Sequence = 10
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000250"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000045"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the final cleaning and sealant (if required) applied as per the approved mockup.",
-                            IsActive = true,
-                            Reference = "Mockup Approval",
-                            Sequence = 11
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000251"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000046"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure method statement, materials and drawings (finishing schedule) are approved.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 1
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000252"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000046"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure materials are stored as per manufacturers recommendations.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 2
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000253"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000046"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the expiry date of the material prior to applications.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 3
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000254"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000047"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check substrate is clean, free from contaminants like dust, traces of curing compound, oil and greese.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 4
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000255"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000047"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check for repair of surface imperfection and protrusions (if any).",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 5
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000256"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000047"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure the protection of nearby finishes / MEP services.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 6
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000257"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000047"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check the MEP clearance prior to start of aluminium works.",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 7
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000258"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000048"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Profile and glass country of origin / Manufacturer",
-                            IsActive = true,
-                            Reference = "MA",
-                            Sequence = 8
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000259"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000048"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Type, Size, Colour, Thickness and Opening Direction",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 9
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000260"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000048"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Varify Size of opening as per drawing",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 10
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000261"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000048"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Varify Location of opening for curtain wall, door and windows as per drawing",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 11
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000262"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000048"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ironmongery is installed and free from damages",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 12
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000263"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000048"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Sealant is applied properly",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 13
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000264"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000048"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "water leak test is performed and no leakage is found",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 14
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000265"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000048"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "varify Functioning/movement of panels is as free as required",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 15
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000266"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000048"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Varify the Rigidity of frame and moveable panels",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 16
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000267"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000048"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Varify Line and Level",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 17
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000268"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000049"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure method statement, ITP, materials and shop drawings are approved",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 1
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000269"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000049"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check identification tag of the modular",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 2
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000270"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000049"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Visually inspect the modular for any defects or damages",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 3
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000271"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000049"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Verify the method of loading as per the project / design requirements",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 4
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000272"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000050"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Internal and External Dimensions of the modular",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 1
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000273"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000051"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Location and color of Painting as per the App Drawing",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 1
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000274"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000051"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Internal Paint (Application of Primer, Stucco and 1st Coat of Paint)",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 2
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000275"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000051"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "External Paint(Application of Primer, Filler and Final Coat Texture Paint)",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 3
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000276"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000051"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure Paint touch ups are completed around installed items.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 4
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000277"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000051"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Bitumin Applied at required Areas",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 5
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000278"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000051"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Damages, If any",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 6
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000279"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000052"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Layout and Fixing of Tiles as per App Drawing",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 1
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000280"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000052"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Line, Level and Spacer for the Installed Tiles",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 2
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000281"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000052"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Skirting is installed/fixed properly and truly vertical",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 3
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000282"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000052"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Grouting of all Joints is done properly",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 4
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000283"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000052"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Elastomeric sealant under skirting is provided properly",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 5
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000284"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000052"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Cleaning of corners and edges removing exccessive paint on skirting",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 6
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000285"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000052"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure Drainhole are free from any debris and properly closed (if applicable)",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 7
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000286"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000052"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Damages, if any",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 8
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000287"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000053"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Layout, location and position of dry wall is as per App Drawing",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 1
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000288"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000053"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Thickness of Dry wall is as per App Drawing",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 2
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000289"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000053"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Opening for MEP services are cut properly.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 3
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000290"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000053"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure Gypsum surface are Crackfree at joints.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 4
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000291"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000053"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Damages, if any",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 5
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000292"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000054"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Layout of False Ceiling tiles and bulk head as per App Drawing",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 1
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000293"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000054"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Height of the False Ceiling as per App Drawing",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 2
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000294"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000054"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Access panels/ Ceiling tiles are Fixed Properly",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 3
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000295"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000054"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Ensure Gypsum surface are Crackfree at joints.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 4
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000296"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000054"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Damages, if any",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 5
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000297"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000055"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Location of Window as per App Drawing",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 1
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000298"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000055"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Fixing of Glass/panels",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 2
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000299"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000055"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Fixing of Iron-Mongery and Accessories",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 3
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000300"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000055"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Fixing of Silicone Sealant",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 4
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000301"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000055"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Water leak test performed and passed.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 5
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000302"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000055"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Paint touch completed around the frame.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 6
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000303"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000055"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Damages, if any",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 7
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000304"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000056"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Location of Doors as per App Drawing",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 1
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000305"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000056"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Direction of doors swing as per App Drawing",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 2
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000306"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000056"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Main enterance door as per App Drawing",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 3
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000307"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000056"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Lock of Main enterance door is installed",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 4
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000308"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000056"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Architraves are fixed as per Drawing around main entrance door",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 5
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000309"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000056"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Pod door is installed as per App Drawing",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 6
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000310"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000056"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Lock of Main Pod door is installed",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 7
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000311"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000056"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Architraves are fixed as per Drawing around Pod door",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 8
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000312"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000056"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Locking of Doors and Shutters securely to avoid movement during transportation",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 9
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000313"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000056"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Kitchen cabinets, counter top and accessories installed as per app drawing",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 10
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000314"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000056"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Kitchen sink and sink mixer installed",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 11
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000315"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000056"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Wardrobe installed as per approved drawings",
-                            IsActive = true,
-                            Reference = "Approved Drawing",
-                            Sequence = 12
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000316"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000056"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Wardrobe doors and drawers funtioning smoothly and free from scratches",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 13
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000317"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000056"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Damages, if any",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 14
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000318"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000057"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Mirror installed and free from damage",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 1
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000319"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000057"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Threshold installed and free from damage",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 2
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000320"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000057"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Glass Partition installed and free from damage",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 3
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000321"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000057"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Floor drain and covers installed and free from damages",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 4
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000322"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000057"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Vanity installed and free from damage",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 5
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000323"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000057"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "WC and cover installed and free from damage",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 6
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000324"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000057"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Shower installted and free from damage",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 7
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000325"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000057"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Gypsum board are free from pealing off",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 8
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000326"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000057"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Painted walls are clean and free from stains.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 9
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000327"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000057"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Tiles are fixed with grouting properly and free from damage",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 10
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000328"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000057"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Toilet accessories installed and free from damage",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 11
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000329"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000057"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Firestop sealant, fire rated sealant & General sealant applied around penetration pipes & MEP fittings.",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 12
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000330"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000058"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Check Final Condition of outside of the room and ensure its damage free",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 1
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000331"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000058"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Sign the delivery note for accepting the loading of precast modular in good condition",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 2
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000332"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000059"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Review documents for received materials",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 1
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000333"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000059"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Materials outside visual checking",
-                            IsActive = true,
-                            Reference = "General",
-                            Sequence = 2
-                        },
-                        new
-                        {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000334"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000059"),
-                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check for any damages (General & Visual)",
                             IsActive = true,
                             Reference = "General",
@@ -7716,8 +4729,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000335"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000059"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000087"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000017"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Verify original bill of landing / Delivery Note",
                             IsActive = true,
@@ -7726,8 +4739,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000336"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000059"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000088"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000017"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Supplier Certificate / Warranty letter",
                             IsActive = true,
@@ -7736,8 +4749,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000337"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000059"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000089"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000017"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check and Verify the material as per delivery list / details.",
                             IsActive = true,
@@ -7746,8 +4759,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000338"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000059"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000090"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000017"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check the accessories.",
                             IsActive = true,
@@ -7756,8 +4769,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000339"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000059"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000091"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000017"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check the Name Plate.",
                             IsActive = true,
@@ -7766,8 +4779,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000340"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000059"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000092"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000017"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Materials Storage and preservation as per manufacturer.",
                             IsActive = true,
@@ -7776,8 +4789,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000341"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000059"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000093"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000017"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check the identification of components.",
                             IsActive = true,
@@ -7786,8 +4799,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000342"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000059"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000094"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000017"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check the rating as per approved drawing",
                             IsActive = true,
@@ -7796,8 +4809,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000343"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000059"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000095"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000017"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check the loose part.",
                             IsActive = true,
@@ -7806,8 +4819,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000344"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000059"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000096"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000017"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check the dimension of delivered equipment as per approved drawing.",
                             IsActive = true,
@@ -7816,8 +4829,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000345"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000059"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000097"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000017"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check the availability of spare breakers / relays/ terminals.",
                             IsActive = true,
@@ -7826,8 +4839,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000346"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000059"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000098"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000017"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Delivered material photos.",
                             IsActive = true,
@@ -7836,8 +4849,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000347"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000059"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000099"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000017"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Material Site test.",
                             IsActive = true,
@@ -7846,8 +4859,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000348"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000060"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000100"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000018"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure the materials as per approved material submittal.",
                             IsActive = true,
@@ -7856,8 +4869,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000349"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000060"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000101"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000018"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure drawings are used for installation are current and approved.",
                             IsActive = true,
@@ -7866,8 +4879,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000350"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000060"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000102"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000018"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check that only in properly fabricated fittings are used for changes in directions, shapes,sizes and connections.",
                             IsActive = true,
@@ -7876,8 +4889,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000351"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000060"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000103"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000018"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "The joints and flanges are correctly made, jointed and sealed.",
                             IsActive = true,
@@ -7886,8 +4899,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000352"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000060"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000104"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000018"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check that duct joints are sealed externally with approved sealant.",
                             IsActive = true,
@@ -7896,8 +4909,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000353"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000060"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000105"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000018"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check fixing of supports and spacing as approved drawings & submittal.",
                             IsActive = true,
@@ -7906,8 +4919,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000354"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000060"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000106"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000018"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check acoustic lining is properly fastened and un damaged.",
                             IsActive = true,
@@ -7916,8 +4929,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000355"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000060"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000107"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000018"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check nuts, bolts, screws, brackets drop rods etc. are tight and aligned properly.",
                             IsActive = true,
@@ -7926,8 +4939,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000356"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000060"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000108"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000018"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "All the access doors, fire dampers,VCDs etc are installed as per approved drawings, specification and manufacturer instructions as applicable.",
                             IsActive = true,
@@ -7936,8 +4949,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000357"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000060"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000109"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000018"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure that the identification & labeling are provided for duct works.",
                             IsActive = true,
@@ -7946,8 +4959,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000358"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000061"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000110"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure the materials are approved",
                             IsActive = true,
@@ -7956,8 +4969,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000359"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000061"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000111"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "No visible damage on the materials",
                             IsActive = true,
@@ -7966,8 +4979,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000360"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000061"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000112"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Pipe sizes are as per approved shop drawing",
                             IsActive = true,
@@ -7976,8 +4989,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000361"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000061"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000113"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Pipe layout/routing as per approved shop drawing",
                             IsActive = true,
@@ -7986,8 +4999,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000362"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000061"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000114"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Slope of the pipes as per approved shop drawing",
                             IsActive = true,
@@ -7996,8 +5009,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000363"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000061"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000115"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation as per approved method statement",
                             IsActive = true,
@@ -8006,8 +5019,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000364"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000061"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000116"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Sleeves are provided for the pipes passing through the walls /slabs",
                             IsActive = true,
@@ -8016,8 +5029,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000365"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000061"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000117"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check the pipes are supported well with approved clamps.",
                             IsActive = true,
@@ -8026,8 +5039,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000366"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000061"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000118"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure Drainage pipes are not passing above electrical services",
                             IsActive = true,
@@ -8036,8 +5049,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000367"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000061"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000119"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installed pipes are free of sag & bend",
                             IsActive = true,
@@ -8046,8 +5059,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000368"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000061"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000120"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Drainage pipes are connected to the vent system",
                             IsActive = true,
@@ -8056,8 +5069,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000369"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000061"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000121"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000019"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Pipe joints are properly made and are tight / secure",
                             IsActive = true,
@@ -8066,8 +5079,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000370"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000062"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000122"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000020"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of Drainage Pipe has completed",
                             IsActive = true,
@@ -8076,8 +5089,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000371"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000062"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000123"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000020"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "All pipe joints shall be inspected.",
                             IsActive = true,
@@ -8086,8 +5099,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000372"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000062"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000124"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000020"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Drainage pipe should generally be subjected to an internal pressure test of 3m head of water above the crown of the pipe at the high end",
                             IsActive = true,
@@ -8096,8 +5109,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000373"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000063"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000125"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000021"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Site Location: Dubox Factory",
                             IsActive = true,
@@ -8106,8 +5119,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000374"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000063"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000126"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000021"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "System to be Tested: Drainage",
                             IsActive = true,
@@ -8116,8 +5129,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000375"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000063"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000127"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000021"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Test Fluid: Potable water",
                             IsActive = true,
@@ -8126,8 +5139,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000376"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000063"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000128"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000021"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Duration of Test: 4 Hours",
                             IsActive = true,
@@ -8136,8 +5149,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000377"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000063"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000129"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000021"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Start Time of Test",
                             IsActive = true,
@@ -8146,8 +5159,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000378"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000063"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000130"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000021"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Finish Time of Test",
                             IsActive = true,
@@ -8156,8 +5169,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000379"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000064"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000131"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure the materials are approved",
                             IsActive = true,
@@ -8166,8 +5179,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000380"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000064"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000132"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "No visible damage on the materials.",
                             IsActive = true,
@@ -8176,8 +5189,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000381"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000064"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000133"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Pipe sizes are as per approved shop drawing.",
                             IsActive = true,
@@ -8186,8 +5199,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000382"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000064"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000134"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Pipe layout/routing as per approved shop drawing.",
                             IsActive = true,
@@ -8196,8 +5209,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000383"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000064"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000135"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation as per approved method statement.",
                             IsActive = true,
@@ -8206,8 +5219,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000384"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000064"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000136"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Sleeves are provided for the pipes passing through the walls /slabs.",
                             IsActive = true,
@@ -8216,8 +5229,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000385"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000064"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000137"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check the Horizontal pipes are supported well and with approved clamps.",
                             IsActive = true,
@@ -8226,8 +5239,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000386"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000064"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000138"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check the vertical riser of the pipes are supported well with approved clamp.",
                             IsActive = true,
@@ -8236,8 +5249,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000387"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000064"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000139"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Water pipes are not passing above electrical services.",
                             IsActive = true,
@@ -8246,8 +5259,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000388"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000064"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000140"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installed pipes are free of sag & bend.",
                             IsActive = true,
@@ -8256,8 +5269,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000389"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000064"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000141"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000022"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Pipe joints are properly made and are tight / secure",
                             IsActive = true,
@@ -8266,8 +5279,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000390"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000065"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000142"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000023"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of Water Supply pipes completed",
                             IsActive = true,
@@ -8276,8 +5289,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000391"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000065"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000143"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000023"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure Pressure Gauge used is Calibrated",
                             IsActive = true,
@@ -8286,8 +5299,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000392"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000065"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000144"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000023"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "The system shall be subjected to a hydrostatic pressure test, to the satisfaction and in the presence of the Engineer. Pressure shall be 1.5 times than working pressure",
                             IsActive = true,
@@ -8296,8 +5309,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000393"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000066"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000145"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000024"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Site Location: Dubox Factory",
                             IsActive = true,
@@ -8306,8 +5319,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000394"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000066"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000146"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000024"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "System to be Tested: Water Supply",
                             IsActive = true,
@@ -8316,8 +5329,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000395"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000066"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000147"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000024"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Test Fluid: Potable water",
                             IsActive = true,
@@ -8326,8 +5339,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000396"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000066"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000148"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000024"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Test Pressure (Bar): 8 Bar",
                             IsActive = true,
@@ -8336,8 +5349,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000397"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000066"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000149"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000024"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Duration of Test: 2 Hours",
                             IsActive = true,
@@ -8346,8 +5359,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000398"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000066"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000150"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000024"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Start Time of Test",
                             IsActive = true,
@@ -8356,8 +5369,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000399"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000066"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000151"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000024"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Finish Time of Test",
                             IsActive = true,
@@ -8366,8 +5379,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000400"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000067"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000152"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000025"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check the piping, fitting, installation and valves materials are as per specification and approved material submittal",
                             IsActive = true,
@@ -8376,8 +5389,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000401"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000067"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000153"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000025"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Checks the piping layouts are as per the approved shop drawing and site conditions.",
                             IsActive = true,
@@ -8386,8 +5399,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000402"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000067"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000154"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000025"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check the approved supports& accessories are used for installation firefighting piping &Accessories.",
                             IsActive = true,
@@ -8396,8 +5409,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000403"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000067"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000155"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000025"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Checks the distance between the supports are maintained as per specification and method statement.",
                             IsActive = true,
@@ -8406,8 +5419,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000404"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000067"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000156"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000025"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Checks the proper sizing's of hangers are used as per specification.",
                             IsActive = true,
@@ -8416,8 +5429,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000405"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000067"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000157"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000025"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check threaded joints are provided for 2\" and below and grooved fitting are provided for 2 ½\" and above in piping.",
                             IsActive = true,
@@ -8426,8 +5439,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000406"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000067"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000158"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000025"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check location / size of valves are provided as per approved shop drawing and specification.",
                             IsActive = true,
@@ -8436,8 +5449,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000407"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000067"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000159"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000025"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check unions are provided for 2\" and below piping in direction of flow.",
                             IsActive = true,
@@ -8446,8 +5459,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000408"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000067"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000160"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000025"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check flexible pipe connector/expansion compensator are installed in expansion joints and equipment connections.",
                             IsActive = true,
@@ -8456,8 +5469,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000409"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000067"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000161"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000025"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check drain points are provided in lowest piping points.",
                             IsActive = true,
@@ -8466,8 +5479,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000410"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000067"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000162"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000025"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check air vents are provided in highest piping points.",
                             IsActive = true,
@@ -8476,8 +5489,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000411"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000068"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000163"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000026"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Fire fighting pipes installation completed",
                             IsActive = true,
@@ -8486,8 +5499,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000412"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000068"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000164"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000026"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure the Pressure Gauge used are calibrated",
                             IsActive = true,
@@ -8496,8 +5509,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000413"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000068"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000165"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000026"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "The system shall be subjected to a hydrostatic pressure test, to the satisfaction and in the presence of the Engineer. Pressure shall be 1.5 times than working pressure in accordance to NFPA 13. Test shall be maintained for two hours as a minimum.",
                             IsActive = true,
@@ -8506,8 +5519,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000414"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000069"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000166"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000027"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Site Location: Dubox Factory",
                             IsActive = true,
@@ -8516,8 +5529,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000415"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000069"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000167"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000027"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "System to be Tested: Fire Fighting",
                             IsActive = true,
@@ -8526,8 +5539,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000416"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000069"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000168"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000027"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Test Fluid: Potable water",
                             IsActive = true,
@@ -8536,8 +5549,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000417"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000069"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000169"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000027"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Test Pressure (Bar): 200 psi",
                             IsActive = true,
@@ -8546,8 +5559,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000418"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000069"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000170"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000027"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Duration of Test: 2 Hours",
                             IsActive = true,
@@ -8556,8 +5569,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000419"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000069"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000171"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000027"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Start Time of Test",
                             IsActive = true,
@@ -8566,8 +5579,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000420"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000069"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000172"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000027"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Finish Time of Test",
                             IsActive = true,
@@ -8576,8 +5589,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000421"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000070"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000173"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000028"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure the materials as per approved material submittal.",
                             IsActive = true,
@@ -8586,8 +5599,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000422"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000070"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000174"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000028"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "No visible damage on the materials.",
                             IsActive = true,
@@ -8596,8 +5609,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000423"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000070"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000175"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000028"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Pipe sizes are as per approved shop drawing.",
                             IsActive = true,
@@ -8606,8 +5619,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000424"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000070"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000176"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000028"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Pipe layout/routing as per approved shop drawing.",
                             IsActive = true,
@@ -8616,8 +5629,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000425"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000070"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000177"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000028"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation as per approved method statement.",
                             IsActive = true,
@@ -8626,8 +5639,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000426"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000070"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000178"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000028"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Sleeves are provided for the pipes passing through the walls/slabs.",
                             IsActive = true,
@@ -8636,8 +5649,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000427"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000070"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000179"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000028"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check the Horizontal pipes are supported well and with approved clamps.",
                             IsActive = true,
@@ -8646,8 +5659,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000428"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000070"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000180"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000028"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check the vertical riser of the pipes are supported well with approved clamp.",
                             IsActive = true,
@@ -8656,8 +5669,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000429"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000070"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000181"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000028"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Pipe joints are properly brazed with no leak",
                             IsActive = true,
@@ -8666,8 +5679,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000430"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000070"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000182"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000028"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure the proper insulation done.",
                             IsActive = true,
@@ -8676,8 +5689,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000431"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000070"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000183"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000028"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure the cladding and sealant on the cladding joints.",
                             IsActive = true,
@@ -8686,8 +5699,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000432"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000070"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000184"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000028"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure the system charged with approved refrigerant",
                             IsActive = true,
@@ -8696,8 +5709,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000433"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000071"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000185"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000029"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of FAHU, FCU & VRF units are completed",
                             IsActive = true,
@@ -8706,8 +5719,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000434"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000071"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000186"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000029"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of Refrigerant pipes completed",
                             IsActive = true,
@@ -8716,8 +5729,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000435"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000071"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000187"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000029"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation inspection completed",
                             IsActive = true,
@@ -8726,8 +5739,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000436"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000071"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000188"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000029"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Pressure Test: After installation, charge system and test for leaks. Repair leaks and retest until no leaks exist.",
                             IsActive = true,
@@ -8736,8 +5749,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000437"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000072"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000189"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000030"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Site Location: Dubox Factory",
                             IsActive = true,
@@ -8746,8 +5759,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000438"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000072"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000190"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000030"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "System to be Tested: Refrigerant pipe",
                             IsActive = true,
@@ -8756,8 +5769,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000439"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000072"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000191"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000030"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Test Fluid: Nitrogen",
                             IsActive = true,
@@ -8766,8 +5779,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000440"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000072"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000192"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000030"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Test Pressure (Bar): 39 bar",
                             IsActive = true,
@@ -8776,8 +5789,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000441"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000072"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000193"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000030"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Duration of Test: 24 hrs",
                             IsActive = true,
@@ -8786,8 +5799,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000442"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000072"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000194"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000030"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Start Time of Test",
                             IsActive = true,
@@ -8796,8 +5809,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000443"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000072"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000195"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000030"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Finish Time of Test",
                             IsActive = true,
@@ -8806,8 +5819,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000444"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000073"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000196"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check all materials installed are as per approved material submittal.",
                             IsActive = true,
@@ -8816,8 +5829,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000445"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000073"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000197"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Dimensions as per approved drawings",
                             IsActive = true,
@@ -8826,8 +5839,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000446"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000073"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000198"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "the cable/wire provided with Ties appropriately?",
                             IsActive = true,
@@ -8836,8 +5849,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000447"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000073"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000199"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Verify measurement of lengths.",
                             IsActive = true,
@@ -8846,8 +5859,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000448"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000073"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000200"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure that there are no damages to the cables",
                             IsActive = true,
@@ -8856,8 +5869,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000449"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000073"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000201"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Verify that identification, grouping, spacing, markings and clamps are as required.",
                             IsActive = true,
@@ -8866,8 +5879,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000450"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000073"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000202"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure the cable laying in trunking, trays and conduit installations are conducted in approved and accepted manner & as per project specification",
                             IsActive = true,
@@ -8876,8 +5889,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000451"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000073"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000203"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure that cable type and routes are as per approved Drawing",
                             IsActive = true,
@@ -8886,8 +5899,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000452"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000073"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000204"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure that correct types and sizes of wires and LV Cables are installed",
                             IsActive = true,
@@ -8896,8 +5909,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000453"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000073"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000205"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Verify that routes and marked locations are correct as per approved drawings",
                             IsActive = true,
@@ -8906,8 +5919,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000454"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000073"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000206"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Is cable/wire provided with Lugs?",
                             IsActive = true,
@@ -8916,8 +5929,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000455"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000073"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000207"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Is the cable/wire termination done correctly",
                             IsActive = true,
@@ -8926,8 +5939,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000456"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000073"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000208"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Before pulling wires in conduit check that inside of conduit (and raceway in general) is free of burrs and is dry and clean.",
                             IsActive = true,
@@ -8936,8 +5949,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000457"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000073"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000209"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure that extra Length left at every branch circuit outlet and pull-box, every cable passing through in order to allow inspection and for connections to be made.",
                             IsActive = true,
@@ -8946,8 +5959,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000458"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000073"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000210"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000031"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure that tightening of electrical connectors and terminals including screws and bolts, in accordance with manufacturers recommendation",
                             IsActive = true,
@@ -8956,8 +5969,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000459"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000074"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000211"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000032"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Is the Cable/Wire Continuity test Setup, okay?",
                             IsActive = true,
@@ -8966,8 +5979,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000460"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000074"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000212"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000032"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Is the Cable/Wire Megger test Setup, okay?",
                             IsActive = true,
@@ -8976,8 +5989,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000461"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000074"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000213"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000032"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure Megger test is performed for Cables and accepted",
                             IsActive = true,
@@ -8986,8 +5999,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000462"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000074"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000214"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000032"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure Continuity test performed and accepted",
                             IsActive = true,
@@ -8996,8 +6009,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000463"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000075"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000215"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000033"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Toilet lighting - 2.5mm² - Y1",
                             IsActive = true,
@@ -9006,8 +6019,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000464"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000075"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000216"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000033"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Room Lighting - 2.5mm² - B1",
                             IsActive = true,
@@ -9016,8 +6029,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000465"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000075"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000217"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000033"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "FCU - 4mm² - B2",
                             IsActive = true,
@@ -9026,8 +6039,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000466"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000075"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000218"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000033"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "General Purpose Power-usb - 4mm² - Y3",
                             IsActive = true,
@@ -9036,8 +6049,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000467"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000075"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000219"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000033"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Shaver - 4mm² - B3",
                             IsActive = true,
@@ -9046,8 +6059,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000468"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000075"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000220"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000033"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Hob - 6mm² - R4",
                             IsActive = true,
@@ -9056,8 +6069,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000469"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000075"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000221"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000033"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Water Kettle - 4mm² - Y4",
                             IsActive = true,
@@ -9066,8 +6079,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000470"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000075"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000222"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000033"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Washing Machine - 4mm² - B4",
                             IsActive = true,
@@ -9076,8 +6089,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000471"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000075"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000223"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000033"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Kitchen hood - 4mm² - R5",
                             IsActive = true,
@@ -9086,8 +6099,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000472"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000075"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000224"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000033"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Water cooler/Refrigeration - 4mm² - Y5",
                             IsActive = true,
@@ -9096,8 +6109,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000473"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000075"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000225"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000033"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "General Purpose Power-TV - 4mm² - B5",
                             IsActive = true,
@@ -9106,8 +6119,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000474"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000075"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000226"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000033"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Microwave oven - 4mm² - Y6",
                             IsActive = true,
@@ -9116,8 +6129,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000475"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000075"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000227"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000033"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Living UD - 4mm² - B6",
                             IsActive = true,
@@ -9126,8 +6139,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000476"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000076"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000228"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Verify the installed Panel boards have approved submittals.",
                             IsActive = true,
@@ -9136,8 +6149,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000477"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000076"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000229"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure the drawings used for installation are correct and approved.",
                             IsActive = true,
@@ -9146,8 +6159,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000478"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000076"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000230"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Align, level and securely fasten panelboards to structure",
                             IsActive = true,
@@ -9156,8 +6169,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000479"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000076"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000231"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check the Name Plate and Identification labels as per load schedule and approved submittals.",
                             IsActive = true,
@@ -9166,8 +6179,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000480"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000076"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000232"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check all meters, circuit breakers, indication lamp, handles and locks are correct and undamaged.",
                             IsActive = true,
@@ -9176,8 +6189,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000481"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000076"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000233"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Fix surface mounted outdoor panelboards at least 25mm from wall ensuring supporting members do not prevent flow of air.",
                             IsActive = true,
@@ -9186,8 +6199,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000482"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000076"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000234"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Do not use connecting conduits to support panelboards.",
                             IsActive = true,
@@ -9196,8 +6209,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000483"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000076"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000235"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Panelboard Interiors: Do not install in cabinets until all conduit connections to cabinet have been completed",
                             IsActive = true,
@@ -9206,8 +6219,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000484"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000076"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000236"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Wiring: Inside Panelboards: Neatly arranged, accessible and strapped to prevent tension on circuit breaker terminals. Tap-off connections shall be split and bolted type, fully insulated.",
                             IsActive = true,
@@ -9216,8 +6229,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000485"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000076"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000237"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Equipment grounding for LV Panel Board is provided",
                             IsActive = true,
@@ -9226,8 +6239,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000486"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000076"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000238"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure that all unused openings are closed in the panels",
                             IsActive = true,
@@ -9236,8 +6249,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000487"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000076"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000239"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure that updated circuit directory and other relevant documents provided in the panel directory accordingly.",
                             IsActive = true,
@@ -9246,8 +6259,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000488"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000076"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000240"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure that the Panel fixing bolts have been tightened with the suitable nut and washer.",
                             IsActive = true,
@@ -9256,8 +6269,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000489"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000076"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000241"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Touch up and cleaning of the panel",
                             IsActive = true,
@@ -9266,8 +6279,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000490"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000076"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000242"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000034"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Ensure that each Panel Marking should be done as per approved drawing",
                             IsActive = true,
@@ -9276,8 +6289,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000491"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000077"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000243"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000035"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check the conduits and accessories are as per approved material submittal.",
                             IsActive = true,
@@ -9286,8 +6299,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000492"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000077"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000244"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000035"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check and ensure the drawings used for installation are current and approved.",
                             IsActive = true,
@@ -9296,8 +6309,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000493"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000077"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000245"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000035"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check the conduits and other associated material are new and undamaged.",
                             IsActive = true,
@@ -9306,8 +6319,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000494"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000077"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000246"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000035"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check that the conduits are leveled and aligned properly.",
                             IsActive = true,
@@ -9316,8 +6329,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000495"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000077"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000247"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000035"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check that the conduits are securely fixed.",
                             IsActive = true,
@@ -9326,8 +6339,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000496"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000077"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000248"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000035"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check and ensure that the conduits and back boxes are sizely adequated.",
                             IsActive = true,
@@ -9336,8 +6349,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000497"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000077"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000249"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000035"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check that the bottom hight of the back boxes is as per the shop drawing.",
                             IsActive = true,
@@ -9346,8 +6359,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000498"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000077"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000250"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000035"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check that a minimum of 5mm thick cover is provided for conduits concealed in walls.",
                             IsActive = true,
@@ -9356,8 +6369,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000499"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000077"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000251"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000035"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check the installation of conduits is co-ordinated with other services.",
                             IsActive = true,
@@ -9366,8 +6379,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000500"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000077"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000252"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000035"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check the installation of conduiting as per approved drawings.",
                             IsActive = true,
@@ -9376,8 +6389,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000501"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000078"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000253"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000036"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check identification tag of the modular",
                             IsActive = true,
@@ -9386,8 +6399,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000502"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000078"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000254"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000036"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Visually inspect the MEP Services for any defects or damages",
                             IsActive = true,
@@ -9396,8 +6409,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000503"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000079"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000255"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000037"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of Supply Duct",
                             IsActive = true,
@@ -9406,8 +6419,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000504"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000079"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000256"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000037"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of Return Duct",
                             IsActive = true,
@@ -9416,8 +6429,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000505"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000079"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000257"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000037"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of Fresh Air Duct",
                             IsActive = true,
@@ -9426,8 +6439,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000506"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000079"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000258"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000037"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of Exhaust Air Duct",
                             IsActive = true,
@@ -9436,8 +6449,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000507"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000079"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000259"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000037"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of Kitchen Hood and Flexible Duct",
                             IsActive = true,
@@ -9446,8 +6459,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000508"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000079"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000260"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000037"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of VCD",
                             IsActive = true,
@@ -9456,8 +6469,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000509"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000079"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000261"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000037"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of Fan Coil Unit",
                             IsActive = true,
@@ -9466,8 +6479,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000510"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000079"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000262"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000037"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of Fire Damper and Back Draft Damper",
                             IsActive = true,
@@ -9476,8 +6489,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000511"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000079"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000263"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000037"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of Grills/Diffuser",
                             IsActive = true,
@@ -9486,8 +6499,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000512"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000080"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000264"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000038"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of Pipes and fittings",
                             IsActive = true,
@@ -9496,8 +6509,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000513"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000080"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000265"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000038"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Insulation of pipe",
                             IsActive = true,
@@ -9506,8 +6519,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000514"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000080"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000266"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000038"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check Pipe Insulation and adhesive.",
                             IsActive = true,
@@ -9516,8 +6529,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000515"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000080"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000267"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000038"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Pressure testing of the Piping",
                             IsActive = true,
@@ -9526,8 +6539,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000516"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000081"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000268"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000039"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Application of Primer paint",
                             IsActive = true,
@@ -9536,8 +6549,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000517"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000081"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000269"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000039"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Application of Paint final coating",
                             IsActive = true,
@@ -9546,8 +6559,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000518"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000081"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000270"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000039"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of Sprinklers",
                             IsActive = true,
@@ -9556,8 +6569,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000519"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000081"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000271"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000039"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Pressure testing of the Piping",
                             IsActive = true,
@@ -9566,8 +6579,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000520"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000082"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000272"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000040"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of Pipes and fittings",
                             IsActive = true,
@@ -9576,8 +6589,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000521"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000082"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000273"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000040"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Water Hammer Arrestor installed in the approved location.",
                             IsActive = true,
@@ -9586,8 +6599,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000522"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000082"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000274"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000040"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Pressure testing of the Piping",
                             IsActive = true,
@@ -9596,8 +6609,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000523"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000082"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000275"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000040"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Hot water pipes insulated.",
                             IsActive = true,
@@ -9606,8 +6619,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000524"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000082"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000276"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000040"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Gate Valve Installation",
                             IsActive = true,
@@ -9616,8 +6629,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000525"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000082"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000277"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000040"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Kitchen sink and accessories",
                             IsActive = true,
@@ -9626,8 +6639,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000526"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000083"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000278"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000041"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of Floor Cleanout (FCO)",
                             IsActive = true,
@@ -9636,8 +6649,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000527"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000083"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000279"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000041"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation of Floor Drain",
                             IsActive = true,
@@ -9646,8 +6659,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000528"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000083"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000280"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000041"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Installation CDP Pipes",
                             IsActive = true,
@@ -9656,8 +6669,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000529"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000083"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000281"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000041"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Piping Leak test",
                             IsActive = true,
@@ -9666,8 +6679,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000530"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000083"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000282"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000041"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Sleeves provided for drain pipes outlets.",
                             IsActive = true,
@@ -9676,8 +6689,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000531"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000084"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000283"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000042"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Soil Pipe",
                             IsActive = true,
@@ -9686,8 +6699,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000532"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000084"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000284"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000042"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Waste Pipe",
                             IsActive = true,
@@ -9696,8 +6709,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000533"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000084"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000285"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000042"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Vent Pipe",
                             IsActive = true,
@@ -9706,8 +6719,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000534"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000084"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000286"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000042"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Water Supply Pipe",
                             IsActive = true,
@@ -9716,8 +6729,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000535"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000084"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000287"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000042"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Refrigerant Pipe",
                             IsActive = true,
@@ -9726,8 +6739,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000536"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000084"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000288"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000042"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Firefighting Pipe",
                             IsActive = true,
@@ -9736,8 +6749,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000537"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000084"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000289"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000042"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Duct Riser and connection",
                             IsActive = true,
@@ -9746,8 +6759,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000538"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000085"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000290"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000043"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check Alignment of Wiring Devices",
                             IsActive = true,
@@ -9756,8 +6769,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000539"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000085"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000291"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000043"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check For ONU Panel Door",
                             IsActive = true,
@@ -9766,8 +6779,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000540"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000085"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000292"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000043"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Check For DB Panel Door",
                             IsActive = true,
@@ -9776,8 +6789,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000541"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000086"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000293"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000044"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "10A 1G, 2 Way switch",
                             IsActive = true,
@@ -9786,8 +6799,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000542"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000086"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000294"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000044"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "10A 2G, 2 Way switch",
                             IsActive = true,
@@ -9796,8 +6809,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000543"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000086"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000295"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000044"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "10A 3G, 2 Way switch",
                             IsActive = true,
@@ -9806,8 +6819,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000544"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000086"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000296"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000044"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Single Data Outlet -Euro face plate single keystone adaptor",
                             IsActive = true,
@@ -9816,8 +6829,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000545"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000086"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000297"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000044"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Twin Data Outlet -Euro face plate Duplex keystone adaptor",
                             IsActive = true,
@@ -9826,8 +6839,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000546"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000086"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000298"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000044"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "13A, Double pole Duplex switched Power socket",
                             IsActive = true,
@@ -9836,8 +6849,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000547"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000086"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000299"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000044"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "20 A, DP switch Washing Machine",
                             IsActive = true,
@@ -9846,8 +6859,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000548"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000086"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000300"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000044"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "45 A, DP switch for HOB",
                             IsActive = true,
@@ -9856,8 +6869,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000549"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000086"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000301"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000044"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Unswitched Fused Connection Unit + cord outlet - FACP",
                             IsActive = true,
@@ -9866,8 +6879,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000550"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000086"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000302"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000044"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Switched Fused Connection Unit + cord outlet - Hood",
                             IsActive = true,
@@ -9876,8 +6889,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000551"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000086"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000303"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000044"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "20 A, Cable/Flex outlet Washing Machine",
                             IsActive = true,
@@ -9886,8 +6899,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000552"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000086"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000304"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000044"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "45 A, Cable/Flex outlet for HOB",
                             IsActive = true,
@@ -9896,8 +6909,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000553"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000086"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000305"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000044"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Door Bell -230V Electromechanical chime",
                             IsActive = true,
@@ -9906,8 +6919,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000554"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000086"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000306"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000044"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "13A, DP, Simplex Switched & fused Spur Outlet for FCUs",
                             IsActive = true,
@@ -9916,8 +6929,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000555"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000087"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000307"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000045"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "All Wires pulled as per the approved Drawings.",
                             IsActive = true,
@@ -9926,8 +6939,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000556"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000087"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000308"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000045"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "CAT-6 Cable pulled",
                             IsActive = true,
@@ -9936,8 +6949,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000557"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000087"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000309"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000045"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Fire alarm Cable pulled",
                             IsActive = true,
@@ -9946,8 +6959,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000558"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000087"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000310"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000045"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "VRV Cable pulled",
                             IsActive = true,
@@ -9956,8 +6969,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000559"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000087"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000311"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000045"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Main Cable pulled",
                             IsActive = true,
@@ -9966,8 +6979,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000560"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000087"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000312"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000045"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Smoke detector",
                             IsActive = true,
@@ -9976,8 +6989,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000561"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000087"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000313"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000045"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Heat detector",
                             IsActive = true,
@@ -9986,8 +6999,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000562"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000087"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000314"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000045"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Sensor",
                             IsActive = true,
@@ -9996,8 +7009,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000563"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000087"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000315"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000045"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "DB Panel Tags and identification.",
                             IsActive = true,
@@ -10006,8 +7019,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000564"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000087"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000316"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000045"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "ONU Panel installation and termination",
                             IsActive = true,
@@ -10016,8 +7029,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000565"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000087"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000317"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000045"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "DB Panel installation and termination",
                             IsActive = true,
@@ -10026,8 +7039,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000566"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000087"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000318"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000045"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "Thermostat",
                             IsActive = true,
@@ -10036,8 +7049,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000567"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000087"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000319"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000045"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "PMU",
                             IsActive = true,
@@ -10046,8 +7059,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000568"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000088"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000320"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000046"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "LT03 STUDIO",
                             IsActive = true,
@@ -10056,8 +7069,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000569"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000088"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000321"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000046"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "LT9B STUDIO",
                             IsActive = true,
@@ -10066,8 +7079,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000570"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000088"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000322"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000046"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "LT06 STUDIO",
                             IsActive = true,
@@ -10076,8 +7089,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000571"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000088"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000323"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000046"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "LT09A LOUNGE 2",
                             IsActive = true,
@@ -10086,8 +7099,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000572"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000088"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000324"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000046"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "C LOUNGE 2",
                             IsActive = true,
@@ -10096,8 +7109,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000573"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000088"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000325"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000046"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "L01 GABRGE ROOM",
                             IsActive = true,
@@ -10106,8 +7119,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000574"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000088"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000326"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000046"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "L05 ELECTRICAL ROOM",
                             IsActive = true,
@@ -10116,8 +7129,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000575"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000088"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000327"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000046"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "L07 STAIR",
                             IsActive = true,
@@ -10126,8 +7139,8 @@ namespace Dubox.Infrastructure.Migrations
                         },
                         new
                         {
-                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000576"),
-                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000088"),
+                            PredefinedItemId = new Guid("52000000-0000-0000-0000-000000000328"),
+                            ChecklistSectionId = new Guid("51000000-0000-0000-0000-000000000046"),
                             CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             Description = "L08 ICT ROOM",
                             IsActive = true,
@@ -13011,11 +10024,6 @@ namespace Dubox.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("int");
 
-                    b.Property<string>("WIRCode")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("nvarchar(20)");
-
                     b.Property<string>("WIRDescription")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
@@ -13023,6 +10031,11 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<string>("WIRName")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("WIRNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.HasKey("WIRId");
 
@@ -13306,8 +10319,7 @@ namespace Dubox.Infrastructure.Migrations
                 {
                     b.HasOne("Dubox.Domain.Entities.Checklist", "Checklist")
                         .WithMany("Sections")
-                        .HasForeignKey("ChecklistId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .HasForeignKey("ChecklistId");
 
                     b.Navigation("Checklist");
                 });

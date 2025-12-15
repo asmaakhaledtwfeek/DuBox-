@@ -1,11 +1,9 @@
-using Dubox.Application.DTOs;
 using Dubox.Application.Features.WIRCheckpoints.Commands;
 using Dubox.Application.Features.WIRCheckpoints.Queries;
 using Dubox.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Text;
 using System.Text.Json;
 
 namespace Dubox.Api.Controllers
@@ -31,6 +29,14 @@ namespace Dubox.Api.Controllers
         public async Task<IActionResult> GetPredefinedChecklistItems([FromQuery] string? wirNumber, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(new GetPredefinedChecklistItemsQuery { WIRNumber = wirNumber }, cancellationToken);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        [HttpGet("predefined-checklist-items/{checkpointId}")]
+        public async Task<IActionResult> GetPredefinedChecklistItemsByWIRCode([FromQuery] Guid checkpointId, CancellationToken cancellationToken)
+        {
+
+            var result = await _mediator.Send(new GetPredefinedChecklistItemsByWIRCodeQuery(checkpointId), cancellationToken);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
@@ -79,13 +85,13 @@ namespace Dubox.Api.Controllers
             {
                 // Handle multipart/form-data
                 var form = await Request.ReadFormAsync(cancellationToken);
-                
+
                 if (!Enum.TryParse<IssueTypeEnum>(form["IssueType"].ToString(), out issueType))
                     return BadRequest("Invalid IssueType");
-                
+
                 if (!Enum.TryParse<SeverityEnum>(form["Severity"].ToString(), out severity))
                     return BadRequest("Invalid Severity");
-                
+
                 issueDescription = form["IssueDescription"].ToString();
                 if (string.IsNullOrWhiteSpace(issueDescription))
                     return BadRequest("IssueDescription is required");

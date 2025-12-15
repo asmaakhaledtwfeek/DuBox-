@@ -61,9 +61,9 @@ public interface IDbContext
     DbSet<Notification> Notifications { get; }
     DbSet<AuditLog> AuditLogs { get; }
     
-    // Reference & Category
-    DbSet<Reference> References { get; }
-    DbSet<Category> Categories { get; }
+    // Checklist Sections
+    DbSet<ChecklistSection> ChecklistSections { get; }
+    DbSet<Checklist> Checklists { get; }
     
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     

@@ -8,8 +8,6 @@ public class GetPredefinedItemsByCategorySpecification : Specification<Predefine
     public GetPredefinedItemsByCategorySpecification(List<Guid> predefinedItemIds)
     {
         AddCriteria(p => predefinedItemIds.Contains(p.PredefinedItemId));
-        AddInclude(nameof(PredefinedChecklistItem.Category));
-        AddInclude(nameof(PredefinedChecklistItem.Reference));
         AddOrderBy(p => p.Sequence);
     }
 }

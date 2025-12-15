@@ -42,7 +42,7 @@
             if (!string.IsNullOrWhiteSpace(query.WIRNumber))
             {
                 var wirNumberLower = query.WIRNumber.ToLower().Trim();
-                AddCriteria(x => x.WIRNumber != null && x.WIRNumber.ToLower().Contains(wirNumberLower));
+                AddCriteria(x => x.WIRCode != null && x.WIRCode.ToLower().Contains(wirNumberLower));
             }
             if (query.From.HasValue)
                 AddCriteria(x => x.CreatedDate >= query.From.Value);

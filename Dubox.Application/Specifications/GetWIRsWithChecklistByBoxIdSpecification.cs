@@ -9,7 +9,7 @@ public class GetWIRsWithChecklistByBoxIdSpecification : Specification<WIRCheckpo
     {
         AddCriteria(w => w.BoxId == boxId);
         AddInclude(nameof(WIRCheckpoint.ChecklistItems));
-        AddOrderBy(w => w.WIRNumber);
+        AddOrderBy(w => w.WIRCode);
         
         // Enable split query to avoid Cartesian explosion
         EnableSplitQuery();

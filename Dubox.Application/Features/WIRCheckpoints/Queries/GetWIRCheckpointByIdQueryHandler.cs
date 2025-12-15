@@ -46,7 +46,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
                 .ToList();
 
             Dictionary<Guid, (Guid? CategoryId, string? CategoryName)> categoryMap = new();
-            
+
             if (predefinedItemIds.Any())
             {
                 var predefinedSpec = new GetPredefinedItemsByCategorySpecification(predefinedItemIds);
@@ -54,14 +54,11 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
                     .GetWithSpec(predefinedSpec).Data
                     .ToListAsync(cancellationToken);
 
-                categoryMap = predefinedItems.ToDictionary(
-                    p => p.PredefinedItemId,
-                    p => (p.CategoryId, p.Category?.CategoryName)
-                );
+
             }
 
             var dto = checkpoint.Adapt<WIRCheckpointDto>();
-            
+
             // Enrich checklist items with category information
             if (dto.ChecklistItems != null)
             {

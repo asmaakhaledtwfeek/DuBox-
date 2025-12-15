@@ -8,8 +8,6 @@ public class GetAllPredefinedItemsWithCategorySpecification : Specification<Pred
     public GetAllPredefinedItemsWithCategorySpecification()
     {
         AddCriteria(p => p.IsActive);
-        AddInclude(nameof(PredefinedChecklistItem.Category));
-        AddInclude(nameof(PredefinedChecklistItem.Reference));
         AddOrderBy(p => p.Sequence);
     }
 }

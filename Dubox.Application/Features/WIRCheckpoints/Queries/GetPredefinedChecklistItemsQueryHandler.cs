@@ -3,7 +3,6 @@ using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
-using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -30,7 +29,6 @@ public class GetPredefinedChecklistItemsQueryHandler : IRequestHandler<GetPredef
         if (!string.IsNullOrWhiteSpace(request.WIRNumber))
         {
             predefinedItems = predefinedItems
-                .Where(p => p.WIRNumber == request.WIRNumber)
                 .ToList();
         }
 
@@ -38,15 +36,8 @@ public class GetPredefinedChecklistItemsQueryHandler : IRequestHandler<GetPredef
         var items = predefinedItems.Select(p => new PredefinedChecklistItemDto
         {
             PredefinedItemId = p.PredefinedItemId,
-            WIRNumber = p.WIRNumber,
-            ItemNumber = p.ItemNumber,
-            CheckpointDescription = p.CheckpointDescription,
-            CategoryId = p.CategoryId,
-            Category = p.Category?.CategoryName, // Legacy field
-            CategoryName = p.Category?.CategoryName, // New field
-            ReferenceId = p.ReferenceId,
-            ReferenceDocument = p.Reference?.ReferenceName, // Legacy field
-            ReferenceName = p.Reference?.ReferenceName, // New field
+            CheckpointDescription = p.Description,
+
             Sequence = p.Sequence,
             IsActive = p.IsActive
         }).ToList();

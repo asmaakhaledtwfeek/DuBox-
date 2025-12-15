@@ -63,6 +63,25 @@
                 .Map(dest => dest.Sequence, src => src.Sequence)
                 .Map(dest => dest.CreatedDate, src => src.CreatedDate);
 
+            TypeAdapterConfig<PredefinedChecklistItem, PredefinedChecklistItemWithChecklistDto>.NewConfig()
+                .Map(dest => dest.PredefinedItemId, src => src.PredefinedItemId)
+                .Map(dest => dest.CheckpointDescription, src => src.Description)
+                .Map(dest => dest.Reference, src => src.Reference)
+                .Map(dest => dest.Sequence, src => src.Sequence)
+                .Map(dest => dest.IsActive, src => src.IsActive)
+                .Map(dest => dest.ChecklistSectionId, src => src.ChecklistSectionId)
+                .Map(dest => dest.SectionTitle, src => src.ChecklistSection != null ? src.ChecklistSection.Title : null)
+                .Map(dest => dest.SectionOrder, src => src.ChecklistSection != null ? (int?)src.ChecklistSection.Order : null)
+                .Map(dest => dest.ChecklistId, src => src.ChecklistSection != null && src.ChecklistSection.Checklist != null ? (Guid?)src.ChecklistSection.Checklist.ChecklistId : null)
+                .Map(dest => dest.ChecklistName, src => src.ChecklistSection != null && src.ChecklistSection.Checklist != null ? src.ChecklistSection.Checklist.Name : null)
+                .Map(dest => dest.ChecklistCode, src => src.ChecklistSection != null && src.ChecklistSection.Checklist != null ? src.ChecklistSection.Checklist.Code : null)
+                .Map(dest => dest.ChecklistDiscipline, src => src.ChecklistSection != null && src.ChecklistSection.Checklist != null ? src.ChecklistSection.Checklist.Discipline : null)
+                .Map(dest => dest.ChecklistSubDiscipline, src => src.ChecklistSection != null && src.ChecklistSection.Checklist != null ? src.ChecklistSection.Checklist.SubDiscipline : null)
+                .Map(dest => dest.ChecklistPageNumber, src => src.ChecklistSection != null && src.ChecklistSection.Checklist != null ? (int?)src.ChecklistSection.Checklist.PageNumber : null)
+                .Map(dest => dest.ChecklistWIRCode, src => src.ChecklistSection != null && src.ChecklistSection.Checklist != null ? src.ChecklistSection.Checklist.WIRCode : null)
+                .Map(dest => dest.ChecklistReferenceDocuments, src => src.ChecklistSection != null && src.ChecklistSection.Checklist != null ? src.ChecklistSection.Checklist.ReferenceDocuments : null)
+                .Map(dest => dest.ChecklistSignatureRoles, src => src.ChecklistSection != null && src.ChecklistSection.Checklist != null ? src.ChecklistSection.Checklist.SignatureRoles : null);
+
         }
     }
 

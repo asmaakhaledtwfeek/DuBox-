@@ -392,8 +392,7 @@ export class WirExportService {
       section.items.forEach(item => {
         const isPassed = item.status === 'Pass';
         const isFailed = item.status === 'Fail';
-        const isNA = item.status === 'NA';
-        const statusClass = isPassed ? 'status-pass' : isFailed ? 'status-fail' : isNA ? 'status-na' : 'status-pending';
+        const statusClass = isPassed ? 'status-pass' : isFailed ? 'status-fail' : 'status-pending';
         
         html += `
               <tr class="item-row ${statusClass}">
@@ -401,7 +400,6 @@ export class WirExportService {
                 <td class="col-description">${this.escapeHtml(item.checkpointDescription)}</td>
                 <td class="col-checkbox checkbox-y ${isPassed ? 'checked' : ''}">${isPassed ? '✓' : ''}</td>
                 <td class="col-checkbox checkbox-n ${isFailed ? 'checked' : ''}">${isFailed ? '✗' : ''}</td>
-                <td class="col-checkbox checkbox-na ${isNA ? 'checked' : ''}">${isNA ? '—' : ''}</td>
                 <td class="col-remarks">${item.remarks ? this.escapeHtml(item.remarks) : ''}</td>
               </tr>`;
         itemCounter++;

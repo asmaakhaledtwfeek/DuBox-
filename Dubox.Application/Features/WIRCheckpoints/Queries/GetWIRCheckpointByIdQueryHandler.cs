@@ -38,36 +38,42 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
                 return Result.Failure<WIRCheckpointDto>("Access denied. You do not have permission to view this WIR checkpoint.");
             }
 
-            // Load category information for checklist items
-            var predefinedItemIds = checkpoint.ChecklistItems
-                .Where(ci => ci.PredefinedItemId.HasValue)
-                .Select(ci => ci.PredefinedItemId.Value)
-                .Distinct()
-                .ToList();
-
-            Dictionary<Guid, (Guid? CategoryId, string? CategoryName)> categoryMap = new();
-
-            if (predefinedItemIds.Any())
-            {
-                var predefinedSpec = new GetPredefinedItemsByCategorySpecification(predefinedItemIds);
-                var predefinedItems = await _unitOfWork.Repository<PredefinedChecklistItem>()
-                    .GetWithSpec(predefinedSpec).Data
-                    .ToListAsync(cancellationToken);
-
-
-            }
-
             var dto = checkpoint.Adapt<WIRCheckpointDto>();
 
-            // Enrich checklist items with category information
-            if (dto.ChecklistItems != null)
+            // Enrich checklist items with section and checklist information
+            if (dto.ChecklistItems != null && checkpoint.ChecklistItems != null)
             {
-                foreach (var item in dto.ChecklistItems)
+                foreach (var dtoItem in dto.ChecklistItems)
                 {
-                    if (item.PredefinedItemId.HasValue && categoryMap.TryGetValue(item.PredefinedItemId.Value, out var category))
+                    // Find the corresponding entity item
+                    var entityItem = checkpoint.ChecklistItems
+                        .FirstOrDefault(ci => ci.ChecklistItemId == dtoItem.ChecklistItemId);
+                    
+                    if (entityItem?.PredefinedChecklistItem != null)
                     {
-                        item.CategoryId = category.CategoryId;
-                        item.CategoryName = category.CategoryName;
+                        var predefinedItem = entityItem.PredefinedChecklistItem;
+                        
+                        // Map section information
+                        if (predefinedItem.ChecklistSection != null)
+                        {
+                            dtoItem.SectionId = predefinedItem.ChecklistSection.ChecklistSectionId;
+                            dtoItem.SectionName = predefinedItem.ChecklistSection.Title;
+                            dtoItem.SectionOrder = predefinedItem.ChecklistSection.Order;
+                            
+                            // Map checklist information
+                            if (predefinedItem.ChecklistSection.Checklist != null)
+                            {
+                                dtoItem.ChecklistId = predefinedItem.ChecklistSection.Checklist.ChecklistId;
+                                dtoItem.ChecklistName = predefinedItem.ChecklistSection.Checklist.Name;
+                                dtoItem.ChecklistCode = predefinedItem.ChecklistSection.Checklist.Code;
+                                
+                                // Use checklist name as category if not already set
+                                if (string.IsNullOrEmpty(dtoItem.CategoryName))
+                                {
+                                    dtoItem.CategoryName = predefinedItem.ChecklistSection.Checklist.Name;
+                                }
+                            }
+                        }
                     }
                 }
             }

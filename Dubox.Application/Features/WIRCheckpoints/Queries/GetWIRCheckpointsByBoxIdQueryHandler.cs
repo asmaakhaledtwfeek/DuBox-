@@ -49,12 +49,61 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
 
             var checkpointDtos = checkpoints.Adapt<List<WIRCheckpointDto>>();
 
+            // Enrich checklist items with section and checklist information
+            EnrichChecklistItems(checkpoints, checkpointDtos);
+
             // Load image metadata separately (without base64 ImageData) for performance
             await PopulateImageMetadata(checkpointDtos, cancellationToken);
 
             await PopulateActivityMetadata(checkpointDtos, cancellationToken);
 
             return Result.Success(checkpointDtos);
+        }
+
+        private void EnrichChecklistItems(List<WIRCheckpoint> checkpoints, List<WIRCheckpointDto> checkpointDtos)
+        {
+            for (int i = 0; i < checkpoints.Count && i < checkpointDtos.Count; i++)
+            {
+                var checkpoint = checkpoints[i];
+                var checkpointDto = checkpointDtos[i];
+
+                if (checkpointDto.ChecklistItems == null || checkpoint.ChecklistItems == null)
+                    continue;
+
+                foreach (var dtoItem in checkpointDto.ChecklistItems)
+                {
+                    // Find the corresponding entity item
+                    var entityItem = checkpoint.ChecklistItems
+                        .FirstOrDefault(ci => ci.ChecklistItemId == dtoItem.ChecklistItemId);
+
+                    if (entityItem?.PredefinedChecklistItem != null)
+                    {
+                        var predefinedItem = entityItem.PredefinedChecklistItem;
+
+                        // Map section information
+                        if (predefinedItem.ChecklistSection != null)
+                        {
+                            dtoItem.SectionId = predefinedItem.ChecklistSection.ChecklistSectionId;
+                            dtoItem.SectionName = predefinedItem.ChecklistSection.Title;
+                            dtoItem.SectionOrder = predefinedItem.ChecklistSection.Order;
+
+                            // Map checklist information
+                            if (predefinedItem.ChecklistSection.Checklist != null)
+                            {
+                                dtoItem.ChecklistId = predefinedItem.ChecklistSection.Checklist.ChecklistId;
+                                dtoItem.ChecklistName = predefinedItem.ChecklistSection.Checklist.Name;
+                                dtoItem.ChecklistCode = predefinedItem.ChecklistSection.Checklist.Code;
+
+                                // Use checklist name as category if not already set
+                                if (string.IsNullOrEmpty(dtoItem.CategoryName))
+                                {
+                                    dtoItem.CategoryName = predefinedItem.ChecklistSection.Checklist.Name;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
         
         private async Task PopulateImageMetadata(List<WIRCheckpointDto> checkpoints, CancellationToken cancellationToken)

@@ -80,6 +80,16 @@ namespace Dubox.Application.DTOs
         public Guid? PredefinedItemId { get; set; } // Reference to the predefined item this was cloned from
         public Guid? CategoryId { get; set; }
         public string? CategoryName { get; set; }
+        
+        // Section information
+        public Guid? SectionId { get; set; }
+        public string? SectionName { get; set; }
+        public int? SectionOrder { get; set; }
+        
+        // Checklist information
+        public Guid? ChecklistId { get; set; }
+        public string? ChecklistName { get; set; }
+        public string? ChecklistCode { get; set; }
     }
     public class QualityIssueDto
     {

@@ -166,6 +166,7 @@ export class WIRService {
         const data = response?.data || response;
         if (data?.items) {
           // Paginated response
+          console.log('getWIRCheckpoints - data:', data.items);
           return {
             items: data.items.map((c: any) => this.transformWIRCheckpoint(c)),
             totalCount: data.totalCount || 0,
@@ -323,16 +324,24 @@ export class WIRService {
       remarks: request.remarks,
       sequence: request.sequence
     }).pipe(
-      map((item: any) => ({
-        checklistItemId: item.checklistItemId || item.ChecklistItemId,
-        wirId: item.wirId || item.WIRId,
-        checkpointDescription: item.checkpointDescription || item.CheckpointDescription,
-        referenceDocument: item.referenceDocument || item.ReferenceDocument,
-        status: item.status || item.Status || 'Pending',
-        remarks: item.remarks || item.Remarks,
-        sequence: item.sequence || item.Sequence || 0,
-        predefinedItemId: item.predefinedItemId || item.PredefinedItemId
-      }))
+      map((item: any) => {
+        // Normalize status: backend returns 'NA' but frontend expects 'N/A'
+        let normalizedStatus = item.status || item.Status || 'Pending';
+        if (normalizedStatus === 'NA') {
+          normalizedStatus = 'N/A';
+        }
+        
+        return {
+          checklistItemId: item.checklistItemId || item.ChecklistItemId,
+          wirId: item.wirId || item.WIRId,
+          checkpointDescription: item.checkpointDescription || item.CheckpointDescription,
+          referenceDocument: item.referenceDocument || item.ReferenceDocument,
+          status: normalizedStatus,
+          remarks: item.remarks || item.Remarks,
+          sequence: item.sequence || item.Sequence || 0,
+          predefinedItemId: item.predefinedItemId || item.PredefinedItemId
+        };
+      })
     );
   }
 
@@ -632,15 +641,32 @@ export class WIRService {
         const rawItems = backendCheckpoint.checklistItems || backendCheckpoint.ChecklistItems || [];
         console.log('Transforming checklist items, raw count:', rawItems.length);
         const transformed = rawItems.map((item: any, index: number) => {
+          // Normalize status: backend returns 'NA' but frontend expects 'N/A'
+          let normalizedStatus = item.status || item.Status || 'Pending';
+          if (normalizedStatus === 'NA') {
+            normalizedStatus = 'N/A';
+          }
+          
           const transformedItem = {
             checklistItemId: item.checklistItemId || item.ChecklistItemId,
             wirId: item.wirId || item.WIRId,
             checkpointDescription: item.checkpointDescription || item.CheckpointDescription || item.itemName || item.ItemName,
             referenceDocument: item.referenceDocument || item.ReferenceDocument,
-            status: item.status || item.Status || 'Pending',
+            status: normalizedStatus,
             remarks: item.remarks || item.Remarks || item.comments || item.Comments,
             sequence: item.sequence || item.Sequence || 0,
-            predefinedItemId: item.predefinedItemId || item.PredefinedItemId
+            predefinedItemId: item.predefinedItemId || item.PredefinedItemId,
+            // Category information
+            categoryId: item.categoryId || item.CategoryId,
+            categoryName: item.categoryName || item.CategoryName,
+            // Section information
+            sectionId: item.sectionId || item.SectionId,
+            sectionName: item.sectionName || item.SectionName,
+            sectionOrder: item.sectionOrder ?? item.SectionOrder,
+            // Checklist information
+            checklistId: item.checklistId || item.ChecklistId,
+            checklistName: item.checklistName || item.ChecklistName,
+            checklistCode: item.checklistCode || item.ChecklistCode
           };
           console.log(`Transformed item ${index + 1}:`, transformedItem);
           return transformedItem;

@@ -11,13 +11,17 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
 interface ChecklistGroup {
   checklistName: string;
   checklistCode?: string;
+  checklistId?: string;
   sections: SectionGroup[];
+  isExpanded?: boolean;
 }
 
 interface SectionGroup {
   sectionTitle: string;
   sectionOrder: number;
+  sectionId?: string;
   items: PredefinedChecklistItemWithChecklistDto[];
+  isExpanded?: boolean;
 }
 
 @Component({
@@ -44,6 +48,10 @@ export class AddChecklistItemsComponent implements OnInit {
   groupedChecklists: ChecklistGroup[] = [];
   loadingPredefinedItems = false;
   selectedPredefinedItemIds: string[] = [];
+  
+  // Collapsible state - single open index for accordion behavior
+  openChecklistIndex: number | null = 0; // First one open by default
+  openSectionIndexMap: { [checklistIndex: number]: number | null } = {};
 
   constructor(
     private route: ActivatedRoute,
@@ -187,9 +195,11 @@ export class AddChecklistItemsComponent implements OnInit {
       sectionMap.forEach((sectionItems, sectionKey) => {
         const firstSectionItem = sectionItems[0];
         console.log(`  Section: ${firstSectionItem.sectionTitle} - ${sectionItems.length} items`);
+        
         sections.push({
           sectionTitle: firstSectionItem.sectionTitle || 'Uncategorized',
           sectionOrder: firstSectionItem.sectionOrder || 0,
+          sectionId: firstSectionItem.checklistSectionId || sectionKey,
           items: sectionItems.sort((a, b) => a.sequence - b.sequence)
         });
       });
@@ -200,12 +210,64 @@ export class AddChecklistItemsComponent implements OnInit {
       result.push({
         checklistName: firstItem.checklistName || 'General Checklist',
         checklistCode: firstItem.checklistCode,
+        checklistId: firstItem.checklistId || checklistKey,
         sections
       });
     });
     
     console.log('Final grouped result:', result.length, 'checklists');
     return result;
+  }
+
+  toggleChecklistExpanded(index: number, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    // Accordion behavior: if clicking the open one, close it; otherwise open the clicked one
+    if (this.openChecklistIndex === index) {
+      this.openChecklistIndex = null;
+    } else {
+      this.openChecklistIndex = index;
+      // Initialize section map for this checklist if not exists
+      if (this.openSectionIndexMap[index] === undefined) {
+        this.openSectionIndexMap[index] = null;
+      }
+    }
+  }
+
+  toggleSectionExpanded(checklistIndex: number, sectionIndex: number, event?: Event): void {
+    if (event) {
+      event.stopPropagation();
+    }
+    
+    // Accordion behavior for sections within a checklist
+    if (this.openSectionIndexMap[checklistIndex] === sectionIndex) {
+      this.openSectionIndexMap[checklistIndex] = null;
+    } else {
+      this.openSectionIndexMap[checklistIndex] = sectionIndex;
+    }
+  }
+
+  isChecklistExpanded(index: number): boolean {
+    return this.openChecklistIndex === index;
+  }
+
+  isSectionExpanded(checklistIndex: number, sectionIndex: number): boolean {
+    return this.openSectionIndexMap[checklistIndex] === sectionIndex;
+  }
+
+  expandAllChecklists(): void {
+    // Open all checklists (set to -1 to indicate all open)
+    this.openChecklistIndex = -1;
+    this.groupedChecklists.forEach((checklist, checklistIndex) => {
+      this.openSectionIndexMap[checklistIndex] = -1; // All sections open
+    });
+  }
+
+  collapseAllChecklists(): void {
+    this.openChecklistIndex = null;
+    this.openSectionIndexMap = {};
   }
 
   togglePredefinedItemSelection(itemId: string): void {
@@ -294,26 +356,55 @@ export class AddChecklistItemsComponent implements OnInit {
       return;
     }
 
-    // Get the selected items details for preview
-    const selectedItems = this.predefinedChecklistItems.filter(
-      item => this.selectedPredefinedItemIds.includes(item.predefinedItemId)
-    );
+    this.loading = true;
+    this.error = '';
 
-    console.log('Navigating back to Step 2 with selected items:', selectedItems);
+    const request = {
+      wirId: this.wirCheckpoint.wirId,
+      predefinedItemIds: this.selectedPredefinedItemIds
+    };
 
-    // Navigate back to qa-qc-checklist page, Step 2 (add-items), with selected items
-    this.router.navigate([
-      '/projects',
-      this.projectId,
-      'boxes',
-      this.boxId,
-      'activities',
-      this.activityId,
-      'qa-qc'
-    ], { 
-      queryParams: { 
-        step: 'add-items',
-        selectedItemIds: this.selectedPredefinedItemIds.join(',')
+    console.log('Saving selected checklist items:', request);
+
+    this.wirService.addChecklistItems(request).subscribe({
+      next: (updatedCheckpoint) => {
+        console.log('Checklist items added successfully:', updatedCheckpoint);
+        this.loading = false;
+
+        // Show success message
+        setTimeout(() => {
+          document.dispatchEvent(new CustomEvent('app-toast', { 
+            detail: { message: 'Checklist items added successfully!', type: 'success' } 
+          }));
+        }, 0);
+
+        // Navigate back to qa-qc-checklist page, Step 2 (add-items)
+        this.router.navigate([
+          '/projects',
+          this.projectId,
+          'boxes',
+          this.boxId,
+          'activities',
+          this.activityId,
+          'qa-qc'
+        ], { 
+          queryParams: { 
+            step: 'add-items',
+            refresh: Date.now() // Add timestamp to force refresh
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error adding checklist items:', error);
+        this.loading = false;
+        this.error = error?.error?.message || 'Failed to add checklist items. Please try again.';
+        
+        // Show error toast
+        setTimeout(() => {
+          document.dispatchEvent(new CustomEvent('app-toast', { 
+            detail: { message: this.error, type: 'error' } 
+          }));
+        }, 0);
       }
     });
   }

@@ -138,6 +138,16 @@ export interface WIRCheckpointChecklistItem {
   predefinedItemId?: string; // Reference to the predefined item this was cloned from
   categoryId?: string;
   categoryName?: string;
+  
+  // Section information
+  sectionId?: string;
+  sectionName?: string;
+  sectionOrder?: number;
+  
+  // Checklist information
+  checklistId?: string;
+  checklistName?: string;
+  checklistCode?: string;
 }
 
 export interface PredefinedChecklistItem {

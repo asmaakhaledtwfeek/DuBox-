@@ -2,7 +2,6 @@
 {
     using Dubox.Application.DTOs;
     using Dubox.Domain.Entities;
-    using Dubox.Domain.Enums;
     using Mapster;
     using System;
 
@@ -32,6 +31,7 @@
                 .Map(dest => dest.Images, src => src.Images);
 
             TypeAdapterConfig<WIRCheckpoint, WIRCheckpointDto>.NewConfig()
+                .Map(dest => dest.WIRNumber, src => src.WIRCode)
                 .Map(dest => dest.ChecklistItems, src => src.ChecklistItems)
                 .Map(dest => dest.QualityIssues, src => src.QualityIssues)
                 .Map(dest => dest.Images, src => src.Images)

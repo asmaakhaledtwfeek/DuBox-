@@ -124,6 +124,7 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   availablePredefinedItems: PredefinedChecklistItem[] = []; // Items not yet added to checkpoint
   loadingPredefinedItems = false;
   selectedPredefinedItemIds: string[] = [];
+  shouldRefreshCheckpoint = false;
   
   loading = true;
   error = '';
@@ -217,14 +218,13 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
       this.router.navigate([], { queryParams: { checklistAdded: null }, queryParamsHandling: 'merge' });
     }
     
-    // Check for selected predefined items from add-checklist-items page
-    const selectedItemIdsParam = this.route.snapshot.queryParamMap.get('selectedItemIds');
-    if (selectedItemIdsParam) {
-      this.selectedPredefinedItemIds = selectedItemIdsParam.split(',').filter(id => id.trim());
-      console.log('Received selected item IDs from navigation:', this.selectedPredefinedItemIds);
+    // Check if returning from add-checklist-items page (refresh checkpoint data)
+    const refreshParam = this.route.snapshot.queryParamMap.get('refresh');
+    if (refreshParam) {
+      this.shouldRefreshCheckpoint = true;
       // Clear the query param
       this.router.navigate([], { 
-        queryParams: { selectedItemIds: null }, 
+        queryParams: { refresh: null }, 
         queryParamsHandling: 'merge',
         replaceUrl: true 
       });
@@ -265,95 +265,6 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     });
   }
 
-  private loadSelectedPredefinedItemsForPreview(): void {
-    if (!this.wirCheckpoint || this.selectedPredefinedItemIds.length === 0) {
-      return;
-    }
-
-    console.log('Loading selected predefined items:', this.selectedPredefinedItemIds);
-    this.loadingPredefinedItems = true;
-
-    // Load predefined items by checkpoint ID to get the full details
-    this.wirService.getPredefinedChecklistItemsByCheckpointId(this.wirCheckpoint.wirId).subscribe({
-      next: (items) => {
-        console.log('All predefined items received:', items.length);
-        
-        // Filter to only selected items
-        const selectedItems = items.filter(item => 
-          this.selectedPredefinedItemIds.includes(item.predefinedItemId)
-        );
-        
-        console.log('Filtered selected items:', selectedItems.length);
-        
-        // Convert to checklist item format for the form
-        const itemsForForm = selectedItems.map((item, index) => ({
-          checklistItemId: '', // Will be assigned when saved
-          wirId: this.wirCheckpoint!.wirId,
-          checkpointDescription: item.checkpointDescription,
-          referenceDocument: item.reference || '',
-          status: 'Pending' as CheckListItemStatus,
-          remarks: '',
-          sequence: item.sequence || index + 1,
-          predefinedItemId: item.predefinedItemId,
-          categoryName: item.checklistName || item.sectionTitle
-        }));
-        
-        console.log('Items prepared for form:', itemsForForm);
-        
-        // Build the form with selected items
-        this.buildAddChecklistItemsForm(itemsForForm);
-        this.loadingPredefinedItems = false;
-      },
-      error: (err) => {
-        console.error('Error loading selected predefined items:', err);
-        this.error = 'Failed to load selected checklist items';
-        this.loadingPredefinedItems = false;
-      }
-    });
-  }
-
-  saveSelectedChecklistItems(): void {
-    if (!this.wirCheckpoint || this.selectedPredefinedItemIds.length === 0) {
-      this.error = 'No items selected to save';
-      return;
-    }
-
-    this.addingChecklistItems = true;
-    this.error = '';
-
-    const request: AddChecklistItemsRequest = {
-      wirId: this.wirCheckpoint.wirId,
-      predefinedItemIds: this.selectedPredefinedItemIds
-    };
-
-    console.log('Saving checklist items:', request);
-
-    this.wirService.addChecklistItems(request).subscribe({
-      next: (updatedCheckpoint) => {
-        console.log('Checklist items added successfully:', updatedCheckpoint);
-        this.addingChecklistItems = false;
-        this.selectedPredefinedItemIds = []; // Clear selected IDs
-        
-        // Refresh the checkpoint to show the added items
-        this.refreshCheckpointDetails(false, false);
-        
-        // Show success message
-        setTimeout(() => {
-          document.dispatchEvent(new CustomEvent('app-toast', { 
-            detail: { message: 'Checklist items added successfully!', type: 'success' } 
-          }));
-        }, 0);
-        
-        // Navigate back to overview
-        this.currentStep = null;
-      },
-      error: (err) => {
-        this.addingChecklistItems = false;
-        this.error = err.error?.message || err.message || 'Failed to add checklist items';
-        console.error('Error adding checklist items:', err);
-      }
-    });
-  }
 
   private updateAvailablePredefinedItems(): void {
     if (!this.wirCheckpoint || !this.predefinedChecklistItems.length) {
@@ -513,6 +424,66 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     return this.checklistForm.get('checklistItems') as FormArray;
   }
 
+  getGroupedReviewChecklistItems(): { checklistName: string; sections: { sectionName: string; items: any[] }[] }[] {
+    const itemsArray = this.checklistItems;
+    if (!itemsArray || itemsArray.length === 0) {
+      return [];
+    }
+
+    // Group by checklist -> section -> items
+    const grouped = new Map<string, Map<string, any[]>>();
+
+    itemsArray.controls.forEach((control, index) => {
+      const formGroup = control as FormGroup;
+      const checklistName = formGroup.get('checklistName')?.value || 'General Checklist';
+      const sectionName = formGroup.get('sectionName')?.value || 'General Items';
+      const checkpointDescription = formGroup.get('checkpointDescription')?.value;
+      const status = formGroup.get('status')?.value;
+      
+      if (!grouped.has(checklistName)) {
+        grouped.set(checklistName, new Map());
+      }
+      
+      const checklistMap = grouped.get(checklistName)!;
+      if (!checklistMap.has(sectionName)) {
+        checklistMap.set(sectionName, []);
+      }
+      
+      checklistMap.get(sectionName)!.push({
+        control: formGroup,
+        index: index,
+        checkpointDescription: checkpointDescription,
+        status: status,
+        checklistName: checklistName,
+        sectionName: sectionName
+      });
+    });
+
+    // Sort checklists alphabetically
+    const checklists = Array.from(grouped.keys()).sort((a, b) => {
+      if (a === 'General Checklist') return -1;
+      if (b === 'General Checklist') return 1;
+      return a.localeCompare(b);
+    });
+
+    return checklists.map(checklist => {
+      const checklistMap = grouped.get(checklist)!;
+      const sections = Array.from(checklistMap.keys()).sort((a, b) => {
+        if (a === 'General Items') return -1;
+        if (b === 'General Items') return 1;
+        return a.localeCompare(b);
+      });
+
+      return {
+        checklistName: checklist,
+        sections: sections.map(sectionName => ({
+          sectionName: sectionName,
+          items: checklistMap.get(sectionName)!
+        }))
+      };
+    });
+  }
+
   get qualityIssuesArray(): FormArray {
     return this.qualityIssuesForm.get('issues') as FormArray;
   }
@@ -643,23 +614,23 @@ console.log(expectedWirCode);
       return;
     }
     
+    console.log('processCheckpointLoaded - wirCheckpoint exists:', this.wirCheckpoint.wirId);
+    console.log('processCheckpointLoaded - initialStepFromQuery:', this.initialStepFromQuery);
+    
     // If there's a step query parameter, apply it first
     if (this.initialStepFromQuery) {
       // Validate query parameter step before applying
       if (this.initialStepFromQuery === 'create-checkpoint') {
-        // Checkpoint exists, so redirect to next accessible step instead of create-checkpoint
-        const nextStep = this.getNextAccessibleStep();
-        if (nextStep && nextStep !== 'create-checkpoint') {
-          this.router.navigate([], {
-            relativeTo: this.route,
-            queryParams: { step: nextStep },
-            queryParamsHandling: 'merge'
-          });
-          this.handleStepClick(nextStep);
-        } else {
-          this.currentStep = null;
-          this.pendingAction = nextStep || 'add-items';
-        }
+        // Checkpoint exists, so redirect to add-items instead of create-checkpoint
+        console.log('Checkpoint already exists, redirecting to add-items');
+        this.currentStep = 'add-items'; // Set immediately
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { step: 'add-items' },
+          queryParamsHandling: 'merge',
+          replaceUrl: true
+        });
+        this.startAddChecklistFlow();
         this.initialStepApplied = true;
       } else {
         // Apply initial step from query (will validate accessibility)
@@ -671,20 +642,17 @@ console.log(expectedWirCode);
         this.applyInitialStepFromQuery();
       }
     } else {
-      // No step query parameter, determine the next accessible step
-      const nextStep = this.getNextAccessibleStep();
-      if (nextStep && nextStep !== 'create-checkpoint') {
-        // Auto-navigate to the next accessible step
-        this.router.navigate([], {
-          relativeTo: this.route,
-          queryParams: { step: nextStep },
-          queryParamsHandling: 'merge'
-        });
-        this.handleStepClick(nextStep);
-      } else {
-        this.currentStep = null;
-        this.pendingAction = nextStep || 'add-items';
-      }
+      // No step query parameter - checkpoint exists, navigate directly to add-items
+      console.log('Checkpoint already exists, navigating directly to add-items');
+      console.log('Setting currentStep to add-items immediately');
+      this.currentStep = 'add-items'; // Set immediately
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { step: 'add-items' },
+        queryParamsHandling: 'merge',
+        replaceUrl: true
+      });
+      this.startAddChecklistFlow();
     }
     
     this.updateAvailablePredefinedItems();
@@ -769,7 +737,14 @@ console.log(expectedWirCode);
             checkpointDescription: item.checkpointDescription,
             referenceDocument: item.referenceDocument,
             sequence: item.sequence,
-            predefinedItemId: item.predefinedItemId
+            predefinedItemId: item.predefinedItemId,
+            categoryName: item.categoryName || 'General',
+            sectionName: item.sectionName || undefined,
+            sectionId: item.sectionId || undefined,
+            sectionOrder: item.sectionOrder || undefined,
+            checklistName: item.checklistName || undefined,
+            checklistId: item.checklistId || undefined,
+            checklistCode: item.checklistCode || undefined
           }));
         });
       console.log('Form array after building:', itemsArray.length, 'items');
@@ -881,7 +856,9 @@ console.log(expectedWirCode);
           checkpointDescription: [item.checkpointDescription || ''],
           referenceDocument: [item.referenceDocument || ''],
           status: [this.mapCheckListItemStatus(item.status), Validators.required],
-          remarks: [item.remarks || '']
+          remarks: [item.remarks || ''],
+          checklistName: [item.checklistName || ''],
+          sectionName: [item.sectionName || '']
         });
         this.checklistItems.push(itemGroup);
       });
@@ -890,6 +867,40 @@ console.log(expectedWirCode);
     } else {
       console.warn('loadChecklistItems: No checklist items found in checkpoint');
     }
+  }
+
+  private reloadCheckpointData(): void {
+    if (!this.wirCheckpoint) return;
+    
+    console.log('Reloading checkpoint data...');
+    this.loading = true;
+    
+    this.wirService.getWIRCheckpointById(this.wirCheckpoint.wirId).subscribe({
+      next: (checkpoint: WIRCheckpoint) => {
+        console.log('Checkpoint reloaded successfully:', checkpoint);
+        this.wirCheckpoint = checkpoint;
+        this.syncReviewFormFromCheckpoint();
+        this.loading = false;
+        this.shouldRefreshCheckpoint = false;
+        
+        // Build the form with the updated items
+        const existingItems = checkpoint.checklistItems && checkpoint.checklistItems.length > 0
+          ? checkpoint.checklistItems
+          : undefined;
+        
+        console.log('Building form with reloaded items:', existingItems?.length || 0);
+        this.buildAddChecklistItemsForm(existingItems);
+        
+        this.currentStep = 'add-items';
+        this.pendingAction = null;
+      },
+      error: (err: any) => {
+        console.error('Error reloading checkpoint:', err);
+        this.loading = false;
+        this.shouldRefreshCheckpoint = false;
+        this.error = 'Failed to reload checkpoint data';
+      }
+    });
   }
 
   startAddChecklistFlow(): void {
@@ -905,21 +916,21 @@ console.log(expectedWirCode);
     // Debug: Log checkpoint state
     console.log('startAddChecklistFlow - checkpoint:', this.wirCheckpoint);
     console.log('startAddChecklistFlow - checklistItems:', this.wirCheckpoint.checklistItems);
-    console.log('startAddChecklistFlow - selectedPredefinedItemIds:', this.selectedPredefinedItemIds);
     
-    // Check if we have selected predefined items to load
-    if (this.selectedPredefinedItemIds.length > 0) {
-      console.log('Loading selected predefined items for preview');
-      this.loadSelectedPredefinedItemsForPreview();
-    } else {
-      // Always build the form with existing items from checkpoint
-      const existingItems = this.wirCheckpoint.checklistItems && this.wirCheckpoint.checklistItems.length > 0
-        ? this.wirCheckpoint.checklistItems
-        : undefined;
-      
-      console.log('Building checklist form with items:', existingItems?.length || 0, existingItems);
-      this.buildAddChecklistItemsForm(existingItems);
+    // If we need to refresh, reload the checkpoint data
+    if (this.shouldRefreshCheckpoint) {
+      console.log('Refreshing checkpoint data after adding items');
+      this.reloadCheckpointData();
+      return;
     }
+    
+    // Build the form with existing items from checkpoint
+    const existingItems = this.wirCheckpoint.checklistItems && this.wirCheckpoint.checklistItems.length > 0
+      ? this.wirCheckpoint.checklistItems
+      : undefined;
+    
+    console.log('Building checklist form with items:', existingItems?.length || 0, existingItems);
+    this.buildAddChecklistItemsForm(existingItems);
     
     this.currentStep = 'add-items';
     this.pendingAction = null;
@@ -949,13 +960,33 @@ console.log(expectedWirCode);
     this.resetQualityIssuesForm();
   }
 
-  private createChecklistItemGroup(item?: Partial<{ checklistItemId?: string; checkpointDescription: string; referenceDocument?: string; sequence?: number; predefinedItemId?: string }>): FormGroup {
+  private createChecklistItemGroup(item?: Partial<{ 
+    checklistItemId?: string; 
+    checkpointDescription: string; 
+    referenceDocument?: string; 
+    sequence?: number; 
+    predefinedItemId?: string; 
+    categoryName?: string; 
+    sectionName?: string;
+    sectionId?: string;
+    sectionOrder?: number;
+    checklistName?: string;
+    checklistId?: string;
+    checklistCode?: string;
+  }>): FormGroup {
     return this.fb.group({
       checklistItemId: [item?.checklistItemId || null],
       checkpointDescription: [item?.checkpointDescription || '', Validators.required],
       referenceDocument: [item?.referenceDocument || ''],
       sequence: [item?.sequence || 1, [Validators.required, Validators.min(1)]],
-      predefinedItemId: [item?.predefinedItemId || null]
+      predefinedItemId: [item?.predefinedItemId || null],
+      categoryName: [item?.categoryName || 'General'],
+      sectionName: [item?.sectionName || undefined],
+      sectionId: [item?.sectionId || undefined],
+      sectionOrder: [item?.sectionOrder || undefined],
+      checklistName: [item?.checklistName || undefined],
+      checklistId: [item?.checklistId || undefined],
+      checklistCode: [item?.checklistCode || undefined]
     });
   }
 
@@ -1193,7 +1224,7 @@ console.log(expectedWirCode);
     // Check if status is set and is not Pending
     const status = this.itemReviewForm.get('status')?.value;
     
-    // Status must be Pass or Fail (not Pending or empty)
+    // Status must be Pass, Fail, or N/A (not Pending or empty)
     if (!status || status === CheckpointStatus.Pending) {
       return true;
     }
@@ -2079,7 +2110,9 @@ console.log(expectedWirCode);
   }
 
   getStatusLabel(status: CheckpointStatus | string | undefined): string {
+    console.log('ssssssssssssssssssss',status);
     if (!status) return 'Pending';
+    
     const statusStr = typeof status === 'string' ? status : String(status);
     switch (statusStr) {
       case CheckpointStatus.Pass:
@@ -2091,12 +2124,16 @@ console.log(expectedWirCode);
       case CheckpointStatus.Pending:
       case 'Pending':
         return 'Pending';
+      case CheckpointStatus.NA:
+      case 'NA':
+        return 'N/A';
       default:
         return 'Pending';
     }
   }
 
   getStatusBadgeClass(status: CheckpointStatus | string | undefined): string {
+    
     if (!status) return 'status-badge-pending';
     const statusStr = typeof status === 'string' ? status : String(status);
     switch (statusStr) {
@@ -2109,40 +2146,78 @@ console.log(expectedWirCode);
       case CheckpointStatus.Pending:
       case 'Pending':
         return 'status-badge-pending';
+      case CheckpointStatus.NA:
+      case 'NA':
+        return 'status-badge-na';
       default:
         return 'status-badge-pending';
     }
   }
 
-  getGroupedChecklistItems(): { categoryName: string; items: any[] }[] {
-    if (!this.wirCheckpoint?.checklistItems) {
+  getTotalItemsCount(sections: { sectionName: string; items: any[] }[]): number {
+    return sections.reduce((acc, section) => acc + section.items.length, 0);
+  }
+
+  getGroupedChecklistItems(): { checklistName: string; sections: { sectionName: string; items: any[] }[] }[] {
+    const itemsArray = this.addChecklistItemsArray;
+    if (itemsArray.length === 0) {
       return [];
     }
 
-    const grouped = new Map<string, any[]>();
+    // Group by checklist -> section -> items
+    const grouped = new Map<string, Map<string, any[]>>();
 
-    this.wirCheckpoint.checklistItems.forEach((item, index) => {
-      const categoryName = item.categoryName || 'General';
-      if (!grouped.has(categoryName)) {
-        grouped.set(categoryName, []);
+    itemsArray.controls.forEach((control, index) => {
+      const formGroup = control as FormGroup;
+      const checklistName = formGroup.get('checklistName')?.value || 'General Checklist';
+      const sectionName = formGroup.get('sectionName')?.value || 'General Items';
+      const checkpointDescription = formGroup.get('checkpointDescription')?.value;
+      const sequence = formGroup.get('sequence')?.value;
+      const referenceDocument = formGroup.get('referenceDocument')?.value;
+      
+      if (!grouped.has(checklistName)) {
+        grouped.set(checklistName, new Map());
       }
-      grouped.get(categoryName)!.push({
-        ...item,
-        formIndex: index
+      
+      const checklistMap = grouped.get(checklistName)!;
+      if (!checklistMap.has(sectionName)) {
+        checklistMap.set(sectionName, []);
+      }
+      
+      checklistMap.get(sectionName)!.push({
+        control: formGroup,
+        index: index,
+        checkpointDescription: checkpointDescription,
+        referenceDocument: referenceDocument,
+        sequence: sequence,
+        checklistName: checklistName,
+        sectionName: sectionName
       });
     });
 
-    // Sort categories alphabetically
-    const categories = Array.from(grouped.keys()).sort((a, b) => {
-      if (a === 'General') return -1;
-      if (b === 'General') return 1;
+    // Sort checklists alphabetically
+    const checklists = Array.from(grouped.keys()).sort((a, b) => {
+      if (a === 'General Checklist') return -1;
+      if (b === 'General Checklist') return 1;
       return a.localeCompare(b);
     });
 
-    return categories.map(category => ({
-      categoryName: category,
-      items: grouped.get(category)!.sort((a, b) => a.sequence - b.sequence)
-    }));
+    return checklists.map(checklist => {
+      const checklistMap = grouped.get(checklist)!;
+      const sections = Array.from(checklistMap.keys()).sort((a, b) => {
+        if (a === 'General Items') return -1;
+        if (b === 'General Items') return 1;
+        return a.localeCompare(b);
+      });
+
+      return {
+        checklistName: checklist,
+        sections: sections.map(sectionName => ({
+          sectionName: sectionName,
+          items: checklistMap.get(sectionName)!.sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
+        }))
+      };
+    });
   }
 
   canReviewItem(status: CheckpointStatus | string | undefined): boolean {
@@ -2808,7 +2883,8 @@ console.log(expectedWirCode);
     const statusMap: Record<string, CheckListItemStatus> = {
       'Pending': CheckListItemStatus.Pending,
       'Pass': CheckListItemStatus.Pass,
-      'Fail': CheckListItemStatus.Fail
+      'Fail': CheckListItemStatus.Fail,
+      'N/A': CheckListItemStatus.NA
     };
     return statusMap[status] || CheckListItemStatus.Pending;
   }
@@ -3055,3 +3131,4 @@ console.log(expectedWirCode);
     return this.wirCheckpoint ? 'review' : 'create-checkpoint';
   }
 }
+

@@ -4,6 +4,7 @@
     {
         Pending = 1,
         Pass,
-        Fail
+        Fail,
+        NA // Not Applicable
     }
 }

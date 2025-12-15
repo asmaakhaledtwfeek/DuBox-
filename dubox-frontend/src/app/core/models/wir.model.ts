@@ -39,7 +39,6 @@ export enum WIRStatus {
 export enum CheckpointStatus {
   Pass = 'Pass',
   Fail = 'Fail',
-  NA = 'N/A',
   Pending = 'Pending'
 }
 
@@ -199,8 +198,7 @@ export enum WIRCheckpointStatus {
 export enum CheckListItemStatus {
   Pending = 'Pending',
   Pass = 'Pass',
-  Fail = 'Fail',
-  NA = 'NA'
+  Fail = 'Fail'
 }
 
 export interface CreateWIRCheckpointRequest {

@@ -621,17 +621,30 @@ console.log(expectedWirCode);
     if (this.initialStepFromQuery) {
       // Validate query parameter step before applying
       if (this.initialStepFromQuery === 'create-checkpoint') {
-        // Checkpoint exists, so redirect to add-items instead of create-checkpoint
-        console.log('Checkpoint already exists, redirecting to add-items');
-        this.currentStep = 'add-items'; // Set immediately
-        this.router.navigate([], {
-          relativeTo: this.route,
-          queryParams: { step: 'add-items' },
-          queryParamsHandling: 'merge',
-          replaceUrl: true
-        });
-        this.startAddChecklistFlow();
-        this.initialStepApplied = true;
+        // Allow create-checkpoint if status is Pending, otherwise redirect to add-items
+        if (this.wirCheckpoint.status === 'Pending') {
+          console.log('Checkpoint exists with Pending status, allowing edit in Step 1');
+          this.currentStep = 'create-checkpoint';
+          this.pendingAction = null;
+          this.createCheckpointForm.patchValue({
+            wirName: this.wirCheckpoint.wirName || '',
+            wirDescription: this.wirCheckpoint.wirDescription || '',
+            inspectorName: this.wirCheckpoint.inspectorName || '',
+            inspectorRole: this.wirCheckpoint.inspectorRole || ''
+          });
+          this.initialStepApplied = true;
+        } else {
+          console.log('Checkpoint already reviewed, redirecting to add-items');
+          this.currentStep = 'add-items'; // Set immediately
+          this.router.navigate([], {
+            relativeTo: this.route,
+            queryParams: { step: 'add-items' },
+            queryParamsHandling: 'merge',
+            replaceUrl: true
+          });
+          this.startAddChecklistFlow();
+          this.initialStepApplied = true;
+        }
       } else {
         // Apply initial step from query (will validate accessibility)
         // If navigating to add-items, ensure form is built with existing items
@@ -1224,7 +1237,7 @@ console.log(expectedWirCode);
     // Check if status is set and is not Pending
     const status = this.itemReviewForm.get('status')?.value;
     
-    // Status must be Pass, Fail, or N/A (not Pending or empty)
+    // Status must be Pass or Fail (not Pending or empty)
     if (!status || status === CheckpointStatus.Pending) {
       return true;
     }
@@ -1794,10 +1807,10 @@ console.log(expectedWirCode);
   canNavigateToStep(step: ReviewStep): boolean {
     const stepIndex = this.getStepIndex(step);
     
-    // Step 1: Accessible if checkpoint doesn't exist OR if checkpoint exists but hasn't been reviewed yet
-    // (i.e., status is still Pending - not Approved, Rejected, or ConditionalApproval)
+    // Step 1: Accessible if checkpoint doesn't exist OR if checkpoint status is still Pending
+    // Once reviewed (Approved/Rejected/ConditionalApproval), user cannot go back to Step 1
     if (step === 'create-checkpoint') {
-      return !this.wirCheckpoint || !this.isStep3Completed();
+      return !this.wirCheckpoint || this.wirCheckpoint.status === 'Pending';
     }
     
     // Step 2: Only accessible if Step 1 is completed
@@ -1836,6 +1849,15 @@ console.log(expectedWirCode);
       case 'create-checkpoint':
         this.currentStep = 'create-checkpoint';
         this.pendingAction = null;
+        // If checkpoint exists and is Pending, populate the form with existing data
+        if (this.wirCheckpoint && this.wirCheckpoint.status === 'Pending') {
+          this.createCheckpointForm.patchValue({
+            wirName: this.wirCheckpoint.wirName || '',
+            wirDescription: this.wirCheckpoint.wirDescription || '',
+            inspectorName: this.wirCheckpoint.inspectorName || '',
+            inspectorRole: this.wirCheckpoint.inspectorRole || ''
+          });
+        }
         break;
       case 'add-items':
         this.startAddChecklistFlow();
@@ -1886,13 +1908,22 @@ console.log(expectedWirCode);
         }
         break;
       case 'create-checkpoint':
-        // Only allow if checkpoint doesn't exist
-        if (!this.wirCheckpoint) {
+        // Allow if checkpoint doesn't exist OR if checkpoint is still Pending
+        if (!this.wirCheckpoint || this.wirCheckpoint.status === 'Pending') {
           this.currentStep = 'create-checkpoint';
           this.pendingAction = null;
+          // If checkpoint exists, populate form with existing data
+          if (this.wirCheckpoint) {
+            this.createCheckpointForm.patchValue({
+              wirName: this.wirCheckpoint.wirName || '',
+              wirDescription: this.wirCheckpoint.wirDescription || '',
+              inspectorName: this.wirCheckpoint.inspectorName || '',
+              inspectorRole: this.wirCheckpoint.inspectorRole || ''
+            });
+          }
           this.initialStepApplied = true;
         } else {
-          // Checkpoint exists, redirect to next accessible step
+          // Checkpoint exists and is reviewed, redirect to next accessible step
           const nextStep = this.getNextAccessibleStep();
           if (nextStep) {
             this.handleStepClick(nextStep);
@@ -2110,9 +2141,7 @@ console.log(expectedWirCode);
   }
 
   getStatusLabel(status: CheckpointStatus | string | undefined): string {
-    console.log('ssssssssssssssssssss',status);
     if (!status) return 'Pending';
-    
     const statusStr = typeof status === 'string' ? status : String(status);
     switch (statusStr) {
       case CheckpointStatus.Pass:
@@ -2124,16 +2153,12 @@ console.log(expectedWirCode);
       case CheckpointStatus.Pending:
       case 'Pending':
         return 'Pending';
-      case CheckpointStatus.NA:
-      case 'NA':
-        return 'N/A';
       default:
         return 'Pending';
     }
   }
 
   getStatusBadgeClass(status: CheckpointStatus | string | undefined): string {
-    
     if (!status) return 'status-badge-pending';
     const statusStr = typeof status === 'string' ? status : String(status);
     switch (statusStr) {
@@ -2146,9 +2171,6 @@ console.log(expectedWirCode);
       case CheckpointStatus.Pending:
       case 'Pending':
         return 'status-badge-pending';
-      case CheckpointStatus.NA:
-      case 'NA':
-        return 'status-badge-na';
       default:
         return 'status-badge-pending';
     }
@@ -2854,7 +2876,6 @@ console.log(expectedWirCode);
         this.wirCheckpoint = updatedCheckpoint;
     this.syncReviewFormFromCheckpoint();
     this.pendingAction = null;
-    this.currentStep = null;
     this.finalStatusControl.setValue(status);
     this.qualityIssuesArray.clear();
     const messageMap: Record<WIRCheckpointStatus, string> = {
@@ -2869,7 +2890,14 @@ console.log(expectedWirCode);
         type: 'success'
       }
     }));
-        this.goBack();
+    
+    // Navigate to quality issues step
+    this.currentStep = 'quality-issues';
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { step: 'quality-issues' },
+      queryParamsHandling: 'merge'
+    });
   }
 
   private handleReviewError(err: any): void {
@@ -2883,8 +2911,7 @@ console.log(expectedWirCode);
     const statusMap: Record<string, CheckListItemStatus> = {
       'Pending': CheckListItemStatus.Pending,
       'Pass': CheckListItemStatus.Pass,
-      'Fail': CheckListItemStatus.Fail,
-      'N/A': CheckListItemStatus.NA
+      'Fail': CheckListItemStatus.Fail
     };
     return statusMap[status] || CheckListItemStatus.Pending;
   }

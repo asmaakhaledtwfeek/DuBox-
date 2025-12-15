@@ -26,7 +26,7 @@ export interface Box {
   progress: number;
   activities: BoxActivity[];
   activitiesCount?: number;
-  attachments: BoxAttachment[];
+  attachments: BoxDrawing[];
   logs: BoxLog[];
   qrCode?: string;
   currentLocationId?: string;
@@ -109,7 +109,7 @@ export interface ChecklistItem {
   remarks?: string;
 }
 
-export interface BoxAttachment {
+export interface BoxDrawing {
   id: string;
   boxId: string;
   fileName: string;
@@ -121,7 +121,7 @@ export interface BoxAttachment {
   uploadedAt: Date;
 }
 
-export interface BoxAttachmentImage {
+export interface BoxDrawingImage {
   progressUpdateImageId: string;
   progressUpdateId: string;
   imageUrl?: string;
@@ -136,9 +136,29 @@ export interface BoxAttachmentImage {
   updateDate?: Date;
 }
 
-export interface BoxAttachmentsResponse {
-  images: BoxAttachmentImage[];
+export interface BoxDrawingsResponse {
+  images: BoxDrawingImage[];
   totalCount: number;
+}
+
+export interface BoxAllAttachmentsResponse {
+  wirCheckpointImages: BoxAttachmentDto[];
+  progressUpdateImages: BoxAttachmentDto[];
+  qualityIssueImages: BoxAttachmentDto[];
+  totalCount: number;
+}
+
+export interface BoxAttachmentDto {
+  imageId: string;
+  imageData: string;
+  imageType: string;
+  originalName?: string;
+  fileSize?: number;
+  sequence: number;
+  createdDate: Date;
+  referenceId: string;
+  referenceType: string;
+  referenceName?: string;
 }
 
 export interface BoxLog {

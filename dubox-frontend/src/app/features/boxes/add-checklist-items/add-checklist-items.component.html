@@ -41,7 +41,7 @@
             </div>
             <div class="header-actions">
               <span *ngIf="selectedPredefinedItemIds.length > 0" class="selection-count">
-                {{ selectedPredefinedItemIds.length }} item(s) selected
+              {{ selectedPredefinedItemIds.length }} item(s) selected
               </span>
               <button 
                 type="button" 
@@ -164,42 +164,42 @@
                       >
                         {{ areAllInSectionSelected(section) ? 'Deselect' : 'Select' }} Section
                       </button>
-                    </div>
+            </div>
 
                     <!-- Items within Section -->
                     <div class="section-items" *ngIf="isSectionExpanded(checklistIdx, sectionIdx) || openSectionIndexMap[checklistIdx] === -1">
-                      <div 
+            <div 
                         *ngFor="let item of section.items" 
-                        class="predefined-item-card"
-                        [class.selected]="isPredefinedItemSelected(item.predefinedItemId)"
-                        (click)="togglePredefinedItemSelection(item.predefinedItemId)"
+              class="predefined-item-card"
+              [class.selected]="isPredefinedItemSelected(item.predefinedItemId)"
+              (click)="togglePredefinedItemSelection(item.predefinedItemId)"
                         role="button"
                         tabindex="0"
                         (keydown.enter)="togglePredefinedItemSelection(item.predefinedItemId)"
                         (keydown.space)="togglePredefinedItemSelection(item.predefinedItemId); $event.preventDefault()"
-                      >
-                        <div class="item-checkbox">
-                          <input 
-                            type="checkbox" 
-                            [checked]="isPredefinedItemSelected(item.predefinedItemId)"
-                            (change)="togglePredefinedItemSelection(item.predefinedItemId)"
-                            (click)="$event.stopPropagation()"
+            >
+              <div class="item-checkbox">
+                <input 
+                  type="checkbox" 
+                  [checked]="isPredefinedItemSelected(item.predefinedItemId)"
+                  (change)="togglePredefinedItemSelection(item.predefinedItemId)"
+                  (click)="$event.stopPropagation()"
                             [id]="'item-' + item.predefinedItemId"
                             [attr.aria-label]="'Select ' + item.checkpointDescription"
-                          />
-                        </div>
-                        <div class="item-content">
-                          <div class="item-header">
-                            <span class="item-sequence">#{{ item.sequence }}</span>
-                          </div>
-                          <p class="item-description">{{ item.checkpointDescription }}</p>
+                />
+              </div>
+              <div class="item-content">
+                <div class="item-header">
+                  <span class="item-sequence">#{{ item.sequence }}</span>
+                </div>
+                <p class="item-description">{{ item.checkpointDescription }}</p>
                           <p class="item-reference" *ngIf="item.reference">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                               <polyline points="14 2 14 8 20 8"/>
                             </svg>
                             <strong>Reference:</strong> {{ item.reference }}
-                          </p>
+                </p>
                         </div>
                       </div>
                     </div>

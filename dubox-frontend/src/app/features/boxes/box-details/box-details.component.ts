@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
+import { trigger, state, style, transition, animate } from '@angular/animations';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { Box, BoxStatus, BoxLog, getBoxStatusNumber } from '../../../core/models/box.model';
@@ -28,6 +29,18 @@ import { environment } from '../../../../environments/environment';
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, HttpClientModule, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent, HeaderComponent, BoxLogDetailsModalComponent],
   providers: [LocationService],
+  animations: [
+    trigger('slideDown', [
+      transition(':enter', [
+        style({ height: '0', opacity: '0', overflow: 'hidden' }),
+        animate('300ms ease-out', style({ height: '*', opacity: '1' }))
+      ]),
+      transition(':leave', [
+        style({ height: '*', opacity: '1', overflow: 'hidden' }),
+        animate('300ms ease-in', style({ height: '0', opacity: '0' }))
+      ])
+    ])
+  ],
   templateUrl: './box-details.component.html',
   styleUrls: ['./box-details.component.scss']
 })
@@ -41,7 +54,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   showDeleteConfirm = false;
   deleteSuccess = false;
   
-  activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments'  | 'progress-updates' = 'overview';
+  activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'drawings' | 'progress-updates' | 'attachments' = 'overview';
   
   canEdit = false;
   canDelete = false;
@@ -132,18 +145,28 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   selectedProgressUpdate: ProgressUpdate | null = null;
   isProgressModalOpen = false;
   
-  // All progress updates for attachments (images)
+  // All progress updates for drawings (images)
   allProgressUpdatesForImages: ProgressUpdate[] = [];
   loadingProgressUpdateImages = false;
   resolvedProgressImages: Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType?: 'file' | 'url' }> = [];
   resolvingProgressImages = false;
   
-  // Box attachments from dedicated endpoint
-  boxAttachments: Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType: 'file' | 'url'; originalUrl?: string }> = [];
+  // Box drawings from dedicated endpoint
+  boxDrawings: Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType: 'file' | 'url'; originalUrl?: string }> = [];
+  loadingBoxDrawings = false;
+  boxDrawingsError = '';
+
+  // All box attachments (WIR, Progress Update, Quality Issue images)
+  boxAttachments: any = null;
   loadingBoxAttachments = false;
   boxAttachmentsError = '';
   
-  // Sub-tab for Drowning (Attachments) section
+  // Collapsible sections state
+  wirImagesExpanded = true;
+  progressImagesExpanded = true;
+  qualityImagesExpanded = true;
+  
+  // Sub-tab for Drawings section
   activeDrawingTab: 'file' | 'url' = 'file';
   
   // Pagination for progress updates
@@ -223,7 +246,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     
     // Check for tab query parameter to set active tab
     const tabParam = this.route.snapshot.queryParams['tab'];
-    if (tabParam && ['overview', 'activities', 'wir', 'quality-issues', 'logs', 'attachments', 'progress-updates'].includes(tabParam)) {
+    if (tabParam && ['overview', 'activities', 'wir', 'quality-issues', 'logs', 'drawings', 'progress-updates'].includes(tabParam)) {
       this.activeTab = tabParam as any;
     }
     
@@ -313,7 +336,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         
         // After box is loaded, if we have a tab query parameter, trigger data loading for that tab
         const tabParam = this.route.snapshot.queryParams['tab'];
-        if (tabParam && ['activities', 'wir', 'quality-issues', 'logs', 'attachments', 'progress-updates'].includes(tabParam)) {
+        if (tabParam && ['activities', 'wir', 'quality-issues', 'logs', 'drawings', 'progress-updates', 'attachments'].includes(tabParam)) {
           // Use setTimeout to ensure the component is fully initialized
           setTimeout(() => {
             this.setActiveTab(tabParam as any);
@@ -536,7 +559,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' | 'progress-updates'): void {
+  setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'drawings' | 'progress-updates' | 'attachments'): void {
     this.activeTab = tab;
     
     // Lazy load data when tab is clicked
@@ -564,10 +587,10 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         this.loadBoxLogs(this.boxLogsCurrentPage, this.boxLogsPageSize);
       }
     }
-    if (tab === 'attachments') {
-      // Load box attachments when attachments/drowning tab is opened
-      if (this.boxAttachments.length === 0 && !this.loadingBoxAttachments) {
-        this.loadBoxAttachments();
+    if (tab === 'drawings') {
+      // Load box drawings when drawings tab is opened
+      if (this.boxDrawings.length === 0 && !this.loadingBoxDrawings) {
+        this.loadBoxDrawings();
       }
     }
     if (tab === 'progress-updates') {
@@ -575,6 +598,12 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       // Service-level cache will handle whether to fetch from API or use cached data
       if (this.progressUpdates.length === 0 && !this.progressUpdatesLoading) {
         this.loadProgressUpdates(1, this.progressUpdatesPageSize);
+      }
+    }
+    if (tab === 'attachments') {
+      // Load all box attachments when Attachments tab is clicked
+      if (!this.boxAttachments && !this.loadingBoxAttachments) {
+        this.loadAllBoxAttachments();
       }
     }
   }
@@ -2815,13 +2844,13 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     img.style.padding = '20px';
   }
 
-  // Load all progress updates to extract images for attachments section
+  // Load all progress updates to extract images for drawings section
   loadAllProgressUpdatesForImages(): void {
     if (!this.boxId || this.loadingProgressUpdateImages) {
       return;
     }
 
-    console.log('📋 Loading progress updates for attachments tab...');
+    console.log('📋 Loading progress updates for drawings tab...');
     this.loadingProgressUpdateImages = true;
     // Load with a large page size to get all progress updates
     this.progressUpdateService.getProgressUpdatesByBox(this.boxId, 1, 1000, {}).subscribe({
@@ -2914,19 +2943,19 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     return this.resolvedProgressImages.length > 0;
   }
 
-  // Set active drawing/attachment sub-tab
+  // Set active drawing sub-tab
   setActiveDrawingTab(tab: 'file' | 'url'): void {
     this.activeDrawingTab = tab;
   }
 
   // Get file-type images (uploaded images)
   getFileTypeImages(): Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType: 'file' | 'url'; originalUrl?: string }> {
-    return this.boxAttachments.filter(img => img.imageType === 'file');
+    return this.boxDrawings.filter(img => img.imageType === 'file');
   }
 
   // Get URL-type images
   getUrlTypeImages(): Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType: 'file' | 'url'; originalUrl?: string }> {
-    return this.boxAttachments.filter(img => img.imageType === 'url');
+    return this.boxDrawings.filter(img => img.imageType === 'url');
   }
 
   // Open image - for URL-type images, open original URL, otherwise open the display URL
@@ -2942,20 +2971,20 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Load box attachments from dedicated endpoint
-  loadBoxAttachments(): void {
+  // Load box drawings from dedicated endpoint
+  loadBoxDrawings(): void {
     if (!this.boxId) {
       return;
     }
 
-    this.loadingBoxAttachments = true;
-    this.boxAttachmentsError = '';
+    this.loadingBoxDrawings = true;
+    this.boxDrawingsError = '';
 
-    console.log('📦 Loading box attachments for box:', this.boxId);
+    console.log('📦 Loading box drawings for box:', this.boxId);
 
-    this.boxService.getBoxAttachmentImages(this.boxId).subscribe({
+    this.boxService.getBoxDrawingImages(this.boxId).subscribe({
       next: (response) => {
-        console.log('✅ Box attachments loaded in component:', response);
+        console.log('✅ Box drawings loaded in component:', response);
         console.log('✅ Response.images:', response.images);
         console.log('✅ Response.images length:', response.images?.length || 0);
         console.log('✅ Response.totalCount:', response.totalCount);
@@ -3013,9 +3042,9 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         if (imageRequests.length > 0) {
           forkJoin(imageRequests).subscribe({
             next: (resolvedImages: ResolvedImage[]) => {
-              this.boxAttachments = resolvedImages;
-              this.loadingBoxAttachments = false;
-              console.log('🎨 Resolved box attachments:', {
+              this.boxDrawings = resolvedImages;
+              this.loadingBoxDrawings = false;
+              console.log('🎨 Resolved box drawings:', {
                 total: resolvedImages.length,
                 fileType: resolvedImages.filter((img: ResolvedImage) => img.imageType === 'file').length,
                 urlType: resolvedImages.filter((img: ResolvedImage) => img.imageType === 'url').length
@@ -3023,14 +3052,14 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
             },
             error: (err) => {
               console.error('❌ Error resolving images:', err);
-              this.boxAttachmentsError = 'Failed to load some images';
-              this.loadingBoxAttachments = false;
+              this.boxDrawingsError = 'Failed to load some images';
+              this.loadingBoxDrawings = false;
             }
           });
         } else {
-          this.boxAttachments = [];
-          this.loadingBoxAttachments = false;
-          console.warn('⚠️ No attachments found for this box. Response had no images.');
+          this.boxDrawings = [];
+          this.loadingBoxDrawings = false;
+          console.warn('⚠️ No drawings found for this box. Response had no images.');
           console.log('⚠️ Empty response details:', {
             responseImages: response.images,
             responseImagesLength: response.images?.length,
@@ -3039,7 +3068,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         }
       },
       error: (err) => {
-        console.error('❌ Error loading box attachments:', err);
+        console.error('❌ Error loading box drawings:', err);
         console.error('❌ Error details:', {
           status: err.status,
           statusText: err.statusText,
@@ -3047,12 +3076,66 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
           message: err.message,
           url: err.url
         });
+        this.boxDrawingsError = err.error?.message || err.message || 'Failed to load drawings';
+        this.loadingBoxDrawings = false;
+      }
+    });
+  }
+
+
+  loadAllBoxAttachments(): void {
+    if (!this.boxId) {
+      return;
+    }
+
+    this.loadingBoxAttachments = true;
+    this.boxAttachmentsError = '';
+
+    console.log('📎 Loading all box attachments for box:', this.boxId);
+
+    this.boxService.getAllBoxAttachments(this.boxId).subscribe({
+      next: (response) => {
+        console.log('✅ Box attachments loaded:', response);
+        this.boxAttachments = response;
+        this.loadingBoxAttachments = false;
+      },
+      error: (err) => {
+        console.error('❌ Error loading box attachments:', err);
         this.boxAttachmentsError = err.error?.message || err.message || 'Failed to load attachments';
         this.loadingBoxAttachments = false;
       }
     });
   }
 
+  openImagePreview(imageUrl: string): void {
+    if (imageUrl) {
+      window.open(imageUrl, '_blank');
+    }
+  }
+
+  toggleWirImages(): void {
+    this.wirImagesExpanded = !this.wirImagesExpanded;
+  }
+
+  toggleProgressImages(): void {
+    this.progressImagesExpanded = !this.progressImagesExpanded;
+  }
+
+  toggleQualityImages(): void {
+    this.qualityImagesExpanded = !this.qualityImagesExpanded;
+  }
+
+  collapseAllAttachments(): void {
+    this.wirImagesExpanded = false;
+    this.progressImagesExpanded = false;
+    this.qualityImagesExpanded = false;
+  }
+
+  expandAllAttachments(): void {
+    this.wirImagesExpanded = true;
+    this.progressImagesExpanded = true;
+    this.qualityImagesExpanded = true;
+  }
 
   loadProgressUpdates(page: number = 1, pageSize: number = 10, forceRefresh: boolean = false): void {
     if (!this.boxId) {

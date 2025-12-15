@@ -25,15 +25,10 @@ namespace Dubox.Api.Controllers
             var result = await _mediator.Send(command, cancellationToken);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
-        [HttpGet("predefined-checklist-items")]
-        public async Task<IActionResult> GetPredefinedChecklistItems([FromQuery] string? wirNumber, CancellationToken cancellationToken)
-        {
-            var result = await _mediator.Send(new GetPredefinedChecklistItemsQuery { WIRNumber = wirNumber }, cancellationToken);
-            return result.IsSuccess ? Ok(result) : BadRequest(result);
-        }
+
 
         [HttpGet("predefined-checklist-items/{checkpointId}")]
-        public async Task<IActionResult> GetPredefinedChecklistItemsByWIRCode([FromQuery] Guid checkpointId, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetPredefinedChecklistItemsByWIRCode(Guid checkpointId, CancellationToken cancellationToken)
         {
 
             var result = await _mediator.Send(new GetPredefinedChecklistItemsByWIRCodeQuery(checkpointId), cancellationToken);

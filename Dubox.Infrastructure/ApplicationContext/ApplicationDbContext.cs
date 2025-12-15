@@ -62,6 +62,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<NavigationMenuItem> NavigationMenuItems { get; set; } = null!;
     public DbSet<Reference> References { get; set; } = null!;
     public DbSet<Category> Categories { get; set; } = null!;
+    public DbSet<WIRMaster> WIRMasters { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -73,7 +74,15 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         DepartmentSeesData.SeedDepartmnts(modelBuilder);
         ReferenceSeedData.SeedReferences(modelBuilder);
         CategorySeedData.SeedCategories(modelBuilder);
-        PredefinedChecklistItemSeedData.SeedPredefinedChecklistItems(modelBuilder);
+        
+        // Seed WIR Masters and all Predefined Checklist Items
+        WIRMasterSeedData.SeedWIRMasters(modelBuilder);
+        PredefinedChecklistItemSeedData.SeedPredefinedChecklistItems(modelBuilder); // WIR-2 and WIR-3
+        WIR1_MaterialVerificationSeedData.SeedWIR1Items(modelBuilder); // WIR-1
+       WIR4_StructuralAssemblySeedData.SeedWIR4Items(modelBuilder); // WIR-4
+        WIR5_FinishingWorksSeedData.SeedWIR5Items(modelBuilder); // WIR-5
+        WIR6_FinalInspectionSeedData.SeedWIR6Items(modelBuilder); // WIR-6
+        
         PermissionSeedData.SeedPermissions(modelBuilder);
         NavigationMenuSeedData.SeedNavigationMenuItems(modelBuilder);
         base.OnModelCreating(modelBuilder);

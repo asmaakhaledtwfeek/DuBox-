@@ -1129,6 +1129,174 @@ namespace Dubox.Infrastructure.Migrations
                             CategoryId = new Guid("40000001-0000-0000-0000-000000000014"),
                             CategoryName = "Installation of Conduits & accessories",
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000015"),
+                            CategoryName = "WIR-1: Material Verification Inspection",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000016"),
+                            CategoryName = "WIR-1: Material Receiving Inspection - MEP",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000017"),
+                            CategoryName = "WIR-4: General Requirements",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000018"),
+                            CategoryName = "WIR-4: Preparation & Setting Out",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000019"),
+                            CategoryName = "WIR-4: External Walls Erection",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000020"),
+                            CategoryName = "WIR-4: Floor Slab Installation",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000021"),
+                            CategoryName = "WIR-4: Internal Partition Installation",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000022"),
+                            CategoryName = "WIR-4: Top Slab Installation",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000023"),
+                            CategoryName = "WIR-4: Final Verification",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000024"),
+                            CategoryName = "WIR-5: Painting - General",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000025"),
+                            CategoryName = "WIR-5: Painting - Surface Preparation",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000026"),
+                            CategoryName = "WIR-5: Painting - Internal Application",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000027"),
+                            CategoryName = "WIR-5: Painting - External Application",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000028"),
+                            CategoryName = "WIR-5: Ceramic Tiling",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000029"),
+                            CategoryName = "WIR-5: Gypsum Partition Installation",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000030"),
+                            CategoryName = "WIR-5: False Ceiling Installation",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000031"),
+                            CategoryName = "WIR-5: Wet Area Waterproofing",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000032"),
+                            CategoryName = "WIR-5: Doors & Windows Installation",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000033"),
+                            CategoryName = "WIR-6: General & Structural Verification",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000034"),
+                            CategoryName = "WIR-6: Painting Inspection",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000035"),
+                            CategoryName = "WIR-6: Floor & Wall Tiling",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000036"),
+                            CategoryName = "WIR-6: Dry Wall Inspection",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000037"),
+                            CategoryName = "WIR-6: False Ceiling Inspection",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000038"),
+                            CategoryName = "WIR-6: Aluminium & Glazing Inspection",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000039"),
+                            CategoryName = "WIR-6: Doors & Windows Inspection",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000040"),
+                            CategoryName = "WIR-6: Wood Works Inspection",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000041"),
+                            CategoryName = "WIR-6: Other Finishes Inspection",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
+                        },
+                        new
+                        {
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000042"),
+                            CategoryName = "WIR-6: MEP Systems Inspection",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc)
                         });
                 });
 
@@ -5063,6 +5231,1806 @@ namespace Dubox.Infrastructure.Migrations
                             ReferenceId = new Guid("30000001-0000-0000-0000-000000000023"),
                             Sequence = 157,
                             WIRNumber = "WIR-3"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000001"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000015"),
+                            CheckpointDescription = "Is there material approval for received item?",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000005"),
+                            Sequence = 1,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000002"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000015"),
+                            CheckpointDescription = "Is Manufacturer Name as per material approval?",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000003"),
+                            Sequence = 2,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000003"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000015"),
+                            CheckpointDescription = "Is Supplier Name as per material approval?",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000003"),
+                            Sequence = 3,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000004"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000015"),
+                            CheckpointDescription = "Is received material matching with approved sample?",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "4",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000036"),
+                            Sequence = 4,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000005"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000015"),
+                            CheckpointDescription = "Related mill test certificate (or) test reports?",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "5",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000027"),
+                            Sequence = 5,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000006"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000015"),
+                            CheckpointDescription = "Check for any defects",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "6",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 6,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000007"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000015"),
+                            CheckpointDescription = "Check Expiry date",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "7",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 7,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000008"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000015"),
+                            CheckpointDescription = "Check Item / product description",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "8",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 8,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000009"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000015"),
+                            CheckpointDescription = "Check Item / product code",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "9",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 9,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000010"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000015"),
+                            CheckpointDescription = "Check Dimensions (length, width, thickness etc.)",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "10",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 10,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000011"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000015"),
+                            CheckpointDescription = "Check Colour",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "11",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000030"),
+                            Sequence = 11,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000012"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000015"),
+                            CheckpointDescription = "Check for Packaging Conditions",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "12",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 12,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000013"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000015"),
+                            CheckpointDescription = "Check for received Quantity (approx) as per DO",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "13",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 13,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000014"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000015"),
+                            CheckpointDescription = "Check the area of storage as per MSDS",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "14",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000025"),
+                            Sequence = 14,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000101"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000016"),
+                            CheckpointDescription = "Review documents for received materials",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 101,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000102"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000016"),
+                            CheckpointDescription = "Materials outside visual checking",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 102,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000103"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000016"),
+                            CheckpointDescription = "Check for any damages (General & Visual)",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 103,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000104"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000016"),
+                            CheckpointDescription = "Verify original bill of landing / Delivery Note",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "4",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 104,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000105"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000016"),
+                            CheckpointDescription = "Supplier Certificate / Warranty letter",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "5",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000026"),
+                            Sequence = 105,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000106"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000016"),
+                            CheckpointDescription = "Check and Verify the material as per delivery list / details",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "6",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 106,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000107"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000016"),
+                            CheckpointDescription = "Check the accessories",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "7",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 107,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000108"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000016"),
+                            CheckpointDescription = "Check the Name Plate",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "8",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 108,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000109"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000016"),
+                            CheckpointDescription = "Materials Storage and preservation as per manufacturer",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "9",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000026"),
+                            Sequence = 109,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000110"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000016"),
+                            CheckpointDescription = "Check the identification of components",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "10",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 110,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000111"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000016"),
+                            CheckpointDescription = "Check the rating as per approved drawing",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "11",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 111,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000112"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000016"),
+                            CheckpointDescription = "Check the loose part",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "12",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 112,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000113"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000016"),
+                            CheckpointDescription = "Check the dimension of delivered equipment as per approved drawing",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "13",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 113,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000114"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000016"),
+                            CheckpointDescription = "Check the availability of spare breakers / relays/ terminals",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "14",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 114,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000115"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000016"),
+                            CheckpointDescription = "Delivered material photos",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "15",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 115,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0001-000000000116"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000016"),
+                            CheckpointDescription = "Material Site test",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "16",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000008"),
+                            Sequence = 116,
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000001"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000017"),
+                            CheckpointDescription = "Ensure method statement, materials and shop drawings are approved",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "A1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000007"),
+                            Sequence = 1,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000002"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000017"),
+                            CheckpointDescription = "Ensure materials are stored under dry, clean, shaded area, away from sunlight and other sources of heat",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "A2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 2,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000003"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000017"),
+                            CheckpointDescription = "Check the expiry date of the material prior to applications",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "A3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 3,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000004"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000018"),
+                            CheckpointDescription = "Drawing Stamp & Signature",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "B1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 4,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000005"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000018"),
+                            CheckpointDescription = "Element Tag, QC Approval for Element",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "B2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 5,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000006"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000018"),
+                            CheckpointDescription = "Floor Setting Out",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "B3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 6,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000007"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000019"),
+                            CheckpointDescription = "Erection with temporary support",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "C1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 7,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000008"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000019"),
+                            CheckpointDescription = "Panel to panel connections",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "C2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 8,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000009"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000019"),
+                            CheckpointDescription = "Dimensions (outer, inner and diagonal), line and level",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "C3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 9,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000010"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000020"),
+                            CheckpointDescription = "Backer Rod / Shim Pad",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "D1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 10,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000011"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000020"),
+                            CheckpointDescription = "Slab Position / Level",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "D2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 11,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000012"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000020"),
+                            CheckpointDescription = "Panel to Slab Connections",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "D3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 12,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000013"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000020"),
+                            CheckpointDescription = "1000mm FFL to be marked clearly",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "D4",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 13,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000014"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000020"),
+                            CheckpointDescription = "MEP Clearance",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "D5",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 14,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000015"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000020"),
+                            CheckpointDescription = "Check the Slab level (shall read 1016mm at 1000m FFL line)",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "D6",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 15,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000016"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000020"),
+                            CheckpointDescription = "Grouting",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "D7",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000008"),
+                            Sequence = 16,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000017"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000021"),
+                            CheckpointDescription = "Erection with Temporary Support",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "E1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 17,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000018"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000021"),
+                            CheckpointDescription = "Panel to Panel Connections",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "E2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 18,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000019"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000021"),
+                            CheckpointDescription = "Dimensions (outer, inner and diagonal), Line and Level",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "E3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 19,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000020"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000021"),
+                            CheckpointDescription = "Grouting",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "E4",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000008"),
+                            Sequence = 20,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000021"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000022"),
+                            CheckpointDescription = "Backer Rod / Shim Pad",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "F1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 21,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000022"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000022"),
+                            CheckpointDescription = "Slab Position / Top Height",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "F2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 22,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000023"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000022"),
+                            CheckpointDescription = "Panel to Slab Connections",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "F3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 23,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000024"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000022"),
+                            CheckpointDescription = "MEP Clearance",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "F4",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 24,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000025"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000022"),
+                            CheckpointDescription = "Grouting",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "F5",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000008"),
+                            Sequence = 25,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000026"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000022"),
+                            CheckpointDescription = "Curing",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "F6",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000008"),
+                            Sequence = 26,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000027"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000023"),
+                            CheckpointDescription = "Internal and External Dimension of Box",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "G1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 27,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0004-000000000028"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000023"),
+                            CheckpointDescription = "Check for edges + Angles + grooves + chamfer + Pin holes + Cracks before moving to finishing area",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "G2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 28,
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000001"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000024"),
+                            CheckpointDescription = "Ensure method statement, materials and drawings (finishing schedule) are approved",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "A1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000007"),
+                            Sequence = 1,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000002"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000024"),
+                            CheckpointDescription = "Ensure materials are stored as per manufacturers recommendations",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "A2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000026"),
+                            Sequence = 2,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000003"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000024"),
+                            CheckpointDescription = "Verify the expiry date and number of coats of the material prior to applications",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "A3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 3,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000004"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000025"),
+                            CheckpointDescription = "Check substrate is clean, free from contaminants like dust, traces of curing compound, oil and grease",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "B1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 4,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000005"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000025"),
+                            CheckpointDescription = "Check for repair of surface imperfection and protrusions (if any)",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "B2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 5,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000006"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000025"),
+                            CheckpointDescription = "Moisture content for the substrate and environmental conditions as per manufacturer recommendations",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "B3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000026"),
+                            Sequence = 6,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000007"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000025"),
+                            CheckpointDescription = "Check the MEP clearance prior to start Painting works",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "B4",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 7,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000008"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000026"),
+                            CheckpointDescription = "Ensure application of Primer as per manufacturers recommendation",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "C1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000026"),
+                            Sequence = 8,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000009"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000026"),
+                            CheckpointDescription = "Ensure application of Stucco as per manufacturers recommendation",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "C2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000026"),
+                            Sequence = 9,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000010"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000026"),
+                            CheckpointDescription = "Touchup, grinding, undulations, corner repairs and pinholes are filled properly",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "C3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 10,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000011"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000026"),
+                            CheckpointDescription = "Application of first coat of Paint as per manufacturers recommendation",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "C4",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000026"),
+                            Sequence = 11,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000012"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000026"),
+                            CheckpointDescription = "Line between two color shades is straight, no Brush marks should be visible",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "C5",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 12,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000013"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000027"),
+                            CheckpointDescription = "Ensure application of Primer as per manufacturers recommendation",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "D1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000026"),
+                            Sequence = 13,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000014"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000027"),
+                            CheckpointDescription = "Ensure application of Filler Coats as per manufacturers recommendation",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "D2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000026"),
+                            Sequence = 14,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000015"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000027"),
+                            CheckpointDescription = "Touch up, grinding, undulations, corner repairs and pinholes are filled properly",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "D3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 15,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000016"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000027"),
+                            CheckpointDescription = "Application of final coat of Texture Paint as per manufacturers recommendation",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "D4",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000026"),
+                            Sequence = 16,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000017"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000028"),
+                            CheckpointDescription = "Ensure method statement, materials and drawings (finishing schedule) are approved",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "E1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000007"),
+                            Sequence = 17,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000018"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000028"),
+                            CheckpointDescription = "Check the Location, Colour & Type of tile as per the approved shop drawings / material submittal",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "E2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000023"),
+                            Sequence = 18,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000019"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000028"),
+                            CheckpointDescription = "Check the setting out / pattern of wall and floor tiles as per the approved drawings",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "E3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 19,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000020"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000028"),
+                            CheckpointDescription = "Verify the slope and level of the tiles as per the approved drawings",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "E4",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 20,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000021"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000028"),
+                            CheckpointDescription = "Check the application of tile grout as per the manufacturer recommendations",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "E5",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000026"),
+                            Sequence = 21,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000022"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000029"),
+                            CheckpointDescription = "Ensure method statement, material submittal and drawings are approved",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "F1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000007"),
+                            Sequence = 22,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000023"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000029"),
+                            CheckpointDescription = "Verify the marking and setting out of the partition walls as per the approved drawings",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "F2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 23,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000024"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000029"),
+                            CheckpointDescription = "Verify the location, spacing and fixation of the supporting grid as per the approved drawings",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "F3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 24,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000025"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000029"),
+                            CheckpointDescription = "Verify the fixation of the board as per the approved drawings",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "F4",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 25,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000026"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000030"),
+                            CheckpointDescription = "Ensure method statement, material submittal and drawings are approved",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "G1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000007"),
+                            Sequence = 26,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000027"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000030"),
+                            CheckpointDescription = "Verify the marking of the false ceiling level on the walls as per the approved drawings",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "G2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 27,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000028"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000030"),
+                            CheckpointDescription = "Verify the location, spacing and fixation of the grid as per the approved drawings",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "G3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 28,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000029"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000030"),
+                            CheckpointDescription = "Verify the type, fixation, level and alignment of the false ceiling board / tiles",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "G4",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 29,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000030"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000031"),
+                            CheckpointDescription = "Ensure method statement and materials are approved",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "H1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000007"),
+                            Sequence = 30,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000031"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000031"),
+                            CheckpointDescription = "Check substrate is clean, free from contaminants",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "H2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 31,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000032"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000031"),
+                            CheckpointDescription = "Check the application of coats as per project requirements / manufacturer recommendations",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "H3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000026"),
+                            Sequence = 32,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000033"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000031"),
+                            CheckpointDescription = "Check for any water seepage / leakage after 24 hours or as per the project requirements",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "H4",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000008"),
+                            Sequence = 33,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000034"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000032"),
+                            CheckpointDescription = "Ensure method statement, material submittal and drawings are approved",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "I1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000007"),
+                            Sequence = 34,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000035"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000032"),
+                            CheckpointDescription = "Check the color, type, material, coating of door and window materials as per approval",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "I2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000003"),
+                            Sequence = 35,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000036"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000032"),
+                            CheckpointDescription = "Verify the location and clear opening of doors / windows as per the approved drawings",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "I3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 36,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000037"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000032"),
+                            CheckpointDescription = "Ensure the location and No. of Door hinges provided as per the approved drawings",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "I4",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000031"),
+                            Sequence = 37,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0005-000000000038"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000032"),
+                            CheckpointDescription = "Ensure required Iron mongery sets are provided as per the door schedule drawings",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "I5",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000031"),
+                            Sequence = 38,
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000001"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000033"),
+                            CheckpointDescription = "Ensure method statement, ITP, materials and shop drawings are approved",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "1.1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000007"),
+                            Sequence = 1,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000002"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000033"),
+                            CheckpointDescription = "Check identification tag of the modular",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "1.2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 2,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000003"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000033"),
+                            CheckpointDescription = "Visually inspect the modular for any defects or damages",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "1.3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 3,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000004"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000033"),
+                            CheckpointDescription = "Verify the method of loading as per the project / design requirements",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "1.4",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 4,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000005"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000033"),
+                            CheckpointDescription = "Internal and External Dimensions of the modular",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "2.1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 5,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000006"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000034"),
+                            CheckpointDescription = "Location and color of Painting as per the App Drawing",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "3.1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 6,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000007"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000034"),
+                            CheckpointDescription = "Internal Paint (Application of Primer, Stucco and 1st Coat of Paint)",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "3.2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000029"),
+                            Sequence = 7,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000008"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000034"),
+                            CheckpointDescription = "External Paint(Application of Primer, Filler and Final Coat Texture Paint)",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "3.3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000029"),
+                            Sequence = 8,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000009"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000034"),
+                            CheckpointDescription = "Ensure Paint touch ups are completed around installed items",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "3.4",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 9,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000010"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000034"),
+                            CheckpointDescription = "Bitumen Applied at required Areas",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "3.5",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 10,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000011"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000034"),
+                            CheckpointDescription = "Damages, If any",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "3.6",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 11,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000012"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000035"),
+                            CheckpointDescription = "Layout and Fixing of Tiles as per App Drawing",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "4.1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 12,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000013"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000035"),
+                            CheckpointDescription = "Line, Level and Spacer for the Installed Tiles",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "4.2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 13,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000014"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000035"),
+                            CheckpointDescription = "Skirting is installed/fixed properly and truly vertical",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "4.3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 14,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000015"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000035"),
+                            CheckpointDescription = "Grouting of all Joints is done properly",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "4.4",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 15,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000016"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000035"),
+                            CheckpointDescription = "Elastomeric sealant under skirting is provided properly",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "4.5",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000026"),
+                            Sequence = 16,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000017"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000035"),
+                            CheckpointDescription = "Ensure Drain holes are free from any debris and properly closed (if applicable)",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "4.6",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 17,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000018"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000035"),
+                            CheckpointDescription = "Damages, if any",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "4.7",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000004"),
+                            Sequence = 18,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000019"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000036"),
+                            CheckpointDescription = "Layout, location and position of dry wall is as per App Drawing",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "5.1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 19,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000020"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000036"),
+                            CheckpointDescription = "Thickness of Dry wall is as per App Drawing",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "5.2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 20,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000021"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000036"),
+                            CheckpointDescription = "Opening for MEP services are cut properly",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "5.3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 21,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000022"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000036"),
+                            CheckpointDescription = "Ensure Gypsum surface are Crack free at joints",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "5.4",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 22,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000023"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000036"),
+                            CheckpointDescription = "Damages, if any",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "5.5",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 23,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000024"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000037"),
+                            CheckpointDescription = "Layout of False Ceiling tiles and bulk head as per App Drawing",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "6.1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 24,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000025"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000037"),
+                            CheckpointDescription = "Height of the False Ceiling as per App Drawing",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "6.2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 25,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000026"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000037"),
+                            CheckpointDescription = "Access panels/ Ceiling tiles are Fixed Properly",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "6.3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 26,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000027"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000037"),
+                            CheckpointDescription = "Ensure Gypsum surface are Crack free at joints",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "6.4",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 27,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000028"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000038"),
+                            CheckpointDescription = "Location of Window as per App Drawing",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "7.1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 28,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000029"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000038"),
+                            CheckpointDescription = "Fixing of Glass/panels",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "7.2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 29,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000030"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000038"),
+                            CheckpointDescription = "Fixing of Iron-Mongery and Accessories",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "7.3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 30,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000031"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000038"),
+                            CheckpointDescription = "Fixing of Silicone Sealant",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "7.4",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000015"),
+                            Sequence = 31,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000032"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000038"),
+                            CheckpointDescription = "Water leak test performed and passed",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "7.5",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000005"),
+                            Sequence = 32,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000033"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000038"),
+                            CheckpointDescription = "Paint touch completed around the frame",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "7.6",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 33,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000034"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000039"),
+                            CheckpointDescription = "Location of Doors as per App Drawing",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "8.1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 34,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000035"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000039"),
+                            CheckpointDescription = "Direction of doors swing as per App Drawing",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "8.2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000031"),
+                            Sequence = 35,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000036"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000039"),
+                            CheckpointDescription = "Main entrance door as per App Drawing",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "8.3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000031"),
+                            Sequence = 36,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000037"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000039"),
+                            CheckpointDescription = "Lock of Main entrance door is installed",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "8.4",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 37,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000038"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000040"),
+                            CheckpointDescription = "Kitchen cabinets, counter top and accessories installed as per app drawing",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "8.10",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 38,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000039"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000040"),
+                            CheckpointDescription = "Kitchen sink and sink mixer installed",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "8.11",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 39,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000040"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000040"),
+                            CheckpointDescription = "Wardrobe installed as per approved drawings",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "8.12",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000002"),
+                            Sequence = 40,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000041"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000040"),
+                            CheckpointDescription = "Wardrobe doors and drawers functioning smoothly and free from scratches",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "8.13",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 41,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000042"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000041"),
+                            CheckpointDescription = "Mirror installed and free from damage",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "9.1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 42,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000043"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000041"),
+                            CheckpointDescription = "Threshold installed and free from damage",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "9.2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 43,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000044"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000041"),
+                            CheckpointDescription = "Glass Partition installed and free from damage",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "9.3",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 44,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000045"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000041"),
+                            CheckpointDescription = "Floor drain and covers installed and free from damages",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "9.4",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 45,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000046"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000041"),
+                            CheckpointDescription = "Vanity installed and free from damage",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "9.5",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 46,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000047"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000041"),
+                            CheckpointDescription = "WC and cover installed and free from damage",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "9.6",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 47,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000048"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000041"),
+                            CheckpointDescription = "Shower installed and free from damage",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "9.7",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 48,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000049"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000041"),
+                            CheckpointDescription = "Toilet accessories installed and free from damage",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "9.8",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 49,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000050"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000041"),
+                            CheckpointDescription = "Firestop sealant, fire rated sealant & General sealant applied around penetration pipes",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "9.9",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000034"),
+                            Sequence = 50,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000051"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000041"),
+                            CheckpointDescription = "Painted walls are clean and free from stains",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "9.10",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 51,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000052"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000041"),
+                            CheckpointDescription = "Tiles are fixed with grouting properly and free from damage",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "9.11",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 52,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000053"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000042"),
+                            CheckpointDescription = "Check Final Condition of outside of the room and ensure its damage free",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "10.1",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 53,
+                            WIRNumber = "WIR-6"
+                        },
+                        new
+                        {
+                            PredefinedItemId = new Guid("20000001-0000-0000-0006-000000000054"),
+                            CategoryId = new Guid("40000001-0000-0000-0000-000000000042"),
+                            CheckpointDescription = "Sign the delivery note for accepting the loading of precast modular in good condition",
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            IsActive = true,
+                            ItemNumber = "10.2",
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000001"),
+                            Sequence = 54,
+                            WIRNumber = "WIR-6"
                         });
                 });
 
@@ -5518,6 +7486,78 @@ namespace Dubox.Infrastructure.Migrations
                             ReferenceId = new Guid("30000001-0000-0000-0000-000000000024"),
                             CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
                             ReferenceName = "Project Specification: Section- 260533"
+                        },
+                        new
+                        {
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000025"),
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ReferenceName = "MSDS (Material Safety Data Sheet)"
+                        },
+                        new
+                        {
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000026"),
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ReferenceName = "Manufacturer Recommendations"
+                        },
+                        new
+                        {
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000027"),
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ReferenceName = "Mill Test Certificate"
+                        },
+                        new
+                        {
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000028"),
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ReferenceName = "NFPA 13 (Fire Protection Standard)"
+                        },
+                        new
+                        {
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000029"),
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ReferenceName = "Finishing Schedule"
+                        },
+                        new
+                        {
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000030"),
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ReferenceName = "Color Schedule"
+                        },
+                        new
+                        {
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000031"),
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ReferenceName = "Door Schedule"
+                        },
+                        new
+                        {
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000032"),
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ReferenceName = "Window Schedule"
+                        },
+                        new
+                        {
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000033"),
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ReferenceName = "DCL Product Conformity Certificate"
+                        },
+                        new
+                        {
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000034"),
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ReferenceName = "Fire Rating Certificate"
+                        },
+                        new
+                        {
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000035"),
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ReferenceName = "Mockup Approval"
+                        },
+                        new
+                        {
+                            ReferenceId = new Guid("30000001-0000-0000-0000-000000000036"),
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            ReferenceName = "Sample Approval"
                         });
                 });
 
@@ -8165,6 +10205,124 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasIndex("WIRId", "Sequence");
 
                     b.ToTable("WIRCheckpointImages");
+                });
+
+            modelBuilder.Entity("Dubox.Domain.Entities.WIRMaster", b =>
+                {
+                    b.Property<Guid>("WIRMasterId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Discipline")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Phase")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int>("Sequence")
+                        .HasColumnType("int");
+
+                    b.Property<string>("WIRName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("WIRNumber")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("WIRMasterId");
+
+                    b.ToTable("WIRMasters");
+
+                    b.HasData(
+                        new
+                        {
+                            WIRMasterId = new Guid("10000001-0000-0000-0000-000000000001"),
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Verify all materials meet specifications and are properly documented before use in production",
+                            Discipline = "Both",
+                            IsActive = true,
+                            Phase = "Material",
+                            Sequence = 1,
+                            WIRName = "Material Receiving & Verification",
+                            WIRNumber = "WIR-1"
+                        },
+                        new
+                        {
+                            WIRMasterId = new Guid("10000001-0000-0000-0000-000000000002"),
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Install and test all MEP systems including HVAC, plumbing, fire fighting, and refrigerant piping",
+                            Discipline = "MEP",
+                            IsActive = true,
+                            Phase = "Installation",
+                            Sequence = 2,
+                            WIRName = "MEP Installation & Testing",
+                            WIRNumber = "WIR-2"
+                        },
+                        new
+                        {
+                            WIRMasterId = new Guid("10000001-0000-0000-0000-000000000003"),
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Install and test all electrical systems including cables, wires, panels, and conduits",
+                            Discipline = "Electrical",
+                            IsActive = true,
+                            Phase = "Installation",
+                            Sequence = 3,
+                            WIRName = "Electrical Installation & Testing",
+                            WIRNumber = "WIR-3"
+                        },
+                        new
+                        {
+                            WIRMasterId = new Guid("10000001-0000-0000-0000-000000000004"),
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Assemble and erect precast concrete modular elements including walls, slabs, and partitions",
+                            Discipline = "Civil",
+                            IsActive = true,
+                            Phase = "Assembly",
+                            Sequence = 4,
+                            WIRName = "Structural Assembly & Erection",
+                            WIRNumber = "WIR-4"
+                        },
+                        new
+                        {
+                            WIRMasterId = new Guid("10000001-0000-0000-0000-000000000005"),
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Apply all interior and exterior finishes including painting, tiling, ceilings, doors, windows, and woodwork",
+                            Discipline = "Civil",
+                            IsActive = true,
+                            Phase = "Finishing",
+                            Sequence = 5,
+                            WIRName = "Finishing Works",
+                            WIRNumber = "WIR-5"
+                        },
+                        new
+                        {
+                            WIRMasterId = new Guid("10000001-0000-0000-0000-000000000006"),
+                            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Comprehensive final inspection of completed modular before loading and transportation to site",
+                            Discipline = "Both",
+                            IsActive = true,
+                            Phase = "Final",
+                            Sequence = 6,
+                            WIRName = "Final Pre-Loading Inspection",
+                            WIRNumber = "WIR-6"
+                        });
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.WIRRecord", b =>

@@ -154,6 +154,79 @@ public static class ReferenceSeedData
                 ReferenceId = Guid.Parse("30000001-0000-0000-0000-000000000024"),
                 ReferenceName = "Project Specification: Section- 260533",
                 CreatedDate = seedDate
+            },
+            // Additional references for complete checklist system
+            new Reference
+            {
+                ReferenceId = Guid.Parse("30000001-0000-0000-0000-000000000025"),
+                ReferenceName = "MSDS (Material Safety Data Sheet)",
+                CreatedDate = seedDate
+            },
+            new Reference
+            {
+                ReferenceId = Guid.Parse("30000001-0000-0000-0000-000000000026"),
+                ReferenceName = "Manufacturer Recommendations",
+                CreatedDate = seedDate
+            },
+            new Reference
+            {
+                ReferenceId = Guid.Parse("30000001-0000-0000-0000-000000000027"),
+                ReferenceName = "Mill Test Certificate",
+                CreatedDate = seedDate
+            },
+            new Reference
+            {
+                ReferenceId = Guid.Parse("30000001-0000-0000-0000-000000000028"),
+                ReferenceName = "NFPA 13 (Fire Protection Standard)",
+                CreatedDate = seedDate
+            },
+            new Reference
+            {
+                ReferenceId = Guid.Parse("30000001-0000-0000-0000-000000000029"),
+                ReferenceName = "Finishing Schedule",
+                CreatedDate = seedDate
+            },
+            new Reference
+            {
+                ReferenceId = Guid.Parse("30000001-0000-0000-0000-000000000030"),
+                ReferenceName = "Color Schedule",
+                CreatedDate = seedDate
+            },
+            new Reference
+            {
+                ReferenceId = Guid.Parse("30000001-0000-0000-0000-000000000031"),
+                ReferenceName = "Door Schedule",
+                CreatedDate = seedDate
+            },
+            new Reference
+            {
+                ReferenceId = Guid.Parse("30000001-0000-0000-0000-000000000032"),
+                ReferenceName = "Window Schedule",
+                CreatedDate = seedDate
+            },
+            new Reference
+            {
+                ReferenceId = Guid.Parse("30000001-0000-0000-0000-000000000033"),
+                ReferenceName = "DCL Product Conformity Certificate",
+                CreatedDate = seedDate
+            },
+            new Reference
+            {
+                ReferenceId = Guid.Parse("30000001-0000-0000-0000-000000000034"),
+                ReferenceName = "Fire Rating Certificate",
+                CreatedDate = seedDate
+            },
+            new Reference
+            {
+                ReferenceId = Guid.Parse("30000001-0000-0000-0000-000000000035"),
+                ReferenceName = "Mockup Approval",
+                CreatedDate = seedDate
+            },
+            new Reference
+            {
+                ReferenceId = Guid.Parse("30000001-0000-0000-0000-000000000036"),
+                ReferenceName = "Sample Approval",
+                CreatedDate = seedDate
             }
         };
 

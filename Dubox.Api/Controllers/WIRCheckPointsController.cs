@@ -1,4 +1,4 @@
-﻿using Dubox.Application.DTOs;
+using Dubox.Application.DTOs;
 using Dubox.Application.Features.WIRCheckpoints.Commands;
 using Dubox.Application.Features.WIRCheckpoints.Queries;
 using Dubox.Domain.Enums;
@@ -28,9 +28,9 @@ namespace Dubox.Api.Controllers
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
         [HttpGet("predefined-checklist-items")]
-        public async Task<IActionResult> GetPredefinedChecklistItems(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetPredefinedChecklistItems([FromQuery] string? wirNumber, CancellationToken cancellationToken)
         {
-            var result = await _mediator.Send(new GetPredefinedChecklistItemsQuery(), cancellationToken);
+            var result = await _mediator.Send(new GetPredefinedChecklistItemsQuery { WIRNumber = wirNumber }, cancellationToken);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
@@ -285,6 +285,26 @@ namespace Dubox.Api.Controllers
         public async Task<IActionResult> GetAllWIRcheckPoints([FromQuery] GetWIRCheckpointsQuery query, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(query, cancellationToken);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        /// <summary>
+        /// Auto-generate all 6 WIRs (with predefined checklist items) for a box
+        /// </summary>
+        [HttpPost("generate-for-box/{boxId}")]
+        public async Task<IActionResult> GenerateWIRsForBox(Guid boxId, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new Dubox.Application.Features.WIRCheckpoints.Commands.GenerateWIRsForBoxCommand(boxId), cancellationToken);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        /// <summary>
+        /// Get all WIRs for a box with their checklist items grouped by category
+        /// </summary>
+        [HttpGet("box/{boxId}/with-checklist")]
+        public async Task<IActionResult> GetWIRsByBoxWithChecklist(Guid boxId, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new Dubox.Application.Features.WIRCheckpoints.Queries.GetWIRsByBoxWithChecklistQuery(boxId), cancellationToken);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
     }

@@ -219,17 +219,28 @@ export class WIRService {
 
   /**
    * Get all predefined checklist items
+   * @param wirNumber Optional WIR number to filter items
    */
-  getPredefinedChecklistItems(): Observable<PredefinedChecklistItem[]> {
-    return this.apiService.get<any[]>('wircheckpoints/predefined-checklist-items').pipe(
+  getPredefinedChecklistItems(wirNumber?: string): Observable<PredefinedChecklistItem[]> {
+    const url = wirNumber 
+      ? `wircheckpoints/predefined-checklist-items?wirNumber=${wirNumber}`
+      : 'wircheckpoints/predefined-checklist-items';
+      
+    return this.apiService.get<any[]>(url).pipe(
       map(response => {
         const items = Array.isArray(response) ? response : (response as any)?.data || [];
         return items.map((item: any) => ({
           predefinedItemId: item.predefinedItemId || item.PredefinedItemId,
+          wirNumber: item.wirNumber || item.WIRNumber || '',
+          itemNumber: item.itemNumber || item.ItemNumber,
           checkpointDescription: item.checkpointDescription || item.CheckpointDescription,
-          referenceDocument: item.referenceDocument || item.ReferenceDocument,
-          sequence: item.sequence || item.Sequence || 0,
+          categoryId: item.categoryId || item.CategoryId,
           category: item.category || item.Category,
+          categoryName: item.categoryName || item.CategoryName,
+          referenceId: item.referenceId || item.ReferenceId,
+          referenceDocument: item.referenceDocument || item.ReferenceDocument,
+          referenceName: item.referenceName || item.ReferenceName,
+          sequence: item.sequence || item.Sequence || 0,
           isActive: item.isActive ?? item.IsActive ?? true
         }));
       })

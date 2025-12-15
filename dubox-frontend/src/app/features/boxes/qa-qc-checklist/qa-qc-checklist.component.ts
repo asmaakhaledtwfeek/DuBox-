@@ -229,12 +229,16 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     this.initForm();
     this.loadWIRRecord();
     this.loadBoxQualityIssues();
-    this.loadPredefinedChecklistItems();
+    // Don't load predefined items here - will load when modal opens with correct WIR filter
   }
 
   private loadPredefinedChecklistItems(): void {
     this.loadingPredefinedItems = true;
-    this.wirService.getPredefinedChecklistItems().subscribe({
+    
+    // Pass WIR number to API for server-side filtering (more efficient)
+    const currentWirNumber = this.wirCheckpoint?.wirNumber;
+    
+    this.wirService.getPredefinedChecklistItems(currentWirNumber).subscribe({
       next: (items) => {
         this.predefinedChecklistItems = items;
         this.updateAvailablePredefinedItems();
@@ -260,46 +264,41 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
         .filter(id => id != null) as string[]
     );
 
-    // Filter out items that are already added
+    // Filter items by current WIR number AND exclude already added items
+    const currentWirNumber = this.wirCheckpoint.wirNumber;
     this.availablePredefinedItems = this.predefinedChecklistItems.filter(
-      item => !addedPredefinedIds.has(item.predefinedItemId)
+      item => item.wirNumber === currentWirNumber && !addedPredefinedIds.has(item.predefinedItemId)
     );
   }
 
   getGroupedPredefinedItems(): { category: string; items: PredefinedChecklistItem[] }[] {
     const grouped = new Map<string, PredefinedChecklistItem[]>();
     
-    // Group items by category
+    // Group items by category (use categoryName first, fallback to category, then 'OTHER')
     this.availablePredefinedItems.forEach(item => {
-      const category = item.category || 'Other';
+      const category = item.categoryName || item.category || 'OTHER';
       if (!grouped.has(category)) {
         grouped.set(category, []);
       }
       grouped.get(category)!.push(item);
     });
 
-    // Convert to array and sort by predefined category order
-    const categoryOrder = ['General', 'Setting Out', 'Installation Activity'];
+    // Convert to array and sort by WIR number, then sequence
     const result: { category: string; items: PredefinedChecklistItem[] }[] = [];
     
-    // Add categories in order
-    categoryOrder.forEach(cat => {
-      if (grouped.has(cat)) {
-        result.push({
-          category: cat,
-          items: grouped.get(cat)!.sort((a, b) => a.sequence - b.sequence)
-        });
-      }
+    // Sort categories alphabetically, but put 'OTHER' at the end
+    const categories = Array.from(grouped.keys()).sort((a, b) => {
+      if (a === 'OTHER') return 1;
+      if (b === 'OTHER') return -1;
+      return a.localeCompare(b);
     });
 
-    // Add any remaining categories
-    grouped.forEach((items, category) => {
-      if (!categoryOrder.includes(category)) {
+    // Add all categories with their items sorted by sequence
+    categories.forEach(category => {
         result.push({
           category,
-          items: items.sort((a, b) => a.sequence - b.sequence)
+        items: grouped.get(category)!.sort((a, b) => a.sequence - b.sequence)
         });
-      }
     });
 
     return result;
@@ -714,7 +713,15 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   }
 
   openAddPredefinedItemsModal(): void {
+    // Reload predefined items with current WIR number filter
+    const currentWirNumber = this.wirCheckpoint?.wirNumber;
+    if (currentWirNumber) {
+      this.loadPredefinedChecklistItems();
+    } else {
+      // If no WIR checkpoint loaded yet, just update from existing items
     this.updateAvailablePredefinedItems();
+    }
+    
     this.selectedPredefinedItemIds = [];
     this.isAddPredefinedItemsModalOpen = true;
     document.body.style.overflow = 'hidden';
@@ -1988,6 +1995,37 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     }
   }
 
+  getGroupedChecklistItems(): { categoryName: string; items: any[] }[] {
+    if (!this.wirCheckpoint?.checklistItems) {
+      return [];
+    }
+
+    const grouped = new Map<string, any[]>();
+
+    this.wirCheckpoint.checklistItems.forEach((item, index) => {
+      const categoryName = item.categoryName || 'General';
+      if (!grouped.has(categoryName)) {
+        grouped.set(categoryName, []);
+      }
+      grouped.get(categoryName)!.push({
+        ...item,
+        formIndex: index
+      });
+    });
+
+    // Sort categories alphabetically
+    const categories = Array.from(grouped.keys()).sort((a, b) => {
+      if (a === 'General') return -1;
+      if (b === 'General') return 1;
+      return a.localeCompare(b);
+    });
+
+    return categories.map(category => ({
+      categoryName: category,
+      items: grouped.get(category)!.sort((a, b) => a.sequence - b.sequence)
+    }));
+  }
+
   canReviewItem(status: CheckpointStatus | string | undefined): boolean {
     if (!status) return true; // Pending items can be reviewed
     const statusStr = typeof status === 'string' ? status : String(status);
@@ -2032,7 +2070,7 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   /**
    * Group checklist items by category for display in the table
    */
-  getGroupedChecklistItems(): { category: string; items: { index: number; control: any }[] }[] {
+  getGroupedAddChecklistItems(): { category: string; items: { index: number; control: any }[] }[] {
     const grouped = new Map<string, { index: number; control: any }[]>();
     const categoryOrder = ['General', 'Setting Out', 'Installation Activity'];
     

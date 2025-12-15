@@ -411,7 +411,7 @@
               <ng-container *ngFor="let group of getGroupedChecklistItems()">
                 <div class="checklist-category-group" *ngIf="group.items.length > 0">
                   <div class="category-header">
-                    <h4 class="category-title">{{ group.category }}</h4>
+                    <h4 class="category-title">{{ group.categoryName }}</h4>
                     <span class="category-count">{{ group.items.length }} item(s)</span>
                   </div>
                   <table class="designer-table">

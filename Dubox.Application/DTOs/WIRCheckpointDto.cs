@@ -1,4 +1,4 @@
-﻿using Dubox.Domain.Enums;
+using Dubox.Domain.Enums;
 
 namespace Dubox.Application.DTOs
 {
@@ -78,6 +78,8 @@ namespace Dubox.Application.DTOs
         public CheckListItemStatusEnum Status { get; set; }
         public int Sequence { get; set; }
         public Guid? PredefinedItemId { get; set; } // Reference to the predefined item this was cloned from
+        public Guid? CategoryId { get; set; }
+        public string? CategoryName { get; set; }
     }
     public class QualityIssueDto
     {
@@ -99,10 +101,16 @@ namespace Dubox.Application.DTOs
     public class PredefinedChecklistItemDto
     {
         public Guid PredefinedItemId { get; set; }
+        public string WIRNumber { get; set; } = string.Empty;
+        public string? ItemNumber { get; set; }
         public string CheckpointDescription { get; set; } = string.Empty;
-        public string? ReferenceDocument { get; set; }
+        public Guid? CategoryId { get; set; }
+        public string? Category { get; set; } // CategoryName
+        public string? CategoryName { get; set; } // For consistency
+        public Guid? ReferenceId { get; set; }
+        public string? ReferenceDocument { get; set; } // ReferenceName
+        public string? ReferenceName { get; set; } // For consistency
         public int Sequence { get; set; }
-        public string? Category { get; set; }
         public bool IsActive { get; set; }
     }
     public class CreateWIRCheckpointDto

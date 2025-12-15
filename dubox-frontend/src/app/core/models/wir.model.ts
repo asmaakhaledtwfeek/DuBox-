@@ -136,14 +136,22 @@ export interface WIRCheckpointChecklistItem {
   remarks?: string;
   sequence: number;
   predefinedItemId?: string; // Reference to the predefined item this was cloned from
+  categoryId?: string;
+  categoryName?: string;
 }
 
 export interface PredefinedChecklistItem {
   predefinedItemId: string;
+  wirNumber: string;
+  itemNumber?: string;
   checkpointDescription: string;
-  referenceDocument?: string;
-  sequence: number;
+  categoryId?: string;
   category?: string;
+  categoryName?: string;
+  referenceId?: string;
+  referenceDocument?: string;
+  referenceName?: string;
+  sequence: number;
   isActive: boolean;
 }
 

@@ -2002,14 +2002,48 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   }
 
   openPhotoInNewTab(photoUrl: string): void {
-    // For base64 images, create a new window with the image
-    if (photoUrl.startsWith('data:image/')) {
-      const newWindow = window.open();
-      if (newWindow) {
-        newWindow.document.write(`<img src="${photoUrl}" style="max-width: 100%; height: auto;" />`);
-      }
-    } else {
-      window.open(photoUrl, '_blank', 'noopener,noreferrer');
+    if (!photoUrl) {
+      console.error('No photo URL provided');
+      return;
+    }
+
+    // Ensure URL is absolute
+    let absoluteUrl = photoUrl;
+    
+    // If it's a relative URL, make it absolute
+    if (photoUrl.startsWith('/')) {
+      const baseUrl = this.getApiBaseUrl();
+      absoluteUrl = `${baseUrl}${photoUrl}`;
+    }
+    // For base64/data images, convert to blob URL
+    else if (photoUrl.startsWith('data:image/')) {
+      fetch(photoUrl)
+        .then(response => response.blob())
+        .then(blob => {
+          const blobUrl = URL.createObjectURL(blob);
+          const newWindow = window.open(blobUrl, '_blank', 'noopener,noreferrer');
+          if (!newWindow) {
+            console.error('Failed to open image in new tab. Popup may be blocked.');
+          }
+        })
+        .catch(error => {
+          console.error('Error converting data URL to blob:', error);
+          // Fallback: try to open data URL directly (may not work in all browsers)
+          window.open(photoUrl, '_blank', 'noopener,noreferrer');
+        });
+      return;
+    }
+    // If it's already an absolute URL (http/https), use as is
+    else if (!photoUrl.startsWith('http://') && !photoUrl.startsWith('https://')) {
+      // Relative URL without leading slash - prepend base URL
+      const baseUrl = this.getApiBaseUrl();
+      absoluteUrl = `${baseUrl}/${photoUrl}`;
+    }
+
+    console.log('🖼️ Opening photo URL:', absoluteUrl);
+    const newWindow = window.open(absoluteUrl, '_blank', 'noopener,noreferrer');
+    if (!newWindow) {
+      console.error('Failed to open photo in new tab. Popup may be blocked.');
     }
   }
 

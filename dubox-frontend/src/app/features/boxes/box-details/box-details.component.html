@@ -110,7 +110,13 @@
         >
           Drawing
         </button>
-      
+        <button 
+        class="tab" 
+        [class.active]="activeTab === 'attachments'"
+        (click)="setActiveTab('attachments')"
+      >
+        All Attachments
+      </button>
         <button 
           class="tab" 
           [class.active]="activeTab === 'progress-updates'"
@@ -118,13 +124,7 @@
         >
           Progress History
         </button>
-        <button 
-          class="tab" 
-          [class.active]="activeTab === 'attachments'"
-          (click)="setActiveTab('attachments')"
-        >
-          All Attachments
-        </button>
+       
       </div>
 
       <!-- Tab Content -->

@@ -155,6 +155,30 @@ export interface PredefinedChecklistItem {
   isActive: boolean;
 }
 
+export interface PredefinedChecklistItemWithChecklistDto {
+  predefinedItemId: string;
+  checkpointDescription: string;
+  reference?: string;
+  sequence: number;
+  isActive: boolean;
+  
+  // ChecklistSection information
+  checklistSectionId?: string;
+  sectionTitle?: string;
+  sectionOrder?: number;
+  
+  // Checklist information
+  checklistId?: string;
+  checklistName?: string;
+  checklistCode?: string;
+  checklistDiscipline?: string;
+  checklistSubDiscipline?: string;
+  checklistPageNumber?: number;
+  checklistWIRCode?: string;
+  checklistReferenceDocuments?: string[];
+  checklistSignatureRoles?: string[];
+}
+
 export enum WIRCheckpointStatus {
   Pending = 'Pending',
   Approved = 'Approved',

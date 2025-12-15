@@ -216,6 +216,20 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
       }, 0);
       this.router.navigate([], { queryParams: { checklistAdded: null }, queryParamsHandling: 'merge' });
     }
+    
+    // Check for selected predefined items from add-checklist-items page
+    const selectedItemIdsParam = this.route.snapshot.queryParamMap.get('selectedItemIds');
+    if (selectedItemIdsParam) {
+      this.selectedPredefinedItemIds = selectedItemIdsParam.split(',').filter(id => id.trim());
+      console.log('Received selected item IDs from navigation:', this.selectedPredefinedItemIds);
+      // Clear the query param
+      this.router.navigate([], { 
+        queryParams: { selectedItemIds: null }, 
+        queryParamsHandling: 'merge',
+        replaceUrl: true 
+      });
+    }
+    
     const stepParam = this.route.snapshot.queryParamMap.get('step');
     const viewParam = this.route.snapshot.queryParamMap.get('view');
     if (viewParam === 'quality-list') {
@@ -247,6 +261,96 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('Error loading predefined checklist items:', err);
         this.loadingPredefinedItems = false;
+      }
+    });
+  }
+
+  private loadSelectedPredefinedItemsForPreview(): void {
+    if (!this.wirCheckpoint || this.selectedPredefinedItemIds.length === 0) {
+      return;
+    }
+
+    console.log('Loading selected predefined items:', this.selectedPredefinedItemIds);
+    this.loadingPredefinedItems = true;
+
+    // Load predefined items by checkpoint ID to get the full details
+    this.wirService.getPredefinedChecklistItemsByCheckpointId(this.wirCheckpoint.wirId).subscribe({
+      next: (items) => {
+        console.log('All predefined items received:', items.length);
+        
+        // Filter to only selected items
+        const selectedItems = items.filter(item => 
+          this.selectedPredefinedItemIds.includes(item.predefinedItemId)
+        );
+        
+        console.log('Filtered selected items:', selectedItems.length);
+        
+        // Convert to checklist item format for the form
+        const itemsForForm = selectedItems.map((item, index) => ({
+          checklistItemId: '', // Will be assigned when saved
+          wirId: this.wirCheckpoint!.wirId,
+          checkpointDescription: item.checkpointDescription,
+          referenceDocument: item.reference || '',
+          status: 'Pending' as CheckListItemStatus,
+          remarks: '',
+          sequence: item.sequence || index + 1,
+          predefinedItemId: item.predefinedItemId,
+          categoryName: item.checklistName || item.sectionTitle
+        }));
+        
+        console.log('Items prepared for form:', itemsForForm);
+        
+        // Build the form with selected items
+        this.buildAddChecklistItemsForm(itemsForForm);
+        this.loadingPredefinedItems = false;
+      },
+      error: (err) => {
+        console.error('Error loading selected predefined items:', err);
+        this.error = 'Failed to load selected checklist items';
+        this.loadingPredefinedItems = false;
+      }
+    });
+  }
+
+  saveSelectedChecklistItems(): void {
+    if (!this.wirCheckpoint || this.selectedPredefinedItemIds.length === 0) {
+      this.error = 'No items selected to save';
+      return;
+    }
+
+    this.addingChecklistItems = true;
+    this.error = '';
+
+    const request: AddChecklistItemsRequest = {
+      wirId: this.wirCheckpoint.wirId,
+      predefinedItemIds: this.selectedPredefinedItemIds
+    };
+
+    console.log('Saving checklist items:', request);
+
+    this.wirService.addChecklistItems(request).subscribe({
+      next: (updatedCheckpoint) => {
+        console.log('Checklist items added successfully:', updatedCheckpoint);
+        this.addingChecklistItems = false;
+        this.selectedPredefinedItemIds = []; // Clear selected IDs
+        
+        // Refresh the checkpoint to show the added items
+        this.refreshCheckpointDetails(false, false);
+        
+        // Show success message
+        setTimeout(() => {
+          document.dispatchEvent(new CustomEvent('app-toast', { 
+            detail: { message: 'Checklist items added successfully!', type: 'success' } 
+          }));
+        }, 0);
+        
+        // Navigate back to overview
+        this.currentStep = null;
+      },
+      error: (err) => {
+        this.addingChecklistItems = false;
+        this.error = err.error?.message || err.message || 'Failed to add checklist items';
+        console.error('Error adding checklist items:', err);
       }
     });
   }
@@ -454,7 +558,7 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     }
 
     const expectedWirCode = this.wirRecord.wirCode;
-
+console.log(expectedWirCode);
     // Check if WIR checkpoint exists for this box/activity by WIR code
     console.log('checkWIRCheckpoint - Searching for checkpoint with boxId:', this.boxId, 'wirCode:', expectedWirCode);
     this.wirService.getWIRCheckpointByActivity(this.boxId, expectedWirCode).subscribe({
@@ -713,18 +817,26 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   }
 
   openAddPredefinedItemsModal(): void {
-    // Reload predefined items with current WIR number filter
-    const currentWirNumber = this.wirCheckpoint?.wirNumber;
-    if (currentWirNumber) {
-      this.loadPredefinedChecklistItems();
-    } else {
-      // If no WIR checkpoint loaded yet, just update from existing items
-    this.updateAvailablePredefinedItems();
+    // Navigate to the add predefined items page
+    if (!this.wirCheckpoint) {
+      console.error('No WIR checkpoint available');
+      return;
     }
-    
-    this.selectedPredefinedItemIds = [];
-    this.isAddPredefinedItemsModalOpen = true;
-    document.body.style.overflow = 'hidden';
+
+    // Construct the route to the add-checklist-items page
+    const route = [
+      '/projects',
+      this.projectId,
+      'boxes',
+      this.boxId,
+      'activities',
+      this.activityId,
+      'wir-checkpoints',
+      this.wirCheckpoint.wirId,
+      'add-checklist-items'
+    ];
+
+    this.router.navigate(route);
   }
 
   closeAddPredefinedItemsModal(): void {
@@ -793,15 +905,22 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     // Debug: Log checkpoint state
     console.log('startAddChecklistFlow - checkpoint:', this.wirCheckpoint);
     console.log('startAddChecklistFlow - checklistItems:', this.wirCheckpoint.checklistItems);
-    console.log('startAddChecklistFlow - checklistItems length:', this.wirCheckpoint.checklistItems?.length || 0);
+    console.log('startAddChecklistFlow - selectedPredefinedItemIds:', this.selectedPredefinedItemIds);
     
-    // Always build the form with existing items from checkpoint
-    const existingItems = this.wirCheckpoint.checklistItems && this.wirCheckpoint.checklistItems.length > 0
-      ? this.wirCheckpoint.checklistItems
-      : undefined;
+    // Check if we have selected predefined items to load
+    if (this.selectedPredefinedItemIds.length > 0) {
+      console.log('Loading selected predefined items for preview');
+      this.loadSelectedPredefinedItemsForPreview();
+    } else {
+      // Always build the form with existing items from checkpoint
+      const existingItems = this.wirCheckpoint.checklistItems && this.wirCheckpoint.checklistItems.length > 0
+        ? this.wirCheckpoint.checklistItems
+        : undefined;
+      
+      console.log('Building checklist form with items:', existingItems?.length || 0, existingItems);
+      this.buildAddChecklistItemsForm(existingItems);
+    }
     
-    console.log('Building checklist form with items:', existingItems?.length || 0, existingItems);
-    this.buildAddChecklistItemsForm(existingItems);
     this.currentStep = 'add-items';
     this.pendingAction = null;
   }

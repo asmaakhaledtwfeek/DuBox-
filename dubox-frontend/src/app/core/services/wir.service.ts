@@ -13,6 +13,7 @@ import {
   AddChecklistItemsRequest,
   UpdateChecklistItemRequest,
   PredefinedChecklistItem,
+  PredefinedChecklistItemWithChecklistDto,
   ReviewWIRCheckpointRequest,
   AddQualityIssueRequest,
   CreateQualityIssueForBoxRequest,
@@ -242,6 +243,57 @@ export class WIRService {
           referenceName: item.referenceName || item.ReferenceName,
           sequence: item.sequence || item.Sequence || 0,
           isActive: item.isActive ?? item.IsActive ?? true
+        }));
+      })
+    );
+  }
+
+  /**
+   * Get predefined checklist items by WIR checkpoint ID with checklist and section grouping
+   * @param checkpointId WIR checkpoint ID
+   */
+  getPredefinedChecklistItemsByCheckpointId(checkpointId: string): Observable<PredefinedChecklistItemWithChecklistDto[]> {
+    return this.apiService.get<any>(`wircheckpoints/predefined-checklist-items/${checkpointId}`).pipe(
+      map(response => {
+        console.log('Raw API response:', response);
+        
+        // Handle different response formats
+        let items = [];
+        if (Array.isArray(response)) {
+          items = response;
+        } else if (response?.data && Array.isArray(response.data)) {
+          items = response.data;
+        } else if (response?.value && Array.isArray(response.value)) {
+          items = response.value;
+        } else {
+          console.warn('Unexpected response format:', response);
+          items = [];
+        }
+        
+        console.log('Extracted items:', items);
+        
+        return items.map((item: any) => ({
+          predefinedItemId: item.predefinedItemId || item.PredefinedItemId || item.id,
+          checkpointDescription: item.checkpointDescription || item.CheckpointDescription || item.description || '',
+          reference: item.reference || item.Reference,
+          sequence: item.sequence || item.Sequence || 0,
+          isActive: item.isActive ?? item.IsActive ?? true,
+          
+          // ChecklistSection information
+          checklistSectionId: item.checklistSectionId || item.ChecklistSectionId,
+          sectionTitle: item.sectionTitle || item.SectionTitle,
+          sectionOrder: item.sectionOrder || item.SectionOrder,
+          
+          // Checklist information
+          checklistId: item.checklistId || item.ChecklistId,
+          checklistName: item.checklistName || item.ChecklistName,
+          checklistCode: item.checklistCode || item.ChecklistCode,
+          checklistDiscipline: item.checklistDiscipline || item.ChecklistDiscipline,
+          checklistSubDiscipline: item.checklistSubDiscipline || item.ChecklistSubDiscipline,
+          checklistPageNumber: item.checklistPageNumber || item.ChecklistPageNumber,
+          checklistWIRCode: item.checklistWIRCode || item.ChecklistWIRCode,
+          checklistReferenceDocuments: item.checklistReferenceDocuments || item.ChecklistReferenceDocuments,
+          checklistSignatureRoles: item.checklistSignatureRoles || item.ChecklistSignatureRoles
         }));
       })
     );

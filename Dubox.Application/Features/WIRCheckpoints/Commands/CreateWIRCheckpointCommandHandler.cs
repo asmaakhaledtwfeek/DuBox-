@@ -55,9 +55,12 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             var user = await _unitOfWork.Repository<User>().GetByIdAsync(currentUserId);
             var currentUserName = user != null ? user.FullName : string.Empty;
             var existCheckpoint = _unitOfWork.Repository<WIRCheckpoint>().FindAsync(c => c.BoxId == boxActicity.BoxId && c.WIRCode == request.WIRNumber).Result.FirstOrDefault();
+
             if (existCheckpoint != null)
             {
+                var existCheckpointId = existCheckpoint.WIRId;
                 existCheckpoint = request.Adapt<WIRCheckpoint>();
+                existCheckpoint.WIRId = existCheckpointId;
                 existCheckpoint.RequestedBy = currentUserName;
                 existCheckpoint.BoxId = boxActicity.BoxId;
                 existCheckpoint.WIRCode = request.WIRNumber;

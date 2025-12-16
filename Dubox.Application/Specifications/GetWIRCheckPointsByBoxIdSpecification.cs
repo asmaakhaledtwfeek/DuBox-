@@ -18,7 +18,7 @@ namespace Dubox.Application.Specifications
 
             AddOrderByDescending(w => w.CreatedDate);
 
-            // Enable split query to avoid Cartesian explosion with multiple collection includes
+
             EnableSplitQuery();
         }
     }

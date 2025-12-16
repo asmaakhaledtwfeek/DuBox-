@@ -608,31 +608,126 @@
 
 <!-- Update Status Modal -->
 <div class="modal-backdrop" *ngIf="isUpdateStatusModalOpen" (click)="closeUpdateStatusModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
+  <div class="activity-status-modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3>Update Activity Status</h3>
-      <button class="btn-close" (click)="closeUpdateStatusModal()">×</button>
+      <div class="header-content">
+        <div class="header-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+        </div>
+        <div>
+          <h3>Update Activity Status</h3>
+          <p class="modal-subtitle" *ngIf="activity">{{ activity.name }}</p>
+        </div>
+      </div>
+      <button class="icon-button" (click)="closeUpdateStatusModal()" [disabled]="isUpdatingStatus" title="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
     </div>
+    
     <div class="modal-body">
       <form [formGroup]="statusForm" (ngSubmit)="onUpdateStatus()">
-        <div class="form-group">
-          <label class="form-label">New Status</label>
-          <select formControlName="status" class="form-control">
-            <option value="NotStarted">Not Started</option>
-            <option value="InProgress">In Progress</option>
-            <option value="OnHold">On Hold</option>
-            <option value="Delayed">Delayed</option>
-          </select>
+        <!-- Status Transition Display -->
+        <div class="status-transition" *ngIf="activity && statusForm.get('status')?.value">
+          <div class="status-item current">
+            <div class="status-label">Current Status</div>
+            <div class="status-badge-wrapper">
+              <span class="status-badge" [ngClass]="'badge-' + activity.status?.toLowerCase()">
+                <span class="status-dot"></span>
+                {{ activity.status === 'NotStarted' ? 'Not Started' : activity.status === 'InProgress' ? 'In Progress' : activity.status === 'OnHold' ? 'On Hold' : activity.status }}
+              </span>
+            </div>
+          </div>
+          
+          <div class="status-arrow" *ngIf="statusForm.get('status')?.value !== activity.status">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </div>
+          
+          <div class="status-item new" *ngIf="statusForm.get('status')?.value !== activity.status">
+            <div class="status-label">New Status</div>
+            <div class="status-badge-wrapper">
+              <span class="status-badge" [ngClass]="'badge-' + statusForm.get('status')?.value?.toLowerCase()">
+                <span class="status-dot"></span>
+                {{ statusForm.get('status')?.value === 'NotStarted' ? 'Not Started' : statusForm.get('status')?.value === 'InProgress' ? 'In Progress' : statusForm.get('status')?.value === 'OnHold' ? 'On Hold' : statusForm.get('status')?.value }}
+              </span>
+            </div>
+          </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">Notes (Optional)</label>
-          <textarea formControlName="notes" class="form-control" rows="3" placeholder="Add any notes about this status change..."></textarea>
+
+        <!-- Status Selection -->
+        <div class="status-selection-wrapper">
+          <label class="form-label" for="activityStatusSelect">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+            Select New Status
+          </label>
+          <div class="select-wrapper">
+            <select 
+              id="activityStatusSelect" 
+              formControlName="status" 
+              class="status-select"
+              [disabled]="isUpdatingStatus"
+            >
+              <option value="NotStarted">Not Started</option>
+              <option value="InProgress">In Progress</option>
+              <option value="OnHold">On Hold</option>
+              <option value="Delayed">Delayed</option>
+            </select>
+            <svg class="select-arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </div>
         </div>
+
+        <!-- Notes Field -->
+        <div class="notes-wrapper">
+          <label class="form-label" for="activityStatusNotes">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            Notes (Optional)
+          </label>
+          <textarea 
+            id="activityStatusNotes"
+            formControlName="notes" 
+            class="notes-textarea" 
+            rows="4" 
+            placeholder="Add any notes about this status change..."
+            [disabled]="isUpdatingStatus"
+          ></textarea>
+        </div>
+
+        <!-- Modal Actions -->
         <div class="modal-actions">
-          <button type="button" class="btn btn-secondary" (click)="closeUpdateStatusModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary" [disabled]="statusForm.invalid || isUpdatingStatus">
-            <span *ngIf="isUpdatingStatus">Updating...</span>
-            <span *ngIf="!isUpdatingStatus">Update Status</span>
+          <button 
+            type="button" 
+            class="btn btn-secondary" 
+            (click)="closeUpdateStatusModal()"
+            [disabled]="isUpdatingStatus"
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            class="btn btn-primary" 
+            [disabled]="statusForm.invalid || isUpdatingStatus"
+          >
+            <svg *ngIf="!isUpdatingStatus" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            <span class="spinner-small" *ngIf="isUpdatingStatus"></span>
+            <span>{{ isUpdatingStatus ? 'Updating...' : 'Update Status' }}</span>
           </button>
         </div>
       </form>

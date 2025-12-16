@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { TeamService } from '../../../core/services/team.service';
-import { Team, TeamMembersDto, TeamMember, CompleteTeamMemberProfile, CreateTeamGroup } from '../../../core/models/team.model';
+import { Team, TeamMembersDto, TeamMember, CompleteTeamMemberProfile, CreateTeamGroup, TeamGroup } from '../../../core/models/team.model';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
@@ -18,7 +18,9 @@ import { PermissionService } from '../../../core/services/permission.service';
 export class TeamDetailsComponent implements OnInit {
   team: Team | null = null;
   teamMembers: TeamMembersDto | null = null;
+  teamGroups: TeamGroup[] = [];
   loading = true;
+  loadingGroups = false;
   error = '';
   teamId = '';
   activeTab: 'overview' | 'members' = 'overview';
@@ -78,6 +80,7 @@ export class TeamDetailsComponent implements OnInit {
     if (this.teamId) {
       this.loadTeamDetails();
       this.loadTeamMembers();
+      this.loadTeamGroups();
     }
   }
 
@@ -102,6 +105,21 @@ export class TeamDetailsComponent implements OnInit {
       },
       error: (err) => {
         console.error('Error loading team members:', err);
+      }
+    });
+  }
+
+  loadTeamGroups(): void {
+    this.loadingGroups = true;
+    this.teamService.getAllTeamGroups().subscribe({
+      next: (groups) => {
+        // Filter groups for this team
+        this.teamGroups = groups.filter(g => g.teamId === this.teamId);
+        this.loadingGroups = false;
+      },
+      error: (err) => {
+        console.error('Error loading team groups:', err);
+        this.loadingGroups = false;
       }
     });
   }
@@ -281,8 +299,8 @@ export class TeamDetailsComponent implements OnInit {
         this.groupSuccessMessage = `Team group created successfully!`;
         setTimeout(() => {
           this.closeCreateGroupModal();
-          // Optionally reload team details to show updated data
-          this.loadTeamDetails();
+          // Reload team groups to show the new one
+          this.loadTeamGroups();
         }, 1500);
       },
       error: (err) => {

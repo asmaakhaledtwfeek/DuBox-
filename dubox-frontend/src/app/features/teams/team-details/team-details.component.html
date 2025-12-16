@@ -130,6 +130,68 @@
                 </div>
               </div>
             </div>
+
+            <!-- Team Groups Card -->
+            <div class="info-card">
+              <div class="card-header-with-action">
+                <h3 class="card-title">Team Groups</h3>
+                <button *ngIf="canCreate" class="btn-icon" (click)="openCreateGroupModal()" title="Create New Group">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M5 12h14"/>
+                  </svg>
+                </button>
+              </div>
+              
+              <!-- Loading State -->
+              <div *ngIf="loadingGroups" class="loading-groups">
+                <div class="spinner-small"></div>
+                <span>Loading groups...</span>
+              </div>
+
+              <!-- Empty State -->
+              <div *ngIf="!loadingGroups && teamGroups.length === 0" class="empty-groups">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+                <p>No groups created yet</p>
+                <button *ngIf="canCreate" class="btn btn-secondary btn-sm" (click)="openCreateGroupModal()">
+                  Create First Group
+                </button>
+              </div>
+
+              <!-- Groups List -->
+              <div *ngIf="!loadingGroups && teamGroups.length > 0" class="groups-list">
+                <div *ngFor="let group of teamGroups" class="group-item">
+                  <div class="group-header">
+                    <div class="group-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                      </svg>
+                    </div>
+                    <div class="group-info">
+                      <div class="group-name">
+                        <span class="group-tag">{{ group.groupTag }}</span>
+                        <span class="group-type">{{ group.groupType }}</span>
+                      </div>
+                      <div class="group-meta">
+                        <span class="group-members">{{ group.memberCount || 0 }} members</span>
+                        <span class="group-separator">•</span>
+                        <span class="group-date">Created {{ formatDate(group.createdDate) }}</span>
+                      </div>
+                    </div>
+                    <div class="group-status">
+                      <span class="badge" [class.active]="group.isActive" [class.inactive]="!group.isActive">
+                        {{ group.isActive ? 'Active' : 'Inactive' }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 

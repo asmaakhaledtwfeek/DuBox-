@@ -135,6 +135,19 @@ export class TeamService {
   }
 
   /**
+   * Get all team groups
+   */
+  getAllTeamGroups(): Observable<TeamGroup[]> {
+    return this.apiService.get<any>(`${this.endpoint}/team-groups`).pipe(
+      map(response => {
+        const data = response?.data || response?.Data || response;
+        const groups = Array.isArray(data) ? data : [];
+        return groups.map((g: any) => this.transformTeamGroup(g));
+      })
+    );
+  }
+
+  /**
    * Get all departments
    */
   getDepartments(): Observable<Department[]> {

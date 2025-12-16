@@ -2017,24 +2017,15 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     }
     // For base64/data images, convert to blob URL
     else if (photoUrl.startsWith('data:image/')) {
-      fetch(photoUrl)
-        .then(response => response.blob())
-        .then(blob => {
-          const blobUrl = URL.createObjectURL(blob);
-          const newWindow = window.open(blobUrl, '_blank', 'noopener,noreferrer');
-          if (!newWindow) {
-            console.error('Failed to open image in new tab. Popup may be blocked.');
-          }
-        })
-        .catch(error => {
-          console.error('Error converting data URL to blob:', error);
-          // Fallback: try to open data URL directly (may not work in all browsers)
-          window.open(photoUrl, '_blank', 'noopener,noreferrer');
-        });
-      return;
+      const newWindow = window.open();
+      if (newWindow) {
+        newWindow.document.write(`<img src="${photoUrl}" style="max-width: 100%; height: auto;" />`);
+      }
+    } else {
+      window.open(photoUrl, '_blank', 'noopener,noreferrer');
     }
     // If it's already an absolute URL (http/https), use as is
-    else if (!photoUrl.startsWith('http://') && !photoUrl.startsWith('https://')) {
+     if (!photoUrl.startsWith('http://') && !photoUrl.startsWith('https://')) {
       // Relative URL without leading slash - prepend base URL
       const baseUrl = this.getApiBaseUrl();
       absoluteUrl = `${baseUrl}/${photoUrl}`;
@@ -2384,8 +2375,16 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     console.log('🖼️ Opening image preview. Type:', imageType, 'Data:', imageData.substring(0, 50) + '...');
     
     const formattedUrl = this.formatImageData(imageData, imageType);
-    console.log('✅ Opening formatted image URL');
-    window.open(formattedUrl, '_blank');
+    if (formattedUrl.startsWith('data:image/')) {
+      const newWindow = window.open();
+      if (newWindow) {
+        newWindow.document.write(`<img src="${formattedUrl}" style="max-width: 100%; height: auto;" />`);
+      }
+    } else {
+      window.open(formattedUrl, '_blank', 'noopener,noreferrer');
+    }
+    console.log('✅ Opening formatted image URL', formattedUrl);
+   
   }
 
   toggleWirImages(): void {

@@ -1833,8 +1833,8 @@
               </div>
               <div class="images-gallery" *ngIf="wirImagesExpanded" [@slideDown]>
                 <div class="image-card" *ngFor="let image of boxAttachments.wirCheckpointImages; let i = index">
-                  <div class="image-wrapper" (click)="openImagePreview(image.imageData)">
-                    <img [src]="image.imageData" [alt]="image.originalName || 'WIR image'">
+                  <div class="image-wrapper" (click)="openImagePreview(image.imageData, image.imageType)">
+                    <img [src]="formatImageData(image.imageData, image.imageType)" [alt]="image.originalName || 'WIR image'">
                     <div class="image-overlay">
                       <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
                         <circle cx="11" cy="11" r="8"/>
@@ -1870,8 +1870,8 @@
               </div>
               <div class="images-gallery" *ngIf="progressImagesExpanded" [@slideDown]>
                 <div class="image-card" *ngFor="let image of boxAttachments.progressUpdateImages; let i = index">
-                  <div class="image-wrapper" (click)="openImagePreview(image.imageData)">
-                    <img [src]="image.imageData" [alt]="image.originalName || 'Progress image'">
+                  <div class="image-wrapper" (click)="openImagePreview(image.imageData, image.imageType)">
+                    <img [src]="formatImageData(image.imageData, image.imageType)" [alt]="image.originalName || 'Progress image'">
                     <div class="image-overlay">
                       <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
                         <circle cx="11" cy="11" r="8"/>
@@ -1909,8 +1909,8 @@
               </div>
               <div class="images-gallery" *ngIf="qualityImagesExpanded" [@slideDown]>
                 <div class="image-card" *ngFor="let image of boxAttachments.qualityIssueImages; let i = index">
-                  <div class="image-wrapper" (click)="openImagePreview(image.imageData)">
-                    <img [src]="image.imageData" [alt]="image.originalName || 'Quality issue image'">
+                  <div class="image-wrapper" (click)="openImagePreview(image.imageData, image.imageType)">
+                    <img [src]="formatImageData(image.imageData, image.imageType)" [alt]="image.originalName || 'Quality issue image'">
                     <div class="image-overlay">
                       <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
                         <circle cx="11" cy="11" r="8"/>

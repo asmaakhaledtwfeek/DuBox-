@@ -2339,10 +2339,53 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     });
   }
 
-  openImagePreview(imageUrl: string): void {
-    if (imageUrl) {
-      window.open(imageUrl, '_blank');
+  /**
+   * Format image data to ensure it has proper data URL format
+   */
+  formatImageData(imageData: string, imageType?: string): string {
+    if (!imageData) {
+      return '';
     }
+
+    // Check if imageData is already a valid data URL or regular URL
+    if (imageData.startsWith('data:') || imageData.startsWith('http://') || imageData.startsWith('https://')) {
+     console.log(imageData);
+      return imageData;
+    }
+
+    // It's a base64 string without the data URL prefix
+    // Determine MIME type from imageType field or default to PNG
+    let mimeType = 'image/png'; // Default
+    
+    if (imageType) {
+      const type = imageType.toLowerCase();
+      if (type.includes('jpg') || type.includes('jpeg')) {
+        mimeType = 'image/jpeg';
+      } else if (type.includes('png')) {
+        mimeType = 'image/png';
+      } else if (type.includes('gif')) {
+        mimeType = 'image/gif';
+      } else if (type.includes('webp')) {
+        mimeType = 'image/webp';
+      } else if (type.includes('bmp')) {
+        mimeType = 'image/bmp';
+      }
+    }
+    
+    return `data:${mimeType};base64,${imageData}`;
+  }
+
+  openImagePreview(imageData: string, imageType?: string): void {
+    if (!imageData) {
+      console.warn('⚠️ No image data provided');
+      return;
+    }
+
+    console.log('🖼️ Opening image preview. Type:', imageType, 'Data:', imageData.substring(0, 50) + '...');
+    
+    const formattedUrl = this.formatImageData(imageData, imageType);
+    console.log('✅ Opening formatted image URL');
+    window.open(formattedUrl, '_blank');
   }
 
   toggleWirImages(): void {

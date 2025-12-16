@@ -602,11 +602,19 @@ export class WIRService {
         rawBox?.ProjectId ||
         backendCheckpoint.projectId ||
         backendCheckpoint.ProjectId,
+        projectName:
+        rawBox?.projectName ||
+        rawBox?.ProjectName ||
+        backendCheckpoint.projectName ||
+        backendCheckpoint.ProjectName,
       projectCode:
         rawBox?.projectCode ||
         rawBox?.ProjectCode ||
         backendCheckpoint.projectCode ||
         backendCheckpoint.ProjectCode,
+      client:
+        backendCheckpoint.client ||
+        backendCheckpoint.Client,
       box: rawBox
         ? {
             boxId: rawBox.boxId || rawBox.BoxId || backendCheckpoint.boxId || backendCheckpoint.BoxId,

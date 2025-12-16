@@ -7,7 +7,6 @@ using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
 
 namespace Dubox.Application.Features.WIRCheckpoints.Queries
 {
@@ -19,7 +18,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
         private readonly IProjectTeamVisibilityService _visibilityService;
 
         public GetWIRCheckpointsByBoxIdQueryHandler(
-            IUnitOfWork unitOfWork, 
+            IUnitOfWork unitOfWork,
             IDbContext dbContext,
             IProjectTeamVisibilityService visibilityService)
         {
@@ -105,13 +104,13 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
                 }
             }
         }
-        
+
         private async Task PopulateImageMetadata(List<WIRCheckpointDto> checkpoints, CancellationToken cancellationToken)
         {
             if (checkpoints.Count == 0) return;
-            
+
             var wirIds = checkpoints.Select(c => c.WIRId).ToList();
-            
+
             // Load WIR checkpoint images metadata (without ImageData)
             // Use /file endpoint so browser can load images directly as <img src>
             var wirImages = await _dbContext.Set<WIRCheckpointImage>()
@@ -130,10 +129,10 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
                     ImageUrl = $"/api/images/WIRCheckpoint/{img.WIRCheckpointImageId}/file"
                 })
                 .ToListAsync(cancellationToken);
-            
+
             // Load quality issue IDs for these checkpoints
             var issueIds = checkpoints.SelectMany(c => c.QualityIssues.Select(q => q.IssueId)).ToList();
-            
+
             // Load quality issue images metadata (without ImageData)
             // Use /file endpoint so browser can load images directly as <img src>
             var qualityImages = await _dbContext.Set<QualityIssueImage>()
@@ -152,18 +151,18 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
                     ImageUrl = $"/api/images/QualityIssue/{img.QualityIssueImageId}/file"
                 })
                 .ToListAsync(cancellationToken);
-            
+
             // Map images to checkpoints
             var wirImagesByWirId = wirImages.GroupBy(i => i.WIRId).ToDictionary(g => g.Key, g => g.OrderBy(i => i.Sequence).ToList());
             var qualityImagesByIssueId = qualityImages.GroupBy(i => i.IssueId).ToDictionary(g => g.Key, g => g.OrderBy(i => i.Sequence).ToList());
-            
+
             foreach (var checkpoint in checkpoints)
             {
                 if (wirImagesByWirId.TryGetValue(checkpoint.WIRId, out var cpImages))
                 {
                     checkpoint.Images = cpImages;
                 }
-                
+
                 foreach (var issue in checkpoint.QualityIssues)
                 {
                     if (qualityImagesByIssueId.TryGetValue(issue.IssueId, out var issueImages))

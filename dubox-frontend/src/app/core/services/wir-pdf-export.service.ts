@@ -44,7 +44,18 @@ export class WirPdfExportService {
    */
   private generatePrintContent(checkpoint: WIRCheckpoint, box?: Box): string {
     const items = checkpoint.checklistItems || [];
-    const groupedItems = this.groupChecklistItemsByCategory(items);
+    
+    // Filter out items that don't have descriptions or are invalid
+    const validItems = items.filter(item => 
+      item && item.checkpointDescription && item.checkpointDescription.trim() !== ''
+    );
+    
+    // If no valid items, don't generate empty sections
+    if (validItems.length === 0) {
+      return this.generateEmptyForm(checkpoint, box);
+    }
+    
+    const groupedItems = this.groupChecklistItemsByCategory(validItems);
     const projectInfo = this.getProjectInfo();
 
     let html = `
@@ -102,7 +113,7 @@ export class WirPdfExportService {
         <!-- Reference Documents -->
         <div class="reference-section">
           <strong>Reference Documents (Specifications, Drawings, others…):</strong>
-          <div class="reference-text">${this.getReferenceDocuments(items) || 'As per approved drawings and specifications'}</div>
+          <div class="reference-text">${this.getReferenceDocuments(validItems) || 'As per approved drawings and specifications'}</div>
         </div>
 
         <!-- Activity/Item -->
@@ -113,13 +124,18 @@ export class WirPdfExportService {
         <!-- Checklist Sections -->
         <div class="checklist-sections-form">`;
 
-    // Group items by category
-    for (const [category, categoryItems] of Object.entries(groupedItems)) {
+    // Group items by category and filter out empty categories
+    const categoriesWithItems = Object.entries(groupedItems).filter(([category, categoryItems]) => {
+      return categoryItems && categoryItems.length > 0;
+    });
+
+    // Only generate sections that have items
+    categoriesWithItems.forEach(([category, categoryItems]) => {
       html += `
           <div class="section-block">
             <!-- Section Header -->
             <div class="section-title-bar">
-              <h2>${category}</h2>
+              <h2>${this.escapeHtml(category)}</h2>
             </div>
 
             <!-- Checklist Items Table -->
@@ -140,29 +156,30 @@ export class WirPdfExportService {
       categoryItems.forEach((item, idx) => {
         const isPass = item.status === 'Pass';
         const isFail = item.status === 'Fail';
+        const isNA = item.status === 'N/A' || item.status === 'NA';
         const isPending = !item.status || item.status === 'Pending';
 
         html += `
                 <tr>
                   <td class="col-sr">${idx + 1}</td>
-                  <td class="col-desc">${item.checkpointDescription}</td>
-                  <td class="col-ref">${item.referenceDocument || '-'}</td>
+                  <td class="col-desc">${this.escapeHtml(item.checkpointDescription || '')}</td>
+                  <td class="col-ref">${this.escapeHtml(item.referenceDocument || '-')}</td>
                   <td class="col-check">
                     <div class="checkbox-cell">
-                      <div class="check-mark">${isPass ? '✓' : ''}</div>
+                      <div class="check-mark ${isPass ? 'checked' : ''}">${isPass ? '✓' : ''}</div>
                     </div>
                   </td>
                   <td class="col-check">
                     <div class="checkbox-cell">
-                      <div class="check-mark">${isFail ? '✗' : ''}</div>
+                      <div class="check-mark ${isFail ? 'checked' : ''}">${isFail ? '✗' : ''}</div>
                     </div>
                   </td>
                   <td class="col-check">
                     <div class="checkbox-cell">
-                      <div class="check-mark">${isPending ? '-' : ''}</div>
+                      <div class="check-mark ${isNA ? 'checked' : ''}">${isNA ? 'N/A' : ''}</div>
                     </div>
                   </td>
-                  <td class="col-remarks">${item.remarks || ''}</td>
+                  <td class="col-remarks">${this.escapeHtml(item.remarks || '')}</td>
                 </tr>`;
       });
 
@@ -170,7 +187,7 @@ export class WirPdfExportService {
               </tbody>
             </table>
           </div>`;
-    }
+    });
 
     html += `
         </div>
@@ -181,7 +198,7 @@ export class WirPdfExportService {
             <h2>Comments:</h2>
           </div>
           <div class="comments-box">
-            ${checkpoint.comments || ''}
+            ${this.escapeHtml(checkpoint.comments || '')}
           </div>
         </div>
 
@@ -198,11 +215,11 @@ export class WirPdfExportService {
               <div class="signature-fields">
                 <div class="field-row">
                   <label>Name:</label>
-                  <span class="signature-line">____________________</span>
+                  <span class="signature-line">${this.escapeHtml(checkpoint.requestedBy || '____________________')}</span>
                 </div>
                 <div class="field-row">
                   <label>Position:</label>
-                  <span class="signature-line">____________________</span>
+                  <span class="signature-line">Project Engineer</span>
                 </div>
                 <div class="field-row">
                   <label>Signature:</label>
@@ -210,7 +227,7 @@ export class WirPdfExportService {
                 </div>
                 <div class="field-row">
                   <label>Date:</label>
-                  <span class="signature-line">____________________</span>
+                  <span class="signature-line">${this.formatDate(checkpoint.requestedDate) || '____________________'}</span>
                 </div>
               </div>
             </div>
@@ -221,7 +238,7 @@ export class WirPdfExportService {
               <div class="signature-fields">
                 <div class="field-row">
                   <label>Name:</label>
-                  <span class="signature-line">${checkpoint.inspectorName || '____________________'}</span>
+                  <span class="signature-line">${this.escapeHtml(checkpoint.inspectorName || '____________________')}</span>
                 </div>
                 <div class="field-row">
                   <label>Position:</label>
@@ -287,8 +304,8 @@ export class WirPdfExportService {
         </div>
 
         <!-- Status Watermark -->
-        <div class="status-watermark" data-status="${checkpoint.status}">
-          ${checkpoint.status}
+        <div class="status-watermark" data-status="${checkpoint.status || 'Pending'}">
+          ${checkpoint.status || 'PENDING'}
         </div>
       </div>
     `;
@@ -297,17 +314,68 @@ export class WirPdfExportService {
   }
 
   /**
-   * Group checklist items by category
+   * Generate empty form when no items exist
+   */
+  private generateEmptyForm(checkpoint: WIRCheckpoint, box?: Box): string {
+    const projectInfo = this.getProjectInfo();
+    
+    return `
+      <div class="inspection-form-container">
+        <div class="form-header">
+          <div class="logos-row">
+            <div class="logo-placeholder">PARSONS</div>
+            <div class="logo-placeholder">AMAALA</div>
+            <div class="logo-placeholder">AMANA</div>
+            <div class="logo-placeholder">DUBOX</div>
+          </div>
+          <div class="form-title">
+            <h1>${checkpoint.wirName || 'Inspection Checklist'}</h1>
+            <div class="form-code">${checkpoint.wirNumber}</div>
+          </div>
+        </div>
+        
+        <div class="project-info-section">
+          <table class="info-table">
+            <tr>
+              <td class="label">Project:</td>
+              <td class="value">${projectInfo.project}</td>
+              <td class="label">Insp. No.:</td>
+              <td class="value">${checkpoint.wirNumber}</td>
+            </tr>
+          </table>
+        </div>
+        
+        <div class="empty-message">
+          <p>No checklist items available for this inspection.</p>
+        </div>
+      </div>
+    `;
+  }
+
+  /**
+   * Group checklist items by category (only non-empty items)
    */
   private groupChecklistItemsByCategory(items: any[]): Record<string, any[]> {
     const grouped: Record<string, any[]> = {};
 
     items.forEach(item => {
-      const category = item.categoryName || 'General';
+      // Skip items without descriptions
+      if (!item || !item.checkpointDescription || item.checkpointDescription.trim() === '') {
+        return;
+      }
+      
+      const category = item.categoryName || item.sectionName || 'General';
       if (!grouped[category]) {
         grouped[category] = [];
       }
       grouped[category].push(item);
+    });
+
+    // Remove empty categories
+    Object.keys(grouped).forEach(key => {
+      if (!grouped[key] || grouped[key].length === 0) {
+        delete grouped[key];
+      }
     });
 
     return grouped;
@@ -332,7 +400,10 @@ export class WirPdfExportService {
   private getReferenceDocuments(items: any[]): string {
     const refs = new Set<string>();
     items.forEach(item => {
-      if (item.referenceDocument && item.referenceDocument !== 'General' && item.referenceDocument !== '-') {
+      if (item && item.referenceDocument && 
+          item.referenceDocument !== 'General' && 
+          item.referenceDocument !== '-' && 
+          item.referenceDocument.trim() !== '') {
         refs.add(item.referenceDocument);
       }
     });
@@ -346,10 +417,21 @@ export class WirPdfExportService {
     if (!date) return '';
     try {
       const d = new Date(date);
+      if (isNaN(d.getTime())) return '';
       return d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
     } catch {
       return '';
     }
+  }
+
+  /**
+   * Escape HTML to prevent XSS
+   */
+  private escapeHtml(text: string): string {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   /**
@@ -377,6 +459,7 @@ export class WirPdfExportService {
         border: 2px solid #000;
         padding: 15px;
         margin-bottom: 20px;
+        page-break-inside: avoid;
       }
 
       .logos-row {
@@ -423,6 +506,7 @@ export class WirPdfExportService {
       /* Project Information Table */
       .project-info-section {
         margin-bottom: 15px;
+        page-break-inside: avoid;
       }
 
       .info-table {
@@ -466,6 +550,7 @@ export class WirPdfExportService {
         background: #f9f9f9;
         border: 1px solid #ccc;
         font-size: 13px;
+        page-break-inside: avoid;
       }
 
       .reference-section strong {
@@ -485,13 +570,32 @@ export class WirPdfExportService {
         background: #f0f0f0;
         border: 1px solid #000;
         font-size: 13px;
+        page-break-inside: avoid;
       }
 
       .activity-section strong {
         margin-right: 10px;
       }
 
+      /* Empty Message */
+      .empty-message {
+        padding: 40px;
+        text-align: center;
+        border: 2px solid #ccc;
+        margin: 20px 0;
+        background: #f9f9f9;
+      }
+
+      .empty-message p {
+        font-size: 16px;
+        color: #666;
+      }
+
       /* Checklist Sections */
+      .checklist-sections-form {
+        page-break-inside: auto;
+      }
+
       .section-block {
         margin-bottom: 25px;
         page-break-inside: avoid;
@@ -503,6 +607,7 @@ export class WirPdfExportService {
         padding: 10px 15px;
         border: 2px solid #000;
         border-bottom: none;
+        page-break-after: avoid;
       }
 
       .section-title-bar h2 {
@@ -517,11 +622,13 @@ export class WirPdfExportService {
         border-collapse: collapse;
         border: 2px solid #000;
         font-size: 12px;
+        page-break-inside: auto;
       }
 
       .checklist-items-table thead tr {
         background: #e8e8e8;
         font-weight: bold;
+        page-break-after: avoid;
       }
 
       .checklist-items-table th,
@@ -530,6 +637,10 @@ export class WirPdfExportService {
         padding: 8px;
         text-align: left;
         vertical-align: middle;
+      }
+
+      .checklist-items-table tbody tr {
+        page-break-inside: avoid;
       }
 
       .checklist-items-table th {
@@ -578,6 +689,11 @@ export class WirPdfExportService {
         font-size: 18px;
         font-weight: bold;
         color: #2c5282;
+      }
+
+      .check-mark.checked {
+        background: #e6f7ff;
+        border-color: #2c5282;
       }
 
       /* Comments Section */
@@ -687,12 +803,40 @@ export class WirPdfExportService {
 
       @page {
         margin: 1cm;
+        size: A4;
       }
 
       @media print {
         body { margin: 0; padding: 10px; }
-        .section-block { page-break-inside: avoid; }
-        .signature-section { page-break-before: auto; }
+        
+        .inspection-form-container {
+          page-break-inside: avoid;
+        }
+        
+        .form-header {
+          page-break-inside: avoid;
+          page-break-after: avoid;
+        }
+        
+        .section-block { 
+          page-break-inside: avoid; 
+        }
+        
+        .section-title-bar {
+          page-break-after: avoid;
+        }
+        
+        .checklist-items-table tbody tr {
+          page-break-inside: avoid;
+        }
+        
+        .signature-section { 
+          page-break-inside: avoid; 
+        }
+        
+        .comments-section {
+          page-break-inside: avoid;
+        }
       }
     `;
   }

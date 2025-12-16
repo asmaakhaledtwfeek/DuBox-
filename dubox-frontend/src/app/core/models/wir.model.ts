@@ -69,7 +69,9 @@ export interface WIRCheckpoint {
   boxId: string;
   boxActivityId?: string;
   projectId?: string;
+  projectName?: string;
   projectCode?: string;
+  client?: string;
   box?: {
     boxId: string;
     projectId?: string;

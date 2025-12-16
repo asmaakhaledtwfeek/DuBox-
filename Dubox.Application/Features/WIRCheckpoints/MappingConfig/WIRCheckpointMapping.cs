@@ -39,7 +39,9 @@
                 .Map(dest => dest.IsOverdue, src => src.IsOverdue)
                 .Map(dest => dest.Box, src => src.Box)
                 .Map(dest => dest.ProjectId, src => src.Box != null ? src.Box.ProjectId : (Guid?)null)
+                .Map(dest => dest.ProjectName, src => src.Box != null && src.Box.Project != null ? src.Box.Project.ProjectName : null)
                 .Map(dest => dest.ProjectCode, src => src.Box != null && src.Box.Project != null ? src.Box.Project.ProjectCode : null)
+                 .Map(dest => dest.Client, src => src.Box != null && src.Box.Project != null ? src.Box.Project.ClientName : null)
                 .Map(dest => dest.BoxName, src => src.Box != null ? src.Box.BoxName : string.Empty)
                 .Map(dest => dest.BoxTag, src => src.Box != null ? src.Box.BoxTag : string.Empty);
 

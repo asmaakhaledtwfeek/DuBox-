@@ -68,7 +68,14 @@ export class WirExportService {
 
     try {
       // Wait for content to render
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 200));
+
+      // Check if content div has actual content
+      if (!contentDiv || !contentDiv.innerHTML || contentDiv.innerHTML.trim().length === 0) {
+        console.warn('No content to generate PDF');
+        alert('No content available to export. Please ensure the checkpoint has checklist items.');
+        return;
+      }
 
       // Configure html2pdf options
       const opt = {
@@ -78,20 +85,23 @@ export class WirExportService {
         html2canvas: { 
           scale: 2,
           useCORS: true,
-          logging: true,
+          logging: false,
           backgroundColor: '#ffffff',
-          windowWidth: 794, // A4 width in pixels at 96 DPI
-          windowHeight: 1123 // A4 height in pixels at 96 DPI
+          windowWidth: 794,
+          windowHeight: 1123,
+          removeContainer: true,
         },
         jsPDF: { 
           unit: 'mm', 
           format: 'a4', 
           orientation: 'portrait' as const,
-          compress: true
+          compress: true,
+          hotfixes: ['px_scaling']
         },
         pagebreak: { 
           mode: ['avoid-all', 'css', 'legacy'],
-          before: '.page-break'
+          before: '.page-break',
+          avoid: ['.signature-section', '.item-row', '.section-header-row']
         }
       };
 
@@ -190,21 +200,32 @@ export class WirExportService {
     const items = checkpoint.checklistItems || [];
     const groupedChecklists = this.groupItemsByChecklist(items);
     const referenceDocuments = this.extractReferenceDocuments(items);
-
+  
+    // Filter out checklists that have no items FIRST
+    const checklistsWithItems = groupedChecklists.filter(checklist => {
+      return checklist.sections.some(section => section.items.length > 0);
+    });
+  
+    // Generate pages ONLY for checklists with items
     let html = '';
-
-    // Generate a page for each checklist
-    groupedChecklists.forEach((checklist, index) => {
-      html += this.generateChecklistPage(
+    let validPageIndex = 0;
+    checklistsWithItems.forEach((checklist) => {
+      const pageContent = this.generateChecklistPage(
         checkpoint, 
         checklist, 
         projectInfo!, 
         box, 
         referenceDocuments,
-        index > 0 // Add page break for subsequent pages
+        validPageIndex > 0 // Add page break for subsequent pages (only if we have valid pages)
       );
+      
+      // Double-check the page has content before adding
+      if (pageContent && pageContent.trim().length > 0) {
+        html += pageContent;
+        validPageIndex++; // Only increment if we actually added a page
+      }
     });
-
+  
     return html;
   }
 
@@ -213,9 +234,9 @@ export class WirExportService {
    */
   private buildProjectInfo(checkpoint: WIRCheckpoint, box?: Box | null, project?: Project | null): ProjectInfo {
     return {
-      projectName: project?.name || 'AMANA STAFF VILLAGE ZONE-05',
+      projectName: checkpoint?.projectName || 'AMANA STAFF VILLAGE ZONE-05',
       projectCode: checkpoint.projectCode || project?.code || '',
-      clientName: project?.clientName || 'AMAALA',
+      clientName: checkpoint.client || project?.clientName || 'AMAALA',
       consultant: 'PARSONS',
       contractor: 'Saudi Amana Contracting Co',
       subContractor: 'DUBOX INDUSTRIAL PRECAST PRODUCTS LLC',
@@ -288,186 +309,202 @@ export class WirExportService {
     referenceDocuments?: string,
     addPageBreak: boolean = false
   ): string {
-    let html = addPageBreak ? '<div class="page-break"></div>' : '';
+    // Filter out sections that have no items
+    const sectionsWithItems = checklist.sections.filter(section => section.items.length > 0);
     
-    html += `
-      <div class="inspection-form-container">
-        <!-- DuBox Logo Watermark -->
-        <div class="watermark">
-          ${this.getDuBoxLogoSVG()}
-        </div>
+    // If no sections have items, return empty string to avoid empty page
+    if (sectionsWithItems.length === 0) {
+      return '';
+    }
+    
+    // Count total items to ensure we have content
+    const totalItems = sectionsWithItems.reduce((sum, section) => sum + section.items.length, 0);
+    if (totalItems === 0) {
+      return '';
+    }
+    
+    // Only add page break if there's actual content AND it's not the first page
+    // Add page-break class directly to container to avoid empty pages
+    const pageBreakClass = addPageBreak ? ' page-break-before' : '';
+   
+   let html = `
+     <div class="inspection-form-container${pageBreakClass}">
+      <!-- DuBox Logo Watermark -->
+      <div class="watermark">
+        ${this.getDuBoxLogoSVG()}
+      </div>
 
-        <!-- Form Header with Border -->
-        <div class="form-header-border">
-          <!-- Company Logos Row -->
-          <div class="company-logos-row">
-            <div class="logo-box logo-amaala">
-              <span class="logo-text">AMAALA</span>
-            </div>
-            <div class="logo-box logo-parsons">
-              <span class="logo-text">PARSONS</span>
-            </div>
-            <div class="logo-box logo-amana">
-              <span class="logo-text">AMANA</span>
-            </div>
+      <!-- Form Header with Border -->
+      <div class="form-header-border">
+        <!-- Company Logos Row -->
+        <div class="company-logos-row">
+          <div class="logo-box logo-amaala">
+            <span class="logo-text">AMAALA</span>
           </div>
-          
-          <!-- Gray Title Bar with Checklist Name -->
-          <div class="title-bar">
-            <h1>${checklist.checklistName.toUpperCase()}</h1>
+          <div class="logo-box logo-parsons">
+            <span class="logo-text">PARSONS</span>
+          </div>
+          <div class="logo-box logo-amana">
+            <span class="logo-text">AMANA</span>
           </div>
         </div>
-
-        <!-- Project Information Table -->
-        <div class="project-info-section">
-          <table class="info-table">
-            <tr>
-              <td class="label">Project</td>
-              <td class="value" colspan="3">: ${projectInfo.projectName}</td>
-            </tr>
-            <tr>
-              <td class="label">Client</td>
-              <td class="value">: ${projectInfo.clientName}</td>
-              <td class="label">Insp. No.</td>
-              <td class="value">${checkpoint.wirNumber || '0'}</td>
-            </tr>
-            <tr>
-              <td class="label">Consultant</td>
-              <td class="value">: ${projectInfo.consultant}</td>
-              <td class="label">Date</td>
-              <td class="value">${this.formatWIRDate(checkpoint.requestedDate) || '0/Jan/00'}</td>
-            </tr>
-            <tr>
-              <td class="label">Contractor</td>
-              <td class="value">: ${projectInfo.contractor}</td>
-              <td class="label">Location</td>
-              <td class="value">${projectInfo.location}</td>
-            </tr>
-            <tr>
-              <td class="label">Sub-Contractor</td>
-              <td class="value">: ${projectInfo.subContractor}</td>
-              <td class="label">Box:</td>
-              <td class="value">${box?.code || box?.name || '0'}</td>
-            </tr>
-          </table>
-        </div>
-
-        <!-- Reference Documents -->
-        <div class="reference-section">
-          <div class="reference-label">Reference Documents (Specifications, Drawings, others…):</div>
-          <div class="reference-content">${referenceDocuments || ''}</div>
-        </div>
-
-        <!-- Activity/Item Section -->
-        <div class="activity-section">
-          <table class="activity-table">
-            <tr>
-              <td class="activity-label">Activity/Item:</td>
-              <td class="activity-value">${checkpoint.wirDescription || checkpoint.wirName || ''}</td>
-              <td class="yn-header-cell">Y<br/><small>(Pass)</small></td>
-              <td class="yn-header-cell">N<br/><small>(Fail)</small></td>
-              <td class="yn-header-cell">N/A</td>
-              <td class="remarks-header-cell">Remarks</td>
-            </tr>
-          </table>
-        </div>
-
-        <!-- Checklist Items Table with Sections -->
-        <div class="checklist-sections-form">
-          <table class="checklist-items-table">
-            <tbody>`;
-
-    // Generate sections and items
-    let itemCounter = 1;
-    checklist.sections.forEach(section => {
-      // Add section header row
-      html += `
-              <tr class="section-header-row">
-                <td colspan="7" class="section-header-cell">
-                  <strong>${section.sectionName}</strong>
-                </td>
-              </tr>`;
-      
-      // Add items under this section
-      section.items.forEach(item => {
-        const isPassed = item.status === 'Pass';
-        const isFailed = item.status === 'Fail';
-        const statusClass = isPassed ? 'status-pass' : isFailed ? 'status-fail' : 'status-pending';
         
-        html += `
-              <tr class="item-row ${statusClass}">
-                <td class="col-number">${itemCounter}</td>
-                <td class="col-description">${this.escapeHtml(item.checkpointDescription)}</td>
-                <td class="col-checkbox checkbox-y ${isPassed ? 'checked' : ''}">${isPassed ? '✓' : ''}</td>
-                <td class="col-checkbox checkbox-n ${isFailed ? 'checked' : ''}">${isFailed ? '✗' : ''}</td>
-                <td class="col-remarks">${item.remarks ? this.escapeHtml(item.remarks) : ''}</td>
-              </tr>`;
-        itemCounter++;
-      });
-    });
-
-    html += `
-            </tbody>
-          </table>
-        </div>
-
-        <!-- Comments Section -->
-        <div class="comments-section">
-          <div class="comments-header">Comments:</div>
-          <div class="comments-content">${checkpoint.comments || ''}</div>
-        </div>
-
-        <!-- Signature Section -->
-        <div class="signature-section">
-          <table class="signature-table">
-            <tr>
-              <td class="signature-block">
-                <div class="signature-title">CIVIL ENGINEER</div>
-                <div class="signature-row">
-                  <span class="signature-label">Name</span>
-                  <div class="signature-line">${checkpoint.requestedBy || ''}</div>
-                </div>
-                <div class="signature-row">
-                  <span class="signature-label">Position:</span>
-                  <div class="signature-value">Project Engineer</div>
-                </div>
-                <div class="signature-row">
-                  <span class="signature-label">Signature</span>
-                  <div class="signature-box"></div>
-                </div>
-                <div class="signature-row">
-                  <span class="signature-label">Date</span>
-                  <div class="signature-line">${this.formatWIRDate(checkpoint.requestedDate) || '0/Jan/00'}</div>
-                </div>
-              </td>
-              <td class="signature-block">
-                <div class="signature-title">QC ENGINEER</div>
-                <div class="signature-row">
-                  <span class="signature-label">Name</span>
-                  <div class="signature-line">${checkpoint.inspectorName || '0'}</div>
-                </div>
-                <div class="signature-row">
-                  <span class="signature-label">Position:</span>
-                  <div class="signature-value">${checkpoint.inspectorRole || 'QC Engineer'}</div>
-                </div>
-                <div class="signature-row">
-                  <span class="signature-label">Signature</span>
-                  <div class="signature-box"></div>
-                </div>
-                <div class="signature-row">
-                  <span class="signature-label">Date</span>
-                  <div class="signature-line">${this.formatWIRDate(checkpoint.inspectionDate) || '0/Jan/00'}</div>
-                </div>
-              </td>
-            </tr>
-          </table>
+        <!-- Gray Title Bar with Checklist Name -->
+        <div class="title-bar">
+          <h1>${checklist.checklistName.toUpperCase()}</h1>
         </div>
       </div>
-    `;
 
-    return html;
-  }
+      <!-- Project Information Table -->
+      <div class="project-info-section">
+        <table class="info-table">
+          <tr>
+            <td class="label">Project</td>
+            <td class="value" colspan="3">: ${projectInfo.projectName}${projectInfo.projectCode ? ` (${projectInfo.projectCode})` : ''}</td>
+          </tr>
+          <tr>
+            <td class="label">Client</td>
+            <td class="value">: ${projectInfo.clientName}</td>
+            <td class="label">Insp. No.</td>
+            <td class="value">${checkpoint.wirNumber || '0'}</td>
+          </tr>
+          <tr>
+            <td class="label">Consultant</td>
+            <td class="value">: ${projectInfo.consultant}</td>
+            <td class="label">Date</td>
+            <td class="value">${this.formatWIRDate(checkpoint.requestedDate) || '0/Jan/00'}</td>
+          </tr>
+          <tr>
+            <td class="label">Contractor</td>
+            <td class="value">: ${projectInfo.contractor}</td>
+            <td class="label">Location</td>
+            <td class="value">${projectInfo.location}</td>
+          </tr>
+          <tr>
+            <td class="label">Sub-Contractor</td>
+            <td class="value">: ${projectInfo.subContractor}</td>
+            <td class="label">Box:</td>
+            <td class="value">${box?.code || box?.name || '0'}</td>
+          </tr>
+        </table>
+      </div>
 
+      <!-- Reference Documents -->
+      <div class="reference-section">
+        <div class="reference-label">Reference Documents (Specifications, Drawings, others…):</div>
+        <div class="reference-content">${referenceDocuments || ''}</div>
+      </div>
+
+      <!-- Activity/Item Section -->
+      <div class="activity-section">
+        <table class="activity-table">
+          <tr>
+            <td class="activity-label">Activity/Item:</td>
+            <td class="activity-value">${checkpoint.wirDescription || checkpoint.wirName || ''}</td>
+            <td class="yn-header-cell">Y<br/><small>(Pass)</small></td>
+            <td class="yn-header-cell">N<br/><small>(Fail)</small></td>
+            <td class="remarks-header-cell">Remarks</td>
+          </tr>
+        </table>
+      </div>
+
+      <!-- Checklist Items Table with Sections -->
+      <div class="checklist-sections-form">
+        <table class="checklist-items-table">
+          <tbody>`;
+
+  // Generate sections and items
+  let itemCounter = 1;
+  
+  sectionsWithItems.forEach((section, sectionIndex) => {
+    // Add section header row
+    // colspan="5" matches: number, description, Y, N, remarks
+    html += `
+            <tr class="section-header-row">
+              <td colspan="5" class="section-header-cell">
+                <strong>${this.escapeHtml(section.sectionName)}</strong>
+              </td>
+            </tr>`;
+    
+    // Add items under this section
+    section.items.forEach((item, itemIndex) => {
+      const isPassed = item.status === 'Pass';
+      const isFailed = item.status === 'Fail';
+      const statusClass = isPassed ? 'status-pass' : isFailed ? 'status-fail' : 'status-pending';
+      
+      html += `
+            <tr class="item-row ${statusClass}">
+              <td class="col-number">${itemCounter}</td>
+              <td class="col-description">${this.escapeHtml(item.checkpointDescription || '')}</td>
+              <td class="col-checkbox checkbox-y ${isPassed ? 'checked' : ''}">${isPassed ? '✓' : ''}</td>
+              <td class="col-checkbox checkbox-n ${isFailed ? 'checked' : ''}">${isFailed ? '✗' : ''}</td>
+              <td class="col-remarks">${item.remarks ? this.escapeHtml(item.remarks) : ''}</td>
+            </tr>`;
+      itemCounter++;
+    });
+  });
+
+  html += `
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Comments Section -->
+      <div class="comments-section">
+        <div class="comments-header">Comments:</div>
+        <div class="comments-content">${checkpoint.comments ? this.escapeHtml(checkpoint.comments) : ''}</div>
+      </div>
+
+      <!-- Signature Section -->
+      <div class="signature-section">
+        <table class="signature-table">
+          <tr>
+            <td class="signature-block">
+              <div class="signature-title">CIVIL ENGINEER</div>
+              <div class="signature-row">
+                <span class="signature-label">Name</span>
+                <div class="signature-line">${checkpoint.requestedBy ? this.escapeHtml(checkpoint.requestedBy) : ''}</div>
+              </div>
+              <div class="signature-row">
+                <span class="signature-label">Position:</span>
+                <div class="signature-value">Project Engineer</div>
+              </div>
+              <div class="signature-row">
+                <span class="signature-label">Signature</span>
+                <div class="signature-box"></div>
+              </div>
+              <div class="signature-row">
+                <span class="signature-label">Date</span>
+                <div class="signature-line">${this.formatWIRDate(checkpoint.requestedDate) || '0/Jan/00'}</div>
+              </div>
+            </td>
+            <td class="signature-block">
+              <div class="signature-title">QC ENGINEER</div>
+              <div class="signature-row">
+                <span class="signature-label">Name</span>
+                <div class="signature-line">${checkpoint.inspectorName ? this.escapeHtml(checkpoint.inspectorName) : '0'}</div>
+              </div>
+              <div class="signature-row">
+                <span class="signature-label">Position:</span>
+                <div class="signature-value">${checkpoint.inspectorRole ? this.escapeHtml(checkpoint.inspectorRole) : 'QC Engineer'}</div>
+              </div>
+              <div class="signature-row">
+                <span class="signature-label">Signature</span>
+                <div class="signature-box"></div>
+              </div>
+              <div class="signature-row">
+                <span class="signature-label">Date</span>
+                <div class="signature-line">${this.formatWIRDate(checkpoint.inspectionDate) || '0/Jan/00'}</div>
+              </div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  `;
+
+  return html;
+}
   /**
    * Extract reference documents from items
    */
@@ -556,6 +593,11 @@ export class WirExportService {
       .page-break {
         page-break-before: always;
         break-before: always;
+      }
+      
+      .page-break-before {
+        page-break-before: always;
+        break-before: page;
       }
       
       .inspection-form-container {
@@ -728,11 +770,14 @@ export class WirExportService {
       /* Activity/Item Section */
       .activity-section {
         border-bottom: 2px solid #000;
+        margin: 0;
+        padding: 0;
       }
       
       .activity-table {
         width: 100%;
         border-collapse: collapse;
+        margin: 0;
       }
       
       .activity-table td {
@@ -753,12 +798,12 @@ export class WirExportService {
       
       .activity-table td.activity-label {
         font-weight: bold;
-        width: 15%;
+        width: 5%;
         border-left: 1px solid #000;
       }
       
        .activity-table td.activity-value {
-         width: 50%;
+         width: 40%;
        }
       
       .activity-table td.yn-header-cell {
@@ -768,6 +813,7 @@ export class WirExportService {
         font-size: 10px;
         background: #f0f0f0;
         line-height: 1.3;
+        padding: 8px 4px;
       }
       
       .activity-table td.yn-header-cell small {
@@ -783,21 +829,26 @@ export class WirExportService {
         font-weight: bold;
         font-size: 10px;
         background: #f0f0f0;
+        padding: 8px 4px;
       }
       
       /* Checklist Items Table */
       .checklist-sections-form {
         border-bottom: 2px solid #000;
+        margin: 0;
+        padding: 0;
+        margin-top: -1px;
       }
       
       .checklist-items-table {
         width: 100%;
         border-collapse: collapse;
+        margin: 0;
       }
       
       .checklist-items-table tbody tr.section-header-row {
         background: #e8e8e8;
-        border-top: 2px solid #000;
+        border-top: 1px solid #000;
         border-bottom: 1px solid #000;
       }
       
@@ -827,6 +878,7 @@ export class WirExportService {
         vertical-align: middle;
         border-right: 1px solid #000;
         border-bottom: 1px solid #000;
+        border-top: 1px solid #000;
       }
       
       .checklist-items-table tbody td:first-child {
@@ -841,12 +893,14 @@ export class WirExportService {
         width: 5%;
         text-align: center;
         font-weight: bold;
+        padding: 6px 4px;
       }
       
       .checklist-items-table td.col-description {
         width: 45%;
         line-height: 1.4;
         text-align: left;
+        padding: 6px 8px;
       }
       
       .checklist-items-table td.col-checkbox {
@@ -857,6 +911,7 @@ export class WirExportService {
         min-height: 24px;
         line-height: 24px;
         padding: 8px 4px;
+        vertical-align: middle;
       }
       
       .checklist-items-table td.col-remarks {
@@ -902,21 +957,21 @@ export class WirExportService {
       /* Comments Section */
       .comments-section {
         border-bottom: 2px solid #000;
-        padding: 10px;
-        min-height: 60px;
+        padding: 6px 10px;
+        min-height: 40px;
       }
       
       .comments-header {
         font-weight: bold;
-        font-size: 11px;
-        margin-bottom: 6px;
+        font-size: 10px;
+        margin-bottom: 4px;
         text-transform: uppercase;
       }
       
       .comments-content {
-        font-size: 10px;
-        line-height: 1.5;
-        min-height: 40px;
+        font-size: 9px;
+        line-height: 1.3;
+        min-height: 25px;
       }
       
       /* Signature Section */
@@ -931,7 +986,7 @@ export class WirExportService {
       
       .signature-table td.signature-block {
         width: 50%;
-        padding: 12px;
+        padding: 8px;
         vertical-align: top;
         border-right: 2px solid #000;
       }
@@ -942,43 +997,43 @@ export class WirExportService {
       
       .signature-title {
         font-weight: bold;
-        font-size: 11px;
-        margin-bottom: 10px;
+        font-size: 10px;
+        margin-bottom: 6px;
         text-transform: uppercase;
-        padding-bottom: 5px;
+        padding-bottom: 3px;
         border-bottom: 1px solid #333;
       }
       
       .signature-row {
         display: flex;
         align-items: center;
-        margin-bottom: 8px;
-        gap: 8px;
+        margin-bottom: 5px;
+        gap: 6px;
       }
       
       .signature-label {
-        font-size: 10px;
+        font-size: 9px;
         font-weight: normal;
-        min-width: 60px;
+        min-width: 50px;
       }
       
       .signature-line {
         flex: 1;
         border-bottom: 1px solid #000;
-        min-height: 18px;
-        font-size: 10px;
-        padding: 2px 4px;
+        min-height: 14px;
+        font-size: 9px;
+        padding: 1px 3px;
       }
       
       .signature-value {
         flex: 1;
-        font-size: 10px;
-        padding: 2px 4px;
+        font-size: 9px;
+        padding: 1px 3px;
       }
       
       .signature-box {
         flex: 1;
-        height: 35px;
+        height: 25px;
         border: 1px solid #000;
       }
       

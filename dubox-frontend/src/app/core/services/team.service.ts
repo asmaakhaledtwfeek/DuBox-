@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiService } from './api.service';
-import { Team, CreateTeam, UpdateTeam, TeamMember, TeamMembersDto, AssignTeamMembers, CompleteTeamMemberProfile, Department, PaginatedTeamsResponse } from '../models/team.model';
+import { Team, CreateTeam, UpdateTeam, TeamMember, TeamMembersDto, AssignTeamMembers, CompleteTeamMemberProfile, Department, PaginatedTeamsResponse, TeamGroup, CreateTeamGroup } from '../models/team.model';
 
 @Injectable({
   providedIn: 'root'
@@ -126,6 +126,15 @@ export class TeamService {
   }
 
   /**
+   * Create team group
+   */
+  createTeamGroup(teamGroup: CreateTeamGroup): Observable<TeamGroup> {
+    return this.apiService.post<TeamGroup>(`${this.endpoint}/team-groups`, teamGroup).pipe(
+      map(tg => this.transformTeamGroup(tg))
+    );
+  }
+
+  /**
    * Get all departments
    */
   getDepartments(): Observable<Department[]> {
@@ -198,6 +207,24 @@ export class TeamService {
         mobileNumber: m.mobileNumber,
         isActive: m.isActive !== undefined ? m.isActive : true
       }))
+    };
+  }
+
+  /**
+   * Transform backend team group to frontend model
+   */
+  private transformTeamGroup(backendGroup: any): TeamGroup {
+    return {
+      teamGroupId: backendGroup.teamGroupId || backendGroup.id?.toString(),
+      teamId: backendGroup.teamId?.toString() || '',
+      teamName: backendGroup.teamName || '',
+      teamCode: backendGroup.teamCode || '',
+      groupTag: backendGroup.groupTag || '',
+      groupType: backendGroup.groupType || '',
+      isActive: backendGroup.isActive !== undefined ? backendGroup.isActive : true,
+      createdDate: backendGroup.createdDate ? new Date(backendGroup.createdDate) : new Date(),
+      createdBy: backendGroup.createdBy?.toString(),
+      memberCount: backendGroup.memberCount || 0
     };
   }
 }

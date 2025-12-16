@@ -7,7 +7,7 @@ import { Subscription } from 'rxjs';
 import { TeamService } from '../../../core/services/team.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { ReportsService } from '../../../core/services/reports.service';
-import { Team, PaginatedTeamsResponse } from '../../../core/models/team.model';
+import { Team, PaginatedTeamsResponse, CreateTeamGroup } from '../../../core/models/team.model';
 import { TeamActivitiesResponse, TeamActivityDetail } from '../../../core/models/teams-performance-report.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
@@ -52,7 +52,7 @@ export class TeamsDashboardComponent implements OnInit, OnDestroy {
   selectedTeam: Team | null = null;
   teamActivities: TeamActivitiesResponse | null = null;
   loadingActivities = false;
-  
+
   private subscriptions: Subscription[] = [];
 
   constructor(

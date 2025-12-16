@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { TeamService } from '../../../core/services/team.service';
-import { Team, TeamMembersDto, TeamMember, CompleteTeamMemberProfile } from '../../../core/models/team.model';
+import { Team, TeamMembersDto, TeamMember, CompleteTeamMemberProfile, CreateTeamGroup } from '../../../core/models/team.model';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
@@ -35,9 +35,17 @@ export class TeamDetailsComponent implements OnInit {
   removingMember = false;
   removeMemberError = '';
   
+  // Create Team Group Modal
+  showCreateGroupModal = false;
+  teamGroupForm!: FormGroup;
+  loadingGroup = false;
+  groupError = '';
+  groupSuccessMessage = '';
+  
   // Permission flags
   canManageMembers = false;
   canEditTeam = false;
+  canCreate = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -54,11 +62,17 @@ export class TeamDetailsComponent implements OnInit {
     this.canManageMembers = this.permissionService.hasPermission('teams', 'manage-members') || 
                             this.permissionService.hasPermission('teams', 'manage');
     this.canEditTeam = this.permissionService.hasPermission('teams', 'edit');
+    this.canCreate = this.permissionService.canCreate('teams');
     
     this.completeProfileForm = this.fb.group({
       employeeCode: ['', [Validators.required, Validators.maxLength(50)]],
       employeeName: ['', [Validators.required, Validators.maxLength(200)]],
       mobileNumber: ['', [Validators.maxLength(20)]]
+    });
+
+    this.teamGroupForm = this.fb.group({
+      groupTag: ['', [Validators.required, Validators.maxLength(50)]],
+      groupType: ['', [Validators.required, Validators.maxLength(100)]]
     });
     
     if (this.teamId) {
@@ -225,6 +239,56 @@ export class TeamDetailsComponent implements OnInit {
         this.removingMember = false;
         this.removeMemberError = err.error?.message || err.message || 'Failed to remove team member. Please try again.';
         console.error('Error removing team member:', err);
+      }
+    });
+  }
+
+  // Create Team Group Methods
+  openCreateGroupModal(): void {
+    this.showCreateGroupModal = true;
+    this.groupError = '';
+    this.groupSuccessMessage = '';
+    this.teamGroupForm.reset();
+  }
+
+  closeCreateGroupModal(): void {
+    this.showCreateGroupModal = false;
+    this.teamGroupForm.reset();
+    this.groupError = '';
+    this.groupSuccessMessage = '';
+  }
+
+  onCreateGroupSubmit(): void {
+    if (this.teamGroupForm.invalid) {
+      this.markFormGroupTouched(this.teamGroupForm);
+      return;
+    }
+
+    this.loadingGroup = true;
+    this.groupError = '';
+    this.groupSuccessMessage = '';
+
+    const formValue = this.teamGroupForm.value;
+    const teamGroupData: CreateTeamGroup = {
+      teamId: this.teamId,
+      groupTag: formValue.groupTag.trim(),
+      groupType: formValue.groupType.trim()
+    };
+
+    this.teamService.createTeamGroup(teamGroupData).subscribe({
+      next: (teamGroup) => {
+        this.loadingGroup = false;
+        this.groupSuccessMessage = `Team group created successfully!`;
+        setTimeout(() => {
+          this.closeCreateGroupModal();
+          // Optionally reload team details to show updated data
+          this.loadTeamDetails();
+        }, 1500);
+      },
+      error: (err) => {
+        this.loadingGroup = false;
+        this.groupError = err.error?.message || err.error?.detail || err.message || 'Failed to create team group. Please try again.';
+        console.error('Error creating team group:', err);
       }
     });
   }

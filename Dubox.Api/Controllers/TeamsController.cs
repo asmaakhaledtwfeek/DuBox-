@@ -63,6 +63,13 @@ public class TeamsController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
+    [HttpPost("team-groups")]
+    public async Task<IActionResult> CreateTeamGroup([FromBody] CreateTeamGroupCommand command, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateTeam(Guid id, [FromBody] UpdateTeamCommand command, CancellationToken cancellationToken)
     {

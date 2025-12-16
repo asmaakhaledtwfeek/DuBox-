@@ -39,7 +39,16 @@
           </div>
           <p class="page-subtitle">{{ team.teamCode }} • {{ team.departmentName || 'No Department' }} • {{ team.trade || 'No Trade' }}</p>
         </div>
-        <div class="header-right" *ngIf="canManageMembers || canEditTeam">
+        <div class="header-right" *ngIf="canManageMembers || canEditTeam || canCreate">
+          <button *ngIf="canCreate" class="btn btn-secondary" (click)="openCreateGroupModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            Create Group
+          </button>
           <button *ngIf="canManageMembers" class="btn btn-secondary" (click)="addMembers()">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75M12 5v14M5 12h14"/>
@@ -339,6 +348,93 @@
         <span *ngIf="!removingMember">Remove Member</span>
       </button>
     </div>
+  </div>
+</div>
+
+<!-- Create Team Group Modal -->
+<div *ngIf="showCreateGroupModal" class="modal-overlay" (click)="closeCreateGroupModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Create Team Group</h2>
+      <button class="modal-close" (click)="closeCreateGroupModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <form [formGroup]="teamGroupForm" (ngSubmit)="onCreateGroupSubmit()">
+      <div class="modal-body">
+        <!-- Success Message -->
+        <div *ngIf="groupSuccessMessage" class="success-message">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <span>{{ groupSuccessMessage }}</span>
+        </div>
+
+        <!-- Error Message -->
+        <div *ngIf="groupError" class="error-message">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 8v4M12 16h.01"/>
+          </svg>
+          <span>{{ groupError }}</span>
+        </div>
+
+        <!-- Group Type -->
+        <div class="form-group">
+          <label for="groupType">Group Type <span class="required">*</span></label>
+          <input 
+            type="text" 
+            id="groupType"
+            formControlName="groupType"
+            class="form-control"
+            [class.invalid]="teamGroupForm.get('groupType')?.invalid && teamGroupForm.get('groupType')?.touched"
+            placeholder="e.g., Production, Quality, Maintenance"
+            maxlength="100"
+          />
+          <div class="form-feedback">
+            <span *ngIf="teamGroupForm.get('groupType')?.invalid && teamGroupForm.get('groupType')?.touched" class="error-text">
+              Group type is required
+            </span>
+            <span class="char-count">{{ teamGroupForm.get('groupType')?.value?.length || 0 }}/100</span>
+          </div>
+        </div>
+
+        <!-- Group Tag -->
+        <div class="form-group">
+          <label for="groupTag">Group Tag <span class="required">*</span></label>
+          <input 
+            type="text" 
+            id="groupTag"
+            formControlName="groupTag"
+            class="form-control"
+            [class.invalid]="teamGroupForm.get('groupTag')?.invalid && teamGroupForm.get('groupTag')?.touched"
+            placeholder="e.g., G1, G2, A, B"
+            maxlength="50"
+          />
+          <div class="form-feedback">
+            <span *ngIf="teamGroupForm.get('groupTag')?.invalid && teamGroupForm.get('groupTag')?.touched" class="error-text">
+              Group tag is required
+            </span>
+            <span class="char-count">{{ teamGroupForm.get('groupTag')?.value?.length || 0 }}/50</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeCreateGroupModal()" [disabled]="loadingGroup">
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="loadingGroup || teamGroupForm.invalid">
+          <span *ngIf="loadingGroup">Creating...</span>
+          <span *ngIf="!loadingGroup">Create Group</span>
+        </button>
+      </div>
+    </form>
   </div>
 </div>
 

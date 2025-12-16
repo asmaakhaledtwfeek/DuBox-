@@ -80,4 +80,23 @@ export interface PaginatedTeamsResponse {
   totalPages: number;
 }
 
+export interface TeamGroup {
+  teamGroupId: string;
+  teamId: string;
+  teamName: string;
+  teamCode: string;
+  groupTag: string;
+  groupType: string;
+  isActive: boolean;
+  createdDate: Date;
+  createdBy?: string;
+  memberCount: number;
+}
+
+export interface CreateTeamGroup {
+  teamId: string;
+  groupTag: string;
+  groupType: string;
+}
+
 

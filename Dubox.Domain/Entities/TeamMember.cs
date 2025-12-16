@@ -16,6 +16,9 @@ namespace Dubox.Domain.Entities
         [ForeignKey(nameof(User))]
         public Guid UserId { get; set; }
 
+        [ForeignKey(nameof(TeamGroup))]
+        public Guid? TeamGroupId { get; set; }
+
         [Required]
         [MaxLength(50)]
         public string EmployeeCode { get; set; } = string.Empty;
@@ -31,6 +34,7 @@ namespace Dubox.Domain.Entities
         // Navigation properties
         public virtual Team Team { get; set; } = null!;
         public virtual User User { get; set; } = null!;
+        public virtual TeamGroup? TeamGroup { get; set; }
         public virtual ICollection<BoxActivity> BoxActivities { get; set; } = new List<BoxActivity>();
 
     }

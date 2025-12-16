@@ -72,5 +72,19 @@ public record TeamMemberDto
 
 public record PaginatedTeamsResponseDto : PaginatedResponse<TeamDto>;
 
+public record TeamGroupDto
+{
+    public Guid TeamGroupId { get; init; }
+    public Guid TeamId { get; init; }
+    public string TeamName { get; init; } = string.Empty;
+    public string TeamCode { get; init; } = string.Empty;
+    public string GroupTag { get; init; } = string.Empty;
+    public string GroupType { get; init; } = string.Empty;
+    public bool IsActive { get; init; }
+    public DateTime CreatedDate { get; init; }
+    public Guid? CreatedBy { get; init; }
+    public int MemberCount { get; init; }
+}
+
 
 

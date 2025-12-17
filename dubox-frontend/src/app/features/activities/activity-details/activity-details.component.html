@@ -737,37 +737,69 @@
 
 <!-- Assign to Team Modal -->
 <div class="modal-backdrop" *ngIf="isAssignTeamModalOpen" (click)="closeAssignTeamModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>Assign Activity to Team</h3>
-      <button class="btn-close" (click)="closeAssignTeamModal()">×</button>
+  <div class="modal-content modern-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header modern-header">
+      <div class="modal-header-content">
+        <div class="modal-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </div>
+        <div>
+          <h3>Assign Activity to Team</h3>
+          <p class="modal-subtitle">Choose a team and member for this activity</p>
+        </div>
+      </div>
+      <button class="btn-close modern-close" (click)="closeAssignTeamModal()">×</button>
     </div>
-    <div class="modal-body">
+    <div class="modal-body modern-body">
       <!-- Success message -->
-      <div class="alert alert-success" *ngIf="assignTeamSuccess">
-        <span>✓ Team assigned successfully!</span>
+      <div class="alert alert-success modern-alert" *ngIf="assignTeamSuccess">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <span>Team assigned successfully!</span>
       </div>
       
       <form [formGroup]="assignTeamForm" (ngSubmit)="onAssignTeam()" *ngIf="!assignTeamSuccess">
-        <div class="form-group">
-          <label class="form-label">Team</label>
-          <select formControlName="teamId" class="form-control">
+        <div class="form-group modern-form-group">
+          <label class="form-label modern-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            Team <span class="required">*</span>
+          </label>
+          <select formControlName="teamId" class="form-control modern-select">
             <option value="">Select a team</option>
             <option *ngFor="let team of availableTeams" [value]="team.teamId">{{ team.teamName }}</option>
           </select>
         </div>
-        <div class="form-group">
-          <label class="form-label">Team Member (Optional)</label>
-          <select formControlName="memberId" class="form-control" [disabled]="!assignTeamForm.get('teamId')?.value">
+        <div class="form-group modern-form-group">
+          <label class="form-label modern-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            Team Member <span class="optional">(Optional)</span>
+          </label>
+          <select formControlName="memberId" class="form-control modern-select" [disabled]="!assignTeamForm.get('teamId')?.value">
             <option value="">Select a team member</option>
             <option *ngFor="let member of availableMembers" [value]="member.teamMemberId">
               {{ member.employeeName || member.fullName || member.email }}
             </option>
           </select>
         </div>
-        <div class="modal-actions">
-          <button type="button" class="btn btn-secondary" (click)="closeAssignTeamModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary" [disabled]="assignTeamForm.invalid || isAssigningTeam">
+        <div class="modal-actions modern-actions">
+          <button type="button" class="btn btn-secondary modern-btn" (click)="closeAssignTeamModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary modern-btn" [disabled]="assignTeamForm.invalid || isAssigningTeam">
+            <svg *ngIf="!isAssigningTeam" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
             <span *ngIf="isAssigningTeam">Assigning...</span>
             <span *ngIf="!isAssigningTeam">Assign Team</span>
           </button>
@@ -779,31 +811,66 @@
 
 <!-- Issue Material Modal -->
 <div class="modal-backdrop" *ngIf="isIssueMaterialModalOpen" (click)="closeIssueMaterialModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>Issue Material</h3>
-      <button class="btn-close" (click)="closeIssueMaterialModal()">×</button>
+  <div class="modal-content modern-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header modern-header">
+      <div class="modal-header-content">
+        <div class="modal-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
+            <line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M16 10a4 4 0 0 1-8 0"/>
+          </svg>
+        </div>
+        <div>
+          <h3>Issue Material</h3>
+          <p class="modal-subtitle">Allocate materials to this activity</p>
+        </div>
+      </div>
+      <button class="btn-close modern-close" (click)="closeIssueMaterialModal()">×</button>
     </div>
-    <div class="modal-body">
+    <div class="modal-body modern-body">
       <form [formGroup]="issueMaterialForm" (ngSubmit)="onIssueMaterial()">
-        <div class="form-group">
-          <label class="form-label">Material</label>
-          <select formControlName="materialId" class="form-control">
+        <div class="form-group modern-form-group">
+          <label class="form-label modern-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            </svg>
+            Material <span class="required">*</span>
+          </label>
+          <select formControlName="materialId" class="form-control modern-select">
             <option value="">Select a material</option>
             <option *ngFor="let material of availableMaterials" [value]="material.id">{{ material.name }} ({{ material.unit }})</option>
           </select>
         </div>
-        <div class="form-group">
-          <label class="form-label">Quantity</label>
-          <input type="number" formControlName="quantity" class="form-control" min="0.01" step="0.01" placeholder="Enter quantity">
+        <div class="form-group modern-form-group">
+          <label class="form-label modern-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="1" x2="12" y2="23"/>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+            Quantity <span class="required">*</span>
+          </label>
+          <input type="number" formControlName="quantity" class="form-control modern-input" min="0.01" step="0.01" placeholder="Enter quantity">
         </div>
-        <div class="form-group">
-          <label class="form-label">Notes (Optional)</label>
-          <textarea formControlName="notes" class="form-control" rows="3" placeholder="Add any notes about this material issue..."></textarea>
+        <div class="form-group modern-form-group">
+          <label class="form-label modern-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            Notes <span class="optional">(Optional)</span>
+          </label>
+          <textarea formControlName="notes" class="form-control modern-textarea" rows="3" placeholder="Add any notes about this material issue..."></textarea>
         </div>
-        <div class="modal-actions">
-          <button type="button" class="btn btn-secondary" (click)="closeIssueMaterialModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary" [disabled]="issueMaterialForm.invalid || isIssuingMaterial">
+        <div class="modal-actions modern-actions">
+          <button type="button" class="btn btn-secondary modern-btn" (click)="closeIssueMaterialModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary modern-btn" [disabled]="issueMaterialForm.invalid || isIssuingMaterial">
+            <svg *ngIf="!isIssuingMaterial" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
             <span *ngIf="isIssuingMaterial">Issuing...</span>
             <span *ngIf="!isIssuingMaterial">Issue Material</span>
           </button>
@@ -815,38 +882,85 @@
 
 <!-- Set Schedule Modal -->
 <div class="modal-backdrop" *ngIf="isSetScheduleModalOpen" (click)="closeSetScheduleModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>Set Activity Schedule</h3>
-      <button class="btn-close" (click)="closeSetScheduleModal()">×</button>
+  <div class="modal-content modern-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header modern-header">
+      <div class="modal-header-content">
+        <div class="modal-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+        </div>
+        <div>
+          <h3>Set Activity Schedule</h3>
+          <p class="modal-subtitle">Define start date and duration</p>
+        </div>
+      </div>
+      <button class="btn-close modern-close" (click)="closeSetScheduleModal()">×</button>
     </div>
-    <div class="modal-body">
+    <div class="modal-body modern-body">
       <!-- Success message -->
-      <div class="alert alert-success" *ngIf="scheduleSuccess">
-        <span>✓ Schedule updated successfully!</span>
+      <div class="alert alert-success modern-alert" *ngIf="scheduleSuccess">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <span>Schedule updated successfully!</span>
       </div>
       
       <form [formGroup]="scheduleForm" (ngSubmit)="onSetSchedule()" *ngIf="!scheduleSuccess">
         <!-- Error message display -->
-        <div class="alert alert-error" *ngIf="scheduleError">
+        <div class="alert alert-error modern-alert" *ngIf="scheduleError">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 8v4M12 16h.01"/>
+          </svg>
           <span>{{ scheduleError }}</span>
         </div>
         
-        <div class="form-group">
-          <label class="form-label">Planned Start Date</label>
-          <input type="date" formControlName="plannedStartDate" class="form-control" [class.invalid]="scheduleError">
+        <div class="form-group modern-form-group">
+          <label class="form-label modern-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            Planned Start Date <span class="required">*</span>
+          </label>
+          <input type="date" formControlName="plannedStartDate" class="form-control modern-input" [class.invalid]="scheduleError">
         </div>
-        <div class="form-group">
-          <label class="form-label">Duration (days)</label>
-          <input type="number" formControlName="duration" class="form-control" min="1" placeholder="Enter duration in days">
+        <div class="form-group modern-form-group">
+          <label class="form-label modern-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+            Duration (days) <span class="required">*</span>
+          </label>
+          <input type="number" formControlName="duration" class="form-control modern-input" min="1" placeholder="Enter duration in days">
         </div>
-        <div class="form-group">
-          <label class="form-label">Notes (Optional)</label>
-          <textarea formControlName="notes" class="form-control" rows="3" placeholder="Add any notes about this schedule..."></textarea>
+        <div class="form-group modern-form-group">
+          <label class="form-label modern-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            Notes <span class="optional">(Optional)</span>
+          </label>
+          <textarea formControlName="notes" class="form-control modern-textarea" rows="3" placeholder="Add any notes about this schedule..."></textarea>
         </div>
-        <div class="modal-actions">
-          <button type="button" class="btn btn-secondary" (click)="closeSetScheduleModal()">Cancel</button>
-          <button type="submit" class="btn btn-primary" [disabled]="scheduleForm.invalid || isSettingSchedule">
+        <div class="modal-actions modern-actions">
+          <button type="button" class="btn btn-secondary modern-btn" (click)="closeSetScheduleModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary modern-btn" [disabled]="scheduleForm.invalid || isSettingSchedule">
+            <svg *ngIf="!isSettingSchedule" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
             <span *ngIf="isSettingSchedule">Setting...</span>
             <span *ngIf="!isSettingSchedule">Set Schedule</span>
           </button>

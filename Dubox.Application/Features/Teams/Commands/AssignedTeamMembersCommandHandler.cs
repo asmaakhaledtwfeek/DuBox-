@@ -1,7 +1,6 @@
 ﻿using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
-using Dubox.Domain.Interfaces;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
@@ -82,7 +81,7 @@ namespace Dubox.Application.Features.Teams.Commands
             if (newMembers.Count > 0)
             {
                 await _unitOfWork.Repository<TeamMember>().AddRangeAsync(newMembers, cancellationToken);
-                
+
                 var addLogs = newMembers.Select(member => new AuditLog
                 {
                     TableName = nameof(TeamMember),

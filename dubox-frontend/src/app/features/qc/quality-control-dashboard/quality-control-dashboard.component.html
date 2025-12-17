@@ -52,6 +52,10 @@
           <input type="text" formControlName="boxTag" placeholder="e.g. B-12" />
         </div>
         <div class="field">
+          <label>Project Code</label>
+          <input type="text" formControlName="projectCode" placeholder="e.g. PROJ-001" />
+        </div>
+        <div class="field">
           <label>Status</label>
           <select formControlName="status">
             <option value="">All</option>
@@ -89,6 +93,7 @@
             <tr>
               <th>MBI Number</th>
               <th>Box</th>
+              <th>Project</th>
               <th>Status</th>
               <th>Requested Date</th>
               <th *ngIf="canManageWIRCheckpoints">Actions</th>
@@ -103,6 +108,10 @@
               <td>
                 <div>{{ checkpoint.box?.boxTag || '—' }}</div>
                 <div class="text-muted">{{ checkpoint.box?.boxName || '—' }}</div>
+              </td>
+              <td>
+               
+                <div class="text-muted" *ngIf="checkpoint.projectName">{{ checkpoint.projectName }}</div>
               </td>
               <td>
                 <span class="status-pill" [ngClass]="getCheckpointStatusClass(checkpoint.status)">

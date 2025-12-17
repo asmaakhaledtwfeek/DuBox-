@@ -166,6 +166,11 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
 
   setTab(tab: QcTab): void {
     this.activeTab = tab;
+    
+    // Fetch quality issues when switching to that tab
+    if (tab === 'quality-issues') {
+      this.fetchAllQualityIssues();
+    }
   }
 
   applyFilters(): void {
@@ -425,6 +430,27 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Update summary cards using quality issues data
+   */
+  private updateQualityIssuesSummary(): void {
+    // Count logged issues and resolved issues from the total count
+    const totalIssues = this.qualityIssuesTotalCount;
+    
+    // Count resolved issues from current page (this is an approximation)
+    // Ideally, the backend should provide separate counts for each status
+    const resolvedInCurrentPage = this.qualityIssues.filter(issue => 
+      issue.status === 'Resolved' || issue.status === 'Closed'
+    ).length;
+
+    this.summaryCards = [
+      { label: 'All WIR Checkpoints', value: this.checkpointsTotalCount, tone: 'info' },
+      { label: 'Pending Reviews', value: this.summaryCards[1].value, tone: 'warning' }, // Keep previous value
+      { label: 'Logged Issues', value: totalIssues, tone: 'danger' },
+      { label: 'Resolved Issues', value: resolvedInCurrentPage, tone: 'success' }
+    ];
+  }
+
+  /**
    * Fetch all quality issues with backend pagination and filters
    */
   fetchAllQualityIssues(): void {
@@ -519,6 +545,9 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     this.qualityIssuesCurrentPage = response.page || 1;
     this.qualityIssuesPageSize = response.pageSize || 25;
     this.qualityIssuesTotalPages = response.totalPages || 0;
+
+    // Update summary cards with quality issues data when on quality issues tab
+    this.updateQualityIssuesSummary();
     
     // Apply client-side filters for WIR Number, Box Tag, and Project Code
     // (these are not supported by backend API)

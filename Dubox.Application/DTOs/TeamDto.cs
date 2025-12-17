@@ -80,10 +80,30 @@ public record TeamGroupDto
     public string TeamCode { get; init; } = string.Empty;
     public string GroupTag { get; init; } = string.Empty;
     public string GroupType { get; init; } = string.Empty;
+    public Guid? GroupLeaderId { get; init; }
+    public string? GroupLeaderName { get; init; }
     public bool IsActive { get; init; }
     public DateTime CreatedDate { get; init; }
-    public Guid? CreatedBy { get; init; }
+    public string? CreatedBy { get; init; } = string.Empty;
     public int MemberCount { get; init; }
+    public List<TeamMemberDto> Members { get; init; } = new();
+}
+
+public record PaginatedTeamGroupsResponseDto : PaginatedResponse<TeamGroupDto>;
+
+public record TeamGroupMembersDto
+{
+    public Guid TeamGroupId { get; init; }
+    public Guid TeamId { get; init; }
+    public string TeamCode { get; init; } = string.Empty;
+    public string TeamName { get; init; } = string.Empty;
+    public string GroupTag { get; init; } = string.Empty;
+    public string GroupType { get; init; } = string.Empty;
+    public Guid? GroupLeaderId { get; init; }
+    public string? GroupLeaderName { get; init; }
+    public int MemberCount { get; init; } = 0;
+    public bool IsActive { get; init; }
+    public List<TeamMemberDto> Members { get; init; } = new();
 }
 
 

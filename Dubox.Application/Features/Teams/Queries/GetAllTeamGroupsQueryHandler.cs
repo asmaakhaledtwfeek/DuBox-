@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.Teams.Queries;
 
-public class GetAllTeamGroupsQueryHandler : IRequestHandler<GetAllTeamGroupsQuery, Result<List<TeamGroupDto>>>
+public class GetAllTeamGroupsQueryHandler : IRequestHandler<GetAllTeamGroupsQuery, Result<PaginatedTeamGroupsResponseDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
 
@@ -18,16 +18,48 @@ public class GetAllTeamGroupsQueryHandler : IRequestHandler<GetAllTeamGroupsQuer
         _unitOfWork = unitOfWork;
     }
 
-    public async Task<Result<List<TeamGroupDto>>> Handle(GetAllTeamGroupsQuery request, CancellationToken cancellationToken)
+    public async Task<Result<PaginatedTeamGroupsResponseDto>> Handle(GetAllTeamGroupsQuery request, CancellationToken cancellationToken)
     {
+        // Normalize pagination parameters
+        var (page, pageSize) = new PaginatedRequest
+        {
+            Page = request.Page,
+            PageSize = request.PageSize
+        }.GetNormalizedPagination();
+
+        // Create specification with filters and pagination
+        var specification = new GetTeamGroupWithIncludesSpecification(
+            request.Search,
+            request.TeamId,
+            request.IsActive,
+            pageSize,
+            page
+        );
+
+        // Get team groups with specification
         var teamGroupsResult = _unitOfWork.Repository<TeamGroup>()
-            .GetWithSpec(new GetTeamGroupWithIncludesSpecification());
+            .GetWithSpec(specification);
 
         var teamGroups = await teamGroupsResult.Data.ToListAsync(cancellationToken);
+        var totalCount = teamGroupsResult.Count;
 
+        // Map to DTOs
         var teamGroupDtos = teamGroups.Adapt<List<TeamGroupDto>>();
 
-        return Result.Success(teamGroupDtos);
+        // Calculate total pages
+        var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+        // Create paginated response
+        var response = new PaginatedTeamGroupsResponseDto
+        {
+            Items = teamGroupDtos,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            TotalPages = totalPages
+        };
+
+        return Result.Success(response);
     }
 }
 

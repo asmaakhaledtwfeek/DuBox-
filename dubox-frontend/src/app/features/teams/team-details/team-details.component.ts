@@ -2,8 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { TeamService } from '../../../core/services/team.service';
-import { Team, TeamMembersDto, TeamMember, CompleteTeamMemberProfile, CreateTeamGroup, TeamGroup } from '../../../core/models/team.model';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Team, TeamMembersDto, TeamMember, CompleteTeamMemberProfile, CreateTeamGroup, TeamGroup, PaginatedTeamGroupsResponse } from '../../../core/models/team.model';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { PermissionService } from '../../../core/services/permission.service';
@@ -11,7 +11,7 @@ import { PermissionService } from '../../../core/services/permission.service';
 @Component({
   selector: 'app-team-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, HeaderComponent, SidebarComponent],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, FormsModule, HeaderComponent, SidebarComponent],
   templateUrl: './team-details.component.html',
   styleUrls: ['./team-details.component.scss']
 })
@@ -24,6 +24,13 @@ export class TeamDetailsComponent implements OnInit {
   error = '';
   teamId = '';
   activeTab: 'overview' | 'members' = 'overview';
+  
+  // Team Groups Pagination
+  teamGroupsSearchTerm = '';
+  teamGroupsCurrentPage = 1;
+  teamGroupsPageSize = 10;
+  teamGroupsTotalCount = 0;
+  teamGroupsTotalPages = 0;
   
   showCompleteProfileModal = false;
   selectedMember: TeamMember | null = null;
@@ -111,10 +118,25 @@ export class TeamDetailsComponent implements OnInit {
 
   loadTeamGroups(): void {
     this.loadingGroups = true;
-    this.teamService.getAllTeamGroups().subscribe({
-      next: (groups) => {
-        // Filter groups for this team
-        this.teamGroups = groups.filter(g => g.teamId === this.teamId);
+    
+    const params: any = {
+      page: this.teamGroupsCurrentPage,
+      pageSize: this.teamGroupsPageSize,
+      teamId: this.teamId
+    };
+
+    // Apply search filter
+    const searchTerm = this.teamGroupsSearchTerm.trim();
+    if (searchTerm) {
+      params.search = searchTerm;
+    }
+
+    this.teamService.getTeamGroupsPaginated(params).subscribe({
+      next: (response: PaginatedTeamGroupsResponse) => {
+        this.teamGroups = response.items;
+        this.teamGroupsTotalCount = response.totalCount;
+        this.teamGroupsTotalPages = response.totalPages;
+        this.teamGroupsCurrentPage = response.page;
         this.loadingGroups = false;
       },
       error: (err) => {
@@ -122,6 +144,28 @@ export class TeamDetailsComponent implements OnInit {
         this.loadingGroups = false;
       }
     });
+  }
+
+  onTeamGroupsSearch(): void {
+    this.teamGroupsCurrentPage = 1; // Reset to first page when searching
+    this.loadTeamGroups();
+  }
+
+  onTeamGroupsPageChange(page: number): void {
+    this.teamGroupsCurrentPage = page;
+    this.loadTeamGroups();
+  }
+
+  onTeamGroupsPageSizeChange(pageSize: number): void {
+    this.teamGroupsPageSize = pageSize;
+    this.teamGroupsCurrentPage = 1; // Reset to first page when changing page size
+    this.loadTeamGroups();
+  }
+
+  clearGroupsSearch(): void {
+    this.teamGroupsSearchTerm = '';
+    this.teamGroupsCurrentPage = 1;
+    this.loadTeamGroups();
   }
 
   goBack(): void {
@@ -317,5 +361,8 @@ export class TeamDetailsComponent implements OnInit {
       control?.markAsTouched();
     });
   }
+
+  // Expose Math to template
+  Math = Math;
 }
 

@@ -4,5 +4,12 @@ using MediatR;
 
 namespace Dubox.Application.Features.Teams.Queries;
 
-public record GetAllTeamGroupsQuery : IRequest<Result<List<TeamGroupDto>>>;
+public record GetAllTeamGroupsQuery : IRequest<Result<PaginatedTeamGroupsResponseDto>>
+{
+    public int Page { get; init; } = 1;
+    public int PageSize { get; init; } = 25;
+    public string? Search { get; init; }
+    public Guid? TeamId { get; init; }
+    public bool? IsActive { get; init; }
+}
 

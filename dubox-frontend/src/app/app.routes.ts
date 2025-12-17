@@ -227,6 +227,29 @@ export const routes: Routes = [
     loadComponent: () => import('./features/teams/team-details/team-details.component').then(m => m.TeamDetailsComponent)
   },
   {
+    path: 'teams/:teamId/groups/:groupId',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/teams/team-group-details/team-group-details.component').then(m => m.TeamGroupDetailsComponent)
+  },
+  {
+    path: 'teams/:teamId/groups/:groupId/assign-leader',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/teams/assign-group-leader/assign-group-leader.component').then(m => m.AssignGroupLeaderComponent)
+  },
+  {
+    path: 'teams/:teamId/groups/:groupId/edit',
+    canActivate: [authGuard, permissionGuard],
+    data: { 
+      permission: { module: 'teams', action: 'edit' }
+    },
+    loadComponent: () => import('./features/teams/edit-team-group/edit-team-group.component').then(m => m.EditTeamGroupComponent)
+  },
+  {
+    path: 'teams/:teamId/groups/:groupId/add-members',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/teams/add-group-members/add-group-members.component').then(m => m.AddGroupMembersComponent)
+  },
+  {
     path: 'notifications',
     canActivate: [authGuard],
     loadComponent: () => import('./features/notifications/notifications-center/notifications-center.component').then(m => m.NotificationsCenterComponent)

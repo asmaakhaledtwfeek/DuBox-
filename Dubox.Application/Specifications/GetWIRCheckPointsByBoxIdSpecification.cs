@@ -9,13 +9,16 @@ namespace Dubox.Application.Specifications
         {
             AddCriteria(w => w.BoxId == boxId);
             AddInclude(nameof(WIRCheckpoint.Box));
+            AddInclude($"{nameof(WIRCheckpoint.Box)}.{nameof(Box.Project)}");
             AddInclude(nameof(WIRCheckpoint.ChecklistItems));
             AddInclude(nameof(WIRCheckpoint.QualityIssues));
-            // NOTE: Don't include Images or QualityIssues.Images - base64 ImageData is too large
-            // Image metadata is loaded separately with lightweight query
+            AddInclude($"{nameof(WIRCheckpoint.ChecklistItems)}.{nameof(WIRChecklistItem.PredefinedChecklistItem)}");
+            AddInclude($"{nameof(WIRCheckpoint.ChecklistItems)}.{nameof(WIRChecklistItem.PredefinedChecklistItem)}.{nameof(PredefinedChecklistItem.ChecklistSection)}");
+            AddInclude($"{nameof(WIRCheckpoint.ChecklistItems)}.{nameof(WIRChecklistItem.PredefinedChecklistItem)}.{nameof(PredefinedChecklistItem.ChecklistSection)}.{nameof(ChecklistSection.Checklist)}");
+
             AddOrderByDescending(w => w.CreatedDate);
-            
-            // Enable split query to avoid Cartesian explosion with multiple collection includes
+
+
             EnableSplitQuery();
         }
     }

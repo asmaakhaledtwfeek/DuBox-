@@ -54,7 +54,23 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
             var user = await _unitOfWork.Repository<User>().GetByIdAsync(currentUserId);
             var currentUserName = user != null ? user.FullName : string.Empty;
+            var existCheckpoint = _unitOfWork.Repository<WIRCheckpoint>().FindAsync(c => c.BoxId == boxActicity.BoxId && c.WIRCode == request.WIRNumber).Result.FirstOrDefault();
+
+            if (existCheckpoint != null)
+            {
+                var existCheckpointId = existCheckpoint.WIRId;
+                existCheckpoint = request.Adapt<WIRCheckpoint>();
+                existCheckpoint.WIRId = existCheckpointId;
+                existCheckpoint.RequestedBy = currentUserName;
+                existCheckpoint.BoxId = boxActicity.BoxId;
+                existCheckpoint.WIRCode = request.WIRNumber;
+                _unitOfWork.Repository<WIRCheckpoint>().Update(existCheckpoint);
+                var existDto = existCheckpoint.Adapt<CreateWIRCheckpointDto>();
+                existDto.WIRNumber = existCheckpoint.WIRCode;
+                return Result.Success(existDto);
+            }
             var checkpoint = request.Adapt<WIRCheckpoint>();
+            checkpoint.WIRCode = request.WIRNumber;
             checkpoint.BoxId = boxActicity.BoxId;
             checkpoint.Status = WIRCheckpointStatusEnum.Pending;
             checkpoint.CreatedDate = DateTime.UtcNow;
@@ -64,7 +80,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
 
             await _unitOfWork.CompleteAsync(cancellationToken);
             var dto = checkpoint.Adapt<CreateWIRCheckpointDto>();
-
+            dto.WIRNumber = checkpoint.WIRCode;
             return Result.Success(dto);
         }
     }

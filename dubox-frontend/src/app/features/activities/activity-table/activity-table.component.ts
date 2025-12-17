@@ -709,21 +709,17 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   getCheckpointStep(checkpoint: WIRCheckpoint): 'add-items' | 'review' | 'quality-issues' {
     // Step 1 (Create Checkpoint) is always completed if checkpoint exists
     
-    // Check if Step 2 (Add Checklist Items) is completed
-    const hasChecklistItems = checkpoint.checklistItems && checkpoint.checklistItems.length > 0;
-    if (!hasChecklistItems) {
-      return 'add-items'; // Navigate to Step 2 to add checklist items
-    }
-    
-    // Check if Step 3 (Review & Sign-off) is completed
+    // Check checkpoint status
     const status = checkpoint.status as any;
-    const isReviewed = status && status !== 'Pending' && status !== 'pending';
-    if (!isReviewed) {
-      return 'review'; // Navigate to Step 3 to review and sign off
-    }
+    const isPending = !status || status === 'Pending' || status === 'pending';
     
-    // Step 3 is completed, navigate to Step 4 (Quality Issues)
-    return 'quality-issues';
+    if (isPending) {
+      // Status is Pending → Navigate to Step 2 (Add Items)
+      return 'add-items';
+    } else {
+      // Status is NOT Pending (Approved, Rejected, etc.) → Navigate to Step 3 (Review)
+      return 'review';
+    }
   }
 
   /**

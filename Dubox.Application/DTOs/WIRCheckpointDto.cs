@@ -1,4 +1,4 @@
-﻿using Dubox.Domain.Enums;
+using Dubox.Domain.Enums;
 
 namespace Dubox.Application.DTOs
 {
@@ -8,7 +8,9 @@ namespace Dubox.Application.DTOs
         public Guid WIRId { get; set; }
         public Guid BoxId { get; set; }
         public Guid? ProjectId { get; set; }
+        public string? ProjectName { get; set; }
         public string? ProjectCode { get; set; }
+        public string? Client { get; set; }
         public Guid? BoxActivityId { get; set; }
         public string BoxName { get; set; } = string.Empty;
         public string BoxTag { get; set; } = string.Empty;
@@ -44,7 +46,7 @@ namespace Dubox.Application.DTOs
     }
 
     public record PaginatedWIRCheckpointsResponseDto : PaginatedResponse<WIRCheckpointDto>;
-    
+
     /// <summary>
     /// Lightweight image info without base64 data - used in listings.
     /// Use /api/images/WIRCheckpoint/{WIRCheckpointImageId} to fetch full image.
@@ -78,6 +80,18 @@ namespace Dubox.Application.DTOs
         public CheckListItemStatusEnum Status { get; set; }
         public int Sequence { get; set; }
         public Guid? PredefinedItemId { get; set; } // Reference to the predefined item this was cloned from
+        public Guid? CategoryId { get; set; }
+        public string? CategoryName { get; set; }
+
+        // Section information
+        public Guid? SectionId { get; set; }
+        public string? SectionName { get; set; }
+        public int? SectionOrder { get; set; }
+
+        // Checklist information
+        public Guid? ChecklistId { get; set; }
+        public string? ChecklistName { get; set; }
+        public string? ChecklistCode { get; set; }
     }
     public class QualityIssueDto
     {
@@ -99,10 +113,16 @@ namespace Dubox.Application.DTOs
     public class PredefinedChecklistItemDto
     {
         public Guid PredefinedItemId { get; set; }
+        public string WIRNumber { get; set; } = string.Empty;
+        public string? ItemNumber { get; set; }
         public string CheckpointDescription { get; set; } = string.Empty;
-        public string? ReferenceDocument { get; set; }
+        public Guid? CategoryId { get; set; }
+        public string? Category { get; set; } // CategoryName
+        public string? CategoryName { get; set; } // For consistency
+        public Guid? ReferenceId { get; set; }
+        public string? ReferenceDocument { get; set; } // ReferenceName
+        public string? ReferenceName { get; set; } // For consistency
         public int Sequence { get; set; }
-        public string? Category { get; set; }
         public bool IsActive { get; set; }
     }
     public class CreateWIRCheckpointDto

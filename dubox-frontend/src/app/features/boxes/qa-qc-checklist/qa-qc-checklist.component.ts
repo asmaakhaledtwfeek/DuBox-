@@ -124,6 +124,7 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   availablePredefinedItems: PredefinedChecklistItem[] = []; // Items not yet added to checkpoint
   loadingPredefinedItems = false;
   selectedPredefinedItemIds: string[] = [];
+  shouldRefreshCheckpoint = false;
   
   loading = true;
   error = '';
@@ -216,6 +217,19 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
       }, 0);
       this.router.navigate([], { queryParams: { checklistAdded: null }, queryParamsHandling: 'merge' });
     }
+    
+    // Check if returning from add-checklist-items page (refresh checkpoint data)
+    const refreshParam = this.route.snapshot.queryParamMap.get('refresh');
+    if (refreshParam) {
+      this.shouldRefreshCheckpoint = true;
+      // Clear the query param
+      this.router.navigate([], { 
+        queryParams: { refresh: null }, 
+        queryParamsHandling: 'merge',
+        replaceUrl: true 
+      });
+    }
+    
     const stepParam = this.route.snapshot.queryParamMap.get('step');
     const viewParam = this.route.snapshot.queryParamMap.get('view');
     if (viewParam === 'quality-list') {
@@ -229,12 +243,16 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     this.initForm();
     this.loadWIRRecord();
     this.loadBoxQualityIssues();
-    this.loadPredefinedChecklistItems();
+    // Don't load predefined items here - will load when modal opens with correct WIR filter
   }
 
   private loadPredefinedChecklistItems(): void {
     this.loadingPredefinedItems = true;
-    this.wirService.getPredefinedChecklistItems().subscribe({
+    
+    // Pass WIR number to API for server-side filtering (more efficient)
+    const currentWirNumber = this.wirCheckpoint?.wirNumber;
+    
+    this.wirService.getPredefinedChecklistItems(currentWirNumber).subscribe({
       next: (items) => {
         this.predefinedChecklistItems = items;
         this.updateAvailablePredefinedItems();
@@ -246,6 +264,7 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
       }
     });
   }
+
 
   private updateAvailablePredefinedItems(): void {
     if (!this.wirCheckpoint || !this.predefinedChecklistItems.length) {
@@ -260,46 +279,41 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
         .filter(id => id != null) as string[]
     );
 
-    // Filter out items that are already added
+    // Filter items by current WIR number AND exclude already added items
+    const currentWirNumber = this.wirCheckpoint.wirNumber;
     this.availablePredefinedItems = this.predefinedChecklistItems.filter(
-      item => !addedPredefinedIds.has(item.predefinedItemId)
+      item => item.wirNumber === currentWirNumber && !addedPredefinedIds.has(item.predefinedItemId)
     );
   }
 
   getGroupedPredefinedItems(): { category: string; items: PredefinedChecklistItem[] }[] {
     const grouped = new Map<string, PredefinedChecklistItem[]>();
     
-    // Group items by category
+    // Group items by category (use categoryName first, fallback to category, then 'OTHER')
     this.availablePredefinedItems.forEach(item => {
-      const category = item.category || 'Other';
+      const category = item.categoryName || item.category || 'OTHER';
       if (!grouped.has(category)) {
         grouped.set(category, []);
       }
       grouped.get(category)!.push(item);
     });
 
-    // Convert to array and sort by predefined category order
-    const categoryOrder = ['General', 'Setting Out', 'Installation Activity'];
+    // Convert to array and sort by WIR number, then sequence
     const result: { category: string; items: PredefinedChecklistItem[] }[] = [];
     
-    // Add categories in order
-    categoryOrder.forEach(cat => {
-      if (grouped.has(cat)) {
-        result.push({
-          category: cat,
-          items: grouped.get(cat)!.sort((a, b) => a.sequence - b.sequence)
-        });
-      }
+    // Sort categories alphabetically, but put 'OTHER' at the end
+    const categories = Array.from(grouped.keys()).sort((a, b) => {
+      if (a === 'OTHER') return 1;
+      if (b === 'OTHER') return -1;
+      return a.localeCompare(b);
     });
 
-    // Add any remaining categories
-    grouped.forEach((items, category) => {
-      if (!categoryOrder.includes(category)) {
+    // Add all categories with their items sorted by sequence
+    categories.forEach(category => {
         result.push({
           category,
-          items: items.sort((a, b) => a.sequence - b.sequence)
+        items: grouped.get(category)!.sort((a, b) => a.sequence - b.sequence)
         });
-      }
     });
 
     return result;
@@ -410,6 +424,66 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     return this.checklistForm.get('checklistItems') as FormArray;
   }
 
+  getGroupedReviewChecklistItems(): { checklistName: string; sections: { sectionName: string; items: any[] }[] }[] {
+    const itemsArray = this.checklistItems;
+    if (!itemsArray || itemsArray.length === 0) {
+      return [];
+    }
+
+    // Group by checklist -> section -> items
+    const grouped = new Map<string, Map<string, any[]>>();
+
+    itemsArray.controls.forEach((control, index) => {
+      const formGroup = control as FormGroup;
+      const checklistName = formGroup.get('checklistName')?.value || 'General Checklist';
+      const sectionName = formGroup.get('sectionName')?.value || 'General Items';
+      const checkpointDescription = formGroup.get('checkpointDescription')?.value;
+      const status = formGroup.get('status')?.value;
+      
+      if (!grouped.has(checklistName)) {
+        grouped.set(checklistName, new Map());
+      }
+      
+      const checklistMap = grouped.get(checklistName)!;
+      if (!checklistMap.has(sectionName)) {
+        checklistMap.set(sectionName, []);
+      }
+      
+      checklistMap.get(sectionName)!.push({
+        control: formGroup,
+        index: index,
+        checkpointDescription: checkpointDescription,
+        status: status,
+        checklistName: checklistName,
+        sectionName: sectionName
+      });
+    });
+
+    // Sort checklists alphabetically
+    const checklists = Array.from(grouped.keys()).sort((a, b) => {
+      if (a === 'General Checklist') return -1;
+      if (b === 'General Checklist') return 1;
+      return a.localeCompare(b);
+    });
+
+    return checklists.map(checklist => {
+      const checklistMap = grouped.get(checklist)!;
+      const sections = Array.from(checklistMap.keys()).sort((a, b) => {
+        if (a === 'General Items') return -1;
+        if (b === 'General Items') return 1;
+        return a.localeCompare(b);
+      });
+
+      return {
+        checklistName: checklist,
+        sections: sections.map(sectionName => ({
+          sectionName: sectionName,
+          items: checklistMap.get(sectionName)!
+        }))
+      };
+    });
+  }
+
   get qualityIssuesArray(): FormArray {
     return this.qualityIssuesForm.get('issues') as FormArray;
   }
@@ -455,7 +529,7 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     }
 
     const expectedWirCode = this.wirRecord.wirCode;
-
+console.log(expectedWirCode);
     // Check if WIR checkpoint exists for this box/activity by WIR code
     console.log('checkWIRCheckpoint - Searching for checkpoint with boxId:', this.boxId, 'wirCode:', expectedWirCode);
     this.wirService.getWIRCheckpointByActivity(this.boxId, expectedWirCode).subscribe({
@@ -540,24 +614,37 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
       return;
     }
     
+    console.log('processCheckpointLoaded - wirCheckpoint exists:', this.wirCheckpoint.wirId);
+    console.log('processCheckpointLoaded - initialStepFromQuery:', this.initialStepFromQuery);
+    
     // If there's a step query parameter, apply it first
     if (this.initialStepFromQuery) {
       // Validate query parameter step before applying
       if (this.initialStepFromQuery === 'create-checkpoint') {
-        // Checkpoint exists, so redirect to next accessible step instead of create-checkpoint
-        const nextStep = this.getNextAccessibleStep();
-        if (nextStep && nextStep !== 'create-checkpoint') {
+        // Allow create-checkpoint if status is Pending, otherwise redirect to add-items
+        if (this.wirCheckpoint.status === 'Pending') {
+          console.log('Checkpoint exists with Pending status, allowing edit in Step 1');
+          this.currentStep = 'create-checkpoint';
+          this.pendingAction = null;
+          this.createCheckpointForm.patchValue({
+            wirName: this.wirCheckpoint.wirName || '',
+            wirDescription: this.wirCheckpoint.wirDescription || '',
+            inspectorName: this.wirCheckpoint.inspectorName || '',
+            inspectorRole: this.wirCheckpoint.inspectorRole || ''
+          });
+          this.initialStepApplied = true;
+        } else {
+          console.log('Checkpoint already reviewed, redirecting to add-items');
+          this.currentStep = 'add-items'; // Set immediately
           this.router.navigate([], {
             relativeTo: this.route,
-            queryParams: { step: nextStep },
-            queryParamsHandling: 'merge'
+            queryParams: { step: 'add-items' },
+            queryParamsHandling: 'merge',
+            replaceUrl: true
           });
-          this.handleStepClick(nextStep);
-        } else {
-          this.currentStep = null;
-          this.pendingAction = nextStep || 'add-items';
+          this.startAddChecklistFlow();
+          this.initialStepApplied = true;
         }
-        this.initialStepApplied = true;
       } else {
         // Apply initial step from query (will validate accessibility)
         // If navigating to add-items, ensure form is built with existing items
@@ -568,20 +655,17 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
         this.applyInitialStepFromQuery();
       }
     } else {
-      // No step query parameter, determine the next accessible step
-      const nextStep = this.getNextAccessibleStep();
-      if (nextStep && nextStep !== 'create-checkpoint') {
-        // Auto-navigate to the next accessible step
-        this.router.navigate([], {
-          relativeTo: this.route,
-          queryParams: { step: nextStep },
-          queryParamsHandling: 'merge'
-        });
-        this.handleStepClick(nextStep);
-      } else {
-        this.currentStep = null;
-        this.pendingAction = nextStep || 'add-items';
-      }
+      // No step query parameter - checkpoint exists, navigate directly to add-items
+      console.log('Checkpoint already exists, navigating directly to add-items');
+      console.log('Setting currentStep to add-items immediately');
+      this.currentStep = 'add-items'; // Set immediately
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { step: 'add-items' },
+        queryParamsHandling: 'merge',
+        replaceUrl: true
+      });
+      this.startAddChecklistFlow();
     }
     
     this.updateAvailablePredefinedItems();
@@ -666,7 +750,14 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
             checkpointDescription: item.checkpointDescription,
             referenceDocument: item.referenceDocument,
             sequence: item.sequence,
-            predefinedItemId: item.predefinedItemId
+            predefinedItemId: item.predefinedItemId,
+            categoryName: item.categoryName || 'General',
+            sectionName: item.sectionName || undefined,
+            sectionId: item.sectionId || undefined,
+            sectionOrder: item.sectionOrder || undefined,
+            checklistName: item.checklistName || undefined,
+            checklistId: item.checklistId || undefined,
+            checklistCode: item.checklistCode || undefined
           }));
         });
       console.log('Form array after building:', itemsArray.length, 'items');
@@ -714,10 +805,26 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   }
 
   openAddPredefinedItemsModal(): void {
-    this.updateAvailablePredefinedItems();
-    this.selectedPredefinedItemIds = [];
-    this.isAddPredefinedItemsModalOpen = true;
-    document.body.style.overflow = 'hidden';
+    // Navigate to the add predefined items page
+    if (!this.wirCheckpoint) {
+      console.error('No WIR checkpoint available');
+      return;
+    }
+
+    // Construct the route to the add-checklist-items page
+    const route = [
+      '/projects',
+      this.projectId,
+      'boxes',
+      this.boxId,
+      'activities',
+      this.activityId,
+      'wir-checkpoints',
+      this.wirCheckpoint.wirId,
+      'add-checklist-items'
+    ];
+
+    this.router.navigate(route);
   }
 
   closeAddPredefinedItemsModal(): void {
@@ -762,7 +869,9 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
           checkpointDescription: [item.checkpointDescription || ''],
           referenceDocument: [item.referenceDocument || ''],
           status: [this.mapCheckListItemStatus(item.status), Validators.required],
-          remarks: [item.remarks || '']
+          remarks: [item.remarks || ''],
+          checklistName: [item.checklistName || ''],
+          sectionName: [item.sectionName || '']
         });
         this.checklistItems.push(itemGroup);
       });
@@ -771,6 +880,40 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     } else {
       console.warn('loadChecklistItems: No checklist items found in checkpoint');
     }
+  }
+
+  private reloadCheckpointData(): void {
+    if (!this.wirCheckpoint) return;
+    
+    console.log('Reloading checkpoint data...');
+    this.loading = true;
+    
+    this.wirService.getWIRCheckpointById(this.wirCheckpoint.wirId).subscribe({
+      next: (checkpoint: WIRCheckpoint) => {
+        console.log('Checkpoint reloaded successfully:', checkpoint);
+        this.wirCheckpoint = checkpoint;
+        this.syncReviewFormFromCheckpoint();
+        this.loading = false;
+        this.shouldRefreshCheckpoint = false;
+        
+        // Build the form with the updated items
+        const existingItems = checkpoint.checklistItems && checkpoint.checklistItems.length > 0
+          ? checkpoint.checklistItems
+          : undefined;
+        
+        console.log('Building form with reloaded items:', existingItems?.length || 0);
+        this.buildAddChecklistItemsForm(existingItems);
+        
+        this.currentStep = 'add-items';
+        this.pendingAction = null;
+      },
+      error: (err: any) => {
+        console.error('Error reloading checkpoint:', err);
+        this.loading = false;
+        this.shouldRefreshCheckpoint = false;
+        this.error = 'Failed to reload checkpoint data';
+      }
+    });
   }
 
   startAddChecklistFlow(): void {
@@ -786,15 +929,22 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     // Debug: Log checkpoint state
     console.log('startAddChecklistFlow - checkpoint:', this.wirCheckpoint);
     console.log('startAddChecklistFlow - checklistItems:', this.wirCheckpoint.checklistItems);
-    console.log('startAddChecklistFlow - checklistItems length:', this.wirCheckpoint.checklistItems?.length || 0);
     
-    // Always build the form with existing items from checkpoint
+    // If we need to refresh, reload the checkpoint data
+    if (this.shouldRefreshCheckpoint) {
+      console.log('Refreshing checkpoint data after adding items');
+      this.reloadCheckpointData();
+      return;
+    }
+    
+    // Build the form with existing items from checkpoint
     const existingItems = this.wirCheckpoint.checklistItems && this.wirCheckpoint.checklistItems.length > 0
       ? this.wirCheckpoint.checklistItems
       : undefined;
     
     console.log('Building checklist form with items:', existingItems?.length || 0, existingItems);
     this.buildAddChecklistItemsForm(existingItems);
+    
     this.currentStep = 'add-items';
     this.pendingAction = null;
   }
@@ -823,13 +973,33 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     this.resetQualityIssuesForm();
   }
 
-  private createChecklistItemGroup(item?: Partial<{ checklistItemId?: string; checkpointDescription: string; referenceDocument?: string; sequence?: number; predefinedItemId?: string }>): FormGroup {
+  private createChecklistItemGroup(item?: Partial<{ 
+    checklistItemId?: string; 
+    checkpointDescription: string; 
+    referenceDocument?: string; 
+    sequence?: number; 
+    predefinedItemId?: string; 
+    categoryName?: string; 
+    sectionName?: string;
+    sectionId?: string;
+    sectionOrder?: number;
+    checklistName?: string;
+    checklistId?: string;
+    checklistCode?: string;
+  }>): FormGroup {
     return this.fb.group({
       checklistItemId: [item?.checklistItemId || null],
       checkpointDescription: [item?.checkpointDescription || '', Validators.required],
       referenceDocument: [item?.referenceDocument || ''],
       sequence: [item?.sequence || 1, [Validators.required, Validators.min(1)]],
-      predefinedItemId: [item?.predefinedItemId || null]
+      predefinedItemId: [item?.predefinedItemId || null],
+      categoryName: [item?.categoryName || 'General'],
+      sectionName: [item?.sectionName || undefined],
+      sectionId: [item?.sectionId || undefined],
+      sectionOrder: [item?.sectionOrder || undefined],
+      checklistName: [item?.checklistName || undefined],
+      checklistId: [item?.checklistId || undefined],
+      checklistCode: [item?.checklistCode || undefined]
     });
   }
 
@@ -1637,10 +1807,10 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   canNavigateToStep(step: ReviewStep): boolean {
     const stepIndex = this.getStepIndex(step);
     
-    // Step 1: Accessible if checkpoint doesn't exist OR if checkpoint exists but hasn't been reviewed yet
-    // (i.e., status is still Pending - not Approved, Rejected, or ConditionalApproval)
+    // Step 1: Accessible if checkpoint doesn't exist OR if checkpoint status is still Pending
+    // Once reviewed (Approved/Rejected/ConditionalApproval), user cannot go back to Step 1
     if (step === 'create-checkpoint') {
-      return !this.wirCheckpoint || !this.isStep3Completed();
+      return !this.wirCheckpoint || this.wirCheckpoint.status === 'Pending';
     }
     
     // Step 2: Only accessible if Step 1 is completed
@@ -1679,6 +1849,15 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
       case 'create-checkpoint':
         this.currentStep = 'create-checkpoint';
         this.pendingAction = null;
+        // If checkpoint exists and is Pending, populate the form with existing data
+        if (this.wirCheckpoint && this.wirCheckpoint.status === 'Pending') {
+          this.createCheckpointForm.patchValue({
+            wirName: this.wirCheckpoint.wirName || '',
+            wirDescription: this.wirCheckpoint.wirDescription || '',
+            inspectorName: this.wirCheckpoint.inspectorName || '',
+            inspectorRole: this.wirCheckpoint.inspectorRole || ''
+          });
+        }
         break;
       case 'add-items':
         this.startAddChecklistFlow();
@@ -1729,13 +1908,22 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
         }
         break;
       case 'create-checkpoint':
-        // Only allow if checkpoint doesn't exist
-        if (!this.wirCheckpoint) {
+        // Allow if checkpoint doesn't exist OR if checkpoint is still Pending
+        if (!this.wirCheckpoint || this.wirCheckpoint.status === 'Pending') {
           this.currentStep = 'create-checkpoint';
           this.pendingAction = null;
+          // If checkpoint exists, populate form with existing data
+          if (this.wirCheckpoint) {
+            this.createCheckpointForm.patchValue({
+              wirName: this.wirCheckpoint.wirName || '',
+              wirDescription: this.wirCheckpoint.wirDescription || '',
+              inspectorName: this.wirCheckpoint.inspectorName || '',
+              inspectorRole: this.wirCheckpoint.inspectorRole || ''
+            });
+          }
           this.initialStepApplied = true;
         } else {
-          // Checkpoint exists, redirect to next accessible step
+          // Checkpoint exists and is reviewed, redirect to next accessible step
           const nextStep = this.getNextAccessibleStep();
           if (nextStep) {
             this.handleStepClick(nextStep);
@@ -1988,6 +2176,72 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     }
   }
 
+  getTotalItemsCount(sections: { sectionName: string; items: any[] }[]): number {
+    return sections.reduce((acc, section) => acc + section.items.length, 0);
+  }
+
+  getGroupedChecklistItems(): { checklistName: string; sections: { sectionName: string; items: any[] }[] }[] {
+    const itemsArray = this.addChecklistItemsArray;
+    if (itemsArray.length === 0) {
+      return [];
+    }
+
+    // Group by checklist -> section -> items
+    const grouped = new Map<string, Map<string, any[]>>();
+
+    itemsArray.controls.forEach((control, index) => {
+      const formGroup = control as FormGroup;
+      const checklistName = formGroup.get('checklistName')?.value || 'General Checklist';
+      const sectionName = formGroup.get('sectionName')?.value || 'General Items';
+      const checkpointDescription = formGroup.get('checkpointDescription')?.value;
+      const sequence = formGroup.get('sequence')?.value;
+      const referenceDocument = formGroup.get('referenceDocument')?.value;
+      
+      if (!grouped.has(checklistName)) {
+        grouped.set(checklistName, new Map());
+      }
+      
+      const checklistMap = grouped.get(checklistName)!;
+      if (!checklistMap.has(sectionName)) {
+        checklistMap.set(sectionName, []);
+      }
+      
+      checklistMap.get(sectionName)!.push({
+        control: formGroup,
+        index: index,
+        checkpointDescription: checkpointDescription,
+        referenceDocument: referenceDocument,
+        sequence: sequence,
+        checklistName: checklistName,
+        sectionName: sectionName
+      });
+    });
+
+    // Sort checklists alphabetically
+    const checklists = Array.from(grouped.keys()).sort((a, b) => {
+      if (a === 'General Checklist') return -1;
+      if (b === 'General Checklist') return 1;
+      return a.localeCompare(b);
+    });
+
+    return checklists.map(checklist => {
+      const checklistMap = grouped.get(checklist)!;
+      const sections = Array.from(checklistMap.keys()).sort((a, b) => {
+        if (a === 'General Items') return -1;
+        if (b === 'General Items') return 1;
+        return a.localeCompare(b);
+      });
+
+      return {
+        checklistName: checklist,
+        sections: sections.map(sectionName => ({
+          sectionName: sectionName,
+          items: checklistMap.get(sectionName)!.sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
+        }))
+      };
+    });
+  }
+
   canReviewItem(status: CheckpointStatus | string | undefined): boolean {
     if (!status) return true; // Pending items can be reviewed
     const statusStr = typeof status === 'string' ? status : String(status);
@@ -2032,7 +2286,7 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   /**
    * Group checklist items by category for display in the table
    */
-  getGroupedChecklistItems(): { category: string; items: { index: number; control: any }[] }[] {
+  getGroupedAddChecklistItems(): { category: string; items: { index: number; control: any }[] }[] {
     const grouped = new Map<string, { index: number; control: any }[]>();
     const categoryOrder = ['General', 'Setting Out', 'Installation Activity'];
     
@@ -2622,7 +2876,6 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
         this.wirCheckpoint = updatedCheckpoint;
     this.syncReviewFormFromCheckpoint();
     this.pendingAction = null;
-    this.currentStep = null;
     this.finalStatusControl.setValue(status);
     this.qualityIssuesArray.clear();
     const messageMap: Record<WIRCheckpointStatus, string> = {
@@ -2637,7 +2890,14 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
         type: 'success'
       }
     }));
-        this.goBack();
+    
+    // Navigate to quality issues step
+    this.currentStep = 'quality-issues';
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { step: 'quality-issues' },
+      queryParamsHandling: 'merge'
+    });
   }
 
   private handleReviewError(err: any): void {
@@ -2898,3 +3158,4 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     return this.wirCheckpoint ? 'review' : 'create-checkpoint';
   }
 }
+

@@ -9,11 +9,14 @@ namespace Dubox.Application.Specifications
         {
             AddCriteria(c => c.WIRId == checkPointId);
             AddInclude(nameof(WIRCheckpoint.ChecklistItems));
+            AddInclude($"{nameof(WIRCheckpoint.ChecklistItems)}.{nameof(WIRChecklistItem.PredefinedChecklistItem)}");
+            AddInclude($"{nameof(WIRCheckpoint.ChecklistItems)}.{nameof(WIRChecklistItem.PredefinedChecklistItem)}.{nameof(PredefinedChecklistItem.ChecklistSection)}");
+            AddInclude($"{nameof(WIRCheckpoint.ChecklistItems)}.{nameof(WIRChecklistItem.PredefinedChecklistItem)}.{nameof(PredefinedChecklistItem.ChecklistSection)}.{nameof(ChecklistSection.Checklist)}");
             AddInclude($"{nameof(WIRCheckpoint.QualityIssues)}.{nameof(Domain.Entities.QualityIssue.Images)}");
             AddInclude(nameof(WIRCheckpoint.QualityIssues));
             AddInclude(nameof(WIRCheckpoint.Images));
             AddInclude(nameof(WIRCheckpoint.Box));
-            
+
             // Enable split query to avoid Cartesian explosion with collection includes
             EnableSplitQuery();
         }

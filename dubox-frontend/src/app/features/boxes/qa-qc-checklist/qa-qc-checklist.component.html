@@ -224,9 +224,9 @@
     </div>
 
     <!-- Step 1: Create WIR Checkpoint -->
-    <div *ngIf="currentStep === 'create-checkpoint' && wirRecord && !loading && !error" class="step-container">
+    <div *ngIf="currentStep === 'create-checkpoint' && wirRecord && (!wirCheckpoint || wirCheckpoint.status === 'Pending') && !loading && !error" class="step-container">
       <div class="step-header">
-        <h2>Step 1: Create WIR Checkpoint</h2>
+        <h2>Step 1: {{ wirCheckpoint ? 'Update' : 'Create' }} WIR Checkpoint</h2>
         <p class="step-description" *ngIf="!wirCheckpoint">Create a new WIR checkpoint for this activity</p>
         <p class="step-description" *ngIf="wirCheckpoint">Update WIR checkpoint information for this activity</p>
       </div>
@@ -324,8 +324,8 @@
           <div class="form-actions">
             <button type="button" class="btn btn-secondary" (click)="goBack()">Cancel</button>
             <button type="submit" class="btn btn-primary" [disabled]="creatingCheckpoint || createCheckpointForm.invalid">
-              <span *ngIf="creatingCheckpoint">Creating...</span>
-              <span *ngIf="!creatingCheckpoint">Create Checkpoint</span>
+              <span *ngIf="creatingCheckpoint">{{ wirCheckpoint ? 'Updating...' : 'Creating...' }}</span>
+              <span *ngIf="!creatingCheckpoint">{{ wirCheckpoint ? 'Update Checkpoint' : 'Create Checkpoint' }}</span>
             </button>
           </div>
         </div>
@@ -373,10 +373,18 @@
         <div class="designer-headline">
           <div>
             <h3>Checklist Designer</h3>
-            <p>Create or edit inspection checkpoints for this WIR.</p>
+            <p *ngIf="selectedPredefinedItemIds.length === 0">Create or edit inspection checkpoints for this WIR.</p>
+            <p *ngIf="selectedPredefinedItemIds.length > 0" class="preview-message">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+              Previewing {{ selectedPredefinedItemIds.length }} selected item(s). Review and click "Save Selected Items" to add them.
+            </p>
           </div>
           <div class="designer-meta">
-            <span><strong>{{ wirCheckpoint?.checklistItems?.length || 0 }}</strong> item(s)</span>
+            <span><strong>{{ wirCheckpoint?.checklistItems?.length || 0 }}</strong> existing item(s)</span>
             <button 
               type="button" 
               class="btn btn-secondary btn-sm" 
@@ -409,30 +417,48 @@
           <div class="checklist-table-wrapper" formArrayName="checklistItems">
             <div *ngIf="addChecklistItemsArray.length > 0; else noChecklistPlaceholder" class="grouped-checklist-table">
               <ng-container *ngFor="let group of getGroupedChecklistItems()">
-                <div class="checklist-category-group" *ngIf="group.items.length > 0">
+                <div class="checklist-category-group" *ngIf="group.sections.length > 0">
                   <div class="category-header">
-                    <h4 class="category-title">{{ group.category }}</h4>
-                    <span class="category-count">{{ group.items.length }} item(s)</span>
+                    <h4 class="category-title">{{ group.checklistName }}</h4>
+                    <span class="category-count">
+                      {{ getTotalItemsCount(group.sections) }} item(s)
+                    </span>
                   </div>
-                  <table class="designer-table">
-                   
-                    <tbody>
-                      <tr *ngFor="let itemData of group.items" [formGroupName]="itemData.index">
-                        <td class="text-center">{{ itemData.index + 1 }}</td>
-                        <td>{{ itemData.control.get('checkpointDescription')?.value }}</td>
-                        <td class="text-right actions-cell">
-                          <button 
-                            type="button" 
-                            class="icon-button" 
-                            (click)="confirmRemoveChecklistItem(itemData.index)"
-                            title="Delete item"
-                          >
-                            🗑️
-                          </button>
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  
+                  <!-- Sections within Category -->
+                  <ng-container *ngFor="let section of group.sections">
+                    <div class="section-subgroup" *ngIf="section.items.length > 0">
+                      <div class="section-subheader">
+                        <h5 class="section-subtitle">{{ section.sectionName }}</h5>
+                        <span class="section-subcount">{{ section.items.length }} item(s)</span>
+                      </div>
+                      <table class="designer-table">
+                        <thead>
+                          <tr>
+                            <th style="width: 60px; text-align: center;">Seq</th>
+                            <th>Checkpoint Description</th>
+                            <th style="width: 80px; text-align: center;">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let itemData of section.items" [formGroupName]="itemData.index">
+                            <td class="text-center">{{ itemData.index + 1 }}</td>
+                            <td>{{ itemData.control.get('checkpointDescription')?.value }}</td>
+                            <td class="text-center actions-cell">
+                              <button 
+                                type="button" 
+                                class="icon-button" 
+                                (click)="confirmRemoveChecklistItem(itemData.index)"
+                                title="Delete item"
+                              >
+                                🗑️
+                              </button>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </ng-container>
                 </div>
               </ng-container>
             </div>
@@ -694,50 +720,74 @@
               Checklist Validation
         </h2>
         
-        <div class="checklist-table-wrapper">
-          <table class="checklist-table">
-            <thead>
-              <tr>
-                <th style="width: 60px;">#</th>
-                <th>Checkpoint Description</th>
-                <th style="width: 150px;">Status</th>
-                <th style="width: 120px;">Actions</th>
-              </tr>
-            </thead>
-            <tbody formArrayName="checklistItems">
-              <tr *ngFor="let item of checklistItems.controls; let i = index" [formGroupName]="i">
-                <td class="text-center">{{ i + 1 }}</td>
-                <td class="checkpoint-desc">
-                  <div class="checkpoint-description-text">
-                    {{ item.get('checkpointDescription')?.value || '—' }}
-                  </div>
-                </td>
-                <td class="status-display">
-                  <span class="status-badge" [ngClass]="getStatusBadgeClass(item.value.status)">
-                    {{ getStatusLabel(item.value.status) }}
+        <div class="checklist-table-wrapper" formArrayName="checklistItems">
+          <div *ngIf="checklistItems.length > 0; else noChecklistItems" class="grouped-checklist-table">
+            <ng-container *ngFor="let group of getGroupedReviewChecklistItems()">
+              <div class="checklist-category-group" *ngIf="group.sections.length > 0">
+                <div class="category-header">
+                  <h4 class="category-title">{{ group.checklistName }}</h4>
+                  <span class="category-count">
+                    {{ getTotalItemsCount(group.sections) }} item(s)
                   </span>
-                </td>
-                <td class="text-right actions-cell">
-                  <button 
-                    type="button" 
-                    class="btn btn-primary btn-sm btn-review" 
-                    (click)="openItemReviewModal(i)"
-                    [disabled]="isChecklistLocked || !canReviewItem(item.value.status)"
-                    [title]="getReviewButtonTitle(item.value.status, isChecklistLocked)"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                    </svg>
-                    Review
-                  </button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-          <div *ngIf="checklistItems.length === 0" class="empty-checklist">
-            <p>No checklist items available.</p>
-            <small>Please add checklist items first.</small>
+                </div>
+                
+                <!-- Sections within Checklist -->
+                <ng-container *ngFor="let section of group.sections">
+                  <div class="section-subgroup" *ngIf="section.items.length > 0">
+                    <div class="section-subheader">
+                      <h5 class="section-subtitle">{{ section.sectionName }}</h5>
+                      <span class="section-subcount">{{ section.items.length }} item(s)</span>
+                    </div>
+                    <table class="checklist-table">
+                      <thead>
+                        <tr>
+                          <th style="width: 60px; text-align: center;">Seq</th>
+                          <th>Checkpoint Description</th>
+                          <th style="width: 150px; text-align: center;">Status</th>
+                          <th style="width: 120px; text-align: center;">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let itemData of section.items" [formGroupName]="itemData.index">
+                          <td class="text-center">{{ itemData.index + 1 }}</td>
+                          <td class="checkpoint-desc">
+                            <div class="checkpoint-description-text">
+                              {{ itemData.control.get('checkpointDescription')?.value || '—' }}
+                            </div>
+                          </td>
+                          <td class="status-display text-center">
+                            <span class="status-badge" [ngClass]="getStatusBadgeClass(itemData.control.value.status)">
+                              {{ getStatusLabel(itemData.control.value.status) }}
+                            </span>
+                          </td>
+                          <td class="text-center actions-cell">
+                            <button 
+                              type="button" 
+                              class="btn btn-primary btn-sm btn-review" 
+                              (click)="openItemReviewModal(itemData.index)"
+                              [disabled]="isChecklistLocked || !canReviewItem(itemData.control.value.status)"
+                              [title]="getReviewButtonTitle(itemData.control.value.status, isChecklistLocked)"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                              </svg>
+                              Review
+                            </button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </ng-container>
+              </div>
+            </ng-container>
           </div>
+          <ng-template #noChecklistItems>
+            <div class="empty-checklist">
+              <p>No checklist items available.</p>
+              <small>Please add checklist items first.</small>
+            </div>
+          </ng-template>
         </div>
       </div>
       </div>

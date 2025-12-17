@@ -13,6 +13,7 @@ import {
   AddChecklistItemsRequest,
   UpdateChecklistItemRequest,
   PredefinedChecklistItem,
+  PredefinedChecklistItemWithChecklistDto,
   ReviewWIRCheckpointRequest,
   AddQualityIssueRequest,
   CreateQualityIssueForBoxRequest,
@@ -165,6 +166,7 @@ export class WIRService {
         const data = response?.data || response;
         if (data?.items) {
           // Paginated response
+          console.log('getWIRCheckpoints - data:', data.items);
           return {
             items: data.items.map((c: any) => this.transformWIRCheckpoint(c)),
             totalCount: data.totalCount || 0,
@@ -219,18 +221,80 @@ export class WIRService {
 
   /**
    * Get all predefined checklist items
+   * @param wirNumber Optional WIR number to filter items
    */
-  getPredefinedChecklistItems(): Observable<PredefinedChecklistItem[]> {
-    return this.apiService.get<any[]>('wircheckpoints/predefined-checklist-items').pipe(
+  getPredefinedChecklistItems(wirNumber?: string): Observable<PredefinedChecklistItem[]> {
+    const url = wirNumber 
+      ? `wircheckpoints/predefined-checklist-items?wirNumber=${wirNumber}`
+      : 'wircheckpoints/predefined-checklist-items';
+      
+    return this.apiService.get<any[]>(url).pipe(
       map(response => {
         const items = Array.isArray(response) ? response : (response as any)?.data || [];
         return items.map((item: any) => ({
           predefinedItemId: item.predefinedItemId || item.PredefinedItemId,
+          wirNumber: item.wirNumber || item.WIRNumber || '',
+          itemNumber: item.itemNumber || item.ItemNumber,
           checkpointDescription: item.checkpointDescription || item.CheckpointDescription,
-          referenceDocument: item.referenceDocument || item.ReferenceDocument,
-          sequence: item.sequence || item.Sequence || 0,
+          categoryId: item.categoryId || item.CategoryId,
           category: item.category || item.Category,
+          categoryName: item.categoryName || item.CategoryName,
+          referenceId: item.referenceId || item.ReferenceId,
+          referenceDocument: item.referenceDocument || item.ReferenceDocument,
+          referenceName: item.referenceName || item.ReferenceName,
+          sequence: item.sequence || item.Sequence || 0,
           isActive: item.isActive ?? item.IsActive ?? true
+        }));
+      })
+    );
+  }
+
+  /**
+   * Get predefined checklist items by WIR checkpoint ID with checklist and section grouping
+   * @param checkpointId WIR checkpoint ID
+   */
+  getPredefinedChecklistItemsByCheckpointId(checkpointId: string): Observable<PredefinedChecklistItemWithChecklistDto[]> {
+    return this.apiService.get<any>(`wircheckpoints/predefined-checklist-items/${checkpointId}`).pipe(
+      map(response => {
+        console.log('Raw API response:', response);
+        
+        // Handle different response formats
+        let items = [];
+        if (Array.isArray(response)) {
+          items = response;
+        } else if (response?.data && Array.isArray(response.data)) {
+          items = response.data;
+        } else if (response?.value && Array.isArray(response.value)) {
+          items = response.value;
+        } else {
+          console.warn('Unexpected response format:', response);
+          items = [];
+        }
+        
+        console.log('Extracted items:', items);
+        
+        return items.map((item: any) => ({
+          predefinedItemId: item.predefinedItemId || item.PredefinedItemId || item.id,
+          checkpointDescription: item.checkpointDescription || item.CheckpointDescription || item.description || '',
+          reference: item.reference || item.Reference,
+          sequence: item.sequence || item.Sequence || 0,
+          isActive: item.isActive ?? item.IsActive ?? true,
+          
+          // ChecklistSection information
+          checklistSectionId: item.checklistSectionId || item.ChecklistSectionId,
+          sectionTitle: item.sectionTitle || item.SectionTitle,
+          sectionOrder: item.sectionOrder || item.SectionOrder,
+          
+          // Checklist information
+          checklistId: item.checklistId || item.ChecklistId,
+          checklistName: item.checklistName || item.ChecklistName,
+          checklistCode: item.checklistCode || item.ChecklistCode,
+          checklistDiscipline: item.checklistDiscipline || item.ChecklistDiscipline,
+          checklistSubDiscipline: item.checklistSubDiscipline || item.ChecklistSubDiscipline,
+          checklistPageNumber: item.checklistPageNumber || item.ChecklistPageNumber,
+          checklistWIRCode: item.checklistWIRCode || item.ChecklistWIRCode,
+          checklistReferenceDocuments: item.checklistReferenceDocuments || item.ChecklistReferenceDocuments,
+          checklistSignatureRoles: item.checklistSignatureRoles || item.ChecklistSignatureRoles
         }));
       })
     );
@@ -538,11 +602,19 @@ export class WIRService {
         rawBox?.ProjectId ||
         backendCheckpoint.projectId ||
         backendCheckpoint.ProjectId,
+        projectName:
+        rawBox?.projectName ||
+        rawBox?.ProjectName ||
+        backendCheckpoint.projectName ||
+        backendCheckpoint.ProjectName,
       projectCode:
         rawBox?.projectCode ||
         rawBox?.ProjectCode ||
         backendCheckpoint.projectCode ||
         backendCheckpoint.ProjectCode,
+      client:
+        backendCheckpoint.client ||
+        backendCheckpoint.Client,
       box: rawBox
         ? {
             boxId: rawBox.boxId || rawBox.BoxId || backendCheckpoint.boxId || backendCheckpoint.BoxId,
@@ -577,7 +649,18 @@ export class WIRService {
             status: item.status || item.Status || 'Pending',
             remarks: item.remarks || item.Remarks || item.comments || item.Comments,
             sequence: item.sequence || item.Sequence || 0,
-            predefinedItemId: item.predefinedItemId || item.PredefinedItemId
+            predefinedItemId: item.predefinedItemId || item.PredefinedItemId,
+            // Category information
+            categoryId: item.categoryId || item.CategoryId,
+            categoryName: item.categoryName || item.CategoryName,
+            // Section information
+            sectionId: item.sectionId || item.SectionId,
+            sectionName: item.sectionName || item.SectionName,
+            sectionOrder: item.sectionOrder ?? item.SectionOrder,
+            // Checklist information
+            checklistId: item.checklistId || item.ChecklistId,
+            checklistName: item.checklistName || item.ChecklistName,
+            checklistCode: item.checklistCode || item.ChecklistCode
           };
           console.log(`Transformed item ${index + 1}:`, transformedItem);
           return transformedItem;

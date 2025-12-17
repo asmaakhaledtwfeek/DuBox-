@@ -9,7 +9,7 @@ namespace Dubox.Infrastructure.Services.ImageEntityConfig.ImageEntityConfigFacto
 
     public class QualityIssueImageConfig : IImageEntityConfig
     {
-        public string ForeignKeyName => "QualityIssueId";
+        public string ForeignKeyName => "IssueId";
     }
     public class WIRCheckpointImageConfig : IImageEntityConfig
     {

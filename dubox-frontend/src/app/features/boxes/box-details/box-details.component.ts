@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
+import { trigger, state, style, transition, animate } from '@angular/animations';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { Box, BoxStatus, BoxLog, getBoxStatusNumber } from '../../../core/models/box.model';
@@ -17,6 +18,7 @@ import { ActivityTableComponent } from '../../activities/activity-table/activity
 import { BoxLogDetailsModalComponent } from '../box-log-details-modal/box-log-details-modal.component';
 import { LocationService, FactoryLocation, BoxLocationHistory } from '../../../core/services/location.service';
 import { ApiService } from '../../../core/services/api.service';
+import { WirExportService, ProjectInfo } from '../../../core/services/wir-export.service';
 import * as ExcelJS from 'exceljs';
 import { Observable, Subject, takeUntil, forkJoin, of, firstValueFrom } from 'rxjs';
 import { debounceTime, distinctUntilChanged, map, skip, catchError } from 'rxjs/operators';
@@ -28,6 +30,18 @@ import { environment } from '../../../../environments/environment';
   standalone: true,
   imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, HttpClientModule, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent, HeaderComponent, BoxLogDetailsModalComponent],
   providers: [LocationService],
+  animations: [
+    trigger('slideDown', [
+      transition(':enter', [
+        style({ height: '0', opacity: '0', overflow: 'hidden' }),
+        animate('300ms ease-out', style({ height: '*', opacity: '1' }))
+      ]),
+      transition(':leave', [
+        style({ height: '*', opacity: '1', overflow: 'hidden' }),
+        animate('300ms ease-in', style({ height: '0', opacity: '0' }))
+      ])
+    ])
+  ],
   templateUrl: './box-details.component.html',
   styleUrls: ['./box-details.component.scss']
 })
@@ -41,7 +55,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   showDeleteConfirm = false;
   deleteSuccess = false;
   
-  activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments'  | 'progress-updates' = 'overview';
+  activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'drawings' | 'progress-updates' | 'attachments' = 'overview';
   
   canEdit = false;
   canDelete = false;
@@ -132,18 +146,28 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   selectedProgressUpdate: ProgressUpdate | null = null;
   isProgressModalOpen = false;
   
-  // All progress updates for attachments (images)
+  // All progress updates for drawings (images)
   allProgressUpdatesForImages: ProgressUpdate[] = [];
   loadingProgressUpdateImages = false;
   resolvedProgressImages: Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType?: 'file' | 'url' }> = [];
   resolvingProgressImages = false;
   
-  // Box attachments from dedicated endpoint
-  boxAttachments: Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType: 'file' | 'url'; originalUrl?: string }> = [];
+  // Box drawings from dedicated endpoint
+  boxDrawings: Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType: 'file' | 'url'; originalUrl?: string }> = [];
+  loadingBoxDrawings = false;
+  boxDrawingsError = '';
+
+  // All box attachments (WIR, Progress Update, Quality Issue images)
+  boxAttachments: any = null;
   loadingBoxAttachments = false;
   boxAttachmentsError = '';
   
-  // Sub-tab for Drowning (Attachments) section
+  // Collapsible sections state
+  wirImagesExpanded = true;
+  progressImagesExpanded = true;
+  qualityImagesExpanded = true;
+  
+  // Sub-tab for Drawings section
   activeDrawingTab: 'file' | 'url' = 'file';
   
   // Pagination for progress updates
@@ -214,7 +238,8 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     private progressUpdateService: ProgressUpdateService,
     @Inject(LocationService) private locationService: LocationService,
     private apiService: ApiService,
-    private http: HttpClient
+    private http: HttpClient,
+    private wirExportService: WirExportService
   ) {}
 
   ngOnInit(): void {
@@ -223,7 +248,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     
     // Check for tab query parameter to set active tab
     const tabParam = this.route.snapshot.queryParams['tab'];
-    if (tabParam && ['overview', 'activities', 'wir', 'quality-issues', 'logs', 'attachments', 'progress-updates'].includes(tabParam)) {
+    if (tabParam && ['overview', 'activities', 'wir', 'quality-issues', 'logs', 'drawings', 'progress-updates'].includes(tabParam)) {
       this.activeTab = tabParam as any;
     }
     
@@ -313,7 +338,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         
         // After box is loaded, if we have a tab query parameter, trigger data loading for that tab
         const tabParam = this.route.snapshot.queryParams['tab'];
-        if (tabParam && ['activities', 'wir', 'quality-issues', 'logs', 'attachments', 'progress-updates'].includes(tabParam)) {
+        if (tabParam && ['activities', 'wir', 'quality-issues', 'logs', 'drawings', 'progress-updates', 'attachments'].includes(tabParam)) {
           // Use setTimeout to ensure the component is fully initialized
           setTimeout(() => {
             this.setActiveTab(tabParam as any);
@@ -536,7 +561,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'attachments' | 'progress-updates'): void {
+  setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'drawings' | 'progress-updates' | 'attachments'): void {
     this.activeTab = tab;
     
     // Lazy load data when tab is clicked
@@ -564,10 +589,10 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         this.loadBoxLogs(this.boxLogsCurrentPage, this.boxLogsPageSize);
       }
     }
-    if (tab === 'attachments') {
-      // Load box attachments when attachments/drowning tab is opened
-      if (this.boxAttachments.length === 0 && !this.loadingBoxAttachments) {
-        this.loadBoxAttachments();
+    if (tab === 'drawings') {
+      // Load box drawings when drawings tab is opened
+      if (this.boxDrawings.length === 0 && !this.loadingBoxDrawings) {
+        this.loadBoxDrawings();
       }
     }
     if (tab === 'progress-updates') {
@@ -575,6 +600,12 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       // Service-level cache will handle whether to fetch from API or use cached data
       if (this.progressUpdates.length === 0 && !this.progressUpdatesLoading) {
         this.loadProgressUpdates(1, this.progressUpdatesPageSize);
+      }
+    }
+    if (tab === 'attachments') {
+      // Load all box attachments when Attachments tab is clicked
+      if (!this.boxAttachments && !this.loadingBoxAttachments) {
+        this.loadAllBoxAttachments();
       }
     }
   }
@@ -774,6 +805,21 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     ], {
       queryParams: { step: targetStep }
     });
+  }
+
+  exportWIRToPDF(checkpoint: WIRCheckpoint): void {
+    // Export as PDF via print dialog
+    this.wirExportService.exportWIRToPrintDialog(checkpoint, this.box, null);
+  }
+
+  async downloadWIRAsPDF(checkpoint: WIRCheckpoint): Promise<void> {
+    // Direct PDF download with DuBox logo watermark (no print dialog)
+    await this.wirExportService.downloadWIRAsPDF(checkpoint, this.box, null);
+  }
+
+  downloadWIRAsHTML(checkpoint: WIRCheckpoint): void {
+    // Download as HTML file (legacy support)
+    this.wirExportService.downloadWIRAsHTML(checkpoint, this.box, null);
   }
 
   loadQualityIssues(): void {
@@ -1956,14 +2002,39 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   }
 
   openPhotoInNewTab(photoUrl: string): void {
-    // For base64 images, create a new window with the image
-    if (photoUrl.startsWith('data:image/')) {
+    if (!photoUrl) {
+      console.error('No photo URL provided');
+      return;
+    }
+
+    // Ensure URL is absolute
+    let absoluteUrl = photoUrl;
+    
+    // If it's a relative URL, make it absolute
+    if (photoUrl.startsWith('/')) {
+      const baseUrl = this.getApiBaseUrl();
+      absoluteUrl = `${baseUrl}${photoUrl}`;
+    }
+    // For base64/data images, convert to blob URL
+    else if (photoUrl.startsWith('data:image/')) {
       const newWindow = window.open();
       if (newWindow) {
         newWindow.document.write(`<img src="${photoUrl}" style="max-width: 100%; height: auto;" />`);
       }
     } else {
       window.open(photoUrl, '_blank', 'noopener,noreferrer');
+    }
+    // If it's already an absolute URL (http/https), use as is
+     if (!photoUrl.startsWith('http://') && !photoUrl.startsWith('https://')) {
+      // Relative URL without leading slash - prepend base URL
+      const baseUrl = this.getApiBaseUrl();
+      absoluteUrl = `${baseUrl}/${photoUrl}`;
+    }
+
+    console.log('🖼️ Opening photo URL:', absoluteUrl);
+    const newWindow = window.open(absoluteUrl, '_blank', 'noopener,noreferrer');
+    if (!newWindow) {
+      console.error('Failed to open photo in new tab. Popup may be blocked.');
     }
   }
 
@@ -1996,13 +2067,13 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     img.style.padding = '20px';
   }
 
-  // Load all progress updates to extract images for attachments section
+  // Load all progress updates to extract images for drawings section
   loadAllProgressUpdatesForImages(): void {
     if (!this.boxId || this.loadingProgressUpdateImages) {
       return;
     }
 
-    console.log('📋 Loading progress updates for attachments tab...');
+    console.log('📋 Loading progress updates for drawings tab...');
     this.loadingProgressUpdateImages = true;
     // Load with a large page size to get all progress updates
     this.progressUpdateService.getProgressUpdatesByBox(this.boxId, 1, 1000, {}).subscribe({
@@ -2095,19 +2166,19 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     return this.resolvedProgressImages.length > 0;
   }
 
-  // Set active drawing/attachment sub-tab
+  // Set active drawing sub-tab
   setActiveDrawingTab(tab: 'file' | 'url'): void {
     this.activeDrawingTab = tab;
   }
 
   // Get file-type images (uploaded images)
   getFileTypeImages(): Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType: 'file' | 'url'; originalUrl?: string }> {
-    return this.boxAttachments.filter(img => img.imageType === 'file');
+    return this.boxDrawings.filter(img => img.imageType === 'file');
   }
 
   // Get URL-type images
   getUrlTypeImages(): Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType: 'file' | 'url'; originalUrl?: string }> {
-    return this.boxAttachments.filter(img => img.imageType === 'url');
+    return this.boxDrawings.filter(img => img.imageType === 'url');
   }
 
   // Open image - for URL-type images, open original URL, otherwise open the display URL
@@ -2123,20 +2194,20 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Load box attachments from dedicated endpoint
-  loadBoxAttachments(): void {
+  // Load box drawings from dedicated endpoint
+  loadBoxDrawings(): void {
     if (!this.boxId) {
       return;
     }
 
-    this.loadingBoxAttachments = true;
-    this.boxAttachmentsError = '';
+    this.loadingBoxDrawings = true;
+    this.boxDrawingsError = '';
 
-    console.log('📦 Loading box attachments for box:', this.boxId);
+    console.log('📦 Loading box drawings for box:', this.boxId);
 
-    this.boxService.getBoxAttachmentImages(this.boxId).subscribe({
+    this.boxService.getBoxDrawingImages(this.boxId).subscribe({
       next: (response) => {
-        console.log('✅ Box attachments loaded in component:', response);
+        console.log('✅ Box drawings loaded in component:', response);
         console.log('✅ Response.images:', response.images);
         console.log('✅ Response.images length:', response.images?.length || 0);
         console.log('✅ Response.totalCount:', response.totalCount);
@@ -2194,9 +2265,9 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         if (imageRequests.length > 0) {
           forkJoin(imageRequests).subscribe({
             next: (resolvedImages: ResolvedImage[]) => {
-              this.boxAttachments = resolvedImages;
-              this.loadingBoxAttachments = false;
-              console.log('🎨 Resolved box attachments:', {
+              this.boxDrawings = resolvedImages;
+              this.loadingBoxDrawings = false;
+              console.log('🎨 Resolved box drawings:', {
                 total: resolvedImages.length,
                 fileType: resolvedImages.filter((img: ResolvedImage) => img.imageType === 'file').length,
                 urlType: resolvedImages.filter((img: ResolvedImage) => img.imageType === 'url').length
@@ -2204,14 +2275,14 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
             },
             error: (err) => {
               console.error('❌ Error resolving images:', err);
-              this.boxAttachmentsError = 'Failed to load some images';
-              this.loadingBoxAttachments = false;
+              this.boxDrawingsError = 'Failed to load some images';
+              this.loadingBoxDrawings = false;
             }
           });
         } else {
-          this.boxAttachments = [];
-          this.loadingBoxAttachments = false;
-          console.warn('⚠️ No attachments found for this box. Response had no images.');
+          this.boxDrawings = [];
+          this.loadingBoxDrawings = false;
+          console.warn('⚠️ No drawings found for this box. Response had no images.');
           console.log('⚠️ Empty response details:', {
             responseImages: response.images,
             responseImagesLength: response.images?.length,
@@ -2220,7 +2291,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         }
       },
       error: (err) => {
-        console.error('❌ Error loading box attachments:', err);
+        console.error('❌ Error loading box drawings:', err);
         console.error('❌ Error details:', {
           status: err.status,
           statusText: err.statusText,
@@ -2228,12 +2299,117 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
           message: err.message,
           url: err.url
         });
+        this.boxDrawingsError = err.error?.message || err.message || 'Failed to load drawings';
+        this.loadingBoxDrawings = false;
+      }
+    });
+  }
+
+
+  loadAllBoxAttachments(): void {
+    if (!this.boxId) {
+      return;
+    }
+
+    this.loadingBoxAttachments = true;
+    this.boxAttachmentsError = '';
+
+    console.log('📎 Loading all box attachments for box:', this.boxId);
+
+    this.boxService.getAllBoxAttachments(this.boxId).subscribe({
+      next: (response) => {
+        console.log('✅ Box attachments loaded:', response);
+        this.boxAttachments = response;
+        this.loadingBoxAttachments = false;
+      },
+      error: (err) => {
+        console.error('❌ Error loading box attachments:', err);
         this.boxAttachmentsError = err.error?.message || err.message || 'Failed to load attachments';
         this.loadingBoxAttachments = false;
       }
     });
   }
 
+  /**
+   * Format image data to ensure it has proper data URL format
+   */
+  formatImageData(imageData: string, imageType?: string): string {
+    if (!imageData) {
+      return '';
+    }
+
+    // Check if imageData is already a valid data URL or regular URL
+    if (imageData.startsWith('data:') || imageData.startsWith('http://') || imageData.startsWith('https://')) {
+     console.log(imageData);
+      return imageData;
+    }
+
+    // It's a base64 string without the data URL prefix
+    // Determine MIME type from imageType field or default to PNG
+    let mimeType = 'image/png'; // Default
+    
+    if (imageType) {
+      const type = imageType.toLowerCase();
+      if (type.includes('jpg') || type.includes('jpeg')) {
+        mimeType = 'image/jpeg';
+      } else if (type.includes('png')) {
+        mimeType = 'image/png';
+      } else if (type.includes('gif')) {
+        mimeType = 'image/gif';
+      } else if (type.includes('webp')) {
+        mimeType = 'image/webp';
+      } else if (type.includes('bmp')) {
+        mimeType = 'image/bmp';
+      }
+    }
+    
+    return `data:${mimeType};base64,${imageData}`;
+  }
+
+  openImagePreview(imageData: string, imageType?: string): void {
+    if (!imageData) {
+      console.warn('⚠️ No image data provided');
+      return;
+    }
+
+    console.log('🖼️ Opening image preview. Type:', imageType, 'Data:', imageData.substring(0, 50) + '...');
+    
+    const formattedUrl = this.formatImageData(imageData, imageType);
+    if (formattedUrl.startsWith('data:image/')) {
+      const newWindow = window.open();
+      if (newWindow) {
+        newWindow.document.write(`<img src="${formattedUrl}" style="max-width: 100%; height: auto;" />`);
+      }
+    } else {
+      window.open(formattedUrl, '_blank', 'noopener,noreferrer');
+    }
+    console.log('✅ Opening formatted image URL', formattedUrl);
+   
+  }
+
+  toggleWirImages(): void {
+    this.wirImagesExpanded = !this.wirImagesExpanded;
+  }
+
+  toggleProgressImages(): void {
+    this.progressImagesExpanded = !this.progressImagesExpanded;
+  }
+
+  toggleQualityImages(): void {
+    this.qualityImagesExpanded = !this.qualityImagesExpanded;
+  }
+
+  collapseAllAttachments(): void {
+    this.wirImagesExpanded = false;
+    this.progressImagesExpanded = false;
+    this.qualityImagesExpanded = false;
+  }
+
+  expandAllAttachments(): void {
+    this.wirImagesExpanded = true;
+    this.progressImagesExpanded = true;
+    this.qualityImagesExpanded = true;
+  }
 
   loadProgressUpdates(page: number = 1, pageSize: number = 10, forceRefresh: boolean = false): void {
     if (!this.boxId) {

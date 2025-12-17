@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiService } from './api.service';
-import { Team, CreateTeam, UpdateTeam, TeamMember, TeamMembersDto, AssignTeamMembers, CompleteTeamMemberProfile, Department, PaginatedTeamsResponse } from '../models/team.model';
+import { Team, CreateTeam, UpdateTeam, TeamMember, TeamMembersDto, AssignTeamMembers, CompleteTeamMemberProfile, Department, PaginatedTeamsResponse, TeamGroup, PaginatedTeamGroupsResponse, CreateTeamGroup, UpdateTeamGroup, TeamGroupMembers } from '../models/team.model';
 
 @Injectable({
   providedIn: 'root'
@@ -126,6 +126,151 @@ export class TeamService {
   }
 
   /**
+   * Create team group
+   */
+  createTeamGroup(teamGroup: CreateTeamGroup): Observable<TeamGroup> {
+    return this.apiService.post<TeamGroup>(`${this.endpoint}/team-groups`, teamGroup).pipe(
+      map(tg => this.transformTeamGroup(tg))
+    );
+  }
+
+  /**
+   * Get all team groups
+   */
+  getAllTeamGroups(): Observable<TeamGroup[]> {
+    return this.apiService.get<any>(`${this.endpoint}/team-groups`).pipe(
+      map(response => {
+        const data = response?.data || response?.Data || response;
+        const groups = Array.isArray(data) ? data : [];
+        return groups.map((g: any) => this.transformTeamGroup(g));
+      })
+    );
+  }
+
+  /**
+   * Get team groups with pagination and filters
+   */
+  getTeamGroupsPaginated(params: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    teamId?: string;
+    isActive?: boolean;
+  }): Observable<PaginatedTeamGroupsResponse> {
+    const queryParams: any = {};
+    
+    if (params.page !== undefined) queryParams.page = params.page;
+    if (params.pageSize !== undefined) queryParams.pageSize = params.pageSize;
+    if (params.search) queryParams.search = params.search;
+    if (params.teamId) queryParams.teamId = params.teamId;
+    if (params.isActive !== undefined) queryParams.isActive = params.isActive;
+
+    return this.apiService.get<any>(`${this.endpoint}/team-groups`, queryParams).pipe(
+      map((response: any) => {
+        const data = response.data || response.Data || response;
+        const items = data.items || data.Items || [];
+        const totalCount = data.totalCount ?? data.TotalCount ?? 0;
+        const page = data.page ?? data.Page ?? params.page ?? 1;
+        const pageSize = data.pageSize ?? data.PageSize ?? params.pageSize ?? 25;
+        const totalPages = data.totalPages ?? data.TotalPages ?? 0;
+
+        return {
+          items: items.map((g: any) => this.transformTeamGroup(g)),
+          totalCount,
+          page,
+          pageSize,
+          totalPages
+        };
+      })
+    );
+  }
+
+  /**
+   * Get team group by ID
+   */
+  getTeamGroupById(groupId: string): Observable<TeamGroup> {
+    return this.apiService.get<any>(`${this.endpoint}/team-groups/${groupId}`).pipe(
+      map(response => {
+        const data = response?.data || response?.Data || response;
+        return this.transformTeamGroup(data);
+      })
+    );
+  }
+
+  /**
+   * Get team group members
+   */
+  getTeamGroupMembers(groupId: string): Observable<TeamGroupMembers> {
+    return this.apiService.get<any>(`${this.endpoint}/team-groups/${groupId}/members`).pipe(
+      map(response => {
+        const data = response?.data || response?.Data || response;
+        return {
+          teamGroupId: data.teamGroupId?.toString() || '',
+          teamId: data.teamId?.toString() || '',
+          teamCode: data.teamCode || '',
+          teamName: data.teamName || '',
+          groupTag: data.groupTag || '',
+          groupType: data.groupType || '',
+          groupLeaderId: data.groupLeaderId?.toString(),
+          groupLeaderName: data.groupLeaderName,
+          memberCount: data.memberCount || 0,
+          isActive: data.isActive !== undefined ? data.isActive : true,
+          members: (data.members || []).map((m: any) => ({
+            teamMemberId: m.teamMemberId || m.id,
+            userId: m.userId,
+            teamId: m.teamId,
+            teamCode: m.teamCode || '',
+            teamName: m.teamName || '',
+            email: m.email || '',
+            fullName: m.fullName,
+            employeeCode: m.employeeCode || '',
+            employeeName: m.employeeName || '',
+            mobileNumber: m.mobileNumber,
+            isActive: m.isActive !== undefined ? m.isActive : true,
+            teamGroupId: m.teamGroupId?.toString()
+          }))
+        };
+      })
+    );
+  }
+
+  /**
+   * Update a team group
+   */
+  updateTeamGroup(groupId: string, teamGroup: UpdateTeamGroup): Observable<TeamGroup> {
+    return this.apiService.put<any>(`${this.endpoint}/team-groups/${groupId}`, teamGroup).pipe(
+      map(response => {
+        const data = response?.data || response?.Data || response;
+        return this.transformTeamGroup(data);
+      })
+    );
+  }
+
+  /**
+   * Add members to a team group
+   */
+  addMembersToGroup(groupId: string, teamMemberIds: string[]): Observable<TeamGroup> {
+    return this.apiService.post<any>(`${this.endpoint}/team-groups/${groupId}/add-members`, { teamMemberIds }).pipe(
+      map(response => {
+        const data = response?.data || response?.Data || response;
+        return this.transformTeamGroup(data);
+      })
+    );
+  }
+
+  /**
+   * Assign a leader to a team group
+   */
+  assignGroupLeader(groupId: string, teamMemberId: string): Observable<TeamGroup> {
+    return this.apiService.post<any>(`${this.endpoint}/team-groups/${groupId}/assign-leader`, { teamMemberId }).pipe(
+      map(response => {
+        const data = response?.data || response?.Data || response;
+        return this.transformTeamGroup(data);
+      })
+    );
+  }
+
+  /**
    * Get all departments
    */
   getDepartments(): Observable<Department[]> {
@@ -197,6 +342,40 @@ export class TeamService {
         employeeName: m.employeeName || '',
         mobileNumber: m.mobileNumber,
         isActive: m.isActive !== undefined ? m.isActive : true
+      }))
+    };
+  }
+
+  /**
+   * Transform backend team group to frontend model
+   */
+  private transformTeamGroup(backendGroup: any): TeamGroup {
+    return {
+      teamGroupId: backendGroup.teamGroupId || backendGroup.id?.toString(),
+      teamId: backendGroup.teamId?.toString() || '',
+      teamName: backendGroup.teamName || '',
+      teamCode: backendGroup.teamCode || '',
+      groupTag: backendGroup.groupTag || '',
+      groupType: backendGroup.groupType || '',
+      groupLeaderId: backendGroup.groupLeaderId?.toString(),
+      groupLeaderName: backendGroup.groupLeaderName,
+      isActive: backendGroup.isActive !== undefined ? backendGroup.isActive : true,
+      createdDate: backendGroup.createdDate ? new Date(backendGroup.createdDate) : new Date(),
+      createdBy: backendGroup.createdBy?.toString(),
+      memberCount: backendGroup.memberCount || 0,
+      members: (backendGroup.members || []).map((m: any) => ({
+        teamMemberId: m.teamMemberId || m.id,
+        userId: m.userId,
+        teamId: m.teamId || backendGroup.teamId?.toString(),
+        teamCode: m.teamCode || backendGroup.teamCode || '',
+        teamName: m.teamName || backendGroup.teamName || '',
+        email: m.email || '',
+        fullName: m.fullName,
+        employeeCode: m.employeeCode || '',
+        employeeName: m.employeeName || '',
+        mobileNumber: m.mobileNumber,
+        isActive: m.isActive !== undefined ? m.isActive : true,
+        teamGroupId: m.teamGroupId?.toString()
       }))
     };
   }

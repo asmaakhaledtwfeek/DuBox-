@@ -5,8 +5,17 @@
     
     <main class="main-content">
       <div class="page-header">
-        <h1 class="page-title">Add Checklist Items</h1>
-        <p class="page-subtitle" *ngIf="wirCheckpoint">WIR Checkpoint: {{ wirCheckpoint.wirNumber }}</p>
+        <button class="btn-back" (click)="goBack()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+          Back
+        </button>
+        <div>
+          <h1 class="page-title">Add Predefined Checklist Items</h1>
+          <p class="page-subtitle" *ngIf="wirCheckpoint">{{ wirCheckpoint.wirNumber }} • {{ wirCheckpoint.wirName || 'WIR Checkpoint' }}</p>
+        </div>
       </div>
 
       <!-- Loading State -->
@@ -16,31 +25,58 @@
       </div>
 
       <!-- Error State -->
-      <div class="error-container" *ngIf="error && !loading">
+      <div class="error-container" *ngIf="error && !loading && !loadingPredefinedItems">
         <p class="error-message">{{ error }}</p>
         <button class="btn btn-primary" (click)="loadWIRCheckpoint()">Retry</button>
       </div>
 
       <!-- Add Checklist Items Form -->
-      <div class="form-container" *ngIf="wirCheckpoint && !loading && !error">
+      <div class="form-container" *ngIf="wirCheckpoint && !loading">
         <form [formGroup]="checklistForm" (ngSubmit)="onSubmit()">
-          <!-- Error Message -->
-          <div *ngIf="error" class="alert alert-error">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M12 8v4M12 16h.01"/>
-            </svg>
-            {{ error }}
-          </div>
-
           <!-- Checklist Items Header -->
           <div class="checklist-header">
             <div>
               <h3>Select Predefined Checklist Items</h3>
-              <p>Select items from the predefined checklist to add to this checkpoint</p>
+              <p>Items are grouped by checklist and section for your WIR checkpoint</p>
             </div>
-            <div *ngIf="selectedPredefinedItemIds.length > 0" class="selection-count">
+            <div class="header-actions">
+              <span *ngIf="selectedPredefinedItemIds.length > 0" class="selection-count">
               {{ selectedPredefinedItemIds.length }} item(s) selected
+              </span>
+              <button 
+                type="button" 
+                class="btn btn-link btn-sm"
+                (click)="expandAllChecklists()"
+                *ngIf="hasItems"
+                title="Expand all sections"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="7 13 12 18 17 13"/>
+                  <polyline points="7 6 12 11 17 6"/>
+                </svg>
+                Expand All
+              </button>
+              <button 
+                type="button" 
+                class="btn btn-link btn-sm"
+                (click)="collapseAllChecklists()"
+                *ngIf="hasItems"
+                title="Collapse all sections"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="17 11 12 6 7 11"/>
+                  <polyline points="17 18 12 13 7 18"/>
+                </svg>
+                Collapse All
+              </button>
+              <button 
+                type="button" 
+                class="btn btn-secondary btn-sm"
+                (click)="areAllSelected() ? deselectAll() : selectAll()"
+                *ngIf="hasItems"
+              >
+                {{ areAllSelected() ? 'Deselect All' : 'Select All' }}
+              </button>
             </div>
           </div>
 
@@ -50,17 +86,97 @@
             <p>Loading predefined checklist items...</p>
           </div>
 
-          <!-- Predefined Checklist Items -->
+          <!-- Grouped Predefined Checklist Items -->
           <div class="predefined-items-container" *ngIf="!loadingPredefinedItems">
-            <div class="empty-checklist" *ngIf="availablePredefinedItems.length === 0">
+            <div class="empty-checklist" *ngIf="!hasItems">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M9 11l3 3L22 4"/>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
               <p>All predefined checklist items have been added to this checkpoint.</p>
+              <small>No additional items are available.</small>
             </div>
 
+            <!-- Checklist Groups -->
+            <div class="checklist-groups" *ngIf="hasItems">
+              <div class="checklist-group" *ngFor="let checklist of groupedChecklists; let checklistIdx = index">
+                <div class="checklist-group-header" (click)="toggleChecklistExpanded(checklistIdx, $event)">
+                  <div class="group-title-section">
+                    <svg 
+                      class="collapse-icon" 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      width="20" 
+                      height="20" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      stroke-width="2"
+                      [class.expanded]="isChecklistExpanded(checklistIdx) || openChecklistIndex === -1"
+                    >
+                      <polyline points="9 18 15 12 9 6"/>
+                    </svg>
+                    <h4 class="group-title">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                      </svg>
+                      {{ checklist.checklistName }}
+                    </h4>
+                    <span class="group-code" *ngIf="checklist.checklistCode">{{ checklist.checklistCode }}</span>
+                  </div>
+                  <button 
+                    type="button" 
+                    class="btn-select-group"
+                    (click)="areAllInChecklistSelected(checklist) ? deselectAllInChecklist(checklist) : selectAllInChecklist(checklist); $event.stopPropagation()"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    {{ areAllInChecklistSelected(checklist) ? 'Deselect All' : 'Select All' }}
+                  </button>
+                </div>
+
+                <!-- Section Groups within Checklist -->
+                <div class="section-groups" *ngIf="isChecklistExpanded(checklistIdx) || openChecklistIndex === -1">
+                  <div class="section-group" *ngFor="let section of checklist.sections; let sectionIdx = index">
+                    <div class="section-header" (click)="toggleSectionExpanded(checklistIdx, sectionIdx, $event)">
+                      <div class="section-title-section">
+                        <svg 
+                          class="collapse-icon-small" 
+                          xmlns="http://www.w3.org/2000/svg" 
+                          width="16" 
+                          height="16" 
+                          viewBox="0 0 24 24" 
+                          fill="none" 
+                          stroke="currentColor" 
+                          stroke-width="2"
+                          [class.expanded]="isSectionExpanded(checklistIdx, sectionIdx) || openSectionIndexMap[checklistIdx] === -1"
+                        >
+                          <polyline points="9 18 15 12 9 6"/>
+                        </svg>
+                        <h5 class="section-title">{{ section.sectionTitle }}</h5>
+                        <span class="section-count">{{ section.items.length }} item(s)</span>
+                      </div>
+                      <button 
+                        type="button" 
+                        class="btn-select-section"
+                        (click)="areAllInSectionSelected(section) ? deselectAllInSection(section) : selectAllInSection(section); $event.stopPropagation()"
+                      >
+                        {{ areAllInSectionSelected(section) ? 'Deselect' : 'Select' }} Section
+                      </button>
+            </div>
+
+                    <!-- Items within Section -->
+                    <div class="section-items" *ngIf="isSectionExpanded(checklistIdx, sectionIdx) || openSectionIndexMap[checklistIdx] === -1">
             <div 
-              *ngFor="let item of availablePredefinedItems" 
+                        *ngFor="let item of section.items" 
               class="predefined-item-card"
               [class.selected]="isPredefinedItemSelected(item.predefinedItemId)"
               (click)="togglePredefinedItemSelection(item.predefinedItemId)"
+                        role="button"
+                        tabindex="0"
+                        (keydown.enter)="togglePredefinedItemSelection(item.predefinedItemId)"
+                        (keydown.space)="togglePredefinedItemSelection(item.predefinedItemId); $event.preventDefault()"
             >
               <div class="item-checkbox">
                 <input 
@@ -68,27 +184,42 @@
                   [checked]="isPredefinedItemSelected(item.predefinedItemId)"
                   (change)="togglePredefinedItemSelection(item.predefinedItemId)"
                   (click)="$event.stopPropagation()"
+                            [id]="'item-' + item.predefinedItemId"
+                            [attr.aria-label]="'Select ' + item.checkpointDescription"
                 />
               </div>
               <div class="item-content">
                 <div class="item-header">
                   <span class="item-sequence">#{{ item.sequence }}</span>
-                  <span class="item-category" *ngIf="item.category">{{ item.category }}</span>
                 </div>
                 <p class="item-description">{{ item.checkpointDescription }}</p>
-                <p class="item-reference" *ngIf="item.referenceDocument">
-                  <strong>Reference:</strong> {{ item.referenceDocument }}
+                          <p class="item-reference" *ngIf="item.reference">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                              <polyline points="14 2 14 8 20 8"/>
+                            </svg>
+                            <strong>Reference:</strong> {{ item.reference }}
                 </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="form-actions">
+          <div class="form-actions" *ngIf="!loading">
             <button type="button" class="btn btn-secondary" (click)="goBack()" [disabled]="submitting">
               Cancel
             </button>
             <button type="submit" class="btn btn-primary" [disabled]="submitting || selectedPredefinedItemIds.length === 0">
-              <span *ngIf="!submitting">Add Selected Items ({{ selectedPredefinedItemIds.length }})</span>
+              <span *ngIf="!submitting">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                  <path d="M12 5v14M5 12h14"/>
+                </svg>
+                Add Selected Items ({{ selectedPredefinedItemIds.length }})
+              </span>
               <span *ngIf="submitting">
                 <span class="spinner-inline">
                   <span class="spinner small"></span>
@@ -102,4 +233,3 @@
     </main>
   </div>
 </div>
-

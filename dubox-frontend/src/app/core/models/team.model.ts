@@ -41,6 +41,7 @@ export interface TeamMember {
   employeeName: string;
   mobileNumber?: string;
   isActive?: boolean;
+  teamGroupId?: string;
 }
 
 export interface TeamMembersDto {
@@ -78,6 +79,57 @@ export interface PaginatedTeamsResponse {
   page: number;
   pageSize: number;
   totalPages: number;
+}
+
+export interface TeamGroup {
+  teamGroupId: string;
+  teamId: string;
+  teamName: string;
+  teamCode: string;
+  groupTag: string;
+  groupType: string;
+  groupLeaderId?: string;
+  groupLeaderName?: string;
+  isActive: boolean;
+  createdDate: Date;
+  createdBy?: string;
+  memberCount: number;
+  members: TeamMember[];
+}
+
+export interface PaginatedTeamGroupsResponse {
+  items: TeamGroup[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export interface CreateTeamGroup {
+  teamId: string;
+  groupTag: string;
+  groupType: string;
+}
+
+export interface UpdateTeamGroup {
+  teamGroupId: string;
+  groupTag: string;
+  groupType: string;
+  isActive: boolean;
+}
+
+export interface TeamGroupMembers {
+  teamGroupId: string;
+  teamId: string;
+  teamCode: string;
+  teamName: string;
+  groupTag: string;
+  groupType: string;
+  groupLeaderId?: string;
+  groupLeaderName?: string;
+  memberCount: number;
+  isActive: boolean;
+  members: TeamMember[];
 }
 
 

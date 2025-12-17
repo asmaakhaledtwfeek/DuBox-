@@ -12,16 +12,18 @@ public class PredefinedChecklistItem
 
     [Required]
     [MaxLength(500)]
-    public string CheckpointDescription { get; set; } = string.Empty;
-
-    [MaxLength(200)]
-    public string? ReferenceDocument { get; set; }
+    public string Description { get; set; } = string.Empty;
 
     [Required]
     public int Sequence { get; set; }
 
-    [MaxLength(50)]
-    public string? Category { get; set; } // e.g., "General", "Setting Out", "Installation Activity"
+    [MaxLength(200)]
+    public string? Reference { get; set; }
+
+    public Guid? ChecklistSectionId { get; set; }
+
+    [ForeignKey(nameof(ChecklistSectionId))]
+    public virtual ChecklistSection? ChecklistSection { get; set; }
 
     public bool IsActive { get; set; } = true;
 

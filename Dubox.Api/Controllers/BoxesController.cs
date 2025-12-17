@@ -163,8 +163,15 @@ public class BoxesController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    [HttpGet("{boxId}/attachement")]
-    public async Task<IActionResult> GetBoxAttachements(Guid boxId, CancellationToken cancellationToken)
+    [HttpGet("{boxId}/drawing")]
+    public async Task<IActionResult> GetBoxDrawing(Guid boxId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetBoxDrawingQuery(boxId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("{boxId}/attachments")]
+    public async Task<IActionResult> GetBoxAttachments(Guid boxId, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetBoxAttachmentsQuery(boxId), cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);

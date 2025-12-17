@@ -34,5 +34,8 @@ namespace Dubox.Domain.Entities
 
         // Navigation properties
         public virtual WIRCheckpoint WIRCheckpoint { get; set; } = null!;
+
+        [ForeignKey(nameof(PredefinedItemId))]
+        public virtual PredefinedChecklistItem PredefinedChecklistItem { get; set; } = null!;
     }
 }

@@ -39,6 +39,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<QualityIssueImage> QualityIssueImages { get; set; } = null!;
     public DbSet<Team> Teams { get; set; } = null!;
     public DbSet<TeamMember> TeamMembers { get; set; } = null!;
+    public DbSet<TeamGroup> TeamGroups { get; set; } = null!;
     public DbSet<Material> Materials { get; set; } = null!;
     public DbSet<BoxMaterial> BoxMaterials { get; set; } = null!;
     public DbSet<MaterialTransaction> MaterialTransactions { get; set; } = null!;
@@ -60,6 +61,8 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<Permission> Permissions { get; set; } = null!;
     public DbSet<RolePermission> RolePermissions { get; set; } = null!;
     public DbSet<NavigationMenuItem> NavigationMenuItems { get; set; } = null!;
+    public DbSet<ChecklistSection> ChecklistSections { get; set; } = null!;
+    public DbSet<Checklist> Checklists { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -69,9 +72,10 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         ActivityMasterSeedData.SeedActivityMaster(modelBuilder);
         RoleAndUserSeedData.SeedRolesGroupsAndUsers(modelBuilder);
         DepartmentSeesData.SeedDepartmnts(modelBuilder);
-        PredefinedChecklistItemSeedData.SeedPredefinedChecklistItems(modelBuilder);
+        PredefinedChecklistItemSeedData.SeedPredefinedChecklistItems(modelBuilder); // WIR-2 and WIR-3
         PermissionSeedData.SeedPermissions(modelBuilder);
         NavigationMenuSeedData.SeedNavigationMenuItems(modelBuilder);
+        ChecklistSeedData.SeedChecklists(modelBuilder);
         base.OnModelCreating(modelBuilder);
     }
 
@@ -298,6 +302,19 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(tm => tm.TeamId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<TeamGroup>()
+            .HasOne(tg => tg.Team)
+            .WithMany(t => t.TeamGroups)
+            .HasForeignKey(tg => tg.TeamId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<TeamMember>()
+            .HasOne(tm => tm.TeamGroup)
+            .WithMany(tg => tg.Members)
+            .HasForeignKey(tm => tm.TeamGroupId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
         modelBuilder.Entity<MaterialTransaction>()
             .HasOne(t => t.Material)
             .WithMany(m => m.Transactions)
@@ -353,6 +370,22 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(h => h.MovedFromLocationId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // ChecklistSection relationships
+        modelBuilder.Entity<ChecklistSection>()
+            .HasOne(cs => cs.Checklist)
+            .WithMany(c => c.Sections)
+            .HasForeignKey(cs => cs.ChecklistId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<PredefinedChecklistItem>()
+            .HasOne(p => p.ChecklistSection)
+            .WithMany(cs => cs.Items)
+            .HasForeignKey(p => p.ChecklistSectionId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
     }
 
     private void ConfigureIndexes(ModelBuilder modelBuilder)
@@ -451,6 +484,18 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
 
         modelBuilder.Entity<RolePermission>()
             .HasIndex(rp => new { rp.RoleId, rp.PermissionId })
+            .IsUnique();
+
+        // CheckpointSection indexes
+        modelBuilder.Entity<ChecklistSection>()
+            .HasIndex(cs => cs.Order);
+
+        // TeamGroup indexes
+        modelBuilder.Entity<TeamGroup>()
+            .HasIndex(tg => tg.TeamId);
+
+        modelBuilder.Entity<TeamGroup>()
+            .HasIndex(tg => new { tg.TeamId, tg.GroupTag })
             .IsUnique();
     }
 

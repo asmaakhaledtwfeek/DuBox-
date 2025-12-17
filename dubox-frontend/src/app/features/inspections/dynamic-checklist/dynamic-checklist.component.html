@@ -1,0 +1,255 @@
+<div class="dynamic-checklist-container">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-overlay">
+    <div class="spinner"></div>
+    <p>Loading checklists...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="error-message">
+    <i class="fa fa-exclamation-triangle"></i>
+    {{ error }}
+    <button class="btn-retry" (click)="loadChecklists()">Retry</button>
+  </div>
+
+  <!-- View Mode Toggle -->
+  <div *ngIf="!loading && !error && wirs.length > 0" class="view-mode-toggle">
+    <button class="toggle-btn" 
+            [class.active]="viewMode === 'tabs'"
+            (click)="viewMode = 'tabs'">
+      <i class="fa fa-th-large"></i> Summary View
+    </button>
+    <button class="toggle-btn" 
+            [class.active]="viewMode === 'form'"
+            (click)="viewMode = 'form'">
+      <i class="fa fa-file-text"></i> Form View
+    </button>
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!loading && !error && wirs.length > 0" class="checklist-content">
+    
+    <!-- Form View (Like PDF) -->
+    <div *ngIf="viewMode === 'form' && selectedWIR" class="form-view-container">
+      <div class="wir-selector-dropdown">
+        <label>Select WIR:</label>
+        <select [(ngModel)]="selectedWIR" class="wir-dropdown">
+          <option *ngFor="let wir of wirs" [ngValue]="wir">
+            {{ wir.wirNumber }} - {{ wir.wirName }} ({{ wir.progressPercentage }}%)
+          </option>
+        </select>
+      </div>
+      
+      <app-detailed-form-view 
+        [wir]="selectedWIR"
+        [readonly]="readonly"
+        [boxNumber]="boxNumber"
+        [location]="location">
+      </app-detailed-form-view>
+    </div>
+
+    <!-- WIR Tabs (Summary View) -->
+    <div *ngIf="viewMode === 'tabs'" class="wir-tabs">
+      <div *ngFor="let wir of wirs" 
+           class="wir-tab"
+           [class.active]="selectedWIR?.wirId === wir.wirId"
+           [class.completed]="wir.progressPercentage === 100"
+           (click)="selectWIR(wir)">
+        <div class="tab-header">
+          <span class="wir-number">{{ wir.wirNumber }}</span>
+          <span class="wir-status" [class]="getStatusClass(wir.status)">
+            {{ wir.status }}
+          </span>
+        </div>
+        <div class="tab-title">{{ wir.wirName }}</div>
+        <div class="progress-bar-mini">
+          <div class="progress-fill" 
+               [style.width.%]="wir.progressPercentage"
+               [class]="getProgressBarClass(wir.progressPercentage)"></div>
+        </div>
+        <div class="progress-text">
+          {{ wir.completedItems }} / {{ wir.totalItems }} items
+        </div>
+      </div>
+    </div>
+
+    <!-- Selected WIR Details -->
+    <div *ngIf="selectedWIR" class="wir-details">
+      
+      <!-- WIR Header -->
+      <div class="wir-header">
+        <div class="wir-info">
+          <h2>{{ selectedWIR.wirNumber }}: {{ selectedWIR.wirName }}</h2>
+          <p class="wir-description" *ngIf="selectedWIR.wirDescription">
+            {{ selectedWIR.wirDescription }}
+          </p>
+          <div class="wir-meta">
+            <span *ngIf="selectedWIR.requestedDate">
+              <i class="fa fa-calendar"></i> Requested: {{ selectedWIR.requestedDate | date }}
+            </span>
+            <span *ngIf="selectedWIR.inspectorName">
+              <i class="fa fa-user"></i> Inspector: {{ selectedWIR.inspectorName }}
+            </span>
+          </div>
+        </div>
+        <div class="wir-progress">
+          <div class="progress-circle">
+            <svg viewBox="0 0 36 36" class="circular-chart">
+              <path class="circle-bg"
+                d="M18 2.0845
+                  a 15.9155 15.9155 0 0 1 0 31.831
+                  a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+              <path class="circle"
+                [attr.stroke-dasharray]="selectedWIR.progressPercentage + ', 100'"
+                d="M18 2.0845
+                  a 15.9155 15.9155 0 0 1 0 31.831
+                  a 15.9155 15.9155 0 0 1 0 -31.831"
+              />
+              <text x="18" y="20.35" class="percentage">{{ selectedWIR.progressPercentage }}%</text>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Checklist Sections -->
+      <div class="checklist-sections">
+        <div *ngFor="let section of selectedWIR.sections" class="checklist-section">
+          
+          <!-- Section Header -->
+          <div class="section-header">
+            <h3>
+              <span class="section-letter">{{ section.sectionLetter }}.</span>
+              {{ section.sectionName }}
+            </h3>
+            <span class="section-progress">
+              {{ section.items.filter(i => i.status !== 'Pending').length }} / {{ section.items.length }}
+            </span>
+          </div>
+
+          <!-- Checklist Table -->
+          <div class="checklist-table-wrapper">
+            <table class="checklist-table">
+              <thead>
+                <tr>
+                  <th class="col-number">Sr.#</th>
+                  <th class="col-description">Description</th>
+                  <th class="col-reference">Reference</th>
+                  <th class="col-status">Y</th>
+                  <th class="col-status">N</th>
+                  <th class="col-status">N/A</th>
+                  <th class="col-remarks">Remarks</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of section.items" [class.item-completed]="item.status !== 'Pending'">
+                  <td class="col-number">{{ item.itemNumber }}</td>
+                  <td class="col-description">{{ item.description }}</td>
+                  <td class="col-reference">{{ item.referenceDocument || '-' }}</td>
+                  <td class="col-status">
+                    <input type="radio" 
+                           [name]="'status-' + item.checklistItemId"
+                           [value]="'Pass'"
+                           [(ngModel)]="item.status"
+                           [disabled]="readonly"
+                           (change)="updateItemStatus(item, 'Pass')">
+                  </td>
+                  <td class="col-status">
+                    <input type="radio" 
+                           [name]="'status-' + item.checklistItemId"
+                           [value]="'Fail'"
+                           [(ngModel)]="item.status"
+                           [disabled]="readonly"
+                           (change)="updateItemStatus(item, 'Fail')">
+                  </td>
+                  <td class="col-status">
+                    <input type="radio" 
+                           [name]="'status-' + item.checklistItemId"
+                           [value]="'Pending'"
+                           [(ngModel)]="item.status"
+                           [disabled]="readonly"
+                           (change)="updateItemStatus(item, 'Pending')">
+                  </td>
+                  <td class="col-remarks">
+                    <input type="text" 
+                           class="remarks-input"
+                           [(ngModel)]="item.remarks"
+                           [disabled]="readonly"
+                           placeholder="Add remarks...">
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Approval Section -->
+      <div *ngIf="!readonly && selectedWIR.status === 'Pending'" class="approval-section">
+        <h3>Inspection Details</h3>
+        
+        <div class="form-group">
+          <label for="inspectorRole">Inspector Role</label>
+          <input type="text" 
+                 id="inspectorRole"
+                 class="form-control"
+                 [(ngModel)]="inspectorRole"
+                 placeholder="e.g., QC Engineer-Civil">
+        </div>
+
+        <div class="form-group">
+          <label for="comments">General Comments</label>
+          <textarea id="comments" 
+                    class="form-control"
+                    rows="3"
+                    [(ngModel)]="generalComments"
+                    placeholder="Enter general comments about the inspection..."></textarea>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn btn-success" 
+                  (click)="submitWIR('Approved')"
+                  [disabled]="!canSubmit || loading">
+            <i class="fa fa-check"></i> Approve
+          </button>
+          <button class="btn btn-warning" 
+                  (click)="submitWIR('ConditionalApproval')"
+                  [disabled]="!canSubmit || loading">
+            <i class="fa fa-exclamation"></i> Conditional Approval
+          </button>
+          <button class="btn btn-danger" 
+                  (click)="submitWIR('Rejected')"
+                  [disabled]="!canSubmit || loading">
+            <i class="fa fa-times"></i> Reject
+          </button>
+        </div>
+
+        <div class="help-text" *ngIf="!canSubmit">
+          <i class="fa fa-info-circle"></i>
+          Please review all checklist items before submitting.
+        </div>
+      </div>
+
+      <!-- Read-only Status Display -->
+      <div *ngIf="readonly || selectedWIR.status !== 'Pending'" class="status-display">
+        <div class="status-badge" [class]="getStatusClass(selectedWIR.status)">
+          <i class="fa" 
+             [class.fa-check-circle]="selectedWIR.status === 'Approved'"
+             [class.fa-exclamation-circle]="selectedWIR.status === 'ConditionalApproval'"
+             [class.fa-times-circle]="selectedWIR.status === 'Rejected'"></i>
+          Status: {{ selectedWIR.status }}
+        </div>
+        <div *ngIf="selectedWIR.comments" class="final-comments">
+          <strong>Inspector Comments:</strong> {{ selectedWIR.comments }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- No Data State -->
+  <div *ngIf="!loading && !error && wirs.length === 0" class="no-data">
+    <i class="fa fa-clipboard-list"></i>
+    <p>No checklists found for this box.</p>
+    <p class="help-text">WIRs will be auto-generated when the box is created.</p>
+  </div>
+</div>

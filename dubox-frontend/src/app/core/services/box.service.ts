@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { ApiService, PaginatedResponse } from './api.service';
-import { Box, BoxActivity, BoxAttachment, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview, BoxTypeStatsByProject, BoxAttachmentsResponse, BoxAttachmentImage } from '../models/box.model';
+import { Box, BoxActivity, BoxDrawing, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview, BoxTypeStatsByProject, BoxDrawingsResponse, BoxDrawingImage, BoxAllAttachmentsResponse } from '../models/box.model';
 
 @Injectable({
   providedIn: 'root'
@@ -336,17 +336,17 @@ export class BoxService {
   }
 
   /**
-   * Get box attachments
+   * Get box drawings
    */
-  getBoxAttachments(boxId: string): Observable<BoxAttachment[]> {
-    return this.apiService.get<BoxAttachment[]>(`${this.endpoint}/${boxId}/attachments`);
+  getBoxDrawings(boxId: string): Observable<BoxDrawing[]> {
+    return this.apiService.get<BoxDrawing[]>(`${this.endpoint}/${boxId}/attachments`);
   }
 
   /**
-   * Upload box attachment
+   * Upload box drawing
    */
-  uploadAttachment(boxId: string, file: File, description?: string): Observable<BoxAttachment> {
-    return this.apiService.upload<BoxAttachment>(
+  uploadDrawing(boxId: string, file: File, description?: string): Observable<BoxDrawing> {
+    return this.apiService.upload<BoxDrawing>(
       `${this.endpoint}/${boxId}/attachments`,
       file,
       { description }
@@ -385,13 +385,13 @@ export class BoxService {
   }
 
   /**
-   * Get box attachment images (file and URL types) from progress updates
+   * Get box drawing images (file and URL types) from progress updates
    */
-  getBoxAttachmentImages(boxId: string): Observable<BoxAttachmentsResponse> {
-    console.log('🔍 Fetching box attachments for boxId:', boxId);
-    console.log('🔗 Full URL:', `${this.endpoint}/${boxId}/attachement`);
+  getBoxDrawingImages(boxId: string): Observable<BoxDrawingsResponse> {
+    console.log('🔍 Fetching box drawings for boxId:', boxId);
+    console.log('🔗 Full URL:', `${this.endpoint}/${boxId}/drawing`);
     
-    return this.apiService.get<any>(`${this.endpoint}/${boxId}/attachement`).pipe(
+    return this.apiService.get<any>(`${this.endpoint}/${boxId}/drawing`).pipe(
       map(response => {
       
         const data = response.data || response.Data || response;
@@ -423,7 +423,7 @@ export class BoxService {
         return result;
       }),
       catchError(err => {
-        console.error('❌ Error in getBoxAttachmentImages:', err);
+        console.error('❌ Error in getBoxDrawingImages:', err);
         console.error('❌ Error status:', err.status);
         console.error('❌ Error message:', err.message);
         console.error('❌ Error body:', err.error);
@@ -468,5 +468,30 @@ export class BoxService {
    */
   getBoxTypeStatsByProject(projectId: string): Observable<BoxTypeStatsByProject> {
     return this.apiService.get<BoxTypeStatsByProject>(`${this.endpoint}/project/${projectId}/box-type-stats`);
+  }
+
+  /**
+   * Get all box attachments (WIR, Progress Update, Quality Issue images)
+   */
+  getAllBoxAttachments(boxId: string): Observable<BoxAllAttachmentsResponse> {
+    console.log('🔍 Fetching all box attachments for boxId:', boxId);
+    return this.apiService.get<any>(`${this.endpoint}/${boxId}/attachments`).pipe(
+      map(response => {
+        console.log('✅ Raw API response:', response);
+        
+        const data = response?.data || response;
+        
+        return {
+          wirCheckpointImages: data.wirCheckpointImages || [],
+          progressUpdateImages: data.progressUpdateImages || [],
+          qualityIssueImages: data.qualityIssueImages || [],
+          totalCount: data.totalCount || 0
+        };
+      }),
+      catchError(err => {
+        console.error('❌ Error fetching box attachments:', err);
+        throw err;
+      })
+    );
   }
 }

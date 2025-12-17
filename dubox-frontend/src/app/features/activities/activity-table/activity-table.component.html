@@ -134,16 +134,15 @@
                   *ngIf="isWIRReviewed(row) && canViewOrAddCheckpoint(getWIR(row)!)"
                   class="btn-wir-action btn-wir-add-checkpoint"
                   (click)="navigateToCreateWIRCheckpoint(getWIR(row)!)"
-                  [title]="hasCheckpoint(getWIR(row)!) ? 'View WIR Checkpoint' : 'Add WIR Checkpoint'"
+                  [title]="hasCheckpoint(getWIR(row)!) ? 'Review WIR Checkpoint' : 'Add WIR Checkpoint'"
                 >
                   <svg *ngIf="!hasCheckpoint(getWIR(row)!)" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M12 5v14M5 12h14"/>
                   </svg>
                   <svg *ngIf="hasCheckpoint(getWIR(row)!)" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
+                    <polyline points="20 6 9 17 4 12"/>
                   </svg>
-                  <span>{{ hasCheckpoint(getWIR(row)!) ? 'View Checkpoint' : 'Add Checkpoint' }}</span>
+                  <span>{{ hasCheckpoint(getWIR(row)!) ? 'Review Checkpoint' : 'Add Checkpoint' }}</span>
                 </button>
               </div>
             </td>

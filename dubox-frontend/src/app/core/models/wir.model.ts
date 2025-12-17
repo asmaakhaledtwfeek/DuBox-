@@ -39,7 +39,6 @@ export enum WIRStatus {
 export enum CheckpointStatus {
   Pass = 'Pass',
   Fail = 'Fail',
-  NA = 'N/A',
   Pending = 'Pending'
 }
 
@@ -70,7 +69,9 @@ export interface WIRCheckpoint {
   boxId: string;
   boxActivityId?: string;
   projectId?: string;
+  projectName?: string;
   projectCode?: string;
+  client?: string;
   box?: {
     boxId: string;
     projectId?: string;
@@ -136,15 +137,57 @@ export interface WIRCheckpointChecklistItem {
   remarks?: string;
   sequence: number;
   predefinedItemId?: string; // Reference to the predefined item this was cloned from
+  categoryId?: string;
+  categoryName?: string;
+  
+  // Section information
+  sectionId?: string;
+  sectionName?: string;
+  sectionOrder?: number;
+  
+  // Checklist information
+  checklistId?: string;
+  checklistName?: string;
+  checklistCode?: string;
 }
 
 export interface PredefinedChecklistItem {
   predefinedItemId: string;
+  wirNumber: string;
+  itemNumber?: string;
   checkpointDescription: string;
-  referenceDocument?: string;
-  sequence: number;
+  categoryId?: string;
   category?: string;
+  categoryName?: string;
+  referenceId?: string;
+  referenceDocument?: string;
+  referenceName?: string;
+  sequence: number;
   isActive: boolean;
+}
+
+export interface PredefinedChecklistItemWithChecklistDto {
+  predefinedItemId: string;
+  checkpointDescription: string;
+  reference?: string;
+  sequence: number;
+  isActive: boolean;
+  
+  // ChecklistSection information
+  checklistSectionId?: string;
+  sectionTitle?: string;
+  sectionOrder?: number;
+  
+  // Checklist information
+  checklistId?: string;
+  checklistName?: string;
+  checklistCode?: string;
+  checklistDiscipline?: string;
+  checklistSubDiscipline?: string;
+  checklistPageNumber?: number;
+  checklistWIRCode?: string;
+  checklistReferenceDocuments?: string[];
+  checklistSignatureRoles?: string[];
 }
 
 export enum WIRCheckpointStatus {
@@ -157,8 +200,7 @@ export enum WIRCheckpointStatus {
 export enum CheckListItemStatus {
   Pending = 'Pending',
   Pass = 'Pass',
-  Fail = 'Fail',
-  NA = 'NA'
+  Fail = 'Fail'
 }
 
 export interface CreateWIRCheckpointRequest {

@@ -2,8 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { TeamService } from '../../../core/services/team.service';
-import { Team, TeamMembersDto, TeamMember, CompleteTeamMemberProfile } from '../../../core/models/team.model';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Team, TeamMembersDto, TeamMember, CompleteTeamMemberProfile, CreateTeamGroup, TeamGroup, PaginatedTeamGroupsResponse } from '../../../core/models/team.model';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { PermissionService } from '../../../core/services/permission.service';
@@ -11,17 +11,26 @@ import { PermissionService } from '../../../core/services/permission.service';
 @Component({
   selector: 'app-team-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, HeaderComponent, SidebarComponent],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, FormsModule, HeaderComponent, SidebarComponent],
   templateUrl: './team-details.component.html',
   styleUrls: ['./team-details.component.scss']
 })
 export class TeamDetailsComponent implements OnInit {
   team: Team | null = null;
   teamMembers: TeamMembersDto | null = null;
+  teamGroups: TeamGroup[] = [];
   loading = true;
+  loadingGroups = false;
   error = '';
   teamId = '';
   activeTab: 'overview' | 'members' = 'overview';
+  
+  // Team Groups Pagination
+  teamGroupsSearchTerm = '';
+  teamGroupsCurrentPage = 1;
+  teamGroupsPageSize = 10;
+  teamGroupsTotalCount = 0;
+  teamGroupsTotalPages = 0;
   
   showCompleteProfileModal = false;
   selectedMember: TeamMember | null = null;
@@ -35,9 +44,17 @@ export class TeamDetailsComponent implements OnInit {
   removingMember = false;
   removeMemberError = '';
   
+  // Create Team Group Modal
+  showCreateGroupModal = false;
+  teamGroupForm!: FormGroup;
+  loadingGroup = false;
+  groupError = '';
+  groupSuccessMessage = '';
+  
   // Permission flags
   canManageMembers = false;
   canEditTeam = false;
+  canCreate = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -54,16 +71,23 @@ export class TeamDetailsComponent implements OnInit {
     this.canManageMembers = this.permissionService.hasPermission('teams', 'manage-members') || 
                             this.permissionService.hasPermission('teams', 'manage');
     this.canEditTeam = this.permissionService.hasPermission('teams', 'edit');
+    this.canCreate = this.permissionService.canCreate('teams');
     
     this.completeProfileForm = this.fb.group({
       employeeCode: ['', [Validators.required, Validators.maxLength(50)]],
       employeeName: ['', [Validators.required, Validators.maxLength(200)]],
       mobileNumber: ['', [Validators.maxLength(20)]]
     });
+
+    this.teamGroupForm = this.fb.group({
+      groupTag: ['', [Validators.required, Validators.maxLength(50)]],
+      groupType: ['', [Validators.required, Validators.maxLength(100)]]
+    });
     
     if (this.teamId) {
       this.loadTeamDetails();
       this.loadTeamMembers();
+      this.loadTeamGroups();
     }
   }
 
@@ -90,6 +114,58 @@ export class TeamDetailsComponent implements OnInit {
         console.error('Error loading team members:', err);
       }
     });
+  }
+
+  loadTeamGroups(): void {
+    this.loadingGroups = true;
+    
+    const params: any = {
+      page: this.teamGroupsCurrentPage,
+      pageSize: this.teamGroupsPageSize,
+      teamId: this.teamId
+    };
+
+    // Apply search filter
+    const searchTerm = this.teamGroupsSearchTerm.trim();
+    if (searchTerm) {
+      params.search = searchTerm;
+    }
+
+    this.teamService.getTeamGroupsPaginated(params).subscribe({
+      next: (response: PaginatedTeamGroupsResponse) => {
+        this.teamGroups = response.items;
+        this.teamGroupsTotalCount = response.totalCount;
+        this.teamGroupsTotalPages = response.totalPages;
+        this.teamGroupsCurrentPage = response.page;
+        this.loadingGroups = false;
+      },
+      error: (err) => {
+        console.error('Error loading team groups:', err);
+        this.loadingGroups = false;
+      }
+    });
+  }
+
+  onTeamGroupsSearch(): void {
+    this.teamGroupsCurrentPage = 1; // Reset to first page when searching
+    this.loadTeamGroups();
+  }
+
+  onTeamGroupsPageChange(page: number): void {
+    this.teamGroupsCurrentPage = page;
+    this.loadTeamGroups();
+  }
+
+  onTeamGroupsPageSizeChange(pageSize: number): void {
+    this.teamGroupsPageSize = pageSize;
+    this.teamGroupsCurrentPage = 1; // Reset to first page when changing page size
+    this.loadTeamGroups();
+  }
+
+  clearGroupsSearch(): void {
+    this.teamGroupsSearchTerm = '';
+    this.teamGroupsCurrentPage = 1;
+    this.loadTeamGroups();
   }
 
   goBack(): void {
@@ -229,11 +305,64 @@ export class TeamDetailsComponent implements OnInit {
     });
   }
 
+  // Create Team Group Methods
+  openCreateGroupModal(): void {
+    this.showCreateGroupModal = true;
+    this.groupError = '';
+    this.groupSuccessMessage = '';
+    this.teamGroupForm.reset();
+  }
+
+  closeCreateGroupModal(): void {
+    this.showCreateGroupModal = false;
+    this.teamGroupForm.reset();
+    this.groupError = '';
+    this.groupSuccessMessage = '';
+  }
+
+  onCreateGroupSubmit(): void {
+    if (this.teamGroupForm.invalid) {
+      this.markFormGroupTouched(this.teamGroupForm);
+      return;
+    }
+
+    this.loadingGroup = true;
+    this.groupError = '';
+    this.groupSuccessMessage = '';
+
+    const formValue = this.teamGroupForm.value;
+    const teamGroupData: CreateTeamGroup = {
+      teamId: this.teamId,
+      groupTag: formValue.groupTag.trim(),
+      groupType: formValue.groupType.trim()
+    };
+
+    this.teamService.createTeamGroup(teamGroupData).subscribe({
+      next: (teamGroup) => {
+        this.loadingGroup = false;
+        this.groupSuccessMessage = `Team group created successfully!`;
+        setTimeout(() => {
+          this.closeCreateGroupModal();
+          // Reload team groups to show the new one
+          this.loadTeamGroups();
+        }, 1500);
+      },
+      error: (err) => {
+        this.loadingGroup = false;
+        this.groupError = err.error?.message || err.error?.detail || err.message || 'Failed to create team group. Please try again.';
+        console.error('Error creating team group:', err);
+      }
+    });
+  }
+
   private markFormGroupTouched(formGroup: FormGroup): void {
     Object.keys(formGroup.controls).forEach(key => {
       const control = formGroup.get(key);
       control?.markAsTouched();
     });
   }
+
+  // Expose Math to template
+  Math = Math;
 }
 

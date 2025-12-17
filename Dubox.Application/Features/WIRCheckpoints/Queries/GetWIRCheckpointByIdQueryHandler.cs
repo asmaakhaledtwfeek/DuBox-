@@ -1,4 +1,4 @@
-﻿using Dubox.Application.DTOs;
+using Dubox.Application.DTOs;
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
@@ -6,6 +6,7 @@ using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.WIRCheckpoints.Queries
 {
@@ -37,7 +38,47 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
                 return Result.Failure<WIRCheckpointDto>("Access denied. You do not have permission to view this WIR checkpoint.");
             }
 
-            return Result.Success(checkpoint.Adapt<WIRCheckpointDto>());
+            var dto = checkpoint.Adapt<WIRCheckpointDto>();
+
+            // Enrich checklist items with section and checklist information
+            if (dto.ChecklistItems != null && checkpoint.ChecklistItems != null)
+            {
+                foreach (var dtoItem in dto.ChecklistItems)
+                {
+                    // Find the corresponding entity item
+                    var entityItem = checkpoint.ChecklistItems
+                        .FirstOrDefault(ci => ci.ChecklistItemId == dtoItem.ChecklistItemId);
+                    
+                    if (entityItem?.PredefinedChecklistItem != null)
+                    {
+                        var predefinedItem = entityItem.PredefinedChecklistItem;
+                        
+                        // Map section information
+                        if (predefinedItem.ChecklistSection != null)
+                        {
+                            dtoItem.SectionId = predefinedItem.ChecklistSection.ChecklistSectionId;
+                            dtoItem.SectionName = predefinedItem.ChecklistSection.Title;
+                            dtoItem.SectionOrder = predefinedItem.ChecklistSection.Order;
+                            
+                            // Map checklist information
+                            if (predefinedItem.ChecklistSection.Checklist != null)
+                            {
+                                dtoItem.ChecklistId = predefinedItem.ChecklistSection.Checklist.ChecklistId;
+                                dtoItem.ChecklistName = predefinedItem.ChecklistSection.Checklist.Name;
+                                dtoItem.ChecklistCode = predefinedItem.ChecklistSection.Checklist.Code;
+                                
+                                // Use checklist name as category if not already set
+                                if (string.IsNullOrEmpty(dtoItem.CategoryName))
+                                {
+                                    dtoItem.CategoryName = predefinedItem.ChecklistSection.Checklist.Name;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            return Result.Success(dto);
         }
     }
 

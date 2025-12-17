@@ -1,11 +1,9 @@
-﻿using Dubox.Application.DTOs;
 using Dubox.Application.Features.WIRCheckpoints.Commands;
 using Dubox.Application.Features.WIRCheckpoints.Queries;
 using Dubox.Domain.Enums;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Text;
 using System.Text.Json;
 
 namespace Dubox.Api.Controllers
@@ -27,10 +25,13 @@ namespace Dubox.Api.Controllers
             var result = await _mediator.Send(command, cancellationToken);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
-        [HttpGet("predefined-checklist-items")]
-        public async Task<IActionResult> GetPredefinedChecklistItems(CancellationToken cancellationToken)
+
+
+        [HttpGet("predefined-checklist-items/{checkpointId}")]
+        public async Task<IActionResult> GetPredefinedChecklistItemsByWIRCode(Guid checkpointId, CancellationToken cancellationToken)
         {
-            var result = await _mediator.Send(new GetPredefinedChecklistItemsQuery(), cancellationToken);
+
+            var result = await _mediator.Send(new GetPredefinedChecklistItemsByWIRCodeQuery(checkpointId), cancellationToken);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
@@ -79,13 +80,13 @@ namespace Dubox.Api.Controllers
             {
                 // Handle multipart/form-data
                 var form = await Request.ReadFormAsync(cancellationToken);
-                
+
                 if (!Enum.TryParse<IssueTypeEnum>(form["IssueType"].ToString(), out issueType))
                     return BadRequest("Invalid IssueType");
-                
+
                 if (!Enum.TryParse<SeverityEnum>(form["Severity"].ToString(), out severity))
                     return BadRequest("Invalid Severity");
-                
+
                 issueDescription = form["IssueDescription"].ToString();
                 if (string.IsNullOrWhiteSpace(issueDescription))
                     return BadRequest("IssueDescription is required");
@@ -285,6 +286,26 @@ namespace Dubox.Api.Controllers
         public async Task<IActionResult> GetAllWIRcheckPoints([FromQuery] GetWIRCheckpointsQuery query, CancellationToken cancellationToken)
         {
             var result = await _mediator.Send(query, cancellationToken);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        /// <summary>
+        /// Auto-generate all 6 WIRs (with predefined checklist items) for a box
+        /// </summary>
+        [HttpPost("generate-for-box/{boxId}")]
+        public async Task<IActionResult> GenerateWIRsForBox(Guid boxId, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new Dubox.Application.Features.WIRCheckpoints.Commands.GenerateWIRsForBoxCommand(boxId), cancellationToken);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
+        /// <summary>
+        /// Get all WIRs for a box with their checklist items grouped by category
+        /// </summary>
+        [HttpGet("box/{boxId}/with-checklist")]
+        public async Task<IActionResult> GetWIRsByBoxWithChecklist(Guid boxId, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new Dubox.Application.Features.WIRCheckpoints.Queries.GetWIRsByBoxWithChecklistQuery(boxId), cancellationToken);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
     }

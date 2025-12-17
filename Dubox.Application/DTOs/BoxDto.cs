@@ -5,6 +5,7 @@ public record BoxDto
     public Guid BoxId { get; init; }
     public Guid ProjectId { get; init; }
     public string ProjectCode { get; init; } = string.Empty;
+    public string Client { get; init; } = string.Empty;
     public string BoxTag { get; init; } = string.Empty;
     public string? SerialNumber { get; init; }
     public string? BoxName { get; init; }

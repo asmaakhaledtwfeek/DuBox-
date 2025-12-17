@@ -61,6 +61,10 @@ public interface IDbContext
     DbSet<Notification> Notifications { get; }
     DbSet<AuditLog> AuditLogs { get; }
     
+    // Checklist Sections
+    DbSet<ChecklistSection> ChecklistSections { get; }
+    DbSet<Checklist> Checklists { get; }
+    
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     
     // Allow generic access to DbSet for repository pattern

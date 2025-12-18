@@ -24,6 +24,7 @@ type AggregatedQualityIssue = QualityIssueItem & {
   boxTag?: string;
   boxName?: string;
   projectCode?: string | null;
+  projectName?: string | null;
   projectId?: string;
   checkpointStatus?: WIRCheckpointStatus;
   issueStatus?: string;
@@ -481,6 +482,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     this.wirService.getAllQualityIssues(params).subscribe({
       next: (response) => {
         console.log('✅ Fetched paginated quality issues:', response.items.length, 'of', response.totalCount);
+        console.log(response.items);
         this.buildQualityIssuesListFromPaginatedResponse(response);
         this.qualityIssuesLoading = false;
       },
@@ -518,27 +520,34 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   private buildQualityIssuesListFromPaginatedResponse(response: any): void {
     const issues = response.items || [];
     
-    this.qualityIssues = issues.map((issue: QualityIssueDetails) => ({
-      issueId: issue.issueId,
-      issueType: issue.issueType,
-      severity: issue.severity,
-      issueDescription: issue.issueDescription,
-      assignedTo: issue.assignedTo,
-      dueDate: issue.dueDate,
-      photoPath: issue.photoPath,
-      reportedBy: issue.reportedBy,
-      issueDate: issue.issueDate,
-      status: issue.status,
-      boxId: issue.boxId,
-      wirNumber: issue.wirNumber || undefined,
-      wirName: issue.wirName || undefined,
-      boxTag: issue.boxTag,
-      boxName: issue.boxName,
-      projectCode: undefined, // Not included in QualityIssueDetails
-      projectId: undefined, // Not included in QualityIssueDetails
-      checkpointStatus: issue.wirStatus as WIRCheckpointStatus | undefined,
-      issueStatus: issue.status
-    }));
+    console.log('📋 Raw quality issues from API:', issues);
+    
+    this.qualityIssues = issues.map((issue: any) => {
+      const mapped = {
+        issueId: issue.issueId,
+        issueType: issue.issueType,
+        severity: issue.severity,
+        issueDescription: issue.issueDescription,
+        assignedTo: issue.assignedTo,
+        dueDate: issue.dueDate,
+        photoPath: issue.photoPath,
+        reportedBy: issue.reportedBy,
+        issueDate: issue.issueDate,
+        status: issue.status,
+        boxId: issue.boxId,
+        wirNumber: issue.wirNumber || undefined,
+        wirName: issue.wirName || undefined,
+        boxTag: issue.boxTag,
+        boxName: issue.boxName,
+        projectCode: issue.projectCode || undefined,
+        projectName: issue.projectName || undefined,
+        projectId: issue.projectId || undefined,
+        checkpointStatus: issue.wirStatus as WIRCheckpointStatus | undefined,
+        issueStatus: issue.status
+      };
+      console.log('📋 Mapped issue projectName:', mapped.projectName);
+      return mapped;
+    });
     
     // Update pagination info from response
     this.qualityIssuesTotalCount = response.totalCount || 0;
@@ -1380,7 +1389,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
       'Status',
       'Issue Type',
       'Severity',
-      'Issue Description',
+      'Project Name',
       'Assigned To',
       'Reported By',
       'Issue Date',
@@ -1400,7 +1409,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
       { width: 12 },  // Status
       { width: 15 },  // Issue Type
       { width: 10 },  // Severity
-      { width: 40 },  // Issue Description
+      { width: 30 },  // Project Name
       { width: 15 },  // Assigned To
       { width: 15 },  // Reported By
       { width: 12 },  // Issue Date
@@ -1448,7 +1457,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
         this.getQualityIssueStatusLabel(issue.issueStatus || issue.status),
         issue.issueType || '—',
         issue.severity || '—',
-        issue.issueDescription || '—',
+        issue.projectName || '—',
         issue.assignedTo || '—',
         issue.reportedBy || '—',
         formatDateForExcel(issue.issueDate),

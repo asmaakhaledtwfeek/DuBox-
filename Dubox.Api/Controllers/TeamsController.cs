@@ -42,7 +42,7 @@ public class TeamsController : ControllerBase
             Trade = trade,
             IsActive = isActive
         };
-
+        
         var result = await _mediator.Send(query, cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }

@@ -1801,6 +1801,19 @@ console.log(expectedWirCode);
     return parsed.toISOString().split('T')[0];
   }
 
+  formatShortDate(date?: string | Date): string {
+    if (!date) {
+      return '—';
+    }
+    const parsed = date instanceof Date ? date : new Date(date);
+    if (isNaN(parsed.getTime())) {
+      return '—';
+    }
+    const month = parsed.toLocaleDateString('en-US', { month: 'short' });
+    const day = parsed.getDate();
+    return `${month} ${day}`;
+  }
+
   /**
    * Check if user can navigate to a specific step (enforces sequential workflow)
    */

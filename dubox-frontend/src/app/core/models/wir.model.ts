@@ -258,6 +258,8 @@ export interface QualityIssueItem {
   issueDate?: string | Date;
   status?: QualityIssueStatus | string;
   imageDataUrls?: string[];
+  projectName?: string;
+  projectCode?: string;
 }
 
 export interface QualityIssueImage {
@@ -289,6 +291,7 @@ export interface QualityIssueDetails extends QualityIssueItem {
   isOverdue?: boolean;
   overdueDays?: number;
   images?: QualityIssueImage[];
+  projectName?:string;
 }
 
 export interface PaginatedQualityIssuesResponse {

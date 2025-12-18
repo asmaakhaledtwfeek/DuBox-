@@ -352,7 +352,7 @@ export class WIRService {
    */
   addQualityIssue(request: AddQualityIssueRequest): Observable<WIRCheckpoint> {
     // Send as FormData if files are present, otherwise as JSON
-    if (request.files && request.files.length > 0) {
+   
       const formData = new FormData();
       formData.append('IssueType', request.issueType);
       formData.append('Severity', request.severity);
@@ -377,29 +377,16 @@ export class WIRService {
       }
       
       // Append files
-      request.files.forEach(file => {
-        formData.append('Files', file);
-      });
+      if (request.files && request.files.length > 0) {
+        request.files.forEach((file: File) => {
+          formData.append('Files', file);
+        });
+      }
       
       return this.apiService.postFormData<any>(`wircheckpoints/${request.wirId}/quality-issue`, formData).pipe(
         map(data => this.transformWIRCheckpoint(data))
       );
-    } else {
-      // Send as JSON if no files
-      const jsonRequest = {
-        wirId: request.wirId,
-        issueType: request.issueType,
-        severity: request.severity,
-        issueDescription: request.issueDescription,
-        assignedTo: request.assignedTo,
-        dueDate: request.dueDate,
-        imageUrls: request.imageUrls
-      };
-      
-      return this.apiService.post<any>(`wircheckpoints/${request.wirId}/quality-issue`, jsonRequest).pipe(
-        map(data => this.transformWIRCheckpoint(data))
-      );
-    }
+    
   }
 
 
@@ -771,7 +758,8 @@ export class WIRService {
       inspectorName: issue.inspectorName || issue.InspectorName,
       isOverdue: issue.isOverdue ?? issue.IsOverdue,
       overdueDays: issue.overdueDays ?? issue.OverdueDays,
-      images: transformedImages
+      images: transformedImages,
+      projectName: issue.projectName || issue.ProjectName,
     };
   }
 }

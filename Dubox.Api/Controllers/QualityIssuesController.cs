@@ -5,6 +5,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Dubox.Api.Controllers
 {
@@ -44,7 +45,7 @@ namespace Dubox.Api.Controllers
         /// </summary>
         [HttpPost]
         [Consumes("multipart/form-data", "application/json")]
-        [RequestSizeLimit(50_000_000)] // 50 MB for multiple images
+        [RequestSizeLimit(50_000_000)] 
         public async Task<IActionResult> CreateQualityIssue(
             CancellationToken cancellationToken)
         {
@@ -57,10 +58,8 @@ namespace Dubox.Api.Controllers
             List<string>? imageUrls = null;
             List<byte[]>? fileBytes = null;
 
-            // Check if request is multipart/form-data or JSON
             if (Request.HasFormContentType)
             {
-                // Handle multipart/form-data
                 var form = await Request.ReadFormAsync(cancellationToken);
 
                 if (!Guid.TryParse(form["BoxId"].ToString(), out boxId))
@@ -123,7 +122,11 @@ namespace Dubox.Api.Controllers
                 {
                     jsonCommand = JsonSerializer.Deserialize<CreateQualityIssueJsonRequest>(requestBody, new JsonSerializerOptions
                     {
-                        PropertyNameCaseInsensitive = true
+                        PropertyNameCaseInsensitive = true,
+                         Converters =
+                            {
+                              new JsonStringEnumConverter()
+                            } 
                     });
                 }
                 catch

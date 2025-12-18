@@ -1,9 +1,15 @@
-using Dubox.Application.DTOs;
+﻿using Dubox.Application.DTOs;
 using Dubox.Domain.Shared;
 using MediatR;
+using System;
+using System.Collections.Generic;
+using System.Text;
 
-namespace Dubox.Application.Features.WIRCheckpoints.Queries;
+namespace Dubox.Application.Features.WIRCheckpoints.Queries
+{
+   
+    public record GetPredefinedChecklistItemsByWIRCodeQuery(string WIRCode) : IRequest<Result<List<PredefinedChecklistItemWithChecklistDto>>>;
 
-public record GetPredefinedChecklistItemsByWIRCodeQuery(Guid WIRCheckPointId) : IRequest<Result<List<PredefinedChecklistItemWithChecklistDto>>>;
 
 
+}

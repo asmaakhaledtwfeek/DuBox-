@@ -94,6 +94,8 @@ export interface BoxActivityDetail {
   teamName?: string;
   assignedMemberId?: string;
   assignedMemberName?: string;
+  assignedGroupId?: string;
+  assignedGroupTag?: string;
   materialsAvailable: boolean;
   isActive: boolean;
   createdDate: Date;

@@ -5,9 +5,6 @@ using MediatR;
 
 namespace Dubox.Application.Features.QualityIssues.Commands
 {
-    /// <summary>
-    /// Command to create a quality issue directly for a box (without WIR checkpoint)
-    /// </summary>
     public record CreateQualityIssueCommand(
         Guid BoxId,
         IssueTypeEnum IssueType,

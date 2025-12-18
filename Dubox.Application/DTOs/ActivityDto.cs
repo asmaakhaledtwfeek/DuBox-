@@ -65,7 +65,6 @@ public record AssignBoxActivityTeamDto
     public Guid TeamId { get; init; }
     public string? TeamCode { get; init; }
     public string? TeamName { get; init; }
-    public Guid AssigneeToId { get; init; }
-    public string? AssigneeTo { get; init; }
-
+    public Guid? AssignedGroupId { get; init; }
+    public string? AssignedGroupTag { get; init; }
 }

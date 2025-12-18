@@ -1,0 +1,126 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="page-content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <button class="btn-back" (click)="goBack()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Back to WIR Selection
+      </button>
+      <div class="header-content">
+        <div class="title-row">
+          <h1 class="page-title">{{ wirCode }} Predefined Checklists</h1>
+          <span class="item-count" *ngIf="!loading && !error">{{ totalItems }} items</span>
+        </div>
+        <p class="page-subtitle">View all predefined checklist items grouped by checklist and section</p>
+      </div>
+      <div class="header-actions" *ngIf="checklistGroups.length > 0">
+        <button class="btn btn-outline" (click)="expandAll()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 15l-6-6-6 6"/>
+          </svg>
+          Expand All
+        </button>
+        <button class="btn btn-outline" (click)="collapseAll()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+          Collapse All
+        </button>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-state" *ngIf="loading">
+      <div class="spinner"></div>
+      <p>Loading checklist items...</p>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-state" *ngIf="error && !loading">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <p>{{ error }}</p>
+      <button class="btn btn-primary" (click)="loadChecklistItems()">Try Again</button>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="!loading && !error && checklistGroups.length === 0">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 11l3 3L22 4"/>
+        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+      </svg>
+      <p>No predefined checklist items found for {{ wirCode }}</p>
+    </div>
+
+    <!-- Checklist Groups -->
+    <div class="checklist-groups" *ngIf="!loading && !error && checklistGroups.length > 0">
+      <div *ngFor="let checklist of checklistGroups" class="checklist-panel">
+        <!-- Checklist Header -->
+        <div class="checklist-header" (click)="toggleChecklist(checklist)">
+          <div class="checklist-toggle">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [class.rotated]="checklist.isExpanded">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </div>
+          <div class="checklist-info">
+            <h2 class="checklist-name">{{ checklist.checklistName }}</h2>
+            <div class="checklist-meta">
+              <span class="meta-item" *ngIf="checklist.checklistCode">
+                <strong>Code:</strong> {{ checklist.checklistCode }}
+              </span>
+              <span class="meta-item" *ngIf="checklist.discipline">
+                <strong>Discipline:</strong> {{ checklist.discipline }}
+              </span>
+              <span class="meta-item" *ngIf="checklist.subDiscipline">
+                <strong>Sub-Discipline:</strong> {{ checklist.subDiscipline }}
+              </span>
+              <span class="meta-item" *ngIf="checklist.pageNumber">
+                <strong>Page:</strong> {{ checklist.pageNumber }}
+              </span>
+            </div>
+          </div>
+          <span class="section-count">{{ checklist.sections.length }} section(s)</span>
+        </div>
+
+        <!-- Checklist Content (Sections) -->
+        <div class="checklist-content" *ngIf="checklist.isExpanded">
+          <div *ngFor="let section of checklist.sections" class="section-panel">
+            <!-- Section Header -->
+            <div class="section-header" (click)="toggleSection(section)">
+              <div class="section-toggle">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [class.rotated]="section.isExpanded">
+                  <path d="M9 18l6-6-6-6"/>
+                </svg>
+              </div>
+              <h3 class="section-title">{{ section.sectionTitle }}</h3>
+              <span class="item-badge">{{ section.items.length }} items</span>
+            </div>
+
+            <!-- Section Items -->
+            <div class="section-items" *ngIf="section.isExpanded">
+              <div *ngFor="let item of section.items; let i = index" class="checklist-item" [class.inactive]="!item.isActive">
+                <span class="item-sequence">{{ item.sequence }}</span>
+                <div class="item-content">
+                  <p class="item-description">{{ item.checkpointDescription }}</p>
+                  <span class="item-reference" *ngIf="item.reference">Ref: {{ item.reference }}</span>
+                </div>
+                <span class="item-status" [class.active]="item.isActive" [class.inactive]="!item.isActive">
+                  {{ item.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

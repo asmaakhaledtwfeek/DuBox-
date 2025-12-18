@@ -57,20 +57,31 @@ namespace Dubox.Application.Features.Activities.Commands
                 return Result.Failure<AssignBoxActivityTeamDto>("Access denied. You do not have permission to assign this team.");
             }
 
-            var teamMember = _unitOfWork.Repository<TeamMember>().GetEntityWithSpec(new GetTeamMemberWithIcludesSpecification(request.TeamMemberId));
+            TeamGroup? teamGroup = null;
+            string groupTag = "";
+            
+            if (request.TeamGroupId.HasValue && request.TeamGroupId.Value != Guid.Empty)
+            {
+                teamGroup = await _unitOfWork.Repository<TeamGroup>().GetByIdAsync(request.TeamGroupId.Value);
 
-            if (teamMember == null)
-                return Result.Failure<AssignBoxActivityTeamDto>(" Team Member not found.");
+                if (teamGroup == null)
+                    return Result.Failure<AssignBoxActivityTeamDto>("Team Group not found.");
 
-            if (teamMember.TeamId != request.TeamId)
-                return Result.Failure<AssignBoxActivityTeamDto>("The selected team member does not belong to the specified team.");
+                if (teamGroup.TeamId != request.TeamId)
+                    return Result.Failure<AssignBoxActivityTeamDto>("The selected team group does not belong to the specified team.");
+
+                if (!teamGroup.IsActive)
+                    return Result.Failure<AssignBoxActivityTeamDto>("The selected team group is not active.");
+
+                groupTag = teamGroup.GroupTag;
+            }
 
             var oldTeamId = activity.TeamId;
-            var oldAssignedMemberId = activity.AssignedMemberId;
+            var oldAssignedGroupId = activity.AssignedGroupId;
 
             activity.TeamId = request.TeamId;
-            activity.AssignedMemberId = request.TeamMemberId;
-
+            activity.AssignedGroupId = request.TeamGroupId;
+            activity.AssignedMemberId = teamGroup.GroupLeaderId!=null? teamGroup.GroupLeaderId:null;
             var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
             activity.ModifiedBy = currentUserId;
             activity.ModifiedDate = DateTime.UtcNow;
@@ -82,11 +93,11 @@ namespace Dubox.Application.Features.Activities.Commands
                 TableName = nameof(BoxActivity),
                 RecordId = activity.BoxActivityId,
                 Action = "Assignment",
-                OldValues = $"TeamId: {oldTeamId}, MemberId: {oldAssignedMemberId}",
-                NewValues = $"TeamId: {request.TeamId}, MemberId: {request.TeamMemberId}",
+                OldValues = $"TeamId: {oldTeamId}, GroupId: {oldAssignedGroupId}",
+                NewValues = $"TeamId: {request.TeamId}, GroupId: {request.TeamGroupId}",
                 ChangedBy = currentUserId,
                 ChangedDate = DateTime.UtcNow,
-                Description = $"Activity assigned to Team '{team.TeamName}' and Member '{teamMember.EmployeeName}'. Old team ID was {oldTeamId}.",
+                Description = $"Activity assigned to Team '{team.TeamName}'" + (teamGroup != null ? $" and Group '{groupTag}'" : "") + $". Old team ID was {oldTeamId}.",
             };
             await _unitOfWork.Repository<AuditLog>().AddAsync(log, cancellationToken);
             await _unitOfWork.CompleteAsync(cancellationToken);
@@ -99,8 +110,8 @@ namespace Dubox.Application.Features.Activities.Commands
                 TeamId = team.TeamId,
                 TeamCode = team.TeamCode,
                 TeamName = team.TeamName,
-                AssigneeToId = teamMember.TeamMemberId,
-                AssigneeTo = teamMember.EmployeeName == string.Empty ? teamMember.User.FullName : teamMember.EmployeeName
+                AssignedGroupId = teamGroup?.TeamGroupId,
+                AssignedGroupTag = groupTag
             };
 
             return Result.Success(responseDto);

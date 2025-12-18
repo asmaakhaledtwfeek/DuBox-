@@ -354,6 +354,24 @@ export class BoxService {
   }
 
   /**
+   * Upload box drawing (PDF or DWG file) or URL
+   */
+  uploadBoxDrawing(request: { boxId: string; drawingUrl?: string; file?: File }): Observable<any> {
+    const formData = new FormData();
+    formData.append('BoxId', request.boxId);
+    
+    if (request.drawingUrl) {
+      formData.append('DrawingUrl', request.drawingUrl);
+    }
+    
+    if (request.file) {
+      formData.append('File', request.file);
+    }
+    
+    return this.apiService.postFormData<any>('boxdrawings', formData);
+  }
+
+  /**
    * Delete attachment
    */
   deleteAttachment(boxId: string, attachmentId: string): Observable<void> {

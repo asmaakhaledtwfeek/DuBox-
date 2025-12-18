@@ -3774,11 +3774,34 @@
     }
   }
 
+  // Header container with sub-nav and upload button
+  .drawing-header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+    
+    .btn-upload-drawing {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      white-space: nowrap;
+      
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+    }
+  }
+
   // Sub-navigation for File Images and URL Images
   .drawing-sub-nav {
     display: flex;
     gap: 12px;
-    margin-bottom: 24px;
+    flex: 1;
     padding: 6px;
     background: linear-gradient(to bottom, #f8fafc 0%, #ffffff 100%);
     border-radius: 12px;

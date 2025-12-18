@@ -63,6 +63,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<NavigationMenuItem> NavigationMenuItems { get; set; } = null!;
     public DbSet<ChecklistSection> ChecklistSections { get; set; } = null!;
     public DbSet<Checklist> Checklists { get; set; } = null!;
+    public DbSet<BoxDrawing> BoxDrawings { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -385,6 +386,13 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(p => p.ChecklistSectionId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // BoxDrawing relationships
+        modelBuilder.Entity<BoxDrawing>()
+            .HasOne(bd => bd.Box)
+            .WithMany(b => b.BoxDrawings)
+            .HasForeignKey(bd => bd.BoxId)
+            .OnDelete(DeleteBehavior.Cascade);
 
     }
 

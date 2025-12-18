@@ -9,6 +9,7 @@ import { QualityIssueItem, QualityIssueDetails, QualityIssueStatus, UpdateQualit
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { PermissionService } from '../../../core/services/permission.service';
+import { AuthService } from '../../../core/services/auth.service';
 import { map } from 'rxjs/operators';
 import * as ExcelJS from 'exceljs';
 import { environment } from '../../../../environments/environment';
@@ -80,6 +81,9 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   private isResettingFilters = false;
   private isResettingCheckpointFilters = false;
 
+  // System Admin flag
+  isSystemAdmin = false;
+
   // Modal state
   isDetailsModalOpen = false;
   isStatusModalOpen = false;
@@ -118,8 +122,10 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     private wirService: WIRService,
     private router: Router,
     private apiService: ApiService,
-    private permissionService: PermissionService
+    private permissionService: PermissionService,
+    private authService: AuthService
   ) {
+    this.isSystemAdmin = this.authService.isSystemAdmin();
     this.filterForm = this.fb.group({
       projectCode: [''],
       boxTag: [''],

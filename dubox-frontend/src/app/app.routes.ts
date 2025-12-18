@@ -88,6 +88,16 @@ export const routes: Routes = [
     loadComponent: () => import('./features/qc/quality-control-dashboard/quality-control-dashboard.component').then(m => m.QualityControlDashboardComponent)
   },
   {
+    path: 'qc/predefined-checklists',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/qc/manage-predefined-checklists/manage-predefined-checklists.component').then(m => m.ManagePredefinedChecklistsComponent)
+  },
+  {
+    path: 'qc/predefined-checklists/:wirCode',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/qc/predefined-checklist-details/predefined-checklist-details.component').then(m => m.PredefinedChecklistDetailsComponent)
+  },
+  {
     path: 'projects/:projectId/boxes/:boxId/activities/:activityId/qa-qc',
     canActivate: [authGuard, permissionGuard],
     data: { 

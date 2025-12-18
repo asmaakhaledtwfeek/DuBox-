@@ -16,6 +16,7 @@ import { HeaderComponent } from '../../../shared/components/header/header.compon
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { ActivityTableComponent } from '../../activities/activity-table/activity-table.component';
 import { BoxLogDetailsModalComponent } from '../box-log-details-modal/box-log-details-modal.component';
+import { UploadDrawingModalComponent } from '../upload-drawing-modal/upload-drawing-modal.component';
 import { LocationService, FactoryLocation, BoxLocationHistory } from '../../../core/services/location.service';
 import { ApiService } from '../../../core/services/api.service';
 import { WirExportService, ProjectInfo } from '../../../core/services/wir-export.service';
@@ -28,7 +29,7 @@ import { environment } from '../../../../environments/environment';
 @Component({
   selector: 'app-box-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, HttpClientModule, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent, HeaderComponent, BoxLogDetailsModalComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, HttpClientModule, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent, HeaderComponent, BoxLogDetailsModalComponent, UploadDrawingModalComponent],
   providers: [LocationService],
   animations: [
     trigger('slideDown', [
@@ -169,6 +170,9 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   
   // Sub-tab for Drawings section
   activeDrawingTab: 'file' | 'url' = 'file';
+  
+  // Upload drawing modal
+  isUploadDrawingModalOpen = false;
   
   // Pagination for progress updates
   progressUpdatesCurrentPage = 1;
@@ -2303,6 +2307,26 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         this.loadingBoxDrawings = false;
       }
     });
+  }
+
+  // Upload Drawing Modal Methods
+  openUploadDrawingModal(): void {
+    this.isUploadDrawingModalOpen = true;
+  }
+
+  closeUploadDrawingModal(): void {
+    this.isUploadDrawingModalOpen = false;
+  }
+
+  onDrawingUploaded(): void {
+    // Reload drawings after successful upload
+    this.loadBoxDrawings();
+    this.closeUploadDrawingModal();
+    
+    // Show success toast
+    document.dispatchEvent(new CustomEvent('app-toast', {
+      detail: { message: 'Drawing uploaded successfully!', type: 'success' }
+    }));
   }
 
 

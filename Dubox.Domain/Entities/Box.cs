@@ -93,6 +93,7 @@ public class Box
     public ICollection<ProgressUpdate> ProgressUpdates { get; set; } = new List<ProgressUpdate>();
     public ICollection<MaterialTransaction> MaterialTransactions { get; set; } = new List<MaterialTransaction>();
     public virtual ICollection<BoxLocationHistory> BoxLocationHistory { get; set; } = new List<BoxLocationHistory>();
+    public ICollection<BoxDrawing> BoxDrawings { get; set; } = new List<BoxDrawing>();
 
 
 }

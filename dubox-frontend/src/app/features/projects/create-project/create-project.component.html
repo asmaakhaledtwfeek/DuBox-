@@ -173,16 +173,17 @@
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                     <circle cx="12" cy="10" r="3"/>
                   </svg>
-                  Location
+                  Location <span class="required">*</span>
                 </label>
-                <input
+                <select
                   id="location"
-                  type="text"
                   formControlName="location"
                   class="form-control"
-                  placeholder="e.g., Dubai, UAE"
                   [class.invalid]="isFieldInvalid('location')"
-                />
+                >
+                  <option [ngValue]="null">Select Location</option>
+                  <option *ngFor="let loc of locations" [ngValue]="loc.value">{{ loc.label }}</option>
+                </select>
                 <div class="error-text" *ngIf="isFieldInvalid('location')">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
@@ -190,6 +191,39 @@
                     <line x1="12" y1="16" x2="12.01" y2="16"/>
                   </svg>
                   {{ getFieldError('location') }}
+                </div>
+              </div>
+
+              <!-- Project Category -->
+              <div class="form-group">
+                <label for="projectCategoryId">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"/>
+                    <rect x="14" y="3" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/>
+                  </svg>
+                  Project Category <span class="required">*</span>
+                </label>
+                <select
+                  id="projectCategoryId"
+                  formControlName="projectCategoryId"
+                  class="form-control"
+                  [class.invalid]="isFieldInvalid('projectCategoryId')"
+                >
+                  <option [ngValue]="null">Select Category</option>
+                  <option *ngFor="let category of categories" [ngValue]="category.categoryId">
+                    {{ category.categoryName }}
+                  </option>
+                </select>
+                <div class="loading-text" *ngIf="loadingCategories">Loading categories...</div>
+                <div class="error-text" *ngIf="isFieldInvalid('projectCategoryId')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  {{ getFieldError('projectCategoryId') }}
                 </div>
               </div>
             </div>

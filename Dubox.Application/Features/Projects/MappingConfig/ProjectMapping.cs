@@ -13,7 +13,8 @@ namespace Dubox.Application.Features.Projects.MappingConfig
                 .Map(dest => dest.PlannedStartDate, src => src.PlannedStartDate)
                 .Map(dest => dest.PlannedEndDate, src => src.PlannedEndDate)
                 .Map(dest => dest.ActualEndDate, src => src.ActualEndDate)
-                .Map(dest => dest.CompressionStartDate, src => src.CompressionStartDate);
+                .Map(dest => dest.CompressionStartDate, src => src.CompressionStartDate)
+                .Map(dest => dest.CategoryName, src => src.Category != null ? src.Category.CategoryName : null);
         }
     }
 }

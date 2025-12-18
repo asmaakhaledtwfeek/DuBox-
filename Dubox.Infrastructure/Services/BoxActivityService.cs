@@ -20,7 +20,7 @@ namespace Dubox.Infrastructure.Services
 
         public async Task CopyActivitiesToBox(Box box, CancellationToken cancellationToken)
         {
-            var boxType = box.BoxType?.Trim();
+            var boxType = box.BoxType.BoxTypeName?.Trim();
             var searchPattern = $",{boxType},";
 
             var activityMasters = await _dbContext.ActivityMasters

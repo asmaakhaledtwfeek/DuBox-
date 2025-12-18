@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { ApiService, PaginatedResponse } from './api.service';
-import { Box, BoxActivity, BoxDrawing, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview, BoxTypeStatsByProject, BoxDrawingsResponse, BoxDrawingImage, BoxAllAttachmentsResponse } from '../models/box.model';
+import { Box, BoxActivity, BoxDrawing, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview, BoxTypeStatsByProject, BoxDrawingsResponse, BoxDrawingImage, BoxAllAttachmentsResponse, BoxType, BoxSubType } from '../models/box.model';
 
 @Injectable({
   providedIn: 'root'
@@ -509,6 +509,45 @@ export class BoxService {
       catchError(err => {
         console.error('❌ Error fetching box attachments:', err);
         throw err;
+      })
+    );
+  }
+
+  /**
+   * Get all project type categories
+   */
+  getAllProjectTypeCategories(): Observable<any[]> {
+    return this.apiService.get<any>('boxtypes/categories').pipe(
+      map(response => response?.data || response || []),
+      catchError(err => {
+        console.error('❌ Error fetching categories:', err);
+        return throwError(() => err);
+      })
+    );
+  }
+
+  /**
+   * Get box types by category ID
+   */
+  getBoxTypesByCategory(categoryId: number): Observable<BoxType[]> {
+    return this.apiService.get<any>(`boxtypes/by-category/${categoryId}`).pipe(
+      map(response => response?.data || response || []),
+      catchError(err => {
+        console.error('❌ Error fetching box types:', err);
+        return throwError(() => err);
+      })
+    );
+  }
+
+  /**
+   * Get box subtypes by box type ID
+   */
+  getBoxSubTypesByBoxType(boxTypeId: number): Observable<BoxSubType[]> {
+    return this.apiService.get<any>(`boxtypes/${boxTypeId}/subtypes`).pipe(
+      map(response => response?.data || response || []),
+      catchError(err => {
+        console.error('❌ Error fetching box subtypes:', err);
+        return throwError(() => err);
       })
     );
   }

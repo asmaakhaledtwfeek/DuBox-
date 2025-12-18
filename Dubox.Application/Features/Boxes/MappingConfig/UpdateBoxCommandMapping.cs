@@ -11,7 +11,7 @@ namespace Dubox.Application.Features.Boxes.MappingConfig
             config.NewConfig<UpdateBoxCommand, Box>()
              .Map(dest => dest.BoxTag, src => src.BoxTag)
              .Map(dest => dest.BoxName, src => src.BoxName)
-             .Map(dest => dest.BoxType, src => src.BoxType)
+             .Map(dest => dest.BoxTypeId, src => src.BoxTypeId)
              .Map(dest => dest.Floor, src => src.Floor)
              .Map(dest => dest.Building, src => src.Building)
              .Map(dest => dest.Zone, src => src.Zone)

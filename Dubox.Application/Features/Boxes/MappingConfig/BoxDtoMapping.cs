@@ -9,7 +9,6 @@ namespace Dubox.Application.Features.Boxes.MappingConfig
         public void Register(TypeAdapterConfig config)
         {
             config.NewConfig<Box, BoxDto>()
-
            .Map(dest => dest.ActivitiesCount, src => src.BoxActivities.Count);
 
         }

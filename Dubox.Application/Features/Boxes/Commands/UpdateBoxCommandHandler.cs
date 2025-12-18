@@ -169,13 +169,13 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
             RecordChange("BoxName", box.BoxName, request.BoxName);
             box.BoxName = request.BoxName;
         }
-        if (!string.IsNullOrEmpty(request.BoxType) && box.BoxType != request.BoxType)
+        if ( request.BoxTypeId.HasValue && box.BoxTypeId != request.BoxTypeId)
         {
-            if (box.BoxType != request.BoxType)
+            if (box.BoxTypeId != request.BoxTypeId)
                 boxTypeChanged = true;
 
-            RecordChange("BoxType", box.BoxType, request.BoxType);
-            box.BoxType = request.BoxType;
+            RecordChange("BoxTypeId", box.BoxTypeId, request.BoxTypeId);
+            box.BoxTypeId = request.BoxTypeId.Value;
         }
 
         if (!string.IsNullOrEmpty(request.Floor) && box.Floor != request.Floor)

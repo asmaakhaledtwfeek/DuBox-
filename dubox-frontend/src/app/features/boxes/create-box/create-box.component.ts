@@ -3,8 +3,10 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormArray } from '@angular/forms';
 import { BoxService } from '../../../core/services/box.service';
+import { ProjectService } from '../../../core/services/project.service';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
+import { BoxType, BoxSubType } from '../../../core/models/box.model';
 
 @Component({
   selector: 'app-create-box',
@@ -27,16 +29,11 @@ export class CreateBoxComponent implements OnInit {
   editingAssetIndex: number | null = null;
   assetForm!: FormGroup;
 
-  boxTypes = [
-    'Living Room',
-    'Bedroom',
-    'Bathroom',
-    'Kitchen',
-    'Office',
-    'Storage',
-    'Utility Room',
-    'Other'
-  ];
+  // Box types loaded from backend based on project category
+  boxTypes: BoxType[] = [];
+  boxSubTypes: BoxSubType[] = [];
+  selectedBoxType: BoxType | null = null;
+  loadingBoxTypes = false;
 
   floors = [
     'GF', 'FF', '1F', '2F', '3F', '4F', '5F',
@@ -46,6 +43,7 @@ export class CreateBoxComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private boxService: BoxService,
+    private projectService: ProjectService,
     private router: Router,
     private route: ActivatedRoute
   ) {}
@@ -57,13 +55,73 @@ export class CreateBoxComponent implements OnInit {
     }
     this.initForm();
     this.initAssetForm();
+    this.loadProjectAndBoxTypes();
+  }
+
+  private loadProjectAndBoxTypes(): void {
+    if (!this.projectId) return;
+    
+    this.loadingBoxTypes = true;
+    this.projectService.getProject(this.projectId).subscribe({
+      next: (project: any) => {
+        const categoryId = project?.categoryId || project?.data?.categoryId;
+        if (categoryId) {
+          this.loadBoxTypes(categoryId);
+        } else {
+          this.loadingBoxTypes = false;
+        }
+      },
+      error: (err: any) => {
+        console.error('Error loading project:', err);
+        this.loadingBoxTypes = false;
+      }
+    });
+  }
+
+  private loadBoxTypes(categoryId: number): void {
+    this.boxService.getBoxTypesByCategory(categoryId).subscribe({
+      next: (types) => {
+        this.boxTypes = types;
+        this.loadingBoxTypes = false;
+      },
+      error: (err) => {
+        console.error('Error loading box types:', err);
+        this.loadingBoxTypes = false;
+      }
+    });
+  }
+
+  onBoxTypeChange(event: Event): void {
+    const selectElement = event.target as HTMLSelectElement;
+    const boxTypeId = parseInt(selectElement.value, 10);
+    
+    this.selectedBoxType = this.boxTypes.find(bt => bt.boxTypeId === boxTypeId) || null;
+    this.boxSubTypes = [];
+    this.boxForm.patchValue({ boxSubTypeId: null });
+    
+    if (this.selectedBoxType?.hasSubTypes) {
+      this.loadBoxSubTypes(boxTypeId);
+    }
+  }
+
+  private loadBoxSubTypes(boxTypeId: number): void {
+    this.boxService.getBoxSubTypesByBoxType(boxTypeId).subscribe({
+      next: (subTypes) => {
+        this.boxSubTypes = subTypes;
+      },
+      error: (err) => {
+        console.error('Error loading box subtypes:', err);
+      }
+    });
   }
 
   private initForm(): void {
     this.boxForm = this.fb.group({
       boxTag: ['', [Validators.required, Validators.maxLength(50)]],
       boxName: ['', Validators.maxLength(200)],
-      boxType: ['Living Room', Validators.required],
+      boxType: ['', Validators.required],
+      boxTypeId: [null],
+      boxSubTypeId: [null],
       floor: ['GF', Validators.required],
       building: ['', Validators.maxLength(100)],
       zone: ['', Validators.maxLength(50)],
@@ -247,7 +305,9 @@ export class CreateBoxComponent implements OnInit {
       projectId: this.projectId,
       boxTag: formValue.boxTag,
       boxName: formValue.boxName || undefined,
-      boxType: formValue.boxType,
+      boxType: this.selectedBoxType?.boxTypeName || formValue.boxType,
+      boxTypeId: formValue.boxTypeId || undefined,
+      boxSubTypeId: formValue.boxSubTypeId || undefined,
       floor: formValue.floor,
       building: formValue.building || undefined,
       zone: formValue.zone || undefined,

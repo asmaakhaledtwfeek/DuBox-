@@ -1,4 +1,5 @@
 using Dubox.Application.DTOs;
+using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
 using MediatR;
 
@@ -8,7 +9,8 @@ public record CreateBoxCommand(
     Guid ProjectId,
     string BoxTag,
     string? BoxName,
-    string BoxType,
+    int BoxTypeId,
+    int? BoxSubTypeId,
     string Floor,
     string? Building,
     string? Zone,

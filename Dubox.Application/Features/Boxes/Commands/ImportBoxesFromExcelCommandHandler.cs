@@ -99,7 +99,7 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
             {
                 var boxDto = importedDtos[i];
                 var rowNumber = i + 2;
-
+                int boxTypeId;
                 try
                 {
                     if (string.IsNullOrWhiteSpace(boxDto.BoxTag))
@@ -113,6 +113,17 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                         errors.Add($"Row {rowNumber}: BoxType (Type) is required");
                         failureCount++;
                         continue;
+                    }
+                    else
+                    {
+                         var boxType = _unitOfWork.Repository<BoxType>()
+                        .Get().Where(x => x.BoxTypeName.ToUpper() == boxDto.BoxType.Trim().ToUpper()).FirstOrDefault();
+                        if (boxType == null)
+                        {
+                            failureCount++;
+                            continue;
+                        }
+                        boxTypeId = boxType.BoxTypeId;
                     }
                     if (string.IsNullOrWhiteSpace(boxDto.Floor))
                     {
@@ -133,14 +144,14 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                         failureCount++;
                         continue;
                     }
-
+                    
                     var serialNumber = _serialNumberService.GenerateSerialNumber();
                     var newBox = new Box
                     {
                         ProjectId = request.ProjectId,
                         BoxTag = boxDto.BoxTag.Trim(),
                         BoxName = boxDto.BoxName?.Trim(),
-                        BoxType = boxDto.BoxType.Trim(),
+                        BoxTypeId = boxTypeId,
                         Floor = boxDto.Floor.Trim(),
                         Building = boxDto.Building?.Trim(),
                         Zone = boxDto.Zone ?? BoxZone.ZoneA,

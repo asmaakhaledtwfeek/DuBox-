@@ -25,8 +25,11 @@ public class Box
     public string? BoxName { get; set; }
 
     [Required]
-    [MaxLength(100)]
-    public string BoxType { get; set; } = string.Empty; // Bedroom, Living Room, Kitchen, etc.
+    [ForeignKey(nameof(BoxType))]
+    public int BoxTypeId { get; set; }
+   
+    [ForeignKey(nameof(BoxSubType))]
+    public int? BoxSubTypeId { get; set; }
 
     [Required]
     [MaxLength(50)]
@@ -88,6 +91,8 @@ public class Box
     public Guid? ModifiedBy { get; set; }
 
     // Navigation properties
+    public BoxType BoxType { get; set; } = new();
+    public BoxSubType BoxSubType { get; set; } = new();
     public ICollection<BoxAsset> BoxAssets { get; set; } = new List<BoxAsset>();
     public ICollection<BoxActivity> BoxActivities { get; set; } = new List<BoxActivity>();
     public ICollection<ProgressUpdate> ProgressUpdates { get; set; } = new List<ProgressUpdate>();

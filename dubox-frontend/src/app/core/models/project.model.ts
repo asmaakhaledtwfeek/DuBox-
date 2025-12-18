@@ -5,6 +5,8 @@ export interface Project {
   location: string;
   clientName?: string;
   description?: string;
+  categoryId?: number;
+  categoryName?: string;
   startDate?: Date;
   endDate?: Date;
   plannedStartDate?: Date;

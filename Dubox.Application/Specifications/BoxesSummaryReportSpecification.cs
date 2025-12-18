@@ -23,8 +23,7 @@ public class BoxesSummaryReportSpecification : Specification<Box>
         if (query.ProjectId.HasValue && query.ProjectId.Value != Guid.Empty)
             AddCriteria(b => b.ProjectId == query.ProjectId.Value);
 
-        if (query.BoxType != null && query.BoxType.Any())
-            AddCriteria(b => query.BoxType.Contains(b.BoxType));
+        
 
         if (!string.IsNullOrWhiteSpace(query.Floor))
             AddCriteria(b => b.Floor == query.Floor);

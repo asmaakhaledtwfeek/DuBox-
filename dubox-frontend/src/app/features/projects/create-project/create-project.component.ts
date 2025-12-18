@@ -3,9 +3,11 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ProjectService } from '../../../core/services/project.service';
+import { BoxService } from '../../../core/services/box.service';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { Project } from '../../../core/models/project.model';
+import { ProjectTypeCategory } from '../../../core/models/box.model';
 
 @Component({
   selector: 'app-create-project',
@@ -24,16 +26,25 @@ export class CreateProjectComponent implements OnInit {
   projectId: string | null = null;
   originalProject: Project | null = null;
   canEditPlannedStartDate = true;
+  categories: ProjectTypeCategory[] = [];
+  loadingCategories = false;
+  
+  locations = [
+    { value: 1, label: 'KSA' },
+    { value: 2, label: 'UAE' }
+  ];
 
   constructor(
     private fb: FormBuilder,
     @Inject(ProjectService) private projectService: ProjectService,
+    private boxService: BoxService,
     private router: Router,
     private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
     this.initForm();
+    this.loadCategories();
     this.detectModeAndLoadProject();
   }
 
@@ -42,10 +53,25 @@ export class CreateProjectComponent implements OnInit {
       projectName: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(200)]],
       projectCode: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
       clientName: ['', Validators.maxLength(200)],
-      location: ['', Validators.maxLength(200)],
+      location: [null, Validators.required],
+      projectCategoryId: [null, Validators.required],
       duration: [null, [Validators.required, Validators.min(1)]],
       plannedStartDate: ['', Validators.required],
       description: ['', Validators.maxLength(500)]
+    });
+  }
+
+  private loadCategories(): void {
+    this.loadingCategories = true;
+    this.boxService.getAllProjectTypeCategories().subscribe({
+      next: (categories) => {
+        this.categories = categories;
+        this.loadingCategories = false;
+      },
+      error: (err: any) => {
+        console.error('Error loading categories:', err);
+        this.loadingCategories = false;
+      }
     });
   }
 
@@ -99,7 +125,8 @@ export class CreateProjectComponent implements OnInit {
       projectName: project.name || '',
       projectCode: project.code || '',
       clientName: project.clientName || '',
-      location: project.location || '',
+      location: project.location || null,
+      projectCategoryId: project.categoryId || null,
       duration: duration,
       plannedStartDate: this.formatDateForInput(plannedStart),
       description: project.description || ''
@@ -145,7 +172,8 @@ export class CreateProjectComponent implements OnInit {
         projectCode: formValue.projectCode,
         projectName: formValue.projectName,
         clientName: formValue.clientName || undefined,
-        location: formValue.location || undefined,
+        location: formValue.location || 1,
+        projectCategoryId: formValue.projectCategoryId,
         duration: formValue.duration,
         plannedStartDate: formValue.plannedStartDate ? new Date(formValue.plannedStartDate).toISOString() : undefined,
         description: formValue.description || undefined
@@ -165,7 +193,10 @@ export class CreateProjectComponent implements OnInit {
           projectData.clientName = formValue.clientName || undefined;
         }
         if (compare(formValue.location, this.originalProject.location)) {
-          projectData.location = formValue.location || undefined;
+          projectData.location = formValue.location || 1;
+        }
+        if (compare(formValue.projectCategoryId, this.originalProject.categoryId)) {
+          projectData.categoryId = formValue.projectCategoryId;
         }
         if (compare(formValue.description, this.originalProject.description)) {
           projectData.description = formValue.description || undefined;
@@ -262,6 +293,7 @@ export class CreateProjectComponent implements OnInit {
       projectCode: 'Project code',
       clientName: 'Client name',
       location: 'Location',
+      projectCategoryId: 'Project category',
       duration: 'Duration',
       plannedStartDate: 'Planned start date',
       description: 'Description'

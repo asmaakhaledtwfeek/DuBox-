@@ -32,7 +32,7 @@ public class GetBoxTypeStatsByProjectQueryHandler : IRequestHandler<GetBoxTypeSt
             .GroupBy(b => b.BoxType)
             .Select(g => new BoxTypeStatDto
             {
-                BoxType = g.Key,
+                BoxType = g.Key.BoxTypeName,
                 BoxCount = g.Count(),
                 OverallProgress = g.Average(b => b.ProgressPercentage)
             })

@@ -2,6 +2,7 @@ using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Interfaces;
+using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
 

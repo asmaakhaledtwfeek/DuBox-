@@ -7,6 +7,8 @@ public record ProjectDto
     public string ProjectName { get; init; } = string.Empty;
     public string? ClientName { get; init; }
     public string? Location { get; init; }
+    public int? CategoryId { get; init; }
+    public string? CategoryName { get; init; }
     public int? Duration { get; init; }
     public DateTime? PlannedStartDate { get; init; }
     public DateTime? StartDate { get; init; }

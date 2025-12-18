@@ -26,11 +26,10 @@ namespace Dubox.Application.Features.Boxes.Commands
             .WithMessage("Box name cannot exceed 200 characters")
             .When(x => !string.IsNullOrEmpty(x.BoxName));
 
-            RuleFor(x => x.BoxType)
+            RuleFor(x => x.BoxTypeId)
             .NotEmpty()
-            .WithMessage("Box type is required")
-            .MaximumLength(100)
-            .WithMessage("Box type cannot exceed 100 characters");
+            .WithMessage("Box type is required");
+            
             //.Must(BeValidBoxType)
             //.WithMessage("Invalid box type. Valid types: Bedroom, Living Room, Kitchen, Bathroom, Office, Storage, Other");
             RuleFor(x => x.Floor)

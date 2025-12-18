@@ -4,6 +4,7 @@ using Dubox.Infrastructure.ApplicationContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Dubox.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251218170808_projectCategoryAndBoxDrawing")]
+    partial class projectCategoryAndBoxDrawing
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -644,16 +647,15 @@ namespace Dubox.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<int?>("BoxSubTypeId")
-                        .HasColumnType("int");
-
                     b.Property<string>("BoxTag")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("BoxTypeId")
-                        .HasColumnType("int");
+                    b.Property<string>("BoxType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("Building")
                         .HasMaxLength(100)
@@ -743,10 +745,6 @@ namespace Dubox.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("BoxId");
-
-                    b.HasIndex("BoxSubTypeId");
-
-                    b.HasIndex("BoxTypeId");
 
                     b.HasIndex("CurrentLocationId");
 
@@ -14291,16 +14289,6 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.Box", b =>
                 {
-                    b.HasOne("Dubox.Domain.Entities.BoxSubType", "BoxSubType")
-                        .WithMany()
-                        .HasForeignKey("BoxSubTypeId");
-
-                    b.HasOne("Dubox.Domain.Entities.BoxType", "BoxType")
-                        .WithMany()
-                        .HasForeignKey("BoxTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("Dubox.Domain.Entities.FactoryLocation", "CurrentLocation")
                         .WithMany()
                         .HasForeignKey("CurrentLocationId")
@@ -14311,10 +14299,6 @@ namespace Dubox.Infrastructure.Migrations
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("BoxSubType");
-
-                    b.Navigation("BoxType");
 
                     b.Navigation("CurrentLocation");
 

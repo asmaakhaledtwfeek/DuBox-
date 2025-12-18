@@ -6,6 +6,10 @@ export interface Box {
   projectId: string;
   status: BoxStatus;
   type?: string;
+  boxTypeId?: number;
+  boxTypeName?: string;
+  boxSubTypeId?: number;
+  boxSubTypeName?: string;
   description?: string;
   floor?: string;
   building?: string;
@@ -213,5 +217,26 @@ export interface BoxTypeStat {
 export interface BoxTypeStatsByProject {
   projectId: string;
   boxTypeStats: BoxTypeStat[];
+}
+
+export interface ProjectTypeCategory {
+  categoryId: number;
+  categoryName: string;
+  abbreviation?: string;
+}
+
+export interface BoxType {
+  boxTypeId: number;
+  boxTypeName: string;
+  abbreviation?: string;
+  categoryId: number;
+  hasSubTypes: boolean;
+}
+
+export interface BoxSubType {
+  boxSubTypeId: number;
+  boxSubTypeName: string;
+  abbreviation?: string;
+  boxTypeId: number;
 }
 

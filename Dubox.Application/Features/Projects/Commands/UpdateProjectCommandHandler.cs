@@ -112,6 +112,8 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
             project.ClientName = request.ClientName;
         if (request.Location.HasValue)
             project.Location = request.Location.Value;
+        if (request.CategoryId.HasValue)
+            project.CategoryId = request.CategoryId.Value;
         if (request.PlannedStartDate.HasValue)
             project.PlannedStartDate = request.PlannedStartDate;
         if (request.Duration.HasValue)

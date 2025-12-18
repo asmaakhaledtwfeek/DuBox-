@@ -291,19 +291,19 @@ namespace Dubox.Api.Controllers
         }
 
        
-        [HttpPost("generate-for-box/{boxId}")]
-        public async Task<IActionResult> GenerateWIRsForBox(Guid boxId, CancellationToken cancellationToken)
-        {
-            var result = await _mediator.Send(new Dubox.Application.Features.WIRCheckpoints.Commands.GenerateWIRsForBoxCommand(boxId), cancellationToken);
-            return result.IsSuccess ? Ok(result) : BadRequest(result);
-        }
+        //[HttpPost("generate-for-box/{boxId}")]
+        //public async Task<IActionResult> GenerateWIRsForBox(Guid boxId, CancellationToken cancellationToken)
+        //{
+        //    var result = await _mediator.Send(new Dubox.Application.Features.WIRCheckpoints.Commands.GenerateWIRsForBoxCommand(boxId), cancellationToken);
+        //    return result.IsSuccess ? Ok(result) : BadRequest(result);
+        //}
 
         
-        [HttpGet("box/{boxId}/with-checklist")]
-        public async Task<IActionResult> GetWIRsByBoxWithChecklist(Guid boxId, CancellationToken cancellationToken)
-        {
-            var result = await _mediator.Send(new Dubox.Application.Features.WIRCheckpoints.Queries.GetWIRsByBoxWithChecklistQuery(boxId), cancellationToken);
-            return result.IsSuccess ? Ok(result) : BadRequest(result);
-        }
+        //[HttpGet("box/{boxId}/with-checklist")]
+        //public async Task<IActionResult> GetWIRsByBoxWithChecklist(Guid boxId, CancellationToken cancellationToken)
+        //{
+        //    var result = await _mediator.Send(new Dubox.Application.Features.WIRCheckpoints.Queries.GetWIRsByBoxWithChecklistQuery(boxId), cancellationToken);
+        //    return result.IsSuccess ? Ok(result) : BadRequest(result);
+        //}
     }
 }

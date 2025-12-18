@@ -13,7 +13,7 @@ namespace Dubox.Application.Features.Boxes.MappingConfig
              .Map(dest => dest.BoxName, src => src.BoxName)
              .Map(dest => dest.BoxTypeId, src => src.BoxTypeId)
              .Map(dest => dest.Floor, src => src.Floor)
-             .Map(dest => dest.Building, src => src.Building)
+             .Map(dest => dest.BuildingNumber, src => src.BuildingNumber)
              .Map(dest => dest.Zone, src => src.Zone)
              .Map(dest => dest.Length, src => src.Length)
              .Map(dest => dest.Width, src => src.Width)

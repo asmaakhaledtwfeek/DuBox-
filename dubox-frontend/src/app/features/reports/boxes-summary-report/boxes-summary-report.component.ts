@@ -39,10 +39,10 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
   selectedBoxTypes: string[] = [];
   availableBoxTypes: string[] = [];
   availableFloors: string[] = [];
-  availableBuildings: string[] = [];
+  availableBuildingNumbers: string[] = [];
   availableZones: string[] = [];
   selectedFloor = '';
-  selectedBuilding = '';
+  selectedBuildingNumber = '';
   selectedZone = '';
   selectedStatuses: number[] = [];
   progressMin = 0;
@@ -134,7 +134,7 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
       projectId: this.selectedProjectId || undefined,
       boxType: this.selectedBoxTypes.length > 0 ? this.selectedBoxTypes : undefined,
       floor: this.selectedFloor || undefined,
-      building: this.selectedBuilding || undefined,
+      buildingNumber: this.selectedBuildingNumber || undefined,
       zone: this.selectedZone || undefined,
       status: this.selectedStatuses.length > 0 ? this.selectedStatuses : undefined,
       progressMin: this.progressMin > 0 ? this.progressMin : undefined,
@@ -169,13 +169,13 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
     items.forEach(item => {
       if (item.boxType) boxTypes.add(item.boxType);
       if (item.floor) floors.add(item.floor);
-      if (item.building) buildings.add(item.building);
+      if (item.buildingNumber) buildings.add(item.buildingNumber);
       if (item.zone) zones.add(item.zone);
     });
 
     this.availableBoxTypes = Array.from(boxTypes).sort();
     this.availableFloors = Array.from(floors).sort();
-    this.availableBuildings = Array.from(buildings).sort();
+    this.availableBuildingNumbers = Array.from(buildings).sort();
     this.availableZones = Array.from(zones).sort();
   }
 
@@ -197,7 +197,7 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
     this.selectedProjectId = '';
     this.selectedBoxTypes = [];
     this.selectedFloor = '';
-    this.selectedBuilding = '';
+    this.selectedBuildingNumber = '';
     this.selectedZone = '';
     this.selectedStatuses = [];
     this.progressMin = 0;
@@ -306,7 +306,7 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
     }
 
     const headers = [
-      'Box Tag', 'Serial Number', 'Project', 'Box Type', 'Floor', 'Building', 'Zone',
+      'Box Tag', 'Serial Number', 'Project', 'Box Type', 'Floor', 'Building Number', 'Zone',
       'Progress', 'Status', 'Non-Resolved Issues', 'Current Location', 'Activities', 'Assets'
     ];
 
@@ -316,7 +316,7 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
       item.projectName,
       item.boxType,
       item.floor || '',
-      item.building || '',
+      item.buildingNumber || '',
       item.zone || '',
       item.progressPercentageFormatted,
       item.status,
@@ -358,7 +358,7 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
       'Project': item.projectName,
       'Box Type': item.boxType,
       'Floor': item.floor || '',
-      'Building': item.building || '',
+      'Building Number': item.buildingNumber || '',
       'Zone': item.zone || '',
       'Progress': item.progressPercentageFormatted,
       'Status': item.status,

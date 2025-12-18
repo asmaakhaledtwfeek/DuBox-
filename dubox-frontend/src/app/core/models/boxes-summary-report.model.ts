@@ -12,7 +12,8 @@ export interface BoxSummaryReportItem {
   boxName?: string;
   boxType: string;
   floor?: string;
-  building?: string;
+  buildingNumber?: string;
+  boxLetter?: string;
   zone?: string;
   progressPercentage: number;
   progressPercentageFormatted: string;
@@ -70,7 +71,7 @@ export interface BoxSummaryReportQueryParams {
   projectId?: string;
   boxType?: string[];
   floor?: string;
-  building?: string;
+  buildingNumber?: string;
   zone?: string;
   status?: number[];
   progressMin?: number;

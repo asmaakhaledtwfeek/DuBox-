@@ -191,9 +191,13 @@
                   <span class="label">Floor</span>
                   <span class="value">{{ box.floor }}</span>
                 </div>
-                <div class="info-item" *ngIf="box.building">
-                  <span class="label">Building</span>
-                  <span class="value">{{ box.building }}</span>
+                <div class="info-item" *ngIf="box.buildingNumber">
+                  <span class="label">Building Number</span>
+                  <span class="value">{{ box.buildingNumber }}</span>
+                </div>
+                <div class="info-item" *ngIf="box.boxLetter">
+                  <span class="label">Box Letter</span>
+                  <span class="value">{{ box.boxLetter }}</span>
                 </div>
                 <div class="info-item" *ngIf="box.zone">
                   <span class="label">Zone</span>

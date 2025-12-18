@@ -80,7 +80,12 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
 
         // Generate unique serial number
-        box.SerialNumber = _serialNumberService.GenerateSerialNumber();
+        var lastSeq = _unitOfWork.Repository<Box>().Get()
+             .Where(b => b.ProjectId == request.ProjectId)
+              .Max(b => (int?)b.SequentialNumber) ?? 0;
+        box.SequentialNumber = lastSeq + 1;
+        var yearOfProject = project.CreatedDate.Year.ToString().Substring(2, 2);
+        box.SerialNumber = _serialNumberService.GenerateSerialNumber(request.BoxLetter,lastSeq,yearOfProject);
         
         // Generate QR code string with structured format
         box.QRCodeString = $"ProjectCode: {project.ProjectCode}\nBoxTag: {request.BoxTag}\nSerialNumber: {box.SerialNumber}";

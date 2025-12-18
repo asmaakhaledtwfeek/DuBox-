@@ -95,32 +95,25 @@
               </div>
 
               <div class="form-grid">
-                <!-- Box Tag -->
+                <!-- Box Tag (Read-only, Auto-generated) -->
                 <div class="form-group">
                   <label for="boxTag">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
                       <line x1="7" y1="7" x2="7.01" y2="7"/>
                     </svg>
-                    Box Tag
-                    <span class="required">*</span>
+                    Box Tag (Auto-generated)
                   </label>
                   <input
                     id="boxTag"
                     type="text"
                     formControlName="boxTag"
                     class="form-control"
-                    [class.invalid]="isFieldInvalid('boxTag')"
-                    placeholder="e.g., B1-GF-LIV-01"
+                    readonly
+                    placeholder="Auto-generated from fields below"
+                    style="background-color: #f5f5f5; cursor: not-allowed;"
                   />
-                  <div class="error-text" *ngIf="isFieldInvalid('boxTag')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="12" cy="12" r="10"/>
-                      <line x1="12" y1="8" x2="12" y2="12"/>
-                      <line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                    {{ getFieldError('boxTag') }}
-                  </div>
+                  <small style="color: #666; font-size: 12px;">Format: Project-Building-Floor-Type-SubType-Letter</small>
                 </div>
 
                 <!-- Box Name -->
@@ -167,25 +160,28 @@
                     id="boxTypeId"
                     formControlName="boxTypeId"
                     class="form-control"
-                    [class.invalid]="isFieldInvalid('boxType')"
+                    [class.invalid]="isFieldInvalid('boxTypeId')"
                     (change)="onBoxTypeChange($event)"
                   >
                     <option [ngValue]="null">Select Box Type</option>
                     <option *ngFor="let type of boxTypes" [value]="type.boxTypeId">{{ type.boxTypeName }}</option>
                   </select>
-                  <div class="loading-text" *ngIf="loadingBoxTypes">Loading box types...</div>
-                  <div class="error-text" *ngIf="isFieldInvalid('boxType')">
+                  <div class="loading-text" *ngIf="loadingBoxTypes">Loading box types for {{ projectCategoryName || 'project category' }}...</div>
+                  <small *ngIf="!loadingBoxTypes && boxTypes.length > 0 && projectCategoryName" style="color: #10b981; font-size: 12px; display: block; margin-top: 4px;">
+                    📂 Showing {{ boxTypes.length }} box type(s) for category: <strong>{{ projectCategoryName }}</strong>
+                  </small>
+                  <div class="error-text" *ngIf="isFieldInvalid('boxTypeId')">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <circle cx="12" cy="12" r="10"/>
                       <line x1="12" y1="8" x2="12" y2="12"/>
                       <line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>
-                    {{ getFieldError('boxType') }}
+                    {{ getFieldError('boxTypeId') }}
                   </div>
                 </div>
 
                 <!-- Box Sub Type (shown only if selected box type has subtypes) -->
-                <div class="form-group" *ngIf="selectedBoxType?.hasSubTypes && boxSubTypes.length > 0">
+                <div class="form-group" *ngIf="selectedBoxType?.hasSubTypes">
                   <label for="boxSubTypeId">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <rect x="3" y="3" width="7" height="7"/>
@@ -199,10 +195,51 @@
                     id="boxSubTypeId"
                     formControlName="boxSubTypeId"
                     class="form-control"
+                    [disabled]="loadingBoxSubTypes"
                   >
-                    <option [ngValue]="null">Select Sub Type</option>
-                    <option *ngFor="let subType of boxSubTypes" [value]="subType.boxSubTypeId">{{ subType.boxSubTypeName }}</option>
+                    <option [ngValue]="null">{{ loadingBoxSubTypes ? 'Loading sub types...' : 'Select Sub Type' }}</option>
+                    <option *ngFor="let subType of boxSubTypes" [ngValue]="subType.boxSubTypeId">{{ subType.boxSubTypeName }}</option>
                   </select>
+                  <div class="loading-text" *ngIf="loadingBoxSubTypes">Loading box sub types...</div>
+                  <small *ngIf="!loadingBoxSubTypes && boxSubTypes.length > 0" style="color: #10b981; font-size: 12px; display: block; margin-top: 4px;">
+                    📦 {{ boxSubTypes.length }} sub type(s) available
+                  </small>
+                  <small *ngIf="!loadingBoxSubTypes && boxSubTypes.length === 0" style="color: #f59e0b; font-size: 12px; display: block; margin-top: 4px;">
+                    ⚠️ No sub types configured for this box type
+                  </small>
+                </div>
+
+                <!-- Building Number -->
+                <div class="form-group">
+                  <label for="buildingNumber">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
+                      <path d="M9 22v-4h6v4"/>
+                      <path d="M8 6h.01"/>
+                      <path d="M16 6h.01"/>
+                      <path d="M12 6h.01"/>
+                    </svg>
+                    Building Number
+                    <span class="required">*</span>
+                  </label>
+                  <select
+                    id="buildingNumber"
+                    formControlName="buildingNumber"
+                    class="form-control"
+                    [class.invalid]="isFieldInvalid('buildingNumber')"
+                    (change)="onBuildingOrFloorChange()"
+                  >
+                    <option value="">Select Building Number</option>
+                    <option *ngFor="let bNum of buildingNumbers" [value]="bNum">{{ bNum }}</option>
+                  </select>
+                  <div class="error-text" *ngIf="isFieldInvalid('buildingNumber')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <line x1="12" y1="8" x2="12" y2="12"/>
+                      <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    {{ getFieldError('buildingNumber') }}
+                  </div>
                 </div>
 
                 <!-- Floor -->
@@ -211,7 +248,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                     </svg>
-                    Floor
+                    Floor / Level
                     <span class="required">*</span>
                   </label>
                   <select
@@ -219,6 +256,7 @@
                     formControlName="floor"
                     class="form-control"
                     [class.invalid]="isFieldInvalid('floor')"
+                    (change)="onBuildingOrFloorChange()"
                   >
                     <option *ngFor="let floor of floors" [value]="floor">{{ floor }}</option>
                   </select>
@@ -232,39 +270,36 @@
                   </div>
                 </div>
 
-                <!-- Building -->
+                <!-- Box Letter -->
                 <div class="form-group">
-                  <label for="building">
+                  <label for="boxLetter">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
-                      <path d="M9 22v-4h6v4"/>
-                      <path d="M8 6h.01"/>
-                      <path d="M16 6h.01"/>
-                      <path d="M12 6h.01"/>
-                      <path d="M12 10h.01"/>
-                      <path d="M12 14h.01"/>
-                      <path d="M16 10h.01"/>
-                      <path d="M16 14h.01"/>
-                      <path d="M8 10h.01"/>
-                      <path d="M8 14h.01"/>
+                      <path d="M4 7V4h16v3M9 20h6M12 4v16"/>
                     </svg>
-                    Building
+                    Box Letter
+                    <span class="required">*</span>
                   </label>
-                  <input
-                    id="building"
-                    type="text"
-                    formControlName="building"
+                  <select
+                    id="boxLetter"
+                    formControlName="boxLetter"
                     class="form-control"
-                    [class.invalid]="isFieldInvalid('building')"
-                    placeholder="e.g., Building 1"
-                  />
-                  <div class="error-text" *ngIf="isFieldInvalid('building')">
+                    [class.invalid]="isFieldInvalid('boxLetter')"
+                    [disabled]="loadingBoxLetters || availableBoxLetters.length === 0"
+                  >
+                    <option value="">Select Box Letter</option>
+                    <option *ngFor="let letter of availableBoxLetters" [value]="letter">{{ letter }}</option>
+                  </select>
+                  <div class="loading-text" *ngIf="loadingBoxLetters">Loading available letters...</div>
+                  <div class="info-text" *ngIf="!loadingBoxLetters && availableBoxLetters.length === 0" style="color: #f59e0b; font-size: 12px; margin-top: 4px;">
+                    No available letters for this combination
+                  </div>
+                  <div class="error-text" *ngIf="isFieldInvalid('boxLetter')">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <circle cx="12" cy="12" r="10"/>
                       <line x1="12" y1="8" x2="12" y2="12"/>
                       <line x1="12" y1="16" x2="12.01" y2="16"/>
                     </svg>
-                    {{ getFieldError('building') }}
+                    {{ getFieldError('boxLetter') }}
                   </div>
                 </div>
 
@@ -277,14 +312,21 @@
                     </svg>
                     Zone
                   </label>
-                  <input
+                  <select
                     id="zone"
-                    type="text"
                     formControlName="zone"
                     class="form-control"
                     [class.invalid]="isFieldInvalid('zone')"
-                    placeholder="e.g., Zone A"
-                  />
+                    [disabled]="loadingZones"
+                  >
+                    <option value="">Select Zone</option>
+                    <option *ngFor="let zone of zones" [value]="zone.value">
+                      {{ zone.displayName }}
+                    </option>
+                  </select>
+                  <div class="helper-text" *ngIf="loadingZones">
+                    Loading zones...
+                  </div>
                   <div class="error-text" *ngIf="isFieldInvalid('zone')">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <circle cx="12" cy="12" r="10"/>

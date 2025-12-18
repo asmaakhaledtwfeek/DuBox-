@@ -5,7 +5,7 @@ namespace Dubox.Application.DTOs;
 /// </summary>
 public record BoxProgressReportDto
 {
-    public string Building { get; set; } = string.Empty;
+    public string BuildingNumber { get; set; } = string.Empty;
     public string ProjectId { get; set; } = string.Empty;
     public string ProjectName { get; set; } = string.Empty;
     public int NonAssembled { get; set; }
@@ -117,7 +117,8 @@ public record BoxSummaryReportItemDto
     public string? BoxName { get; init; }
     public string BoxType { get; init; } = string.Empty;
     public string? Floor { get; init; }
-    public string? Building { get; init; }
+    public string? BuildingNumber { get; init; }
+    public string? BoxLetter { get; init; }
     public string? Zone { get; init; }
     public decimal ProgressPercentage { get; init; }
     public string ProgressPercentageFormatted { get; init; } = string.Empty;

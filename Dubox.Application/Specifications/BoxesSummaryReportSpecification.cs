@@ -23,13 +23,14 @@ public class BoxesSummaryReportSpecification : Specification<Box>
         if (query.ProjectId.HasValue && query.ProjectId.Value != Guid.Empty)
             AddCriteria(b => b.ProjectId == query.ProjectId.Value);
 
-        
+        //if (query.BoxType != null && query.BoxType.Any())
+        //    AddCriteria(b => query.BoxType.Contains(b.BoxType));
 
         if (!string.IsNullOrWhiteSpace(query.Floor))
             AddCriteria(b => b.Floor == query.Floor);
 
-        if (!string.IsNullOrWhiteSpace(query.Building))
-            AddCriteria(b => b.Building == query.Building);
+        if (!string.IsNullOrWhiteSpace(query.BuildingNumber))
+            AddCriteria(b => b.BuildingNumber == query.BuildingNumber);
 
         if (query.Zone.HasValue)
             AddCriteria(b => b.Zone == query.Zone.Value);
@@ -126,9 +127,9 @@ public class BoxesSummaryReportSpecification : Specification<Box>
                 break;
             case "building":
                 if (isAscending)
-                    AddOrderBy(b => b.Building ?? string.Empty);
+                    AddOrderBy(b => b.BuildingNumber ?? string.Empty);
                 else
-                    AddOrderByDescending(b => b.Building ?? string.Empty);
+                    AddOrderByDescending(b => b.BuildingNumber ?? string.Empty);
                 break;
             case "zone":
                 if (isAscending)

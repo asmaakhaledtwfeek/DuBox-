@@ -64,13 +64,13 @@ public class GetBoxProgressReportQueryHandler : IRequestHandler<GetBoxProgressRe
             var groupedData = boxes
                 .GroupBy(b => new 
                 { 
-                    Building = b.Building ?? "Unknown Building", 
+                    BuildingNumber = b.BuildingNumber ?? "Unknown Building", 
                     ProjectId = b.ProjectId,
                     ProjectName = b.Project?.ProjectName ?? "Unknown Project"
                 })
                 .Select(g => new BoxProgressReportDto
                 {
-                    Building = g.Key.Building,
+                    BuildingNumber = g.Key.BuildingNumber,
                     ProjectId = g.Key.ProjectId.ToString(),
                     ProjectName = g.Key.ProjectName,
                     // Classify boxes based on progress percentage into different phases
@@ -82,7 +82,7 @@ public class GetBoxProgressReportQueryHandler : IRequestHandler<GetBoxProgressRe
                     Total = g.Count(),
                     ProgressPercentage = g.Any() ? Math.Round(g.Average(b => b.ProgressPercentage), 2) : 0
                 })
-                .OrderBy(r => r.Building)
+                .OrderBy(r => r.BuildingNumber)
                 .ToList();
 
             return Result<List<BoxProgressReportDto>>.Success(groupedData);

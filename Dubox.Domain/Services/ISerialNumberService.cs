@@ -7,6 +7,6 @@ public interface ISerialNumberService
     /// </summary>
     /// <param name="year">The year for the serial number (defaults to current year)</param>
     /// <returns>A unique serial number string</returns>
-    string GenerateSerialNumber(int? year = null);
+    string GenerateSerialNumber(string boxLetter, int lastSeq, string? year = null);
 }
 

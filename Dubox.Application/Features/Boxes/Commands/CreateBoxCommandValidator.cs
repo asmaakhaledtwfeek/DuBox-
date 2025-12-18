@@ -38,10 +38,10 @@ namespace Dubox.Application.Features.Boxes.Commands
             .MaximumLength(50)
             .WithMessage("Floor cannot exceed 50 characters");
 
-            RuleFor(x => x.Building)
+            RuleFor(x => x.BuildingNumber)
             .MaximumLength(100)
-            .WithMessage("Building cannot exceed 100 characters")
-            .When(x => !string.IsNullOrEmpty(x.Building));
+            .WithMessage("BuildingNumber cannot exceed 100 characters")
+            .When(x => !string.IsNullOrEmpty(x.BuildingNumber));
 
             RuleFor(x => x.Zone)
             .MaximumLength(100)

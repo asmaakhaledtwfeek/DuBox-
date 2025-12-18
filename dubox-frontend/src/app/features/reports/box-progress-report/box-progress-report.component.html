@@ -98,12 +98,12 @@
 
     <!-- Building Status Table -->
     <div class="table-section">
-      <h2 class="section-title">Building Status Overview</h2>
+      <h2 class="section-title">Building Number Status Overview</h2>
       <div class="table-container">
         <table class="status-table">
           <thead>
             <tr>
-              <th>Building</th>
+              <th>Building Number</th>
               <th class="text-center">Non-Assembled</th>
               <th class="text-center">Backing (Due)</th>
               <th class="text-center">Released 1st Fix</th>
@@ -115,7 +115,7 @@
           </thead>
           <tbody>
             <tr *ngFor="let building of buildingStatuses">
-              <td class="building-name">{{ building.building }}</td>
+              <td class="building-name">{{ building.buildingNumber }}</td>
               <td class="text-center">
                 <span class="badge gray">{{ building.nonAssembled }}</span>
               </td>

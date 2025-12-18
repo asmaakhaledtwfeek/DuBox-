@@ -83,10 +83,10 @@
           </div>
 
           <div class="filter-group">
-            <label>Building</label>
-            <select [(ngModel)]="selectedBuilding" (change)="onFilterChange()">
-              <option value="">All Buildings</option>
-              <option *ngFor="let building of availableBuildings" [value]="building">{{ building }}</option>
+            <label>Building Number</label>
+            <select [(ngModel)]="selectedBuildingNumber" (change)="onFilterChange()">
+              <option value="">All Building Numbers</option>
+              <option *ngFor="let buildingNumber of availableBuildingNumbers" [value]="buildingNumber">{{ buildingNumber }}</option>
             </select>
           </div>
 
@@ -329,7 +329,7 @@
                 Box Type <span *ngIf="sortBy === 'boxtype'">{{ sortDir === 'asc' ? '↑' : '↓' }}</span>
               </th>
               <th>Floor</th>
-              <th>Building / Zone</th>
+              <th>Building Number / Zone</th>
               <th (click)="onSort('progress')" class="sortable">
                 Progress <span *ngIf="sortBy === 'progress'">{{ sortDir === 'asc' ? '↑' : '↓' }}</span>
               </th>
@@ -356,7 +356,7 @@
               <td>{{ item.projectName }}</td>
               <td>{{ item.boxType }}</td>
               <td>{{ item.floor || '-' }}</td>
-              <td>{{ item.building || '-' }} / {{ item.zone || '-' }}</td>
+              <td>{{ item.buildingNumber || '-' }} / {{ item.zone || '-' }}</td>
               <td>
                 <div class="progress-cell">
                   <span>{{ item.progressPercentageFormatted }}</span>

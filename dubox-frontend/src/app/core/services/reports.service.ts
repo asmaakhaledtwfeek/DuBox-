@@ -24,7 +24,7 @@ import {
 } from '../models/teams-performance-report.model';
 
 export interface BoxProgressData {
-  building: string;
+  buildingNumber: string;
   projectId: string;
   nonAssembled: number;
   backing: number;
@@ -72,7 +72,7 @@ export class ReportsService {
 
   /**
    * Get box progress report data
-   * Groups boxes by building and phase status
+   * Groups boxes by building number and phase status
    */
   getBoxProgressReport(projectId?: string): Observable<BoxProgressData[]> {
     const params = projectId ? { projectId } : {};
@@ -129,7 +129,7 @@ export class ReportsService {
    */
   private transformBoxProgressData(backendData: any[]): BoxProgressData[] {
     return (backendData || []).map(item => ({
-      building: item.building || item.Building || '',
+      buildingNumber: item.buildingNumber || item.BuildingNumber || '',
       projectId: item.projectId || item.ProjectId || '',
       nonAssembled: item.nonAssembled || item.NonAssembled || 0,
       backing: item.backing || item.Backing || item.dueBacking || item.DueBacking || 0,
@@ -185,27 +185,27 @@ export class ReportsService {
 
   /**
    * Calculate box progress from raw box data
-   * Groups boxes by building and calculates phase distribution
+   * Groups boxes by building number and calculates phase distribution
    */
   private calculateBoxProgressFromRawData(boxes: any[]): BoxProgressData[] {
     if (!boxes || boxes.length === 0) return [];
 
-    // Group boxes by building
+    // Group boxes by building number
     const buildingGroups = new Map<string, any[]>();
     
     boxes.forEach(box => {
-      const building = box.building || box.Building || 'Unknown';
-      if (!buildingGroups.has(building)) {
-        buildingGroups.set(building, []);
+      const buildingNumber = box.buildingNumber || box.BuildingNumber || 'Unknown';
+      if (!buildingGroups.has(buildingNumber)) {
+        buildingGroups.set(buildingNumber, []);
       }
-      buildingGroups.get(building)!.push(box);
+      buildingGroups.get(buildingNumber)!.push(box);
     });
 
-    // Calculate statistics for each building
+    // Calculate statistics for each building number
     const result: BoxProgressData[] = [];
-    buildingGroups.forEach((boxList, building) => {
+    buildingGroups.forEach((boxList, buildingNumber) => {
       const stats: BoxProgressData = {
-        building,
+        buildingNumber,
         projectId: boxList[0]?.projectId || '',
         nonAssembled: 0,
         backing: 0,
@@ -305,7 +305,7 @@ export class ReportsService {
     if (params.sortDir) queryParams.sortDir = params.sortDir;
     if (params.projectId) queryParams.projectId = params.projectId;
     if (params.floor) queryParams.floor = params.floor;
-    if (params.building) queryParams.building = params.building;
+    if (params.buildingNumber) queryParams.buildingNumber = params.buildingNumber;
     if (params.zone) queryParams.zone = params.zone;
     if (params.progressMin !== undefined) queryParams.progressMin = params.progressMin;
     if (params.progressMax !== undefined) queryParams.progressMax = params.progressMax;
@@ -355,7 +355,8 @@ export class ReportsService {
       boxName: item.boxName || item.BoxName,
       boxType: item.boxType || item.BoxType || '',
       floor: item.floor || item.Floor,
-      building: item.building || item.Building,
+      buildingNumber: item.buildingNumber || item.BuildingNumber,
+      boxLetter: item.boxLetter || item.BoxLetter,
       zone: item.zone || item.Zone,
       progressPercentage: item.progressPercentage ?? item.ProgressPercentage ?? 0,
       progressPercentageFormatted: item.progressPercentageFormatted || item.ProgressPercentageFormatted || '0.00%',

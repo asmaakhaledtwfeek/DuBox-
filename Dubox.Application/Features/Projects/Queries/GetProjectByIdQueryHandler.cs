@@ -1,4 +1,5 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
@@ -21,8 +22,9 @@ public class GetProjectByIdQueryHandler : IRequestHandler<GetProjectByIdQuery, R
 
     public async Task<Result<ProjectDto>> Handle(GetProjectByIdQuery request, CancellationToken cancellationToken)
     {
-        var project = await _unitOfWork.Repository<Project>()
-            .GetByIdAsync(request.ProjectId, cancellationToken);
+        // Fetch project with Category navigation property included using specification
+        var specification = new GetProjectByIdSpecification(request.ProjectId);
+        var project = _unitOfWork.Repository<Project>().GetEntityWithSpec(specification);
 
         if (project == null)
             return Result.Failure<ProjectDto>("Project not found");

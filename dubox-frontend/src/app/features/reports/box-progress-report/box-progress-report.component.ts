@@ -11,7 +11,7 @@ import * as XLSX from 'xlsx';
 import { catchError, of } from 'rxjs';
 
 interface BuildingStatus {
-  building: string;
+  buildingNumber: string;
   nonAssembled: number;
   backing: number;
   released1stFix: number;
@@ -105,7 +105,7 @@ export class BoxProgressReportComponent implements OnInit {
     console.log('📊 Loading mock data as fallback');
     this.buildingStatuses = [
       {
-        building: 'KJ158-Building 1 (GF,FF,SF)',
+        buildingNumber: 'KJ158-Building 1 (GF,FF,SF)',
         nonAssembled: 48,
         backing: 0,
         released1stFix: 0,
@@ -114,7 +114,7 @@ export class BoxProgressReportComponent implements OnInit {
         total: 85
       },
       {
-        building: 'KJ158-Building 2 (GF,FF,SF)',
+        buildingNumber: 'KJ158-Building 2 (GF,FF,SF)',
         nonAssembled: 32,
         backing: 5,
         released1stFix: 12,
@@ -123,7 +123,7 @@ export class BoxProgressReportComponent implements OnInit {
         total: 82
       },
       {
-        building: 'KJ158-Building 3 (GF,FF,SF)',
+        buildingNumber: 'KJ158-Building 3 (GF,FF,SF)',
         nonAssembled: 25,
         backing: 3,
         released1stFix: 8,
@@ -132,7 +132,7 @@ export class BoxProgressReportComponent implements OnInit {
         total: 78
       },
       {
-        building: 'KJ158-Building 4 (GF,FF,SF)',
+        buildingNumber: 'KJ158-Building 4 (GF,FF,SF)',
         nonAssembled: 48,
         backing: 0,
         released1stFix: 0,
@@ -196,7 +196,7 @@ export class BoxProgressReportComponent implements OnInit {
 
     // Prepare data for Excel
     const exportData = this.buildingStatuses.map(building => ({
-      'Building': building.building,
+      'Building Number': building.buildingNumber,
       'Non-Assembled': building.nonAssembled,
       'Backing (Due Boxes)': building.backing,
       'Released 1st Fix': building.released1stFix,
@@ -211,7 +211,7 @@ export class BoxProgressReportComponent implements OnInit {
 
     // Set column widths
     const columnWidths = [
-      { wch: 35 }, // Building
+      { wch: 35 }, // Building Number
       { wch: 15 }, // Non-Assembled
       { wch: 20 }, // Backing
       { wch: 18 }, // Released 1st Fix

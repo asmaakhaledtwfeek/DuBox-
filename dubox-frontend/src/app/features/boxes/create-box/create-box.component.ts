@@ -21,6 +21,10 @@ export class CreateBoxComponent implements OnInit {
   error = '';
   successMessage = '';
   projectId!: string;
+  projectNumber: string = '';
+  projectName: string = '';
+  projectCategoryId: number | null = null;
+  projectCategoryName: string = '';
   currentStep = 1;
   totalSteps = 2;
 
@@ -34,11 +38,24 @@ export class CreateBoxComponent implements OnInit {
   boxSubTypes: BoxSubType[] = [];
   selectedBoxType: BoxType | null = null;
   loadingBoxTypes = false;
+  loadingBoxSubTypes = false;
 
   floors = [
     'GF', 'FF', '1F', '2F', '3F', '4F', '5F',
-    'Basement', 'Roof'
+    'BF', 'RF'
   ];
+
+  // Building numbers dropdown
+  buildingNumbers = ['B01', 'B02', 'B03', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09'];
+
+  // Zones dropdown
+  zones: { value: number; name: string; displayName: string }[] = [];
+  loadingZones = false;
+
+  // Box letters dropdown (will be filtered based on usage)
+  allBoxLetters = ['A', 'B', 'C', 'D', 'E', 'F'];
+  availableBoxLetters: string[] = [];
+  loadingBoxLetters = false;
 
   constructor(
     private fb: FormBuilder,
@@ -56,24 +73,79 @@ export class CreateBoxComponent implements OnInit {
     this.initForm();
     this.initAssetForm();
     this.loadProjectAndBoxTypes();
+    this.loadZones();
   }
 
   private loadProjectAndBoxTypes(): void {
     if (!this.projectId) return;
     
     this.loadingBoxTypes = true;
+    console.log('🔍 Loading project details for projectId:', this.projectId);
+    
     this.projectService.getProject(this.projectId).subscribe({
       next: (project: any) => {
-        const categoryId = project?.categoryId || project?.data?.categoryId;
+        const projectData = project?.data || project;
+        
+        // Extract project details
+        this.projectNumber = projectData?.code || projectData?.projectNumber || '';
+        this.projectName = projectData?.name || projectData?.projectName || '';
+        this.projectCategoryName = projectData?.categoryName || '';
+        
+        console.log('📋 Project:', {
+          code: this.projectNumber,
+          name: this.projectName,
+          category: this.projectCategoryName
+        });
+        
+        // Extract category ID
+        const categoryId = projectData?.categoryId || projectData?.projectCategoryId;
+        this.projectCategoryId = categoryId;
+        console.log('📂 Project Category ID:', categoryId);
+        
         if (categoryId) {
+          console.log('🔄 Loading Box Types for Category ID:', categoryId);
           this.loadBoxTypes(categoryId);
         } else {
+          console.warn('⚠️ No category ID found for project. Cannot load box types.');
+          this.error = 'Project does not have a category assigned. Please assign a category to the project first.';
           this.loadingBoxTypes = false;
         }
       },
       error: (err: any) => {
-        console.error('Error loading project:', err);
+        console.error('❌ Error loading project:', err);
+        this.error = 'Failed to load project details. Please try again.';
         this.loadingBoxTypes = false;
+      }
+    });
+  }
+
+  private loadZones(): void {
+    this.loadingZones = true;
+    console.log('🔍 Loading zones...');
+
+    this.boxService.getBoxZones().subscribe({
+      next: (response: any) => {
+        const zonesData = response?.data || response;
+        this.zones = zonesData || [];
+        console.log('✅ Zones loaded:', this.zones);
+        this.loadingZones = false;
+      },
+      error: (error) => {
+        console.error('❌ Error loading zones:', error);
+        this.loadingZones = false;
+        // Fallback to default zones if API fails
+        this.zones = [
+          { value: 0, name: 'ZoneA', displayName: 'Zone A' },
+          { value: 1, name: 'ZoneB', displayName: 'Zone B' },
+          { value: 2, name: 'ZoneC', displayName: 'Zone C' },
+          { value: 3, name: 'ZoneD', displayName: 'Zone D' },
+          { value: 4, name: 'ZoneE', displayName: 'Zone E' },
+          { value: 5, name: 'ZoneF', displayName: 'Zone F' },
+          { value: 6, name: 'ZoneG', displayName: 'Zone G' },
+          { value: 7, name: 'ZoneH', displayName: 'Zone H' },
+          { value: 8, name: 'ZoneI', displayName: 'Zone I' },
+          { value: 9, name: 'ZoneJ', displayName: 'Zone J' }
+        ];
       }
     });
   }
@@ -83,9 +155,26 @@ export class CreateBoxComponent implements OnInit {
       next: (types) => {
         this.boxTypes = types;
         this.loadingBoxTypes = false;
+        
+        console.log(`✅ Loaded ${types.length} Box Type(s) for Category ID ${categoryId}:`, 
+          types.map(t => ({ 
+            id: t.boxTypeId, 
+            name: t.boxTypeName, 
+            abbr: t.abbreviation,
+            hasSubTypes: t.hasSubTypes  // ✅ Check this value
+          }))
+        );
+        
+        console.log('🔍 Full box types data:', types);
+        
+        if (types.length === 0) {
+          console.warn('⚠️ No box types found for this project category.');
+          this.error = 'No box types available for this project category. Please configure box types for this category first.';
+        }
       },
       error: (err) => {
-        console.error('Error loading box types:', err);
+        console.error('❌ Error loading box types for category', categoryId, ':', err);
+        this.error = 'Failed to load box types. Please try again.';
         this.loadingBoxTypes = false;
       }
     });
@@ -97,33 +186,179 @@ export class CreateBoxComponent implements OnInit {
     
     this.selectedBoxType = this.boxTypes.find(bt => bt.boxTypeId === boxTypeId) || null;
     this.boxSubTypes = [];
-    this.boxForm.patchValue({ boxSubTypeId: null });
+    
+    console.log('📦 Box Type Selected:', {
+      id: this.selectedBoxType?.boxTypeId,
+      name: this.selectedBoxType?.boxTypeName,
+      hasSubTypes: this.selectedBoxType?.hasSubTypes,
+      hasSubTypesType: typeof this.selectedBoxType?.hasSubTypes  // Check data type
+    });
+    
+    console.log('🔍 Full selected box type object:', this.selectedBoxType);
+    
+    // Update boxType field with the name for submission
+    this.boxForm.patchValue({ 
+      boxSubTypeId: null,
+      boxType: this.selectedBoxType?.boxTypeName || ''
+    });
     
     if (this.selectedBoxType?.hasSubTypes) {
+      console.log('✅ HAS SUBTYPES - Loading Box Sub Types for Box Type ID:', boxTypeId);
       this.loadBoxSubTypes(boxTypeId);
+    } else {
+      console.log('❌ NO SUBTYPES - hasSubTypes value:', this.selectedBoxType?.hasSubTypes);
     }
+
+    // Load available box letters when box type changes
+    this.loadAvailableBoxLetters();
+  }
+
+  /**
+   * Update BoxTag field automatically based on form values
+   */
+  private updateBoxTag(): void {
+    const formValue = this.boxForm.getRawValue();
+    
+    // Components: ProjectNumber + BuildingNumber + Level + BoxType + BoxSubType + BoxLetter
+    const projectNumber = this.projectNumber || '';
+    const buildingNumber = formValue.buildingNumber || '';
+    const level = formValue.floor || '';
+    const boxTypeAbbr = this.selectedBoxType?.abbreviation || '';
+    
+    // Debug subtype selection
+    console.log('🏷️ BoxTag Generation Debug:', {
+      boxSubTypeId: formValue.boxSubTypeId,
+      boxSubTypeIdType: typeof formValue.boxSubTypeId,
+      availableSubTypes: this.boxSubTypes,
+      boxSubTypesCount: this.boxSubTypes.length
+    });
+    
+    // Convert to number for comparison if needed
+    const selectedSubTypeId = formValue.boxSubTypeId ? Number(formValue.boxSubTypeId) : null;
+    const selectedSubType = selectedSubTypeId 
+      ? this.boxSubTypes.find(st => st.boxSubTypeId === selectedSubTypeId)
+      : null;
+    
+    console.log('🔍 SubType Lookup:', {
+      selectedSubTypeId,
+      foundSubType: selectedSubType,
+      abbreviation: selectedSubType?.abbreviation
+    });
+    
+    const boxSubTypeAbbr = selectedSubType?.abbreviation || '';
+    const boxLetter = formValue.boxLetter || '';
+
+    // Generate BoxTag with separators (-)
+    const components: string[] = [];
+    if (projectNumber) components.push(projectNumber);
+    if (buildingNumber) components.push(buildingNumber);
+    if (level) components.push(level);
+    if (boxTypeAbbr) components.push(boxTypeAbbr);
+    if (boxSubTypeAbbr) components.push(boxSubTypeAbbr);
+    if (boxLetter) components.push(boxLetter);
+
+    const boxTag = components.join('-');
+    
+    console.log('✅ BoxTag Components:', {
+      project: projectNumber,
+      buildingNumber: buildingNumber,
+      floor: level,
+      type: boxTypeAbbr,
+      subType: boxSubTypeAbbr,
+      letter: boxLetter,
+      final: boxTag
+    });
+
+    // Update the boxTag field (it's disabled, so we use patchValue)
+    this.boxForm.patchValue({ boxTag }, { emitEvent: false });
+  }
+
+  /**
+   * Load available box letters by filtering out used ones
+   */
+  private loadAvailableBoxLetters(): void {
+    const formValue = this.boxForm.getRawValue();
+    
+    // Check if we have all required fields to query
+    if (!this.projectId || !formValue.buildingNumber || !formValue.floor || !formValue.boxTypeId) {
+      this.availableBoxLetters = [...this.allBoxLetters];
+      return;
+    }
+
+    this.loadingBoxLetters = true;
+
+    // Build query parameters
+    const params = {
+      projectId: this.projectId,
+      buildingNumber: formValue.buildingNumber,
+      floor: formValue.floor,
+      boxTypeId: formValue.boxTypeId
+    };
+
+    // Fetch used box letters from backend
+    this.boxService.getUsedBoxLetters(params).subscribe({
+      next: (usedLetters: string[]) => {
+        // Filter out used letters
+        this.availableBoxLetters = this.allBoxLetters.filter(
+          letter => !usedLetters.includes(letter)
+        );
+        
+        // If current selection is no longer available, clear it
+        if (formValue.boxLetter && !this.availableBoxLetters.includes(formValue.boxLetter)) {
+          this.boxForm.patchValue({ boxLetter: '' });
+        }
+        
+        this.loadingBoxLetters = false;
+      },
+      error: (err) => {
+        console.error('Error loading used box letters:', err);
+        // Fallback: show all letters
+        this.availableBoxLetters = [...this.allBoxLetters];
+        this.loadingBoxLetters = false;
+      }
+    });
+  }
+
+  /**
+   * Trigger box letter loading when relevant fields change
+   */
+  onBuildingOrFloorChange(): void {
+    this.loadAvailableBoxLetters();
   }
 
   private loadBoxSubTypes(boxTypeId: number): void {
+    this.loadingBoxSubTypes = true;
     this.boxService.getBoxSubTypesByBoxType(boxTypeId).subscribe({
       next: (subTypes) => {
         this.boxSubTypes = subTypes;
+        this.loadingBoxSubTypes = false;
+        
+        console.log(`✅ Loaded ${subTypes.length} Box Sub Type(s) for Box Type ID ${boxTypeId}:`,
+          subTypes.map(st => ({ id: st.boxSubTypeId, name: st.boxSubTypeName, abbr: st.abbreviation }))
+        );
+        
+        if (subTypes.length === 0) {
+          console.warn('⚠️ No box sub types found for this box type.');
+        }
       },
       error: (err) => {
-        console.error('Error loading box subtypes:', err);
+        console.error('❌ Error loading box subtypes:', err);
+        this.loadingBoxSubTypes = false;
+        this.boxSubTypes = [];
       }
     });
   }
 
   private initForm(): void {
     this.boxForm = this.fb.group({
-      boxTag: ['', [Validators.required, Validators.maxLength(50)]],
+      boxTag: [{ value: '', disabled: true }, Validators.maxLength(50)],
       boxName: ['', Validators.maxLength(200)],
-      boxType: ['', Validators.required],
-      boxTypeId: [null],
+      boxType: [''], // Used for submission, populated from selectedBoxType
+      boxTypeId: [null, Validators.required],
       boxSubTypeId: [null],
+      buildingNumber: ['', Validators.required],
       floor: ['GF', Validators.required],
-      building: ['', Validators.maxLength(100)],
+      boxLetter: ['', Validators.required],
       zone: ['', Validators.maxLength(50)],
       length: ['', [Validators.min(0), Validators.max(99999)]],
       width: ['', [Validators.min(0), Validators.max(99999)]],
@@ -134,6 +369,14 @@ export class CreateBoxComponent implements OnInit {
       boxDuration: [null, [Validators.min(1)]],
       assets: this.fb.array([])
     });
+
+    // Subscribe to form changes to auto-update BoxTag
+    this.boxForm.valueChanges.subscribe(() => {
+      this.updateBoxTag();
+    });
+
+    // Initialize available box letters
+    this.availableBoxLetters = [...this.allBoxLetters];
   }
 
   get assets(): FormArray {
@@ -169,7 +412,7 @@ export class CreateBoxComponent implements OnInit {
   }
 
   private validateStep1(): boolean {
-    const step1Fields = ['boxTag', 'boxType', 'floor'];
+    const step1Fields = ['boxTypeId', 'buildingNumber', 'floor', 'boxLetter'];
     let isValid = true;
 
     step1Fields.forEach(field => {
@@ -180,7 +423,15 @@ export class CreateBoxComponent implements OnInit {
       }
     });
 
-    if (!isValid) {
+    // Check if BoxTag was generated
+    const boxTag = this.boxForm.getRawValue().boxTag;
+    if (!boxTag || boxTag.trim() === '') {
+      isValid = false;
+      this.error = 'Box Tag could not be generated. Please ensure all required fields are filled.';
+      setTimeout(() => this.error = '', 5000);
+    }
+
+    if (!isValid && !this.error) {
       this.error = 'Please fill in all required fields in Step 1 before proceeding.';
       setTimeout(() => this.error = '', 5000);
     }
@@ -298,7 +549,7 @@ export class CreateBoxComponent implements OnInit {
     this.error = '';
     this.successMessage = '';
 
-    const formValue = this.boxForm.value;
+    const formValue = this.boxForm.getRawValue(); // Use getRawValue to get disabled fields
 
     // Map frontend fields to backend expected format
     const boxData: any = {
@@ -309,7 +560,8 @@ export class CreateBoxComponent implements OnInit {
       boxTypeId: formValue.boxTypeId || undefined,
       boxSubTypeId: formValue.boxSubTypeId || undefined,
       floor: formValue.floor,
-      building: formValue.building || undefined,
+      buildingNumber: formValue.buildingNumber || undefined,
+      boxLetter: formValue.boxLetter || undefined,
       zone: formValue.zone || undefined,
       length: formValue.length ? parseFloat(formValue.length) : undefined,
       width: formValue.width ? parseFloat(formValue.width) : undefined,
@@ -376,8 +628,10 @@ export class CreateBoxComponent implements OnInit {
       boxTag: 'Box tag',
       boxName: 'Box name',
       boxType: 'Box type',
+      boxTypeId: 'Box type',
+      buildingNumber: 'Building number',
       floor: 'Floor',
-      building: 'Building',
+      boxLetter: 'Box letter',
       zone: 'Zone',
       length: 'Length',
       width: 'Width',

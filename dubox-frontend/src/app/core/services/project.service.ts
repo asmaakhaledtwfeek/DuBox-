@@ -63,7 +63,9 @@ export class ProjectService {
       createdBy: backendProject.createdBy || backendProject.CreatedBy,
       updatedBy: backendProject.modifiedBy || backendProject.ModifiedBy || backendProject.updatedBy || backendProject.UpdatedBy,
       createdAt: (backendProject.createdDate || backendProject.CreatedDate) ? new Date(backendProject.createdDate || backendProject.CreatedDate) : undefined,
-      updatedAt: (backendProject.modifiedDate || backendProject.ModifiedDate) ? new Date(backendProject.modifiedDate || backendProject.ModifiedDate) : undefined
+      updatedAt: (backendProject.modifiedDate || backendProject.ModifiedDate) ? new Date(backendProject.modifiedDate || backendProject.ModifiedDate) : undefined,
+      categoryId: backendProject.categoryId || backendProject.CategoryId,
+      categoryName: backendProject.categoryName || backendProject.CategoryName
     };
     
     console.log('✅ Transformed project:', transformed);

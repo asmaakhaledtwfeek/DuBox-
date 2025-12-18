@@ -272,7 +272,7 @@ export class BoxesListComponent implements OnInit, OnDestroy {
           box.serialNumber?.toLowerCase().includes(searchTerm) ||
           box.type?.toLowerCase().includes(searchTerm) ||
           box.floor?.toLowerCase().includes(searchTerm) ||
-          box.building?.toLowerCase().includes(searchTerm) ||
+          box.buildingNumber?.toLowerCase().includes(searchTerm) ||
           box.zone?.toLowerCase().includes(searchTerm) ||
           box.assignedTeam?.toLowerCase().includes(searchTerm) ||
           box.assignedTo?.toLowerCase().includes(searchTerm);

@@ -14,7 +14,7 @@ namespace Dubox.Application.Features.Reports.Queries
         public Guid? ProjectId { get; init; }
         public List<string>? BoxType { get; init; }
         public string? Floor { get; init; }
-        public string? Building { get; init; }
+        public string? BuildingNumber { get; init; }
         public BoxZone? Zone { get; init; }
         public List<int>? Status { get; init; }
         public decimal? ProgressMin { get; init; }

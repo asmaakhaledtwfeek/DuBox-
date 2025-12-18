@@ -41,8 +41,12 @@ export class EditBoxComponent implements OnInit {
 
   floors = [
     'GF', 'FF', '1F', '2F', '3F', '4F', '5F',
-    'Basement', 'Roof'
+    'BF', 'RF'
   ];
+
+  // Zones dropdown
+  zones: { value: number; name: string; displayName: string }[] = [];
+  loadingZones = false;
 
   constructor(
     private fb: FormBuilder,
@@ -63,8 +67,37 @@ export class EditBoxComponent implements OnInit {
     }
     
     this.initForm();
+    this.loadZones();
     this.loadBox();
     this.loadProjectSchedule();
+  }
+
+  private loadZones(): void {
+    this.loadingZones = true;
+    this.boxService.getBoxZones().subscribe({
+      next: (response: any) => {
+        const zonesData = response?.data || response;
+        this.zones = zonesData || [];
+        this.loadingZones = false;
+      },
+      error: (error) => {
+        console.error('❌ Error loading zones:', error);
+        this.loadingZones = false;
+        // Fallback to default zones if API fails
+        this.zones = [
+          { value: 0, name: 'ZoneA', displayName: 'Zone A' },
+          { value: 1, name: 'ZoneB', displayName: 'Zone B' },
+          { value: 2, name: 'ZoneC', displayName: 'Zone C' },
+          { value: 3, name: 'ZoneD', displayName: 'Zone D' },
+          { value: 4, name: 'ZoneE', displayName: 'Zone E' },
+          { value: 5, name: 'ZoneF', displayName: 'Zone F' },
+          { value: 6, name: 'ZoneG', displayName: 'Zone G' },
+          { value: 7, name: 'ZoneH', displayName: 'Zone H' },
+          { value: 8, name: 'ZoneI', displayName: 'Zone I' },
+          { value: 9, name: 'ZoneJ', displayName: 'Zone J' }
+        ];
+      }
+    });
   }
 
   private initForm(): void {
@@ -73,7 +106,7 @@ export class EditBoxComponent implements OnInit {
       boxName: ['', Validators.maxLength(200)],
       boxType: ['Living Room', Validators.required],
       floor: ['GF', Validators.required],
-      building: ['', Validators.maxLength(100)],
+      buildingNumber: ['', Validators.maxLength(100)],
       zone: ['', Validators.maxLength(50)],
       length: ['', [Validators.min(0), Validators.max(99999)]],
       width: ['', [Validators.min(0), Validators.max(99999)]],
@@ -128,7 +161,7 @@ export class EditBoxComponent implements OnInit {
   private populateForm(box: Box): void {
     console.log('📝 Populating form with box data:', {
       floor: box.floor,
-      building: box.building,
+      buildingNumber: box.buildingNumber,
       zone: box.zone,
       length: box.length,
       width: box.width,
@@ -142,7 +175,8 @@ export class EditBoxComponent implements OnInit {
       boxName: box.name || '',
       boxType: box.type || 'Living Room',
       floor: box.floor || 'GF',
-      building: box.building || '',
+      buildingNumber: box.buildingNumber || '',
+      boxLetter: box.boxLetter || '',
       zone: box.zone || '',
       length: box.length || '',
       width: box.width || '',
@@ -194,7 +228,8 @@ export class EditBoxComponent implements OnInit {
       boxName: formValue.boxName || null,
       boxType: formValue.boxType || null,
       floor: formValue.floor || null,
-      building: formValue.building || null,
+      buildingNumber: formValue.buildingNumber || null,
+      boxLetter: formValue.boxLetter || null,
       zone: formValue.zone || null,
       status: statusNumber,  // REQUIRED (int) - converted from string
       length: formValue.length ? parseFloat(formValue.length) : null,
@@ -275,7 +310,7 @@ export class EditBoxComponent implements OnInit {
       boxName: 'Box name',
       boxType: 'Box type',
       floor: 'Floor',
-      building: 'Building',
+      buildingNumber: 'Building number',
       zone: 'Zone',
       length: 'Length',
       width: 'Width',

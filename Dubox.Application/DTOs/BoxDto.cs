@@ -13,7 +13,8 @@ public record BoxDto
     public string? BoxName { get; init; }
     public string BoxType { get; init; } = string.Empty;
     public string? Floor { get; init; }
-    public string? Building { get; init; }
+    public string? BuildingNumber { get; init; }
+    public string? BoxLetter { get; init; }
     public string? Zone { get; init; }
     public string QRCodeString { get; init; } = string.Empty;
     public string? QRCodeImage { get; init; } = string.Empty;
@@ -45,7 +46,8 @@ public record CreateBoxDto
     public string? BoxName { get; init; }
     public string BoxType { get; init; } = string.Empty;
     public string? Floor { get; init; }
-    public string? Building { get; init; }
+    public string? BuildingNumber { get; init; }
+    public string? BoxLetter { get; init; }
     public string? Zone { get; init; }
     public decimal? Length { get; init; }
     public decimal? Width { get; init; }
@@ -62,7 +64,8 @@ public record UpdateBoxDto
     public string? BoxName { get; init; }
     public string BoxType { get; init; } = string.Empty;
     public string? Floor { get; init; }
-    public string? Building { get; init; }
+    public string? BuildingNumber { get; init; }
+    public string? BoxLetter { get; init; }
     public string? Zone { get; init; }
     public string Status { get; init; } = string.Empty;
     public decimal? Length { get; init; }
@@ -84,13 +87,15 @@ public record ImportBoxFromExcelDto
     public string? BoxName { get; init; }
     public string BoxType { get; init; } = string.Empty;
     public string Floor { get; init; } = string.Empty;
-    public string? Building { get; init; }
+    public string? BuildingNumber { get; init; }
+    public string? BoxLetter { get; init; }
     public BoxZone? Zone { get; init; }
     public decimal? Length { get; init; }
     public decimal? Width { get; init; }
     public decimal? Height { get; init; }
     public string? BIMModelReference { get; init; }
     public string? Notes { get; init; }
+    
 }
 
 public record BoxImportResultDto

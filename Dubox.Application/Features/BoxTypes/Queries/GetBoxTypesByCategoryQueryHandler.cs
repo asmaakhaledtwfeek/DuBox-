@@ -1,9 +1,9 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.BoxTypes.Queries;
 
@@ -18,18 +18,20 @@ public class GetBoxTypesByCategoryQueryHandler : IRequestHandler<GetBoxTypesByCa
 
     public async Task<Result<List<BoxTypeDto>>> Handle(GetBoxTypesByCategoryQuery request, CancellationToken cancellationToken)
     {
-        var boxTypes =  _unitOfWork.Repository<BoxType>().Get()
-            .Where(bt => bt.CategoryId == request.CategoryId)
-            .Select(bt => new BoxTypeDto
-            {
-                BoxTypeId = bt.BoxTypeId,
-                BoxTypeName = bt.BoxTypeName,
-                Abbreviation = bt.Abbreviation,
-                CategoryId = bt.CategoryId,
-                HasSubTypes = bt.BoxSubTypes.Any()
-            })
-            .OrderBy(bt => bt.BoxTypeName)
-            .ToList();
+        // Use specification to get box types with BoxSubTypes navigation property included
+        var specification = new GetBoxTypesByCategorySpecification(request.CategoryId);
+        var boxTypesQuery = _unitOfWork.Repository<BoxType>().GetWithSpec(specification);
+        var boxTypesList = boxTypesQuery.Data.ToList();
+
+        // Map to DTOs with HasSubTypes properly set
+        var boxTypes = boxTypesList.Select(bt => new BoxTypeDto
+        {
+            BoxTypeId = bt.BoxTypeId,
+            BoxTypeName = bt.BoxTypeName,
+            Abbreviation = bt.Abbreviation,
+            CategoryId = bt.CategoryId,
+            HasSubTypes = bt.BoxSubTypes != null && bt.BoxSubTypes.Any()
+        }).ToList();
 
         return Result<List<BoxTypeDto>>.Success(boxTypes);
     }

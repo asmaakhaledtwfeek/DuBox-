@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, throwError } from 'rxjs';
+import { Observable, throwError, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { ApiService, PaginatedResponse } from './api.service';
 import { Box, BoxActivity, BoxDrawing, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview, BoxTypeStatsByProject, BoxDrawingsResponse, BoxDrawingImage, BoxAllAttachmentsResponse, BoxType, BoxSubType } from '../models/box.model';
@@ -70,7 +70,8 @@ export class BoxService {
       type: backendBox.boxType || backendBox.type,
       description: backendBox.description,
       floor: backendBox.floor,
-      building: backendBox.building,
+      buildingNumber: backendBox.buildingNumber,
+      boxLetter: backendBox.boxLetter,
       zone: backendBox.zone,
       length: backendBox.length,
       width: backendBox.width,
@@ -115,7 +116,8 @@ export class BoxService {
       boxName: box.boxName || box.BoxName,
       boxType: box.boxType || box.BoxType,
       floor: box.floor || box.Floor,
-      building: box.building || box.Building,
+      buildingNumber: box.buildingNumber || box.BuildingNumber,
+      boxLetter: box.boxLetter || box.BoxLetter,
       zone: box.zone || box.Zone,
       status: this.mapStatus(box.status || box.Status)
     })) as ImportedBoxPreview[];
@@ -548,6 +550,41 @@ export class BoxService {
       catchError(err => {
         console.error('❌ Error fetching box subtypes:', err);
         return throwError(() => err);
+      })
+    );
+  }
+
+  /**
+   * Get used box letters for filtering
+   * Returns array of letters (A-F) that are already used for the given combination
+   */
+  getUsedBoxLetters(params: { projectId: string; buildingNumber: string; floor: string; boxTypeId: number }): Observable<string[]> {
+    return this.apiService.get<any>(`${this.endpoint}/used-box-letters`, params).pipe(
+      map(response => {
+        const data = response?.data || response;
+        // Ensure we return an array of strings
+        return Array.isArray(data) ? data : [];
+      }),
+      catchError(err => {
+        console.error('❌ Error fetching used box letters (API may not exist yet):', err);
+        // Return empty array on error to show all letters as available
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Get box zones from enum
+   */
+  getBoxZones(): Observable<any[]> {
+    return this.apiService.get<any>(`${this.endpoint}/zones`).pipe(
+      map(response => {
+        const data = response?.data || response;
+        return Array.isArray(data) ? data : [];
+      }),
+      catchError(error => {
+        console.error('Error fetching box zones:', error);
+        return of([]);
       })
     );
   }

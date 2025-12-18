@@ -36,7 +36,10 @@ public class Box
     public string Floor { get; set; }
 
     [MaxLength(100)]
-    public string? Building { get; set; }
+    public string? BuildingNumber { get; set; }
+
+    [MaxLength(10)]
+    public string? BoxLetter { get; set; }
 
     [MaxLength(100)]
     public BoxZone? Zone { get; set; }
@@ -89,7 +92,7 @@ public class Box
     public DateTime? ModifiedDate { get; set; }
     public Guid? CreatedBy { get; set; }
     public Guid? ModifiedBy { get; set; }
-
+    public int SequentialNumber { get; set; } = 1; // For generating serial numbers
     // Navigation properties
     public BoxType BoxType { get; set; } = new();
     public BoxSubType BoxSubType { get; set; } = new();

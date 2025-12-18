@@ -144,8 +144,12 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                         failureCount++;
                         continue;
                     }
-                    
-                    var serialNumber = _serialNumberService.GenerateSerialNumber();
+                    var lastSeq = _unitOfWork.Repository<Box>().Get()
+                    .Where(b => b.ProjectId == request.ProjectId)
+                    .Max(b => (int?)b.SequentialNumber) ?? 0;
+                   var SequentialNumber = lastSeq + 1;
+                    var yearOfProject = project.CreatedDate.Year.ToString().Substring(2, 2);
+                    var serialNumber = _serialNumberService.GenerateSerialNumber(boxDto.BoxLetter, lastSeq, yearOfProject);
                     var newBox = new Box
                     {
                         ProjectId = request.ProjectId,
@@ -153,7 +157,8 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                         BoxName = boxDto.BoxName?.Trim(),
                         BoxTypeId = boxTypeId,
                         Floor = boxDto.Floor.Trim(),
-                        Building = boxDto.Building?.Trim(),
+                        BuildingNumber = boxDto.BuildingNumber?.Trim(),
+                        BoxLetter = boxDto.BoxLetter?.Trim(),
                         Zone = boxDto.Zone ?? BoxZone.ZoneA,
                         Length = boxDto.Length,
                         Width = boxDto.Width,
@@ -162,6 +167,7 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                         BIMModelReference = boxDto.BIMModelReference?.Trim(),
                         Notes = boxDto.Notes?.Trim(),
                         SerialNumber = serialNumber,
+                        SequentialNumber = SequentialNumber,
                         QRCodeString = $"ProjectCode: {project.ProjectCode}\nBoxTag: {boxDto.BoxTag.Trim()}\nSerialNumber: {serialNumber}",
                         Status = BoxStatusEnum.NotStarted,
                         ProgressPercentage = 0,
@@ -278,7 +284,8 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
             BoxName = GetStringValue(row, "Box Name"),
             BoxType = GetStringValue(row, "Box Type"),
             Floor = GetStringValue(row, "Floor"),
-            Building = GetStringValue(row, "Building"),
+            BuildingNumber = GetStringValue(row, "Building Number"),
+            BoxLetter = GetStringValue(row, "Box Letter"),
             Zone = GetBoxZoneValue(row, "Zone"),
             Length = GetDecimalValue(row, "Length"),
             Width = GetDecimalValue(row, "Width"),

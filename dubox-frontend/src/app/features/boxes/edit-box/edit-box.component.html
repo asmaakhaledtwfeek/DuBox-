@@ -192,9 +192,9 @@
                 </div>
               </div>
 
-              <!-- Building -->
+              <!-- Building Number -->
               <div class="form-group">
-                <label for="building">
+                <label for="buildingNumber">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
                     <path d="M9 22v-4h6v4"/>
@@ -208,23 +208,23 @@
                     <path d="M8 10h.01"/>
                     <path d="M8 14h.01"/>
                   </svg>
-                  Building
+                  Building Number
                 </label>
                 <input
-                  id="building"
+                  id="buildingNumber"
                   type="text"
-                  formControlName="building"
+                  formControlName="buildingNumber"
                   class="form-control"
-                  [class.invalid]="isFieldInvalid('building')"
-                  placeholder="e.g., Building 1"
+                  [class.invalid]="isFieldInvalid('buildingNumber')"
+                  placeholder="e.g., B01"
                 />
-                <div class="error-text" *ngIf="isFieldInvalid('building')">
+                <div class="error-text" *ngIf="isFieldInvalid('buildingNumber')">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
                     <line x1="12" y1="8" x2="12" y2="12"/>
                     <line x1="12" y1="16" x2="12.01" y2="16"/>
                   </svg>
-                  {{ getFieldError('building') }}
+                  {{ getFieldError('buildingNumber') }}
                 </div>
               </div>
 
@@ -237,14 +237,21 @@
                   </svg>
                   Zone
                 </label>
-                <input
+                <select
                   id="zone"
-                  type="text"
                   formControlName="zone"
                   class="form-control"
                   [class.invalid]="isFieldInvalid('zone')"
-                  placeholder="e.g., Zone A"
-                />
+                  [disabled]="loadingZones"
+                >
+                  <option value="">Select Zone</option>
+                  <option *ngFor="let zone of zones" [value]="zone.value">
+                    {{ zone.displayName }}
+                  </option>
+                </select>
+                <div class="helper-text" *ngIf="loadingZones">
+                  Loading zones...
+                </div>
                 <div class="error-text" *ngIf="isFieldInvalid('zone')">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>

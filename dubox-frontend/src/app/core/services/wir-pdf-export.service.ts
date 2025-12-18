@@ -95,7 +95,7 @@ export class WirPdfExportService {
               <td class="label">Consultant:</td>
               <td class="value">${projectInfo.consultant}</td>
               <td class="label">Location:</td>
-              <td class="value">${box?.building || 'Dubox Factory'}</td>
+              <td class="value">${box?.buildingNumber || 'Dubox Factory'}</td>
             </tr>
             <tr>
               <td class="label">Contractor:</td>

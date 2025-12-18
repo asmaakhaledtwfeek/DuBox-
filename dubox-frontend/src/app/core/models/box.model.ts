@@ -12,7 +12,8 @@ export interface Box {
   boxSubTypeName?: string;
   description?: string;
   floor?: string;
-  building?: string;
+  buildingNumber?: string;
+  boxLetter?: string;
   zone?: string;
   length?: number;
   width?: number;
@@ -203,7 +204,8 @@ export interface ImportedBoxPreview {
   boxName?: string;
   boxType?: string;
   floor?: string;
-  building?: string;
+  buildingNumber?: string;
+  boxLetter?: string;
   zone?: string;
   status?: string;
 }

@@ -5,6 +5,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Dubox.Api.Controllers
 {
@@ -75,10 +76,8 @@ namespace Dubox.Api.Controllers
             List<string>? imageUrls = null;
             List<byte[]>? fileBytes = null;
 
-            // Check if request is form-data or JSON
             if (Request.HasFormContentType)
             {
-                // Handle multipart/form-data
                 var form = await Request.ReadFormAsync(cancellationToken);
 
                 if (!Enum.TryParse<IssueTypeEnum>(form["IssueType"].ToString(), out issueType))
@@ -99,14 +98,15 @@ namespace Dubox.Api.Controllers
                     dueDate = parsedDueDate;
 
                 // Get ImageUrls from form
-                if (form.ContainsKey("ImageUrls"))
+                var imageUrlsFromForm = form["ImageUrls"];
+                if (imageUrlsFromForm.Count > 0)
                 {
-                    imageUrls = form["ImageUrls"].Where(url => !string.IsNullOrWhiteSpace(url)).ToList();
-                    if (imageUrls.Count == 0)
-                        imageUrls = null;
+                    imageUrls = imageUrlsFromForm
+                        .Where(url => !string.IsNullOrWhiteSpace(url))
+                        .Select(url => url!.Trim())
+                        .ToList();
                 }
-
-                // Convert uploaded files to byte[]
+             
                 var files = form.Files.Where(f => f.Name == "Files" && f.Length > 0).ToList();
                 if (files.Count > 0)
                 {
@@ -121,7 +121,6 @@ namespace Dubox.Api.Controllers
             }
             else
             {
-                // Handle JSON
                 AddQualityIssueCommand? jsonCommand = null;
                 try
                 {
@@ -129,7 +128,11 @@ namespace Dubox.Api.Controllers
                     var body = await reader.ReadToEndAsync();
                     jsonCommand = JsonSerializer.Deserialize<AddQualityIssueCommand>(body, new JsonSerializerOptions
                     {
-                        PropertyNameCaseInsensitive = true
+                        PropertyNameCaseInsensitive = true,
+                        Converters =
+                              {
+                                new JsonStringEnumConverter()
+                              }
                     });
                 }
                 catch
@@ -176,7 +179,6 @@ namespace Dubox.Api.Controllers
 
             var result = await _mediator.Send(command, cancellationToken);
 
-            // Check for specific database conflict errors and return 409
             if (!result.IsSuccess && result.Message?.Contains("Database error", StringComparison.OrdinalIgnoreCase) == true)
             {
                 return Conflict(result);
@@ -232,8 +234,7 @@ namespace Dubox.Api.Controllers
                     {
                         PropertyNameCaseInsensitive = true
                     };
-                    // Use JsonStringEnumConverter to handle string enum values from frontend
-                    // Frontend sends "Pending", "Pass", "Fail" as strings, backend enum has numeric values
+                
                     options.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
 
                     items = JsonSerializer.Deserialize<List<ChecklistItemForReview>>(ItemsJson, options);
@@ -289,24 +290,20 @@ namespace Dubox.Api.Controllers
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
-        /// <summary>
-        /// Auto-generate all 6 WIRs (with predefined checklist items) for a box
-        /// </summary>
-        [HttpPost("generate-for-box/{boxId}")]
-        public async Task<IActionResult> GenerateWIRsForBox(Guid boxId, CancellationToken cancellationToken)
-        {
-            var result = await _mediator.Send(new Dubox.Application.Features.WIRCheckpoints.Commands.GenerateWIRsForBoxCommand(boxId), cancellationToken);
-            return result.IsSuccess ? Ok(result) : BadRequest(result);
-        }
+       
+        //[HttpPost("generate-for-box/{boxId}")]
+        //public async Task<IActionResult> GenerateWIRsForBox(Guid boxId, CancellationToken cancellationToken)
+        //{
+        //    var result = await _mediator.Send(new Dubox.Application.Features.WIRCheckpoints.Commands.GenerateWIRsForBoxCommand(boxId), cancellationToken);
+        //    return result.IsSuccess ? Ok(result) : BadRequest(result);
+        //}
 
-        /// <summary>
-        /// Get all WIRs for a box with their checklist items grouped by category
-        /// </summary>
-        [HttpGet("box/{boxId}/with-checklist")]
-        public async Task<IActionResult> GetWIRsByBoxWithChecklist(Guid boxId, CancellationToken cancellationToken)
-        {
-            var result = await _mediator.Send(new Dubox.Application.Features.WIRCheckpoints.Queries.GetWIRsByBoxWithChecklistQuery(boxId), cancellationToken);
-            return result.IsSuccess ? Ok(result) : BadRequest(result);
-        }
+        
+        //[HttpGet("box/{boxId}/with-checklist")]
+        //public async Task<IActionResult> GetWIRsByBoxWithChecklist(Guid boxId, CancellationToken cancellationToken)
+        //{
+        //    var result = await _mediator.Send(new Dubox.Application.Features.WIRCheckpoints.Queries.GetWIRsByBoxWithChecklistQuery(boxId), cancellationToken);
+        //    return result.IsSuccess ? Ok(result) : BadRequest(result);
+        //}
     }
 }

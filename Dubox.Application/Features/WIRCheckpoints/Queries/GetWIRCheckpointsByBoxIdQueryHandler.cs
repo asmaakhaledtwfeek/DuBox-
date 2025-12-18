@@ -52,7 +52,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
             EnrichChecklistItems(checkpoints, checkpointDtos);
 
             // Load image metadata separately (without base64 ImageData) for performance
-            await PopulateImageMetadata(checkpointDtos, cancellationToken);
+           // await PopulateImageMetadata(checkpointDtos, cancellationToken);
 
             await PopulateActivityMetadata(checkpointDtos, cancellationToken);
 

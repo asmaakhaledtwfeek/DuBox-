@@ -28,17 +28,14 @@ namespace Dubox.Application.Features.QualityIssues.Queries
 
         public async Task<Result<PaginatedQualityIssuesResponseDto>> Handle(GetQualityIssuesQuery request, CancellationToken cancellationToken)
         {
-            // Get accessible project IDs based on user role
             var accessibleProjectIds = await _visibilityService.GetAccessibleProjectIdsAsync(cancellationToken);
             
-            // Normalize pagination parameters
             var (page, pageSize) = new PaginatedRequest
             {
                 Page = request.Page,
                 PageSize = request.PageSize
             }.GetNormalizedPagination();
             
-            // Get quality issues with specification (includes pagination)
             var qualityIssuesResult = _unitOfWork.Repository<QualityIssue>()
                 .GetWithSpec(new GetQualityIssuesSpecification(request, accessibleProjectIds));
             
@@ -51,14 +48,12 @@ namespace Dubox.Application.Features.QualityIssues.Queries
             var dtos = qualityIssues.Select(issue =>
             {
                 var dto = issue.Adapt<QualityIssueDetailsDto>();
-                dto.Images = new List<QualityIssueImageDto>(); // Will be populated below
+               // dto.Images = new List<QualityIssueImageDto>();
                 return dto;
             }).ToList();
             
-            // Load image metadata separately (without base64 ImageData) for performance
-            await PopulateImageMetadata(dtos, cancellationToken);
+            //await PopulateImageMetadata(dtos, cancellationToken);
 
-            // Calculate total pages
             var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
             var response = new PaginatedQualityIssuesResponseDto

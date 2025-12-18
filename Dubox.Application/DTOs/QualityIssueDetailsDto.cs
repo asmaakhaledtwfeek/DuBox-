@@ -25,7 +25,7 @@ namespace Dubox.Application.DTOs
         public Guid BoxId { get; set; }
         public string BoxName { get; set; } = string.Empty;
         public string BoxTag { get; set; } = string.Empty;
-
+        public string ProjectName { get; set; } = string.Empty;
         public Guid? WIRId { get; set; }
         public string? WIRNumber { get; set; }
         public string? WIRName { get; set; }

@@ -304,7 +304,7 @@
               <th>Issue Date</th>
               <th>Type</th>
               <th>Severity</th>
-              <th>Description</th>
+              <th>Project</th>
               <th>Box</th>
               <th>MBI</th>
               <th>Actions</th>
@@ -321,8 +321,8 @@
               <td>{{ issue.issueType || '—' }}</td>
               <td>{{ issue.severity || '—' }}</td>
               <td>
-                <div class="text-truncate" [title]="issue.issueDescription">
-                  {{ issue.issueDescription || '—' }}
+                <div class="text-truncate" [title]="issue.projectName || '—'">
+                  {{ issue.projectName || '—' }}
                 </div>
               </td>
               <td>

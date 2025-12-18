@@ -28,6 +28,7 @@ namespace Dubox.Application.Features.QualityIssues.MappingConfig
                 .Map(dest => dest.BoxId, src => src.Box.BoxId)
                 .Map(dest => dest.BoxName, src => src.Box.BoxName)
                 .Map(dest => dest.BoxTag, src => src.Box.BoxTag)
+                .Map(dest => dest.ProjectName, src => src.Box.Project.ProjectName)
 .Map(dest => dest.WIRId, src => src.WIRCheckpoint != null ? (Guid?)src.WIRCheckpoint.WIRId : null)
                 .Map(dest => dest.ProjectName, src => src.Box.Project.ProjectName)
                 .Map(dest => dest.WIRId, src => src.WIRCheckpoint != null ? (Guid?)src.WIRCheckpoint.WIRId : null)

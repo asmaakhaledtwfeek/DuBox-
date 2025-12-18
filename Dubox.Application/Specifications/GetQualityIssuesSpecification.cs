@@ -10,11 +10,9 @@ namespace Dubox.Application.Specifications
         public GetQualityIssuesSpecification(GetQualityIssuesQuery query, List<Guid>? accessibleProjectIds = null)
         {
             AddInclude(nameof(QualityIssue.Box));
+            AddInclude($"{nameof(QualityIssue.Box)}.{nameof(Box.Project)}");
             AddInclude(nameof(QualityIssue.WIRCheckpoint));
-            // NOTE: Don't include Images - base64 ImageData is too large
-            // Image metadata is loaded separately with lightweight query
-
-            // Enable split query to avoid Cartesian explosion
+          
             EnableSplitQuery();
 
             // Enable pagination

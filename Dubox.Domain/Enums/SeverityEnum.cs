@@ -2,7 +2,7 @@
 {
     public enum SeverityEnum
     {
-        Critical = 1,
+        Critical = 0,
         Major,
         Minor
     }

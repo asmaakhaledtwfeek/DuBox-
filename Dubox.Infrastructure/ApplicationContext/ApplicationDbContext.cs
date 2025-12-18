@@ -63,6 +63,9 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<NavigationMenuItem> NavigationMenuItems { get; set; } = null!;
     public DbSet<ChecklistSection> ChecklistSections { get; set; } = null!;
     public DbSet<Checklist> Checklists { get; set; } = null!;
+    public DbSet<ProjectTypeCategory> ProjectTypeCategories { get; set; } = null!;
+    public DbSet<BoxType> BoxTypes { get; set; } = null!;
+    public DbSet<BoxSubType> BoxSubTypes { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -76,6 +79,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         PermissionSeedData.SeedPermissions(modelBuilder);
         NavigationMenuSeedData.SeedNavigationMenuItems(modelBuilder);
         ChecklistSeedData.SeedChecklists(modelBuilder);
+        BoxTypeSeedData.SeedBoxTypes(modelBuilder);
         base.OnModelCreating(modelBuilder);
     }
 

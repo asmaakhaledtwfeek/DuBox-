@@ -36,7 +36,7 @@ public class Box
     public string? Building { get; set; }
 
     [MaxLength(100)]
-    public string? Zone { get; set; }
+    public BoxZone? Zone { get; set; }
 
     // Current Location
     public Guid? CurrentLocationId { get; set; }

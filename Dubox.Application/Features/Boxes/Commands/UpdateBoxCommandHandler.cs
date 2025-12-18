@@ -188,7 +188,7 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
             RecordChange("Building", box.Building, request.Building);
             box.Building = request.Building;
         }
-        if (!string.IsNullOrEmpty(request.Zone) && box.Zone != request.Zone)
+        if (request.Zone.HasValue && box.Zone != request.Zone)
         {
             RecordChange("Zone", box.Zone, request.Zone);
             box.Zone = request.Zone;

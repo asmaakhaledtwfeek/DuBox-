@@ -1,4 +1,5 @@
 using Dubox.Application.DTOs;
+using Dubox.Domain.Enums;
 using Dubox.Domain.Shared;
 using MediatR;
 
@@ -9,7 +10,7 @@ public record UpdateProjectCommand(
     string? ProjectCode,
     string? ProjectName,
     string? ClientName,
-    string? Location,
+    ProjectLocationEnum? Location,
     string? Description,
     bool? IsActive,
     DateTime? PlannedStartDate,

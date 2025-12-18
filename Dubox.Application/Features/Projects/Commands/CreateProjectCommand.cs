@@ -1,4 +1,6 @@
 using Dubox.Application.DTOs;
+using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
 using Dubox.Domain.Shared;
 using MediatR;
 
@@ -8,7 +10,8 @@ public record CreateProjectCommand(
     string ProjectCode,
     string ProjectName,
     string? ClientName,
-    string? Location,
+    ProjectLocationEnum Location,
+    int ProjectCategoryId,
     int Duration,
     DateTime PlannedStartDate,
     string? Description

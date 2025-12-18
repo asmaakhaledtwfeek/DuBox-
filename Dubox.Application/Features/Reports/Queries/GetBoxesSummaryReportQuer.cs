@@ -1,4 +1,5 @@
 ﻿using Dubox.Application.DTOs;
+using Dubox.Domain.Enums;
 using Dubox.Domain.Shared;
 using MediatR;
 
@@ -14,7 +15,7 @@ namespace Dubox.Application.Features.Reports.Queries
         public List<string>? BoxType { get; init; }
         public string? Floor { get; init; }
         public string? Building { get; init; }
-        public string? Zone { get; init; }
+        public BoxZone? Zone { get; init; }
         public List<int>? Status { get; init; }
         public decimal? ProgressMin { get; init; }
         public decimal? ProgressMax { get; init; }

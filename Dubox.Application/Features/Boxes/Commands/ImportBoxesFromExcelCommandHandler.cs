@@ -143,7 +143,7 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                         BoxType = boxDto.BoxType.Trim(),
                         Floor = boxDto.Floor.Trim(),
                         Building = boxDto.Building?.Trim(),
-                        Zone = boxDto.Zone?.Trim(),
+                        Zone = boxDto.Zone ?? BoxZone.ZoneA,
                         Length = boxDto.Length,
                         Width = boxDto.Width,
                         Height = boxDto.Height,
@@ -268,7 +268,7 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
             BoxType = GetStringValue(row, "Box Type"),
             Floor = GetStringValue(row, "Floor"),
             Building = GetStringValue(row, "Building"),
-            Zone = GetStringValue(row, "Zone"),
+            Zone = GetBoxZoneValue(row, "Zone"),
             Length = GetDecimalValue(row, "Length"),
             Width = GetDecimalValue(row, "Width"),
             Height = GetDecimalValue(row, "Height"),
@@ -293,6 +293,19 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
             if (decimal.TryParse(value.ToString(), out var decimalValue))
             {
                 return decimalValue;
+            }
+        }
+        return null;
+    }
+
+    private BoxZone? GetBoxZoneValue(Dictionary<string, object?> row, string key)
+    {
+        if (row.TryGetValue(key, out var value) && value != null)
+        {
+            var strValue = value.ToString()?.Trim();
+            if (!string.IsNullOrEmpty(strValue) && Enum.TryParse<BoxZone>(strValue, true, out var zone))
+            {
+                return zone;
             }
         }
         return null;

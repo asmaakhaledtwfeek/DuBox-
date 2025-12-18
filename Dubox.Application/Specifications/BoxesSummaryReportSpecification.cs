@@ -32,8 +32,8 @@ public class BoxesSummaryReportSpecification : Specification<Box>
         if (!string.IsNullOrWhiteSpace(query.Building))
             AddCriteria(b => b.Building == query.Building);
 
-        if (!string.IsNullOrWhiteSpace(query.Zone))
-            AddCriteria(b => b.Zone == query.Zone);
+        if (query.Zone.HasValue)
+            AddCriteria(b => b.Zone == query.Zone.Value);
 
         if (query.Status != null && query.Status.Any())
             AddCriteria(b => query.Status.Contains((int)b.Status));
@@ -133,9 +133,9 @@ public class BoxesSummaryReportSpecification : Specification<Box>
                 break;
             case "zone":
                 if (isAscending)
-                    AddOrderBy(b => b.Zone ?? string.Empty);
+                    AddOrderBy(b => b.Zone );
                 else
-                    AddOrderByDescending(b => b.Zone ?? string.Empty);
+                    AddOrderByDescending(b => b.Zone);
                 break;
             case "progress":
                 if (isAscending)

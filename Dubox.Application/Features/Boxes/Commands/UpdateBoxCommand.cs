@@ -1,4 +1,5 @@
 using Dubox.Application.DTOs;
+using Dubox.Domain.Enums;
 using Dubox.Domain.Shared;
 using MediatR;
 
@@ -11,7 +12,7 @@ public record UpdateBoxCommand(
     string? BoxType,
     string? Floor,
     string? Building,
-    string? Zone,
+    BoxZone? Zone,
     decimal? Length,
     decimal? Width,
     decimal? Height,

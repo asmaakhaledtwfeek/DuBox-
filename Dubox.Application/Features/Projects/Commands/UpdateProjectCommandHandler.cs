@@ -110,8 +110,8 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
             project.ProjectName = request.ProjectName;
         if (!string.IsNullOrEmpty(request.ClientName))
             project.ClientName = request.ClientName;
-        if (!string.IsNullOrEmpty(request.Location))
-            project.Location = request.Location;
+        if (request.Location.HasValue)
+            project.Location = request.Location.Value;
         if (request.PlannedStartDate.HasValue)
             project.PlannedStartDate = request.PlannedStartDate;
         if (request.Duration.HasValue)

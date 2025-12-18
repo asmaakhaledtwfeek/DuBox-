@@ -22,8 +22,13 @@ public class Project
     [MaxLength(200)]
     public string? ClientName { get; set; }
 
-    [MaxLength(200)]
-    public string? Location { get; set; }
+    [Required]
+    public ProjectLocationEnum Location { get; set; }
+    [Required]
+    public int CategoryId { get; set; }
+
+    [ForeignKey(nameof(CategoryId))]
+    public ProjectTypeCategory Category { get; set; } = new();
     public DateTime? PlannedStartDate { get; set; }
     public DateTime? ActualStartDate { get; set; }
     public int? Duration { get; set; }

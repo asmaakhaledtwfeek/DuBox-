@@ -1,3 +1,5 @@
+using Dubox.Domain.Enums;
+
 namespace Dubox.Application.DTOs;
 
 public record BoxDto
@@ -83,7 +85,7 @@ public record ImportBoxFromExcelDto
     public string BoxType { get; init; } = string.Empty;
     public string Floor { get; init; } = string.Empty;
     public string? Building { get; init; }
-    public string? Zone { get; init; }
+    public BoxZone? Zone { get; init; }
     public decimal? Length { get; init; }
     public decimal? Width { get; init; }
     public decimal? Height { get; init; }

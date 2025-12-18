@@ -1,5 +1,6 @@
 ﻿using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
 using FluentValidation;
 
 namespace Dubox.Application.Features.Projects.Commands
@@ -34,9 +35,8 @@ namespace Dubox.Application.Features.Projects.Commands
                 .When(x => !string.IsNullOrEmpty(x.ClientName));
 
             RuleFor(x => x.Location)
-                .MaximumLength(200).WithMessage("Location cannot exceed 200 characters")
-                .Must(l => l?.ToLower() != "string").WithMessage("Location cannot be the default value 'string'.")
-                .When(x => !string.IsNullOrEmpty(x.Location));
+                .Must(location => Enum.IsDefined(typeof(ProjectLocationEnum), location))
+                .WithMessage("Invalid value value.").When(x=>x.Location.HasValue);
 
             RuleFor(x => x.Description)
                 .MaximumLength(500).WithMessage("Description cannot exceed 500 characters")

@@ -1,4 +1,5 @@
-﻿using FluentValidation;
+﻿using Dubox.Domain.Enums;
+using FluentValidation;
 
 namespace Dubox.Application.Features.Projects.Commands
 {
@@ -28,9 +29,9 @@ namespace Dubox.Application.Features.Projects.Commands
             .When(x => !string.IsNullOrEmpty(x.ClientName));
 
             RuleFor(x => x.Location)
-            .MaximumLength(200)
-            .WithMessage("Location cannot exceed 200 characters")
-            .When(x => !string.IsNullOrEmpty(x.Location));
+                    .NotEmpty().WithMessage("Project location is required.")
+                  .Must(location => Enum.IsDefined(typeof(ProjectLocationEnum), location))
+                  .WithMessage("Invalid value value.");
 
             RuleFor(x => x.Duration)
             .GreaterThan(0)

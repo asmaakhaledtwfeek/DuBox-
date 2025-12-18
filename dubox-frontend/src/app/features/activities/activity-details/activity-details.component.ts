@@ -11,7 +11,7 @@ import { UpdateProgressModalComponent } from '../update-progress-modal/update-pr
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
 import { BoxActivityDetail, ProgressUpdate } from '../../../core/models/progress-update.model';
 import { TeamService } from '../../../core/services/team.service';
-import { Team, TeamMember } from '../../../core/models/team.model';
+import { Team, TeamMember, TeamGroup } from '../../../core/models/team.model';
 import { ProgressUpdatesTableComponent } from '../../../shared/components/progress-updates-table/progress-updates-table.component';
 import { AuditLogService } from '../../../core/services/audit-log.service';
 import { AuditLog, AuditLogQueryParams } from '../../../core/models/audit-log.model';
@@ -88,6 +88,7 @@ export class ActivityDetailsComponent implements OnInit {
   // Data for dropdowns
   availableTeams: Team[] = [];
   availableMembers: TeamMember[] = [];
+  availableGroups: TeamGroup[] = [];
   availableMaterials: any[] = [];
 
   // Permission properties
@@ -135,7 +136,7 @@ export class ActivityDetailsComponent implements OnInit {
 
     this.assignTeamForm = this.fb.group({
       teamId: ['', Validators.required],
-      memberId: ['']
+      groupId: ['']
     });
 
     this.issueMaterialForm = this.fb.group({
@@ -173,28 +174,28 @@ export class ActivityDetailsComponent implements OnInit {
   }
 
   /**
-   * Load team members when a team is selected
+   * Load team groups when a team is selected
    */
-  loadTeamMembers(teamId: string, onComplete?: (members: any[]) => void): void {
+  loadTeamGroups(teamId: string, onComplete?: (groups: TeamGroup[]) => void): void {
     if (!teamId) {
-      this.availableMembers = [];
+      this.availableGroups = [];
       if (onComplete) {
         onComplete([]);
       }
       return;
     }
 
-    this.teamService.getTeamMembers(teamId).subscribe({
-      next: (teamMembersData) => {
-        this.availableMembers = teamMembersData.members.filter(member => member.isActive !== false);
-        console.log('✅ Team members loaded:', this.availableMembers);
+    this.teamService.getTeamGroupsPaginated({ teamId, isActive: true, pageSize: 100 }).subscribe({
+      next: (response) => {
+        this.availableGroups = response.items || [];
+        console.log('✅ Team groups loaded:', this.availableGroups);
         if (onComplete) {
-          onComplete(this.availableMembers);
+          onComplete(this.availableGroups);
         }
       },
       error: (err) => {
-        console.error('❌ Error loading team members:', err);
-        this.availableMembers = [];
+        console.error('❌ Error loading team groups:', err);
+        this.availableGroups = [];
         if (onComplete) {
           onComplete([]);
         }
@@ -826,43 +827,43 @@ export class ActivityDetailsComponent implements OnInit {
   openAssignTeamModal(): void {
     this.assignTeamSuccess = false; // Reset success state
     
-    // Pre-select team and member if they exist
+    // Pre-select team and group if they exist
     if (this.activityDetail?.teamId) {
       const teamId = this.activityDetail.teamId.toString();
-      const memberId = this.activityDetail.assignedMemberId || '';
+      const groupId = this.activityDetail.assignedGroupId || '';
       
       // First, set the teamId (without emitting events to avoid triggering valueChanges)
       this.assignTeamForm.patchValue({
         teamId: teamId,
-        memberId: '' // Clear member first, will set after members load
+        groupId: '' // Clear group first, will set after groups load
       }, { emitEvent: false });
       
-      // Load team members for the pre-selected team, then set memberId
-      this.loadTeamMembers(teamId, (members) => {
-        // After team members are loaded, set the memberId if it exists and is valid
-        if (memberId && members.some(m => m.teamMemberId === memberId)) {
+      // Load team groups for the pre-selected team, then set groupId
+      this.loadTeamGroups(teamId, (groups) => {
+        // After team groups are loaded, set the groupId if it exists and is valid
+        if (groupId && groups.some(g => g.teamGroupId === groupId)) {
           this.assignTeamForm.patchValue({
-            memberId: memberId
+            groupId: groupId
           }, { emitEvent: false });
         }
       });
     } else {
-      this.availableMembers = [];
+      this.availableGroups = [];
       this.assignTeamForm.patchValue({
         teamId: '',
-        memberId: ''
+        groupId: ''
       }, { emitEvent: false });
     }
 
-    // Listen to team selection changes to load members
+    // Listen to team selection changes to load groups
     this.assignTeamForm.get('teamId')?.valueChanges.subscribe(teamId => {
       if (teamId) {
-        this.loadTeamMembers(teamId);
-        // Clear member selection when team changes
-        this.assignTeamForm.patchValue({ memberId: '' }, { emitEvent: false });
+        this.loadTeamGroups(teamId);
+        // Clear group selection when team changes
+        this.assignTeamForm.patchValue({ groupId: '' }, { emitEvent: false });
       } else {
-        this.availableMembers = [];
-        this.assignTeamForm.patchValue({ memberId: '' }, { emitEvent: false });
+        this.availableGroups = [];
+        this.assignTeamForm.patchValue({ groupId: '' }, { emitEvent: false });
       }
     });
 
@@ -872,7 +873,7 @@ export class ActivityDetailsComponent implements OnInit {
   closeAssignTeamModal(): void {
     this.isAssignTeamModalOpen = false;
     this.assignTeamForm.reset();
-    this.availableMembers = [];
+    this.availableGroups = [];
     this.assignTeamSuccess = false; // Reset success state
   }
 
@@ -885,14 +886,14 @@ export class ActivityDetailsComponent implements OnInit {
     console.log('🔄 Assigning team:', {
       activityId: this.activityId,
       teamId: formValue.teamId,
-      memberId: formValue.memberId
+      groupId: formValue.groupId
     });
 
     // Call API to assign team
     this.boxService.assignActivityToTeam(
       this.activityId,
       formValue.teamId,
-      formValue.memberId
+      formValue.groupId
     ).subscribe({
       next: (response) => {
         console.log('✅ Team assigned successfully:', response);

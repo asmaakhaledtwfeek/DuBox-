@@ -8,7 +8,7 @@ namespace Dubox.Application.Features.Activities.Commands
     (
        Guid BoxActivityId,
        Guid TeamId,
-       Guid TeamMemberId
+       Guid? TeamGroupId
     ) : IRequest<Result<AssignBoxActivityTeamDto>>;
 
 

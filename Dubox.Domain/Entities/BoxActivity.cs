@@ -46,6 +46,10 @@ public class BoxActivity
     public Guid? AssignedMemberId { get; set; }
     public virtual TeamMember? AssignedMember { get; set; }
 
+    [ForeignKey(nameof(AssignedGroup))]
+    public Guid? AssignedGroupId { get; set; }
+    public virtual TeamGroup? AssignedGroup { get; set; }
+
     // Materials tracking
     public bool MaterialsAvailable { get; set; } = true;
 

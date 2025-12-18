@@ -300,13 +300,13 @@ export class BoxService {
   /**
    * Assign activity to team
    */
-  assignActivityToTeam(activityId: string, teamId: string, teamMemberId: string): Observable<any> {
+  assignActivityToTeam(activityId: string, teamId: string, teamGroupId: string): Observable<any> {
     return this.apiService.put<any>(
       'activities/Assign-team',
       {
         boxActivityId: activityId,
         teamId: teamId,
-        teamMemberId: teamMemberId
+        teamGroupId: teamGroupId
       }
     );
   }

@@ -10,7 +10,8 @@ namespace Dubox.Application.DTOs
         public SeverityEnum? Severity { get; set; }
         public string? IssueDescription { get; set; }
         public string? ReportedBy { get; set; }
-        public string? AssignedTo { get; set; }
+        public Guid? AssignedTo { get; set; }
+        public string? AssignedTeamName { get; set; }
         public DateTime? DueDate { get; set; }
         public QualityIssueStatusEnum Status { get; set; }
         public DateTime? ResolutionDate { get; set; }

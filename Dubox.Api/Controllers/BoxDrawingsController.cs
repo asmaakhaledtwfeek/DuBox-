@@ -1,4 +1,5 @@
 using Dubox.Application.Features.BoxDrawings.Commands;
+using Dubox.Application.Features.BoxDrawings.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,9 +18,6 @@ public class BoxDrawingsController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
-    /// Upload a box drawing (PDF or DWG file) or provide a URL
-    /// </summary>
     [HttpPost]
     [Consumes("multipart/form-data")]
     [RequestSizeLimit(52_428_800)] // 50 MB
@@ -80,9 +78,8 @@ public class BoxDrawingsController : ControllerBase
     [HttpGet("box/{boxId}")]
     public async Task<IActionResult> GetBoxDrawings(Guid boxId, CancellationToken cancellationToken)
     {
-        // This would require a query handler - for now, returning a placeholder
-        // You can implement GetBoxDrawingsQuery and Handler if needed
-        return Ok(new { message = "Get box drawings endpoint - to be implemented" });
+        var result = await _mediator.Send(new GetBoxDrawingsQuery(boxId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
     /// <summary>

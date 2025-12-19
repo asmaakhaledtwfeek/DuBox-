@@ -21,7 +21,7 @@ public class SerialNumberService : ISerialNumberService
         var companyCode = "DBX";
         var prefix = $"SN-{currentYear}-";
         var newSeq = lastSeq + 1;
-        return $"{areaCode}-{year}{newSeq:2D}-{companyCode}-{boxLetter}";
+        return $"{areaCode}-{year}{newSeq:D2}-{companyCode}-{boxLetter}";
     }
 }
 

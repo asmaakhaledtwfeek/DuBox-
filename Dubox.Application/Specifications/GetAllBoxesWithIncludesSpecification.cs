@@ -8,6 +8,7 @@ namespace Dubox.Application.Specifications
         public GetAllBoxesWithIncludesSpecification(List<Guid>? accessibleProjectIds = null)
         {
             AddInclude(nameof(Box.Project));
+            AddInclude(nameof(Box.BoxType));
             AddInclude(nameof(Box.BoxAssets));
             AddInclude(nameof(Box.BoxActivities));
             AddInclude(nameof(Box.ProgressUpdates));

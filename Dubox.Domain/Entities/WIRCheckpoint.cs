@@ -52,6 +52,8 @@ namespace Dubox.Domain.Entities
 
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
+        public Guid? CreatedBy { get; set; }
+
         // Navigation properties
         public virtual Box Box { get; set; } = null!;
         public virtual ICollection<WIRChecklistItem> ChecklistItems { get; set; } = new List<WIRChecklistItem>();

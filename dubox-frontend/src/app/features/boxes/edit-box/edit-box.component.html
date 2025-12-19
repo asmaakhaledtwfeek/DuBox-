@@ -79,32 +79,25 @@
             </div>
 
             <div class="form-grid">
-              <!-- Box Tag -->
+              <!-- Box Tag (Read-only, Auto-generated) -->
               <div class="form-group">
                 <label for="boxTag">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
                     <line x1="7" y1="7" x2="7.01" y2="7"/>
                   </svg>
-                  Box Tag
-                  <span class="required">*</span>
+                  Box Tag (Auto-generated)
                 </label>
                 <input
                   id="boxTag"
                   type="text"
                   formControlName="boxTag"
                   class="form-control"
-                  [class.invalid]="isFieldInvalid('boxTag')"
-                  placeholder="e.g., B1-GF-LIV-01"
+                  readonly
+                  placeholder="Auto-generated from fields below"
+                  style="background-color: #f5f5f5; cursor: not-allowed;"
                 />
-                <div class="error-text" *ngIf="isFieldInvalid('boxTag')">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="12" y1="8" x2="12" y2="12"/>
-                    <line x1="12" y1="16" x2="12.01" y2="16"/>
-                  </svg>
-                  {{ getFieldError('boxTag') }}
-                </div>
+                <small style="color: #666; font-size: 12px;">Format: Project-Building-Floor-Type-SubType-Letter</small>
               </div>
 
               <!-- Box Name -->
@@ -137,7 +130,7 @@
 
               <!-- Box Type -->
               <div class="form-group">
-                <label for="boxType">
+                <label for="boxTypeId">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="3" width="7" height="7"/>
                     <rect x="14" y="3" width="7" height="7"/>
@@ -148,20 +141,88 @@
                   <span class="required">*</span>
                 </label>
                 <select
-                  id="boxType"
-                  formControlName="boxType"
+                  id="boxTypeId"
+                  formControlName="boxTypeId"
                   class="form-control"
-                  [class.invalid]="isFieldInvalid('boxType')"
+                  [class.invalid]="isFieldInvalid('boxTypeId')"
+                  (change)="onBoxTypeChange($event)"
                 >
-                  <option *ngFor="let type of boxTypes" [value]="type">{{ type }}</option>
+                  <option [ngValue]="null">Select Box Type</option>
+                  <option *ngFor="let type of boxTypes" [value]="type.boxTypeId">{{ type.boxTypeName }}</option>
                 </select>
-                <div class="error-text" *ngIf="isFieldInvalid('boxType')">
+                <div class="loading-text" *ngIf="loadingBoxTypes">Loading box types for {{ projectCategoryName || 'project category' }}...</div>
+                <small *ngIf="!loadingBoxTypes && boxTypes.length > 0 && projectCategoryName" style="color: #10b981; font-size: 12px; display: block; margin-top: 4px;">
+                  📂 Showing {{ boxTypes.length }} box type(s) for category: <strong>{{ projectCategoryName }}</strong>
+                </small>
+                <div class="error-text" *ngIf="isFieldInvalid('boxTypeId')">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
                     <line x1="12" y1="8" x2="12" y2="12"/>
                     <line x1="12" y1="16" x2="12.01" y2="16"/>
                   </svg>
-                  {{ getFieldError('boxType') }}
+                  {{ getFieldError('boxTypeId') }}
+                </div>
+              </div>
+
+              <!-- Box Sub Type (shown only if selected box type has subtypes) -->
+              <div class="form-group" *ngIf="selectedBoxType?.hasSubTypes">
+                <label for="boxSubTypeId">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"/>
+                    <rect x="14" y="3" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/>
+                  </svg>
+                  Box Sub Type
+                </label>
+                <select
+                  id="boxSubTypeId"
+                  formControlName="boxSubTypeId"
+                  class="form-control"
+                  [disabled]="loadingBoxSubTypes"
+                >
+                  <option [ngValue]="null">{{ loadingBoxSubTypes ? 'Loading sub types...' : 'Select Sub Type' }}</option>
+                  <option *ngFor="let subType of boxSubTypes" [ngValue]="subType.boxSubTypeId">{{ subType.boxSubTypeName }}</option>
+                </select>
+                <div class="loading-text" *ngIf="loadingBoxSubTypes">Loading box sub types...</div>
+                <small *ngIf="!loadingBoxSubTypes && boxSubTypes.length > 0" style="color: #10b981; font-size: 12px; display: block; margin-top: 4px;">
+                  📦 {{ boxSubTypes.length }} sub type(s) available
+                </small>
+                <small *ngIf="!loadingBoxSubTypes && boxSubTypes.length === 0" style="color: #f59e0b; font-size: 12px; display: block; margin-top: 4px;">
+                  ⚠️ No sub types configured for this box type
+                </small>
+              </div>
+
+              <!-- Building Number -->
+              <div class="form-group">
+                <label for="buildingNumber">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
+                    <path d="M9 22v-4h6v4"/>
+                    <path d="M8 6h.01"/>
+                    <path d="M16 6h.01"/>
+                    <path d="M12 6h.01"/>
+                  </svg>
+                  Building Number
+                  <span class="required">*</span>
+                </label>
+                <select
+                  id="buildingNumber"
+                  formControlName="buildingNumber"
+                  class="form-control"
+                  [class.invalid]="isFieldInvalid('buildingNumber')"
+                  (change)="onBuildingOrFloorChange()"
+                >
+                  <option value="">Select Building Number</option>
+                  <option *ngFor="let bNum of buildingNumbers" [value]="bNum">{{ bNum }}</option>
+                </select>
+                <div class="error-text" *ngIf="isFieldInvalid('buildingNumber')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  {{ getFieldError('buildingNumber') }}
                 </div>
               </div>
 
@@ -171,7 +232,7 @@
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                   </svg>
-                  Floor
+                  Floor / Level
                   <span class="required">*</span>
                 </label>
                 <select
@@ -179,6 +240,7 @@
                   formControlName="floor"
                   class="form-control"
                   [class.invalid]="isFieldInvalid('floor')"
+                  (change)="onBuildingOrFloorChange()"
                 >
                   <option *ngFor="let floor of floors" [value]="floor">{{ floor }}</option>
                 </select>
@@ -192,39 +254,36 @@
                 </div>
               </div>
 
-              <!-- Building Number -->
+              <!-- Box Letter -->
               <div class="form-group">
-                <label for="buildingNumber">
+                <label for="boxLetter">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
-                    <path d="M9 22v-4h6v4"/>
-                    <path d="M8 6h.01"/>
-                    <path d="M16 6h.01"/>
-                    <path d="M12 6h.01"/>
-                    <path d="M12 10h.01"/>
-                    <path d="M12 14h.01"/>
-                    <path d="M16 10h.01"/>
-                    <path d="M16 14h.01"/>
-                    <path d="M8 10h.01"/>
-                    <path d="M8 14h.01"/>
+                    <path d="M4 7V4h16v3M9 20h6M12 4v16"/>
                   </svg>
-                  Building Number
+                  Box Letter
+                  <span class="required">*</span>
                 </label>
-                <input
-                  id="buildingNumber"
-                  type="text"
-                  formControlName="buildingNumber"
+                <select
+                  id="boxLetter"
+                  formControlName="boxLetter"
                   class="form-control"
-                  [class.invalid]="isFieldInvalid('buildingNumber')"
-                  placeholder="e.g., B01"
-                />
-                <div class="error-text" *ngIf="isFieldInvalid('buildingNumber')">
+                  [class.invalid]="isFieldInvalid('boxLetter')"
+                  [disabled]="loadingBoxLetters || availableBoxLetters.length === 0"
+                >
+                  <option value="">Select Box Letter</option>
+                  <option *ngFor="let letter of availableBoxLetters" [value]="letter">{{ letter }}</option>
+                </select>
+                <div class="loading-text" *ngIf="loadingBoxLetters">Loading available letters...</div>
+                <div class="info-text" *ngIf="!loadingBoxLetters && availableBoxLetters.length === 0" style="color: #f59e0b; font-size: 12px; margin-top: 4px;">
+                  No available letters for this combination
+                </div>
+                <div class="error-text" *ngIf="isFieldInvalid('boxLetter')">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
                     <line x1="12" y1="8" x2="12" y2="12"/>
                     <line x1="12" y1="16" x2="12.01" y2="16"/>
                   </svg>
-                  {{ getFieldError('buildingNumber') }}
+                  {{ getFieldError('boxLetter') }}
                 </div>
               </div>
 
@@ -272,7 +331,7 @@
               </svg>
               <div>
                 <h3 class="section-title">Dimensions</h3>
-                <p class="section-description">Physical dimensions in millimeters</p>
+                <p class="section-description">Specify the physical dimensions in millimeters</p>
               </div>
             </div>
 
@@ -429,7 +488,7 @@
             </div>
           </div>
 
-          <!-- Schedule & Notes -->
+          <!-- Schedule -->
           <div class="form-section">
             <div class="section-header">
               <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -439,37 +498,36 @@
                 <line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
               <div>
-                <h3 class="section-title">Schedule & Notes</h3>
-                <p class="section-description">Plan the timeline and add any additional notes</p>
+                <h3 class="section-title">Schedule</h3>
+                <p class="section-description">Plan the construction timeline for this box</p>
               </div>
             </div>
 
             <div class="form-grid">
-              <!-- Planned Start Date -->
               <div class="form-group">
-                <label for="plannedStartDate">
+                <label for="boxPlannedStartDate">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
                     <polyline points="12 6 12 12 16 14"/>
                   </svg>
-                  Planned Start Date
+                  Box Planned Start Date
                 </label>
                 <input
-                  id="plannedStartDate"
+                  id="boxPlannedStartDate"
                   type="date"
-                  formControlName="plannedStartDate"
+                  formControlName="boxPlannedStartDate"
                   class="form-control"
-                  [class.invalid]="isFieldInvalid('plannedStartDate')"
+                  [class.invalid]="isFieldInvalid('boxPlannedStartDate')"
                 />
-                <div class="error-text" *ngIf="isFieldInvalid('plannedStartDate')">
+                <div class="error-text" *ngIf="isFieldInvalid('boxPlannedStartDate')">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
                     <line x1="12" y1="8" x2="12" y2="12"/>
                     <line x1="12" y1="16" x2="12.01" y2="16"/>
                   </svg>
-                  {{ getFieldError('plannedStartDate') }}
+                  {{ getFieldError('boxPlannedStartDate') }}
                 </div>
-                <div class="error-text" *ngIf="boxForm.get('plannedStartDate')?.errors?.['projectSchedule'] && scheduleErrorMessage">
+                <div class="error-text" *ngIf="boxForm.get('boxPlannedStartDate')?.errors?.['projectSchedule'] && scheduleErrorMessage">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
                     <line x1="12" y1="8" x2="12" y2="12"/>
@@ -479,37 +537,54 @@
                 </div>
               </div>
 
-              <!-- Duration -->
               <div class="form-group">
-                <label for="duration">
+                <label for="boxDuration">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
                     <line x1="16" y1="2" x2="16" y2="6"/>
                     <line x1="8" y1="2" x2="8" y2="6"/>
                     <line x1="3" y1="10" x2="21" y2="10"/>
                   </svg>
-                  Duration (days)
+                  Box Duration (days)
                 </label>
                 <input
-                  id="duration"
+                  id="boxDuration"
                   type="number"
-                  formControlName="duration"
+                  formControlName="boxDuration"
                   class="form-control"
+                  [class.invalid]="isFieldInvalid('boxDuration')"
                   min="1"
-                  [class.invalid]="isFieldInvalid('duration')"
-                  placeholder="e.g., 14"
+                  placeholder="e.g., 45"
                 />
-                <div class="error-text" *ngIf="isFieldInvalid('duration')">
+                <div class="error-text" *ngIf="isFieldInvalid('boxDuration')">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
                     <line x1="12" y1="8" x2="12" y2="12"/>
                     <line x1="12" y1="16" x2="12.01" y2="16"/>
                   </svg>
-                  {{ getFieldError('duration') }}
+                  {{ getFieldError('boxDuration') }}
                 </div>
               </div>
+            </div>
+          </div>
 
-              <!-- Notes -->
+          <!-- Notes -->
+          <div class="form-section">
+            <div class="section-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+              <div>
+                <h3 class="section-title">Notes</h3>
+                <p class="section-description">Add any additional notes or special instructions</p>
+              </div>
+            </div>
+
+            <div class="form-grid">
               <div class="form-group full-width">
                 <label for="notes">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

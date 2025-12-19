@@ -77,7 +77,7 @@ namespace Dubox.Api.Controllers
             IssueTypeEnum issueType;
             SeverityEnum severity;
             string issueDescription;
-            string? assignedTo = null;
+            Guid? assignedTo = null;
             DateTime? dueDate = null;
             List<string>? imageUrls = null;
             List<byte[]>? fileBytes = null;
@@ -96,9 +96,11 @@ namespace Dubox.Api.Controllers
                 if (string.IsNullOrWhiteSpace(issueDescription))
                     return BadRequest("IssueDescription is required");
 
-                assignedTo = form["AssignedTo"].ToString();
-                if (string.IsNullOrWhiteSpace(assignedTo))
-                    assignedTo = null;
+                Guid assignedToTemp;
+                if (!Guid.TryParse(form["AssignedTo"].FirstOrDefault(), out assignedToTemp))
+                    return BadRequest("Invalid or missing AssignedTo");
+
+                assignedTo = assignedToTemp;
 
                 if (DateTime.TryParse(form["DueDate"].ToString(), out var parsedDueDate))
                     dueDate = parsedDueDate;

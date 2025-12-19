@@ -316,6 +316,7 @@
               <th>Project</th>
               <th>Box</th>
               <th>MBI</th>
+              <th>Assigned To</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -342,6 +343,11 @@
                 <div>{{ issue.wirNumber || '—' }}</div>
                 <div class="text-muted" *ngIf="issue.wirName">{{ issue.wirName }}</div>
               </td>
+              <td>
+                <div class="text-truncate" [title]="issue.assignedTeamName || '—'">
+                  {{ issue.assignedTeamName || '—' }}
+                </div>
+              </td>
               <td class="col-actions">
                 <div class="action-stack">
                   <button 
@@ -352,6 +358,20 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                       <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                  <button 
+                    class="action-btn assign" 
+                    (click)="openAssignModal(issue); $event.stopPropagation()"
+                    title="Assign to Team"
+                    *ngIf="canUpdateQualityIssueStatus"
+                    type="button"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                      <circle cx="9" cy="7" r="4"/>
+                      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                     </svg>
                   </button>
                   <button 
@@ -679,6 +699,87 @@
   </div>
 </div>
 
+<!-- Assign to Team Modal -->
+<div class="status-modal-backdrop" *ngIf="isAssignModalOpen" (click)="closeAssignModal()">
+  <div class="status-modal" (click)="$event.stopPropagation()" *ngIf="selectedIssueForAssign">
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-title-section">
+          <h3 class="modal-title">Assign to Team</h3>
+          <div class="header-badges">
+            <span class="issue-type-badge-small">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+              </svg>
+              {{ selectedIssueForAssign.issueType || 'Issue' }}
+            </span>
+            <span class="severity-badge-small" [ngClass]="'severity-' + (selectedIssueForAssign.severity ? selectedIssueForAssign.severity.toLowerCase() : '')">
+              {{ selectedIssueForAssign.severity || '—' }}
+            </span>
+          </div>
+        </div>
+      </div>
+      <button class="icon-button" (click)="closeAssignModal()" [disabled]="assignLoading" aria-label="Close modal">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-content">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="modal-label">Assign to Team</label>
+          <select 
+            class="modal-input" 
+            [(ngModel)]="selectedTeamId"
+            [disabled]="assignLoading || loadingTeams"
+          >
+            <option [value]="null">Unassign (No Team)</option>
+            <option *ngFor="let team of availableTeams" [value]="team.teamId">
+              {{ team.teamName }} ({{ team.teamCode }})
+            </option>
+          </select>
+          <div class="loading-text" *ngIf="loadingTeams">Loading teams...</div>
+          <small class="helper-text" *ngIf="!loadingTeams && availableTeams.length === 0">
+            No teams available. Please contact your administrator.
+          </small>
+        </div>
+
+        <div class="current-assignment" *ngIf="selectedIssueForAssign?.assignedTeamName">
+          <p class="info-text">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            Currently assigned to: <strong>{{ selectedIssueForAssign.assignedTeamName }}</strong>
+          </p>
+        </div>
+
+        <p class="modal-error" *ngIf="assignError">{{ assignError }}</p>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" (click)="closeAssignModal()" [disabled]="assignLoading">
+        Cancel
+      </button>
+      <button 
+        class="btn btn-primary" 
+        (click)="assignIssueToTeam()" 
+        [disabled]="assignLoading || loadingTeams"
+      >
+        <span *ngIf="assignLoading">Assigning...</span>
+        <span *ngIf="!assignLoading">{{ selectedTeamId ? 'Assign' : 'Unassign' }}</span>
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Issue Details Modal -->
 <div class="status-modal-backdrop" *ngIf="isDetailsModalOpen && selectedIssueDetails" (click)="closeIssueDetails()">
   <div class="details-modal" (click)="$event.stopPropagation()">
@@ -711,7 +812,7 @@
       </div>
       <div class="details-row">
         <span class="label">Assigned To</span>
-        <span class="value">{{ selectedIssueDetails.assignedTo || '—' }}</span>
+        <span class="value">{{ selectedIssueDetails.assignedTeamName || '—' }}</span>
       </div>
       <div class="details-row">
         <span class="label">Due Date</span>

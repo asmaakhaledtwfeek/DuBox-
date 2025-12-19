@@ -29,13 +29,16 @@ namespace Dubox.Application.Features.QualityIssues.MappingConfig
                 .Map(dest => dest.BoxName, src => src.Box.BoxName)
                 .Map(dest => dest.BoxTag, src => src.Box.BoxTag)
                 .Map(dest => dest.ProjectName, src => src.Box.Project.ProjectName)
-.Map(dest => dest.WIRId, src => src.WIRCheckpoint != null ? (Guid?)src.WIRCheckpoint.WIRId : null)
-                .Map(dest => dest.ProjectName, src => src.Box.Project.ProjectName)
+                .Map(dest => dest.WIRId, src => src.WIRCheckpoint != null ? (Guid?)src.WIRCheckpoint.WIRId : null)
+                
                 .Map(dest => dest.WIRId, src => src.WIRCheckpoint != null ? (Guid?)src.WIRCheckpoint.WIRId : null)
                 .Map(dest => dest.WIRNumber, src => src.WIRCheckpoint != null ? src.WIRCheckpoint.WIRCode : null)
                 .Map(dest => dest.WIRName, src => src.WIRCheckpoint != null ? src.WIRCheckpoint.WIRName : null)
                 .Map(dest => dest.WIRStatus, src => src.WIRCheckpoint != null ? (WIRCheckpointStatusEnum?)src.WIRCheckpoint.Status : null)
-                .Map(dest => dest.WIRRequestedDate, src => src.WIRCheckpoint != null ? src.WIRCheckpoint.RequestedDate : null);
+                .Map(dest => dest.WIRRequestedDate, src => src.WIRCheckpoint != null ? src.WIRCheckpoint.RequestedDate : null)
+                .Map(dest => dest.AssignedTo, src => src.AssignedTo != null ? src.AssignedTo : null)
+                .Map(dest => dest.AssignedTeamName, src => src.AssignedToTeam != null ? src.AssignedToTeam.TeamName : null)
+                ;
         }
     }
 

@@ -10,7 +10,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
         IssueTypeEnum IssueType,
         SeverityEnum Severity,
         string IssueDescription,
-        string? AssignedTo = null,
+        Guid? AssignedTo = null,
         DateTime? DueDate = null,
         List<string>? ImageUrls = null,
         List<byte[]>? Files = null

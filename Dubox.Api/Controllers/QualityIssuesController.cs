@@ -53,7 +53,7 @@ namespace Dubox.Api.Controllers
             IssueTypeEnum issueType;
             SeverityEnum severity;
             string issueDescription;
-            string? assignedTo = null;
+            Guid? assignedTo = null;
             DateTime? dueDate = null;
             List<string>? imageUrls = null;
             List<byte[]>? fileBytes = null;
@@ -74,10 +74,13 @@ namespace Dubox.Api.Controllers
                 issueDescription = form["IssueDescription"].ToString();
                 if (string.IsNullOrWhiteSpace(issueDescription))
                     return BadRequest("IssueDescription is required");
-
-                assignedTo = form["AssignedTo"].ToString();
-                if (string.IsNullOrWhiteSpace(assignedTo))
-                    assignedTo = null;
+                
+                // AssignedTo is optional - only parse if provided
+                var assignedToValue = form["AssignedTo"].FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(assignedToValue) && Guid.TryParse(assignedToValue, out var assignedToTemp))
+                {
+                    assignedTo = assignedToTemp;
+                }
 
                 if (DateTime.TryParse(form["DueDate"].ToString(), out var parsedDueDate))
                     dueDate = parsedDueDate;
@@ -223,6 +226,36 @@ namespace Dubox.Api.Controllers
             var result = await _mediator.Send(command, cancellationToken);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
+
+        /// <summary>
+        /// Assign a quality issue to a team or unassign it
+        /// </summary>
+        [HttpPut("{issueId}/assign")]
+        public async Task<IActionResult> AssignQualityIssueToTeam(
+            Guid issueId,
+            [FromBody] AssignQualityIssueToTeamRequest request,
+            CancellationToken cancellationToken)
+        {
+            if (issueId != request.IssueId)
+                return BadRequest("Issue ID mismatch");
+
+            var command = new AssignQualityIssueToTeamCommand(
+                IssueId: issueId,
+                TeamId: request.TeamId
+            );
+
+            var result = await _mediator.Send(command, cancellationToken);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+    }
+
+    /// <summary>
+    /// Request model for assigning quality issue to team
+    /// </summary>
+    public class AssignQualityIssueToTeamRequest
+    {
+        public Guid IssueId { get; set; }
+        public Guid? TeamId { get; set; }
     }
 
     /// <summary>
@@ -234,7 +267,7 @@ namespace Dubox.Api.Controllers
         public IssueTypeEnum IssueType { get; set; }
         public SeverityEnum Severity { get; set; }
         public string IssueDescription { get; set; } = string.Empty;
-        public string? AssignedTo { get; set; }
+        public Guid? AssignedTo { get; set; }
         public DateTime? DueDate { get; set; }
         public List<string>? ImageUrls { get; set; }
         public List<byte[]>? Files { get; set; }

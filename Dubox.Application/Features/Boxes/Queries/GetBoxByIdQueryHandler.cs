@@ -44,7 +44,10 @@ public class GetBoxByIdQueryHandler : IRequestHandler<GetBoxByIdQuery, Result<Bo
             QRCodeImage = _qrCodeService.GenerateQRCodeBase64(box.QRCodeString),
             CurrentLocationId = box.CurrentLocationId,
             CurrentLocationCode = box.CurrentLocation?.LocationCode,
-            CurrentLocationName = box.CurrentLocation?.LocationName
+            CurrentLocationName = box.CurrentLocation?.LocationName,
+            BoxTypeId = box.BoxTypeId,
+            BoxSubTypeId = box.BoxSubTypeId,
+            BoxSubTypeName = box.BoxSubType?.BoxSubTypeName
         };
 
         return Result.Success(boxDto);

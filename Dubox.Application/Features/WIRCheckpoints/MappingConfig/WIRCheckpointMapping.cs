@@ -28,7 +28,9 @@
                 .Map(dest => dest.IssueDate, src => src.IssueDate)
                 .Map(dest => dest.ReportedBy, src => src.ReportedBy)
                 .Map(dest => dest.Status, src => src.Status)
-                .Map(dest => dest.Images, src => src.Images);
+                .Map(dest => dest.Images, src => src.Images)
+               .Map(dest => dest.AssignedTeam, src => src.AssignedToTeam != null ? src.AssignedToTeam.TeamName:null);
+;
 
             TypeAdapterConfig<WIRCheckpoint, WIRCheckpointDto>.NewConfig()
                 .Map(dest => dest.WIRNumber, src => src.WIRCode)

@@ -10,6 +10,8 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { TeamService } from '../../../core/services/team.service';
+import { Team } from '../../../core/models/team.model';
 import { map } from 'rxjs/operators';
 import * as ExcelJS from 'exceljs';
 import { environment } from '../../../../environments/environment';
@@ -29,6 +31,7 @@ type AggregatedQualityIssue = QualityIssueItem & {
   projectId?: string;
   checkpointStatus?: WIRCheckpointStatus;
   issueStatus?: string;
+  assignedTeamName?: string;
 };
 
 @Component({
@@ -117,13 +120,23 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   cameraStream: MediaStream | null = null;
   showCamera = false;
 
+  // Assign modal state
+  isAssignModalOpen = false;
+  selectedIssueForAssign: AggregatedQualityIssue | null = null;
+  availableTeams: Team[] = [];
+  loadingTeams = false;
+  assignLoading = false;
+  assignError = '';
+  selectedTeamId: string | null = null;
+
   constructor(
     private fb: FormBuilder,
     private wirService: WIRService,
     private router: Router,
     private apiService: ApiService,
     private permissionService: PermissionService,
-    private authService: AuthService
+    private authService: AuthService,
+    private teamService: TeamService
   ) {
     this.isSystemAdmin = this.authService.isSystemAdmin();
     this.filterForm = this.fb.group({
@@ -530,11 +543,12 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     
     this.qualityIssues = issues.map((issue: any) => {
       const mapped = {
-        issueId: issue.issueId,
+        issueId: issue.issueId || issue.IssueId || issue.qualityIssueId || issue.QualityIssueId,
         issueType: issue.issueType,
         severity: issue.severity,
         issueDescription: issue.issueDescription,
         assignedTo: issue.assignedTo,
+        assignedTeamName: issue.assignedTeamName || issue.assignedTeam || undefined,
         dueDate: issue.dueDate,
         photoPath: issue.photoPath,
         reportedBy: issue.reportedBy,
@@ -682,11 +696,11 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
 
   openIssueDetails(issue: AggregatedQualityIssue): void {
     const boxId = issue.boxId;
-
     // If we have issueId, fetch full details using GetQualityIssueById to get images
     if (issue.issueId) {
       // Show modal immediately with existing data
       this.selectedIssueDetails = this.convertToQualityIssueDetails(issue, boxId);
+      
       this.isDetailsModalOpen = true;
 
       // Fetch fresh details from backend (including images)
@@ -703,6 +717,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     } else {
       // Use aggregated data directly (no issueId available)
       this.selectedIssueDetails = this.convertToQualityIssueDetails(issue, boxId);
+     
       this.isDetailsModalOpen = true;
     }
   }
@@ -869,9 +884,112 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
-  openStatusModal(issue: AggregatedQualityIssue): void {
+  openAssignModal(issue: AggregatedQualityIssue): void {
+    // Close other modals first
     if (this.isDetailsModalOpen) {
       this.closeIssueDetails();
+    }
+    if (this.isStatusModalOpen) {
+      this.closeStatusModal();
+    }
+
+    // Check for issueId in multiple possible property names
+    const issueId = issue.issueId || (issue as any).IssueId || (issue as any).qualityIssueId || (issue as any).QualityIssueId;
+    
+    if (!issueId) {
+      alert('Cannot assign: Issue ID is missing. This issue may not be saved yet.');
+      return;
+    }
+
+    // Ensure issue has issueId for the assignment
+    if (!issue.issueId) {
+      (issue as any).issueId = issueId;
+    }
+
+    this.selectedIssueForAssign = issue;
+    this.selectedTeamId = null; // Reset selection
+    this.assignError = '';
+    this.isAssignModalOpen = true;
+    this.loadAvailableTeams();
+  }
+
+  closeAssignModal(): void {
+    this.isAssignModalOpen = false;
+    this.selectedIssueForAssign = null;
+    this.selectedTeamId = null;
+    this.assignError = '';
+  }
+
+  loadAvailableTeams(): void {
+    this.loadingTeams = true;
+    this.teamService.getTeams().subscribe({
+      next: (teams) => {
+        this.availableTeams = teams.filter(team => team.isActive);
+        this.loadingTeams = false;
+      },
+      error: (err) => {
+        console.error('Error loading teams:', err);
+        this.loadingTeams = false;
+        this.availableTeams = [];
+        this.assignError = 'Failed to load teams. Please try again.';
+      }
+    });
+  }
+
+  assignIssueToTeam(): void {
+    if (!this.selectedIssueForAssign || !this.selectedIssueForAssign.issueId) {
+      this.assignError = 'Invalid issue selected';
+      return;
+    }
+
+    this.assignLoading = true;
+    this.assignError = '';
+
+    const teamId = this.selectedTeamId && this.selectedTeamId.trim() !== '' ? this.selectedTeamId : null;
+
+    this.wirService.assignQualityIssueToTeam(this.selectedIssueForAssign.issueId, teamId).subscribe({
+      next: (updatedIssue) => {
+        this.assignLoading = false;
+        
+        // Update the issue in the list
+        const index = this.qualityIssues.findIndex(issue => issue.issueId === updatedIssue.issueId);
+        if (index !== -1) {
+          this.qualityIssues[index] = {
+            ...this.qualityIssues[index],
+            assignedTeamName: updatedIssue.assignedTeamName || undefined
+          };
+        }
+
+        // If details modal is open for this issue, update it
+        if (this.selectedIssueDetails && this.selectedIssueDetails.issueId === updatedIssue.issueId) {
+          this.selectedIssueDetails = updatedIssue;
+        }
+
+        this.closeAssignModal();
+        
+        // Show success message
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: {
+            message: teamId ? `Issue assigned to team successfully.` : `Issue unassigned successfully.`,
+            type: 'success'
+          }
+        }));
+      },
+      error: (err) => {
+        this.assignLoading = false;
+        this.assignError = err.error?.message || err.message || 'Failed to assign issue to team';
+        console.error('Error assigning issue to team:', err);
+      }
+    });
+  }
+
+  openStatusModal(issue: AggregatedQualityIssue): void {
+    // Close other modals first
+    if (this.isDetailsModalOpen) {
+      this.closeIssueDetails();
+    }
+    if (this.isAssignModalOpen) {
+      this.closeAssignModal();
     }
 
     if (!issue.issueId) {
@@ -1342,6 +1460,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
       severity: issue.severity,
       issueDescription: issue.issueDescription,
       assignedTo: issue.assignedTo,
+      assignedTeamName: issue.assignedTeamName || issue.assignedTeam || undefined,
       dueDate: issue.dueDate,
       photoPath: issue.photoPath,
       reportedBy: issue.reportedBy,
@@ -1464,7 +1583,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
         issue.issueType || '—',
         issue.severity || '—',
         issue.projectName || '—',
-        issue.assignedTo || '—',
+        issue.assignedTeamName || issue.assignedTo || '—',
         issue.reportedBy || '—',
         formatDateForExcel(issue.issueDate),
         formatDateForExcel(issue.dueDate),

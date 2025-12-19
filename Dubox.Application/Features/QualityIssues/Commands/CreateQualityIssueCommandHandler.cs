@@ -76,7 +76,8 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                 DueDate = request.DueDate,
                 Status = QualityIssueStatusEnum.Open,
                 IssueDate = DateTime.UtcNow,
-                ReportedBy = reportedBy
+                ReportedBy = reportedBy,
+                CreatedBy = currentUserId,
             };
 
             await _unitOfWork.Repository<QualityIssue>().AddAsync(newIssue, cancellationToken);
@@ -113,6 +114,21 @@ namespace Dubox.Application.Features.QualityIssues.Commands
             {
                 return Result.Failure<QualityIssueDetailsDto>($"Error saving images: {ex.Message}. Inner exception: {ex.InnerException?.Message}");
             }
+
+            // Create audit log for quality issue creation
+            var auditLog = new AuditLog
+            {
+                TableName = nameof(QualityIssue),
+                RecordId = newIssue.IssueId,
+                Action = "INSERT",
+                OldValues = null,
+                NewValues = $"IssueType: {newIssue.IssueType}, Severity: {newIssue.Severity}, Status: {newIssue.Status}, IssueDescription: {newIssue.IssueDescription ?? "N/A"}",
+                ChangedBy = currentUserId,
+                ChangedDate = DateTime.UtcNow,
+                Description = $"Quality Issue created for Box {box.BoxTag ?? box.BoxName}. Type: {newIssue.IssueType}, Severity: {newIssue.Severity}."
+            };
+            await _unitOfWork.Repository<AuditLog>().AddAsync(auditLog, cancellationToken);
+            await _unitOfWork.CompleteAsync(cancellationToken);
 
             return Result.Success(new QualityIssueDetailsDto());
         }

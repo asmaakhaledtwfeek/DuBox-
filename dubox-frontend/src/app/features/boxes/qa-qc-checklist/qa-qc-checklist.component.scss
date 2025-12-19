@@ -3843,10 +3843,29 @@ textarea.form-control {
     .description-text {
       margin: 0;
       font-size: 15px;
-      line-height: 1.6;
+      line-height: 1.7;
       color: var(--text-primary);
       white-space: pre-wrap;
-      padding: 0;
+      padding: 16px;
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.02) 0%, rgba(15, 23, 42, 0.01) 100%);
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.04) 0%, rgba(15, 23, 42, 0.02) 100%);
+        border-color: var(--gray-300);
+      }
+
+      &.resolution-notes {
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.05) 0%, rgba(34, 197, 94, 0.02) 100%);
+        border-color: rgba(34, 197, 94, 0.2);
+
+        &:hover {
+          background: linear-gradient(135deg, rgba(34, 197, 94, 0.08) 0%, rgba(34, 197, 94, 0.04) 100%);
+          border-color: rgba(34, 197, 94, 0.3);
+        }
+      }
     }
   }
 
@@ -3864,6 +3883,13 @@ textarea.form-control {
       color: var(--text-secondary);
       margin: 0;
       line-height: 1.2;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+
+      svg {
+        flex-shrink: 0;
+      }
 
       &.text-danger {
         color: #dc2626;
@@ -3892,6 +3918,31 @@ textarea.form-control {
         color: var(--text-secondary);
         font-size: 13px;
         font-weight: 500;
+      }
+
+      .assigned-team {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
+        border: 1px solid rgba(59, 130, 246, 0.2);
+        border-radius: 8px;
+        color: #1d4ed8;
+        font-weight: 600;
+        font-size: 14px;
+        transition: all 0.2s ease;
+
+        svg {
+          color: #3b82f6;
+          flex-shrink: 0;
+        }
+
+        &:hover {
+          background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(59, 130, 246, 0.08) 100%);
+          transform: translateY(-1px);
+          box-shadow: 0 2px 4px rgba(59, 130, 246, 0.15);
+        }
       }
     }
   }

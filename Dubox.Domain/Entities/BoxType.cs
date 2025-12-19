@@ -20,7 +20,7 @@ public class BoxType
     public int CategoryId { get; set; }
 
     [ForeignKey(nameof(CategoryId))]
-    public ProjectTypeCategory Category { get; set; } = null!;
+    public virtual ProjectTypeCategory Category { get; set; } = null!;
 
     // Navigation properties
     public ICollection<BoxSubType> BoxSubTypes { get; set; } = new List<BoxSubType>();

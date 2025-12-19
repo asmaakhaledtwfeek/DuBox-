@@ -59,12 +59,33 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             if (existCheckpoint != null)
             {
                 var existCheckpointId = existCheckpoint.WIRId;
+                var oldStatus = existCheckpoint.Status.ToString();
+                var oldWIRName = existCheckpoint.WIRName ?? "N/A";
+                var oldWIRDescription = existCheckpoint.WIRDescription ?? "N/A";
+                
                 existCheckpoint = request.Adapt<WIRCheckpoint>();
                 existCheckpoint.WIRId = existCheckpointId;
                 existCheckpoint.RequestedBy = currentUserName;
                 existCheckpoint.BoxId = boxActicity.BoxId;
                 existCheckpoint.WIRCode = request.WIRNumber;
+                existCheckpoint.CreatedBy = currentUserId;
                 _unitOfWork.Repository<WIRCheckpoint>().Update(existCheckpoint);
+                
+                // Create audit log for update
+                var auditLog = new AuditLog
+                {
+                    TableName = nameof(WIRCheckpoint),
+                    RecordId = existCheckpoint.WIRId,
+                    Action = "UPDATE",
+                    OldValues = $"Status: {oldStatus}, WIRName: {oldWIRName}, WIRDescription: {oldWIRDescription}",
+                    NewValues = $"Status: {existCheckpoint.Status}, WIRName: {existCheckpoint.WIRName ?? "N/A"}, WIRDescription: {existCheckpoint.WIRDescription ?? "N/A"}",
+                    ChangedBy = currentUserId,
+                    ChangedDate = DateTime.UtcNow,
+                    Description = $"WIR Checkpoint {request.WIRNumber} updated."
+                };
+                await _unitOfWork.Repository<AuditLog>().AddAsync(auditLog, cancellationToken);
+                
+                await _unitOfWork.CompleteAsync(cancellationToken);
                 var existDto = existCheckpoint.Adapt<CreateWIRCheckpointDto>();
                 existDto.WIRNumber = existCheckpoint.WIRCode;
                 return Result.Success(existDto);
@@ -76,9 +97,26 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             checkpoint.CreatedDate = DateTime.UtcNow;
             checkpoint.RequestedDate = DateTime.UtcNow;
             checkpoint.RequestedBy = currentUserName;
+            checkpoint.CreatedBy = currentUserId;
             await _unitOfWork.Repository<WIRCheckpoint>().AddAsync(checkpoint);
 
             await _unitOfWork.CompleteAsync(cancellationToken);
+            
+            // Create audit log for creation
+            var createAuditLog = new AuditLog
+            {
+                TableName = nameof(WIRCheckpoint),
+                RecordId = checkpoint.WIRId,
+                Action = "INSERT",
+                OldValues = null,
+                NewValues = $"WIRCode: {checkpoint.WIRCode}, Status: {checkpoint.Status}, WIRName: {checkpoint.WIRName ?? "N/A"}, WIRDescription: {checkpoint.WIRDescription ?? "N/A"}",
+                ChangedBy = currentUserId,
+                ChangedDate = DateTime.UtcNow,
+                Description = $"WIR Checkpoint {checkpoint.WIRCode} created for Box {box.BoxTag ?? box.BoxName}."
+            };
+            await _unitOfWork.Repository<AuditLog>().AddAsync(createAuditLog, cancellationToken);
+            await _unitOfWork.CompleteAsync(cancellationToken);
+            
             var dto = checkpoint.Adapt<CreateWIRCheckpointDto>();
             dto.WIRNumber = checkpoint.WIRCode;
             return Result.Success(dto);

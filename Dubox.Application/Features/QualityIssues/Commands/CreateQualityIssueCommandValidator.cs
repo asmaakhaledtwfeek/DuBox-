@@ -19,9 +19,6 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                 .NotEmpty().WithMessage("Issue description is required.")
                 .MaximumLength(2000).WithMessage("Issue description cannot exceed 2000 characters.");
 
-            RuleFor(x => x.AssignedTo)
-                .MaximumLength(200).WithMessage("Assigned to field cannot exceed 200 characters.")
-                .When(x => !string.IsNullOrWhiteSpace(x.AssignedTo));
 
             RuleFor(x => x.DueDate)
                 .GreaterThanOrEqualTo(DateTime.Today)

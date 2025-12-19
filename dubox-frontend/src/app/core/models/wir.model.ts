@@ -252,6 +252,7 @@ export interface QualityIssueItem {
   severity: SeverityType;
   issueDescription: string;
   assignedTo?: string;
+  assignedTeam?: string; // Team name from backend
   dueDate?: string | Date;
   photoPath?: string;
   reportedBy?: string;
@@ -292,6 +293,7 @@ export interface QualityIssueDetails extends QualityIssueItem {
   overdueDays?: number;
   images?: QualityIssueImage[];
   projectName?:string;
+  assignedTeamName?: string;
 }
 
 export interface PaginatedQualityIssuesResponse {

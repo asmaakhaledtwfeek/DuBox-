@@ -13,6 +13,8 @@ namespace Dubox.Application.Specifications
             // AddInclude(nameof(Box.BoxActivities));
             // AddInclude(nameof(Box.ProgressUpdates));
             AddInclude(nameof(Box.CurrentLocation));
+            AddInclude(nameof(Box.BoxType));
+            AddInclude(nameof(Box.BoxSubType));
         }
     }
 }

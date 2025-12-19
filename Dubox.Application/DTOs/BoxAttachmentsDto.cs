@@ -17,6 +17,7 @@ public class BoxAttachmentDto
     public long? FileSize { get; set; }
     public int Sequence { get; set; }
     public DateTime CreatedDate { get; set; }
+    public Guid? CreatedBy { get; set; }
     
     // Reference information
     public Guid ReferenceId { get; set; } // WIRId, ProgressUpdateId, or IssueId

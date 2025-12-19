@@ -12,6 +12,9 @@ public record BoxDto
     public string? SerialNumber { get; init; }
     public string? BoxName { get; init; }
     public string BoxType { get; init; } = string.Empty;
+    public int? BoxTypeId { get; init; }
+    public int? BoxSubTypeId { get; init; }
+    public string? BoxSubTypeName { get; init; }
     public string? Floor { get; init; }
     public string? BuildingNumber { get; init; }
     public string? BoxLetter { get; init; }

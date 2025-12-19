@@ -670,7 +670,7 @@
                         {{ issue.severity || '—' }}
                       </span>
                     </td>
-                    <td class="assigned-cell">{{ issue.assignedTo || '—' }}</td>
+                    <td class="assigned-cell">{{ issue.assignedTeamName || '—' }}</td>
                     <td class="due-date-cell">{{ formatIssueDate(issue.dueDate) }}</td>
                     <td class="reported-cell">{{ issue.reportedBy || '—' }}</td>
                     <td class="issue-date-cell">{{ formatIssueDate(issue.issueDate) }}</td>
@@ -690,6 +690,21 @@
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
                             <circle cx="12" cy="12" r="3"/>
+                          </svg>
+                        </button>
+                        <button 
+                          class="action-btn assign" 
+                          title="Assign to Team" 
+                          aria-label="Assign to Team"
+                          (click)="openAssignModal(issue); $event.stopPropagation()"
+                          *ngIf="canUpdateQualityIssueStatus"
+                          type="button"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                            <circle cx="9" cy="7" r="4"/>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                           </svg>
                         </button>
                         <button 
@@ -938,127 +953,74 @@
           </div>
         </div>
 
-        <div class="details-modal" *ngIf="isDetailsModalOpen && selectedIssueDetails">
-          <div class="modal-header">
-            <div>
-              <h3>Quality Issue Details</h3>
-              <p class="modal-subtitle">{{ selectedIssueDetails.issueType || 'Issue' }} • {{ selectedIssueDetails.severity || '—' }}</p>
+        <!-- Assign to Team Modal -->
+        <div class="status-modal-backdrop" *ngIf="isAssignModalOpen" (click)="closeAssignModal()">
+          <div class="status-modal" (click)="$event.stopPropagation()">
+            <div class="modal-header" *ngIf="selectedIssueForAssign">
+              <div>
+                <h3>Assign to Team</h3>
+                <p class="modal-subtitle">{{ selectedIssueForAssign.issueType || 'Issue' }} • {{ selectedIssueForAssign.severity || '—' }}</p>
+              </div>
+              <button class="icon-button" (click)="closeAssignModal()" [disabled]="assignLoading" aria-label="Close modal">
+                &times;
+              </button>
             </div>
-            <button class="icon-button" (click)="closeIssueDetails()">&times;</button>
-          </div>
 
-          <div class="details-grid">
-            <div class="details-row">
-              <span class="label">Status</span>
-              <span class="value">
-                <span class="status-pill" [ngClass]="getQualityIssueStatusClass(selectedIssueDetails.status)">
-                  {{ getQualityIssueStatusLabel(selectedIssueDetails.status) }}
-                </span>
-              </span>
-            </div>
-            <div class="details-row">
-              <span class="label">Reported By</span>
-              <span class="value">{{ selectedIssueDetails.reportedBy || '—' }}</span>
-            </div>
-            <div class="details-row">
-              <span class="label">Issue Date</span>
-              <span class="value">{{ formatIssueDate(selectedIssueDetails.issueDate) }}</span>
-            </div>
-            <div class="details-row">
-              <span class="label">Assigned To</span>
-              <span class="value">{{ selectedIssueDetails.assignedTo || '—' }}</span>
-            </div>
-            <div class="details-row">
-              <span class="label">Due Date</span>
-              <span class="value">{{ formatIssueDate(selectedIssueDetails.dueDate) }}</span>
-            </div>
-            <div class="details-row" *ngIf="selectedIssueDetails.isOverdue">
-              <span class="label text-danger">Overdue</span>
-              <span class="value text-danger">{{ selectedIssueDetails.overdueDays || 0 }} days</span>
-            </div>
-            <div class="details-row">
-              <span class="label">Description</span>
-              <span class="value multiline">{{ selectedIssueDetails.issueDescription || '—' }}</span>
-            </div>
-            <div class="details-row">
-              <span class="label">Resolution Notes</span>
-              <span class="value multiline">{{ selectedIssueDetails.resolutionDescription || '—' }}</span>
-            </div>
-            <div class="details-row">
-              <span class="label">Resolution Date</span>
-              <span class="value">{{ formatIssueDate(selectedIssueDetails.resolutionDate) }}</span>
-            </div>
-            <div class="details-row" *ngIf="getQualityIssueImageUrls(selectedIssueDetails).length > 0">
-              <span class="label">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                  <circle cx="8.5" cy="8.5" r="1.5"/>
-                  <polyline points="21 15 16 10 5 21"/>
-                </svg>
-                Images ({{ getQualityIssueImageUrls(selectedIssueDetails).length }})
-              </span>
-              <span class="value">
-                <div class="quality-issue-images-gallery">
-                  <div class="image-item" *ngFor="let imageUrl of getQualityIssueImageUrls(selectedIssueDetails); let i = index">
-                    <div class="image-wrapper">
-                      <img [src]="imageUrl" 
-                           [alt]="'Quality issue image ' + (i + 1)"
-                           class="image-thumbnail"
-                           (click)="openImageInNewTab(imageUrl)"
-                           (error)="onImageError($event)"
-                           loading="lazy" />
-                      <div class="image-overlay">
-                        <button class="image-view-btn" (click)="openImageInNewTab(imageUrl); $event.stopPropagation()" title="View full size">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                            <circle cx="12" cy="12" r="3"/>
-                          </svg>
-                        </button>
-                        <button class="image-download-btn" (click)="downloadImage(imageUrl); $event.stopPropagation()" title="Download image">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                            <polyline points="7 10 12 15 17 10"/>
-                            <line x1="12" y1="15" x2="12" y2="3"/>
-                          </svg>
-                        </button>
-                      </div>
-                      <div class="image-number">{{ i + 1 }}</div>
-                    </div>
-                  </div>
-                </div>
-              </span>
-            </div>
-            <div class="details-row" *ngIf="getQualityIssueImageUrls(selectedIssueDetails).length === 0">
-              <span class="label">Images</span>
-              <span class="value">—</span>
-            </div>
-            <div class="details-row">
-              <span class="label">Inspector</span>
-              <span class="value">{{ selectedIssueDetails.inspectorName || '—' }}</span>
-            </div>
-            <div class="details-row">
-              <span class="label">Box</span>
-              <span class="value">{{ selectedIssueDetails.boxName || selectedIssueDetails.boxTag || '—' }}</span>
-            </div>
-            <div class="details-row">
-              <span class="label">WIR</span>
-              <span class="value">
-                {{ getQualityIssueWir(selectedIssueDetails) }}
-                <small *ngIf="selectedIssueDetails.wirStatus">
-                  • {{ getWIRCheckpointStatusLabel(selectedIssueDetails.wirStatus) }}
+            <div class="modal-body" *ngIf="selectedIssueForAssign">
+              <div class="form-group">
+                <label class="modal-label">Assign to Team</label>
+                <select 
+                  class="modal-input" 
+                  [(ngModel)]="selectedTeamId"
+                  [disabled]="assignLoading || loadingTeams"
+                >
+                  <option [value]="null">Unassign (No Team)</option>
+                  <option *ngFor="let team of availableTeams" [value]="team.teamId">
+                    {{ team.teamName }} ({{ team.teamCode }})
+                  </option>
+                </select>
+                <div class="loading-text" *ngIf="loadingTeams">Loading teams...</div>
+                <small class="helper-text" *ngIf="!loadingTeams && availableTeams.length === 0">
+                  No teams available. Please contact your administrator.
                 </small>
-              </span>
-            </div>
-            <div class="details-row">
-              <span class="label">WIR Requested</span>
-              <span class="value">{{ formatIssueDate(selectedIssueDetails.wirRequestedDate) }}</span>
-            </div>
-          </div>
+              </div>
 
-          <div class="modal-actions single">
-            <button class="btn btn-secondary" (click)="closeIssueDetails()">Close</button>
+              <div class="current-assignment" *ngIf="selectedIssueForAssign.assignedTeamName">
+                <p class="info-text">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="16" x2="12" y2="12"/>
+                    <line x1="12" y1="8" x2="12.01" y2="8"/>
+                  </svg>
+                  Currently assigned to: <strong>{{ selectedIssueForAssign.assignedTeamName }}</strong>
+                </p>
+              </div>
+
+              <p class="modal-error" *ngIf="assignError">{{ assignError }}</p>
+            </div>
+
+            <div class="modal-actions">
+              <button class="btn btn-secondary" (click)="closeAssignModal()" [disabled]="assignLoading">
+                Cancel
+              </button>
+              <button 
+                class="btn btn-primary" 
+                (click)="assignIssueToTeam()" 
+                [disabled]="assignLoading || loadingTeams"
+              >
+                <span *ngIf="assignLoading">Assigning...</span>
+                <span *ngIf="!assignLoading">{{ selectedTeamId ? 'Assign' : 'Unassign' }}</span>
+              </button>
+            </div>
           </div>
         </div>
+
+        <app-quality-issue-details-modal
+          [issue]="selectedIssueDetails"
+          [wirCheckpoints]="wirCheckpoints"
+          [isOpen]="isDetailsModalOpen"
+          (close)="closeIssueDetails()"
+        ></app-quality-issue-details-modal>
         </div>
 
         <!-- Create Quality Issue Modal -->
@@ -1104,14 +1066,21 @@
 
               <!-- Assigned To -->
               <label class="modal-label" for="createAssignedTo">Assigned To</label>
-              <input
+              <select
                 id="createAssignedTo"
-                type="text"
                 class="modal-input"
-                placeholder="Person responsible for resolving this issue"
                 [(ngModel)]="newQualityIssueForm.assignedTo"
                 name="createAssignedTo"
-              />
+                [disabled]="loadingTeams || createQualityIssueLoading"
+              >
+                <option [value]="''">Select Team (Optional)</option>
+                <option *ngFor="let team of availableTeams" [value]="team.teamId">
+                  {{ team.teamName }} ({{ team.teamCode }})
+                </option>
+              </select>
+              <div *ngIf="loadingTeams" class="loading-text" style="font-size: 12px; color: #64748b; margin-top: 4px;">
+                Loading teams...
+              </div>
 
               <!-- Due Date -->
               <label class="modal-label" for="createDueDate">Due Date</label>
@@ -1672,7 +1641,7 @@
                   <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
                   <polyline points="13 2 13 9 20 9"/>
                 </svg>
-                File Images
+                Files
                 <span class="count-badge">{{ getFileTypeImages().length }}</span>
               </button>
               <button 
@@ -1684,7 +1653,7 @@
                   <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
                   <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
                 </svg>
-                URL Images
+                URLs
                 <span class="count-badge">{{ getUrlTypeImages().length }}</span>
               </button>
             </div>
@@ -1703,68 +1672,75 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
             </svg>
-            <h3>No Images</h3>
-            <p>No images attached to this box</p>
+            <h3>No URLs</h3>
+            <p>No URLs attached to this box</p>
           </div>
 
-          <!-- File Images Section -->
+          <!-- File Drawings Section (PDF/DWG files) -->
           <div *ngIf="!loadingBoxDrawings && !boxDrawingsError && activeDrawingTab === 'file' && getFileTypeImages().length > 0" class="progress-images-section">
             <div class="section-header">
               <h3 class="section-title">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                  <circle cx="8.5" cy="8.5" r="1.5"/>
-                  <polyline points="21 15 16 10 5 21"/>
+                  <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                  <polyline points="13 2 13 9 20 9"/>
                 </svg>
-                Uploaded File Images
+                Uploaded Files
               </h3>
-              <span class="section-count">{{ getFileTypeImages().length }} image(s)</span>
+              <span class="section-count">{{ getFileTypeImages().length }} file(s)</span>
             </div>
-              <div class="progress-images-gallery">
-                <div class="image-gallery-item" *ngFor="let image of getFileTypeImages(); let i = index">
-                  <div class="image-wrapper" (click)="openImage(image)">
-                  <img 
-                    *ngIf="image.displayUrl || image.imageUrl"
-                    [src]="image.displayUrl || image.imageUrl" 
-                    [alt]="'File image ' + (i + 1)"
-                    class="gallery-image"
-                    (error)="onImageError($event)"
-                    loading="lazy"
-                  />
-                  <div *ngIf="!image.displayUrl && !image.imageUrl" class="image-placeholder">
-                    <div>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                        <circle cx="8.5" cy="8.5" r="1.5"/>
-                        <polyline points="21 15 16 10 5 21"/>
-                      </svg>
-                      <p>No URL</p>
-                    </div>
-                  </div>
-                  <div class="image-overlay">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                      <circle cx="12" cy="12" r="3"/>
+            <div class="file-drawings-gallery">
+              <div class="file-drawing-item" *ngFor="let drawing of getFileTypeImages(); let i = index">
+                <div class="file-drawing-card" (click)="openFileDrawing(drawing)">
+                  <div class="file-icon-wrapper">
+                    <svg *ngIf="drawing.fileExtension?.toLowerCase() === '.pdf'" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                      <polyline points="13 2 13 9 20 9"/>
+                      <line x1="13" y1="2" x2="13" y2="9" x2="20" y2="9"/>
+                    </svg>
+                    <svg *ngIf="drawing.fileExtension?.toLowerCase() !== '.pdf'" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                      <polyline points="13 2 13 9 20 9"/>
                     </svg>
                   </div>
-                  <div class="image-number-badge">{{ i + 1 }}</div>
-                </div>
-                <div class="image-info" *ngIf="image.activityName || image.updateDate">
-                  <p class="image-activity" *ngIf="image.activityName">{{ image.activityName }}</p>
-                  <p class="image-date" *ngIf="image.updateDate">{{ image.updateDate | date: 'MMM d, yyyy' }}</p>
+                  <div class="file-info">
+                    <h4 class="file-name" [title]="drawing.fileName || 'Untitled'">
+                      {{ drawing.fileName || 'Untitled' }}
+                    </h4>
+                    <p class="file-meta">
+                      <span class="file-extension">{{ drawing.fileExtension?.toUpperCase() || 'FILE' }}</span>
+                      <span class="file-size" *ngIf="drawing.fileSize">{{ formatFileSize(drawing.fileSize) }}</span>
+                    </p>
+                    <p class="file-date" *ngIf="drawing.updateDate">{{ drawing.updateDate | date: 'MMM d, yyyy' }}</p>
+                    <p class="file-creator" *ngIf="drawing.createdByName">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                      </svg>
+                      {{ drawing.createdByName }}
+                    </p>
+                  </div>
+                  <div class="file-actions">
+                    <button class="btn-download" (click)="downloadFileDrawing(drawing); $event.stopPropagation()" title="Download">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- File Images Empty State -->
+          <!-- File Drawings Empty State -->
           <div class="empty-state" *ngIf="!loadingBoxDrawings && !boxDrawingsError && activeDrawingTab === 'file' && getFileTypeImages().length === 0">
             <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
               <polyline points="13 2 13 9 20 9"/>
             </svg>
-            <h3>No File Images</h3>
-            <p>No uploaded file images found for this box</p>
+            <h3>No File Drawings</h3>
+            <p>No uploaded files (PDF/DWG) found for this box</p>
           </div>
 
           <!-- URL Images Section -->
@@ -1775,41 +1751,49 @@
                   <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
                   <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
                 </svg>
-                URL-based Images
+                URL Links
               </h3>
-              <span class="section-count">{{ getUrlTypeImages().length }} image(s)</span>
+              <span class="section-count">{{ getUrlTypeImages().length }} link(s)</span>
             </div>
-            <div class="progress-images-gallery">
-              <div class="image-gallery-item" *ngFor="let image of getUrlTypeImages(); let i = index">
-                <div class="image-wrapper" (click)="openImage(image)">
-                  <img 
-                    *ngIf="image.displayUrl || image.imageUrl"
-                    [src]="image.displayUrl || image.imageUrl" 
-                    [alt]="'URL image ' + (i + 1)"
-                    class="gallery-image"
-                    (error)="onImageError($event)"
-                    loading="lazy"
-                  />
-                  <div *ngIf="!image.displayUrl && !image.imageUrl" class="image-placeholder">
-                    <div>
-                      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
-                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                      </svg>
-                      <p>No URL</p>
-                    </div>
-                  </div>
-                  <div class="image-overlay">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                      <circle cx="12" cy="12" r="3"/>
+            <div class="url-links-gallery">
+              <div class="url-link-item" *ngFor="let urlItem of getUrlTypeImages(); let i = index">
+                <div class="url-link-card" (click)="openUrl(urlItem.displayUrl || urlItem.imageUrl || urlItem.originalUrl || '')">
+                  <div class="url-icon-wrapper">
+                    <svg *ngIf="isImageUrl(urlItem.displayUrl || urlItem.imageUrl || '')" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    <svg *ngIf="!isImageUrl(urlItem.displayUrl || urlItem.imageUrl || '')" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
                     </svg>
                   </div>
-                  <div class="image-number-badge">{{ i + 1 }}</div>
-                </div>
-                <div class="image-info" *ngIf="image.activityName || image.updateDate">
-                  <p class="image-activity" *ngIf="image.activityName">{{ image.activityName }}</p>
-                  <p class="image-date" *ngIf="image.updateDate">{{ image.updateDate | date: 'MMM d, yyyy' }}</p>
+                  <div class="url-info">
+                    <h4 class="url-title" [title]="urlItem.displayUrl || urlItem.imageUrl || urlItem.originalUrl || 'URL'">
+                      {{ (urlItem.displayUrl || urlItem.imageUrl || urlItem.originalUrl || 'URL').substring(0, 60) }}{{ (urlItem.displayUrl || urlItem.imageUrl || urlItem.originalUrl || '').length > 60 ? '...' : '' }}
+                    </h4>
+                    <p class="url-link" [title]="urlItem.displayUrl || urlItem.imageUrl || urlItem.originalUrl || ''">
+                      {{ urlItem.displayUrl || urlItem.imageUrl || urlItem.originalUrl || 'No URL' }}
+                    </p>
+                    <p class="url-date" *ngIf="urlItem.updateDate">{{ urlItem.updateDate | date: 'MMM d, yyyy' }}</p>
+                    <p class="url-creator" *ngIf="urlItem.createdByName">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                      </svg>
+                      {{ urlItem.createdByName }}
+                    </p>
+                  </div>
+                  <div class="url-actions">
+                    <button class="btn-open-url" (click)="openUrl(urlItem.displayUrl || urlItem.imageUrl || urlItem.originalUrl || ''); $event.stopPropagation()" title="Open URL">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                        <polyline points="15 3 21 3 21 9"/>
+                        <line x1="10" y1="14" x2="21" y2="3"/>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1821,8 +1805,8 @@
               <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
               <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
             </svg>
-            <h3>No URL Images</h3>
-            <p>No URL-based images found for this box</p>
+            <h3>No URLs</h3>
+            <p>No URL-based drawings found for this box</p>
           </div>
         </div>
 
@@ -1941,6 +1925,13 @@
                     <p class="image-name">{{ image.originalName || 'Image ' + (i + 1) }}</p>
                     <p class="image-ref">{{ image.referenceName || 'WIR' }}</p>
                     <p class="image-date">{{ image.createdDate | date: 'MMM d, yyyy' }}</p>
+                    <p class="image-creator" *ngIf="image.createdByName">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                      </svg>
+                      {{ image.createdByName }}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1978,6 +1969,13 @@
                     <p class="image-name">{{ image.originalName || 'Image ' + (i + 1) }}</p>
                     <p class="image-ref">{{ image.referenceName || 'Progress Update' }}</p>
                     <p class="image-date">{{ image.createdDate | date: 'MMM d, yyyy' }}</p>
+                    <p class="image-creator" *ngIf="image.createdByName">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                      </svg>
+                      {{ image.createdByName }}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -2017,6 +2015,13 @@
                     <p class="image-name">{{ image.originalName || 'Image ' + (i + 1) }}</p>
                     <p class="image-ref">{{ image.referenceName || 'Quality Issue' }}</p>
                     <p class="image-date">{{ image.createdDate | date: 'MMM d, yyyy' }}</p>
+                    <p class="image-creator" *ngIf="image.createdByName">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                        <circle cx="12" cy="7" r="4"/>
+                      </svg>
+                      {{ image.createdByName }}
+                    </p>
                   </div>
                 </div>
               </div>

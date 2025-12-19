@@ -33,10 +33,9 @@ namespace Dubox.Domain.Entities
 
         [MaxLength(200)]
         public string? ReportedBy { get; set; }
-
-        [MaxLength(200)]
-        public string? AssignedTo { get; set; }
-
+        [ForeignKey(nameof(AssignedToTeam))]
+        public Guid? AssignedTo { get; set; }
+        
         public DateTime? DueDate { get; set; }
 
         public QualityIssueStatusEnum Status { get; set; } = QualityIssueStatusEnum.Open; // Open, In Progress, Resolved, Closed
@@ -45,8 +44,13 @@ namespace Dubox.Domain.Entities
 
         public string? ResolutionDescription { get; set; }
 
+        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+
+        public Guid? CreatedBy { get; set; }
+        public Guid? UpdatedBy { get; set; }
         // Navigation properties
         public virtual Box Box { get; set; } = null!;
+        public virtual Team? AssignedToTeam { get; set; } 
         public virtual WIRCheckpoint? WIRCheckpoint { get; set; }
 
         public List<QualityIssueImage> Images { get; set; } = new();

@@ -152,7 +152,20 @@ export class BoxesListComponent implements OnInit, OnDestroy {
       next: (boxes) => {
         // Filter boxes by selected type if a type is selected
         if (this.selectedBoxType) {
-          this.boxes = boxes.filter(box => box.type === this.selectedBoxType);
+          // Compare using boxTypeName or type (both should contain the box type name)
+          this.boxes = boxes.filter(box => 
+            box.boxTypeName === this.selectedBoxType || 
+            box.type === this.selectedBoxType
+          );
+          console.log(`🔍 Filtering boxes by type "${this.selectedBoxType}":`, {
+            totalBoxes: boxes.length,
+            filteredBoxes: this.boxes.length,
+            sampleBox: boxes[0] ? {
+              boxTypeName: boxes[0].boxTypeName,
+              type: boxes[0].type,
+              boxTypeId: boxes[0].boxTypeId
+            } : null
+          });
         } else {
           this.boxes = boxes;
         }

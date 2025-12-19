@@ -94,8 +94,8 @@ public class Box
     public Guid? ModifiedBy { get; set; }
     public int SequentialNumber { get; set; } = 1; // For generating serial numbers
     // Navigation properties
-    public BoxType BoxType { get; set; } = new();
-    public BoxSubType BoxSubType { get; set; } = new();
+    public virtual BoxType BoxType { get; set; } = null!;
+    public virtual BoxSubType BoxSubType { get; set; } = null!;
     public ICollection<BoxAsset> BoxAssets { get; set; } = new List<BoxAsset>();
     public ICollection<BoxActivity> BoxActivities { get; set; } = new List<BoxActivity>();
     public ICollection<ProgressUpdate> ProgressUpdates { get; set; } = new List<ProgressUpdate>();

@@ -4,6 +4,7 @@ using Dubox.Infrastructure.ApplicationContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Dubox.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251219091820_addCreatedByToCheckpointAndQualityIssue")]
+    partial class addCreatedByToCheckpointAndQualityIssue
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -11416,8 +11419,9 @@ namespace Dubox.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("AssignedTo")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<string>("AssignedTo")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<Guid>("BoxId")
                         .HasColumnType("uniqueidentifier");
@@ -11456,15 +11460,10 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid?>("WIRId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("IssueId");
-
-                    b.HasIndex("AssignedTo");
 
                     b.HasIndex("BoxId");
 
@@ -14690,10 +14689,6 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.QualityIssue", b =>
                 {
-                    b.HasOne("Dubox.Domain.Entities.Team", "AssignedToTeam")
-                        .WithMany()
-                        .HasForeignKey("AssignedTo");
-
                     b.HasOne("Dubox.Domain.Entities.Box", "Box")
                         .WithMany()
                         .HasForeignKey("BoxId")
@@ -14703,8 +14698,6 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasOne("Dubox.Domain.Entities.WIRCheckpoint", "WIRCheckpoint")
                         .WithMany("QualityIssues")
                         .HasForeignKey("WIRId");
-
-                    b.Navigation("AssignedToTeam");
 
                     b.Navigation("Box");
 

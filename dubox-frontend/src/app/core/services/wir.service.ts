@@ -535,6 +535,23 @@ export class WIRService {
     );
   }
 
+  /**
+   * Assign a quality issue to a team
+   */
+  assignQualityIssueToTeam(issueId: string, teamId: string | null): Observable<QualityIssueDetails> {
+    const request = {
+      issueId: issueId,
+      teamId: teamId || null
+    };
+    
+    return this.apiService.put<QualityIssueDetails>(`qualityissues/${issueId}/assign`, request).pipe(
+      map((response: any) => {
+        const data = response?.data || response;
+        return this.transformQualityIssueDetails(data);
+      })
+    );
+  }
+
   updateQualityIssueStatus(
     issueId: string, 
     payload: UpdateQualityIssueStatusRequest,
@@ -692,6 +709,7 @@ export class WIRService {
           severity: issue.severity || issue.Severity || 'Minor',
           issueDescription: issue.issueDescription || issue.IssueDescription || '',
           assignedTo: issue.assignedTo || issue.AssignedTo,
+          assignedTeam: issue.assignedTeam || issue.AssignedTeam, // Team name from backend
           dueDate: issue.dueDate ? new Date(issue.dueDate) : undefined,
           photoPath: issue.photoPath || issue.PhotoPath,
           reportedBy: issue.reportedBy || issue.ReportedBy,
@@ -741,6 +759,7 @@ export class WIRService {
       issueDescription: issue.issueDescription || issue.IssueDescription,
       reportedBy: issue.reportedBy || issue.ReportedBy,
       assignedTo: issue.assignedTo || issue.AssignedTo,
+      assignedTeamName: issue.assignedTeamName || issue.AssignedTeamName,
       dueDate: issue.dueDate ? new Date(issue.dueDate) : undefined,
       photoPath: issue.photoPath || issue.PhotoPath,
       issueDate: issue.issueDate ? new Date(issue.issueDate) : undefined,

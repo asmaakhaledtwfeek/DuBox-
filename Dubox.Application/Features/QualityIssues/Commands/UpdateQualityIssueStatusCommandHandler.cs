@@ -50,8 +50,17 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                 return Result.Failure<QualityIssueDetailsDto>("Access denied. You do not have permission to modify this quality issue.");
             }
 
-            issue.Status = request.Status;
+            // Capture old values for audit log
+            var oldStatus = issue.Status.ToString();
+            var oldResolutionDescription = issue.ResolutionDescription ?? "N/A";
+            var oldResolutionDate = issue.ResolutionDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? "N/A";
 
+            var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId)
+                ? parsedUserId
+                : Guid.Empty;
+
+            issue.Status = request.Status;
+            issue.UpdatedBy = currentUserId;
             if (request.Status == QualityIssueStatusEnum.Resolved ||
                 request.Status == QualityIssueStatusEnum.Closed)
             {
@@ -83,6 +92,24 @@ namespace Dubox.Application.Features.QualityIssues.Commands
             issue = _unitOfWork.Repository<QualityIssue>().GetEntityWithSpec(new GetQualityIssueByIdSpecification(request.IssueId));
             if (issue == null)
                 return Result.Failure<QualityIssueDetailsDto>("Quality issue not found after update.");
+
+            // Create audit log for status update
+            var newResolutionDescription = issue.ResolutionDescription ?? "N/A";
+            var newResolutionDate = issue.ResolutionDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? "N/A";
+            
+            var auditLog = new AuditLog
+            {
+                TableName = nameof(QualityIssue),
+                RecordId = issue.IssueId,
+                Action = "UPDATE",
+                OldValues = $"Status: {oldStatus}, ResolutionDescription: {oldResolutionDescription}, ResolutionDate: {oldResolutionDate}",
+                NewValues = $"Status: {issue.Status}, ResolutionDescription: {newResolutionDescription}, ResolutionDate: {newResolutionDate}",
+                ChangedBy = currentUserId,
+                ChangedDate = DateTime.UtcNow,
+                Description = $"Quality Issue status updated from {oldStatus} to {issue.Status}."
+            };
+            await _unitOfWork.Repository<AuditLog>().AddAsync(auditLog, cancellationToken);
+            await _unitOfWork.CompleteAsync(cancellationToken);
 
             var dto = issue.Adapt<QualityIssueDetailsDto>();
             // Manually map images to ensure they're included

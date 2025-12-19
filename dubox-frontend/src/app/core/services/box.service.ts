@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, throwError, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { ApiService, PaginatedResponse } from './api.service';
-import { Box, BoxActivity, BoxDrawing, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview, BoxTypeStatsByProject, BoxDrawingsResponse, BoxDrawingImage, BoxAllAttachmentsResponse, BoxType, BoxSubType } from '../models/box.model';
+import { Box, BoxActivity, BoxDrawing, BoxDrawingDto, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview, BoxTypeStatsByProject, BoxDrawingsResponse, BoxDrawingImage, BoxAllAttachmentsResponse, BoxType, BoxSubType } from '../models/box.model';
 
 @Injectable({
   providedIn: 'root'
@@ -59,7 +59,7 @@ export class BoxService {
     // Map status from backend format to frontend format
     const rawStatus = backendBox.status || backendBox.boxStatus || backendBox.Status;
     const mappedStatus = this.mapStatus(rawStatus);
-    
+    console.log(backendBox);
     return {
       id: backendBox.boxId || backendBox.id,
       name: backendBox.boxName || backendBox.name,
@@ -67,7 +67,12 @@ export class BoxService {
       serialNumber: backendBox.serialNumber || backendBox.SerialNumber,
       projectId: backendBox.projectId,
       status: mappedStatus as any,
-      type: backendBox.boxType || backendBox.type,
+      type: backendBox.boxType || backendBox.type || backendBox.boxTypeName || '',
+      boxTypeId: backendBox.boxTypeId || backendBox.typeId || null,
+      boxTypeName: backendBox.boxType || backendBox.boxTypeName || backendBox.type || '',
+      boxSubTypeId: backendBox.boxSubTypeId || null,
+      boxSubTypeName: backendBox.boxSubTypeName || null,
+      subType: backendBox.boxSubTypeId || backendBox.boxSubTypeId,
       description: backendBox.description,
       floor: backendBox.floor,
       buildingNumber: backendBox.buildingNumber,
@@ -167,6 +172,7 @@ export class BoxService {
   getBox(id: string): Observable<Box> {
     return this.apiService.get<any>(`${this.endpoint}/${id}`).pipe(
       map(box => this.transformBox(box))
+      
     );
   }
 
@@ -342,6 +348,35 @@ export class BoxService {
    */
   getBoxDrawings(boxId: string): Observable<BoxDrawing[]> {
     return this.apiService.get<BoxDrawing[]>(`${this.endpoint}/${boxId}/attachments`);
+  }
+
+  /**
+   * Get box drawings from BoxDrawings endpoint (PDF/DWG files and URLs)
+   */
+  getBoxDrawingsFromEndpoint(boxId: string): Observable<BoxDrawingDto[]> {
+    return this.apiService.get<BoxDrawingDto[]>(`boxdrawings/box/${boxId}`).pipe(
+      map(drawings => {
+        // Ensure we have an array
+        const drawingsArray = Array.isArray(drawings) ? drawings : [];
+        // Transform backend DTO to match frontend expectations (handle both camelCase and PascalCase)
+        return drawingsArray.map((dto: any) => ({
+          boxDrawingId: dto.boxDrawingId || dto.BoxDrawingId,
+          boxId: dto.boxId || dto.BoxId,
+          drawingUrl: dto.drawingUrl || dto.DrawingUrl,
+          fileData: dto.fileData || dto.FileData,
+          originalFileName: dto.originalFileName || dto.OriginalFileName,
+          fileExtension: dto.fileExtension || dto.FileExtension,
+          fileType: (dto.fileType || dto.FileType || 'file') as 'file' | 'url',
+          fileSize: dto.fileSize || dto.FileSize,
+          createdDate: dto.createdDate || dto.CreatedDate ? new Date(dto.createdDate || dto.CreatedDate) : new Date(),
+          createdBy: dto.createdBy || dto.CreatedBy
+        } as BoxDrawingDto));
+      }),
+      catchError(err => {
+        console.error('❌ Error fetching box drawings:', err);
+        return throwError(() => err);
+      })
+    );
   }
 
   /**

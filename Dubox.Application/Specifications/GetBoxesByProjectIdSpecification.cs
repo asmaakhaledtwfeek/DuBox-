@@ -10,6 +10,7 @@ namespace Dubox.Application.Specifications
             AddCriteria(b => b.ProjectId == projectId);
             //AddInclude(nameof(Box.BoxActivities));
             AddInclude(nameof(Box.Project));
+            AddInclude(nameof(Box.BoxType));
             
             // Enable split query to avoid Cartesian explosion with BoxActivities collection
             EnableSplitQuery();

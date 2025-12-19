@@ -33,7 +33,8 @@ public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQu
             {
                 Image = img,
                 WIRId = wir.WIRId,
-                WIRCode = wir.WIRCode
+                WIRCode = wir.WIRCode,
+                CreatedBy = wir.CreatedBy
             }))
             .OrderByDescending(x => x.Image.CreatedDate)
             .ToListAsync(cancellationToken);
@@ -47,6 +48,7 @@ public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQu
             FileSize = x.Image.FileSize,
             Sequence = x.Image.Sequence,
             CreatedDate = x.Image.CreatedDate,
+            CreatedBy = x.CreatedBy, // Use WIRCheckpoint.CreatedBy
             ReferenceId = x.WIRId,
             ReferenceType = "WIRCheckpoint",
             ReferenceName = x.WIRCode
@@ -59,7 +61,8 @@ public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQu
             {
                 Image = img,
                 ProgressUpdateId = pu.ProgressUpdateId,
-                UpdateTitle = "Progress Update"
+                UpdateTitle = "Progress Update",
+                UpdatedBy = pu.UpdatedBy
             }))
             .OrderByDescending(x => x.Image.CreatedDate)
             .ToListAsync(cancellationToken);
@@ -73,6 +76,7 @@ public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQu
             FileSize = x.Image.FileSize,
             Sequence = x.Image.Sequence,
             CreatedDate = x.Image.CreatedDate,
+            CreatedBy = x.UpdatedBy, // Use ProgressUpdate.UpdatedBy as the creator
             ReferenceId = x.ProgressUpdateId,
             ReferenceType = "ProgressUpdate",
             ReferenceName = x.UpdateTitle
@@ -85,7 +89,8 @@ public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQu
             {
                 Image = img,
                 IssueId = qi.IssueId,
-                IssueDescription = qi.IssueDescription
+                IssueDescription = qi.IssueDescription,
+                CreatedBy = qi.CreatedBy
             }))
             .OrderByDescending(x => x.Image.CreatedDate)
             .ToListAsync(cancellationToken);
@@ -99,6 +104,7 @@ public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQu
             FileSize = x.Image.FileSize,
             Sequence = x.Image.Sequence,
             CreatedDate = x.Image.CreatedDate,
+            CreatedBy = x.CreatedBy, // Use QualityIssue.CreatedBy
             ReferenceId = x.IssueId,
             ReferenceType = "QualityIssue",
             ReferenceName = x.IssueDescription

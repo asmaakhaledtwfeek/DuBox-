@@ -6,6 +6,7 @@ export interface Box {
   projectId: string;
   status: BoxStatus;
   type?: string;
+  subType?:string;
   boxTypeId?: number;
   boxTypeName?: string;
   boxSubTypeId?: number;
@@ -126,6 +127,19 @@ export interface BoxDrawing {
   uploadedAt: Date;
 }
 
+export interface BoxDrawingDto {
+  boxDrawingId: string;
+  boxId: string;
+  drawingUrl?: string;
+  fileData?: string;
+  originalFileName?: string;
+  fileExtension?: string;
+  fileType?: string; // "url" or "file"
+  fileSize?: number;
+  createdDate: Date;
+  createdBy?: string;
+}
+
 export interface BoxDrawingImage {
   progressUpdateImageId: string;
   progressUpdateId: string;
@@ -161,6 +175,7 @@ export interface BoxAttachmentDto {
   fileSize?: number;
   sequence: number;
   createdDate: Date;
+  createdBy?: string;
   referenceId: string;
   referenceType: string;
   referenceName?: string;

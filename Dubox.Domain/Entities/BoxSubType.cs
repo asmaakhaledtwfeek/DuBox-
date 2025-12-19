@@ -20,6 +20,6 @@ public class BoxSubType
     public int BoxTypeId { get; set; }
 
     [ForeignKey(nameof(BoxTypeId))]
-    public BoxType BoxType { get; set; } = null!;
+    public virtual BoxType BoxType { get; set; } = null!;
 }
 

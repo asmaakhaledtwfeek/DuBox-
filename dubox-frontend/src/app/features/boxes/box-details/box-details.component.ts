@@ -6,6 +6,9 @@ import { FormsModule, ReactiveFormsModule, FormControl, Validators } from '@angu
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
+import { UserService } from '../../../core/services/user.service';
+import { TeamService } from '../../../core/services/team.service';
+import { Team } from '../../../core/models/team.model';
 import { Box, BoxStatus, BoxLog, getBoxStatusNumber } from '../../../core/models/box.model';
 import { WIRService } from '../../../core/services/wir.service';
 import { ProgressUpdate, ProgressUpdatesSearchParams } from '../../../core/models/progress-update.model';
@@ -17,6 +20,7 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
 import { ActivityTableComponent } from '../../activities/activity-table/activity-table.component';
 import { BoxLogDetailsModalComponent } from '../box-log-details-modal/box-log-details-modal.component';
 import { UploadDrawingModalComponent } from '../upload-drawing-modal/upload-drawing-modal.component';
+import { QualityIssueDetailsModalComponent } from '../../../shared/components/quality-issue-details-modal/quality-issue-details-modal.component';
 import { LocationService, FactoryLocation, BoxLocationHistory } from '../../../core/services/location.service';
 import { ApiService } from '../../../core/services/api.service';
 import { WirExportService, ProjectInfo } from '../../../core/services/wir-export.service';
@@ -26,10 +30,27 @@ import { debounceTime, distinctUntilChanged, map, skip, catchError } from 'rxjs/
 import { DiffUtil } from '../../../core/utils/diff.util';
 import { environment } from '../../../../environments/environment';
 
+type BoxDrawing = {
+  imageUrl: string; 
+  displayUrl: string; 
+  updateDate?: Date; 
+  activityName?: string; 
+  progressPercentage?: number; 
+  imageType: 'file' | 'url'; 
+  originalUrl?: string;
+  fileName?: string;
+  fileExtension?: string;
+  fileSize?: number;
+  fileData?: string;
+  boxDrawingId?: string;
+  createdBy?: string;
+  createdByName?: string;
+};
+
 @Component({
   selector: 'app-box-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, HttpClientModule, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent, HeaderComponent, BoxLogDetailsModalComponent, UploadDrawingModalComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, HttpClientModule, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent, HeaderComponent, BoxLogDetailsModalComponent, UploadDrawingModalComponent, QualityIssueDetailsModalComponent],
   providers: [LocationService],
   animations: [
     trigger('slideDown', [
@@ -92,6 +113,13 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     resolutionDescription: ''
   };
   isDetailsModalOpen = false;
+
+  // Assign modal state
+  isAssignModalOpen = false;
+  selectedIssueForAssign: QualityIssueDetails | null = null;
+  assignLoading = false;
+  assignError = '';
+  selectedTeamId: string | null = null;
   selectedIssueDetails: QualityIssueDetails | null = null;
   
   // Multiple images state
@@ -121,7 +149,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     issueType: IssueType;
     severity: SeverityType;
     issueDescription: string;
-    assignedTo: string;
+    assignedTo: string; // Team ID
     dueDate: string;
   } = {
     issueType: 'Defect',
@@ -130,6 +158,8 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     assignedTo: '',
     dueDate: ''
   };
+  availableTeams: Team[] = [];
+  loadingTeams = false;
   qualityIssueImages: Array<{
     id: string;
     type: 'file' | 'url' | 'camera';
@@ -154,9 +184,12 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   resolvingProgressImages = false;
   
   // Box drawings from dedicated endpoint
-  boxDrawings: Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType: 'file' | 'url'; originalUrl?: string }> = [];
+  boxDrawings: BoxDrawing[] = [];
   loadingBoxDrawings = false;
   boxDrawingsError = '';
+  
+  // User name cache for drawings
+  private userNamesCache = new Map<string, string>();
 
   // All box attachments (WIR, Progress Update, Quality Issue images)
   boxAttachments: any = null;
@@ -238,12 +271,14 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     private router: Router,
     private boxService: BoxService,
     private permissionService: PermissionService,
+    private userService: UserService,
     private wirService: WIRService,
     private progressUpdateService: ProgressUpdateService,
     @Inject(LocationService) private locationService: LocationService,
     private apiService: ApiService,
     private http: HttpClient,
-    private wirExportService: WirExportService
+    private wirExportService: WirExportService,
+    private teamService: TeamService
   ) {}
 
   ngOnInit(): void {
@@ -836,9 +871,29 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
     this.wirService.getQualityIssuesByBox(this.boxId).subscribe({
       next: (issues) => {
-        this.qualityIssues = issues || [];
+        // Filter out incomplete/invalid quality issues
+        // A valid quality issue should have at least an issueId and issueDate
+        const validIssues = (issues || []).filter(issue => {
+          // Must have a valid issueId
+          if (!issue.issueId) {
+            console.warn('⚠️ Quality issue missing issueId:', issue);
+            return false;
+          }
+          // Must have a valid issueDate
+          if (!issue.issueDate) {
+            console.warn('⚠️ Quality issue missing issueDate:', issue);
+            return false;
+          }
+          return true;
+        });
+        
+        this.qualityIssues = validIssues;
         this.qualityIssueCount = this.qualityIssues.length;
         this.qualityIssuesLoading = false;
+        
+        if (validIssues.length < (issues || []).length) {
+          console.warn(`⚠️ Filtered out ${(issues || []).length - validIssues.length} incomplete quality issue(s)`);
+        }
       },
       error: (err) => {
         console.error('❌ Error loading quality issues for box:', err);
@@ -856,6 +911,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   openCreateQualityIssueModal(): void {
     this.isCreateQualityIssueModalOpen = true;
     this.createQualityIssueError = '';
+    this.loadAvailableTeams();
     this.newQualityIssueForm = {
       issueType: 'Defect',
       severity: 'Major',
@@ -916,7 +972,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       issueType: this.newQualityIssueForm.issueType,
       severity: this.newQualityIssueForm.severity,
       issueDescription: this.newQualityIssueForm.issueDescription.trim(),
-      assignedTo: this.newQualityIssueForm.assignedTo?.trim() || undefined,
+      assignedTo: this.newQualityIssueForm.assignedTo?.trim() || undefined, // Team ID as string
       dueDate: this.newQualityIssueForm.dueDate || undefined,
       imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
       files: files.length > 0 ? files : undefined
@@ -974,6 +1030,23 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         
         this.createQualityIssueError = errorMessage;
         this.createQualityIssueLoading = false;
+      }
+    });
+  }
+
+  loadAvailableTeams(): void {
+    this.loadingTeams = true;
+    this.teamService.getTeams().subscribe({
+      next: (teams) => {
+        // Filter to only active teams that user has access to
+        // The backend already filters based on user permissions
+        this.availableTeams = teams.filter(team => team.isActive);
+        this.loadingTeams = false;
+      },
+      error: (err) => {
+        console.error('❌ Error loading teams:', err);
+        this.availableTeams = [];
+        this.loadingTeams = false;
       }
     });
   }
@@ -1494,7 +1567,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         issue.issueType || '—',
         issue.severity || '—',
         issue.issueDescription || '—',
-        issue.assignedTo || '—',
+        issue.assignedTeamName || '—',
         issue.reportedBy || '—',
         formatDateForExcel(issue.issueDate),
         formatDateForExcel(issue.dueDate),
@@ -1724,9 +1797,97 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  openStatusModal(issue: QualityIssueDetails): void {
+  openAssignModal(issue: QualityIssueDetails): void {
+    // Close other modals firstop
+    console.log('jjjjjjjjjjjjjjjjjjjjjjjjj;jjjjjjjjjjjjjjj');
     if (this.isDetailsModalOpen) {
       this.closeIssueDetails();
+    }
+    if (this.isStatusModalOpen) {
+      this.closeStatusModal();
+    }
+
+    // Check for issueId in multiple possible property names
+    const issueId = issue.issueId || (issue as any).IssueId || (issue as any).qualityIssueId || (issue as any).QualityIssueId;
+    
+    if (!issueId) {
+      alert('Cannot assign: Issue ID is missing. This issue may not be saved yet.');
+      return;
+    }
+
+    // Ensure issue has issueId for the assignment
+    if (!issue.issueId) {
+      (issue as any).issueId = issueId;
+    }
+
+    this.selectedIssueForAssign = issue;
+    this.selectedTeamId = null; // Reset selection
+    this.assignError = '';
+    this.isAssignModalOpen = true;
+    this.loadAvailableTeams();
+  }
+
+  closeAssignModal(): void {
+    this.isAssignModalOpen = false;
+    this.selectedIssueForAssign = null;
+    this.selectedTeamId = null;
+    this.assignError = '';
+  }
+
+  assignIssueToTeam(): void {
+    if (!this.selectedIssueForAssign || !this.selectedIssueForAssign.issueId) {
+      this.assignError = 'Invalid issue selected';
+      return;
+    }
+
+    this.assignLoading = true;
+    this.assignError = '';
+
+    const teamId = this.selectedTeamId && this.selectedTeamId.trim() !== '' ? this.selectedTeamId : null;
+
+    this.wirService.assignQualityIssueToTeam(this.selectedIssueForAssign.issueId, teamId).subscribe({
+      next: (updatedIssue) => {
+        this.assignLoading = false;
+        
+        // Update the issue in the list
+        const index = this.qualityIssues.findIndex(issue => issue.issueId === updatedIssue.issueId);
+        if (index !== -1) {
+          this.qualityIssues[index] = {
+            ...this.qualityIssues[index],
+            assignedTeamName: updatedIssue.assignedTeamName || undefined
+          };
+        }
+
+        // If details modal is open for this issue, update it
+        if (this.selectedIssueDetails && this.selectedIssueDetails.issueId === updatedIssue.issueId) {
+          this.selectedIssueDetails = updatedIssue;
+        }
+
+        this.closeAssignModal();
+        
+        // Show success message
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: {
+            message: teamId ? `Issue assigned to team successfully.` : `Issue unassigned successfully.`,
+            type: 'success'
+          }
+        }));
+      },
+      error: (err) => {
+        this.assignLoading = false;
+        this.assignError = err.error?.message || err.message || 'Failed to assign issue to team';
+        console.error('Error assigning issue to team:', err);
+      }
+    });
+  }
+
+  openStatusModal(issue: QualityIssueDetails): void {
+    // Close other modals first
+    if (this.isDetailsModalOpen) {
+      this.closeIssueDetails();
+    }
+    if (this.isAssignModalOpen) {
+      this.closeAssignModal();
     }
 
     this.selectedIssueForStatus = issue;
@@ -2175,22 +2336,218 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.activeDrawingTab = tab;
   }
 
-  // Get file-type images (uploaded images)
-  getFileTypeImages(): Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType: 'file' | 'url'; originalUrl?: string }> {
-    return this.boxDrawings.filter(img => img.imageType === 'file');
+  // Get file-type drawings (PDF/DWG files)
+  getFileTypeImages(): BoxDrawing[] {
+    return this.boxDrawings.filter(drawing => drawing.imageType === 'file');
   }
 
-  // Get URL-type images
-  getUrlTypeImages(): Array<{ imageUrl: string; displayUrl: string; updateDate?: Date; activityName?: string; progressPercentage?: number; imageType: 'file' | 'url'; originalUrl?: string }> {
-    return this.boxDrawings.filter(img => img.imageType === 'url');
+  // Get URL-type drawings (only actual image URLs, not PDF/DWG files)
+  getUrlTypeImages(): BoxDrawing[] {
+    return this.boxDrawings.filter(drawing => {
+      // Only show URLs that are not PDF/DWG files
+      if (drawing.imageType === 'url') {
+        const url = drawing.displayUrl || drawing.imageUrl || '';
+        const isFileUrl = /\.(pdf|dwg)(\?|$|#)/i.test(url);
+        return !isFileUrl; // Only return if it's NOT a file URL
+      }
+      return false;
+    });
+  }
+
+  // Download file drawing
+  downloadFileDrawing(drawing: any): void {
+    if (!drawing.displayUrl || !drawing.fileName) {
+      console.error('Cannot download: missing file data or filename');
+      return;
+    }
+
+    const link = document.createElement('a');
+    link.href = drawing.displayUrl;
+    link.download = drawing.fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // Open file drawing (for PDFs, open in new tab; for DWG, download)
+  openFileDrawing(drawing: any): void {
+    if (!drawing.displayUrl) {
+      console.error('Cannot open: missing file data');
+      return;
+    }
+
+    const extension = drawing.fileExtension?.toLowerCase() || '';
+    if (extension === '.pdf') {
+      // Open PDF in new tab
+      window.open(drawing.displayUrl, '_blank');
+    } else {
+      // For DWG and other files, download
+      this.downloadFileDrawing(drawing);
+    }
+  }
+
+  // Format file size
+  formatFileSize(bytes?: number): string {
+    if (!bytes) return 'Unknown size';
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  }
+
+  // Load user names for drawings
+  private loadUserNamesForDrawings(drawings: Array<{ createdBy?: string }>): void {
+    // Get unique user IDs
+    const userIds = new Set<string>();
+    drawings.forEach(drawing => {
+      if (drawing.createdBy && !this.userNamesCache.has(drawing.createdBy)) {
+        userIds.add(drawing.createdBy);
+      }
+    });
+
+    if (userIds.size === 0) {
+      // All user names are already cached or no users to load
+      this.loadingBoxDrawings = false;
+      return;
+    }
+
+    // Fetch user names for all unique user IDs
+    const userObservables = Array.from(userIds).map(userId => 
+      this.userService.getUserById(userId).pipe(
+        map((user: any) => ({ userId, userName: user.fullName || user.email || 'Unknown User' })),
+        catchError(() => of({ userId, userName: 'Unknown User' }))
+      )
+    );
+
+    forkJoin(userObservables).subscribe({
+      next: (results) => {
+        // Cache user names
+        results.forEach(result => {
+          this.userNamesCache.set(result.userId, result.userName);
+        });
+
+        // Update drawings with user names
+        this.boxDrawings = this.boxDrawings.map(drawing => ({
+          ...drawing,
+          createdByName: drawing.createdBy ? this.userNamesCache.get(drawing.createdBy) : undefined
+        }));
+
+        this.loadingBoxDrawings = false;
+        console.log('✅ User names loaded for drawings');
+      },
+      error: (err) => {
+        console.error('❌ Error loading user names:', err);
+        // Continue even if user names fail to load
+        this.loadingBoxDrawings = false;
+      }
+    });
+  }
+
+  // Load user names for attachments
+  private loadUserNamesForAttachments(attachments: any): void {
+    // Collect all unique user IDs from all attachment types
+    const userIds = new Set<string>();
+    
+    // WIR Checkpoint Images
+    if (attachments.wirCheckpointImages) {
+      attachments.wirCheckpointImages.forEach((img: any) => {
+        if (img.createdBy && !this.userNamesCache.has(img.createdBy)) {
+          userIds.add(img.createdBy);
+        }
+      });
+    }
+    
+    // Progress Update Images
+    if (attachments.progressUpdateImages) {
+      attachments.progressUpdateImages.forEach((img: any) => {
+        if (img.createdBy && !this.userNamesCache.has(img.createdBy)) {
+          userIds.add(img.createdBy);
+        }
+      });
+    }
+    
+    // Quality Issue Images
+    if (attachments.qualityIssueImages) {
+      attachments.qualityIssueImages.forEach((img: any) => {
+        if (img.createdBy && !this.userNamesCache.has(img.createdBy)) {
+          userIds.add(img.createdBy);
+        }
+      });
+    }
+
+    if (userIds.size === 0) {
+      // All user names are already cached or no users to load
+      this.updateAttachmentsWithUserNames(attachments);
+      this.loadingBoxAttachments = false;
+      return;
+    }
+
+    // Fetch user names for all unique user IDs in parallel
+    const userObservables = Array.from(userIds).map(userId => 
+      this.userService.getUserById(userId).pipe(
+        map((user: any) => ({ userId, userName: user.fullName || user.email || 'Unknown User' })),
+        catchError(() => of({ userId, userName: 'Unknown User' }))
+      )
+    );
+
+    forkJoin(userObservables).subscribe({
+      next: (results) => {
+        // Cache user names
+        results.forEach(result => {
+          this.userNamesCache.set(result.userId, result.userName);
+        });
+
+        // Update attachments with user names
+        this.updateAttachmentsWithUserNames(attachments);
+        this.loadingBoxAttachments = false;
+        console.log('✅ User names loaded for attachments');
+      },
+      error: (err) => {
+        console.error('❌ Error loading user names for attachments:', err);
+        // Continue even if user names fail to load
+        this.updateAttachmentsWithUserNames(attachments);
+        this.loadingBoxAttachments = false;
+      }
+    });
+  }
+
+  // Update attachments with user names
+  private updateAttachmentsWithUserNames(attachments: any): void {
+    // Update WIR Checkpoint Images
+    if (attachments.wirCheckpointImages) {
+      attachments.wirCheckpointImages = attachments.wirCheckpointImages.map((img: any) => ({
+        ...img,
+        createdByName: img.createdBy ? this.userNamesCache.get(img.createdBy) : undefined
+      }));
+    }
+    
+    // Update Progress Update Images
+    if (attachments.progressUpdateImages) {
+      attachments.progressUpdateImages = attachments.progressUpdateImages.map((img: any) => ({
+        ...img,
+        createdByName: img.createdBy ? this.userNamesCache.get(img.createdBy) : undefined
+      }));
+    }
+    
+    // Update Quality Issue Images
+    if (attachments.qualityIssueImages) {
+      attachments.qualityIssueImages = attachments.qualityIssueImages.map((img: any) => ({
+        ...img,
+        createdByName: img.createdBy ? this.userNamesCache.get(img.createdBy) : undefined
+      }));
+    }
+    
+    this.boxAttachments = attachments;
   }
 
   // Open image - for URL-type images, open original URL, otherwise open the display URL
   openImage(image: { imageUrl: string; displayUrl: string; imageType: 'file' | 'url'; originalUrl?: string }): void {
-    if (image.imageType === 'url' && image.originalUrl) {
-      // For URL-type images, open the original URL stored in originalName
-      console.log('🔗 Opening original URL:', image.originalUrl);
-      window.open(image.originalUrl, '_blank');
+    if (image.imageType === 'url') {
+      // For URL-type, open the URL (originalUrl or displayUrl)
+      const urlToOpen = image.originalUrl || image.displayUrl || image.imageUrl;
+      console.log('🔗 Opening URL:', urlToOpen);
+      if (urlToOpen) {
+        window.open(urlToOpen, '_blank');
+      }
     } else {
       // For file-type images, open the display URL
       console.log('🖼️ Opening image URL:', image.displayUrl || image.imageUrl);
@@ -2198,7 +2555,21 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Load box drawings from dedicated endpoint
+  // Open URL directly (for URL links)
+  openUrl(url: string): void {
+    if (url) {
+      window.open(url, '_blank');
+    }
+  }
+
+  // Check if URL is an image URL
+  isImageUrl(url: string): boolean {
+    if (!url) return false;
+    const imageExtensions = /\.(jpg|jpeg|png|gif|bmp|webp|svg)(\?|$|#)/i;
+    return imageExtensions.test(url);
+  }
+
+  // Load box drawings from dedicated BoxDrawings endpoint
   loadBoxDrawings(): void {
     if (!this.boxId) {
       return;
@@ -2209,90 +2580,89 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
     console.log('📦 Loading box drawings for box:', this.boxId);
 
-    this.boxService.getBoxDrawingImages(this.boxId).subscribe({
-      next: (response) => {
-        console.log('✅ Box drawings loaded in component:', response);
-        console.log('✅ Response.images:', response.images);
-        console.log('✅ Response.images length:', response.images?.length || 0);
-        console.log('✅ Response.totalCount:', response.totalCount);
+    this.boxService.getBoxDrawingsFromEndpoint(this.boxId).subscribe({
+      next: (drawings) => {
+        console.log('✅ Box drawings loaded from endpoint:', drawings);
         
-        // Process images and resolve URLs
-        type ResolvedImage = { 
+        // Process drawings and resolve URLs/data
+        type ResolvedDrawing = { 
           imageUrl: string; 
           displayUrl: string; 
           updateDate?: Date; 
           activityName?: string; 
           progressPercentage?: number; 
           imageType: 'file' | 'url';
-          originalUrl?: string; // Store original URL for URL-type images
+          originalUrl?: string;
+          fileName?: string;
+          fileExtension?: string;
+          fileSize?: number;
+          fileData?: string;
+          boxDrawingId?: string;
+          createdBy?: string;
         };
 
-        const imageRequests = response.images.map((img, index) => {
-          console.log(`🖼️ Processing image ${index + 1}:`, img);
-          const imageUrl = img.imageUrl || img.imageData || '';
+        const processedDrawings = drawings.map((drawing, index) => {
+          console.log(`📄 Processing drawing ${index + 1}:`, drawing);
           
-          // Convert relative URLs to absolute
-          let absoluteUrl = imageUrl;
-          if (imageUrl && (imageUrl.startsWith('/api/') || (imageUrl.startsWith('/') && !imageUrl.startsWith('http')))) {
-            const baseUrl = `${window.location.protocol}//${window.location.host}`;
-            absoluteUrl = baseUrl + imageUrl;
+          let fileType = (drawing.fileType || 'file').toLowerCase() as 'file' | 'url';
+          let imageUrl = '';
+          let displayUrl = '';
+          let fileName = drawing.originalFileName;
+          let fileExtension = drawing.fileExtension;
+          
+          // Check if URL points to a PDF/DWG file (not an image)
+          if (fileType === 'url' && drawing.drawingUrl) {
+            // Check if backend provided fileExtension (for URLs pointing to files)
+            const isFileExtension = drawing.fileExtension?.toLowerCase() === '.pdf' || 
+                                   drawing.fileExtension?.toLowerCase() === '.dwg';
+            
+            // Or extract file extension from URL
+            const urlExtension = drawing.drawingUrl.toLowerCase().match(/\.(pdf|dwg)(\?|$|#)/)?.[1];
+            
+            if (isFileExtension || urlExtension) {
+              // URL points to a PDF/DWG file, treat it as a file type
+              fileType = 'file';
+              fileExtension = drawing.fileExtension || `.${urlExtension}`;
+              // Extract filename from URL if not provided
+              if (!fileName) {
+                const urlParts = drawing.drawingUrl.split('/');
+                fileName = urlParts[urlParts.length - 1].split('?')[0].split('#')[0];
+              }
+            }
+            
+            imageUrl = drawing.drawingUrl;
+            displayUrl = drawing.drawingUrl;
+          } else if (fileType === 'file' && drawing.fileData) {
+            // File type drawing - convert base64 to data URL for download
+            const extension = drawing.fileExtension?.toLowerCase() || '';
+            const mimeType = extension === '.pdf' ? 'application/pdf' : 
+                            extension === '.dwg' ? 'application/acad' : 
+                            'application/octet-stream';
+            imageUrl = `data:${mimeType};base64,${drawing.fileData}`;
+            displayUrl = imageUrl; // For PDF/DWG, this will be used for download
           }
           
-          // For URL-type images, originalName contains the actual original URL
-          const originalUrl = img.imageType === 'url' ? img.originalName : undefined;
-          
-          return this.fetchImageAsObjectUrl(absoluteUrl, img.imageData).pipe(
-            map(displayUrl => ({
-              imageUrl: absoluteUrl,
-              displayUrl: displayUrl,
-              updateDate: img.updateDate,
-              activityName: img.activityName,
-              progressPercentage: img.progressPercentage,
-              imageType: img.imageType,
-              originalUrl: originalUrl // Store the original URL
-            } as ResolvedImage)),
-            catchError(err => {
-              console.error('❌ Failed to fetch image:', absoluteUrl, err);
-              return of({
-                imageUrl: absoluteUrl,
-                displayUrl: absoluteUrl,
-                updateDate: img.updateDate,
-                activityName: img.activityName,
-                progressPercentage: img.progressPercentage,
-                imageType: img.imageType,
-                originalUrl: originalUrl
-              } as ResolvedImage);
-            })
-          );
+          return {
+            imageUrl: imageUrl,
+            displayUrl: displayUrl,
+            updateDate: drawing.createdDate,
+            activityName: undefined, // Box drawings don't have activity names
+            progressPercentage: undefined, // Box drawings don't have progress
+            imageType: fileType, // This determines which section to show in
+            originalUrl: drawing.drawingUrl || undefined,
+            fileName: fileName,
+            fileExtension: fileExtension,
+            fileSize: drawing.fileSize,
+            fileData: drawing.fileData,
+            boxDrawingId: drawing.boxDrawingId,
+          createdBy: drawing.createdBy
+          } as ResolvedDrawing;
         });
 
-        if (imageRequests.length > 0) {
-          forkJoin(imageRequests).subscribe({
-            next: (resolvedImages: ResolvedImage[]) => {
-              this.boxDrawings = resolvedImages;
-              this.loadingBoxDrawings = false;
-              console.log('🎨 Resolved box drawings:', {
-                total: resolvedImages.length,
-                fileType: resolvedImages.filter((img: ResolvedImage) => img.imageType === 'file').length,
-                urlType: resolvedImages.filter((img: ResolvedImage) => img.imageType === 'url').length
-              });
-            },
-            error: (err) => {
-              console.error('❌ Error resolving images:', err);
-              this.boxDrawingsError = 'Failed to load some images';
-              this.loadingBoxDrawings = false;
-            }
-          });
-        } else {
-          this.boxDrawings = [];
-          this.loadingBoxDrawings = false;
-          console.warn('⚠️ No drawings found for this box. Response had no images.');
-          console.log('⚠️ Empty response details:', {
-            responseImages: response.images,
-            responseImagesLength: response.images?.length,
-            totalCount: response.totalCount
-          });
-        }
+        this.boxDrawings = processedDrawings;
+        
+        // Load user names for all drawings
+        this.loadUserNamesForDrawings(processedDrawings);
       },
       error: (err) => {
         console.error('❌ Error loading box drawings:', err);
@@ -2344,7 +2714,9 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       next: (response) => {
         console.log('✅ Box attachments loaded:', response);
         this.boxAttachments = response;
-        this.loadingBoxAttachments = false;
+        
+        // Load user names for all attachments
+        this.loadUserNamesForAttachments(response);
       },
       error: (err) => {
         console.error('❌ Error loading box attachments:', err);

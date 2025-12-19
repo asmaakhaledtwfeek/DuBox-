@@ -1,5 +1,6 @@
 using Dubox.Application.DTOs;
 using Dubox.Application.Services;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Services;
@@ -93,9 +94,14 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
         box.BoxAssets = request.Assets?.Adapt<List<BoxAsset>>() ?? new List<BoxAsset>();
         foreach (var asset in box.BoxAssets)
             asset.Box = box;
-
+        //var typeExisit = await _unitOfWork.Repository<BoxType>().GetByIdAsync(box.BoxTypeId);
+        //box.BoxType = typeExisit;
+        //var typeExisitOfBoxsubType = await _unitOfWork.Repository<BoxType>().GetByIdAsync(box.BoxSubType.BoxTypeId);
+        //if (typeExisit ==null)
+        //    return Result.Failure<BoxDto>("Project not found");
         await _unitOfWork.Repository<Box>().AddAsync(box, cancellationToken);
-
+        await _unitOfWork.CompleteAsync();
+         box = _unitOfWork.Repository<Box>().GetEntityWithSpec(new GetBoxByIdWithIncludesSpecification(box.BoxId));
         await _boxActivityService.CopyActivitiesToBox(box, cancellationToken);
         var oldTotalBoxes = project.TotalBoxes;
 

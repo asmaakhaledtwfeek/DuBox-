@@ -9,7 +9,9 @@ namespace Dubox.Application.Specifications
         {
             AddCriteria(i => i.IssueId == issueId);
             AddInclude(nameof(QualityIssue.Box));
+            AddInclude($"{nameof(QualityIssue.Box)}.{nameof(Box.Project)}");
             AddInclude(nameof(QualityIssue.WIRCheckpoint));
+            AddInclude(nameof(QualityIssue.AssignedToTeam));
             AddInclude(nameof(QualityIssue.Images));
             // NOTE: Don't include Images - base64 ImageData is too large
             // Image metadata is loaded separately with lightweight query

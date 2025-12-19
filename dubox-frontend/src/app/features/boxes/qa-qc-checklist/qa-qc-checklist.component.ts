@@ -7,6 +7,8 @@ import { BoxService } from '../../../core/services/box.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { ApiService } from '../../../core/services/api.service';
+import { TeamService } from '../../../core/services/team.service';
+import { Team } from '../../../core/models/team.model';
 import { Observable, forkJoin } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
@@ -32,6 +34,7 @@ import {
 } from '../../../core/models/wir.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
+import { QualityIssueDetailsModalComponent } from '../../../shared/components/quality-issue-details-modal/quality-issue-details-modal.component';
 import * as ExcelJS from 'exceljs';
 
 type ReviewStep = 'create-checkpoint' | 'add-items' | 'review' | 'quality-issues';
@@ -40,7 +43,8 @@ type QualityIssueFormValue = {
   issueType: IssueType;
   severity: SeverityType;
   issueDescription: string;
-  assignedTo?: string;
+  assignedTo?: string; // Team ID
+  assignedTeam?: string; // Team name for display
   dueDate?: string;
   photoPath?: string;
   reportedBy?: string;
@@ -52,7 +56,7 @@ type QualityIssueFormValue = {
 @Component({
   selector: 'app-qa-qc-checklist',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, FormsModule, HeaderComponent, SidebarComponent],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, FormsModule, HeaderComponent, SidebarComponent, QualityIssueDetailsModalComponent],
   templateUrl: './qa-qc-checklist.component.html',
   styleUrls: ['./qa-qc-checklist.component.scss']
 })
@@ -83,6 +87,52 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     images?: string[];
   } | null = null;
   
+  // Convert to QualityIssueDetails for shared modal
+  getQualityIssueDetailsForModal(): QualityIssueDetails | null {
+    if (!this.selectedQualityIssueDetails) return null;
+    
+    const { issue, formIssue, images } = this.selectedQualityIssueDetails;
+    
+    // Build QualityIssueDetails from available data
+    const details: QualityIssueDetails = {
+      issueId: (issue as any)?.issueId || '',
+      issueType: this.getQualityIssueDetail('issueType') || issue?.issueType || 'Defect',
+      severity: this.getQualityIssueDetail('severity') || issue?.severity || 'Minor',
+      issueDescription: this.getQualityIssueDetail('issueDescription') || issue?.issueDescription || '',
+      assignedTeamName: this.getQualityIssueDetail('assignedTeam') || issue?.assignedTeam || issue?.assignedTo || undefined,
+      dueDate: this.getQualityIssueDetail('dueDate') || issue?.dueDate,
+      reportedBy: this.getQualityIssueDetail('reportedBy') || issue?.reportedBy,
+      issueDate: this.getQualityIssueDetail('issueDate') || issue?.issueDate,
+      status: (this.getQualityIssueDetail('status') || issue?.status || 'Open') as QualityIssueStatus,
+      resolutionDescription: this.getQualityIssueDetail('resolutionDescription'),
+      resolutionDate: this.getQualityIssueDetail('resolutionDate'),
+      boxName: this.getQualityIssueDetail('boxName'),
+      boxTag: this.getQualityIssueDetail('boxTag'),
+      wirNumber: this.getQualityIssueDetail('wirNumber') || this.wirCheckpoint?.wirNumber,
+      wirName: this.getQualityIssueDetail('wirName') || this.wirCheckpoint?.wirName,
+      wirRequestedDate: this.getQualityIssueDetail('wirRequestedDate') || this.wirCheckpoint?.requestedDate,
+      inspectorName: this.getQualityIssueDetail('inspectorName'),
+      photoPath: issue?.photoPath,
+      // Convert images array to QualityIssueImage format
+      images: images?.map((imgUrl, index) => ({
+        qualityIssueImageId: `temp-${index}`,
+        issueId: (issue as any)?.issueId || '',
+        imageData: imgUrl.startsWith('data:') ? imgUrl.split(',')[1] : (imgUrl.startsWith('http') ? undefined : imgUrl),
+        imageUrl: imgUrl.startsWith('http') ? imgUrl : undefined,
+        imageType: imgUrl.startsWith('http') ? 'url' : 'file' as 'file' | 'url',
+        sequence: index,
+        createdDate: new Date()
+      })) || []
+    };
+    
+    return details;
+  }
+  
+  // Get WIR checkpoints array for modal (convert single checkpoint to array)
+  getWirCheckpointsForModal(): WIRCheckpoint[] {
+    return this.wirCheckpoint ? [this.wirCheckpoint] : [];
+  }
+  
   // Lightbox state
   lightboxOpen = false;
   lightboxImages: string[] = [];
@@ -111,6 +161,8 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   qualityIssueCurrentUrlInput = '';
   qualityIssueVideoRef?: HTMLVideoElement;
   qualityIssueCameraStream: MediaStream | null = null;
+  availableTeams: Team[] = [];
+  loadingTeams = false;
   isAddPredefinedItemsModalOpen = false;
   isItemReviewModalOpen = false;
   pendingDeleteIndex: number | null = null;
@@ -194,7 +246,8 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     private boxService: BoxService,
     private authService: AuthService,
     private permissionService: PermissionService,
-    private apiService: ApiService
+    private apiService: ApiService,
+    private teamService: TeamService
   ) {}
 
   // Permission getter for template
@@ -1200,6 +1253,7 @@ console.log(expectedWirCode);
     this.qualityIssuePhotoInputMethod = 'upload';
     this.stopQualityIssueCamera();
     this.isQualityIssueModalOpen = true;
+    this.loadAvailableTeams();
   }
 
   closeQualityIssueModal(): void {
@@ -1400,6 +1454,23 @@ console.log(expectedWirCode);
     });
   }
 
+  loadAvailableTeams(): void {
+    this.loadingTeams = true;
+    this.teamService.getTeams().subscribe({
+      next: (teams) => {
+        // Filter to only active teams that user has access to
+        // The backend already filters based on user permissions
+        this.availableTeams = teams.filter(team => team.isActive);
+        this.loadingTeams = false;
+      },
+      error: (err) => {
+        console.error('❌ Error loading teams:', err);
+        this.availableTeams = [];
+        this.loadingTeams = false;
+      }
+    });
+  }
+
 
   closeWorkflowStep(): void {
     this.currentStep = null;
@@ -1487,20 +1558,20 @@ console.log(expectedWirCode);
     this.qualityIssuesArray.clear();
     this.qualityIssueFilesMap.clear();
     const existing = this.existingQualityIssues;
-    if (existing.length) {
+    if (existing && existing.length > 0) {
       existing.forEach(issue => {
         this.addQualityIssueRow({
           issueDescription: issue.issueDescription,
           severity: (issue.severity as SeverityType) || this.severityLevels[0],
           issueType: (issue.issueType as IssueType) || this.issueTypes[0],
-          assignedTo: issue.assignedTo,
+          assignedTo: issue.assignedTo, // Team ID for form
+          assignedTeam: issue.assignedTeam, // Team name for display
           dueDate: issue.dueDate ? this.toDateInputValue(issue.dueDate) : '',
           photoPath: issue.photoPath
         });
       });
-      return;
     }
-    this.addQualityIssueRow();
+    // Don't add empty row - only show existing quality issues
   }
 
   // Store files separately for each issue (indexed by form array index)
@@ -1512,6 +1583,7 @@ console.log(expectedWirCode);
       severity: [issue?.severity || this.severityLevels[0], Validators.required],
       issueDescription: [issue?.issueDescription || '', [Validators.required, Validators.maxLength(500)]],
       assignedTo: [issue?.assignedTo || '', [Validators.maxLength(200)]],
+      assignedTeam: [issue?.assignedTeam || ''], // Team name for display
       dueDate: [issue?.dueDate || ''],
       photoPath: [issue?.photoPath || '', [Validators.maxLength(500)]],
       reportedBy: [issue?.reportedBy || null],

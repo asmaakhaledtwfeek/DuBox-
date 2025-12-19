@@ -12,7 +12,7 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(QualityIssue.Box));
             AddInclude($"{nameof(QualityIssue.Box)}.{nameof(Box.Project)}");
             AddInclude(nameof(QualityIssue.WIRCheckpoint));
-          
+            AddInclude(nameof(QualityIssue.AssignedToTeam));
             EnableSplitQuery();
 
             // Enable pagination
@@ -37,8 +37,7 @@ namespace Dubox.Application.Specifications
                 var term = query.SearchTerm.ToLower().Trim();
                 AddCriteria(q =>
                     (q.IssueDescription != null && q.IssueDescription.ToLower().Contains(term)) ||
-                    (q.ReportedBy != null && q.ReportedBy.ToLower().Contains(term)) ||
-                    (q.AssignedTo != null && q.AssignedTo.ToLower().Contains(term))
+                    (q.ReportedBy != null && q.ReportedBy.ToLower().Contains(term)) 
                 );
             }
 

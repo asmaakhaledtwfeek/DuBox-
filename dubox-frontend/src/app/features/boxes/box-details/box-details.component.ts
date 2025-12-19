@@ -1799,7 +1799,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   openAssignModal(issue: QualityIssueDetails): void {
     // Close other modals firstop
-    console.log('jjjjjjjjjjjjjjjjjjjjjjjjj;jjjjjjjjjjjjjjj');
+
     if (this.isDetailsModalOpen) {
       this.closeIssueDetails();
     }

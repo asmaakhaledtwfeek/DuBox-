@@ -291,19 +291,148 @@
             </div>
           </div>
 
+          <!-- Attachment/Image Upload Section -->
           <div class="form-group">
-            <label for="attachmentPath">Attachment Path</label>
-            <input 
-              id="attachmentPath" 
-              type="text" 
-              formControlName="attachmentPath" 
-              class="form-control"
-              [class.invalid]="createCheckpointForm.get('attachmentPath')?.invalid && createCheckpointForm.get('attachmentPath')?.touched"
-              placeholder="e.g., /attachments/wir-1-drawing.pdf"
-            >
-            <div *ngIf="createCheckpointForm.get('attachmentPath')?.invalid && createCheckpointForm.get('attachmentPath')?.touched" class="error-text">
-              Attachment Path max 500 characters.
+            <label>Attachment <span class="image-count-badge" *ngIf="attachmentImages.length > 0">{{ attachmentImages.length }}</span></label>
+            <p class="photo-upload-hint">Add images from upload, camera, or URL</p>
+            
+            <!-- Selected Images Preview List -->
+            <div class="selected-images-list" *ngIf="attachmentImages.length > 0">
+              <div class="image-preview-item" *ngFor="let image of attachmentImages; let i = index">
+                <div class="image-preview-wrapper">
+                  <img [src]="image.preview || image.url" [alt]="image.name || 'Image preview'" />
+                  <button 
+                    type="button" 
+                    class="remove-image-btn" 
+                    (click)="removeAttachmentImage(i)"
+                    [disabled]="creatingCheckpoint"
+                    title="Remove image"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                  <div class="image-type-badge" [class.type-file]="image.type === 'file' || image.type === 'camera'" [class.type-url]="image.type === 'url'">
+                    {{ image.type === 'file' || image.type === 'camera' ? 'File' : 'URL' }}
+                  </div>
+                </div>
+                <div class="image-info" *ngIf="image.name || image.url">
+                  <p class="image-name" *ngIf="image.name">{{ image.name }}</p>
+                  <p class="image-url" *ngIf="image.url">{{ image.url }}</p>
+                  <p class="image-size" *ngIf="image.file">{{ (image.file.size / 1024).toFixed(1) }} KB</p>
+                </div>
+              </div>
+              <button 
+                type="button" 
+                class="btn-clear-all" 
+                (click)="clearAllAttachmentImages()" 
+                [disabled]="creatingCheckpoint"
+                *ngIf="attachmentImages.length > 1"
+              >
+                Clear All
+              </button>
             </div>
+            
+            <!-- Tabs for different input methods -->
+            <div class="photo-input-tabs" *ngIf="!showAttachmentCamera">
+              <button 
+                type="button"
+                class="tab-button"
+                [class.active]="attachmentInputMethod === 'url'"
+                (click)="attachmentInputMethod = 'url'; showAttachmentCamera = false"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+                URL
+              </button>
+              <button 
+                type="button"
+                class="tab-button"
+                [class.active]="attachmentInputMethod === 'upload'"
+                (click)="openAttachmentFileInput(); attachmentInputMethod = 'upload'"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Upload
+              </button>
+              <button 
+                type="button"
+                class="tab-button"
+                [class.active]="attachmentInputMethod === 'camera'"
+                (click)="openAttachmentCamera()"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+                Camera
+              </button>
+            </div>
+
+            <!-- URL Input -->
+            <div *ngIf="attachmentInputMethod === 'url' && !showAttachmentCamera" class="photo-input-content">
+              <div class="url-input-group">
+                <input
+                  type="text"
+                  class="form-control"
+                  placeholder="Enter image URL (e.g., https://example.com/photo.jpg)"
+                  [(ngModel)]="attachmentPhotoUrl"
+                  [ngModelOptions]="{standalone: true}"
+                  [disabled]="creatingCheckpoint"
+                  (keydown.enter)="addAttachmentImageUrl(attachmentPhotoUrl); $event.preventDefault()"
+                />
+                <button 
+                  type="button" 
+                  class="btn-add-url" 
+                  (click)="addAttachmentImageUrl(attachmentPhotoUrl)"
+                  [disabled]="creatingCheckpoint || !attachmentPhotoUrl?.trim()"
+                >
+                  Add URL
+                </button>
+              </div>
+            </div>
+
+            <!-- File Upload Input (hidden, supports multiple) -->
+            <input
+              id="checkpoint-attachment-file-input"
+              type="file"
+              accept="image/*"
+              multiple
+              style="display: none"
+              (change)="onAttachmentFileSelected($event)"
+              [disabled]="creatingCheckpoint"
+            />
+
+            <!-- Camera Preview -->
+            <div *ngIf="showAttachmentCamera" id="checkpoint-attachment-camera-container" class="camera-preview-container">
+              <video 
+                id="checkpoint-attachment-camera-preview" 
+                autoplay 
+                playsinline 
+                muted
+                style="display: block; visibility: visible; opacity: 1;"
+              ></video>
+              <div class="camera-controls">
+                <button type="button" class="btn btn-secondary btn-sm" (click)="stopAttachmentCamera()">
+                  Cancel
+                </button>
+                <button type="button" class="btn btn-primary btn-sm" (click)="captureAttachmentPhoto()" [disabled]="creatingCheckpoint">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3"/>
+                  </svg>
+                  Capture
+                </button>
+              </div>
+            </div>
+
+            <!-- Errors -->
+            <p class="form-text text-danger" *ngIf="attachmentUploadError">{{ attachmentUploadError }}</p>
           </div>
 
           <div class="form-group">
@@ -529,20 +658,30 @@
           
           <div class="existing-images-grid">
             <div class="existing-image-item" *ngFor="let imageUrl of getCheckpointImageUrls(); let i = index">
-              <div class="existing-image-wrapper">
+              <div class="existing-image-wrapper" (click)="openCheckpointImageInNewTab(imageUrl)">
                 <img 
                   [src]="imageUrl" 
                   [alt]="'Inspection photo ' + (i + 1)"
                   class="existing-image-thumbnail"
-                  (click)="openCheckpointImageInNewTab(imageUrl)"
                   (error)="onCheckpointImageError($event)"
                   loading="lazy"
                 />
                 <div class="existing-image-overlay">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
-                  </svg>
+                  <div class="overlay-actions">
+                    <button class="overlay-btn view-btn" (click)="openCheckpointImageInNewTab(imageUrl); $event.stopPropagation()" title="View full size">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    </button>
+                    <button class="overlay-btn download-btn" (click)="downloadCheckpointImage(imageUrl); $event.stopPropagation()" title="Download image">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                      </svg>
+                    </button>
+                  </div>
                 </div>
                 <div class="existing-image-number">{{ i + 1 }}</div>
               </div>

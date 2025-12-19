@@ -801,7 +801,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
           const newWindow = window.open(blobUrl, '_blank', 'noopener,noreferrer');
           if (!newWindow) {
             console.error('Failed to open image in new tab. Popup may be blocked.');
-            this.downloadImage(imageUrl);
+           
           }
         })
         .catch(error => {
@@ -825,7 +825,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     if (!newWindow) {
       console.error('Failed to open image in new tab. Popup may be blocked.');
       // Fallback: try to download instead
-      this.downloadImage(imageUrl);
+  
     }
   }
 

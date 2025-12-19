@@ -1,0 +1,43 @@
+ .overlay-btn {
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            width: 46px;
+            height: 46px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--text-primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(8px);
+            padding: 0;
+
+            &:hover {
+              background: white;
+              transform: scale(1.15) translateY(-2px);
+              box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+              border-color: var(--amana-teal);
+            }
+
+            &.view-btn:hover {
+              color: var(--amana-teal);
+            }
+
+            &.download-btn:hover {
+              color: #10b981;
+              border-color: #10b981;
+            }
+
+            &:active {
+              transform: scale(0.95) translateY(0);
+            }
+
+            svg {
+              width: 20px;
+              height: 20px;
+              stroke: currentColor;
+            }
+          }
+        }

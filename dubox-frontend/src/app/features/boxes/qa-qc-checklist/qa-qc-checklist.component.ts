@@ -86,6 +86,175 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     formIssue?: any;
     images?: string[];
   } | null = null;
+
+  // Attachment/Image upload state (for Attachment Path field in Step 1)
+  attachmentImages: Array<{ type: 'file' | 'url' | 'camera'; file?: File; url?: string; preview?: string; name?: string; size?: number }> = [];
+  attachmentPhotoUrl: string = '';
+  attachmentUploadError = '';
+  attachmentCameraStream: MediaStream | null = null;
+  showAttachmentCamera = false;
+  attachmentInputMethod: 'url' | 'upload' | 'camera' = 'url';
+
+  // Attachment image handling methods
+  onAttachmentFileSelected(event: any): void {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      Array.from(files as FileList).forEach((file: File) => {
+        if (file.type.startsWith('image/')) {
+          this.addAttachmentImageFile(file);
+        } else {
+          this.attachmentUploadError = 'Please select image files only';
+        }
+      });
+      const fileInput = event.target as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
+    }
+  }
+
+  addAttachmentImageFile(file: File): void {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      this.attachmentImages.push({
+        type: 'file',
+        file: file,
+        preview: e.target?.result as string,
+        name: file.name,
+        size: file.size
+      });
+      this.attachmentInputMethod = 'upload';
+      this.attachmentUploadError = '';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  addAttachmentImageUrl(url: string): void {
+    if (url && url.trim()) {
+      try {
+        new URL(url);
+        this.attachmentImages.push({
+          type: 'url',
+          url: url.trim(),
+          preview: url.trim()
+        });
+        this.attachmentPhotoUrl = '';
+        this.attachmentInputMethod = 'url';
+        this.attachmentUploadError = '';
+      } catch {
+        this.attachmentUploadError = 'Please enter a valid URL';
+      }
+    }
+  }
+
+  openAttachmentFileInput(): void {
+    this.showAttachmentCamera = false;
+    const fileInput = document.getElementById('checkpoint-attachment-file-input') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+  removeAttachmentImage(index: number): void {
+    this.attachmentImages.splice(index, 1);
+    this.attachmentUploadError = '';
+  }
+
+  clearAllAttachmentImages(): void {
+    this.attachmentImages = [];
+    this.attachmentPhotoUrl = '';
+    this.attachmentUploadError = '';
+  }
+
+  async openAttachmentCamera(): Promise<void> {
+    try {
+      this.stopAttachmentCamera();
+      this.showAttachmentCamera = true;
+      this.attachmentInputMethod = 'camera';
+      this.attachmentUploadError = '';
+      
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' }
+      });
+      this.attachmentCameraStream = stream;
+      
+      setTimeout(() => {
+        const video = document.getElementById('checkpoint-attachment-camera-preview') as HTMLVideoElement;
+        if (video) {
+          video.srcObject = stream;
+          video.play().catch(err => {
+            console.error('Error playing video:', err);
+            this.attachmentUploadError = 'Unable to start camera preview.';
+            this.stopAttachmentCamera();
+          });
+        } else {
+          this.stopAttachmentCamera();
+        }
+      }, 100);
+    } catch (err) {
+      console.error('Error accessing camera:', err);
+      this.attachmentUploadError = 'Unable to access camera. Please check permissions.';
+      this.showAttachmentCamera = false;
+    }
+  }
+
+  stopAttachmentCamera(): void {
+    if (this.attachmentCameraStream) {
+      this.attachmentCameraStream.getTracks().forEach(track => track.stop());
+      this.attachmentCameraStream = null;
+    }
+    
+    const video = document.getElementById('checkpoint-attachment-camera-preview') as HTMLVideoElement;
+    if (video) {
+      const stream = video.srcObject as MediaStream;
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+      video.srcObject = null;
+      video.pause();
+    }
+    
+    this.showAttachmentCamera = false;
+  }
+
+  captureAttachmentPhoto(): void {
+    const video = document.getElementById('checkpoint-attachment-camera-preview') as HTMLVideoElement;
+    if (!video || !video.srcObject) return;
+
+    if (!video.videoWidth || !video.videoHeight) {
+      this.attachmentUploadError = 'Camera not ready. Please wait a moment and try again.';
+      return;
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.drawImage(video, 0, 0);
+    const imageData = canvas.toDataURL('image/jpeg', 0.9);
+
+    this.stopAttachmentCamera();
+
+    fetch(imageData)
+      .then(res => res.blob())
+      .then(blob => {
+        const file = new File([blob], `checkpoint-attachment-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        this.attachmentImages.push({
+          type: 'camera',
+          file: file,
+          preview: imageData,
+          name: file.name,
+          size: file.size
+        });
+        this.attachmentUploadError = '';
+      })
+      .catch(err => {
+        console.error('Error converting data URL to file:', err);
+        this.attachmentUploadError = 'Failed to process captured image.';
+      });
+  }
   
   // Convert to QualityIssueDetails for shared modal
   getQualityIssueDetailsForModal(): QualityIssueDetails | null {
@@ -685,6 +854,26 @@ console.log(expectedWirCode);
             inspectorName: this.wirCheckpoint.inspectorName || '',
             inspectorRole: this.wirCheckpoint.inspectorRole || ''
           });
+          
+          // Load existing attachment path into images array if it exists
+          if (this.wirCheckpoint.attachmentPath) {
+            // Check if it's a URL or a file path
+            if (this.wirCheckpoint.attachmentPath.startsWith('http://') || this.wirCheckpoint.attachmentPath.startsWith('https://')) {
+              this.attachmentImages = [{
+                type: 'url',
+                url: this.wirCheckpoint.attachmentPath,
+                preview: this.wirCheckpoint.attachmentPath
+              }];
+            } else {
+              // For file paths, we'll just show it as a URL for now
+              this.attachmentImages = [{
+                type: 'url',
+                url: this.wirCheckpoint.attachmentPath,
+                preview: this.wirCheckpoint.attachmentPath
+              }];
+            }
+          }
+          
           this.initialStepApplied = true;
         } else {
           console.log('Checkpoint already reviewed, redirecting to add-items');
@@ -735,13 +924,31 @@ console.log(expectedWirCode);
     this.error = '';
     
     const formValue = this.createCheckpointForm.value;
+    
+    // Separate files and URLs from attachment images
+    const files: File[] = this.attachmentImages
+      .filter(img => (img.type === 'file' || img.type === 'camera') && img.file)
+      .map(img => img.file!);
+    
+    const imageUrls: string[] = this.attachmentImages
+      .filter(img => img.type === 'url' && img.url)
+      .map(img => img.url!);
+    
+    // For backward compatibility, set attachmentPath to first URL if no files
+    let attachmentPath: string | undefined = undefined;
+    if (imageUrls.length > 0 && files.length === 0) {
+      attachmentPath = imageUrls[0];
+    }
+    
     const request: CreateWIRCheckpointRequest = {
       boxActivityId: this.activityId, // Get from route param
       wirNumber: this.wirRecord.wirCode || '', // Get from WIRRecord
       wirName: formValue.wirName?.trim() || undefined,
       wirDescription: formValue.wirDescription?.trim() || undefined,
-      attachmentPath: formValue.attachmentPath?.trim() || undefined,
-      comments: formValue.comments?.trim() || undefined
+      attachmentPath: attachmentPath || formValue.attachmentPath?.trim() || undefined,
+      comments: formValue.comments?.trim() || undefined,
+      files: files.length > 0 ? files : undefined,
+      imageUrls: imageUrls.length > 0 ? imageUrls : undefined
     };
 
     this.wirService.createWIRCheckpoint(request).subscribe({
@@ -1942,6 +2149,23 @@ console.log(expectedWirCode);
             inspectorName: this.wirCheckpoint.inspectorName || '',
             inspectorRole: this.wirCheckpoint.inspectorRole || ''
           });
+          
+          // Load existing attachment path into images array if it exists
+          if (this.wirCheckpoint.attachmentPath) {
+            if (this.wirCheckpoint.attachmentPath.startsWith('http://') || this.wirCheckpoint.attachmentPath.startsWith('https://')) {
+              this.attachmentImages = [{
+                type: 'url',
+                url: this.wirCheckpoint.attachmentPath,
+                preview: this.wirCheckpoint.attachmentPath
+              }];
+            } else {
+              this.attachmentImages = [{
+                type: 'url',
+                url: this.wirCheckpoint.attachmentPath,
+                preview: this.wirCheckpoint.attachmentPath
+              }];
+            }
+          }
         }
         break;
       case 'add-items':
@@ -2005,6 +2229,23 @@ console.log(expectedWirCode);
               inspectorName: this.wirCheckpoint.inspectorName || '',
               inspectorRole: this.wirCheckpoint.inspectorRole || ''
             });
+            
+            // Load existing attachment path into images array if it exists
+            if (this.wirCheckpoint.attachmentPath) {
+              if (this.wirCheckpoint.attachmentPath.startsWith('http://') || this.wirCheckpoint.attachmentPath.startsWith('https://')) {
+                this.attachmentImages = [{
+                  type: 'url',
+                  url: this.wirCheckpoint.attachmentPath,
+                  preview: this.wirCheckpoint.attachmentPath
+                }];
+              } else {
+                this.attachmentImages = [{
+                  type: 'url',
+                  url: this.wirCheckpoint.attachmentPath,
+                  preview: this.wirCheckpoint.attachmentPath
+                }];
+              }
+            }
           }
           this.initialStepApplied = true;
         } else {
@@ -2717,6 +2958,7 @@ console.log(expectedWirCode);
   ngOnDestroy(): void {
     this.stopCamera();
     this.stopQualityIssueCamera();
+    this.stopAttachmentCamera();
   }
 
   // Quality Issue Image Methods
@@ -3068,7 +3310,114 @@ console.log(expectedWirCode);
    * Open image in new tab
    */
   openCheckpointImageInNewTab(imageUrl: string): void {
-    window.open(imageUrl, '_blank', 'noopener,noreferrer');
+    if (!imageUrl) {
+      console.error('No image URL provided');
+      return;
+    }
+
+    // Ensure URL is absolute
+    let absoluteUrl = imageUrl;
+    
+    // If it's a relative URL, make it absolute
+    if (imageUrl.startsWith('/')) {
+      const baseUrl = this.getApiBaseUrl();
+      absoluteUrl = `${baseUrl}${imageUrl}`;
+    }
+    // For base64/data images, convert to blob URL
+    else if (imageUrl.startsWith('data:image/')) {
+      // For data URLs, convert to blob URL
+      fetch(imageUrl)
+        .then(response => response.blob())
+        .then(blob => {
+          const blobUrl = URL.createObjectURL(blob);
+          const newWindow = window.open(blobUrl, '_blank', 'noopener,noreferrer');
+          if (!newWindow) {
+            console.error('Failed to open image in new tab. Popup may be blocked.');
+            // Fallback: try to open data URL directly
+            const fallbackWindow = window.open();
+            if (fallbackWindow) {
+              fallbackWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                  <head>
+                    <title>Image Viewer</title>
+                    <style>
+                      body {
+                        margin: 0;
+                        padding: 20px;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        min-height: 100vh;
+                        background: #1a1a1a;
+                      }
+                      img {
+                        max-width: 100%;
+                        max-height: 100vh;
+                        height: auto;
+                        object-fit: contain;
+                      }
+                    </style>
+                  </head>
+                  <body>
+                    <img src="${imageUrl}" alt="Image" />
+                  </body>
+                </html>
+              `);
+              fallbackWindow.document.close();
+            }
+          }
+          // Clean up blob URL after a delay
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+        })
+        .catch(error => {
+          console.error('Error converting data URL to blob:', error);
+          // Fallback: try to open data URL directly
+          const fallbackWindow = window.open();
+          if (fallbackWindow) {
+            fallbackWindow.document.write(`
+              <!DOCTYPE html>
+              <html>
+                <head>
+                  <title>Image Viewer</title>
+                  <style>
+                    body {
+                      margin: 0;
+                      padding: 20px;
+                      display: flex;
+                      justify-content: center;
+                      align-items: center;
+                      min-height: 100vh;
+                      background: #1a1a1a;
+                    }
+                    img {
+                      max-width: 100%;
+                      max-height: 100vh;
+                      height: auto;
+                      object-fit: contain;
+                    }
+                  </style>
+                </head>
+                <body>
+                  <img src="${imageUrl}" alt="Image" />
+                </body>
+              </html>
+            `);
+            fallbackWindow.document.close();
+          }
+        });
+      return;
+    }
+    // For external URLs (http/https), open directly
+    else if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      absoluteUrl = imageUrl;
+    }
+
+    // Open the absolute URL in a new tab
+    const newWindow = window.open(absoluteUrl, '_blank', 'noopener,noreferrer');
+    if (!newWindow) {
+      console.error('Failed to open image in new tab. Popup may be blocked.');
+    }
   }
 
   /**
@@ -3077,6 +3426,75 @@ console.log(expectedWirCode);
   onCheckpointImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
     img.style.display = 'none';
+  }
+
+  /**
+   * Download checkpoint image
+   */
+  downloadCheckpointImage(imageUrl: string): void {
+    if (!imageUrl) {
+      console.error('No image URL provided');
+      return;
+    }
+
+    // Ensure URL is absolute for download
+    let absoluteUrl = imageUrl;
+    
+    // If it's a relative URL, make it absolute
+    if (imageUrl.startsWith('/')) {
+      const baseUrl = this.getApiBaseUrl();
+      absoluteUrl = `${baseUrl}${imageUrl}`;
+    }
+
+    // For data URLs, convert to blob and download
+    if (imageUrl.startsWith('data:image/')) {
+      fetch(imageUrl)
+        .then(response => response.blob())
+        .then(blob => {
+          const blobUrl = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = `checkpoint-image-${Date.now()}.jpg`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(blobUrl);
+        })
+        .catch(error => {
+          console.error('Error downloading image:', error);
+        });
+      return;
+    }
+
+    // For regular URLs (including API endpoints), fetch and download
+    fetch(absoluteUrl)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = `checkpoint-image-${Date.now()}.jpg`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+      })
+      .catch(error => {
+        console.error('Error downloading image:', error);
+        // Fallback: try direct download link
+        const link = document.createElement('a');
+        link.href = absoluteUrl;
+        link.download = `checkpoint-image-${Date.now()}.jpg`;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
   }
 
   private markFormGroupTouched(formGroup: FormGroup): void {

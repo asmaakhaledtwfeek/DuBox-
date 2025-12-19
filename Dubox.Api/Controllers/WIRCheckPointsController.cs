@@ -21,8 +21,103 @@ namespace Dubox.Api.Controllers
             _mediator = mediator;
         }
         [HttpPost]
-        public async Task<IActionResult> CreateWIRCheckPoints([FromBody] CreateWIRCheckpointCommand command, CancellationToken cancellationToken)
+        [Consumes("multipart/form-data", "application/json")]
+        [RequestSizeLimit(50_000_000)] // 50 MB for multiple images
+        public async Task<IActionResult> CreateWIRCheckPoints(
+            CancellationToken cancellationToken)
         {
+            CreateWIRCheckpointCommand command;
+            List<byte[]>? fileBytes = null;
+            List<string>? imageUrls = null;
+
+            if (Request.HasFormContentType)
+            {
+                // Handle multipart/form-data
+                var form = await Request.ReadFormAsync(cancellationToken);
+                
+                // Parse required fields
+                if (!Guid.TryParse(form["BoxActivityId"].ToString(), out var boxActivityId))
+                {
+                    return BadRequest("BoxActivityId is required and must be a valid GUID");
+                }
+
+                var wirNumber = form["WIRNumber"].ToString();
+                if (string.IsNullOrWhiteSpace(wirNumber))
+                {
+                    return BadRequest("WIRNumber is required");
+                }
+
+                var wirName = form["WIRName"].ToString();
+                var wirDescription = form["WIRDescription"].ToString();
+                var attachmentPath = form["AttachmentPath"].ToString();
+                var comments = form["Comments"].ToString();
+
+                // Get files
+                var files = form.Files.Where(f => f.Name == "Files" && f.Length > 0).ToList();
+                if (files.Count > 0)
+                {
+                    fileBytes = new List<byte[]>();
+                    foreach (var file in files)
+                    {
+                        using var ms = new MemoryStream();
+                        await file.CopyToAsync(ms, cancellationToken);
+                        fileBytes.Add(ms.ToArray());
+                    }
+                }
+
+                // Get ImageUrls
+                var imageUrlsFromForm = form["ImageUrls"];
+                if (imageUrlsFromForm.Count > 0)
+                {
+                    imageUrls = imageUrlsFromForm
+                        .Where(url => !string.IsNullOrWhiteSpace(url))
+                        .Select(url => url!.Trim())
+                        .ToList();
+                    if (imageUrls.Count == 0)
+                    {
+                        imageUrls = null;
+                    }
+                }
+
+                command = new CreateWIRCheckpointCommand(
+                    BoxActivityId: boxActivityId,
+                    WIRNumber: wirNumber,
+                    WIRName: string.IsNullOrWhiteSpace(wirName) ? null : wirName,
+                    WIRDescription: string.IsNullOrWhiteSpace(wirDescription) ? null : wirDescription,
+                    AttachmentPath: string.IsNullOrWhiteSpace(attachmentPath) ? null : attachmentPath,
+                    Comments: string.IsNullOrWhiteSpace(comments) ? null : comments,
+                    Files: fileBytes,
+                    ImageUrls: imageUrls
+                );
+            }
+            else
+            {
+                // Handle JSON (backward compatibility)
+                CreateWIRCheckpointCommand? jsonCommand = null;
+                try
+                {
+                    using var reader = new StreamReader(Request.Body);
+                    var body = await reader.ReadToEndAsync();
+                    jsonCommand = JsonSerializer.Deserialize<CreateWIRCheckpointCommand>(body, new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+                }
+                catch
+                {
+                    return BadRequest("Invalid JSON format");
+                }
+
+                if (jsonCommand == null)
+                    return BadRequest("Request body is required");
+
+                command = jsonCommand with
+                {
+                    Files = null,
+                    ImageUrls = null
+                };
+            }
+
             var result = await _mediator.Send(command, cancellationToken);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }

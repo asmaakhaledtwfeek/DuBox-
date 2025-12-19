@@ -80,7 +80,9 @@ export class QualityIssueDetailsModalComponent implements OnInit, OnChanges {
   }
 
   private getApiBaseUrl(): string {
-    return environment.apiUrl || window.location.origin;
+    // Use environment.apiUrl and remove /api suffix if present
+    const apiUrl = environment.apiUrl || window.location.origin;
+    return apiUrl.replace(/\/api\/?$/, '');
   }
 
   formatIssueDate(date?: string | Date): string {
@@ -143,7 +145,114 @@ export class QualityIssueDetailsModalComponent implements OnInit, OnChanges {
   }
 
   openImageInNewTab(imageUrl: string): void {
-    window.open(imageUrl, '_blank');
+    if (!imageUrl) {
+      console.error('No image URL provided');
+      return;
+    }
+
+    // Ensure URL is absolute
+    let absoluteUrl = imageUrl;
+    
+    // If it's a relative URL, make it absolute
+    if (imageUrl.startsWith('/')) {
+      const baseUrl = this.getApiBaseUrl();
+      absoluteUrl = `${baseUrl}${imageUrl}`;
+    }
+    // For base64/data images, convert to blob URL
+    else if (imageUrl.startsWith('data:image/')) {
+      // For data URLs, convert to blob URL
+      fetch(imageUrl)
+        .then(response => response.blob())
+        .then(blob => {
+          const blobUrl = URL.createObjectURL(blob);
+          const newWindow = window.open(blobUrl, '_blank', 'noopener,noreferrer');
+          if (!newWindow) {
+            console.error('Failed to open image in new tab. Popup may be blocked.');
+            // Fallback: try to open data URL directly
+            const fallbackWindow = window.open();
+            if (fallbackWindow) {
+              fallbackWindow.document.write(`
+                <!DOCTYPE html>
+                <html>
+                  <head>
+                    <title>Image Viewer</title>
+                    <style>
+                      body {
+                        margin: 0;
+                        padding: 20px;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        min-height: 100vh;
+                        background: #1a1a1a;
+                      }
+                      img {
+                        max-width: 100%;
+                        max-height: 100vh;
+                        height: auto;
+                        object-fit: contain;
+                      }
+                    </style>
+                  </head>
+                  <body>
+                    <img src="${imageUrl}" alt="Image" />
+                  </body>
+                </html>
+              `);
+              fallbackWindow.document.close();
+            }
+          }
+          // Clean up blob URL after a delay
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+        })
+        .catch(error => {
+          console.error('Error converting data URL to blob:', error);
+          // Fallback: try to open data URL directly
+          const fallbackWindow = window.open();
+          if (fallbackWindow) {
+            fallbackWindow.document.write(`
+              <!DOCTYPE html>
+              <html>
+                <head>
+                  <title>Image Viewer</title>
+                  <style>
+                    body {
+                      margin: 0;
+                      padding: 20px;
+                      display: flex;
+                      justify-content: center;
+                      align-items: center;
+                      min-height: 100vh;
+                      background: #1a1a1a;
+                    }
+                    img {
+                      max-width: 100%;
+                      max-height: 100vh;
+                      height: auto;
+                      object-fit: contain;
+                    }
+                  </style>
+                </head>
+                <body>
+                  <img src="${imageUrl}" alt="Image" />
+                </body>
+              </html>
+            `);
+            fallbackWindow.document.close();
+          }
+        });
+      return;
+    }
+    // For external URLs (http/https), open directly
+    else if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      absoluteUrl = imageUrl;
+    }
+
+    // Open the absolute URL in a new tab
+    const newWindow = window.open(absoluteUrl, '_blank', 'noopener,noreferrer');
+    if (!newWindow) {
+      console.error('Failed to open image in new tab. Popup may be blocked.');
+    }
   }
 
   downloadImage(imageUrl: string): void {

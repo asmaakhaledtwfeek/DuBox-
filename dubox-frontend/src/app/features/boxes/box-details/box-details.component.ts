@@ -197,9 +197,9 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   boxAttachmentsError = '';
   
   // Collapsible sections state
-  wirImagesExpanded = true;
-  progressImagesExpanded = true;
-  qualityImagesExpanded = true;
+  wirImagesExpanded = false;
+  progressImagesExpanded = false;
+  qualityImagesExpanded = false;
   
   // Sub-tab for Drawings section
   activeDrawingTab: 'file' | 'url' = 'file';
@@ -2805,6 +2805,69 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.wirImagesExpanded = true;
     this.progressImagesExpanded = true;
     this.qualityImagesExpanded = true;
+  }
+
+  /**
+   * Download attachment image
+   */
+  downloadAttachmentImage(imageData: string, imageType?: string, originalName?: string): void {
+    if (!imageData) {
+      console.error('No image data provided');
+      return;
+    }
+
+    const formattedUrl = this.formatImageData(imageData, imageType);
+    const fileName = originalName || `attachment-image-${Date.now()}.jpg`;
+
+    // For data URLs, convert to blob and download
+    if (formattedUrl.startsWith('data:image/')) {
+      fetch(formattedUrl)
+        .then(response => response.blob())
+        .then(blob => {
+          const blobUrl = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(blobUrl);
+        })
+        .catch(error => {
+          console.error('Error downloading image:', error);
+        });
+      return;
+    }
+
+    // For regular URLs (including API endpoints), fetch and download
+    fetch(formattedUrl)
+      .then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.blob();
+      })
+      .then(blob => {
+        const blobUrl = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+      })
+      .catch(error => {
+        console.error('Error downloading image:', error);
+        // Fallback: try direct download link
+        const link = document.createElement('a');
+        link.href = formattedUrl;
+        link.download = fileName;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
   }
 
   loadProgressUpdates(page: number = 1, pageSize: number = 10, forceRefresh: boolean = false): void {

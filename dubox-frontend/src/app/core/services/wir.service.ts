@@ -214,9 +214,48 @@ export class WIRService {
    * Create WIR checkpoint
    */
   createWIRCheckpoint(request: CreateWIRCheckpointRequest): Observable<WIRCheckpoint> {
-    return this.apiService.post<any>('wircheckpoints', request).pipe(
-      map(data => this.transformWIRCheckpoint(data))
-    );
+    // If files or imageUrls are provided, send as multipart/form-data
+    if ((request.files && request.files.length > 0) || (request.imageUrls && request.imageUrls.length > 0)) {
+      const formData = new FormData();
+      formData.append('BoxActivityId', request.boxActivityId);
+      formData.append('WIRNumber', request.wirNumber);
+      
+      if (request.wirName) {
+        formData.append('WIRName', request.wirName);
+      }
+      if (request.wirDescription) {
+        formData.append('WIRDescription', request.wirDescription);
+      }
+      if (request.attachmentPath) {
+        formData.append('AttachmentPath', request.attachmentPath);
+      }
+      if (request.comments) {
+        formData.append('Comments', request.comments);
+      }
+      
+      // Append files if any
+      if (request.files && request.files.length > 0) {
+        request.files.forEach(file => {
+          formData.append('Files', file);
+        });
+      }
+      
+      // Append image URLs if any
+      if (request.imageUrls && request.imageUrls.length > 0) {
+        request.imageUrls.forEach(url => {
+          formData.append('ImageUrls', url);
+        });
+      }
+      
+      return this.apiService.postFormData<any>('wircheckpoints', formData).pipe(
+        map(data => this.transformWIRCheckpoint(data))
+      );
+    } else {
+      // Backward compatibility: send as JSON if no files/URLs
+      return this.apiService.post<any>('wircheckpoints', request).pipe(
+        map(data => this.transformWIRCheckpoint(data))
+      );
+    }
   }
 
   /**

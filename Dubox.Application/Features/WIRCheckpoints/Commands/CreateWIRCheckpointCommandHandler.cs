@@ -15,15 +15,18 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserService _currentUserService;
         private readonly IProjectTeamVisibilityService _visibilityService;
+        private readonly IImageProcessingService _imageProcessingService;
 
         public CreateWIRCheckpointCommandHandler(
             IUnitOfWork unitOfWork,
             ICurrentUserService currentUserService,
-            IProjectTeamVisibilityService visibilityService)
+            IProjectTeamVisibilityService visibilityService,
+            IImageProcessingService imageProcessingService)
         {
             _unitOfWork = unitOfWork;
             _currentUserService = currentUserService;
             _visibilityService = visibilityService;
+            _imageProcessingService = imageProcessingService;
         }
 
         public async Task<Result<CreateWIRCheckpointDto>> Handle(CreateWIRCheckpointCommand request, CancellationToken cancellationToken)
@@ -54,7 +57,8 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
             var user = await _unitOfWork.Repository<User>().GetByIdAsync(currentUserId);
             var currentUserName = user != null ? user.FullName : string.Empty;
-            var existCheckpoint = _unitOfWork.Repository<WIRCheckpoint>().FindAsync(c => c.BoxId == boxActicity.BoxId && c.WIRCode == request.WIRNumber).Result.FirstOrDefault();
+
+            var existCheckpoint = _unitOfWork.Repository<WIRCheckpoint>().Get().Where(c => c.BoxId == boxActicity.BoxId && c.WIRCode == request.WIRNumber).FirstOrDefault();
 
             if (existCheckpoint != null)
             {
@@ -62,14 +66,52 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                 var oldStatus = existCheckpoint.Status.ToString();
                 var oldWIRName = existCheckpoint.WIRName ?? "N/A";
                 var oldWIRDescription = existCheckpoint.WIRDescription ?? "N/A";
-                
-                existCheckpoint = request.Adapt<WIRCheckpoint>();
-                existCheckpoint.WIRId = existCheckpointId;
+
+               //existCheckpoint.WIRId = existCheckpointId;
                 existCheckpoint.RequestedBy = currentUserName;
                 existCheckpoint.BoxId = boxActicity.BoxId;
                 existCheckpoint.WIRCode = request.WIRNumber;
                 existCheckpoint.CreatedBy = currentUserId;
+                
                 _unitOfWork.Repository<WIRCheckpoint>().Update(existCheckpoint);
+                await _unitOfWork.CompleteAsync(cancellationToken);
+
+                // Process images - save to WIRCheckpointImage table (same logic as ReviewWIRCheckPoint)
+                if (request.Files != null && request.Files.Any() || request.ImageUrls != null && request.ImageUrls.Any())
+                {
+                    int sequence = 0;
+                    var existingImages = await _unitOfWork.Repository<WIRCheckpointImage>()
+                        .FindAsync(img => img.WIRId == existCheckpoint.WIRId, cancellationToken);
+                    if (existingImages.Any())
+                    {
+                        sequence = existingImages.Max(img => img.Sequence) + 1;
+                    }
+
+                    (bool, string) imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<WIRCheckpointImage>(
+                        existCheckpoint.WIRId, 
+                        request.Files, 
+                        request.ImageUrls, 
+                        cancellationToken, 
+                        sequence);
+                    
+                    if (!imagesProcessResult.Item1)
+                    {
+                        return Result.Failure<CreateWIRCheckpointDto>(imagesProcessResult.Item2);
+                    }
+
+                    try
+                    {
+                        await _unitOfWork.CompleteAsync(cancellationToken);
+                    }
+                    catch (Microsoft.EntityFrameworkCore.DbUpdateException dbEx)
+                    {
+                        return Result.Failure<CreateWIRCheckpointDto>($"Database error saving images: {dbEx.Message}. Inner exception: {dbEx.InnerException?.Message}.");
+                    }
+                    catch (Exception ex)
+                    {
+                        return Result.Failure<CreateWIRCheckpointDto>($"Error saving images: {ex.Message}. Inner exception: {ex.InnerException?.Message}");
+                    }
+                }
                 
                 // Create audit log for update
                 var auditLog = new AuditLog
@@ -84,13 +126,14 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                     Description = $"WIR Checkpoint {request.WIRNumber} updated."
                 };
                 await _unitOfWork.Repository<AuditLog>().AddAsync(auditLog, cancellationToken);
-                
                 await _unitOfWork.CompleteAsync(cancellationToken);
+                
                 var existDto = existCheckpoint.Adapt<CreateWIRCheckpointDto>();
                 existDto.WIRNumber = existCheckpoint.WIRCode;
                 return Result.Success(existDto);
             }
-            var checkpoint = request.Adapt<WIRCheckpoint>();
+            
+                var checkpoint = request.Adapt<WIRCheckpoint>();
             checkpoint.WIRCode = request.WIRNumber;
             checkpoint.BoxId = boxActicity.BoxId;
             checkpoint.Status = WIRCheckpointStatusEnum.Pending;
@@ -99,8 +142,44 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             checkpoint.RequestedBy = currentUserName;
             checkpoint.CreatedBy = currentUserId;
             await _unitOfWork.Repository<WIRCheckpoint>().AddAsync(checkpoint);
-
             await _unitOfWork.CompleteAsync(cancellationToken);
+
+            // Process images - save to WIRCheckpointImage table (same logic as ReviewWIRCheckPoint)
+            if (request.Files != null && request.Files.Any() || request.ImageUrls != null && request.ImageUrls.Any())
+            {
+                int sequence = 0;
+                var existingImages = await _unitOfWork.Repository<WIRCheckpointImage>()
+                    .FindAsync(img => img.WIRId == checkpoint.WIRId, cancellationToken);
+                if (existingImages.Any())
+                {
+                    sequence = existingImages.Max(img => img.Sequence) + 1;
+                }
+
+                (bool, string) imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<WIRCheckpointImage>(
+                    checkpoint.WIRId, 
+                    request.Files, 
+                    request.ImageUrls, 
+                    cancellationToken, 
+                    sequence);
+                
+                if (!imagesProcessResult.Item1)
+                {
+                    return Result.Failure<CreateWIRCheckpointDto>(imagesProcessResult.Item2);
+                }
+
+                try
+                {
+                    await _unitOfWork.CompleteAsync(cancellationToken);
+                }
+                catch (Microsoft.EntityFrameworkCore.DbUpdateException dbEx)
+                {
+                    return Result.Failure<CreateWIRCheckpointDto>($"Database error saving images: {dbEx.Message}. Inner exception: {dbEx.InnerException?.Message}.");
+                }
+                catch (Exception ex)
+                {
+                    return Result.Failure<CreateWIRCheckpointDto>($"Error saving images: {ex.Message}. Inner exception: {ex.InnerException?.Message}");
+                }
+            }
             
             // Create audit log for creation
             var createAuditLog = new AuditLog

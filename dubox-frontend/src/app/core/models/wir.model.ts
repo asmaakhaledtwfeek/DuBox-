@@ -208,8 +208,10 @@ export interface CreateWIRCheckpointRequest {
   wirNumber: string; // Auto-filled from WIRRecord
   wirName?: string; // User input
   wirDescription?: string; // User input
-  attachmentPath?: string; // User input
+  attachmentPath?: string; // User input (deprecated, use files/imageUrls instead)
   comments?: string; // User input
+  files?: File[]; // Image files to upload
+  imageUrls?: string[]; // Image URLs
 }
 
 export interface AddChecklistItemsRequest {

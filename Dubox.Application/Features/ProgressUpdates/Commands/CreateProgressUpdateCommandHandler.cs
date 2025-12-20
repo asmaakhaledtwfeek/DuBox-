@@ -383,7 +383,7 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         boxActivity.ModifiedDate = DateTime.UtcNow;
         boxActivity.ModifiedBy = currentUserId;
 
-        if (inferredStatus == BoxStatusEnum.InProgress && boxActivity.ActualStartDate == null)
+        if ((inferredStatus == BoxStatusEnum.InProgress || inferredStatus == BoxStatusEnum.Completed )&& boxActivity.ActualStartDate == null)
             boxActivity.ActualStartDate = DateTime.UtcNow;
 
         if (inferredStatus == BoxStatusEnum.Completed && oldStatus != BoxStatusEnum.Completed)
@@ -409,7 +409,7 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         };
         await _unitOfWork.Repository<AuditLog>().AddAsync(log, cancellationToken);
 
-        if (inferredStatus == BoxStatusEnum.Completed && boxActivity.ActivityMaster.IsWIRCheckpoint)
+        if (boxActivity.ActivityMaster.IsWIRCheckpoint)
         {
             var wirExists = await _dbContext.WIRRecords
                 .AnyAsync(w => w.BoxActivityId == request.BoxActivityId, cancellationToken);

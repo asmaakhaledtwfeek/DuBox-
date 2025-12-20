@@ -32,6 +32,7 @@ public class GetWIRRecordsByBoxQueryHandler : IRequestHandler<GetWIRRecordsByBox
             var dto = w.Adapt<WIRRecordDto>();
             return dto with
             {
+
                 BoxTag = w.BoxActivity.Box.BoxTag,
                 ActivityName = w.BoxActivity.ActivityMaster.ActivityName,
                 RequestedByName = w.RequestedByUser.FullName ?? w.RequestedByUser.Email,

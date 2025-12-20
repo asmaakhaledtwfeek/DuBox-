@@ -46,6 +46,7 @@ export class WIRService {
       activityName: backendWIR.activityName || backendWIR.ActivityName || '',
       wirCode: backendWIR.wirCode || backendWIR.WIRCode || '',
       status: backendWIR.status || backendWIR.Status,
+      checkpointStatus: backendWIR.checkpointStatus || backendWIR.CheckpointStatus,
       requestedDate: new Date(backendWIR.requestedDate || backendWIR.RequestedDate),
       requestedBy: backendWIR.requestedBy || backendWIR.RequestedBy,
       requestedByName: backendWIR.requestedByName || backendWIR.RequestedByName || '',

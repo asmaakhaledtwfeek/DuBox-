@@ -558,6 +558,23 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
+   * Get WIR display status (prefer checkpoint status if available, otherwise WIR record status)
+   */
+  getWIRDisplayStatus(row: TableRow): any {
+    const wir = this.getWIR(row);
+    if (!wir) return 'Pending';
+    
+    // If checkpoint exists, use checkpoint status
+    const checkpoint = this.getCheckpoint(wir);
+    if (checkpoint && checkpoint.status) {
+      return checkpoint.status;
+    }
+    
+    // Otherwise, fall back to WIR record status
+    return wir.status || 'Pending';
+  }
+
+  /**
    * Get WIR status class
    */
   getWIRStatusClass(status: any): string {
@@ -587,6 +604,7 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
       activityName: activity.activityName,
       wirCode,
       status: WIRStatus.Pending,
+      checkpointStatus: WIRStatus.Pending,
       requestedDate: new Date(),
       requestedBy: '',
       requestedByName: '',

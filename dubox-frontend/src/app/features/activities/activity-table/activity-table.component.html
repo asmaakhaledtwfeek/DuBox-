@@ -107,8 +107,8 @@
             </td>
             <!-- Status cell: merge with Actions if empty -->
             <td class="text-center wir-status-cell" [attr.colspan]="hasWIRActions(row) ? 1 : 2">
-              <span class="wir-status-card" [ngClass]="getWIR(row)?.status || 'Pending'">
-                {{ getWIRStatusLabel(getWIR(row)?.status || 'Pending') }}
+              <span class="wir-status-card" [ngClass]="getWIRStatusClass(getWIRDisplayStatus(row))">
+                {{ getWIRStatusLabel(getWIRDisplayStatus(row)) }}
               </span>
             </td>
             <!-- Actions cell: only show if has data -->

@@ -7,6 +7,7 @@ export interface WIRRecord {
   activityName: string;
   wirCode: string;
   status: WIRStatus;
+  checkpointStatus: WIRStatus;
   requestedDate: Date;
   requestedBy: string;
   requestedByName: string;

@@ -45,6 +45,10 @@ export interface CreateProgressUpdateRequest {
   imageUrl?: string; // For URL input method
   updateMethod: string; // "Web" or "Mobile"
   deviceInfo?: string;
+  // WIR Position fields (optional, only sent if WIR exists below activity)
+  wirBay?: string;
+  wirRow?: string;
+  wirPosition?: string;
 }
 
 export interface ProgressUpdateResponse {

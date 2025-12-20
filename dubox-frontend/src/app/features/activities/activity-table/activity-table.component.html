@@ -175,6 +175,7 @@
 <app-update-progress-modal
   *ngIf="selectedActivity"
   [activity]="selectedActivity"
+  [allActivities]="activitiesWithDetails"
   [isOpen]="isModalOpen"
   (closeModal)="closeProgressModal()"
   (progressUpdated)="onProgressUpdated($event)"

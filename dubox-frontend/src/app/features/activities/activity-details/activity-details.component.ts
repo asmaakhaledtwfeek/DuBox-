@@ -27,6 +27,7 @@ import { DiffUtil } from '../../../core/utils/diff.util';
 export class ActivityDetailsComponent implements OnInit {
   activity: BoxActivity | null = null;
   activityDetail: BoxActivityDetail | null = null;
+  allActivities: BoxActivityDetail[] = []; // All activities for the box (for WIR position feature)
   progressHistory: ProgressUpdate[] = [];
   progressHistoryLoading = false;
   progressHistoryError = '';
@@ -125,6 +126,7 @@ export class ActivityDetailsComponent implements OnInit {
     
     this.initForms();
     this.loadActivity();
+    this.loadAllActivities(); // Load all activities for WIR position feature
     this.loadDropdownData();
   }
 
@@ -232,6 +234,28 @@ export class ActivityDetailsComponent implements OnInit {
             console.error('❌ Error loading activity:', err);
           }
         });
+      }
+    });
+  }
+
+  /**
+   * Load all activities for the box (used for WIR position feature)
+   */
+  loadAllActivities(): void {
+    if (!this.boxId) {
+      console.warn('⚠️ BoxId not available, cannot load all activities');
+      return;
+    }
+
+    this.progressUpdateService.getBoxActivitiesWithProgress(this.boxId).subscribe({
+      next: (activities) => {
+        this.allActivities = activities || [];
+        console.log(`✅ Loaded ${this.allActivities.length} activities for WIR position feature`);
+      },
+      error: (err) => {
+        console.error('❌ Error loading all activities:', err);
+        // Don't show error to user, just log it - modal will work without WIR position feature
+        this.allActivities = [];
       }
     });
   }
@@ -522,6 +546,8 @@ export class ActivityDetailsComponent implements OnInit {
   onProgressUpdated(response: any): void {
     // Reload activity data to reflect the updated progress
     this.loadActivity();
+    // Reload all activities to ensure WIR position data is up to date
+    this.loadAllActivities();
     
     // Reload progress history to show the new update
     this.loadProgressHistory();

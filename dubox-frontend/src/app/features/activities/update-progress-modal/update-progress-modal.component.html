@@ -253,6 +253,49 @@
           ></textarea>
         </div>
 
+        <!-- WIR Position Section (only shown if WIR exists below) -->
+        <div class="form-group wir-position-section" *ngIf="hasWIRBelow && nearestWIR">
+          <div class="wir-position-header">
+            <label>WIR Position</label>
+            <span class="wir-position-note">Location for {{ nearestWIR.wirCode }}</span>
+          </div>
+          <div class="wir-position-fields">
+            <div class="form-group-inline">
+              <label for="wirBay">Bay</label>
+              <input 
+                type="text" 
+                id="wirBay" 
+                formControlName="wirBay"
+                class="form-control"
+                placeholder="Enter bay"
+                maxlength="50"
+              />
+            </div>
+            <div class="form-group-inline">
+              <label for="wirRow">Row</label>
+              <input 
+                type="text" 
+                id="wirRow" 
+                formControlName="wirRow"
+                class="form-control"
+                placeholder="Enter row"
+                maxlength="50"
+              />
+            </div>
+            <div class="form-group-inline">
+              <label for="wirPosition">Position</label>
+              <input 
+                type="text" 
+                id="wirPosition" 
+                formControlName="wirPosition"
+                class="form-control"
+                placeholder="Enter position"
+                maxlength="50"
+              />
+            </div>
+          </div>
+        </div>
+
         <!-- Action Buttons -->
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" (click)="close()" [disabled]="isSubmitting">

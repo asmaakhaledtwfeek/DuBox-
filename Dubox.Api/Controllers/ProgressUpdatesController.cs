@@ -36,6 +36,9 @@ public class ProgressUpdatesController : ControllerBase
     [FromForm] List<string>? ImageUrls,
     [FromForm] string UpdateMethod,
     [FromForm] string? DeviceInfo,
+    [FromForm] string? WirBay,
+    [FromForm] string? WirRow,
+    [FromForm] string? WirPosition,
     CancellationToken cancellationToken)
     {
         List<byte[]>? fileBytes = null;
@@ -72,7 +75,10 @@ public class ProgressUpdatesController : ControllerBase
             fileBytes,
             validImageUrls,
             UpdateMethod,
-            DeviceInfo
+            DeviceInfo,
+            WirBay,
+            WirRow,
+            WirPosition
         );
 
         var result = await _mediator.Send(command, cancellationToken);

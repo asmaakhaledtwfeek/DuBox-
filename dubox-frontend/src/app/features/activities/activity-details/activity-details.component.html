@@ -976,6 +976,7 @@
 <app-update-progress-modal
   *ngIf="activityDetail"
   [activity]="activityDetail"
+  [allActivities]="allActivities"
   [isOpen]="isModalOpen"
   (closeModal)="closeProgressModal()"
   (progressUpdated)="onProgressUpdated($event)">

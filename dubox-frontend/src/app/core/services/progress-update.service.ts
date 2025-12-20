@@ -58,6 +58,17 @@ export class ProgressUpdateService {
       formData.append('LocationDescription', request.locationDescription);
     }
     
+    // Append WIR position fields if provided
+    if (request.wirBay !== undefined) {
+      formData.append('WirBay', request.wirBay || '');
+    }
+    if (request.wirRow !== undefined) {
+      formData.append('WirRow', request.wirRow || '');
+    }
+    if (request.wirPosition !== undefined) {
+      formData.append('WirPosition', request.wirPosition || '');
+    }
+    
     // Append multiple files if provided - ASP.NET Core expects Files parameter name
     if (files && files.length > 0) {
       files.forEach((file) => {

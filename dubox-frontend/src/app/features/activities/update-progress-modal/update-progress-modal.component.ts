@@ -2,7 +2,9 @@ import { Component, EventEmitter, Input, OnChanges, OnDestroy, OnInit, Output, S
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
+import { WIRService } from '../../../core/services/wir.service';
 import { ActivityProgressStatus, BoxActivityDetail } from '../../../core/models/progress-update.model';
+import { WIRRecord } from '../../../core/models/wir.model';
 
 @Component({
   selector: 'app-update-progress-modal',
@@ -14,6 +16,7 @@ import { ActivityProgressStatus, BoxActivityDetail } from '../../../core/models/
 export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestroy {
   @Input() activity!: BoxActivityDetail;
   @Input() isOpen: boolean = false;
+  @Input() allActivities: BoxActivityDetail[] = []; // All activities to find nearest WIR
   @Output() closeModal = new EventEmitter<void>();
   @Output() progressUpdated = new EventEmitter<any>();
 
@@ -33,9 +36,14 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
   showCamera = false;
   photoInputMethod: 'url' | 'upload' | 'camera' = 'url';
 
+  // WIR position fields
+  nearestWIR: WIRRecord | null = null;
+  hasWIRBelow: boolean = false;
+
   constructor(
     private fb: FormBuilder,
-    private progressUpdateService: ProgressUpdateService
+    private progressUpdateService: ProgressUpdateService,
+    private wirService: WIRService
   ) {}
 
   ngOnInit(): void {
@@ -43,8 +51,8 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    // Reinitialize form when activity changes or modal opens
-    if (changes['activity'] || (changes['isOpen'] && this.isOpen && this.activity)) {
+    // Reinitialize form when activity changes, allActivities changes, or modal opens
+    if (changes['activity'] || changes['allActivities'] || (changes['isOpen'] && this.isOpen && this.activity)) {
       this.initializeForm();
       // Clear previous errors and messages when opening
       if (this.isOpen) {
@@ -82,14 +90,95 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
   initializeForm(): void {
     if (!this.activity) return;
     
+    // Find nearest WIR below this activity in sequence
+    this.findNearestWIRBelow();
+    
     this.progressForm = this.fb.group({
       progressPercentage: [
         this.activity.progressPercentage || 0, 
         [Validators.required, Validators.min(0), Validators.max(100)]
       ],
       workDescription: [''],
-      issuesEncountered: ['']
+      issuesEncountered: [''],
+      // WIR Position fields (optional, only shown if WIR exists below)
+      wirBay: [this.nearestWIR?.bay || ''],
+      wirRow: [this.nearestWIR?.row || ''],
+      wirPosition: [this.nearestWIR?.position || '']
     });
+  }
+
+  /**
+   * Find the nearest WIR record below the current activity in sequence
+   */
+  private findNearestWIRBelow(): void {
+    if (!this.activity || !this.allActivities || this.allActivities.length === 0) {
+      this.hasWIRBelow = false;
+      this.nearestWIR = null;
+      return;
+    }
+
+    const currentSequence = this.activity.sequence || 0;
+    
+    // Find activities with sequence greater than current
+    const activitiesBelow = this.allActivities
+      .filter(a => (a.sequence || 0) > currentSequence)
+      .sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
+
+    if (activitiesBelow.length === 0) {
+      this.hasWIRBelow = false;
+      this.nearestWIR = null;
+      return;
+    }
+
+    // Load WIR records for the box to find the nearest WIR
+    if (this.activity.boxId) {
+      this.wirService.getWIRRecordsByBox(this.activity.boxId).subscribe({
+        next: (wirRecords) => {
+          // Find WIR records for activities below current
+          const wirRecordsBelow = wirRecords.filter(wir => {
+            const wirActivity = activitiesBelow.find(a => a.boxActivityId === wir.boxActivityId);
+            return wirActivity !== undefined;
+          });
+
+          if (wirRecordsBelow.length > 0) {
+            // Get the nearest WIR (lowest sequence)
+            const nearestActivity = activitiesBelow.find(a => 
+              wirRecordsBelow.some(wir => wir.boxActivityId === a.boxActivityId)
+            );
+            
+            if (nearestActivity) {
+              this.nearestWIR = wirRecordsBelow.find(wir => 
+                wir.boxActivityId === nearestActivity.boxActivityId
+              ) || null;
+              this.hasWIRBelow = !!this.nearestWIR;
+              
+              // Update form with WIR position values
+              if (this.nearestWIR && this.progressForm) {
+                this.progressForm.patchValue({
+                  wirBay: this.nearestWIR.bay || '',
+                  wirRow: this.nearestWIR.row || '',
+                  wirPosition: this.nearestWIR.position || ''
+                });
+              }
+            } else {
+              this.hasWIRBelow = false;
+              this.nearestWIR = null;
+            }
+          } else {
+            this.hasWIRBelow = false;
+            this.nearestWIR = null;
+          }
+        },
+        error: (error) => {
+          console.error('Error loading WIR records:', error);
+          this.hasWIRBelow = false;
+          this.nearestWIR = null;
+        }
+      });
+    } else {
+      this.hasWIRBelow = false;
+      this.nearestWIR = null;
+    }
   }
 
   onFileSelected(event: any): void {
@@ -432,7 +521,11 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
         workDescription: this.progressForm.value.workDescription || undefined,
         issuesEncountered: this.progressForm.value.issuesEncountered || undefined,
         updateMethod: 'Web',
-        deviceInfo: deviceInfo
+        deviceInfo: deviceInfo,
+        // Include WIR position fields if WIR exists below
+        wirBay: this.hasWIRBelow ? (this.progressForm.value.wirBay || undefined) : undefined,
+        wirRow: this.hasWIRBelow ? (this.progressForm.value.wirRow || undefined) : undefined,
+        wirPosition: this.hasWIRBelow ? (this.progressForm.value.wirPosition || undefined) : undefined
       };
 
       this.progressUpdateService.createProgressUpdate(request, files, imageUrls).subscribe({

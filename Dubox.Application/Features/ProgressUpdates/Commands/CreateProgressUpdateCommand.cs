@@ -16,6 +16,9 @@ public record CreateProgressUpdateCommand(
     List<byte[]>? Files,
     List<string>? ImageUrls,
     string UpdateMethod,
-    string? DeviceInfo
+    string? DeviceInfo,
+    string? WirBay,
+    string? WirRow,
+    string? WirPosition
 ) : IRequest<Result<ProgressUpdateDto>>;
 

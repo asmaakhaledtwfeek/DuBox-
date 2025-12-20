@@ -41,5 +41,13 @@ public class WIRRecord
 
     public DateTime CreatedDate { get; set; }
     public DateTime? ModifiedDate { get; set; }
+    [MaxLength(50)]
+    public string? Bay { get; set; }
+
+    [MaxLength(50)]
+    public string? Row { get; set; }
+
+    [MaxLength(50)]
+    public string? Position { get; set; }
 }
 

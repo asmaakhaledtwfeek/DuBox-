@@ -18,6 +18,9 @@ export interface WIRRecord {
   photoUrls?: string;
   rejectionReason?: string;
   checklistItems?: WIRChecklistItem[];
+  bay?: string;
+  row?: string;
+  position?: string;
 }
 
 export interface WIRChecklistItem {

@@ -18,6 +18,9 @@ public record WIRRecordDto
     public string? InspectionNotes { get; init; }
     public string? PhotoUrls { get; init; }
     public string? RejectionReason { get; init; }
+    public string? Bay { get; init; }
+    public string? Row { get; init; }
+    public string? Position { get; init; }
 }
 
 public record CreateWIRRecordDto

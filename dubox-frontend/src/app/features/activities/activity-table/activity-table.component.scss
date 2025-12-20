@@ -367,6 +367,12 @@
 }
 
 // WIR-specific cell styling
+.wir-activity-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .stage-label {
   font-size: 12px;
   font-weight: 700;
@@ -376,6 +382,33 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
   display: block;
+}
+
+.wir-location-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.wir-location-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: rgba(27, 154, 170, 0.08);
+  border-radius: 6px;
+  border: 1px solid rgba(27, 154, 170, 0.15);
+
+  strong {
+    font-weight: 600;
+    color: #1b9aaa;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
 }
 
 .wir-activity-cell,

@@ -55,7 +55,10 @@ export class WIRService {
       inspectionDate: backendWIR.inspectionDate ? new Date(backendWIR.inspectionDate || backendWIR.InspectionDate) : undefined,
       inspectionNotes: backendWIR.inspectionNotes || backendWIR.InspectionNotes,
       photoUrls: backendWIR.photoUrls || backendWIR.PhotoUrls,
-      rejectionReason: backendWIR.rejectionReason || backendWIR.RejectionReason
+      rejectionReason: backendWIR.rejectionReason || backendWIR.RejectionReason,
+      bay: backendWIR.bay || backendWIR.Bay,
+      row: backendWIR.row || backendWIR.Row,
+      position: backendWIR.position || backendWIR.Position
     };
   }
 

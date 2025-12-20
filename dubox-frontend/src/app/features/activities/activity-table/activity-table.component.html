@@ -92,7 +92,20 @@
             <td class="text-center team-cell wir-team-cell"><strong>QA/QC</strong></td>
             <!-- Activity cell: merge with Assigned to if empty -->
             <td class="activity-name wir-activity-cell" [attr.colspan]="hasWIRInspector(row) ? 1 : 2">
-              <span class="stage-label">Clearance / WIR</span>
+              <div class="wir-activity-info">
+                <span class="stage-label">Clearance / WIR</span>
+                <div class="wir-location-info" *ngIf="hasWIRLocation(row)">
+                  <span class="wir-location-item" *ngIf="getWIR(row)?.bay && getWIR(row)?.bay !== '-'">
+                    <strong>Bay:</strong> {{ getWIRBay(row) }}
+                  </span>
+                  <span class="wir-location-item" *ngIf="getWIR(row)?.row && getWIR(row)?.row !== '-'">
+                    <strong>Row:</strong> {{ getWIRRow(row) }}
+                  </span>
+                  <span class="wir-location-item" *ngIf="getWIR(row)?.position && getWIR(row)?.position !== '-'">
+                    <strong>Position:</strong> {{ getWIRPosition(row) }}
+                  </span>
+                </div>
+              </div>
             </td>
             <!-- Assigned to cell: show for all WIRs, default to "QC Engineer" if not assigned -->
             <td class="assigned-to" *ngIf="hasWIRInspector(row)">

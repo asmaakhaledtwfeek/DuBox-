@@ -170,6 +170,13 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
     this.wirService.getWIRRecordsByBox(this.boxId).subscribe({
       next: (wirRecords) => {
         this.wirRecords = wirRecords;
+        // Debug: Log WIR records with location data
+        console.log('📋 WIR Records loaded:', wirRecords.map(w => ({
+          wirCode: w.wirCode,
+          bay: w.bay,
+          row: w.row,
+          position: w.position
+        })));
         // Load checkpoints for all WIR records
         this.loadWIRCheckpoints();
       },
@@ -614,7 +621,10 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
       inspectionNotes: '',
       photoUrls: '',
       rejectionReason: '',
-      checklistItems: []
+      checklistItems: [],
+      bay: undefined,
+      row: undefined,
+      position: undefined
     };
   }
 
@@ -638,6 +648,46 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   getWIRInspectorName(row: TableRow): string {
     const wir = this.getWIR(row);
     return wir?.inspectedByName || 'QC Engineer';
+  }
+
+  /**
+   * Get WIR bay
+   */
+  getWIRBay(row: TableRow): string {
+    const wir = this.getWIR(row);
+    const bay = wir?.bay;
+    return (bay && bay.trim() !== '') ? bay : '-';
+  }
+
+  /**
+   * Get WIR row (position row)
+   */
+  getWIRRow(row: TableRow): string {
+    const wir = this.getWIR(row);
+    const rowValue = wir?.row;
+    return (rowValue && rowValue.trim() !== '') ? rowValue : '-';
+  }
+
+  /**
+   * Get WIR position
+   */
+  getWIRPosition(row: TableRow): string {
+    const wir = this.getWIR(row);
+    const position = wir?.position;
+    return (position && position.trim() !== '') ? position : '-';
+  }
+
+  /**
+   * Check if WIR has location info (bay, row, or position)
+   */
+  hasWIRLocation(row: TableRow): boolean {
+    const wir = this.getWIR(row);
+    if (!wir) return false;
+    // Check if any location field exists and is not empty or dash
+    const hasBay = wir.bay && wir.bay !== '-' && wir.bay.trim() !== '';
+    const hasRow = wir.row && wir.row !== '-' && wir.row.trim() !== '';
+    const hasPosition = wir.position && wir.position !== '-' && wir.position.trim() !== '';
+    return !!(hasBay || hasRow || hasPosition);
   }
 
   /**

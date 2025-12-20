@@ -802,6 +802,12 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     ).length;
   }
 
+  getConditionalApprovedCheckpointsCount(): number {
+    return this.wirCheckpoints.filter(cp => 
+      cp.status?.toLowerCase() === WIRCheckpointStatus.ConditionalApproval.toLowerCase()
+    ).length;
+  }
+
   navigateToAddChecklist(checkpoint: WIRCheckpoint): void {
     if (!this.canNavigateToAddChecklist(checkpoint)) {
       return;

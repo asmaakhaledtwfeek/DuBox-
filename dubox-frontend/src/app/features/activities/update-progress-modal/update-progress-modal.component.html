@@ -254,10 +254,10 @@
         </div>
 
         <!-- WIR Position Section (only shown if WIR exists below) -->
-        <div class="form-group wir-position-section" *ngIf="hasWIRBelow && nearestWIR">
+        <div class="form-group wir-position-section" >
           <div class="wir-position-header">
             <label>WIR Position</label>
-            <span class="wir-position-note">Location for {{ nearestWIR.wirCode }}</span>
+            <span class="wir-position-note">Location for {{ nearestWIR?.wirCode||"WIR" }}</span>
           </div>
           <div class="wir-position-fields">
             <div class="form-group-inline">

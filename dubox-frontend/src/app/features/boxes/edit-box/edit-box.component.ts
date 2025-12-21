@@ -4,6 +4,7 @@ import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { BoxService } from '../../../core/services/box.service';
 import { Box, BoxType, BoxSubType, getBoxStatusNumber } from '../../../core/models/box.model';
+import { FactoryService, Factory, ProjectLocation } from '../../../core/services/factory.service';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { ProjectService } from '../../../core/services/project.service';
@@ -29,6 +30,7 @@ export class EditBoxComponent implements OnInit {
   scheduleErrorMessage: string | null = null;
   projectCategoryId: number | null = null;
   projectCategoryName: string = '';
+  projectLocation: string = ''; // Store project location
 
   // Box types loaded from backend based on project category
   boxTypes: BoxType[] = [];
@@ -54,9 +56,14 @@ export class EditBoxComponent implements OnInit {
   availableBoxLetters: string[] = [];
   loadingBoxLetters = false;
 
+  // Factory dropdown
+  factories: Factory[] = [];
+  loadingFactories = false;
+
   constructor(
     private fb: FormBuilder,
     private boxService: BoxService,
+    private factoryService: FactoryService,
     private router: Router,
     private route: ActivatedRoute,
     private projectService: ProjectService
@@ -91,11 +98,18 @@ export class EditBoxComponent implements OnInit {
         
         // Extract project details
         this.projectCategoryName = projectData?.categoryName || '';
+        this.projectLocation = projectData?.location || '';
         
         // Extract category ID
         const categoryId = projectData?.categoryId || projectData?.projectCategoryId;
         this.projectCategoryId = categoryId;
         console.log('📂 Project Category ID:', categoryId);
+        console.log('📍 Project Location:', this.projectLocation);
+
+        // Load factories based on project location
+        if (this.projectLocation) {
+          this.loadFactoriesByLocation();
+        }
         
         if (categoryId) {
           console.log('🔄 Loading Box Types for Category ID:', categoryId);
@@ -292,6 +306,7 @@ export class EditBoxComponent implements OnInit {
       floor: ['GF', Validators.required],
       boxLetter: ['', Validators.required],
       zone: [null], // Zone is a number (BoxZone enum value)
+      factoryId: [null],
       length: ['', [Validators.min(0), Validators.max(99999)]],
       width: ['', [Validators.min(0), Validators.max(99999)]],
       height: ['', [Validators.min(0), Validators.max(99999)]],
@@ -414,6 +429,7 @@ export class EditBoxComponent implements OnInit {
       boxLetter: box.boxLetter || '',
       // Don't set zone here - let preselectZone handle it after zones are loaded
       // zone: box.zone || '',
+      factoryId: box.factoryId || null,
       length: box.length || '',
       width: box.width || '',
       height: box.height || '',
@@ -435,6 +451,12 @@ export class EditBoxComponent implements OnInit {
     // This will work if zones are already loaded, otherwise it will be called from loadZones
     setTimeout(() => {
       this.preselectZone();
+    }, 100);
+    
+    // Preselect factory after form is populated
+    // This will work if factories are already loaded, otherwise it will be called from loadFactoriesByLocation
+    setTimeout(() => {
+      this.preselectFactory();
     }, 100);
     
     // Load available box letters after form is populated
@@ -591,6 +613,7 @@ export class EditBoxComponent implements OnInit {
       buildingNumber: formValue.buildingNumber || null,
       boxLetter: formValue.boxLetter || null,
       zone: formValue.zone || null,
+      factoryId: formValue.factoryId || null,
       status: statusNumber,  // REQUIRED (int) - converted from string
       length: formValue.length ? parseFloat(formValue.length) : null,
       width: formValue.width ? parseFloat(formValue.width) : null,
@@ -684,9 +707,76 @@ export class EditBoxComponent implements OnInit {
       revitElementId: 'Revit element ID',
       boxPlannedStartDate: 'Box planned start date',
       boxDuration: 'Box duration',
-      notes: 'Notes'
+      notes: 'Notes',
+      factoryId: 'Factory'
     };
     return labels[fieldName] || fieldName;
+  }
+
+  /**
+   * Load factories based on project location
+   */
+  private loadFactoriesByLocation(): void {
+    if (!this.projectLocation) {
+      return;
+    }
+
+    // Map project location string to ProjectLocation enum
+    let locationEnum: ProjectLocation;
+    const locationUpper = this.projectLocation.toUpperCase();
+    if (locationUpper === 'KSA') {
+      locationEnum = ProjectLocation.KSA;
+    } else if (locationUpper === 'UAE') {
+      locationEnum = ProjectLocation.UAE;
+    } else {
+      console.warn('⚠️ Unknown project location:', this.projectLocation);
+      return;
+    }
+
+    this.loadingFactories = true;
+    this.factoryService.getFactoriesByLocation(locationEnum).subscribe({
+      next: (factories) => {
+        this.factories = factories;
+        this.loadingFactories = false;
+        console.log(`✅ Loaded ${factories.length} factory(ies) for location: ${this.projectLocation}`);
+        
+        // After factories are loaded, preselect if box is already loaded
+        if (this.box) {
+          this.preselectFactory();
+        }
+      },
+      error: (err) => {
+        console.error('❌ Error loading factories:', err);
+        this.loadingFactories = false;
+        this.factories = [];
+      }
+    });
+  }
+
+  /**
+   * Preselect the factory based on the current box data
+   */
+  private preselectFactory(): void {
+    if (!this.box || !this.box.factoryId) {
+      return;
+    }
+
+    // Check if factories are loaded
+    if (this.factories.length === 0) {
+      console.log('⏳ Factories not loaded yet, will preselect after they load');
+      return;
+    }
+
+    // Find the factory in the loaded list
+    const factory = this.factories.find(f => f.factoryId === this.box!.factoryId);
+    if (factory) {
+      this.boxForm.patchValue({ factoryId: factory.factoryId });
+      console.log(`✅ Preselected Factory: ${factory.factoryCode} - ${factory.factoryName}`);
+    } else {
+      console.warn(`⚠️ Factory ID ${this.box.factoryId} not found in loaded factories`);
+      // Still set the factoryId even if not in the list (in case it's from a different location)
+      this.boxForm.patchValue({ factoryId: this.box.factoryId });
+    }
   }
 
   private validateSchedule(): void {

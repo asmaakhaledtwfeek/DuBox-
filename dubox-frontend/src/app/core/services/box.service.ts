@@ -104,6 +104,12 @@ export class BoxService {
       currentLocationId: backendBox.currentLocationId,
       currentLocationCode: backendBox.currentLocationCode,
       currentLocationName: backendBox.currentLocationName,
+      factoryId: backendBox.factoryId || backendBox.FactoryId,
+      factoryCode: backendBox.factoryCode || backendBox.FactoryCode,
+      factoryName: backendBox.factoryName || backendBox.FactoryName,
+      bay: backendBox.bay || backendBox.Bay,
+      row: backendBox.row || backendBox.Row,
+      position: backendBox.position || backendBox.Position,
       createdBy: backendBox.createdBy,
       updatedBy: backendBox.modifiedBy || backendBox.updatedBy,
       createdAt: this.parseDate(backendBox.createdDate ?? backendBox.CreatedDate),
@@ -162,6 +168,15 @@ export class BoxService {
    */
   getBoxesByProject(projectId: string, filters?: BoxFilters): Observable<Box[]> {
     return this.apiService.get<any[]>(`${this.endpoint}/project/${projectId}`, filters).pipe(
+      map(boxes => boxes.map(b => this.transformBox(b)))
+    );
+  }
+
+  /**
+   * Get boxes by factory ID
+   */
+  getBoxesByFactory(factoryId: string): Observable<Box[]> {
+    return this.apiService.get<any[]>(`${this.endpoint}/factory/${factoryId}`).pipe(
       map(boxes => boxes.map(b => this.transformBox(b)))
     );
   }

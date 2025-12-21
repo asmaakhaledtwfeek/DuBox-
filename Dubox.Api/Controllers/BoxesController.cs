@@ -32,6 +32,13 @@ public class BoxesController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
+    [HttpGet("factory/{factoryId}")]
+    public async Task<IActionResult> GetBoxesByFactory(Guid factoryId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetBoxesByFactoryQuery(factoryId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
     [HttpGet("project/{projectId}/box-type-stats")]
     public async Task<IActionResult> GetBoxTypeStatsByProject(Guid projectId, CancellationToken cancellationToken)
     {

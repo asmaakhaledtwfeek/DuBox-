@@ -320,6 +320,47 @@
                   {{ getFieldError('zone') }}
                 </div>
               </div>
+
+              <!-- Factory -->
+              <div class="form-group">
+                <label for="factoryId">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M2 20h.01"/><path d="M7 20h.01"/><path d="M12 20h.01"/><path d="M17 20h.01"/><path d="M22 20h.01"/><path d="M2 15h.01"/><path d="M7 15h.01"/><path d="M12 15h.01"/><path d="M17 15h.01"/><path d="M22 15h.01"/><path d="M2 10h.01"/><path d="M7 10h.01"/><path d="M12 10h.01"/><path d="M17 10h.01"/><path d="M22 10h.01"/><path d="M2 5h.01"/><path d="M7 5h.01"/><path d="M12 5h.01"/><path d="M17 5h.01"/><path d="M22 5h.01"/>
+                  </svg>
+                  Factory
+                </label>
+                <select
+                  id="factoryId"
+                  formControlName="factoryId"
+                  class="form-control"
+                  [class.invalid]="isFieldInvalid('factoryId')"
+                  [disabled]="loadingFactories"
+                >
+                  <option [ngValue]="null">Select Factory</option>
+                  <option *ngFor="let factory of factories" [ngValue]="factory.factoryId">
+                    {{ factory.factoryCode }} - {{ factory.factoryName }}
+                    <span *ngIf="factory.isFull"> (Full)</span>
+                    <span *ngIf="!factory.isFull && factory.capacity"> ({{ factory.availableCapacity }} available)</span>
+                  </option>
+                </select>
+                <div class="helper-text" *ngIf="loadingFactories">
+                  Loading factories for {{ projectLocation }}...
+                </div>
+                <small *ngIf="!loadingFactories && factories.length === 0 && projectLocation" style="color: #f59e0b; font-size: 12px; display: block; margin-top: 4px;">
+                  ⚠️ No factories available for location: {{ projectLocation }}
+                </small>
+                <small *ngIf="!loadingFactories && factories.length > 0 && projectLocation" style="color: #10b981; font-size: 12px; display: block; margin-top: 4px;">
+                  📍 Showing {{ factories.length }} factory(ies) for location: <strong>{{ projectLocation }}</strong>
+                </small>
+                <div class="error-text" *ngIf="isFieldInvalid('factoryId')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  {{ getFieldError('factoryId') }}
+                </div>
+              </div>
             </div>
           </div>
 

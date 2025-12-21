@@ -33,7 +33,13 @@
               {{ getStatusLabel(box.status) }}
             </span>
           </div>
-          <p class="page-subtitle">{{ box.code }} • {{ box.type }}</p>
+          <p class="page-subtitle">
+            {{ box.code }} • 
+            {{ box.boxTypeName || box.type }}
+            <span *ngIf="box.boxSubTypeName || box.subType">
+              / {{ box.boxSubTypeName || box.subType }}
+            </span>
+          </p>
         </div>
         <div class="header-right">
           <button class="btn btn-secondary" (click)="openMoveLocationModal()" *ngIf="canEdit">

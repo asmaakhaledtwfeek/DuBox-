@@ -75,6 +75,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
     this.isLoadingMenu = false;
     this.allMenuItemsFromDb = [];
     this.menuItems = [];
+    // Clear navigation menu cache
+    this.permissionService.clearNavigationMenuCache();
     this.loadMenuItems();
   }
 
@@ -89,6 +91,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
     // The service now handles caching, so this won't make duplicate API calls
     this.permissionService.getNavigationMenuItems().subscribe({
       next: (items) => {
+        console.log('📋 Loaded menu items from backend:', items.length, 'items');
+        console.log('📋 Menu items:', items.map(i => `${i.label} (${i.permissionModule}.${i.permissionAction})`));
         this.allMenuItemsFromDb = items;
         this.menuLoaded = true;
         this.isLoadingMenu = false;
@@ -125,22 +129,32 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
     // Use database menu items if loaded, otherwise use fallback
     if (this.allMenuItemsFromDb.length > 0) {
-      allMenuItems = this.allMenuItemsFromDb.map(item => ({
-        label: item.label,
-        icon: item.icon,
-        route: item.route,
-        aliases: item.aliases,
-        permissionModule: item.permissionModule,
-        permissionAction: item.permissionAction,
-        children: item.children?.map(child => ({
-          label: child.label,
-          icon: child.icon,
-          route: child.route,
-          aliases: child.aliases,
-          permissionModule: child.permissionModule,
-          permissionAction: child.permissionAction
-        }))
-      }));
+      allMenuItems = this.allMenuItemsFromDb
+        .filter(item => {
+          // Filter out Locations menu item (commented out but kept in code)
+          return !(item.label?.toLowerCase() === 'locations' || item.route?.toLowerCase() === '/locations');
+        })
+        .map(item => {
+          // Ensure route starts with / for proper navigation
+          const normalizedRoute = item.route?.startsWith('/') ? item.route : `/${item.route}`;
+          console.log(`🔗 Menu item "${item.label}": route="${item.route}" -> normalized="${normalizedRoute}"`);
+          return {
+            label: item.label,
+            icon: item.icon,
+            route: normalizedRoute,
+            aliases: item.aliases,
+            permissionModule: item.permissionModule,
+            permissionAction: item.permissionAction,
+            children: item.children?.map(child => ({
+              label: child.label,
+              icon: child.icon,
+              route: child.route?.startsWith('/') ? child.route : `/${child.route}`,
+              aliases: child.aliases,
+              permissionModule: child.permissionModule,
+              permissionAction: child.permissionAction
+            }))
+          };
+        });
     } else {
       // Fallback menu items if database not available
       allMenuItems = this.getFallbackMenuItems();
@@ -171,6 +185,16 @@ export class SidebarComponent implements OnInit, OnDestroy {
         item.permissionAction
       );
 
+      // Debug logging for Factories menu item
+      if (item.label === 'Factories' || item.permissionModule === 'factories') {
+        console.log('🏭 Checking Factories menu item permission:');
+        console.log('  - Module:', item.permissionModule);
+        console.log('  - Action:', item.permissionAction);
+        console.log('  - Has Permission:', hasExactPermission);
+        console.log('  - User has factories.view:', this.permissionService.hasPermission('factories', 'view'));
+        console.log('  - All user permissions:', this.permissionService.getCachedPermissions());
+      }
+
       // Special case: allow users with 'users.view' to see the Admin menu
       // even if the menu item action is still 'manage' in the DB seed data.
       if (item.permissionModule === 'users' && item.route?.startsWith('/admin')) {
@@ -183,6 +207,9 @@ export class SidebarComponent implements OnInit, OnDestroy {
       return hasExactPermission;
     });
 
+    console.log('✅ Filtered menu items:', this.menuItems.length, 'visible items');
+    console.log('✅ Visible menu items:', this.menuItems.map(i => i.label));
+
     // Mark menu as built to prevent rebuilds
     this.menuBuilt = true;
   }
@@ -191,7 +218,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
     return [
       { label: 'Projects', icon: 'projects', route: '/projects', permissionModule: 'projects', permissionAction: 'view' },
       { label: 'Materials', icon: 'materials', route: '/materials', permissionModule: 'materials', permissionAction: 'view' },
-      { label: 'Locations', icon: 'location', route: '/locations', permissionModule: 'locations', permissionAction: 'view' },
+      //{ label: 'Locations', icon: 'location', route: '/locations', permissionModule: 'locations', permissionAction: 'view' },
+      { label: 'Factories', icon: 'factory', route: '/factories', permissionModule: 'factories', permissionAction: 'view' },
       { label: 'Teams', icon: 'teams', route: '/teams', permissionModule: 'teams', permissionAction: 'view' },
       { label: 'Quality Control', icon: 'qc', route: '/qc', aliases: ['/quality'], permissionModule: 'wir', permissionAction: 'view' },
       { label: 'Reports', icon: 'reports', route: '/reports', permissionModule: 'reports', permissionAction: 'view' },
@@ -202,6 +230,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   toggleSidebar(): void {
     this.isCollapsed = !this.isCollapsed;
+  }
+
+  onMenuItemClick(item: MenuItem): void {
+    console.log(`🖱️ Menu item clicked: "${item.label}" -> route: "${item.route}"`);
+    console.log(`📍 Current route: ${this.router.url}`);
+    // routerLink will handle navigation, this is just for debugging
   }
 
   isActive(route: string, aliases?: string[]): boolean {
@@ -223,7 +257,8 @@ export class SidebarComponent implements OnInit, OnDestroy {
       dashboard: '<path d="M3 3h7v7H3z"/><path d="M14 3h7v7h-7z"/><path d="M14 14h7v7h-7z"/><path d="M3 14h7v7H3z"/>',
       projects: '<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>',
       materials: '<path d="M20 7h-4M4 7h4m0 0V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-6 0h6m-6 0v10m6-10v10"/>',
-      location: '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
+      //location: '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>',
+      factory: '<path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/><path d="M12 8v8M8 12h8"/>',
       teams: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/>',
       qc: '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
       procurement: '<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>',

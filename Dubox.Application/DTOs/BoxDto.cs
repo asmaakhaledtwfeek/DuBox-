@@ -40,6 +40,12 @@ public record BoxDto
     public Guid? CurrentLocationId { get; init; }
     public string? CurrentLocationCode { get; init; }
     public string? CurrentLocationName { get; init; }
+    public Guid? FactoryId { get; init; }
+    public string? FactoryCode { get; init; }
+    public string? FactoryName { get; init; }
+    public string? Bay { get; init; }
+    public string? Row { get; init; }
+    public string? Position { get; init; }
 }
 
 public record CreateBoxDto
@@ -57,6 +63,7 @@ public record CreateBoxDto
     public decimal? Height { get; init; }
     public string? BIMModelReference { get; init; }
     public string? RevitElementId { get; init; }
+    public Guid? FactoryId { get; init; }
     public List<CreateBoxAssetDto>? Assets { get; init; }
 }
 
@@ -76,6 +83,7 @@ public record UpdateBoxDto
     public decimal? Height { get; init; }
     public DateTime? PlannedEndDate { get; init; }
     public string? Notes { get; init; }
+    public Guid? FactoryId { get; init; }
 }
 
 public record ImportBoxesDto

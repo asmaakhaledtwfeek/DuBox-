@@ -450,11 +450,10 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
                 RequestedBy = currentUserId,
                 CreatedDate = DateTime.UtcNow
             };
-           positionUpdated= UpdateWIRPosition(nearestWIR, request);
             await _unitOfWork.Repository<WIRRecord>().AddAsync(nearestWIR, cancellationToken);
+            await _unitOfWork.CompleteAsync();
         }
-        else
-        {
+       
              oldBay = nearestWIR.Bay;
              oldRow = nearestWIR.Row;
              oldPosition = nearestWIR.Position;
@@ -464,11 +463,22 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
                 nearestWIR.ModifiedDate = DateTime.UtcNow;
                 _unitOfWork.Repository<WIRRecord>().Update(nearestWIR);
             }
-        }
+        
         if (positionUpdated)
         {
+            // update box location 
+            var box= await _unitOfWork.Repository<Box>().GetByIdAsync(currentActivity.BoxId, cancellationToken);
+            if (box != null)
+            {
+                box.Bay = nearestWIR.Bay;
+                box.Row = nearestWIR.Row;
+                box.Position = nearestWIR.Position;
+                box.ModifiedDate = DateTime.UtcNow;
+                box.ModifiedBy = currentUserId;
+                _unitOfWork.Repository<Box>().Update(box);
+            }
             // Create audit log for WIR position update
-            var auditLog = new AuditLog
+            var wIRAuditLog = new AuditLog
             {
                 TableName = nameof(WIRRecord),
                 RecordId = nearestWIR.WIRRecordId,
@@ -479,7 +489,20 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
                 ChangedDate = DateTime.UtcNow,
                 Description = $"WIR position updated from activity progress update. WIR: {nearestWIR.WIRCode}"
             };
-            await _unitOfWork.Repository<AuditLog>().AddAsync(auditLog, cancellationToken);
+            var boxAuditLog = new AuditLog
+            {
+                TableName = nameof(Box),
+                RecordId = currentActivity.BoxId,
+                Action = "BoxPositionUpdate",
+                OldValues = $"Bay: {oldBay ?? "N/A"}, Row: {oldRow ?? "N/A"}, Position: {oldPosition ?? "N/A"}",
+                NewValues = $"Bay: {nearestWIR.Bay ?? "N/A"}, Row: {nearestWIR.Row ?? "N/A"}, Position: {nearestWIR.Position ?? "N/A"}",
+                ChangedBy = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString()),
+                ChangedDate = DateTime.UtcNow,
+                Description = $"Box position updated from activity progress update. Box: {box.BoxTag}"
+            };
+            await _unitOfWork.Repository<AuditLog>().AddAsync(wIRAuditLog, cancellationToken);
+            await _unitOfWork.Repository<AuditLog>().AddAsync(boxAuditLog, cancellationToken);
+
         }
     }
     private bool UpdateWIRPosition(WIRRecord nearestWIR, CreateProgressUpdateCommand request)

@@ -640,6 +640,10 @@ namespace Dubox.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("Bay")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("BoxLetter")
                         .HasMaxLength(10)
                         .HasColumnType("nvarchar(10)");
@@ -675,6 +679,9 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<int?>("Duration")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("FactoryId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Floor")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -705,6 +712,10 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime?>("PlannedStartDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("Position")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<decimal>("ProgressPercentage")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("decimal(18,2)")
@@ -725,6 +736,10 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<string>("RevitElementId")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Row")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<int>("SequentialNumber")
                         .HasColumnType("int");
@@ -756,6 +771,8 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasIndex("BoxTypeId");
 
                     b.HasIndex("CurrentLocationId");
+
+                    b.HasIndex("FactoryId");
 
                     b.HasIndex("QRCodeString")
                         .IsUnique();
@@ -3556,6 +3573,42 @@ namespace Dubox.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Dubox.Domain.Entities.Factory", b =>
+                {
+                    b.Property<Guid>("FactoryId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("Capacity")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CurrentOccupancy")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FactoryCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("FactoryName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("Location")
+                        .HasColumnType("int");
+
+                    b.HasKey("FactoryId");
+
+                    b.HasIndex("FactoryCode")
+                        .IsUnique();
+
+                    b.ToTable("Factories");
+                });
+
             modelBuilder.Entity("Dubox.Domain.Entities.FactoryLocation", b =>
                 {
                     b.Property<Guid>("LocationId")
@@ -3571,6 +3624,9 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.Property<int>("CurrentOccupancy")
                         .HasColumnType("int");
+
+                    b.Property<Guid?>("FactoryId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
@@ -3598,6 +3654,8 @@ namespace Dubox.Infrastructure.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.HasKey("LocationId");
+
+                    b.HasIndex("FactoryId");
 
                     b.HasIndex("LocationCode")
                         .IsUnique();
@@ -4034,6 +4092,20 @@ namespace Dubox.Infrastructure.Migrations
                             PermissionAction = "view",
                             PermissionModule = "locations",
                             Route = "/locations"
+                        },
+                        new
+                        {
+                            MenuItemId = new Guid("20000000-0000-0000-0001-000000000009"),
+                            CreatedBy = "System",
+                            CreatedDate = new DateTime(2024, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DisplayOrder = 35,
+                            Icon = "factory",
+                            IsActive = true,
+                            IsVisible = true,
+                            Label = "Factories",
+                            PermissionAction = "view",
+                            PermissionModule = "factories",
+                            Route = "/factories"
                         },
                         new
                         {
@@ -14338,6 +14410,10 @@ namespace Dubox.Infrastructure.Migrations
                         .HasForeignKey("CurrentLocationId")
                         .OnDelete(DeleteBehavior.SetNull);
 
+                    b.HasOne("Dubox.Domain.Entities.Factory", "Factory")
+                        .WithMany("Boxes")
+                        .HasForeignKey("FactoryId");
+
                     b.HasOne("Dubox.Domain.Entities.Project", "Project")
                         .WithMany("Boxes")
                         .HasForeignKey("ProjectId")
@@ -14349,6 +14425,8 @@ namespace Dubox.Infrastructure.Migrations
                     b.Navigation("BoxType");
 
                     b.Navigation("CurrentLocation");
+
+                    b.Navigation("Factory");
 
                     b.Navigation("Project");
                 });
@@ -14561,6 +14639,15 @@ namespace Dubox.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Manager");
+                });
+
+            modelBuilder.Entity("Dubox.Domain.Entities.FactoryLocation", b =>
+                {
+                    b.HasOne("Dubox.Domain.Entities.Factory", "Factory")
+                        .WithMany("FactoryLocations")
+                        .HasForeignKey("FactoryId");
+
+                    b.Navigation("Factory");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.GroupRole", b =>
@@ -15010,6 +15097,13 @@ namespace Dubox.Infrastructure.Migrations
             modelBuilder.Entity("Dubox.Domain.Entities.Department", b =>
                 {
                     b.Navigation("Employees");
+                });
+
+            modelBuilder.Entity("Dubox.Domain.Entities.Factory", b =>
+                {
+                    b.Navigation("Boxes");
+
+                    b.Navigation("FactoryLocations");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.FactoryLocation", b =>

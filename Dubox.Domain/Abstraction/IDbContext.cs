@@ -49,6 +49,7 @@ public interface IDbContext
     DbSet<MaterialTransaction> MaterialTransactions { get; }
     
     // Factory layout
+    DbSet<Factory> Factories { get; }
     DbSet<FactoryLocation> FactoryLocations { get; }
     DbSet<BoxLocationHistory> BoxLocationHistory { get; }
     

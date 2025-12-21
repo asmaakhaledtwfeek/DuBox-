@@ -1,0 +1,366 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="page-content">
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="loading">
+      <div class="spinner"></div>
+      <p>Loading factories...</p>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-container" *ngIf="error && !loading">
+      <p class="error-message">{{ error }}</p>
+      <button class="btn btn-primary" (click)="loadFactories()">Retry</button>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div *ngIf="!loading && !error">
+      <!-- Dashboard Header -->
+      <div class="dashboard-header">
+        <div class="header-info">
+          <div class="title-section">
+            <h1 class="dashboard-title">Factories</h1>
+            <p class="dashboard-subtitle">Manage factories and track capacity</p>
+          </div>
+          <div class="dashboard-meta">
+            <span class="meta-item">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                <path d="M12 8v8M8 12h8"/>
+              </svg>
+              {{ stats.total }} Total Factories
+            </span>
+            <span class="meta-item">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 12l2 2 4-4M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3"/>
+              </svg>
+              {{ stats.active }} Active
+            </span>
+            <span class="meta-item">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+              </svg>
+              {{ stats.totalOccupancy }} Boxes
+            </span>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button 
+            *ngIf="canCreate"
+            class="btn btn-primary"
+            (click)="openCreateModal()"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Add Factory
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background: rgba(27, 154, 170, 0.1); color: var(--amana-teal);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+              <path d="M12 8v8M8 12h8"/>
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ stats.total }}</div>
+            <div class="kpi-label">Total Factories</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--success-color);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 12l2 2 4-4M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3"/>
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ stats.active }}</div>
+            <div class="kpi-label">Active Factories</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background: rgba(25, 118, 210, 0.1); color: var(--amana-blue);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ stats.totalOccupancy }}</div>
+            <div class="kpi-label">Total Boxes</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning-color);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ stats.totalCapacity || '∞' }}</div>
+            <div class="kpi-label">Total Capacity</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background: rgba(239, 68, 68, 0.1); color: var(--error-color);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 9v4M12 17h.01M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ stats.fullFactories }}</div>
+            <div class="kpi-label">Full Factories</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search and Filters -->
+      <div class="filters-card card">
+        <div class="search-box">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input 
+            type="text" 
+            [formControl]="searchControl"
+            placeholder="Search by code, name, or location..."
+            class="search-input"
+          />
+        </div>
+      </div>
+
+      <!-- Factories Grid -->
+      <div class="factories-grid" *ngIf="filteredFactories.length > 0">
+        <div class="factory-card" *ngFor="let factory of filteredFactories" (click)="viewFactory(factory.factoryId)">
+          <div class="card-header">
+            <div class="factory-code">{{ factory.factoryCode }}</div>
+            <div class="factory-status" [class.full]="factory.isFull" [class.available]="!factory.isFull">
+              <span *ngIf="factory.isFull">Full</span>
+              <span *ngIf="!factory.isFull">{{ factory.availableCapacity }} Available</span>
+            </div>
+          </div>
+          
+          <div class="card-body">
+            <h3 class="factory-name">{{ factory.factoryName }}</h3>
+            
+            <div class="factory-location">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              <span> {{factory.location}} </span>
+            </div>
+            
+            <div class="capacity-info" *ngIf="factory.capacity">
+              <div class="capacity-header">
+                <span>Capacity</span>
+                <span class="capacity-value">{{ factory.currentOccupancy }} / {{ factory.capacity }}</span>
+              </div>
+              <div class="capacity-bar">
+                <div class="capacity-fill" [style.width.%]="getCapacityPercentage(factory)"></div>
+              </div>
+            </div>
+
+            <div class="factory-stats">
+              <div class="stat-item">
+                <span class="stat-label">Boxes</span>
+                <span class="stat-value">{{ factory.currentOccupancy }}</span>
+              </div>
+              <div class="stat-item" *ngIf="factory.capacity">
+                <span class="stat-label">Capacity</span>
+                <span class="stat-value">{{ factory.capacity }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <button class="btn-view-details" (click)="viewFactory(factory.factoryId); $event.stopPropagation()">
+              <span>View Details</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" *ngIf="filteredFactories.length === 0 && !loading">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+          <path d="M12 8v8M8 12h8"/>
+        </svg>
+        <h3>No factories found</h3>
+        <p>{{ factories.length === 0 ? 'Create your first factory to get started' : 'Try adjusting your search' }}</p>
+        <button class="btn btn-primary" (click)="openCreateModal()" *ngIf="canCreate && factories.length === 0">
+          Add Factory
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create Factory Modal -->
+<div class="modal-backdrop" *ngIf="showCreateModal" (click)="closeCreateModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="modal-header-content">
+        <div class="modal-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M2 20h.01"/><path d="M7 20h.01"/><path d="M12 20h.01"/><path d="M17 20h.01"/><path d="M22 20h.01"/><path d="M2 15h.01"/><path d="M7 15h.01"/><path d="M12 15h.01"/><path d="M17 15h.01"/><path d="M22 15h.01"/><path d="M2 10h.01"/><path d="M7 10h.01"/><path d="M12 10h.01"/><path d="M17 10h.01"/><path d="M22 10h.01"/><path d="M2 5h.01"/><path d="M7 5h.01"/><path d="M12 5h.01"/><path d="M17 5h.01"/><path d="M22 5h.01"/>
+          </svg>
+        </div>
+        <div class="modal-title-section">
+          <h2>Add New Factory</h2>
+          <p class="modal-subtitle">Create a new factory to manage production capacity</p>
+        </div>
+      </div>
+      <button class="icon-button" (click)="closeCreateModal()" aria-label="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <form [formGroup]="factoryForm" (ngSubmit)="onCreateFactory()">
+      <div class="modal-body">
+        <div class="form-group">
+          <label for="factoryCode" class="form-label required">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 7V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v3M4 7H2a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2M4 7v10"/>
+            </svg>
+            Factory Code
+          </label>
+          <div class="input-wrapper">
+            <input 
+              type="text" 
+              id="factoryCode"
+              formControlName="factoryCode"
+              class="form-input"
+              [class.invalid]="factoryForm.get('factoryCode')?.invalid && factoryForm.get('factoryCode')?.touched"
+              placeholder="e.g., FAC-001"
+            />
+          </div>
+          <div class="form-error" *ngIf="factoryForm.get('factoryCode')?.invalid && factoryForm.get('factoryCode')?.touched">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span *ngIf="factoryForm.get('factoryCode')?.errors?.['required']">Factory code is required</span>
+            <span *ngIf="factoryForm.get('factoryCode')?.errors?.['maxlength']">Factory code must be 50 characters or less</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="factoryName" class="form-label required">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 7h-4M4 7h4m0 0v12m0-12l-4-4m4 4l4-4M4 11h16M4 15h16"/>
+            </svg>
+            Factory Name
+          </label>
+          <div class="input-wrapper">
+            <input 
+              type="text" 
+              id="factoryName"
+              formControlName="factoryName"
+              class="form-input"
+              [class.invalid]="factoryForm.get('factoryName')?.invalid && factoryForm.get('factoryName')?.touched"
+              placeholder="e.g., Main Production Factory"
+            />
+          </div>
+          <div class="form-error" *ngIf="factoryForm.get('factoryName')?.invalid && factoryForm.get('factoryName')?.touched">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span *ngIf="factoryForm.get('factoryName')?.errors?.['required']">Factory name is required</span>
+            <span *ngIf="factoryForm.get('factoryName')?.errors?.['maxlength']">Factory name must be 200 characters or less</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="location" class="form-label required">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+            Location
+          </label>
+          <div class="input-wrapper">
+            <select 
+              id="location"
+              formControlName="location"
+              class="form-input form-select"
+              [class.invalid]="factoryForm.get('location')?.invalid && factoryForm.get('location')?.touched"
+            >
+              <option *ngFor="let option of locationOptions" [value]="option.value">
+                {{ option.label }}
+              </option>
+            </select>
+            <svg class="select-arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </div>
+          <div class="form-error" *ngIf="factoryForm.get('location')?.invalid && factoryForm.get('location')?.touched">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>Location is required</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="capacity" class="form-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            </svg>
+            Capacity (Optional)
+          </label>
+          <div class="input-wrapper">
+            <input 
+              type="number" 
+              id="capacity"
+              formControlName="capacity"
+              class="form-input"
+              placeholder="e.g., 100"
+              min="1"
+            />
+          </div>
+          <div class="form-help">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3M12 17h.01"/>
+            </svg>
+            Maximum number of boxes this factory can hold. Leave blank for unlimited capacity.
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeCreateModal()" [disabled]="creating">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+          Cancel
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="factoryForm.invalid || creating">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" *ngIf="!creating">
+            <path d="M20 6L9 17l-5-5"/>
+          </svg>
+          <span *ngIf="!creating">Create Factory</span>
+          <span *ngIf="creating">Creating...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+

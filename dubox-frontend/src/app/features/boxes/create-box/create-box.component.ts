@@ -4,6 +4,7 @@ import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormArray } from '@angular/forms';
 import { BoxService } from '../../../core/services/box.service';
 import { ProjectService } from '../../../core/services/project.service';
+import { FactoryService, Factory, ProjectLocation } from '../../../core/services/factory.service';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { BoxType, BoxSubType } from '../../../core/models/box.model';
@@ -25,6 +26,7 @@ export class CreateBoxComponent implements OnInit {
   projectName: string = '';
   projectCategoryId: number | null = null;
   projectCategoryName: string = '';
+  projectLocation: string = ''; // Store project location
   currentStep = 1;
   totalSteps = 2;
 
@@ -57,10 +59,15 @@ export class CreateBoxComponent implements OnInit {
   availableBoxLetters: string[] = [];
   loadingBoxLetters = false;
 
+  // Factory dropdown
+  factories: Factory[] = [];
+  loadingFactories = false;
+
   constructor(
     private fb: FormBuilder,
     private boxService: BoxService,
     private projectService: ProjectService,
+    private factoryService: FactoryService,
     private router: Router,
     private route: ActivatedRoute
   ) {}
@@ -90,12 +97,19 @@ export class CreateBoxComponent implements OnInit {
         this.projectNumber = projectData?.code || projectData?.projectNumber || '';
         this.projectName = projectData?.name || projectData?.projectName || '';
         this.projectCategoryName = projectData?.categoryName || '';
+        this.projectLocation = projectData?.location || '';
         
         console.log('📋 Project:', {
           code: this.projectNumber,
           name: this.projectName,
-          category: this.projectCategoryName
+          category: this.projectCategoryName,
+          location: this.projectLocation
         });
+
+        // Load factories based on project location
+        if (this.projectLocation) {
+          this.loadFactoriesByLocation();
+        }
         
         // Extract category ID
         const categoryId = projectData?.categoryId || projectData?.projectCategoryId;
@@ -360,6 +374,7 @@ export class CreateBoxComponent implements OnInit {
       floor: ['GF', Validators.required],
       boxLetter: ['', Validators.required],
       zone: ['', Validators.maxLength(50)],
+      factoryId: [null],
       length: ['', [Validators.min(0), Validators.max(99999)]],
       width: ['', [Validators.min(0), Validators.max(99999)]],
       height: ['', [Validators.min(0), Validators.max(99999)]],
@@ -570,6 +585,7 @@ export class CreateBoxComponent implements OnInit {
       revitElementId: formValue.revitElementId || undefined,
       boxPlannedStartDate: formValue.boxPlannedStartDate ? new Date(formValue.boxPlannedStartDate).toISOString() : undefined,
       boxDuration: formValue.boxDuration ? parseInt(formValue.boxDuration, 10) : undefined,
+      factoryId: formValue.factoryId || undefined,
       assets: this.getAssetsPayload()
     };
 
@@ -639,9 +655,45 @@ export class CreateBoxComponent implements OnInit {
       bimModelReference: 'BIM model reference',
       revitElementId: 'Revit element ID',
       boxPlannedStartDate: 'Box planned start date',
-      boxDuration: 'Box duration'
+      boxDuration: 'Box duration',
+      factoryId: 'Factory'
     };
     return labels[fieldName] || fieldName;
+  }
+
+  /**
+   * Load factories based on project location
+   */
+  private loadFactoriesByLocation(): void {
+    if (!this.projectLocation) {
+      return;
+    }
+
+    // Map project location string to ProjectLocation enum
+    let locationEnum: ProjectLocation;
+    const locationUpper = this.projectLocation.toUpperCase();
+    if (locationUpper === 'KSA') {
+      locationEnum = ProjectLocation.KSA;
+    } else if (locationUpper === 'UAE') {
+      locationEnum = ProjectLocation.UAE;
+    } else {
+      console.warn('⚠️ Unknown project location:', this.projectLocation);
+      return;
+    }
+
+    this.loadingFactories = true;
+    this.factoryService.getFactoriesByLocation(locationEnum).subscribe({
+      next: (factories) => {
+        this.factories = factories;
+        this.loadingFactories = false;
+        console.log(`✅ Loaded ${factories.length} factory(ies) for location: ${this.projectLocation}`);
+      },
+      error: (err) => {
+        console.error('❌ Error loading factories:', err);
+        this.loadingFactories = false;
+        this.factories = [];
+      }
+    });
   }
 
   private getAssetsPayload() {

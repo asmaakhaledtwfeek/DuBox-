@@ -39,6 +39,7 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
   // WIR position fields
   nearestWIR: WIRRecord | null = null;
   hasWIRBelow: boolean = false;
+  hasWIRActivityBelow: boolean = false; // Track if WIR activity exists (regardless of record)
 
   constructor(
     private fb: FormBuilder,
@@ -113,6 +114,7 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
   private findNearestWIRBelow(): void {
     if (!this.activity || !this.allActivities || this.allActivities.length === 0) {
       this.hasWIRBelow = false;
+      this.hasWIRActivityBelow = false;
       this.nearestWIR = null;
       return;
     }
@@ -126,9 +128,14 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
 
     if (activitiesBelow.length === 0) {
       this.hasWIRBelow = false;
+      this.hasWIRActivityBelow = false;
       this.nearestWIR = null;
       return;
     }
+
+    // Check if there's a WIR activity below (regardless of whether record exists)
+    const wirActivityBelow = activitiesBelow.find(a => a.isWIRCheckpoint || a.activityMaster?.isWIRCheckpoint);
+    this.hasWIRActivityBelow = !!wirActivityBelow;
 
     // Load WIR records for the box to find the nearest WIR
     if (this.activity.boxId) {
@@ -165,6 +172,7 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
               this.nearestWIR = null;
             }
           } else {
+            // WIR activity exists but record hasn't been created yet
             this.hasWIRBelow = false;
             this.nearestWIR = null;
           }
@@ -522,10 +530,12 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
         issuesEncountered: this.progressForm.value.issuesEncountered || undefined,
         updateMethod: 'Web',
         deviceInfo: deviceInfo,
-        // Include WIR position fields if WIR exists below
-        wirBay: this.hasWIRBelow ? (this.progressForm.value.wirBay || undefined) : undefined,
-        wirRow: this.hasWIRBelow ? (this.progressForm.value.wirRow || undefined) : undefined,
-        wirPosition: this.hasWIRBelow ? (this.progressForm.value.wirPosition || undefined) : undefined
+        // Include WIR position fields: Always send user-entered values
+        // - If user entered a value, send it (even if WIR record doesn't exist yet)
+        // - If field is empty/undefined, send undefined (don't include in request)
+        wirBay: this.progressForm.value.wirBay || undefined,
+        wirRow: this.progressForm.value.wirRow || undefined,
+        wirPosition: this.progressForm.value.wirPosition || undefined
       };
 
       this.progressUpdateService.createProgressUpdate(request, files, imageUrls).subscribe({

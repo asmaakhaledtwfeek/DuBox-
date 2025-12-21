@@ -21,6 +21,7 @@ public record UpdateBoxCommand(
     decimal? Height,
     DateTime? PlannedStartDate,
     int? Duration,
-    string? Notes
+    string? Notes,
+    Guid? FactoryId
 ) : IRequest<Result<BoxDto>>;
 

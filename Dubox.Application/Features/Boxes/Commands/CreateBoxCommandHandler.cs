@@ -142,7 +142,12 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
             cancellationToken);
 
         var boxDto = box.Adapt<BoxDto>() with
-        { QRCodeImage = _qrCodeService.GenerateQRCodeBase64(box.QRCodeString) };
+        { 
+            QRCodeImage = _qrCodeService.GenerateQRCodeBase64(box.QRCodeString),
+            FactoryId = box.FactoryId,
+            FactoryCode = box.Factory?.FactoryCode,
+            FactoryName = box.Factory?.FactoryName
+        };
 
         return Result.Success(boxDto);
 

@@ -19,6 +19,7 @@ namespace Dubox.Application.Features.Boxes.MappingConfig
              .Map(dest => dest.Width, src => src.Width)
              .Map(dest => dest.Height, src => src.Height)
              .Map(dest => dest.Notes, src => src.Notes)
+             .Map(dest => dest.FactoryId, src => src.FactoryId)
              .Map(dest => dest.ModifiedDate, _ => DateTime.UtcNow)
 
              .Ignore(dest => dest.BoxId)

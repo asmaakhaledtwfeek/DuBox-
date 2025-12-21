@@ -22,6 +22,7 @@ public record CreateBoxCommand(
     string? RevitElementId,
     DateTime? BoxPlannedStartDate,
     int? BoxDuration,
+    Guid? FactoryId,
     List<CreateBoxAssetDto>? Assets
 ) : IRequest<Result<BoxDto>>;
 

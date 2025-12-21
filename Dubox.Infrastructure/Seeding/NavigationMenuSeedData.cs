@@ -9,6 +9,7 @@ public static class NavigationMenuSeedData
     private static readonly Guid ProjectsMenuId = new("20000000-0000-0000-0001-000000000001");
     private static readonly Guid MaterialsMenuId = new("20000000-0000-0000-0001-000000000002");
     private static readonly Guid LocationsMenuId = new("20000000-0000-0000-0001-000000000003");
+    private static readonly Guid FactoriesMenuId = new("20000000-0000-0000-0001-000000000009");
     private static readonly Guid TeamsMenuId = new("20000000-0000-0000-0001-000000000004");
     private static readonly Guid QualityControlMenuId = new("20000000-0000-0000-0001-000000000005");
     private static readonly Guid ReportsMenuId = new("20000000-0000-0000-0001-000000000006");
@@ -63,6 +64,21 @@ public static class NavigationMenuSeedData
                 PermissionModule = "locations",
                 PermissionAction = "view",
                 DisplayOrder = 30,
+                IsActive = true,
+                IsVisible = true,
+                CreatedDate = SeedDate,
+                CreatedBy = "System"
+            },
+            new()
+            {
+                MenuItemId = FactoriesMenuId,
+                Label = "Factories",
+                Icon = "factory",
+                Route = "/factories",
+                Aliases = null,
+                PermissionModule = "factories",
+                PermissionAction = "view",
+                DisplayOrder = 35,
                 IsActive = true,
                 IsVisible = true,
                 CreatedDate = SeedDate,

@@ -38,6 +38,12 @@ export interface Box {
   currentLocationId?: string;
   currentLocationCode?: string;
   currentLocationName?: string;
+  factoryId?: string;
+  factoryCode?: string;
+  factoryName?: string;
+  bay?: string;
+  row?: string;
+  position?: string;
   createdBy?: string;
   updatedBy?: string;
   createdAt?: Date;

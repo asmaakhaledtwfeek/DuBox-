@@ -43,7 +43,10 @@ public class Box
 
     [MaxLength(100)]
     public BoxZone? Zone { get; set; }
+    [ForeignKey(nameof(Factory))]
+    public Guid? FactoryId { get; set; }
 
+    public Factory? Factory { get; set; }
     // Current Location
     public Guid? CurrentLocationId { get; set; }
     public FactoryLocation? CurrentLocation { get; set; }
@@ -93,6 +96,14 @@ public class Box
     public Guid? CreatedBy { get; set; }
     public Guid? ModifiedBy { get; set; }
     public int SequentialNumber { get; set; } = 1; // For generating serial numbers
+    [MaxLength(50)]
+    public string? Bay { get; set; } = string.Empty;
+
+    [MaxLength(50)]
+    public string? Row { get; set; } = string.Empty;
+
+    [MaxLength(50)]
+    public string? Position { get; set; } = string.Empty;
     // Navigation properties
     public virtual BoxType BoxType { get; set; } = null!;
     public virtual BoxSubType BoxSubType { get; set; } = null!;

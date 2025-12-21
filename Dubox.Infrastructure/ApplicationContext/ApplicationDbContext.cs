@@ -43,6 +43,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<Material> Materials { get; set; } = null!;
     public DbSet<BoxMaterial> BoxMaterials { get; set; } = null!;
     public DbSet<MaterialTransaction> MaterialTransactions { get; set; } = null!;
+    public DbSet<Factory> Factories { get; set; } = null!;
     public DbSet<FactoryLocation> FactoryLocations { get; set; } = null!;
     public DbSet<BoxLocationHistory> BoxLocationHistory { get; set; } = null!;
     public DbSet<CostCategory> CostCategories { get; set; } = null!;

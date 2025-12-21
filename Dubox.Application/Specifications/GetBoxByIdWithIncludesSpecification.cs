@@ -15,6 +15,7 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(Box.CurrentLocation));
             AddInclude(nameof(Box.BoxType));
             AddInclude(nameof(Box.BoxSubType));
+            AddInclude(nameof(Box.Factory));
         }
     }
 }

@@ -58,15 +58,18 @@ export class ProgressUpdateService {
       formData.append('LocationDescription', request.locationDescription);
     }
     
-    // Append WIR position fields if provided
+    // Append WIR position fields:
+    // - If undefined, don't append (no WIR activity below)
+    // - If null, append empty string (WIR activity exists but record not created yet)
+    // - If value exists, append the value
     if (request.wirBay !== undefined) {
-      formData.append('WirBay', request.wirBay || '');
+      formData.append('WirBay', request.wirBay ?? '');
     }
     if (request.wirRow !== undefined) {
-      formData.append('WirRow', request.wirRow || '');
+      formData.append('WirRow', request.wirRow ?? '');
     }
     if (request.wirPosition !== undefined) {
-      formData.append('WirPosition', request.wirPosition || '');
+      formData.append('WirPosition', request.wirPosition ?? '');
     }
     
     // Append multiple files if provided - ASP.NET Core expects Files parameter name

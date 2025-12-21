@@ -26,6 +26,13 @@ public class GetNavigationMenuItemsQueryHandler : IRequestHandler<GetNavigationM
             .Include(m => m.Children.Where(c => c.IsActive && c.IsVisible))
             .ToListAsync(cancellationToken);
 
+        // Debug: Log all menu items found
+        System.Diagnostics.Debug.WriteLine($"🔍 Found {menuItems.Count} menu items in database:");
+        foreach (var item in menuItems)
+        {
+            System.Diagnostics.Debug.WriteLine($"  - {item.Label} ({item.PermissionModule}.{item.PermissionAction})");
+        }
+
         // Get current user's permissions
         var userPermissions = new HashSet<string>();
         
@@ -63,6 +70,13 @@ public class GetNavigationMenuItemsQueryHandler : IRequestHandler<GetNavigationM
                 userPermissions = directRolePermissions
                     .Union(groupRolePermissions)
                     .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                // Debug: Log user permissions
+                System.Diagnostics.Debug.WriteLine($"🔑 User has {userPermissions.Count} permissions:");
+                foreach (var perm in userPermissions.OrderBy(p => p))
+                {
+                    System.Diagnostics.Debug.WriteLine($"  - {perm}");
+                }
             }
         }
 
@@ -70,6 +84,13 @@ public class GetNavigationMenuItemsQueryHandler : IRequestHandler<GetNavigationM
         var filteredMenuItems = menuItems
             .Where(m => HasPermission(m.PermissionModule, m.PermissionAction, userPermissions))
             .ToList();
+
+        // Debug: Log filtered menu items
+        System.Diagnostics.Debug.WriteLine($"✅ Filtered to {filteredMenuItems.Count} menu items after permission check:");
+        foreach (var item in filteredMenuItems)
+        {
+            System.Diagnostics.Debug.WriteLine($"  - {item.Label} ({item.PermissionModule}.{item.PermissionAction})");
+        }
 
         var result = filteredMenuItems.Select(m => new NavigationMenuItemDto(
             m.MenuItemId,

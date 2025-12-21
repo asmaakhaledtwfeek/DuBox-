@@ -20,6 +20,8 @@ namespace Dubox.Domain.Entities
         [Required]
         [MaxLength(200)]
         public string LocationName { get; set; } = string.Empty;
+        [ForeignKey("Factory")]
+        public Guid? FactoryId { get; set; }
 
         [MaxLength(50)]
         public string? LocationType { get; set; } // Assembly Bay, Finishing Bay, Storage, Dispatch Area
@@ -41,7 +43,7 @@ namespace Dubox.Domain.Entities
 
         // Navigation properties
         public virtual ICollection<BoxLocationHistory> BoxLocationHistory { get; set; } = new List<BoxLocationHistory>();
-
+        public virtual Factory Factory { get; set; } = null!;
         [NotMapped]
         public bool IsFull => Capacity.HasValue && CurrentOccupancy >= Capacity;
 

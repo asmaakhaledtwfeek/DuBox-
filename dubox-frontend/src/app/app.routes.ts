@@ -140,6 +140,22 @@ export const routes: Routes = [
     loadComponent: () => import('./features/locations/location-details/location-details.component').then(m => m.LocationDetailsComponent)
   },
   {
+    path: 'factories',
+    canActivate: [authGuard, permissionGuard],
+    data: {
+      permission: { module: 'factories', action: 'view' }
+    },
+    loadComponent: () => import('./features/factories/factories-management/factories-management.component').then(m => m.FactoriesManagementComponent)
+  },
+  {
+    path: 'factories/:id',
+    canActivate: [authGuard, permissionGuard],
+    data: {
+      permission: { module: 'factories', action: 'view' }
+    },
+    loadComponent: () => import('./features/factories/factory-details/factory-details.component').then(m => m.FactoryDetailsComponent)
+  },
+  {
     path: 'admin',
     canActivate: [authGuard, permissionGuard],
     data: { 

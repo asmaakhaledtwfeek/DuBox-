@@ -1,4 +1,5 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Services;
@@ -137,10 +138,16 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
         }
         await _unitOfWork.CompleteAsync(cancellationToken);
 
+        // Reload box with includes to get Factory info
+        box = _unitOfWork.Repository<Box>().GetEntityWithSpec(new GetBoxByIdWithIncludesSpecification(box.BoxId));
+        
         BoxDto response = box.Adapt<BoxDto>() with
         {
             ProjectCode = project.ProjectCode,
-            QRCodeImage = _qrCodeService.GenerateQRCodeBase64(box.QRCodeString)
+            QRCodeImage = _qrCodeService.GenerateQRCodeBase64(box.QRCodeString),
+            FactoryId = box.FactoryId,
+            FactoryCode = box.Factory?.FactoryCode,
+            FactoryName = box.Factory?.FactoryName
         };
 
         return Result.Success(response);
@@ -235,6 +242,16 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
         {
             RecordChange("Duration", box.Duration, request.Duration.Value);
             box.Duration = request.Duration.Value;
+        }
+        if (request.FactoryId.HasValue && box.FactoryId != request.FactoryId.Value)
+        {
+            RecordChange("FactoryId", box.FactoryId?.ToString() ?? "N/A", request.FactoryId.Value.ToString());
+            box.FactoryId = request.FactoryId.Value;
+        }
+        else if (!request.FactoryId.HasValue && box.FactoryId.HasValue)
+        {
+            RecordChange("FactoryId", box.FactoryId.Value.ToString(), "N/A");
+            box.FactoryId = null;
         }
 
         var oldPlannedEndDate = box.PlannedEndDate;

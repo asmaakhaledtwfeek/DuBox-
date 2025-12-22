@@ -76,7 +76,7 @@ export class BoxService {
       description: backendBox.description,
       floor: backendBox.floor,
       buildingNumber: backendBox.buildingNumber,
-      boxLetter: backendBox.boxLetter,
+      boxFunction: backendBox.boxFunction,
       zone: backendBox.zone,
       length: backendBox.length,
       width: backendBox.width,
@@ -128,7 +128,7 @@ export class BoxService {
       boxType: box.boxType || box.BoxType,
       floor: box.floor || box.Floor,
       buildingNumber: box.buildingNumber || box.BuildingNumber,
-      boxLetter: box.boxLetter || box.BoxLetter,
+      boxFunction: box.boxFunction || box.BoxFunction,
       zone: box.zone || box.Zone,
       status: this.mapStatus(box.status || box.Status)
     })) as ImportedBoxPreview[];
@@ -383,8 +383,10 @@ export class BoxService {
           fileExtension: dto.fileExtension || dto.FileExtension,
           fileType: (dto.fileType || dto.FileType || 'file') as 'file' | 'url',
           fileSize: dto.fileSize || dto.FileSize,
+          version: dto.version || dto.Version || 1,
           createdDate: dto.createdDate || dto.CreatedDate ? new Date(dto.createdDate || dto.CreatedDate) : new Date(),
-          createdBy: dto.createdBy || dto.CreatedBy
+          createdBy: dto.createdBy || dto.CreatedBy,
+          createdByName: dto.createdByName || dto.CreatedByName
         } as BoxDrawingDto));
       }),
       catchError(err => {

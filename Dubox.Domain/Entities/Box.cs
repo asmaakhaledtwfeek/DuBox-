@@ -24,11 +24,10 @@ public class Box
     [MaxLength(200)]
     public string? BoxName { get; set; }
 
-    [Required]
-    [ForeignKey(nameof(BoxType))]
-    public int BoxTypeId { get; set; }
-   
-    [ForeignKey(nameof(BoxSubType))]
+    // Project configuration box type and subtype IDs
+    // NOTE: These IDs now reference ProjectBoxTypes/ProjectBoxSubTypes (project-specific config)
+    // The navigation properties below are for backward compatibility but may be null
+    public int? BoxTypeId { get; set; }
     public int? BoxSubTypeId { get; set; }
 
     [Required]
@@ -38,8 +37,8 @@ public class Box
     [MaxLength(100)]
     public string? BuildingNumber { get; set; }
 
-    [MaxLength(10)]
-    public string? BoxLetter { get; set; }
+    [MaxLength(100)]
+    public string? BoxFunction { get; set; }
 
     [MaxLength(100)]
     public BoxZone? Zone { get; set; }
@@ -105,8 +104,9 @@ public class Box
     [MaxLength(50)]
     public string? Position { get; set; } = string.Empty;
     // Navigation properties
-    public virtual BoxType BoxType { get; set; } = null!;
-    public virtual BoxSubType BoxSubType { get; set; } = null!;
+    // NOTE: These are kept for backward compatibility but may be null since we use project-specific configs
+    public virtual BoxType? BoxType { get; set; }
+    public virtual BoxSubType? BoxSubType { get; set; }
     public ICollection<BoxAsset> BoxAssets { get; set; } = new List<BoxAsset>();
     public ICollection<BoxActivity> BoxActivities { get; set; } = new List<BoxActivity>();
     public ICollection<ProgressUpdate> ProgressUpdates { get; set; } = new List<ProgressUpdate>();

@@ -120,7 +120,7 @@ public class GetBoxByIdQueryHandler : IRequestHandler<GetBoxByIdQuery, Result<Bo
                 BoxSubTypeName = boxSubTypeName,
                 Floor = box.Floor,
                 BuildingNumber = box.BuildingNumber,
-                BoxLetter = box.BoxLetter,
+                BoxFunction = box.BoxFunction,
                 Zone = zoneString,
                 QRCodeString = box.QRCodeString ?? string.Empty,
                 QRCodeImage = qrCodeImage,

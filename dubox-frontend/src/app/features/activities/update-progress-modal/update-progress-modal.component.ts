@@ -101,11 +101,61 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
       ],
       workDescription: [''],
       issuesEncountered: [''],
-      // WIR Position fields (optional, only shown if WIR exists below)
-      wirBay: [this.nearestWIR?.bay || ''],
-      wirRow: [this.nearestWIR?.row || ''],
-      wirPosition: [this.nearestWIR?.position || '']
+      // WIR Position fields - editable when empty, read-only when filled
+      wirBay: [''],
+      wirRow: [''],
+      wirPosition: [{value: '', disabled: true}] // Position is always calculated, never manually editable
     });
+
+    // Setup automatic calculation of Position = Bay × Row
+    this.setupPositionCalculation();
+  }
+
+  /**
+   * Setup automatic calculation of Position = Bay × Row
+   * Bay is a text field (e.g., "A", "B"), Row is numeric
+   * Position is calculated as numeric multiplication if Bay is numeric, otherwise concatenated
+   * Note: Fields are NOT disabled here - that's handled by populateWIRPositionFields based on WIR state
+   */
+  private setupPositionCalculation(): void {
+    const bayControl = this.progressForm.get('wirBay');
+    const rowControl = this.progressForm.get('wirRow');
+    const positionControl = this.progressForm.get('wirPosition');
+
+    if (bayControl && rowControl && positionControl) {
+      const calculatePosition = () => {
+        const bayValue = bayControl.value?.toString().trim();
+        const rowValue = rowControl.value?.toString().trim();
+        
+        if (bayValue && rowValue) {
+          // Try to parse bay as number for multiplication
+          const bayNum = parseInt(bayValue);
+          const rowNum = parseInt(rowValue) || 0;
+          
+          // If bay is numeric, multiply; otherwise concatenate with a hyphen
+          let position: string;
+          if (!isNaN(bayNum)) {
+            position = (bayNum * rowNum).toString();
+          } else {
+            // Bay is text (e.g., "A"), so concatenate: "A-3"
+            position = `${bayValue}-${rowValue}`;
+          }
+          
+          positionControl.setValue(position, { emitEvent: false });
+        } else {
+          positionControl.setValue('', { emitEvent: false });
+        }
+        
+        // Don't disable fields here - let populateWIRPositionFields handle it
+        // This allows each WIR section to have editable fields
+      };
+
+      bayControl.valueChanges.subscribe(() => calculatePosition());
+      rowControl.valueChanges.subscribe(() => calculatePosition());
+      
+      // Initial calculation in case values are loaded
+      calculatePosition();
+    }
   }
 
   /**
@@ -120,6 +170,28 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
     }
 
     const currentSequence = this.activity.sequence || 0;
+    
+    // If current activity IS a WIR checkpoint, use it
+    if (this.activity.isWIRCheckpoint || this.activity.activityMaster?.isWIRCheckpoint) {
+      // Load WIR records to find if this activity has a WIR record
+      if (this.activity.boxId) {
+        this.wirService.getWIRRecordsByBox(this.activity.boxId).subscribe({
+          next: (wirRecords) => {
+            const currentWIR = wirRecords.find(wir => wir.boxActivityId === this.activity.boxActivityId);
+            if (currentWIR) {
+              this.nearestWIR = currentWIR;
+              this.hasWIRBelow = true;
+              this.hasWIRActivityBelow = true;
+              this.populateWIRPositionFields(currentWIR);
+            }
+          },
+          error: (error) => {
+            console.error('Error loading WIR records:', error);
+          }
+        });
+      }
+      return;
+    }
     
     // Find activities with sequence greater than current
     const activitiesBelow = this.allActivities
@@ -159,20 +231,21 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
               ) || null;
               this.hasWIRBelow = !!this.nearestWIR;
               
-              // Update form with WIR position values
-              if (this.nearestWIR && this.progressForm) {
-                this.progressForm.patchValue({
-                  wirBay: this.nearestWIR.bay || '',
-                  wirRow: this.nearestWIR.row || '',
-                  wirPosition: this.nearestWIR.position || ''
-                });
+              // Populate WIR position fields with existing values
+              if (this.nearestWIR) {
+                this.populateWIRPositionFields(this.nearestWIR);
               }
             } else {
               this.hasWIRBelow = false;
               this.nearestWIR = null;
             }
-          } else {
+          } else if (wirActivityBelow) {
             // WIR activity exists but record hasn't been created yet
+            // Don't inherit from previous WIRs - each WIR section should have its own values
+            // Leave fields empty so user can set new values for this WIR
+            this.hasWIRBelow = false;
+            this.nearestWIR = null;
+          } else {
             this.hasWIRBelow = false;
             this.nearestWIR = null;
           }
@@ -186,6 +259,36 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
     } else {
       this.hasWIRBelow = false;
       this.nearestWIR = null;
+    }
+  }
+
+  /**
+   * Populate WIR position fields and make them read-only if already set
+   * Only disable fields if this is the SAME WIR being edited
+   */
+  private populateWIRPositionFields(wir: WIRRecord): void {
+    if (!this.progressForm) return;
+    
+    const bayValue = wir.bay || '';
+    const rowValue = wir.row || '';
+    const positionValue = wir.position || '';
+    
+    // Patch the form values
+    this.progressForm.patchValue({
+      wirBay: bayValue,
+      wirRow: rowValue,
+      wirPosition: positionValue
+    }, { emitEvent: false });
+    
+    // Only make fields read-only if values exist AND this WIR record matches the nearest WIR
+    // This allows new WIR sections to have their own editable position values
+    const isNearestWIR = this.nearestWIR?.wirRecordId === wir.wirRecordId;
+    
+    if (isNearestWIR && bayValue) {
+      this.progressForm.get('wirBay')?.disable();
+    }
+    if (isNearestWIR && rowValue) {
+      this.progressForm.get('wirRow')?.disable();
     }
   }
 
@@ -522,20 +625,23 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
         .filter(img => img.type === 'url' && img.url)
         .map(img => img.url!);
 
+      // Use getRawValue() to include disabled field values (wirBay, wirRow, wirPosition)
+      const formValues = this.progressForm.getRawValue();
+
       const request = {
         boxId: this.activity.boxId,
         boxActivityId: this.activity.boxActivityId,
-        progressPercentage: this.progressForm.value.progressPercentage || 0,
-        workDescription: this.progressForm.value.workDescription || undefined,
-        issuesEncountered: this.progressForm.value.issuesEncountered || undefined,
+        progressPercentage: formValues.progressPercentage || 0,
+        workDescription: formValues.workDescription || undefined,
+        issuesEncountered: formValues.issuesEncountered || undefined,
         updateMethod: 'Web',
         deviceInfo: deviceInfo,
-        // Include WIR position fields: Always send user-entered values
-        // - If user entered a value, send it (even if WIR record doesn't exist yet)
-        // - If field is empty/undefined, send undefined (don't include in request)
-        wirBay: this.progressForm.value.wirBay || undefined,
-        wirRow: this.progressForm.value.wirRow || undefined,
-        wirPosition: this.progressForm.value.wirPosition || undefined
+        // Include WIR position fields: Send values if they exist
+        // Bay and Row can be entered by user (editable when empty, locked when filled)
+        // Position is always auto-calculated (Bay × Row)
+        wirBay: formValues.wirBay?.toString().trim() || undefined,
+        wirRow: formValues.wirRow?.toString().trim() || undefined,
+        wirPosition: formValues.wirPosition?.toString().trim() || undefined
       };
 
       this.progressUpdateService.createProgressUpdate(request, files, imageUrls).subscribe({

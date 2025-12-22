@@ -200,10 +200,10 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
             RecordChange("BuildingNumber", box.BuildingNumber, request.BuildingNumber);
             box.BuildingNumber = request.BuildingNumber;
         }
-        if (!string.IsNullOrEmpty(request.BoxLetter) && box.BoxLetter != request.BoxLetter)
+        if (!string.IsNullOrEmpty(request.BoxFunction) && box.BoxFunction != request.BoxFunction)
         {
-            RecordChange("BoxLetter", box.BoxLetter, request.BoxLetter);
-            box.BoxLetter = request.BoxLetter;
+            RecordChange("BoxFunction", box.BoxFunction, request.BoxFunction);
+            box.BoxFunction = request.BoxFunction;
         }
         if (request.Zone.HasValue && box.Zone != request.Zone)
         {

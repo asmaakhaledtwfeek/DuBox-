@@ -7,6 +7,6 @@ namespace Dubox.Domain.Abstraction
         Task<byte[]?> GetImageBytesAsync(IFormFile? file, string? imageUrl, CancellationToken cancellationToken);
 
         Task<byte[]?> DownloadImageFromUrlAsync(string imageUrl, CancellationToken cancellationToken);
-        Task<(bool IsSuccess, string ErrorMessage)> ProcessImagesAsync<TEntity>(Guid parentId, List<byte[]>? files, List<string>? imageUrls, CancellationToken ct, int sequence = 0) where TEntity : BaseImageEntity, new();
+        Task<(bool IsSuccess, string ErrorMessage)> ProcessImagesAsync<TEntity>(Guid parentId, List<byte[]>? files, List<string>? imageUrls, CancellationToken ct, int sequence = 0, List<string>? fileNames = null) where TEntity : BaseImageEntity, new();
     }
 }

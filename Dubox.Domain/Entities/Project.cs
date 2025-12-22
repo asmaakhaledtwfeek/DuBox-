@@ -52,4 +52,11 @@ public class Project
 
     // Navigation properties
     public ICollection<Box> Boxes { get; set; } = new List<Box>();
+    
+    // Project Configuration Collections
+    public ICollection<ProjectBuilding> ProjectBuildings { get; set; } = new List<ProjectBuilding>();
+    public ICollection<ProjectLevel> ProjectLevels { get; set; } = new List<ProjectLevel>();
+    public ICollection<ProjectBoxType> ProjectBoxTypes { get; set; } = new List<ProjectBoxType>();
+    public ICollection<ProjectZone> ProjectZones { get; set; } = new List<ProjectZone>();
+    public ICollection<ProjectBoxFunction> ProjectBoxFunctions { get; set; } = new List<ProjectBoxFunction>();
 }

@@ -308,6 +308,19 @@
         font-size: 15px;
         color: var(--text-primary);
         font-weight: 400;
+
+        .position-badge {
+          display: inline-block;
+          padding: 4px 12px;
+          margin-right: 8px;
+          margin-bottom: 4px;
+          background: linear-gradient(135deg, rgba(27, 154, 170, 0.1) 0%, rgba(25, 118, 210, 0.1) 100%);
+          border: 1px solid rgba(27, 154, 170, 0.3);
+          border-radius: 6px;
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--amana-teal);
+        }
       }
     }
 

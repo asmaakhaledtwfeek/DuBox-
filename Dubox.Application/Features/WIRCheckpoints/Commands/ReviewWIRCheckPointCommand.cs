@@ -12,7 +12,8 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
       string? InspectorRole,
       List<byte[]>? Files,
       List<string>? ImageUrls,
-      List<ChecklistItemForReview> Items
+      List<ChecklistItemForReview> Items,
+      List<string>? FileNames = null
  ) : IRequest<Result<WIRCheckpointDto>>;
 
     public record ChecklistItemForReview(

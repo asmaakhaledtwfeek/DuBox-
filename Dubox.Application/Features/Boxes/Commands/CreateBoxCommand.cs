@@ -9,11 +9,11 @@ public record CreateBoxCommand(
     Guid ProjectId,
     string BoxTag,
     string? BoxName,
-    int BoxTypeId,
+    int? BoxTypeId,  // Optional - box type is now derived from BoxTag and project configuration
     int? BoxSubTypeId,
     string Floor,
     string? BuildingNumber,
-    string? BoxLetter,
+    string? BoxFunction,
     string? Zone,
     decimal? Length,
     decimal? Width,

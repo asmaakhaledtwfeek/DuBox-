@@ -257,7 +257,15 @@
         <div class="form-group wir-position-section" >
           <div class="wir-position-header">
             <label>WIR Position</label>
-            <span class="wir-position-note">Location for {{ nearestWIR?.wirCode||"WIR" }}</span>
+            <span class="wir-position-note">
+              Location for {{ nearestWIR?.wirCode||"WIR" }}
+              <span *ngIf="progressForm.get('wirBay')?.disabled || progressForm.get('wirRow')?.disabled" class="locked-indicator" title="Position locked for this WIR section">
+                🔒 Locked
+              </span>
+              <span *ngIf="!progressForm.get('wirBay')?.disabled && !progressForm.get('wirRow')?.disabled" class="editable-indicator" title="You can set position for this WIR section">
+                ✏️ Editable
+              </span>
+            </span>
           </div>
           <div class="wir-position-fields">
             <div class="form-group-inline">
@@ -267,19 +275,20 @@
                 id="wirBay" 
                 formControlName="wirBay"
                 class="form-control"
-                placeholder="Enter bay"
-                maxlength="50"
+                placeholder="Enter bay (e.g., A, B, 1)"
+                maxlength="10"
+                [title]="progressForm.get('wirBay')?.disabled ? 'This field cannot be edited once set' : 'Enter bay identifier'"
               />
             </div>
             <div class="form-group-inline">
               <label for="wirRow">Row</label>
               <input 
-                type="text" 
+                type="number" 
                 id="wirRow" 
                 formControlName="wirRow"
                 class="form-control"
                 placeholder="Enter row"
-                maxlength="50"
+                [title]="progressForm.get('wirRow')?.disabled ? 'This field cannot be edited once set' : 'Enter row number'"
               />
             </div>
             <div class="form-group-inline">
@@ -289,8 +298,9 @@
                 id="wirPosition" 
                 formControlName="wirPosition"
                 class="form-control"
-                placeholder="Enter position"
-                maxlength="50"
+                placeholder="Auto-calculated"
+                title="Position = Bay × Row (calculated automatically)"
+                readonly
               />
             </div>
           </div>

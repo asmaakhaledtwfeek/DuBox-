@@ -21,9 +21,10 @@ public class GetWIRRecordsByBoxQueryHandler : IRequestHandler<GetWIRRecordsByBox
 
     public async Task<Result<List<WIRRecordDto>>> Handle(GetWIRRecordsByBoxQuery request, CancellationToken cancellationToken)
     {
-        // Use AsNoTracking and ToListAsync for better performance
+        // Filter WIR records by the specific BoxId - CRITICAL FIX
         var wirRecords = await _unitOfWork.Repository<WIRRecord>()
             .GetWithSpec(new GetAllWIRRecordWithIncludesSpecification()).Data
+            .Where(w => w.BoxActivity.BoxId == request.BoxId) // Filter by BoxId!
             .AsNoTracking()
             .ToListAsync(cancellationToken);
 
@@ -32,7 +33,7 @@ public class GetWIRRecordsByBoxQueryHandler : IRequestHandler<GetWIRRecordsByBox
             var dto = w.Adapt<WIRRecordDto>();
             return dto with
             {
-
+                BoxId = w.BoxActivity.BoxId, // Include BoxId in response
                 BoxTag = w.BoxActivity.Box.BoxTag,
                 ActivityName = w.BoxActivity.ActivityMaster.ActivityName,
                 RequestedByName = w.RequestedByUser.FullName ?? w.RequestedByUser.Email,

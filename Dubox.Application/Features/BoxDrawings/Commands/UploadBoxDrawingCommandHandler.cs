@@ -35,11 +35,35 @@ public class UploadBoxDrawingCommandHandler : IRequestHandler<UploadBoxDrawingCo
             currentUserId = userId;
         }
 
+        // Determine version number: Check for existing files with same name
+        int version = 1;
+        string fileName = request.FileName ?? request.DrawingUrl ?? "unknown";
+        
+        var existingDrawings = _unitOfWork.Repository<BoxDrawing>()
+            .Get()
+            .Where(d => d.BoxId == request.BoxId && d.IsActive)
+            .ToList();
+        
+        // Find all drawings with the same filename
+        var sameNameDrawings = existingDrawings
+            .Where(d => 
+                (d.OriginalFileName != null && d.OriginalFileName.Equals(fileName, StringComparison.OrdinalIgnoreCase)) ||
+                (d.DrawingUrl != null && d.DrawingUrl.Equals(fileName, StringComparison.OrdinalIgnoreCase))
+            )
+            .ToList();
+        
+        if (sameNameDrawings.Any())
+        {
+            // Get the highest version number and increment
+            version = sameNameDrawings.Max(d => d.Version) + 1;
+        }
+
         // Create the BoxDrawing entity
         var boxDrawing = new BoxDrawing
         {
             BoxId = request.BoxId,
             DrawingUrl = request.DrawingUrl,
+            Version = version,
             IsActive = true,
             CreatedDate = DateTime.UtcNow,
             CreatedBy = currentUserId
@@ -90,8 +114,22 @@ public class UploadBoxDrawingCommandHandler : IRequestHandler<UploadBoxDrawingCo
             return Result.Failure<BoxDrawingDto>($"Failed to save drawing: {ex.Message}");
         }
 
+        // Get user name for the response
+        string? createdByName = "Unknown";
+        if (currentUserId.HasValue)
+        {
+            var user = await _unitOfWork.Repository<User>().GetByIdAsync(currentUserId.Value, cancellationToken);
+            if (user != null)
+            {
+                createdByName = user.FullName ?? user.Email;
+            }
+        }
+
         // Map to DTO and return
-        var dto = boxDrawing.Adapt<BoxDrawingDto>();
+        var dto = boxDrawing.Adapt<BoxDrawingDto>() with 
+        { 
+            CreatedByName = createdByName 
+        };
         return Result.Success(dto);
     }
 }

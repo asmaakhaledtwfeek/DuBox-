@@ -42,14 +42,17 @@ public class ProgressUpdatesController : ControllerBase
     CancellationToken cancellationToken)
     {
         List<byte[]>? fileBytes = null;
+        List<string>? fileNames = null;
         if (Files != null && Files.Count > 0)
         {
             fileBytes = new List<byte[]>();
+            fileNames = new List<string>();
             foreach (var file in Files.Where(f => f != null && f.Length > 0))
             {
                 using var ms = new MemoryStream();
                 await file.CopyToAsync(ms, cancellationToken);
                 fileBytes.Add(ms.ToArray());
+                fileNames.Add(file.FileName);
             }
         }
 
@@ -78,7 +81,8 @@ public class ProgressUpdatesController : ControllerBase
             DeviceInfo,
             WirBay,
             WirRow,
-            WirPosition
+            WirPosition,
+            fileNames
         );
 
         var result = await _mediator.Send(command, cancellationToken);

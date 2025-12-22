@@ -44,6 +44,7 @@ type QualityIssueFormValue = {
   severity: SeverityType;
   issueDescription: string;
   assignedTo?: string; // Team ID
+  assignedToUserId?: string; // User ID within team
   assignedTeam?: string; // Team name for display
   dueDate?: string;
   photoPath?: string;
@@ -332,6 +333,8 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   qualityIssueCameraStream: MediaStream | null = null;
   availableTeams: Team[] = [];
   loadingTeams = false;
+  availableTeamUsers: {userId: string, userName: string, userEmail: string}[] = [];
+  loadingTeamUsers = false;
   isAddPredefinedItemsModalOpen = false;
   isItemReviewModalOpen = false;
   pendingDeleteIndex: number | null = null;
@@ -612,6 +615,7 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
       severity: [this.severityLevels[0], Validators.required],
       issueType: [this.issueTypes[0], Validators.required],
       assignedTo: ['', [Validators.maxLength(200)]],
+      assignedToUserId: [''],
       dueDate: [''],
       photoPath: ['', [Validators.maxLength(500)]]
     });
@@ -1452,8 +1456,10 @@ console.log(expectedWirCode);
       severity: this.severityLevels[0],
       issueType: this.issueTypes[0],
       assignedTo: '',
+      assignedToUserId: '',
       dueDate: ''
     });
+    this.availableTeamUsers = [];
     this.qualityIssueImages = [];
     this.qualityIssueCurrentUrlInput = '';
     this.showQualityIssueCamera = false;
@@ -1465,6 +1471,7 @@ console.log(expectedWirCode);
 
   closeQualityIssueModal(): void {
     this.isQualityIssueModalOpen = false;
+    this.availableTeamUsers = [];
   }
 
   openItemReviewModal(itemIndex: number): void {
@@ -1619,6 +1626,7 @@ console.log(expectedWirCode);
       severity: value.severity,
       issueDescription: value.issueDescription?.trim() || '',
       assignedTo: value.assignedTo?.trim() || undefined,
+      assignedToUserId: value.assignedToUserId?.trim() || undefined,
       dueDate: value.dueDate || undefined,
       imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
       files: files.length > 0 ? files : undefined
@@ -1674,6 +1682,33 @@ console.log(expectedWirCode);
         console.error('❌ Error loading teams:', err);
         this.availableTeams = [];
         this.loadingTeams = false;
+      }
+    });
+  }
+
+  onQualityIssueTeamChange(): void {
+    // Reset user selection when team changes
+    this.newQualityIssueForm.get('assignedToUserId')?.setValue('');
+    this.availableTeamUsers = [];
+
+    // Load users if a team is selected
+    const teamId = this.newQualityIssueForm.get('assignedTo')?.value;
+    if (teamId) {
+      this.loadTeamUsers(teamId);
+    }
+  }
+
+  loadTeamUsers(teamId: string): void {
+    this.loadingTeamUsers = true;
+    this.teamService.getTeamUsers(teamId).subscribe({
+      next: (users) => {
+        this.availableTeamUsers = users;
+        this.loadingTeamUsers = false;
+      },
+      error: (err) => {
+        console.error('❌ Error loading team users:', err);
+        this.availableTeamUsers = [];
+        this.loadingTeamUsers = false;
       }
     });
   }

@@ -17,7 +17,7 @@
             &:hover {
               background: white;
               transform: scale(1.15) translateY(-2px);
-              box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            }box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
               border-color: var(--amana-teal);
             }
 
@@ -39,5 +39,3 @@
               height: 20px;
               stroke: currentColor;
             }
-          }
-        }

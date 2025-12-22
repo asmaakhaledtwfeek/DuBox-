@@ -149,7 +149,7 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                     .Max(b => (int?)b.SequentialNumber) ?? 0;
                    var SequentialNumber = lastSeq + 1;
                     var yearOfProject = project.CreatedDate.Year.ToString().Substring(2, 2);
-                    var serialNumber = _serialNumberService.GenerateSerialNumber(boxDto.BoxLetter, lastSeq, yearOfProject);
+                    var serialNumber = _serialNumberService.GenerateSerialNumber("X", lastSeq, yearOfProject);
                     var newBox = new Box
                     {
                         ProjectId = request.ProjectId,
@@ -158,7 +158,7 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                         BoxTypeId = boxTypeId,
                         Floor = boxDto.Floor.Trim(),
                         BuildingNumber = boxDto.BuildingNumber?.Trim(),
-                        BoxLetter = boxDto.BoxLetter?.Trim(),
+                        BoxFunction = boxDto.BoxFunction?.Trim(),
                         Zone = boxDto.Zone ?? BoxZone.ZoneA,
                         Length = boxDto.Length,
                         Width = boxDto.Width,
@@ -285,7 +285,7 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
             BoxType = GetStringValue(row, "Box Type"),
             Floor = GetStringValue(row, "Floor"),
             BuildingNumber = GetStringValue(row, "Building Number"),
-            BoxLetter = GetStringValue(row, "Box Letter"),
+            BoxFunction = GetStringValue(row, "Box Function"),
             Zone = GetBoxZoneValue(row, "Zone"),
             Length = GetDecimalValue(row, "Length"),
             Width = GetDecimalValue(row, "Width"),

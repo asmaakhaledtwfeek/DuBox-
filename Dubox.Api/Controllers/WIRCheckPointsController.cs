@@ -173,9 +173,11 @@ namespace Dubox.Api.Controllers
             SeverityEnum severity;
             string issueDescription;
             Guid? assignedTo = null;
+            Guid? assignedToUserId = null;
             DateTime? dueDate = null;
             List<string>? imageUrls = null;
             List<byte[]>? fileBytes = null;
+            List<string>? fileNames = null;
 
             if (Request.HasFormContentType)
             {
@@ -197,6 +199,10 @@ namespace Dubox.Api.Controllers
 
                 assignedTo = assignedToTemp;
 
+                // Parse AssignedToUserId if provided
+                if (Guid.TryParse(form["AssignedToUserId"].FirstOrDefault(), out var assignedToUserTemp))
+                    assignedToUserId = assignedToUserTemp;
+
                 if (DateTime.TryParse(form["DueDate"].ToString(), out var parsedDueDate))
                     dueDate = parsedDueDate;
 
@@ -214,11 +220,13 @@ namespace Dubox.Api.Controllers
                 if (files.Count > 0)
                 {
                     fileBytes = new List<byte[]>();
+                    fileNames = new List<string>();
                     foreach (var file in files)
                     {
                         using var ms = new MemoryStream();
                         await file.CopyToAsync(ms, cancellationToken);
                         fileBytes.Add(ms.ToArray());
+                        fileNames.Add(file.FileName);
                     }
                 }
             }
@@ -253,9 +261,11 @@ namespace Dubox.Api.Controllers
                 severity = jsonCommand.Severity;
                 issueDescription = jsonCommand.IssueDescription;
                 assignedTo = jsonCommand.AssignedTo;
+                assignedToUserId = jsonCommand.AssignedToUserId;
                 dueDate = jsonCommand.DueDate;
                 imageUrls = jsonCommand.ImageUrls;
                 fileBytes = jsonCommand.Files;
+                fileNames = jsonCommand.FileNames;
             }
 
             // Validate and clean ImageUrls
@@ -275,9 +285,11 @@ namespace Dubox.Api.Controllers
                 Severity: severity,
                 IssueDescription: issueDescription,
                 AssignedTo: assignedTo,
+                AssignedToUserId: assignedToUserId,
                 DueDate: dueDate,
                 ImageUrls: validImageUrls,
-                Files: fileBytes
+                Files: fileBytes,
+                FileNames: fileNames
             );
 
             var result = await _mediator.Send(command, cancellationToken);
@@ -306,14 +318,17 @@ namespace Dubox.Api.Controllers
             CancellationToken cancellationToken)
         {
             List<byte[]>? fileBytes = null;
+            List<string>? fileNames = null;
             if (Files != null && Files.Count > 0)
             {
                 fileBytes = new List<byte[]>();
+                fileNames = new List<string>();
                 foreach (var file in Files.Where(f => f != null && f.Length > 0))
                 {
                     using var ms = new MemoryStream();
                     await file.CopyToAsync(ms, cancellationToken);
                     fileBytes.Add(ms.ToArray());
+                    fileNames.Add(file.FileName);
                 }
             }
 
@@ -366,7 +381,8 @@ namespace Dubox.Api.Controllers
                 InspectorRole: InspectorRole,
                 Files: fileBytes,
                 ImageUrls: validImageUrls,
-                Items: items
+                Items: items,
+                FileNames: fileNames
             );
 
             var result = await _mediator.Send(command, cancellationToken);

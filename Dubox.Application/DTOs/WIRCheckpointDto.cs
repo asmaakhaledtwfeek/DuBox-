@@ -64,6 +64,7 @@ namespace Dubox.Application.DTOs
         public string? OriginalName { get; set; }
         public long? FileSize { get; set; }
         public int Sequence { get; set; }
+        public int Version { get; set; } = 1; // Version number for files with same name
         public DateTime CreatedDate { get; set; }
         /// <summary>
         /// URL to fetch full image: /api/images/WIRCheckpoint/{WIRCheckpointImageId}

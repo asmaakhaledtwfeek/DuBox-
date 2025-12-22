@@ -356,7 +356,7 @@ export class ReportsService {
       boxType: item.boxType || item.BoxType || '',
       floor: item.floor || item.Floor,
       buildingNumber: item.buildingNumber || item.BuildingNumber,
-      boxLetter: item.boxLetter || item.BoxLetter,
+      boxFunction: item.boxFunction || item.BoxFunction,
       zone: item.zone || item.Zone,
       progressPercentage: item.progressPercentage ?? item.ProgressPercentage ?? 0,
       progressPercentageFormatted: item.progressPercentageFormatted || item.ProgressPercentageFormatted || '0.00%',

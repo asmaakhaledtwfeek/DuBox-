@@ -644,9 +644,9 @@ namespace Dubox.Infrastructure.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("BoxLetter")
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                    b.Property<string>("BoxFunction")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("BoxName")
                         .HasMaxLength(200)
@@ -660,7 +660,7 @@ namespace Dubox.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("BoxTypeId")
+                    b.Property<int?>("BoxTypeId")
                         .HasColumnType("int");
 
                     b.Property<string>("BuildingNumber")
@@ -1022,6 +1022,9 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<string>("OriginalFileName")
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
 
                     b.HasKey("BoxDrawingId");
 
@@ -11325,6 +11328,9 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<int>("Sequence")
                         .HasColumnType("int");
 
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
                     b.HasKey("ProgressUpdateImageId");
 
                     b.HasIndex("ProgressUpdateId", "Sequence");
@@ -11416,6 +11422,189 @@ namespace Dubox.Infrastructure.Migrations
                     b.ToTable("Projects");
                 });
 
+            modelBuilder.Entity("Dubox.Domain.Entities.ProjectBoxFunction", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("FunctionName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("ProjectBoxFunctions");
+                });
+
+            modelBuilder.Entity("Dubox.Domain.Entities.ProjectBoxSubType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Abbreviation")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("ProjectBoxTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("SubTypeName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectBoxTypeId");
+
+                    b.ToTable("ProjectBoxSubTypes");
+                });
+
+            modelBuilder.Entity("Dubox.Domain.Entities.ProjectBoxType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Abbreviation")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("HasSubTypes")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("TypeName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("ProjectBoxTypes");
+                });
+
+            modelBuilder.Entity("Dubox.Domain.Entities.ProjectBuilding", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("BuildingCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("BuildingName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("ProjectBuildings");
+                });
+
+            modelBuilder.Entity("Dubox.Domain.Entities.ProjectLevel", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LevelCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("LevelName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("ProjectLevels");
+                });
+
             modelBuilder.Entity("Dubox.Domain.Entities.ProjectTypeCategory", b =>
                 {
                     b.Property<int>("CategoryId")
@@ -11482,6 +11671,42 @@ namespace Dubox.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Dubox.Domain.Entities.ProjectZone", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ZoneCode")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ZoneName")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("ProjectZones");
+                });
+
             modelBuilder.Entity("Dubox.Domain.Entities.QualityIssue", b =>
                 {
                     b.Property<Guid>("IssueId")
@@ -11489,6 +11714,9 @@ namespace Dubox.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("AssignedTo")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("AssignedToUserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BoxId")
@@ -11538,6 +11766,8 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("AssignedTo");
 
+                    b.HasIndex("AssignedToUserId");
+
                     b.HasIndex("BoxId");
 
                     b.HasIndex("Status");
@@ -11576,6 +11806,9 @@ namespace Dubox.Infrastructure.Migrations
                         .HasColumnType("nvarchar(500)");
 
                     b.Property<int>("Sequence")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Version")
                         .HasColumnType("int");
 
                     b.HasKey("QualityIssueImageId");
@@ -14274,6 +14507,9 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<int>("Sequence")
                         .HasColumnType("int");
 
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
                     b.Property<Guid>("WIRId")
                         .HasColumnType("uniqueidentifier");
 
@@ -14397,13 +14633,13 @@ namespace Dubox.Infrastructure.Migrations
                 {
                     b.HasOne("Dubox.Domain.Entities.BoxSubType", "BoxSubType")
                         .WithMany()
-                        .HasForeignKey("BoxSubTypeId");
+                        .HasForeignKey("BoxSubTypeId")
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Dubox.Domain.Entities.BoxType", "BoxType")
                         .WithMany()
                         .HasForeignKey("BoxTypeId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.HasOne("Dubox.Domain.Entities.FactoryLocation", "CurrentLocation")
                         .WithMany()
@@ -14787,11 +15023,81 @@ namespace Dubox.Infrastructure.Migrations
                     b.Navigation("Category");
                 });
 
+            modelBuilder.Entity("Dubox.Domain.Entities.ProjectBoxFunction", b =>
+                {
+                    b.HasOne("Dubox.Domain.Entities.Project", "Project")
+                        .WithMany("ProjectBoxFunctions")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("Dubox.Domain.Entities.ProjectBoxSubType", b =>
+                {
+                    b.HasOne("Dubox.Domain.Entities.ProjectBoxType", "ProjectBoxType")
+                        .WithMany("SubTypes")
+                        .HasForeignKey("ProjectBoxTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProjectBoxType");
+                });
+
+            modelBuilder.Entity("Dubox.Domain.Entities.ProjectBoxType", b =>
+                {
+                    b.HasOne("Dubox.Domain.Entities.Project", "Project")
+                        .WithMany("ProjectBoxTypes")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("Dubox.Domain.Entities.ProjectBuilding", b =>
+                {
+                    b.HasOne("Dubox.Domain.Entities.Project", "Project")
+                        .WithMany("ProjectBuildings")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("Dubox.Domain.Entities.ProjectLevel", b =>
+                {
+                    b.HasOne("Dubox.Domain.Entities.Project", "Project")
+                        .WithMany("ProjectLevels")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+                });
+
+            modelBuilder.Entity("Dubox.Domain.Entities.ProjectZone", b =>
+                {
+                    b.HasOne("Dubox.Domain.Entities.Project", "Project")
+                        .WithMany("ProjectZones")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Project");
+                });
+
             modelBuilder.Entity("Dubox.Domain.Entities.QualityIssue", b =>
                 {
                     b.HasOne("Dubox.Domain.Entities.Team", "AssignedToTeam")
                         .WithMany()
                         .HasForeignKey("AssignedTo");
+
+                    b.HasOne("Dubox.Domain.Entities.User", "AssignedToUser")
+                        .WithMany()
+                        .HasForeignKey("AssignedToUserId");
 
                     b.HasOne("Dubox.Domain.Entities.Box", "Box")
                         .WithMany()
@@ -14804,6 +15110,8 @@ namespace Dubox.Infrastructure.Migrations
                         .HasForeignKey("WIRId");
 
                     b.Navigation("AssignedToTeam");
+
+                    b.Navigation("AssignedToUser");
 
                     b.Navigation("Box");
 
@@ -15145,6 +15453,21 @@ namespace Dubox.Infrastructure.Migrations
             modelBuilder.Entity("Dubox.Domain.Entities.Project", b =>
                 {
                     b.Navigation("Boxes");
+
+                    b.Navigation("ProjectBoxFunctions");
+
+                    b.Navigation("ProjectBoxTypes");
+
+                    b.Navigation("ProjectBuildings");
+
+                    b.Navigation("ProjectLevels");
+
+                    b.Navigation("ProjectZones");
+                });
+
+            modelBuilder.Entity("Dubox.Domain.Entities.ProjectBoxType", b =>
+                {
+                    b.Navigation("SubTypes");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.ProjectTypeCategory", b =>

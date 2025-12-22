@@ -73,6 +73,7 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                 Severity = request.Severity,
                 IssueDescription = request.IssueDescription,
                 AssignedTo = request.AssignedTo,
+                AssignedToUserId = request.AssignedToUserId,
                 DueDate = request.DueDate,
                 Status = QualityIssueStatusEnum.Open,
                 IssueDate = DateTime.UtcNow,

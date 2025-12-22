@@ -10,7 +10,9 @@ public record BoxDrawingDto
     public string? FileExtension { get; init; }
     public string? FileType { get; init; }
     public long? FileSize { get; init; }
+    public int Version { get; init; } = 1; // Version number for files with same name
     public DateTime CreatedDate { get; init; }
     public Guid? CreatedBy { get; init; }
+    public string? CreatedByName { get; init; } // User name who created this drawing
 }
 

@@ -132,6 +132,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
                     OriginalName = img.OriginalName,
                     FileSize = img.FileSize,
                     Sequence = img.Sequence,
+                    Version = img.Version,
                     CreatedDate = img.CreatedDate,
                     ImageUrl = $"/api/images/WIRCheckpoint/{img.WIRCheckpointImageId}/file"
                 })
@@ -154,6 +155,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
                     OriginalName = img.OriginalName,
                     FileSize = img.FileSize,
                     Sequence = img.Sequence,
+                    Version = img.Version,
                     CreatedDate = img.CreatedDate,
                     ImageUrl = $"/api/images/QualityIssue/{img.QualityIssueImageId}/file"
                 })

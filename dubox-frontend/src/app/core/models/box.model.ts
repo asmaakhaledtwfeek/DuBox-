@@ -14,7 +14,7 @@ export interface Box {
   description?: string;
   floor?: string;
   buildingNumber?: string;
-  boxLetter?: string;
+  boxFunction?: string;
   zone?: string;
   length?: number;
   width?: number;
@@ -128,9 +128,19 @@ export interface BoxDrawing {
   fileUrl: string;
   fileType: string;
   fileSize: number;
+  version?: number; // Version number for files with same name
   description?: string;
   uploadedBy: string;
   uploadedAt: Date;
+  createdDate?: Date; // Creation date
+  drawingUrl?: string; // URL for drawing
+  originalFileName?: string; // Original filename
+  fileExtension?: string; // File extension (.pdf, .dwg, etc.)
+  imageType?: string; // "file" or "url"
+  imageUrl?: string; // Image URL
+  displayUrl?: string; // Display URL
+  updateDate?: Date; // Update date
+  createdByName?: string; // Name of creator
 }
 
 export interface BoxDrawingDto {
@@ -142,8 +152,10 @@ export interface BoxDrawingDto {
   fileExtension?: string;
   fileType?: string; // "url" or "file"
   fileSize?: number;
+  version?: number; // Version number for files with same name
   createdDate: Date;
   createdBy?: string;
+  createdByName?: string; // Name of user who created this drawing
 }
 
 export interface BoxDrawingImage {
@@ -180,6 +192,7 @@ export interface BoxAttachmentDto {
   originalName?: string;
   fileSize?: number;
   sequence: number;
+  version?: number;
   createdDate: Date;
   createdBy?: string;
   referenceId: string;
@@ -226,15 +239,23 @@ export interface ImportedBoxPreview {
   boxType?: string;
   floor?: string;
   buildingNumber?: string;
-  boxLetter?: string;
+  boxFunction?: string;
   zone?: string;
   status?: string;
+}
+
+export interface BoxSubTypeStat {
+  subTypeName: string;
+  subTypeAbbreviation?: string;
+  boxCount: number;
+  progress: number;
 }
 
 export interface BoxTypeStat {
   boxType: string;
   boxCount: number;
   overallProgress: number;
+  subTypes?: BoxSubTypeStat[];
 }
 
 export interface BoxTypeStatsByProject {

@@ -39,12 +39,16 @@ type BoxDrawing = {
   imageType: 'file' | 'url'; 
   originalUrl?: string;
   fileName?: string;
+  originalFileName?: string; // Original filename
   fileExtension?: string;
   fileSize?: number;
   fileData?: string;
   boxDrawingId?: string;
   createdBy?: string;
   createdByName?: string;
+  version?: number; // Version number for files with same name
+  createdDate?: Date; // Creation date
+  drawingUrl?: string; // URL for drawing
 };
 
 @Component({
@@ -61,6 +65,16 @@ type BoxDrawing = {
       transition(':leave', [
         style({ height: '*', opacity: '1', overflow: 'hidden' }),
         animate('300ms ease-in', style({ height: '0', opacity: '0' }))
+      ])
+    ]),
+    trigger('slideIn', [
+      transition(':enter', [
+        style({ transform: 'translateX(100%)', opacity: '0' }),
+        animate('350ms cubic-bezier(0.4, 0, 0.2, 1)', style({ transform: 'translateX(0)', opacity: '1' }))
+      ]),
+      transition(':leave', [
+        style({ transform: 'translateX(0)', opacity: '1' }),
+        animate('300ms cubic-bezier(0.4, 0, 0.2, 1)', style({ transform: 'translateX(100%)', opacity: '0' }))
       ])
     ])
   ],
@@ -150,16 +164,20 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     severity: SeverityType;
     issueDescription: string;
     assignedTo: string; // Team ID
+    assignedToUserId: string; // User ID within team
     dueDate: string;
   } = {
     issueType: 'Defect',
     severity: 'Major',
     issueDescription: '',
     assignedTo: '',
+    assignedToUserId: '',
     dueDate: ''
   };
   availableTeams: Team[] = [];
   loadingTeams = false;
+  availableTeamUsers: {userId: string, userName: string, userEmail: string}[] = [];
+  loadingTeamUsers = false;
   qualityIssueImages: Array<{
     id: string;
     type: 'file' | 'url' | 'camera';
@@ -200,6 +218,20 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   wirImagesExpanded = false;
   progressImagesExpanded = false;
   qualityImagesExpanded = false;
+  
+  // Track expanded file groups (by fileName)
+  expandedFileGroups = new Set<string>();
+  expandedUrlGroups = new Set<string>();
+  expandedWirImageGroups = new Set<string>();
+  expandedProgressImageGroups = new Set<string>();
+  expandedQualityImageGroups = new Set<string>();
+  
+  // Version History Sidebar
+  versionHistorySidebarOpen = false;
+  currentFileVersions: BoxDrawing[] = [];
+  currentFileName = '';
+  selectedVersionsForCompare: BoxDrawing[] = [];
+  compareMode = false;
   
   // Sub-tab for Drawings section
   activeDrawingTab: 'file' | 'url' = 'file';
@@ -923,8 +955,10 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       severity: 'Major',
       issueDescription: '',
       assignedTo: '',
+      assignedToUserId: '',
       dueDate: ''
     };
+    this.availableTeamUsers = [];
     this.qualityIssueImages = [];
     this.currentImageInputMode = 'url';
     this.currentUrlInput = '';
@@ -938,8 +972,10 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       severity: 'Major',
       issueDescription: '',
       assignedTo: '',
+      assignedToUserId: '',
       dueDate: ''
     };
+    this.availableTeamUsers = [];
     this.qualityIssueImages = [];
     this.createQualityIssueError = '';
     if (this.cameraStream) {
@@ -979,6 +1015,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       severity: this.newQualityIssueForm.severity,
       issueDescription: this.newQualityIssueForm.issueDescription.trim(),
       assignedTo: this.newQualityIssueForm.assignedTo?.trim() || undefined, // Team ID as string
+      assignedToUserId: this.newQualityIssueForm.assignedToUserId?.trim() || undefined, // User ID within team
       dueDate: this.newQualityIssueForm.dueDate || undefined,
       imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
       files: files.length > 0 ? files : undefined
@@ -1053,6 +1090,32 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         console.error('❌ Error loading teams:', err);
         this.availableTeams = [];
         this.loadingTeams = false;
+      }
+    });
+  }
+
+  onQualityIssueTeamChange(): void {
+    // Reset user selection when team changes
+    this.newQualityIssueForm.assignedToUserId = '';
+    this.availableTeamUsers = [];
+
+    // Load users if a team is selected
+    if (this.newQualityIssueForm.assignedTo) {
+      this.loadTeamUsers(this.newQualityIssueForm.assignedTo);
+    }
+  }
+
+  loadTeamUsers(teamId: string): void {
+    this.loadingTeamUsers = true;
+    this.teamService.getTeamUsers(teamId).subscribe({
+      next: (users) => {
+        this.availableTeamUsers = users;
+        this.loadingTeamUsers = false;
+      },
+      error: (err) => {
+        console.error('❌ Error loading team users:', err);
+        this.availableTeamUsers = [];
+        this.loadingTeamUsers = false;
       }
     });
   }
@@ -2360,6 +2423,151 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     });
   }
 
+  // Group file drawings by filename with version history
+  getGroupedFileTypeImages(): { fileName: string; versions: BoxDrawing[] }[] {
+    const fileDrawings = this.getFileTypeImages();
+    const grouped = new Map<string, BoxDrawing[]>();
+
+    // Group by filename
+    fileDrawings.forEach(drawing => {
+      const fileName = drawing.fileName || drawing.originalFileName || 'Untitled';
+      if (!grouped.has(fileName)) {
+        grouped.set(fileName, []);
+      }
+      grouped.get(fileName)!.push(drawing);
+    });
+
+    // Convert to array and sort versions (newest first: V5, V4, V3, V2, V1)
+    return Array.from(grouped.entries())
+      .map(([fileName, versions]) => ({
+        fileName,
+        versions: versions.sort((a, b) => (b.version || 1) - (a.version || 1))
+      }))
+      .sort((a, b) => {
+        // Sort groups by the most recent upload date
+        const aLatestDate = Math.max(...a.versions.map(v => new Date(v.updateDate || v.createdDate || 0).getTime()));
+        const bLatestDate = Math.max(...b.versions.map(v => new Date(v.updateDate || v.createdDate || 0).getTime()));
+        return bLatestDate - aLatestDate; // Newest first
+      });
+  }
+
+  // Group URL drawings by URL with version history
+  getGroupedUrlTypeImages(): { fileName: string; versions: BoxDrawing[] }[] {
+    const urlDrawings = this.getUrlTypeImages();
+    const grouped = new Map<string, BoxDrawing[]>();
+
+    // Group by URL
+    urlDrawings.forEach(drawing => {
+      const url = drawing.drawingUrl || drawing.displayUrl || drawing.imageUrl || 'Untitled';
+      if (!grouped.has(url)) {
+        grouped.set(url, []);
+      }
+      grouped.get(url)!.push(drawing);
+    });
+
+    // Convert to array and sort versions (newest first)
+    return Array.from(grouped.entries())
+      .map(([fileName, versions]) => ({
+        fileName,
+        versions: versions.sort((a, b) => (b.version || 1) - (a.version || 1))
+      }))
+      .sort((a, b) => {
+        const aLatestDate = Math.max(...a.versions.map(v => new Date(v.updateDate || v.createdDate || 0).getTime()));
+        const bLatestDate = Math.max(...b.versions.map(v => new Date(v.updateDate || v.createdDate || 0).getTime()));
+        return bLatestDate - aLatestDate;
+      });
+  }
+
+  // Group WIR checkpoint images by filename with version history
+  getGroupedWirImages(): { fileName: string; versions: any[] }[] {
+    if (!this.boxAttachments.wirCheckpointImages || this.boxAttachments.wirCheckpointImages.length === 0) {
+      return [];
+    }
+
+    const grouped = new Map<string, any[]>();
+
+    // Group by filename
+    this.boxAttachments.wirCheckpointImages.forEach((image: any) => {
+      const fileName = image.originalName || 'WIR_Image';
+      if (!grouped.has(fileName)) {
+        grouped.set(fileName, []);
+      }
+      grouped.get(fileName)!.push(image);
+    });
+
+    // Convert to array and sort versions (newest first)
+    return Array.from(grouped.entries())
+      .map(([fileName, versions]) => ({
+        fileName,
+        versions: versions.sort((a, b) => (b.version || 1) - (a.version || 1))
+      }))
+      .sort((a, b) => {
+        const aLatestDate = Math.max(...a.versions.map(v => new Date(v.createdDate || 0).getTime()));
+        const bLatestDate = Math.max(...b.versions.map(v => new Date(v.createdDate || 0).getTime()));
+        return bLatestDate - aLatestDate;
+      });
+  }
+
+  // Group progress update images by filename with version history
+  getGroupedProgressImages(): { fileName: string; versions: any[] }[] {
+    if (!this.boxAttachments.progressUpdateImages || this.boxAttachments.progressUpdateImages.length === 0) {
+      return [];
+    }
+
+    const grouped = new Map<string, any[]>();
+
+    // Group by filename
+    this.boxAttachments.progressUpdateImages.forEach((image: any) => {
+      const fileName = image.originalName || 'Progress_Image';
+      if (!grouped.has(fileName)) {
+        grouped.set(fileName, []);
+      }
+      grouped.get(fileName)!.push(image);
+    });
+
+    // Convert to array and sort versions (newest first)
+    return Array.from(grouped.entries())
+      .map(([fileName, versions]) => ({
+        fileName,
+        versions: versions.sort((a, b) => (b.version || 1) - (a.version || 1))
+      }))
+      .sort((a, b) => {
+        const aLatestDate = Math.max(...a.versions.map(v => new Date(v.createdDate || 0).getTime()));
+        const bLatestDate = Math.max(...b.versions.map(v => new Date(v.createdDate || 0).getTime()));
+        return bLatestDate - aLatestDate;
+      });
+  }
+
+  // Group quality issue images by filename with version history
+  getGroupedQualityImages(): { fileName: string; versions: any[] }[] {
+    if (!this.boxAttachments.qualityIssueImages || this.boxAttachments.qualityIssueImages.length === 0) {
+      return [];
+    }
+
+    const grouped = new Map<string, any[]>();
+
+    // Group by filename
+    this.boxAttachments.qualityIssueImages.forEach((image: any) => {
+      const fileName = image.originalName || 'Quality_Image';
+      if (!grouped.has(fileName)) {
+        grouped.set(fileName, []);
+      }
+      grouped.get(fileName)!.push(image);
+    });
+
+    // Convert to array and sort versions (newest first)
+    return Array.from(grouped.entries())
+      .map(([fileName, versions]) => ({
+        fileName,
+        versions: versions.sort((a, b) => (b.version || 1) - (a.version || 1))
+      }))
+      .sort((a, b) => {
+        const aLatestDate = Math.max(...a.versions.map(v => new Date(v.createdDate || 0).getTime()));
+        const bLatestDate = Math.max(...b.versions.map(v => new Date(v.createdDate || 0).getTime()));
+        return bLatestDate - aLatestDate;
+      });
+  }
+
   // Download file drawing
   downloadFileDrawing(drawing: any): void {
     if (!drawing.displayUrl || !drawing.fileName) {
@@ -2658,6 +2866,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
           fileData?: string;
           boxDrawingId?: string;
           createdBy?: string;
+          createdByName?: string;
         };
 
         const processedDrawings = drawings.map((drawing, index) => {
@@ -2710,7 +2919,8 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
             fileSize: drawing.fileSize,
             fileData: drawing.fileData,
             boxDrawingId: drawing.boxDrawingId,
-          createdBy: drawing.createdBy
+            createdBy: drawing.createdBy,
+            createdByName: drawing.createdByName // Include user name from backend
           } as ResolvedDrawing;
         });
 
@@ -2860,6 +3070,230 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.wirImagesExpanded = true;
     this.progressImagesExpanded = true;
     this.qualityImagesExpanded = true;
+  }
+
+  /**
+   * Toggle expansion of a file group
+   */
+  toggleFileGroupExpansion(fileName: string): void {
+    if (this.expandedFileGroups.has(fileName)) {
+      this.expandedFileGroups.delete(fileName);
+    } else {
+      this.expandedFileGroups.add(fileName);
+    }
+  }
+
+  /**
+   * Check if a file group is expanded
+   */
+  isFileGroupExpanded(fileName: string): boolean {
+    return this.expandedFileGroups.has(fileName);
+  }
+
+  /**
+   * Toggle expansion of a URL group
+   */
+  toggleUrlGroupExpansion(fileName: string): void {
+    if (this.expandedUrlGroups.has(fileName)) {
+      this.expandedUrlGroups.delete(fileName);
+    } else {
+      this.expandedUrlGroups.add(fileName);
+    }
+  }
+
+  /**
+   * Check if a URL group is expanded
+   */
+  isUrlGroupExpanded(fileName: string): boolean {
+    return this.expandedUrlGroups.has(fileName);
+  }
+
+  /**
+   * Get visible versions for a file group (only latest if collapsed, all if expanded)
+   */
+  getVisibleVersions(group: { fileName: string; versions: BoxDrawing[] }): BoxDrawing[] {
+    if (group.versions.length <= 1) {
+      return group.versions; // Always show if only one version
+    }
+    const isExpanded = this.isFileGroupExpanded(group.fileName);
+    const visibleVersions = isExpanded ? group.versions : [group.versions[0]];
+    
+    console.log(`getVisibleVersions for ${group.fileName}:`, {
+      totalVersions: group.versions.length,
+      isExpanded: isExpanded,
+      visibleCount: visibleVersions.length,
+      versions: visibleVersions
+    });
+    
+    return visibleVersions;
+  }
+
+  /**
+   * Get visible versions for a URL group (only latest if collapsed, all if expanded)
+   */
+  getVisibleUrlVersions(group: { fileName: string; versions: BoxDrawing[] }): BoxDrawing[] {
+    if (group.versions.length <= 1) {
+      return group.versions; // Always show if only one version
+    }
+    return this.isUrlGroupExpanded(group.fileName) ? group.versions : [group.versions[0]];
+  }
+
+  // WIR Image Group Methods
+  toggleWirImageGroupExpansion(fileName: string): void {
+    if (this.expandedWirImageGroups.has(fileName)) {
+      this.expandedWirImageGroups.delete(fileName);
+    } else {
+      this.expandedWirImageGroups.add(fileName);
+    }
+  }
+
+  isWirImageGroupExpanded(fileName: string): boolean {
+    return this.expandedWirImageGroups.has(fileName);
+  }
+
+  getVisibleWirImageVersions(group: { fileName: string; versions: any[] }): any[] {
+    if (group.versions.length <= 1) {
+      return group.versions;
+    }
+    return this.isWirImageGroupExpanded(group.fileName) ? group.versions : [group.versions[0]];
+  }
+
+  // Progress Image Group Methods
+  toggleProgressImageGroupExpansion(fileName: string): void {
+    if (this.expandedProgressImageGroups.has(fileName)) {
+      this.expandedProgressImageGroups.delete(fileName);
+    } else {
+      this.expandedProgressImageGroups.add(fileName);
+    }
+  }
+
+  isProgressImageGroupExpanded(fileName: string): boolean {
+    return this.expandedProgressImageGroups.has(fileName);
+  }
+
+  getVisibleProgressImageVersions(group: { fileName: string; versions: any[] }): any[] {
+    if (group.versions.length <= 1) {
+      return group.versions;
+    }
+    return this.isProgressImageGroupExpanded(group.fileName) ? group.versions : [group.versions[0]];
+  }
+
+  // Quality Image Group Methods
+  toggleQualityImageGroupExpansion(fileName: string): void {
+    if (this.expandedQualityImageGroups.has(fileName)) {
+      this.expandedQualityImageGroups.delete(fileName);
+    } else {
+      this.expandedQualityImageGroups.add(fileName);
+    }
+  }
+
+  isQualityImageGroupExpanded(fileName: string): boolean {
+    return this.expandedQualityImageGroups.has(fileName);
+  }
+
+  getVisibleQualityImageVersions(group: { fileName: string; versions: any[] }): any[] {
+    if (group.versions.length <= 1) {
+      return group.versions;
+    }
+    return this.isQualityImageGroupExpanded(group.fileName) ? group.versions : [group.versions[0]];
+  }
+
+  /**
+   * Open version history sidebar
+   */
+  openVersionHistory(group: { fileName: string; versions: BoxDrawing[] }): void {
+    console.log('Opening version history for:', group.fileName);
+    console.log('Versions count:', group.versions.length);
+    console.log('Versions:', group.versions);
+    
+    this.currentFileName = group.fileName;
+    this.currentFileVersions = [...group.versions].sort((a, b) => (b.version || 1) - (a.version || 1));
+    this.versionHistorySidebarOpen = true;
+    this.selectedVersionsForCompare = [];
+    this.compareMode = false;
+    
+    console.log('Current file versions after assignment:', this.currentFileVersions);
+    console.log('Sidebar open:', this.versionHistorySidebarOpen);
+  }
+
+  /**
+   * Close version history sidebar
+   */
+  closeVersionHistory(): void {
+    this.versionHistorySidebarOpen = false;
+    this.currentFileVersions = [];
+    this.currentFileName = '';
+    this.selectedVersionsForCompare = [];
+    this.compareMode = false;
+  }
+
+  /**
+   * Toggle compare mode
+   */
+  toggleCompareMode(): void {
+    this.compareMode = !this.compareMode;
+    if (!this.compareMode) {
+      this.selectedVersionsForCompare = [];
+    }
+  }
+
+  /**
+   * Toggle version selection for comparison
+   */
+  toggleVersionSelection(version: BoxDrawing): void {
+    const index = this.selectedVersionsForCompare.findIndex(v => v.version === version.version);
+    if (index > -1) {
+      this.selectedVersionsForCompare.splice(index, 1);
+    } else {
+      if (this.selectedVersionsForCompare.length < 2) {
+        this.selectedVersionsForCompare.push(version);
+      } else {
+        // Replace the oldest selection
+        this.selectedVersionsForCompare.shift();
+        this.selectedVersionsForCompare.push(version);
+      }
+    }
+  }
+
+  /**
+   * Check if a version is selected for comparison
+   */
+  isVersionSelected(version: BoxDrawing): boolean {
+    return this.selectedVersionsForCompare.some(v => v.version === version.version);
+  }
+
+  /**
+   * Compare selected versions
+   */
+  compareSelectedVersions(): void {
+    if (this.selectedVersionsForCompare.length === 2) {
+      // Sort by version number (older first, newer second)
+      const sorted = [...this.selectedVersionsForCompare].sort((a, b) => (a.version || 1) - (b.version || 1));
+      const older = sorted[0];
+      const newer = sorted[1];
+      
+      // Open both files in new tabs/windows for comparison
+      window.open(older.displayUrl || older.imageUrl || older.drawingUrl, '_blank');
+      setTimeout(() => {
+        window.open(newer.displayUrl || newer.imageUrl || newer.drawingUrl, '_blank');
+      }, 500);
+    }
+  }
+
+  /**
+   * Get formatted date and time
+   */
+  getFormattedDateTime(date: Date | undefined): string {
+    if (!date) return '';
+    const d = new Date(date);
+    return d.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
   }
 
   /**
@@ -3587,5 +4021,27 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.isBoxLogDetailsModalOpen = false;
     this.selectedBoxLog = null;
     document.body.style.overflow = '';
+  }
+
+  /**
+   * Extract box type abbreviation from BoxTag
+   * BoxTag format: ProjectNumber-Building-Floor-Type-SubType
+   */
+  getBoxTypeFromTag(): string {
+    if (!this.box) return '';
+    const parts = (this.box.code || '').split('-');
+    // Type is at position 3 (index 3)
+    return parts.length >= 4 ? parts[3] : '';
+  }
+
+  /**
+   * Extract box subtype abbreviation from BoxTag
+   * BoxTag format: ProjectNumber-Building-Floor-Type-SubType
+   */
+  getBoxSubTypeFromTag(): string {
+    if (!this.box) return '';
+    const parts = (this.box.code || '').split('-');
+    // SubType is at position 4 (index 4)
+    return parts.length >= 5 ? parts[4] : '';
   }
 }

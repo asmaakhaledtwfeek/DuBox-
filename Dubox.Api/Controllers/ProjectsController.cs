@@ -75,5 +75,22 @@ public class ProjectsController : ControllerBase
         var result = await _mediator.Send(new DeleteProjectCommand(projectId), cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+
+    [HttpGet("{projectId}/configuration")]
+    public async Task<IActionResult> GetProjectConfiguration(Guid projectId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetProjectConfigurationQuery(projectId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpPost("{projectId}/configuration")]
+    public async Task<IActionResult> SaveProjectConfiguration(Guid projectId, [FromBody] SaveProjectConfigurationCommand command, CancellationToken cancellationToken)
+    {
+        if (projectId != command.ProjectId)
+            return BadRequest("Project ID mismatch");
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
 }
 

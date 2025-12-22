@@ -26,7 +26,21 @@ public class GetBoxDrawingByIdQueryHandler : IRequestHandler<GetBoxDrawingByIdQu
             return Result.Failure<BoxDrawingDto>("Drawing not found");
         }
 
-        var drawingDto = drawing.Adapt<BoxDrawingDto>();
+        // Get user name
+        string? createdByName = "Unknown";
+        if (drawing.CreatedBy.HasValue)
+        {
+            var user = await _unitOfWork.Repository<User>().GetByIdAsync(drawing.CreatedBy.Value, cancellationToken);
+            if (user != null)
+            {
+                createdByName = user.FullName ?? user.Email;
+            }
+        }
+
+        var drawingDto = drawing.Adapt<BoxDrawingDto>() with 
+        { 
+            CreatedByName = createdByName 
+        };
         return Result.Success(drawingDto);
     }
 }

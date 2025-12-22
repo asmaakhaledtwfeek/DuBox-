@@ -61,6 +61,7 @@ public class GetProgressUpdatesByActivityQueryHandler : IRequestHandler<GetProgr
                 OriginalName = img.OriginalName,
                 FileSize = img.FileSize,
                 Sequence = img.Sequence,
+                Version = img.Version,
                 CreatedDate = img.CreatedDate,
             })
             .ToListAsync(cancellationToken);

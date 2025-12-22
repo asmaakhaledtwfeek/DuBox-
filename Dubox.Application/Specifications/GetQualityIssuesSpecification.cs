@@ -13,6 +13,7 @@ namespace Dubox.Application.Specifications
             AddInclude($"{nameof(QualityIssue.Box)}.{nameof(Box.Project)}");
             AddInclude(nameof(QualityIssue.WIRCheckpoint));
             AddInclude(nameof(QualityIssue.AssignedToTeam));
+            AddInclude(nameof(QualityIssue.AssignedToUser));
             EnableSplitQuery();
 
             // Enable pagination

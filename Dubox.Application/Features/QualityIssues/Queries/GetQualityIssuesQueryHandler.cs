@@ -48,6 +48,7 @@ namespace Dubox.Application.Features.QualityIssues.Queries
             var dtos = qualityIssues.Select(issue =>
             {
                 var dto = issue.Adapt<QualityIssueDetailsDto>();
+                dto.AssignedToUserName = issue.AssignedToUser?.FullName;
                // dto.Images = new List<QualityIssueImageDto>();
                 return dto;
             }).ToList();
@@ -88,6 +89,7 @@ namespace Dubox.Application.Features.QualityIssues.Queries
                     OriginalName = img.OriginalName,
                     FileSize = img.FileSize,
                     Sequence = img.Sequence,
+                    Version = img.Version,
                     CreatedDate = img.CreatedDate,
                     ImageUrl = $"/api/images/QualityIssue/{img.QualityIssueImageId}/file"
                 })

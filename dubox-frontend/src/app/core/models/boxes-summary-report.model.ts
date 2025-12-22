@@ -13,7 +13,7 @@ export interface BoxSummaryReportItem {
   boxType: string;
   floor?: string;
   buildingNumber?: string;
-  boxLetter?: string;
+  boxFunction?: string;
   zone?: string;
   progressPercentage: number;
   progressPercentageFormatted: string;

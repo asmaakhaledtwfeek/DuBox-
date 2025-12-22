@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { Project, ProjectStats, ProjectStatus } from '../models/project.model';
+import { ProjectConfiguration } from '../models/project-configuration.model';
 
 @Injectable({
   providedIn: 'root'
@@ -182,5 +183,23 @@ export class ProjectService {
    */
   getProjectDashboard(id: string): Observable<any> {
     return this.apiService.get<any>(`${this.endpoint}/${id}/dashboard`);
+  }
+
+  /**
+   * Get project configuration (buildings, levels, types, zones, functions)
+   */
+  getProjectConfiguration(projectId: string): Observable<ProjectConfiguration> {
+    return this.apiService.get<any>(`${this.endpoint}/${projectId}/configuration`).pipe(
+      map(response => response.data || response)
+    );
+  }
+
+  /**
+   * Save project configuration (buildings, levels, types, zones, functions)
+   */
+  saveProjectConfiguration(projectId: string, configuration: ProjectConfiguration): Observable<ProjectConfiguration> {
+    return this.apiService.post<any>(`${this.endpoint}/${projectId}/configuration`, configuration).pipe(
+      map(response => response.data || response)
+    );
   }
 }

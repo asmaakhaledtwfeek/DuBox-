@@ -66,6 +66,14 @@ public interface IDbContext
     DbSet<ChecklistSection> ChecklistSections { get; }
     DbSet<Checklist> Checklists { get; }
     
+    // Project Configuration
+    DbSet<ProjectBuilding> ProjectBuildings { get; }
+    DbSet<ProjectLevel> ProjectLevels { get; }
+    DbSet<ProjectBoxType> ProjectBoxTypes { get; }
+    DbSet<ProjectBoxSubType> ProjectBoxSubTypes { get; }
+    DbSet<ProjectZone> ProjectZones { get; }
+    DbSet<ProjectBoxFunction> ProjectBoxFunctions { get; }
+    
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     
     // Allow generic access to DbSet for repository pattern

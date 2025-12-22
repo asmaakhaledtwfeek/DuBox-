@@ -100,7 +100,7 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             return Result.Failure<ProgressUpdateDto>($"Failed to save progress update: {ex.Message}");
         }
 
-        (bool, string) imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<ProgressUpdateImage>(progressUpdate.ProgressUpdateId, request.Files, request.ImageUrls, cancellationToken);
+        (bool, string) imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<ProgressUpdateImage>(progressUpdate.ProgressUpdateId, request.Files, request.ImageUrls, cancellationToken, fileNames: request.FileNames);
         if (!imagesProcessResult.Item1)
         {
             return Result.Failure<ProgressUpdateDto>(imagesProcessResult.Item2);
@@ -433,51 +433,122 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
                  .FirstOrDefaultAsync(cancellationToken);
         }
 
+        // If no WIR activity found, return
+        if (nextWIRActivity == null)
+            return;
+
         WIRRecord? nearestWIR = _unitOfWork.Repository<WIRRecord>()
-            .Get().Where(w => w.BoxActivityId == nextWIRActivity!.BoxActivityId).FirstOrDefault();
+            .Get().Where(w => w.BoxActivityId == nextWIRActivity.BoxActivityId).FirstOrDefault();
         string oldBay = string.Empty;
         string oldRow =string.Empty;
         string oldPosition = string.Empty;
         bool positionUpdated = false;
-        if (nearestWIR ==null)
+        
+        if (nearestWIR == null)
         {
-             nearestWIR = new WIRRecord
+            // WIR record doesn't exist yet - create it
+            // Each WIR section should have its own position values
+            // Only use values from the current request (no inheritance from previous WIRs)
+            string bayValue = request.WirBay ?? string.Empty;
+            string rowValue = request.WirRow ?? string.Empty;
+            string positionValue = request.WirPosition ?? string.Empty;
+
+            nearestWIR = new WIRRecord
             {
-                BoxActivityId = nextWIRActivity!.BoxActivityId,
+                BoxActivityId = nextWIRActivity.BoxActivityId,
                 WIRCode = nextWIRActivity.ActivityMaster.WIRCode ?? "WIR",
                 Status = WIRRecordStatusEnum.Pending,
                 RequestedDate = DateTime.UtcNow,
                 RequestedBy = currentUserId,
-                CreatedDate = DateTime.UtcNow
+                CreatedDate = DateTime.UtcNow,
+                Bay = !string.IsNullOrWhiteSpace(bayValue) ? bayValue : null,
+                Row = !string.IsNullOrWhiteSpace(rowValue) ? rowValue : null,
+                Position = !string.IsNullOrWhiteSpace(positionValue) ? positionValue : null
             };
             await _unitOfWork.Repository<WIRRecord>().AddAsync(nearestWIR, cancellationToken);
-            await _unitOfWork.CompleteAsync();
+            await _unitOfWork.CompleteAsync(cancellationToken);
+            
+            // If provided values exist, consider it as position updated
+            positionUpdated = !string.IsNullOrWhiteSpace(bayValue) || !string.IsNullOrWhiteSpace(rowValue);
         }
-       
-             oldBay = nearestWIR.Bay;
-             oldRow = nearestWIR.Row;
-             oldPosition = nearestWIR.Position;
-            positionUpdated = UpdateWIRPosition(nearestWIR, request);
-            if (positionUpdated)
+        else
+        {
+            // WIR record exists - update position only if values provided and not already set
+            oldBay = nearestWIR.Bay ?? string.Empty;
+            oldRow = nearestWIR.Row ?? string.Empty;
+            oldPosition = nearestWIR.Position ?? string.Empty;
+            
+            // Try to update if new values are provided
+            bool wirFieldsUpdated = UpdateWIRPosition(nearestWIR, request);
+            if (wirFieldsUpdated)
             {
                 nearestWIR.ModifiedDate = DateTime.UtcNow;
                 _unitOfWork.Repository<WIRRecord>().Update(nearestWIR);
             }
+            
+            // Check if WIR has position data (either newly set or already existing)
+            // This ensures box location is always synchronized with WIR position
+            positionUpdated = !string.IsNullOrWhiteSpace(nearestWIR.Bay) || 
+                             !string.IsNullOrWhiteSpace(nearestWIR.Row) || 
+                             !string.IsNullOrWhiteSpace(nearestWIR.Position);
+            }
         
         if (positionUpdated)
         {
-            // update box location 
-            var box= await _unitOfWork.Repository<Box>().GetByIdAsync(currentActivity.BoxId, cancellationToken);
+            // Update box location to match the LATEST WIR position
+            // The box location should reflect the current WIR section
+            var box = await _unitOfWork.Repository<Box>().GetByIdAsync(currentActivity.BoxId, cancellationToken);
             if (box != null)
             {
-                box.Bay = nearestWIR.Bay;
-                box.Row = nearestWIR.Row;
-                box.Position = nearestWIR.Position;
-                box.ModifiedDate = DateTime.UtcNow;
-                box.ModifiedBy = currentUserId;
-                _unitOfWork.Repository<Box>().Update(box);
+                // Find the most recent WIR with position data for this box
+                // This ensures box location reflects the current/latest WIR section
+                var latestWIRWithPosition = await _dbContext.WIRRecords
+                    .Include(w => w.BoxActivity)
+                    .Where(w => w.BoxActivity.BoxId == currentActivity.BoxId)
+                    .Where(w => !string.IsNullOrWhiteSpace(w.Bay) || !string.IsNullOrWhiteSpace(w.Row) || !string.IsNullOrWhiteSpace(w.Position))
+                    .OrderByDescending(w => w.CreatedDate)
+                    .FirstOrDefaultAsync(cancellationToken);
+
+                if (latestWIRWithPosition != null)
+                {
+                    // Check if box location actually needs updating (avoid unnecessary updates)
+                    bool boxNeedsUpdate = box.Bay != latestWIRWithPosition.Bay || 
+                                         box.Row != latestWIRWithPosition.Row || 
+                                         box.Position != latestWIRWithPosition.Position;
+                    
+                    if (boxNeedsUpdate)
+                    {
+                        string boxOldBay = box.Bay ?? string.Empty;
+                        string boxOldRow = box.Row ?? string.Empty;
+                        string boxOldPosition = box.Position ?? string.Empty;
+                        
+                        box.Bay = latestWIRWithPosition.Bay;
+                        box.Row = latestWIRWithPosition.Row;
+                        box.Position = latestWIRWithPosition.Position;
+                        box.ModifiedDate = DateTime.UtcNow;
+                        box.ModifiedBy = currentUserId;
+                        _unitOfWork.Repository<Box>().Update(box);
+                        
+                        // Create audit log for box position update only if values changed
+                        var boxAuditLog = new AuditLog
+                        {
+                            TableName = nameof(Box),
+                            RecordId = currentActivity.BoxId,
+                            Action = "BoxPositionUpdate",
+                            OldValues = $"Bay: {boxOldBay ?? "N/A"}, Row: {boxOldRow ?? "N/A"}, Position: {boxOldPosition ?? "N/A"}",
+                            NewValues = $"Bay: {latestWIRWithPosition.Bay ?? "N/A"}, Row: {latestWIRWithPosition.Row ?? "N/A"}, Position: {latestWIRWithPosition.Position ?? "N/A"}",
+                            ChangedBy = currentUserId,
+                            ChangedDate = DateTime.UtcNow,
+                            Description = $"Box position synchronized with latest WIR position. Box: {box.BoxTag}, WIR: {latestWIRWithPosition.WIRCode}"
+                        };
+                        await _unitOfWork.Repository<AuditLog>().AddAsync(boxAuditLog, cancellationToken);
+                    }
+                }
             }
-            // Create audit log for WIR position update
+            
+            // Create audit log for WIR position update only if WIR values actually changed
+            if (oldBay != nearestWIR.Bay || oldRow != nearestWIR.Row || oldPosition != nearestWIR.Position)
+            {
             var wIRAuditLog = new AuditLog
             {
                 TableName = nameof(WIRRecord),
@@ -485,24 +556,12 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
                 Action = "WIRPositionUpdate",
                 OldValues = $"Bay: {oldBay ?? "N/A"}, Row: {oldRow ?? "N/A"}, Position: {oldPosition ?? "N/A"}",
                 NewValues = $"Bay: {nearestWIR.Bay ?? "N/A"}, Row: {nearestWIR.Row ?? "N/A"}, Position: {nearestWIR.Position ?? "N/A"}",
-                ChangedBy = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString()),
+                    ChangedBy = currentUserId,
                 ChangedDate = DateTime.UtcNow,
                 Description = $"WIR position updated from activity progress update. WIR: {nearestWIR.WIRCode}"
             };
-            var boxAuditLog = new AuditLog
-            {
-                TableName = nameof(Box),
-                RecordId = currentActivity.BoxId,
-                Action = "BoxPositionUpdate",
-                OldValues = $"Bay: {oldBay ?? "N/A"}, Row: {oldRow ?? "N/A"}, Position: {oldPosition ?? "N/A"}",
-                NewValues = $"Bay: {nearestWIR.Bay ?? "N/A"}, Row: {nearestWIR.Row ?? "N/A"}, Position: {nearestWIR.Position ?? "N/A"}",
-                ChangedBy = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString()),
-                ChangedDate = DateTime.UtcNow,
-                Description = $"Box position updated from activity progress update. Box: {box.BoxTag}"
-            };
             await _unitOfWork.Repository<AuditLog>().AddAsync(wIRAuditLog, cancellationToken);
-            await _unitOfWork.Repository<AuditLog>().AddAsync(boxAuditLog, cancellationToken);
-
+            }
         }
     }
     private bool UpdateWIRPosition(WIRRecord nearestWIR, CreateProgressUpdateCommand request)
@@ -515,12 +574,10 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         {
             return positionUpdated; // No position data to update
         }
-        // Update WIR position fields
-        var oldBay = nearestWIR.Bay;
-        var oldRow = nearestWIR.Row;
-        var oldPosition = nearestWIR.Position;
 
-        if (!string.IsNullOrWhiteSpace(request.WirBay))
+        // Update WIR position fields only if they are currently empty
+        // Once set, position values should not be overwritten
+        if (!string.IsNullOrWhiteSpace(request.WirBay) && string.IsNullOrWhiteSpace(nearestWIR.Bay))
         {
             nearestWIR.Bay = request.WirBay.Trim();
             if (nearestWIR.Bay.Length > 50)
@@ -528,7 +585,7 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             positionUpdated = true;
         }
 
-        if (!string.IsNullOrWhiteSpace(request.WirRow))
+        if (!string.IsNullOrWhiteSpace(request.WirRow) && string.IsNullOrWhiteSpace(nearestWIR.Row))
         {
             nearestWIR.Row = request.WirRow.Trim();
             if (nearestWIR.Row.Length > 50)
@@ -536,7 +593,7 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             positionUpdated = true;
         }
 
-        if (!string.IsNullOrWhiteSpace(request.WirPosition))
+        if (!string.IsNullOrWhiteSpace(request.WirPosition) && string.IsNullOrWhiteSpace(nearestWIR.Position))
         {
             nearestWIR.Position = request.WirPosition.Trim();
             if (nearestWIR.Position.Length > 50)

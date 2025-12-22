@@ -75,6 +75,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                 Severity = request.Severity,
                 IssueDescription = request.IssueDescription,
                 AssignedTo = request.AssignedTo,
+                AssignedToUserId = request.AssignedToUserId,
                 DueDate = request.DueDate,
                 Status = QualityIssueStatusEnum.Open,
                 IssueDate = DateTime.UtcNow,
@@ -97,7 +98,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                 return Result.Failure<WIRCheckpointDto>($"Error saving quality issue: {ex.Message}. Inner exception: {ex.InnerException?.Message}");
             }
 
-            (bool, string) imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<QualityIssueImage>(newIssue.IssueId, request.Files, request.ImageUrls, cancellationToken);
+            (bool, string) imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<QualityIssueImage>(newIssue.IssueId, request.Files, request.ImageUrls, cancellationToken, fileNames: request.FileNames);
             if (!imagesProcessResult.Item1)
             {
                 return Result.Failure<WIRCheckpointDto>(imagesProcessResult.Item2);

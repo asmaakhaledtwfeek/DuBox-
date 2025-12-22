@@ -35,9 +35,9 @@
           </div>
           <p class="page-subtitle">
             {{ box.code }} • 
-            {{ box.boxTypeName || box.type }}
-            <span *ngIf="box.boxSubTypeName || box.subType">
-              / {{ box.boxSubTypeName || box.subType }}
+            {{ getBoxTypeFromTag() || box.boxTypeName || box.type }}
+            <span *ngIf="getBoxSubTypeFromTag()">
+              / {{ getBoxSubTypeFromTag() }}
             </span>
           </p>
         </div>
@@ -191,19 +191,25 @@
               <h3 class="card-title">Box Information</h3>
               <div class="info-grid">
               
-                
-               
-                <div class="info-item" *ngIf="box.floor">
-                  <span class="label">Floor</span>
-                  <span class="value">{{ box.floor }}</span>
+                <div class="info-item" *ngIf="getBoxTypeFromTag()">
+                  <span class="label">Box Type</span>
+                  <span class="value">{{ getBoxTypeFromTag() }}</span>
+                </div>
+                <div class="info-item" *ngIf="getBoxSubTypeFromTag()">
+                  <span class="label">Box Sub Type</span>
+                  <span class="value">{{ getBoxSubTypeFromTag() }}</span>
                 </div>
                 <div class="info-item" *ngIf="box.buildingNumber">
                   <span class="label">Building Number</span>
                   <span class="value">{{ box.buildingNumber }}</span>
                 </div>
-                <div class="info-item" *ngIf="box.boxLetter">
-                  <span class="label">Box Letter</span>
-                  <span class="value">{{ box.boxLetter }}</span>
+                <div class="info-item" *ngIf="box.floor">
+                  <span class="label">Floor</span>
+                  <span class="value">{{ box.floor }}</span>
+                </div>
+                <div class="info-item" *ngIf="box.boxFunction">
+                  <span class="label">Box Function</span>
+                  <span class="value">{{ box.boxFunction }}</span>
                 </div>
                 <div class="info-item" *ngIf="box.zone">
                   <span class="label">Zone</span>
@@ -249,9 +255,17 @@
                     </a>
                   </span>
                 </div>
-                <div class="info-item" *ngIf="!box.currentLocationCode">
+                <div class="info-item" *ngIf="!box.currentLocationCode && !box.bay && !box.row && !box.position">
                   <span class="label">Current Location</span>
                   <span class="value text-muted">Not assigned</span>
+                </div>
+                <div class="info-item" *ngIf="box.bay || box.row || box.position">
+                  <span class="label">Position (Bay / Row / Position)</span>
+                  <span class="value">
+                    <span *ngIf="box.bay" class="position-badge">Bay: {{ box.bay }}</span>
+                    <span *ngIf="box.row" class="position-badge">Row: {{ box.row }}</span>
+                    <span *ngIf="box.position" class="position-badge">Position: {{ box.position }}</span>
+                  </span>
                 </div>
                 <div class="info-item" *ngIf="box.description">
                   <span class="label">Description</span>
@@ -1024,14 +1038,15 @@
                 name="createIssueDescription"
               ></textarea>
 
-              <!-- Assigned To -->
-              <label class="modal-label" for="createAssignedTo">Assigned To</label>
+              <!-- Assigned To Team -->
+              <label class="modal-label" for="createAssignedTo">Assigned To Team</label>
               <select
                 id="createAssignedTo"
                 class="modal-input"
                 [(ngModel)]="newQualityIssueForm.assignedTo"
                 name="createAssignedTo"
                 [disabled]="loadingTeams || createQualityIssueLoading"
+                (change)="onQualityIssueTeamChange()"
               >
                 <option [value]="''">Select Team (Optional)</option>
                 <option *ngFor="let team of availableTeams" [value]="team.teamId">
@@ -1040,6 +1055,25 @@
               </select>
               <div *ngIf="loadingTeams" class="loading-text" style="font-size: 12px; color: #64748b; margin-top: 4px;">
                 Loading teams...
+              </div>
+
+              <!-- Assigned To User (within selected team) -->
+              <label class="modal-label" for="createAssignedToUser" *ngIf="newQualityIssueForm.assignedTo">Assigned To User</label>
+              <select
+                id="createAssignedToUser"
+                class="modal-input"
+                [(ngModel)]="newQualityIssueForm.assignedToUserId"
+                name="createAssignedToUser"
+                [disabled]="loadingTeamUsers || createQualityIssueLoading || !newQualityIssueForm.assignedTo"
+                *ngIf="newQualityIssueForm.assignedTo"
+              >
+                <option [value]="''">Select User (Optional)</option>
+                <option *ngFor="let user of availableTeamUsers" [value]="user.userId">
+                  {{ user.userName }} <span *ngIf="user.userEmail">({{ user.userEmail }})</span>
+                </option>
+              </select>
+              <div *ngIf="loadingTeamUsers && newQualityIssueForm.assignedTo" class="loading-text" style="font-size: 12px; color: #64748b; margin-top: 4px;">
+                Loading team members...
               </div>
 
               <!-- Due Date -->
@@ -1636,7 +1670,7 @@
             <p>No URLs attached to this box</p>
           </div>
 
-          <!-- File Drawings Section (PDF/DWG files) -->
+          <!-- File Drawings Section (PDF/DWG files) - Grouped by filename with versions -->
           <div *ngIf="!loadingBoxDrawings && !boxDrawingsError && activeDrawingTab === 'file' && getFileTypeImages().length > 0" class="progress-images-section">
             <div class="section-header">
               <h3 class="section-title">
@@ -1648,9 +1682,43 @@
               </h3>
               <span class="section-count">{{ getFileTypeImages().length }} file(s)</span>
             </div>
-            <div class="file-drawings-gallery">
-              <div class="file-drawing-item" *ngFor="let drawing of getFileTypeImages(); let i = index">
+            
+            <!-- Group files by name -->
+            <div class="file-group" *ngFor="let group of getGroupedFileTypeImages()">
+              <!-- File Group Header (if multiple versions) -->
+              <div class="file-group-header" *ngIf="group.versions.length > 1" [class.expanded]="isFileGroupExpanded(group.fileName)">
+                <div class="file-group-header-left" (click)="toggleFileGroupExpansion(group.fileName)">
+                  <svg class="chevron-icon" [class.rotated]="isFileGroupExpanded(group.fileName)" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                  <h4 class="file-group-name">{{ group.fileName }}</h4>
+                </div>
+                <div class="file-group-header-right">
+                  <button class="version-history-btn" (click)="openVersionHistory(group); $event.stopPropagation()" title="View version history">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    Version History
+                  </button>
+                  <span class="version-count-badge" (click)="toggleFileGroupExpansion(group.fileName)" title="Click to toggle versions">
+                    {{ isFileGroupExpanded(group.fileName) ? group.versions.length + ' version(s) expanded' : 'Show all ' + group.versions.length + ' versions' }}
+                  </span>
+                </div>
+              </div>
+              
+              <!-- All versions for this file (ordered newest first) -->
+              <div class="file-drawing-item" *ngFor="let drawing of getVisibleVersions(group); let i = index">
                 <div class="file-drawing-card" (click)="openFileDrawing(drawing)">
+                  <!-- Version Badge -->
+                  <div class="version-badge" *ngIf="group.versions.length > 1">
+                    V{{ drawing.version || 1 }}
+                  </div>
+                  <!-- Latest Version Badge (when collapsed and multiple versions exist) -->
+                  <div class="latest-badge" *ngIf="group.versions.length > 1 && !isFileGroupExpanded(group.fileName) && i === 0">
+                    Latest
+                  </div>
+                  
                   <div class="file-icon-wrapper">
                     <svg *ngIf="drawing.fileExtension?.toLowerCase() === '.pdf'" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
@@ -1670,7 +1738,7 @@
                       <span class="file-extension">{{ drawing.fileExtension?.toUpperCase() || 'FILE' }}</span>
                       <span class="file-size" *ngIf="drawing.fileSize">{{ formatFileSize(drawing.fileSize) }}</span>
                     </p>
-                    <p class="file-date" *ngIf="drawing.updateDate">{{ drawing.updateDate | date: 'MMM d, yyyy' }}</p>
+                    <p class="file-date" *ngIf="drawing.updateDate">Uploaded on {{ drawing.updateDate | date: 'MMM d, yyyy' }}</p>
                     <p class="file-creator" *ngIf="drawing.createdByName">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -1768,6 +1836,138 @@
             <h3>No URLs</h3>
             <p>No URL-based drawings found for this box</p>
           </div>
+
+          <!-- Version History Sidebar -->
+          <div class="version-history-sidebar" *ngIf="versionHistorySidebarOpen" [@slideIn]>
+            <div class="version-sidebar-header">
+              <div class="version-sidebar-title">
+                <div class="title-content">
+                  <div class="title-row">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <h3>Version history</h3>
+                    <svg class="warning-icon" *ngIf="currentFileVersions.length > 10" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" title="Many versions">
+                      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                      <line x1="12" y1="9" x2="12" y2="13"/>
+                      <line x1="12" y1="17" x2="12.01" y2="17"/>
+                    </svg>
+                  </div>
+                  <div class="file-name-subtitle" *ngIf="currentFileName">
+                    {{ currentFileName }}
+                  </div>
+                </div>
+              </div>
+              <button class="version-sidebar-close" (click)="closeVersionHistory()" title="Close">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            </div>
+
+            <div class="version-sidebar-controls">
+              <button class="compare-versions-btn" [class.active]="compareMode" (click)="toggleCompareMode()" [disabled]="currentFileVersions.length < 2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="16 3 21 3 21 8"/>
+                  <line x1="4" y1="20" x2="21" y2="3"/>
+                  <polyline points="21 16 21 21 16 21"/>
+                  <line x1="15" y1="15" x2="21" y2="21"/>
+                  <line x1="4" y1="4" x2="9" y2="9"/>
+                </svg>
+                {{ compareMode ? 'Cancel Compare' : 'Compare versions' }}
+              </button>
+              <button class="execute-compare-btn" *ngIf="compareMode && selectedVersionsForCompare.length === 2" (click)="compareSelectedVersions()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+                Compare Selected
+              </button>
+            </div>
+
+            <div class="version-sidebar-content">
+              
+              <!-- Empty State -->
+              <div class="version-empty-state" *ngIf="currentFileVersions.length === 0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <circle cx="12" cy="12" r="10"/>
+                  <polyline points="12 6 12 12 16 14"/>
+                </svg>
+                <h3>No versions found</h3>
+                <p>There are no version history records for this file.</p>
+              </div>
+
+              <!-- Versions List -->
+              <div class="versions-list" *ngIf="currentFileVersions.length > 0">
+                <div class="version-item" *ngFor="let version of currentFileVersions; let i = index" 
+                     [class.selected]="isVersionSelected(version)"
+                     [class.selectable]="compareMode"
+                     (click)="compareMode && toggleVersionSelection(version)">
+                  
+                  <div class="version-checkbox" *ngIf="compareMode">
+                    <input type="checkbox" 
+                           [checked]="isVersionSelected(version)" 
+                           [id]="'version-' + version.version"
+                           (change)="toggleVersionSelection(version)">
+                    <label [for]="'version-' + version.version"></label>
+                  </div>
+
+                  <div class="version-badge-circle">
+                    <span class="version-number">V{{ version.version || 1 }}</span>
+                  </div>
+
+                  <div class="version-details">
+                    <div class="version-file-info">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
+                        <polyline points="13 2 13 9 20 9"/>
+                      </svg>
+                      <span class="version-filename">{{ version.fileName || version.originalFileName || 'Untitled' }}</span>
+                    </div>
+                    <div class="version-meta">
+                      <span class="version-uploader">Uploaded by <strong>{{ version.createdByName || 'Unknown' }}</strong></span>
+                      <span class="version-date">on {{ getFormattedDateTime(version.updateDate || version.createdDate) }}</span>
+                    </div>
+                    <div class="version-size" *ngIf="version.fileSize">
+                      {{ formatFileSize(version.fileSize) }}
+                    </div>
+                  </div>
+
+                  <div class="version-actions">
+                    <button class="version-action-btn view-btn" (click)="openFileDrawing(version); $event.stopPropagation()" title="View">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                      </svg>
+                    </button>
+                    <button class="version-action-btn download-btn" (click)="downloadFileDrawing(version); $event.stopPropagation()" title="Download">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div class="version-more" (click)="$event.stopPropagation()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="1"/>
+                      <circle cx="19" cy="12" r="1"/>
+                      <circle cx="5" cy="12" r="1"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="version-count-footer" *ngIf="currentFileVersions.length > 0">
+              Showing {{ currentFileVersions.length }} version(s)
+            </div>
+          </div>
+
+          <!-- Sidebar Overlay -->
+          <div class="version-sidebar-overlay" *ngIf="versionHistorySidebarOpen" (click)="closeVersionHistory()"></div>
         </div>
 
 
@@ -1870,39 +2070,58 @@
                 <span class="section-count">{{ boxAttachments.wirCheckpointImages.length }} image(s)</span>
               </div>
               <div class="images-gallery" *ngIf="wirImagesExpanded" [@slideDown]>
-                <div class="image-card" *ngFor="let image of boxAttachments.wirCheckpointImages; let i = index">
-                  <div class="image-wrapper" (click)="openImagePreview(image.imageData, image.imageType)">
-                    <img [src]="formatImageData(image.imageData, image.imageType)" [alt]="image.originalName || 'WIR image'">
-                    <div class="image-overlay">
-                      <div class="overlay-actions">
-                        <button class="overlay-btn view-btn" (click)="openImagePreview(image.imageData, image.imageType); $event.stopPropagation()" title="View full size">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                            <circle cx="12" cy="12" r="3"/>
-                          </svg>
-                        </button>
-                        <button class="overlay-btn download-btn" (click)="downloadAttachmentImage(image.imageData, image.imageType, image.originalName); $event.stopPropagation()" title="Download image">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                            <polyline points="7 10 12 15 17 10"/>
-                            <line x1="12" y1="15" x2="12" y2="3"/>
-                          </svg>
-                        </button>
+                <!-- Group images by filename -->
+                <div class="file-group" *ngFor="let group of getGroupedWirImages()">
+                  <!-- Group Header (if multiple versions) -->
+                  <div class="file-group-header" *ngIf="group.versions.length > 1" [class.expanded]="isWirImageGroupExpanded(group.fileName)">
+                    <div class="file-group-header-left" (click)="toggleWirImageGroupExpansion(group.fileName)">
+                      <svg class="chevron-icon" [class.rotated]="isWirImageGroupExpanded(group.fileName)" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="9 18 15 12 9 6"/>
+                      </svg>
+                      <h4 class="file-group-name">{{ group.fileName }}</h4>
+                    </div>
+                    <div class="file-group-header-right">
+                      <span class="version-count-badge" (click)="toggleWirImageGroupExpansion(group.fileName)" title="Click to toggle versions">
+                        {{ isWirImageGroupExpanded(group.fileName) ? group.versions.length + ' version(s) expanded' : 'Show all ' + group.versions.length + ' versions' }}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <!-- Image cards for this group -->
+                  <div class="image-card" *ngFor="let image of getVisibleWirImageVersions(group); let i = index">
+                    <div class="image-wrapper" (click)="openImagePreview(image.imageData, image.imageType)">
+                      <!-- Version Badge -->
+                      <div class="version-badge" *ngIf="group.versions.length > 1">
+                        V{{ image.version || 1 }}
+                      </div>
+                      <!-- Latest Badge (when collapsed) -->
+                      <div class="latest-badge" *ngIf="group.versions.length > 1 && !isWirImageGroupExpanded(group.fileName) && i === 0">
+                        Latest
+                      </div>
+                      <img [src]="formatImageData(image.imageData, image.imageType)" [alt]="image.originalName || 'WIR image'">
+                      <div class="image-overlay">
+                        <div class="overlay-actions">
+                          <button class="overlay-btn view-btn" (click)="openImagePreview(image.imageData, image.imageType); $event.stopPropagation()" title="View full size">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                              <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                          </button>
+                          <button class="overlay-btn download-btn" (click)="downloadAttachmentImage(image.imageData, image.imageType, image.originalName); $event.stopPropagation()" title="Download image">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                              <polyline points="7 10 12 15 17 10"/>
+                              <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    <div class="image-number">{{ i + 1 }}</div>
-                  </div>
-                  <div class="image-info">
-                    <p class="image-name">{{ image.originalName || 'Image ' + (i + 1) }}</p>
-                    <p class="image-ref">{{ image.referenceName || 'WIR' }}</p>
-                    <p class="image-date">{{ image.createdDate | date: 'MMM d, yyyy' }}</p>
-                    <p class="image-creator" *ngIf="image.createdByName">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                        <circle cx="12" cy="7" r="4"/>
-                      </svg>
-                      {{ image.createdByName }}
-                    </p>
+                    <div class="image-info">
+                      <p class="image-name">{{ image.originalName || 'Image' }}</p>
+                      <p class="image-date">{{ image.createdDate | date: 'MMM d, yyyy' }}</p>
+                      <p class="image-size" *ngIf="image.fileSize">{{ formatFileSize(image.fileSize) }}</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1923,39 +2142,58 @@
                 <span class="section-count">{{ boxAttachments.progressUpdateImages.length }} image(s)</span>
               </div>
               <div class="images-gallery" *ngIf="progressImagesExpanded" [@slideDown]>
-                <div class="image-card" *ngFor="let image of boxAttachments.progressUpdateImages; let i = index">
-                  <div class="image-wrapper" (click)="openImagePreview(image.imageData, image.imageType)">
-                    <img [src]="formatImageData(image.imageData, image.imageType)" [alt]="image.originalName || 'Progress image'">
-                    <div class="image-overlay">
-                      <div class="overlay-actions">
-                        <button class="overlay-btn view-btn" (click)="openImagePreview(image.imageData, image.imageType); $event.stopPropagation()" title="View full size">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                            <circle cx="12" cy="12" r="3"/>
-                          </svg>
-                        </button>
-                        <button class="overlay-btn download-btn" (click)="downloadAttachmentImage(image.imageData, image.imageType, image.originalName); $event.stopPropagation()" title="Download image">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                            <polyline points="7 10 12 15 17 10"/>
-                            <line x1="12" y1="15" x2="12" y2="3"/>
-                          </svg>
-                        </button>
+                <!-- Group images by filename -->
+                <div class="file-group" *ngFor="let group of getGroupedProgressImages()">
+                  <!-- Group Header (if multiple versions) -->
+                  <div class="file-group-header" *ngIf="group.versions.length > 1" [class.expanded]="isProgressImageGroupExpanded(group.fileName)">
+                    <div class="file-group-header-left" (click)="toggleProgressImageGroupExpansion(group.fileName)">
+                      <svg class="chevron-icon" [class.rotated]="isProgressImageGroupExpanded(group.fileName)" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="9 18 15 12 9 6"/>
+                      </svg>
+                      <h4 class="file-group-name">{{ group.fileName }}</h4>
+                    </div>
+                    <div class="file-group-header-right">
+                      <span class="version-count-badge" (click)="toggleProgressImageGroupExpansion(group.fileName)" title="Click to toggle versions">
+                        {{ isProgressImageGroupExpanded(group.fileName) ? group.versions.length + ' version(s) expanded' : 'Show all ' + group.versions.length + ' versions' }}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <!-- Image cards for this group -->
+                  <div class="image-card" *ngFor="let image of getVisibleProgressImageVersions(group); let i = index">
+                    <div class="image-wrapper" (click)="openImagePreview(image.imageData, image.imageType)">
+                      <!-- Version Badge -->
+                      <div class="version-badge" *ngIf="group.versions.length > 1">
+                        V{{ image.version || 1 }}
+                      </div>
+                      <!-- Latest Badge (when collapsed) -->
+                      <div class="latest-badge" *ngIf="group.versions.length > 1 && !isProgressImageGroupExpanded(group.fileName) && i === 0">
+                        Latest
+                      </div>
+                      <img [src]="formatImageData(image.imageData, image.imageType)" [alt]="image.originalName || 'Progress image'">
+                      <div class="image-overlay">
+                        <div class="overlay-actions">
+                          <button class="overlay-btn view-btn" (click)="openImagePreview(image.imageData, image.imageType); $event.stopPropagation()" title="View full size">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                              <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                          </button>
+                          <button class="overlay-btn download-btn" (click)="downloadAttachmentImage(image.imageData, image.imageType, image.originalName); $event.stopPropagation()" title="Download image">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                              <polyline points="7 10 12 15 17 10"/>
+                              <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    <div class="image-number">{{ i + 1 }}</div>
-                  </div>
-                  <div class="image-info">
-                    <p class="image-name">{{ image.originalName || 'Image ' + (i + 1) }}</p>
-                   
-                    <p class="image-date">{{ image.createdDate | date: 'MMM d, yyyy' }}</p>
-                    <p class="image-creator" *ngIf="image.createdByName">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                        <circle cx="12" cy="7" r="4"/>
-                      </svg>
-                      {{ image.createdByName }}
-                    </p>
+                    <div class="image-info">
+                      <p class="image-name">{{ image.originalName || 'Image' }}</p>
+                      <p class="image-date">{{ image.createdDate | date: 'MMM d, yyyy' }}</p>
+                      <p class="image-size" *ngIf="image.fileSize">{{ formatFileSize(image.fileSize) }}</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1978,39 +2216,58 @@
                 <span class="section-count">{{ boxAttachments.qualityIssueImages.length }} image(s)</span>
               </div>
               <div class="images-gallery" *ngIf="qualityImagesExpanded" [@slideDown]>
-                <div class="image-card" *ngFor="let image of boxAttachments.qualityIssueImages; let i = index">
-                  <div class="image-wrapper" (click)="openImagePreview(image.imageData, image.imageType)">
-                    <img [src]="formatImageData(image.imageData, image.imageType)" [alt]="image.originalName || 'Quality issue image'">
-                    <div class="image-overlay">
-                      <div class="overlay-actions">
-                        <button class="overlay-btn view-btn" (click)="openImagePreview(image.imageData, image.imageType); $event.stopPropagation()" title="View full size">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                            <circle cx="12" cy="12" r="3"/>
-                          </svg>
-                        </button>
-                        <button class="overlay-btn download-btn" (click)="downloadAttachmentImage(image.imageData, image.imageType, image.originalName); $event.stopPropagation()" title="Download image">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                            <polyline points="7 10 12 15 17 10"/>
-                            <line x1="12" y1="15" x2="12" y2="3"/>
-                          </svg>
-                        </button>
+                <!-- Group images by filename -->
+                <div class="file-group" *ngFor="let group of getGroupedQualityImages()">
+                  <!-- Group Header (if multiple versions) -->
+                  <div class="file-group-header" *ngIf="group.versions.length > 1" [class.expanded]="isQualityImageGroupExpanded(group.fileName)">
+                    <div class="file-group-header-left" (click)="toggleQualityImageGroupExpansion(group.fileName)">
+                      <svg class="chevron-icon" [class.rotated]="isQualityImageGroupExpanded(group.fileName)" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="9 18 15 12 9 6"/>
+                      </svg>
+                      <h4 class="file-group-name">{{ group.fileName }}</h4>
+                    </div>
+                    <div class="file-group-header-right">
+                      <span class="version-count-badge" (click)="toggleQualityImageGroupExpansion(group.fileName)" title="Click to toggle versions">
+                        {{ isQualityImageGroupExpanded(group.fileName) ? group.versions.length + ' version(s) expanded' : 'Show all ' + group.versions.length + ' versions' }}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <!-- Image cards for this group -->
+                  <div class="image-card" *ngFor="let image of getVisibleQualityImageVersions(group); let i = index">
+                    <div class="image-wrapper" (click)="openImagePreview(image.imageData, image.imageType)">
+                      <!-- Version Badge -->
+                      <div class="version-badge" *ngIf="group.versions.length > 1">
+                        V{{ image.version || 1 }}
+                      </div>
+                      <!-- Latest Badge (when collapsed) -->
+                      <div class="latest-badge" *ngIf="group.versions.length > 1 && !isQualityImageGroupExpanded(group.fileName) && i === 0">
+                        Latest
+                      </div>
+                      <img [src]="formatImageData(image.imageData, image.imageType)" [alt]="image.originalName || 'Quality issue image'">
+                      <div class="image-overlay">
+                        <div class="overlay-actions">
+                          <button class="overlay-btn view-btn" (click)="openImagePreview(image.imageData, image.imageType); $event.stopPropagation()" title="View full size">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                              <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                          </button>
+                          <button class="overlay-btn download-btn" (click)="downloadAttachmentImage(image.imageData, image.imageType, image.originalName); $event.stopPropagation()" title="Download image">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                              <polyline points="7 10 12 15 17 10"/>
+                              <line x1="12" y1="15" x2="12" y2="3"/>
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    <div class="image-number">{{ i + 1 }}</div>
-                  </div>
-                  <div class="image-info">
-                    <p class="image-name">{{ image.originalName || 'Image ' + (i + 1) }}</p>
-                    <p class="image-ref">{{ image.referenceName || 'Quality Issue' }}</p>
-                    <p class="image-date">{{ image.createdDate | date: 'MMM d, yyyy' }}</p>
-                    <p class="image-creator" *ngIf="image.createdByName">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                        <circle cx="12" cy="7" r="4"/>
-                      </svg>
-                      {{ image.createdByName }}
-                    </p>
+                    <div class="image-info">
+                      <p class="image-name">{{ image.originalName || 'Image' }}</p>
+                      <p class="image-date">{{ image.createdDate | date: 'MMM d, yyyy' }}</p>
+                      <p class="image-size" *ngIf="image.fileSize">{{ formatFileSize(image.fileSize) }}</p>
+                    </div>
                   </div>
                 </div>
               </div>

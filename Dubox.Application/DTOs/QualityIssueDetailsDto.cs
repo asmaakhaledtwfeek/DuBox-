@@ -12,6 +12,8 @@ namespace Dubox.Application.DTOs
         public string? ReportedBy { get; set; }
         public Guid? AssignedTo { get; set; }
         public string? AssignedTeamName { get; set; }
+        public Guid? AssignedToUserId { get; set; }
+        public string? AssignedToUserName { get; set; }
         public DateTime? DueDate { get; set; }
         public QualityIssueStatusEnum Status { get; set; }
         public DateTime? ResolutionDate { get; set; }
@@ -54,6 +56,7 @@ namespace Dubox.Application.DTOs
         public string? OriginalName { get; set; }
         public long? FileSize { get; set; }
         public int Sequence { get; set; }
+        public int Version { get; set; } = 1; // Version number for files with same name
         public DateTime CreatedDate { get; set; }
         /// <summary>
         /// URL to fetch full image: /api/images/QualityIssue/{QualityIssueImageId}

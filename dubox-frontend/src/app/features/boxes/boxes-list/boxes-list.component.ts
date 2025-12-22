@@ -27,6 +27,7 @@ export class BoxesListComponent implements OnInit, OnDestroy {
   boxTypes: BoxTypeStat[] = [];
   filteredBoxTypes: BoxTypeStat[] = [];
   selectedBoxType: string | null = null;
+  selectedBoxSubType: string | null = null;
   showBoxTypes = true;
   loading = true;
   error = '';
@@ -50,6 +51,7 @@ export class BoxesListComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.projectId = this.route.snapshot.params['id'];
     const boxType = this.route.snapshot.queryParams['boxType'];
+    const boxSubType = this.route.snapshot.queryParams['boxSubType'];
     
     // Check permissions immediately
     this.checkPermissions();
@@ -68,6 +70,7 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     
     if (boxType) {
       this.selectedBoxType = boxType;
+      this.selectedBoxSubType = boxSubType || null;
       this.showBoxTypes = false;
       this.loadBoxes();
     } else {
@@ -152,19 +155,24 @@ export class BoxesListComponent implements OnInit, OnDestroy {
       next: (boxes) => {
         // Filter boxes by selected type if a type is selected
         if (this.selectedBoxType) {
-          // Compare using boxTypeName or type (both should contain the box type name)
-          this.boxes = boxes.filter(box => 
-            box.boxTypeName === this.selectedBoxType || 
-            box.type === this.selectedBoxType
-          );
-          console.log(`🔍 Filtering boxes by type "${this.selectedBoxType}":`, {
+          // Parse BoxTag to extract type and subtype abbreviations
+          // BoxTag format: ProjectNumber-Building-Floor-Type-SubType
+          this.boxes = boxes.filter(box => {
+            const parts = (box.code || '').split('-');
+            // Type is at position 3 (index 3), SubType is at position 4 (index 4)
+            const boxType = parts.length >= 4 ? parts[3] : '';
+            const boxSubType = parts.length >= 5 ? parts[4] : '';
+            
+            // Filter by type and subtype (if subtype is selected)
+            const typeMatches = boxType === this.selectedBoxType;
+            const subTypeMatches = !this.selectedBoxSubType || boxSubType === this.selectedBoxSubType;
+            
+            return typeMatches && subTypeMatches;
+          });
+          console.log(`🔍 Filtering boxes by type "${this.selectedBoxType}"${this.selectedBoxSubType ? ' and subtype "' + this.selectedBoxSubType + '"' : ''}:`, {
             totalBoxes: boxes.length,
             filteredBoxes: this.boxes.length,
-            sampleBox: boxes[0] ? {
-              boxTypeName: boxes[0].boxTypeName,
-              type: boxes[0].type,
-              boxTypeId: boxes[0].boxTypeId
-            } : null
+            sampleBoxTag: boxes[0]?.code
           });
         } else {
           this.boxes = boxes;
@@ -232,11 +240,26 @@ export class BoxesListComponent implements OnInit, OnDestroy {
 
   viewBoxType(boxType: string): void {
     this.selectedBoxType = boxType;
+    this.selectedBoxSubType = null; // Reset subtype when viewing all types
     this.showBoxTypes = false;
     this.boxTypeSearchControl.setValue('');
     this.router.navigate([], {
       relativeTo: this.route,
-      queryParams: { boxType: boxType },
+      queryParams: { boxType: boxType, boxSubType: null },
+      queryParamsHandling: 'merge'
+    });
+    this.loadBoxes();
+  }
+
+  viewBoxSubType(boxType: string, subType: string, event: Event): void {
+    event.stopPropagation(); // Prevent card click
+    this.selectedBoxType = boxType;
+    this.selectedBoxSubType = subType;
+    this.showBoxTypes = false;
+    this.boxTypeSearchControl.setValue('');
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { boxType: boxType, boxSubType: subType },
       queryParamsHandling: 'merge'
     });
     this.loadBoxes();
@@ -244,6 +267,7 @@ export class BoxesListComponent implements OnInit, OnDestroy {
 
   backToBoxTypes(): void {
     this.selectedBoxType = null;
+    this.selectedBoxSubType = null;
     this.showBoxTypes = true;
     this.boxes = [];
     this.filteredBoxes = [];
@@ -394,6 +418,26 @@ export class BoxesListComponent implements OnInit, OnDestroy {
       [BoxStatus.Dispatched]: 'Dispatched'
     };
     return labels[status] || status;
+  }
+
+  /**
+   * Extract box type abbreviation from BoxTag
+   * BoxTag format: ProjectNumber-Building-Floor-Type-SubType
+   */
+  getBoxTypeFromTag(box: Box): string {
+    const parts = (box.code || '').split('-');
+    // Type is at position 3 (index 3)
+    return parts.length >= 4 ? parts[3] : '';
+  }
+
+  /**
+   * Extract box subtype abbreviation from BoxTag
+   * BoxTag format: ProjectNumber-Building-Floor-Type-SubType
+   */
+  getBoxSubTypeFromTag(box: Box): string {
+    const parts = (box.code || '').split('-');
+    // SubType is at position 4 (index 4)
+    return parts.length >= 5 ? parts[4] : '';
   }
 
   // Expose Math to template

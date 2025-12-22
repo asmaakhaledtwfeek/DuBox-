@@ -28,27 +28,30 @@ public class GetBoxDrawingsQueryHandler : IRequestHandler<GetBoxDrawingsQuery, R
             return Result.Failure<List<BoxDrawingDto>>("Box not found");
         }
 
-        // Get all active box drawings for the specified box
-        var boxDrawings = _unitOfWork.Repository<BoxDrawing>()
-            .Get()
-            .Where(bd => bd.BoxId == request.BoxId && bd.IsActive)
-            .OrderByDescending(bd => bd.CreatedDate)
-            .ToList();
+        // Get all active box drawings for the specified box with user info
+        var boxDrawingsQuery = from bd in _unitOfWork.Repository<BoxDrawing>().Get()
+                               join u in _unitOfWork.Repository<User>().Get() 
+                                   on bd.CreatedBy equals u.UserId into userGroup
+                               from user in userGroup.DefaultIfEmpty()
+                               where bd.BoxId == request.BoxId && bd.IsActive
+                               orderby bd.CreatedDate descending
+                               select new BoxDrawingDto
+                               {
+                                   BoxDrawingId = bd.BoxDrawingId,
+                                   BoxId = bd.BoxId,
+                                   DrawingUrl = bd.DrawingUrl,
+                                   FileData = null, // Don't return large base64 data - use download endpoint instead
+                                   OriginalFileName = bd.OriginalFileName,
+                                   FileExtension = bd.FileExtension,
+                                   FileType = bd.FileType,
+                                   FileSize = bd.FileSize,
+                                   Version = bd.Version,
+                                   CreatedDate = bd.CreatedDate,
+                                   CreatedBy = bd.CreatedBy,
+                                   CreatedByName = user != null ? (user.FullName ?? user.Email) : "Unknown"
+                               };
 
-        // Map to DTOs (excluding FileData for performance - use download endpoint instead)
-        var boxDrawingDtos = boxDrawings.Select(bd => new BoxDrawingDto
-        {
-            BoxDrawingId = bd.BoxDrawingId,
-            BoxId = bd.BoxId,
-            DrawingUrl = bd.DrawingUrl,
-            FileData = null, // Don't return large base64 data - use download endpoint instead
-            OriginalFileName = bd.OriginalFileName,
-            FileExtension = bd.FileExtension,
-            FileType = bd.FileType,
-            FileSize = bd.FileSize,
-            CreatedDate = bd.CreatedDate,
-            CreatedBy = bd.CreatedBy
-        }).ToList();
+        var boxDrawingDtos = boxDrawingsQuery.ToList();
 
         return Result.Success(boxDrawingDtos);
     }

@@ -131,6 +131,7 @@ export interface ProgressUpdateImage {
   originalName?: string;
   fileSize?: number;
   sequence: number;
+  version?: number; // Version number for files with same name
   createdDate: Date;
   imageUrl?: string; // URL to fetch image on-demand: /api/images/ProgressUpdate/{progressUpdateImageId}
 }

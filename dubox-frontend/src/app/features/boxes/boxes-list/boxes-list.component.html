@@ -25,6 +25,10 @@
           </button>
           <span class="breadcrumb-separator">/</span>
           <span class="breadcrumb-current">{{ selectedBoxType }}</span>
+          <span *ngIf="selectedBoxSubType">
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-current">{{ selectedBoxSubType }}</span>
+          </span>
         </div>
         <h1 class="page-title">{{ showBoxTypes ? 'Box Types' : 'Boxes' }}</h1>
         <p class="page-subtitle" *ngIf="projectName || projectCode">
@@ -32,7 +36,7 @@
           <span *ngIf="projectName" class="project-name">{{ projectName }}</span>
         </p>
         <p class="page-helper">
-          {{ showBoxTypes ? 'Select a box type to view boxes' : 'Manage boxes for ' + selectedBoxType }}
+          {{ showBoxTypes ? 'Select a box type to view boxes' : 'Manage boxes for ' + selectedBoxType + (selectedBoxSubType ? ' - ' + selectedBoxSubType : '') }}
         </p>
       </div>
       <div class="header-right" *ngIf="canCreate">
@@ -202,6 +206,27 @@
               <span class="stat-value">{{ Math.round(boxType.overallProgress) }}%</span>
             </div>
           </div>
+
+          <!-- Sub Types Breakdown -->
+          <div class="sub-types-section" *ngIf="boxType.subTypes && boxType.subTypes.length > 0">
+            <h4 class="sub-types-title">Sub Types</h4>
+            <div class="sub-type-list">
+              <div 
+                class="sub-type-item clickable" 
+                *ngFor="let subType of boxType.subTypes"
+                (click)="viewBoxSubType(boxType.boxType, subType.subTypeAbbreviation || subType.subTypeName, $event)"
+                title="Click to view {{ subType.subTypeAbbreviation || subType.subTypeName }} boxes"
+              >
+                <div class="sub-type-info">
+                  <span class="sub-type-name">{{ subType.subTypeAbbreviation || subType.subTypeName }}</span>
+                </div>
+                <div class="sub-type-stats">
+                  <span class="sub-type-count">{{ subType.boxCount }} {{ subType.boxCount === 1 ? 'box' : 'boxes' }}</span>
+                  <span class="sub-type-progress">{{ Math.round(subType.progress) }}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="card-footer">
@@ -257,14 +282,14 @@
 
         <div class="card-body">
           <div class="box-details">
-            <div class="detail-item" *ngIf="box.boxTypeName || box.type">
+            <div class="detail-item" *ngIf="getBoxTypeFromTag(box) || box.boxTypeName || box.type">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
               </svg>
               <span>
-                {{ box.boxTypeName || box.type }}
-                <span *ngIf="box.boxSubTypeName || box.subType">
-                  / {{ box.boxSubTypeName || box.subType }}
+                {{ getBoxTypeFromTag(box) || box.boxTypeName || box.type }}
+                <span *ngIf="getBoxSubTypeFromTag(box)">
+                  / {{ getBoxSubTypeFromTag(box) }}
                 </span>
               </span>
             </div>

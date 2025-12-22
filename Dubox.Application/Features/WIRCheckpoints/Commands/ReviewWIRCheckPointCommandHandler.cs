@@ -102,7 +102,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                 sequence = existingImages.Max(img => img.Sequence) + 1;
             }
 
-            (bool, string) imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<WIRCheckpointImage>(wir.WIRId, request.Files, request.ImageUrls, cancellationToken, sequence);
+            (bool, string) imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<WIRCheckpointImage>(wir.WIRId, request.Files, request.ImageUrls, cancellationToken, sequence, request.FileNames);
             if (!imagesProcessResult.Item1)
             {
                 return Result.Failure<WIRCheckpointDto>(imagesProcessResult.Item2);

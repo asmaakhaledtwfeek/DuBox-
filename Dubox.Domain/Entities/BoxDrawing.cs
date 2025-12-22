@@ -29,6 +29,8 @@ public class BoxDrawing
 
     public long? FileSize { get; set; }
 
+    public int Version { get; set; } = 1; // Version number for files with same name
+
     public bool IsActive { get; set; } = true;
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
     public DateTime? ModifiedDate { get; set; }

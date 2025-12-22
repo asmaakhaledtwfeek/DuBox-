@@ -1,18 +1,27 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { ProjectService } from '../../../core/services/project.service';
 import { BoxService } from '../../../core/services/box.service';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { Project } from '../../../core/models/project.model';
 import { ProjectTypeCategory } from '../../../core/models/box.model';
+import { 
+  ProjectConfiguration, 
+  ProjectBuilding, 
+  ProjectLevel, 
+  ProjectBoxType, 
+  ProjectZone, 
+  ProjectBoxFunction 
+} from '../../../core/models/project-configuration.model';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-create-project',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, HeaderComponent, SidebarComponent],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, FormsModule, HeaderComponent, SidebarComponent],
   templateUrl: './create-project.component.html',
   styleUrl: './create-project.component.scss'
 })
@@ -33,6 +42,22 @@ export class CreateProjectComponent implements OnInit {
     { value: 1, label: 'KSA' },
     { value: 2, label: 'UAE' }
   ];
+
+  // Project Configuration
+  buildings: ProjectBuilding[] = [];
+  levels: ProjectLevel[] = [];
+  boxTypes: ProjectBoxType[] = [];
+  zones: ProjectZone[] = [];
+  boxFunctions: ProjectBoxFunction[] = [];
+  
+  // Temp forms for adding new items
+  newBuilding = '';
+  newLevel = '';
+  newBoxType = '';
+  newBoxSubType = '';
+  selectedTypeForSubType = -1;
+  newZone = '';
+  newBoxFunction = '';
 
   constructor(
     private fb: FormBuilder,
@@ -100,6 +125,7 @@ export class CreateProjectComponent implements OnInit {
       next: (project) => {
         this.originalProject = project;
         this.patchForm(project);
+        this.loadProjectConfiguration(id);
         this.initializing = false;
         this.projectForm.enable();
 
@@ -113,6 +139,22 @@ export class CreateProjectComponent implements OnInit {
         this.initializing = false;
         this.projectForm.enable();
         console.error('❌ Error loading project for edit:', err);
+      }
+    });
+  }
+
+  private loadProjectConfiguration(id: string): void {
+    this.projectService.getProjectConfiguration(id).subscribe({
+      next: (config) => {
+        this.buildings = config.buildings || [];
+        this.levels = config.levels || [];
+        this.boxTypes = config.boxTypes || [];
+        this.zones = config.zones || [];
+        this.boxFunctions = config.boxFunctions || [];
+      },
+      error: (err) => {
+        console.log('No existing configuration or error loading:', err);
+        // It's okay if there's no configuration yet
       }
     });
   }
@@ -225,30 +267,69 @@ export class CreateProjectComponent implements OnInit {
 
     request$.subscribe({
       next: (project: any) => {
-        this.loading = false;
-        this.successMessage = this.isEdit ? 'Project updated successfully!' : 'Project created successfully!';
-        console.log('✅ Project saved:', project);
-
         const projectId = project.id || project.projectId || project.ProjectId || this.projectId;
 
         if (!projectId) {
           console.error('⚠️ WARNING: Saved project has no ID!');
           console.error('📦 Full project object:', JSON.stringify(project, null, 2));
-          alert('Warning: Project saved but has no ID. Please check console.');
+          this.loading = false;
+          this.error = 'Project saved but has no ID. Please contact support.';
+          return;
         }
 
-        setTimeout(() => {
-          if (projectId) {
+        // Save configuration if any configuration items exist
+        if (this.hasConfiguration()) {
+          this.saveConfiguration(projectId);
+        } else {
+          this.loading = false;
+          this.successMessage = this.isEdit ? 'Project updated successfully!' : 'Project created successfully!';
+          console.log('✅ Project saved:', project);
+          
+          setTimeout(() => {
             this.router.navigate(['/projects', projectId, 'dashboard']);
-          } else {
-            this.router.navigate(['/projects']);
-          }
-        }, 1200);
+          }, 1200);
+        }
       },
       error: (err) => {
         this.loading = false;
         this.error = err.error?.message || err.message || `Failed to ${this.isEdit ? 'update' : 'create'} project. Please try again.`;
         console.error('❌ Error saving project:', err);
+      }
+    });
+  }
+
+  private hasConfiguration(): boolean {
+    return this.buildings.length > 0 || 
+           this.levels.length > 0 || 
+           this.boxTypes.length > 0 || 
+           this.zones.length > 0 || 
+           this.boxFunctions.length > 0;
+  }
+
+  private saveConfiguration(projectId: string): void {
+    const configuration: ProjectConfiguration = {
+      projectId: projectId,
+      buildings: this.buildings,
+      levels: this.levels,
+      boxTypes: this.boxTypes,
+      zones: this.zones,
+      boxFunctions: this.boxFunctions
+    };
+
+    this.projectService.saveProjectConfiguration(projectId, configuration).subscribe({
+      next: () => {
+        this.loading = false;
+        this.successMessage = this.isEdit ? 'Project and configuration updated successfully!' : 'Project and configuration created successfully!';
+        console.log('✅ Project and configuration saved');
+        
+        setTimeout(() => {
+          this.router.navigate(['/projects', projectId, 'dashboard']);
+        }, 1200);
+      },
+      error: (err) => {
+        this.loading = false;
+        this.error = 'Project saved but failed to save configuration: ' + (err.error?.message || err.message);
+        console.error('❌ Error saving configuration:', err);
       }
     });
   }
@@ -299,6 +380,109 @@ export class CreateProjectComponent implements OnInit {
       description: 'Description'
     };
     return labels[fieldName] || fieldName;
+  }
+
+  // Configuration Management Methods
+
+  // Building methods
+  addBuilding(): void {
+    if (this.newBuilding.trim()) {
+      this.buildings.push({
+        buildingCode: this.newBuilding.trim(),
+        buildingName: this.newBuilding.trim()
+      });
+      this.newBuilding = '';
+    }
+  }
+
+  removeBuilding(index: number): void {
+    this.buildings.splice(index, 1);
+  }
+
+  // Level methods
+  addLevel(): void {
+    if (this.newLevel.trim()) {
+      this.levels.push({
+        levelCode: this.newLevel.trim(),
+        levelName: this.newLevel.trim()
+      });
+      this.newLevel = '';
+    }
+  }
+
+  removeLevel(index: number): void {
+    this.levels.splice(index, 1);
+  }
+
+  // Box Type methods
+  addBoxType(): void {
+    if (this.newBoxType.trim()) {
+      this.boxTypes.push({
+        typeName: this.newBoxType.trim(),
+        hasSubTypes: false,
+        subTypes: []
+      });
+      this.newBoxType = '';
+    }
+  }
+
+  removeBoxType(index: number): void {
+    this.boxTypes.splice(index, 1);
+  }
+
+  toggleHasSubTypes(index: number): void {
+    const type = this.boxTypes[index];
+    type.hasSubTypes = !type.hasSubTypes;
+    if (!type.hasSubTypes) {
+      type.subTypes = [];
+    }
+  }
+
+  // Box SubType methods
+  addSubType(typeIndex: number): void {
+    if (this.newBoxSubType.trim()) {
+      if (!this.boxTypes[typeIndex].subTypes) {
+        this.boxTypes[typeIndex].subTypes = [];
+      }
+      this.boxTypes[typeIndex].subTypes!.push({
+        subTypeName: this.newBoxSubType.trim()
+      });
+      this.newBoxSubType = '';
+      this.selectedTypeForSubType = -1;
+    }
+  }
+
+  removeSubType(typeIndex: number, subTypeIndex: number): void {
+    this.boxTypes[typeIndex].subTypes?.splice(subTypeIndex, 1);
+  }
+
+  // Zone methods
+  addZone(): void {
+    if (this.newZone.trim()) {
+      this.zones.push({
+        zoneCode: this.newZone.trim(),
+        zoneName: this.newZone.trim()
+      });
+      this.newZone = '';
+    }
+  }
+
+  removeZone(index: number): void {
+    this.zones.splice(index, 1);
+  }
+
+  // Box Function methods
+  addBoxFunction(): void {
+    if (this.newBoxFunction.trim()) {
+      this.boxFunctions.push({
+        functionName: this.newBoxFunction.trim()
+      });
+      this.newBoxFunction = '';
+    }
+  }
+
+  removeBoxFunction(index: number): void {
+    this.boxFunctions.splice(index, 1);
   }
 }
 

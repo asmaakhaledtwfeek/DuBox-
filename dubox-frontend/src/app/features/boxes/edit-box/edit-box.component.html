@@ -150,9 +150,12 @@
                   <option [ngValue]="null">Select Box Type</option>
                   <option *ngFor="let type of boxTypes" [value]="type.boxTypeId">{{ type.boxTypeName }}</option>
                 </select>
-                <div class="loading-text" *ngIf="loadingBoxTypes">Loading box types for {{ projectCategoryName || 'project category' }}...</div>
-                <small *ngIf="!loadingBoxTypes && boxTypes.length > 0 && projectCategoryName" style="color: #10b981; font-size: 12px; display: block; margin-top: 4px;">
-                  📂 Showing {{ boxTypes.length }} box type(s) for category: <strong>{{ projectCategoryName }}</strong>
+                <div class="loading-text" *ngIf="loadingBoxTypes">Loading box types from project configuration...</div>
+                <small *ngIf="!loadingBoxTypes && boxTypes.length > 0" style="color: #10b981; font-size: 12px; display: block; margin-top: 4px;">
+                  📂 Showing {{ boxTypes.length }} box type(s) from project configuration
+                </small>
+                <small *ngIf="!loadingBoxTypes && boxTypes.length === 0" style="color: #f59e0b; font-size: 12px; display: block; margin-top: 4px;">
+                  ⚠️ No box types configured for this project. Please configure box types in project settings.
                 </small>
                 <div class="error-text" *ngIf="isFieldInvalid('boxTypeId')">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -254,36 +257,37 @@
                 </div>
               </div>
 
-              <!-- Box Letter -->
+              <!-- Box Function -->
               <div class="form-group">
-                <label for="boxLetter">
+                <label for="boxFunction">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M4 7V4h16v3M9 20h6M12 4v16"/>
+                    <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                    <polyline points="2 17 12 22 22 17"/>
+                    <polyline points="2 12 12 17 22 12"/>
                   </svg>
-                  Box Letter
-                  <span class="required">*</span>
+                  Box Function
                 </label>
                 <select
-                  id="boxLetter"
-                  formControlName="boxLetter"
+                  id="boxFunction"
+                  formControlName="boxFunction"
                   class="form-control"
-                  [class.invalid]="isFieldInvalid('boxLetter')"
-                  [disabled]="loadingBoxLetters || availableBoxLetters.length === 0"
+                  [class.invalid]="isFieldInvalid('boxFunction')"
+                  [disabled]="loadingConfiguration"
                 >
-                  <option value="">Select Box Letter</option>
-                  <option *ngFor="let letter of availableBoxLetters" [value]="letter">{{ letter }}</option>
+                  <option value="">Select Box Function (Optional)</option>
+                  <option *ngFor="let func of boxFunctions" [value]="func.functionName">{{ func.functionName }}</option>
                 </select>
-                <div class="loading-text" *ngIf="loadingBoxLetters">Loading available letters...</div>
-                <div class="info-text" *ngIf="!loadingBoxLetters && availableBoxLetters.length === 0" style="color: #f59e0b; font-size: 12px; margin-top: 4px;">
-                  No available letters for this combination
+                <div class="loading-text" *ngIf="loadingConfiguration">Loading functions...</div>
+                <div class="info-text" *ngIf="!loadingConfiguration && boxFunctions.length === 0" style="color: #64748b; font-size: 12px; margin-top: 4px;">
+                  No box functions configured for this project
                 </div>
-                <div class="error-text" *ngIf="isFieldInvalid('boxLetter')">
+                <div class="error-text" *ngIf="isFieldInvalid('boxFunction')">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
                     <line x1="12" y1="8" x2="12" y2="12"/>
                     <line x1="12" y1="16" x2="12.01" y2="16"/>
                   </svg>
-                  {{ getFieldError('boxLetter') }}
+                  {{ getFieldError('boxFunction') }}
                 </div>
               </div>
 

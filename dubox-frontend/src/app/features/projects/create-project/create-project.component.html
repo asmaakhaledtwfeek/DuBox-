@@ -348,6 +348,206 @@
             </div>
           </div>
 
+          <!-- Project Configuration Section -->
+          <div class="form-section config-section">
+            <div class="section-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <polyline points="2 17 12 22 22 17"/>
+                <polyline points="2 12 12 17 22 12"/>
+              </svg>
+              <div>
+                <h3 class="section-title">Project Configuration</h3>
+                <p class="section-description">Define buildings, levels, box types, zones, and functions (optional)</p>
+              </div>
+            </div>
+
+            <!-- Buildings -->
+            <div class="config-item">
+              <label class="config-label">Building Numbers</label>
+              <div class="add-row">
+                <input 
+                  type="text" 
+                  [(ngModel)]="newBuilding" 
+                  [ngModelOptions]="{standalone: true}"
+                  placeholder="e.g., B01, B02" 
+                  class="form-control config-input"
+                  (keyup.enter)="addBuilding()"
+                />
+                <button type="button" class="btn-config-add" (click)="addBuilding()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Add
+                </button>
+              </div>
+              <div class="chips-container">
+                <div class="chip" *ngFor="let building of buildings; let i = index">
+                  <span>{{ building.buildingCode }}</span>
+                  <button type="button" class="chip-remove" (click)="removeBuilding(i)">×</button>
+                </div>
+                <span class="empty-hint" *ngIf="buildings.length === 0">No buildings added</span>
+              </div>
+            </div>
+
+            <!-- Levels/Floors -->
+            <div class="config-item">
+              <label class="config-label">Building Levels/Floors</label>
+              <div class="add-row">
+                <input 
+                  type="text" 
+                  [(ngModel)]="newLevel" 
+                  [ngModelOptions]="{standalone: true}"
+                  placeholder="e.g., GF, 1F, 2F" 
+                  class="form-control config-input"
+                  (keyup.enter)="addLevel()"
+                />
+                <button type="button" class="btn-config-add" (click)="addLevel()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Add
+                </button>
+              </div>
+              <div class="chips-container">
+                <div class="chip" *ngFor="let level of levels; let i = index">
+                  <span>{{ level.levelCode }}</span>
+                  <button type="button" class="chip-remove" (click)="removeLevel(i)">×</button>
+                </div>
+                <span class="empty-hint" *ngIf="levels.length === 0">No levels added</span>
+              </div>
+            </div>
+
+            <!-- Box Types -->
+            <div class="config-item">
+              <label class="config-label">Box Types</label>
+              <div class="add-row">
+                <input 
+                  type="text" 
+                  [(ngModel)]="newBoxType" 
+                  [ngModelOptions]="{standalone: true}"
+                  placeholder="e.g., S1 ,S2 ,S3" 
+                  class="form-control config-input"
+                  (keyup.enter)="addBoxType()"
+                />
+                <button type="button" class="btn-config-add" (click)="addBoxType()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Add
+                </button>
+              </div>
+              <div class="type-cards">
+                <div class="type-card" *ngFor="let type of boxTypes; let i = index">
+                  <div class="type-header">
+                    <span class="type-name">{{ type.typeName }}</span>
+                    <div class="type-actions">
+                      <label class="checkbox-inline">
+                        <input 
+                          type="checkbox" 
+                          [checked]="type.hasSubTypes" 
+                          (change)="toggleHasSubTypes(i)"
+                        />
+                        <span>Has Sub-Types</span>
+                      </label>
+                      <button type="button" class="btn-remove-type" (click)="removeBoxType(i)">×</button>
+                    </div>
+                  </div>
+                  <div class="subtype-section" *ngIf="type.hasSubTypes">
+                    <div class="add-row-sm">
+                      <input 
+                        type="text" 
+                        [(ngModel)]="newBoxSubType" 
+                        [ngModelOptions]="{standalone: true}"
+                        placeholder="Sub-type name" 
+                        class="form-control config-input-sm"
+                        (keyup.enter)="addSubType(i)"
+                        (focus)="selectedTypeForSubType = i"
+                      />
+                      <button 
+                        type="button" 
+                        class="btn-config-add-sm" 
+                        (click)="addSubType(i)"
+                        [disabled]="selectedTypeForSubType !== i || !newBoxSubType.trim()"
+                      >
+                        Add
+                      </button>
+                    </div>
+                    <div class="chips-container-sm">
+                      <div class="chip-sm" *ngFor="let subType of type.subTypes; let j = index">
+                        <span>{{ subType.subTypeName }}</span>
+                        <button type="button" class="chip-remove" (click)="removeSubType(i, j)">×</button>
+                      </div>
+                      <span class="empty-hint-sm" *ngIf="!type.subTypes || type.subTypes.length === 0">No sub-types</span>
+                    </div>
+                  </div>
+                </div>
+                <span class="empty-hint" *ngIf="boxTypes.length === 0">No box types added</span>
+              </div>
+            </div>
+
+            <!-- Zones -->
+            <div class="config-item">
+              <label class="config-label">Zones</label>
+              <div class="add-row">
+                <input 
+                  type="text" 
+                  [(ngModel)]="newZone" 
+                  [ngModelOptions]="{standalone: true}"
+                  placeholder="e.g., Zone A, Zone B" 
+                  class="form-control config-input"
+                  (keyup.enter)="addZone()"
+                />
+                <button type="button" class="btn-config-add" (click)="addZone()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Add
+                </button>
+              </div>
+              <div class="chips-container">
+                <div class="chip" *ngFor="let zone of zones; let i = index">
+                  <span>{{ zone.zoneCode }}</span>
+                  <button type="button" class="chip-remove" (click)="removeZone(i)">×</button>
+                </div>
+                <span class="empty-hint" *ngIf="zones.length === 0">No zones added</span>
+              </div>
+            </div>
+
+            <!-- Box Functions -->
+            <div class="config-item">
+              <label class="config-label">Box Functions</label>
+              <div class="add-row">
+                <input 
+                  type="text" 
+                  [(ngModel)]="newBoxFunction" 
+                  [ngModelOptions]="{standalone: true}"
+                  placeholder="e.g., Kitchen, Bathroom" 
+                  class="form-control config-input"
+                  (keyup.enter)="addBoxFunction()"
+                />
+                <button type="button" class="btn-config-add" (click)="addBoxFunction()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  Add
+                </button>
+              </div>
+              <div class="chips-container">
+                <div class="chip" *ngFor="let func of boxFunctions; let i = index">
+                  <span>{{ func.functionName }}</span>
+                  <button type="button" class="chip-remove" (click)="removeBoxFunction(i)">×</button>
+                </div>
+                <span class="empty-hint" *ngIf="boxFunctions.length === 0">No functions added</span>
+              </div>
+            </div>
+          </div>
+
           <!-- Form Actions -->
           <div class="form-actions">
             <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="loading || initializing">

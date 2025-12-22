@@ -60,6 +60,7 @@ public class GetProgressUpdateByIdQueryHandler : IRequestHandler<GetProgressUpda
                 OriginalName = img.OriginalName,
                 FileSize = img.FileSize,
                 Sequence = img.Sequence,
+                Version = img.Version,
                 CreatedDate = img.CreatedDate,
             })
             .OrderBy(i => i.Sequence)

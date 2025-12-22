@@ -85,6 +85,18 @@ export class TeamService {
   }
 
   /**
+   * Get team users for assignment purposes
+   */
+  getTeamUsers(teamId: string): Observable<{userId: string, userName: string, userEmail: string}[]> {
+    return this.apiService.get<any>(`${this.endpoint}/${teamId}/users`).pipe(
+      map(response => {
+        const data = response?.data || response?.Data || response;
+        return data || [];
+      })
+    );
+  }
+
+  /**
    * Create new team
    */
   createTeam(team: CreateTeam): Observable<Team> {

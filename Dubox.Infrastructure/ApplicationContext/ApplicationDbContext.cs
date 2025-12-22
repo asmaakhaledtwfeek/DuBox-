@@ -68,6 +68,14 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<BoxType> BoxTypes { get; set; } = null!;
     public DbSet<BoxSubType> BoxSubTypes { get; set; } = null!;
     public DbSet<BoxDrawing> BoxDrawings { get; set; } = null!;
+    
+    // Project Configuration
+    public DbSet<ProjectBuilding> ProjectBuildings { get; set; } = null!;
+    public DbSet<ProjectLevel> ProjectLevels { get; set; } = null!;
+    public DbSet<ProjectBoxType> ProjectBoxTypes { get; set; } = null!;
+    public DbSet<ProjectBoxSubType> ProjectBoxSubTypes { get; set; } = null!;
+    public DbSet<ProjectZone> ProjectZones { get; set; } = null!;
+    public DbSet<ProjectBoxFunction> ProjectBoxFunctions { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -279,6 +287,29 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .WithMany(p => p.Boxes)
             .HasForeignKey(b => b.ProjectId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        // Box Type and SubType - Mark as optional, no foreign key (IDs reference project config tables)
+        modelBuilder.Entity<Box>()
+            .Property(b => b.BoxTypeId)
+            .IsRequired(false);
+        modelBuilder.Entity<Box>()
+            .Property(b => b.BoxSubTypeId)
+            .IsRequired(false);
+        
+        // Explicitly configure to NOT create foreign key relationships
+        modelBuilder.Entity<Box>()
+            .HasOne(b => b.BoxType)
+            .WithMany()
+            .HasForeignKey(b => b.BoxTypeId)
+            .OnDelete(DeleteBehavior.NoAction)
+            .IsRequired(false);
+            
+        modelBuilder.Entity<Box>()
+            .HasOne(b => b.BoxSubType)
+            .WithMany()
+            .HasForeignKey(b => b.BoxSubTypeId)
+            .OnDelete(DeleteBehavior.NoAction)
+            .IsRequired(false);
 
         // 10. BoxAsset relationships
         modelBuilder.Entity<BoxAsset>()

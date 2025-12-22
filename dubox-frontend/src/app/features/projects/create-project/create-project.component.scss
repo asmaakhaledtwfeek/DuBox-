@@ -455,3 +455,289 @@
     }
   }
 }
+
+// ============= Project Configuration Styles ============= //
+.config-section {
+  background: #f8fafc;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.config-item {
+  margin-bottom: 24px;
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.config-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 8px;
+}
+
+.add-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  
+  .config-input {
+    flex: 1;
+    font-size: 14px;
+  }
+}
+
+.btn-config-add {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 20px;
+  background: var(--amana-green);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  
+  &:hover {
+    background: #1b5e20;
+    transform: translateY(-1px);
+  }
+  
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.chips-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 40px;
+  padding: 12px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--amana-green);
+  color: white;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  
+  span {
+    line-height: 1;
+  }
+  
+  .chip-remove {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.2s;
+    
+    &:hover {
+      background: rgba(0, 0, 0, 0.2);
+    }
+  }
+}
+
+.empty-hint {
+  color: #94a3b8;
+  font-size: 13px;
+  font-style: italic;
+  padding: 4px 0;
+}
+
+// Box Types specific styles
+.type-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 60px;
+}
+
+.type-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  
+  .type-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    
+    .type-name {
+      font-weight: 600;
+      color: #1e293b;
+      font-size: 15px;
+    }
+    
+    .type-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      
+      .checkbox-inline {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        color: #64748b;
+        cursor: pointer;
+        
+        input[type="checkbox"] {
+          width: 16px;
+          height: 16px;
+          cursor: pointer;
+        }
+      }
+      
+      .btn-remove-type {
+        background: none;
+        border: none;
+        color: #64748b;
+        font-size: 24px;
+        line-height: 1;
+        cursor: pointer;
+        padding: 0;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        transition: all 0.2s;
+        
+        &:hover {
+          background: #fee2e2;
+          color: #dc2626;
+        }
+      }
+    }
+  }
+}
+
+.subtype-section {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  
+  .add-row-sm {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+    
+    .config-input-sm {
+      flex: 1;
+      padding: 8px 12px;
+      font-size: 13px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      
+      &:focus {
+        outline: none;
+        border-color: var(--amana-green);
+        box-shadow: 0 0 0 3px rgba(46, 125, 50, 0.1);
+      }
+    }
+    
+    .btn-config-add-sm {
+      padding: 8px 16px;
+      background: var(--amana-green);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      
+      &:hover:not(:disabled) {
+        background: #1b5e20;
+      }
+      
+      &:disabled {
+        background: #94a3b8;
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+    }
+  }
+  
+  .chips-container-sm {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 32px;
+  }
+  
+  .chip-sm {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: #e0f2f1;
+    color: #00695c;
+    border: 1px solid #80cbc4;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    
+    .chip-remove {
+      background: none;
+      border: none;
+      color: #00695c;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0;
+      width: 14px;
+      height: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background 0.2s;
+      
+      &:hover {
+        background: rgba(0, 0, 0, 0.1);
+      }
+    }
+  }
+  
+  .empty-hint-sm {
+    color: #94a3b8;
+    font-size: 12px;
+    font-style: italic;
+    padding: 2px 0;
+  }
+}

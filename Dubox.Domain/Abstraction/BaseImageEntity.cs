@@ -18,6 +18,8 @@ namespace Dubox.Domain.Abstractions
 
         public int Sequence { get; set; } = 0;
 
+        public int Version { get; set; } = 1; // Version number for files with same name
+
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
     }
 

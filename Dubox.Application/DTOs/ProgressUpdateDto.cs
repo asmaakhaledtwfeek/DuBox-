@@ -37,6 +37,7 @@ public record ProgressUpdateImageDto
     public string? OriginalName { get; init; }
     public long? FileSize { get; init; }
     public int Sequence { get; init; }
+    public int Version { get; init; } = 1; // Version number for files with same name
     public DateTime CreatedDate { get; init; }
 
 }

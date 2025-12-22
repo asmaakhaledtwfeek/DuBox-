@@ -115,7 +115,7 @@ public class GetBoxesByProjectQueryHandler : IRequestHandler<GetBoxesByProjectQu
                 BoxSubTypeName = boxSubTypeName,
                 Floor = box.Floor,
                 BuildingNumber = box.BuildingNumber,
-                BoxLetter = box.BoxLetter,
+                BoxFunction = box.BoxFunction,
                 Zone = zoneString,
                 QRCodeString = box.QRCodeString ?? string.Empty,
                 QRCodeImage = box.QRCodeImageUrl,

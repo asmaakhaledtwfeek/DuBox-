@@ -8,6 +8,14 @@ import { FactoryService, Factory, ProjectLocation } from '../../../core/services
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { ProjectService } from '../../../core/services/project.service';
+import { 
+  ProjectConfiguration, 
+  ProjectBuilding, 
+  ProjectLevel, 
+  ProjectBoxType,
+  ProjectZone, 
+  ProjectBoxFunction 
+} from '../../../core/models/project-configuration.model';
 
 @Component({
   selector: 'app-edit-box',
@@ -32,29 +40,29 @@ export class EditBoxComponent implements OnInit {
   projectCategoryName: string = '';
   projectLocation: string = ''; // Store project location
 
-  // Box types loaded from backend based on project category
-  boxTypes: BoxType[] = [];
-  boxSubTypes: BoxSubType[] = [];
-  selectedBoxType: BoxType | null = null;
+  // Project Configuration
+  projectConfiguration: ProjectConfiguration | null = null;
+  loadingConfiguration = false;
+  
+  // Box types - can be from project config or system default
+  boxTypes: any[] = [];
+  boxSubTypes: any[] = [];
+  selectedBoxType: any | null = null;
   loadingBoxTypes = false;
   loadingBoxSubTypes = false;
 
-  floors = [
-    'GF', 'FF', '1F', '2F', '3F', '4F', '5F',
-    'BF', 'RF'
-  ];
+  // Buildings from project config or default
+  buildingNumbers: string[] = [];
+  
+  // Floors/Levels from project config or default
+  floors: string[] = [];
 
-  // Building numbers dropdown
-  buildingNumbers = ['B01', 'B02', 'B03', 'B04', 'B05', 'B06', 'B07', 'B08', 'B09'];
-
-  // Zones dropdown
-  zones: { value: number; name: string; displayName: string }[] = [];
+  // Zones from project config or system default
+  zones: any[] = [];
   loadingZones = false;
-
-  // Box letters dropdown (will be filtered based on usage)
-  allBoxLetters = ['A', 'B', 'C', 'D', 'E', 'F'];
-  availableBoxLetters: string[] = [];
-  loadingBoxLetters = false;
+  
+  // Box Functions from project config
+  boxFunctions: ProjectBoxFunction[] = [];
 
   // Factory dropdown
   factories: Factory[] = [];
@@ -80,18 +88,19 @@ export class EditBoxComponent implements OnInit {
     }
     
     this.initForm();
-    this.loadZones();
-    this.loadProjectAndBoxTypes();
+    this.loadProjectConfigurationAndData();
     this.loadBox();
     this.loadProjectSchedule();
   }
 
-  private loadProjectAndBoxTypes(): void {
+  private loadProjectConfigurationAndData(): void {
     if (!this.projectId) return;
     
+    this.loadingConfiguration = true;
     this.loadingBoxTypes = true;
-    console.log('🔍 Loading project details for projectId:', this.projectId);
+    console.log('🔍 Loading project configuration for projectId:', this.projectId);
     
+    // Load project details first
     this.projectService.getProject(this.projectId).subscribe({
       next: (project: any) => {
         const projectData = project?.data || project;
@@ -100,9 +109,10 @@ export class EditBoxComponent implements OnInit {
         this.projectCategoryName = projectData?.categoryName || '';
         this.projectLocation = projectData?.location || '';
         
-        // Extract category ID
+        // Extract category ID for fallback
         const categoryId = projectData?.categoryId || projectData?.projectCategoryId;
         this.projectCategoryId = categoryId;
+        
         console.log('📂 Project Category ID:', categoryId);
         console.log('📍 Project Location:', this.projectLocation);
 
@@ -111,17 +121,111 @@ export class EditBoxComponent implements OnInit {
           this.loadFactoriesByLocation();
         }
         
-        if (categoryId) {
-          console.log('🔄 Loading Box Types for Category ID:', categoryId);
-          this.loadBoxTypes(categoryId);
-        } else {
-          console.warn('⚠️ No category ID found for project. Cannot load box types.');
-          this.loadingBoxTypes = false;
-        }
+        // Load project configuration
+        this.loadProjectConfiguration();
       },
       error: (err: any) => {
         console.error('❌ Error loading project:', err);
+        this.loadingConfiguration = false;
         this.loadingBoxTypes = false;
+      }
+    });
+  }
+
+  private loadProjectConfiguration(): void {
+    console.log('🔧 Loading project configuration...');
+    
+    this.projectService.getProjectConfiguration(this.projectId).subscribe({
+      next: (config: ProjectConfiguration) => {
+        console.log('✅ Project configuration loaded:', config);
+        this.projectConfiguration = config;
+        
+        // Use project-specific buildings or default
+        if (config.buildings && config.buildings.length > 0) {
+          this.buildingNumbers = config.buildings
+            .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+            .map(b => b.buildingCode);
+          console.log('📦 Using project buildings:', this.buildingNumbers);
+        } else {
+          this.buildingNumbers = ['B01', 'B02', 'B03', 'B04', 'B05'];
+          console.log('📦 Using default buildings');
+        }
+        
+        // Use project-specific levels or default
+        if (config.levels && config.levels.length > 0) {
+          this.floors = config.levels
+            .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+            .map(l => l.levelCode);
+          console.log('🏢 Using project levels:', this.floors);
+        } else {
+          this.floors = ['GF', 'FF', '1F', '2F', '3F', '4F', '5F', 'BF', 'RF'];
+          console.log('🏢 Using default levels');
+        }
+        
+        // Use project-specific box types ONLY
+        if (config.boxTypes && config.boxTypes.length > 0) {
+          this.boxTypes = config.boxTypes
+            .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+            .map(t => ({
+              boxTypeId: t.id,
+              boxTypeName: t.typeName,
+              abbreviation: t.abbreviation,
+              hasSubTypes: t.hasSubTypes,
+              subTypes: t.subTypes || []
+            }));
+          console.log('📋 Using project box types:', this.boxTypes);
+          this.loadingBoxTypes = false;
+          
+          // Preselect box type if box is loaded
+          if (this.box) {
+            this.preselectBoxTypeAndSubType();
+          }
+        } else {
+          console.warn('⚠️ No box types configured for this project. Please configure box types in project settings.');
+          this.loadingBoxTypes = false;
+        }
+        
+        // Use project-specific zones or load system default
+        if (config.zones && config.zones.length > 0) {
+          this.zones = config.zones
+            .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+            .map(z => ({
+              value: z.id,
+              name: z.zoneCode,
+              displayName: z.zoneName || z.zoneCode
+            }));
+          console.log('🗺️ Using project zones:', this.zones);
+          this.loadingZones = false;
+        } else {
+          console.log('🗺️ No project zones, loading system defaults');
+          this.loadZones();
+        }
+        
+        // Load box functions if available
+        if (config.boxFunctions && config.boxFunctions.length > 0) {
+          this.boxFunctions = config.boxFunctions
+            .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0));
+          console.log('⚙️ Box functions loaded:', this.boxFunctions);
+        }
+        
+        this.loadingConfiguration = false;
+      },
+      error: (err: any) => {
+        console.log('⚠️ No project configuration found:', err);
+        this.projectConfiguration = null;
+        
+        // Use defaults for buildings and floors only
+        this.buildingNumbers = ['B01', 'B02', 'B03', 'B04', 'B05'];
+        this.floors = ['GF', 'FF', '1F', '2F', '3F', '4F', '5F', 'BF', 'RF'];
+        
+        // No box types if no configuration
+        this.boxTypes = [];
+        this.loadingBoxTypes = false;
+        console.warn('⚠️ No box types available. Please configure box types for this project.');
+        
+        this.loadZones();
+        
+        this.loadingConfiguration = false;
       }
     });
   }
@@ -163,13 +267,21 @@ export class EditBoxComponent implements OnInit {
       boxType: this.selectedBoxType?.boxTypeName || ''
     });
     
-    if (this.selectedBoxType?.hasSubTypes) {
-      console.log('✅ HAS SUBTYPES - Loading Box Sub Types for Box Type ID:', boxTypeId);
-      this.loadBoxSubTypes(boxTypeId);
+    // Load sub types from project configuration
+    if (this.selectedBoxType?.hasSubTypes && this.selectedBoxType.subTypes && this.selectedBoxType.subTypes.length > 0) {
+      console.log('✅ HAS SUBTYPES - Loading from project configuration');
+      this.boxSubTypes = this.selectedBoxType.subTypes.map((st: any) => ({
+        boxSubTypeId: st.id,
+        boxSubTypeName: st.subTypeName,
+        abbreviation: st.abbreviation,
+        boxTypeId: st.projectBoxTypeId || st.boxTypeId
+      }));
+      console.log('📋 Sub types loaded:', this.boxSubTypes);
+    } else if (this.selectedBoxType?.hasSubTypes) {
+      console.log('⚠️ Box type has subTypes flag but no subtypes configured');
+    } else {
+      console.log('❌ NO SUBTYPES - hasSubTypes value:', this.selectedBoxType?.hasSubTypes);
     }
-
-    // Load available box letters when box type changes
-    this.loadAvailableBoxLetters();
   }
 
   private loadBoxSubTypes(boxTypeId: number, preselectSubTypeId?: number): void {
@@ -204,57 +316,10 @@ export class EditBoxComponent implements OnInit {
   }
 
   /**
-   * Load available box letters by filtering out used ones
-   */
-  private loadAvailableBoxLetters(): void {
-    const formValue = this.boxForm.getRawValue();
-    
-    // Check if we have all required fields to query
-    if (!this.projectId || !formValue.buildingNumber || !formValue.floor || !formValue.boxTypeId) {
-      this.availableBoxLetters = [...this.allBoxLetters];
-      return;
-    }
-
-    this.loadingBoxLetters = true;
-
-    // Build query parameters
-    const params: any = {
-      projectId: this.projectId,
-      buildingNumber: formValue.buildingNumber,
-      floor: formValue.floor,
-      boxTypeId: formValue.boxTypeId
-    };
-
-    // Fetch used box letters from backend
-    this.boxService.getUsedBoxLetters(params).subscribe({
-      next: (usedLetters: string[]) => {
-        // Filter out used letters
-        this.availableBoxLetters = this.allBoxLetters.filter(
-          letter => !usedLetters.includes(letter)
-        );
-        
-        // If current selection is no longer available, keep it (for edit mode)
-        const currentLetter = formValue.boxLetter;
-        if (currentLetter && !this.availableBoxLetters.includes(currentLetter)) {
-          this.availableBoxLetters.push(currentLetter);
-        }
-        
-        this.loadingBoxLetters = false;
-      },
-      error: (err) => {
-        console.error('Error loading used box letters:', err);
-        // Fallback: show all letters
-        this.availableBoxLetters = [...this.allBoxLetters];
-        this.loadingBoxLetters = false;
-      }
-    });
-  }
-
-  /**
-   * Trigger box letter loading when relevant fields change
+   * Trigger update when building or floor changes
    */
   onBuildingOrFloorChange(): void {
-    this.loadAvailableBoxLetters();
+    this.updateBoxTag();
   }
 
   private loadZones(): void {
@@ -300,11 +365,11 @@ export class EditBoxComponent implements OnInit {
       boxTag: [{ value: '', disabled: true }, Validators.maxLength(50)],
       boxName: ['', Validators.maxLength(200)],
       boxType: [''], // Used for submission, populated from selectedBoxType
-      boxTypeId: [null, Validators.required],
-      boxSubTypeId: [null],
+      boxTypeId: [null], // Legacy field - kept for backward compatibility but not required (uses project config now)
+      boxSubTypeId: [null], // Legacy field - kept for backward compatibility but not required (uses project config now)
       buildingNumber: ['', Validators.required],
       floor: ['GF', Validators.required],
-      boxLetter: ['', Validators.required],
+      boxFunction: [''],
       zone: [null], // Zone is a number (BoxZone enum value)
       factoryId: [null],
       length: ['', [Validators.min(0), Validators.max(99999)]],
@@ -322,9 +387,6 @@ export class EditBoxComponent implements OnInit {
       this.updateBoxTag();
     });
 
-    // Initialize available box letters
-    this.availableBoxLetters = [...this.allBoxLetters];
-
     this.boxForm.get('boxPlannedStartDate')?.valueChanges.subscribe(() => this.validateSchedule());
     this.boxForm.get('boxDuration')?.valueChanges.subscribe(() => this.validateSchedule());
   }
@@ -340,7 +402,8 @@ export class EditBoxComponent implements OnInit {
     const projectNumber = boxCode.split('-')[0] || '';
     const buildingNumber = formValue.buildingNumber || '';
     const level = formValue.floor || '';
-    const boxTypeAbbr = this.selectedBoxType?.abbreviation || '';
+    // Use abbreviation if available, otherwise use the type name
+    const boxTypeAbbr = this.selectedBoxType?.abbreviation || this.selectedBoxType?.boxTypeName || '';
     
     // Convert to number for comparison if needed
     const selectedSubTypeId = formValue.boxSubTypeId ? Number(formValue.boxSubTypeId) : null;
@@ -348,8 +411,8 @@ export class EditBoxComponent implements OnInit {
       ? this.boxSubTypes.find(st => st.boxSubTypeId === selectedSubTypeId)
       : null;
     
-    const boxSubTypeAbbr = selectedSubType?.abbreviation || '';
-    const boxLetter = formValue.boxLetter || '';
+    // Use abbreviation if available, otherwise use the subtype name
+    const boxSubTypeAbbr = selectedSubType?.abbreviation || selectedSubType?.boxSubTypeName || '';
 
     // Generate BoxTag with separators (-)
     const components: string[] = [];
@@ -358,7 +421,6 @@ export class EditBoxComponent implements OnInit {
     if (level) components.push(level);
     if (boxTypeAbbr) components.push(boxTypeAbbr);
     if (boxSubTypeAbbr) components.push(boxSubTypeAbbr);
-    if (boxLetter) components.push(boxLetter);
 
     const boxTag = components.join('-');
 
@@ -414,8 +476,7 @@ export class EditBoxComponent implements OnInit {
       bimModelReference: box.bimModelReference,
       revitElementId: box.revitElementId,
       boxTypeId: box.type,
-      boxSubTypeId: box.subType,
-      boxLetter: box.boxLetter
+      boxSubTypeId: box.subType
     });
     
     this.boxForm.patchValue({
@@ -426,7 +487,7 @@ export class EditBoxComponent implements OnInit {
       boxSubTypeId: box.subType || null,
       floor: box.floor || 'GF',
       buildingNumber: box.buildingNumber || '',
-      boxLetter: box.boxLetter || '',
+      boxFunction: (box as any).boxFunction || '',
       // Don't set zone here - let preselectZone handle it after zones are loaded
       // zone: box.zone || '',
       factoryId: box.factoryId || null,
@@ -458,11 +519,6 @@ export class EditBoxComponent implements OnInit {
     setTimeout(() => {
       this.preselectFactory();
     }, 100);
-    
-    // Load available box letters after form is populated
-    setTimeout(() => {
-      this.loadAvailableBoxLetters();
-    }, 500);
     
     console.log('✅ Form populated, current values:', this.boxForm.value);
   }
@@ -556,14 +612,25 @@ export class EditBoxComponent implements OnInit {
         console.log(`✅ Box Type already selected: ${boxType.boxTypeName} (ID: ${boxType.boxTypeId})`);
       }
 
-      // If box has a subtype and the box type has subtypes, load and preselect it
-      if (this.box.boxSubTypeId && boxType.hasSubTypes) {
-        console.log(`🔄 Loading subtypes for Box Type ID ${boxType.boxTypeId} and preselecting Sub Type ID ${this.box.boxSubTypeId}`);
-        this.loadBoxSubTypes(boxType.boxTypeId, Number(this.box.boxSubTypeId));
+      // If box type has subtypes, load them from project configuration
+      if (boxType.hasSubTypes && boxType.subTypes && boxType.subTypes.length > 0) {
+        console.log('✅ Loading subtypes from project configuration');
+        this.boxSubTypes = boxType.subTypes.map((st: any) => ({
+          boxSubTypeId: st.id,
+          boxSubTypeName: st.subTypeName,
+          abbreviation: st.abbreviation,
+          boxTypeId: st.projectBoxTypeId || st.boxTypeId
+        }));
+        console.log('📋 Sub types loaded:', this.boxSubTypes);
+        
+        // Preselect the sub type if box has one
+        if (this.box.boxSubTypeId) {
+          const subTypeId = Number(this.box.boxSubTypeId);
+          console.log(`🔍 Preselecting Sub Type ID: ${subTypeId}`);
+          this.boxForm.patchValue({ boxSubTypeId: subTypeId });
+        }
       } else if (boxType.hasSubTypes) {
-        // Box type has subtypes but box doesn't have one selected, just load them
-        console.log(`🔄 Loading subtypes for Box Type ID ${boxType.boxTypeId} (no preselection)`);
-        this.loadBoxSubTypes(boxType.boxTypeId);
+        console.log('⚠️ Box type has subTypes flag but no subtypes configured');
       }
     } else {
       console.warn(`⚠️ Box Type ID ${boxTypeId} not found in loaded box types`);
@@ -607,11 +674,11 @@ export class EditBoxComponent implements OnInit {
       boxTag: formValue.boxTag || null,
       boxName: formValue.boxName || null,
       boxType: this.selectedBoxType?.boxTypeName || formValue.boxType || null,
-      boxTypeId: formValue.boxTypeId || null,
-      boxSubTypeId: formValue.boxSubTypeId || null,
+      boxTypeId: null, // Always null - box type info is in BoxTag from project config (avoids FK constraint to old BoxTypes table)
+      boxSubTypeId: null, // Always null - box subtype info is in BoxTag from project config (avoids FK constraint to old BoxSubTypes table)
       floor: formValue.floor || null,
       buildingNumber: formValue.buildingNumber || null,
-      boxLetter: formValue.boxLetter || null,
+      boxFunction: formValue.boxFunction || null,
       zone: formValue.zone || null,
       factoryId: formValue.factoryId || null,
       status: statusNumber,  // REQUIRED (int) - converted from string
@@ -698,7 +765,7 @@ export class EditBoxComponent implements OnInit {
       boxSubTypeId: 'Box sub type',
       floor: 'Floor',
       buildingNumber: 'Building number',
-      boxLetter: 'Box letter',
+      boxFunction: 'Box function',
       zone: 'Zone',
       length: 'Length',
       width: 'Width',

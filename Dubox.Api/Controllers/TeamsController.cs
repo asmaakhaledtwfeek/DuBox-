@@ -1,6 +1,7 @@
 using Dubox.Application.DTOs;
 using Dubox.Application.Features.Teams.Commands;
 using Dubox.Application.Features.Teams.Queries;
+using Dubox.Domain.Shared;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -190,6 +191,30 @@ public class TeamsController : ControllerBase
     {
         var result = await _mediator.Send(new GetTeamMembersQuery(teamId), cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>
+    /// Get users in a team for assignment purposes (quality issues, tasks, etc.)
+    /// </summary>
+    [HttpGet("{teamId}/users")]
+    public async Task<IActionResult> GetTeamUsers(Guid teamId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetTeamMembersQuery(teamId), cancellationToken);
+        
+        if (!result.IsSuccess || result.Data == null)
+            return BadRequest(result);
+
+        // Transform to simple user list for assignment dropdowns
+        var users = result.Data.Members
+            .Select(m => new 
+            {
+                userId = m.UserId,
+                userName = m.FullName,
+                userEmail = m.Email
+            })
+            .ToList();
+
+        return Ok(Result.Success(users));
     }
 
     [HttpDelete("team-members/{teamId}/member/{teamMemberId}")]

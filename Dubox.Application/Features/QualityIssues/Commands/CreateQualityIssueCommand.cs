@@ -11,6 +11,7 @@ namespace Dubox.Application.Features.QualityIssues.Commands
         SeverityEnum Severity,
         string IssueDescription,
         Guid? AssignedTo = null,
+        Guid? AssignedToUserId = null,
         DateTime? DueDate = null,
         List<string>? ImageUrls = null,
         List<byte[]>? Files = null

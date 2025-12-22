@@ -109,6 +109,7 @@ export interface WIRCheckpointImage {
   originalName?: string;
   fileSize?: number;
   sequence: number;
+  version?: number; // Version number for files with same name
   createdDate: Date;
   imageUrl?: string; // URL to fetch image on-demand: /api/images/WIRCheckpoint/{wirCheckpointImageId}
 }
@@ -259,6 +260,8 @@ export interface QualityIssueItem {
   issueDescription: string;
   assignedTo?: string;
   assignedTeam?: string; // Team name from backend
+  assignedToUserId?: string;
+  assignedToUserName?: string;
   dueDate?: string | Date;
   photoPath?: string;
   reportedBy?: string;
@@ -277,6 +280,7 @@ export interface QualityIssueImage {
   originalName?: string;
   fileSize?: number;
   sequence: number;
+  version?: number; // Version number for files with same name
   createdDate: Date;
   imageUrl?: string; // URL to fetch image on-demand: /api/images/QualityIssue/{qualityIssueImageId}
 }
@@ -316,6 +320,7 @@ export interface AddQualityIssueRequest {
   severity: SeverityType;
   issueDescription: string;
   assignedTo?: string;
+  assignedToUserId?: string;
   dueDate?: string | Date;
   imageUrls?: string[];
   files?: File[];
@@ -327,6 +332,7 @@ export interface CreateQualityIssueForBoxRequest {
   severity: SeverityType;
   issueDescription: string;
   assignedTo?: string;
+  assignedToUserId?: string;
   dueDate?: string | Date;
   imageUrls?: string[];
   files?: File[];

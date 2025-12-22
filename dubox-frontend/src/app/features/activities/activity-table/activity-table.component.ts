@@ -583,13 +583,25 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
 
   /**
    * Get WIR status class
+   * If all checklist items are PASS, use approved class, otherwise use under-review class
    */
-  getWIRStatusClass(status: any): string {
+  getWIRStatusClass(status: any, wirRecord?: WIRRecord | null): string {
     if (!status) return 'wir-status-pending';
+
+    console.log('WIR status:', status);
     const statusStr = String(status);
+    
+    // When status is "Approved", check if all items are PASS
+    if (statusStr === 'Approved' && wirRecord) {
+      const checkpoint = this.getCheckpoint(wirRecord);
+      if (checkpoint && this.areAllChecklistItemsPass(checkpoint)) {
+        return 'wir-status-approved'; // All items passed
+      }
+      return 'wir-status-under-review'; // Still under review
+    }
+    
     const statusMap: Record<string, string> = {
       'Pending': 'wir-status-pending',
-      'Approved': 'wir-status-approved',
       'Rejected': 'wir-status-rejected'
     };
     return statusMap[statusStr] || 'wir-status-pending';
@@ -597,9 +609,40 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
 
   /**
    * Format WIR status label
+   * Note: "Approved" status means the WIR is approved for review
+   * If all checklist items are PASS, show "Approved", otherwise show "Under Review"
    */
-  getWIRStatusLabel(status: any): string {
-    return status ? String(status) : 'Pending';
+  getWIRStatusLabel(status: any, wirRecord?: WIRRecord | null): string {
+    if (!status) return 'Pending';
+    
+    const statusStr = String(status);
+    
+    // When WIR status is "Approved", check if all checklist items are PASS
+    if (statusStr === 'Approved' && wirRecord) {
+      const checkpoint = this.getCheckpoint(wirRecord);
+      if (checkpoint && this.areAllChecklistItemsPass(checkpoint)) {
+        return 'Approved'; // All items passed - show as approved
+      }
+      return 'Under Review'; // Still has items to review
+    }
+    
+    return statusStr;
+  }
+
+  /**
+   * Check if all checklist items in a checkpoint have PASS status
+   */
+  private areAllChecklistItemsPass(checkpoint: WIRCheckpoint): boolean {
+    if (!checkpoint.checklistItems || checkpoint.checklistItems.length === 0) {
+      return false;
+    }
+
+    return checkpoint.checklistItems.every(item => {
+      const status = item.status;
+      if (!status) return false;
+      const statusStr = typeof status === 'string' ? status : String(status);
+      return statusStr === 'Pass' || statusStr === 'pass';
+    });
   }
 
   private createPlaceholderWIR(activity: BoxActivityDetail): WIRRecord {

@@ -10,9 +10,10 @@
         public GetWIRCheckpointsSpecification(GetWIRCheckpointsQuery query, List<Guid>? accessibleProjectIds = null)
         {
             AddInclude(nameof(WIRCheckpoint.Box));
-            AddInclude($"{nameof(WIRCheckpoint.Box)}.{nameof(WIRCheckpoint.Box.Project)}");
+            AddInclude($"{nameof(WIRCheckpoint.Box)}.{nameof(Box.Project)}");
             AddInclude(nameof(WIRCheckpoint.ChecklistItems));
             AddInclude(nameof(WIRCheckpoint.QualityIssues));
+            AddInclude($"{nameof(WIRCheckpoint.QualityIssues)}.{nameof(QualityIssue.AssignedToTeam)}");
 
             EnableSplitQuery();
 

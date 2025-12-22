@@ -2506,6 +2506,31 @@ console.log(expectedWirCode);
     return sections.reduce((acc, section) => acc + section.items.length, 0);
   }
 
+  /**
+   * Check if all items in a group (checklist) have PASS status
+   * Used to display auto-approved badge in UI
+   */
+  areAllItemsPassInGroup(sections: { sectionName: string; items: any[] }[]): boolean {
+    // Get all items from all sections
+    const allItems: any[] = [];
+    sections.forEach(section => {
+      allItems.push(...section.items);
+    });
+
+    // If no items, return false
+    if (allItems.length === 0) {
+      return false;
+    }
+
+    // Check if all items have PASS status
+    return allItems.every(itemData => {
+      const status = itemData.control?.value?.status;
+      if (!status) return false;
+      const statusStr = typeof status === 'string' ? status : String(status);
+      return statusStr === 'Pass' || statusStr === CheckpointStatus.Pass;
+    });
+  }
+
   getGroupedChecklistItems(): { checklistName: string; sections: { sectionName: string; items: any[] }[] }[] {
     const itemsArray = this.addChecklistItemsArray;
     if (itemsArray.length === 0) {

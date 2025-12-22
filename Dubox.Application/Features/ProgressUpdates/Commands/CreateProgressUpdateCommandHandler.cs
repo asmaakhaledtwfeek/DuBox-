@@ -54,15 +54,15 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             if (boxActivity.Status == BoxStatusEnum.OnHold)
                 inferredStatus = BoxStatusEnum.OnHold;
         }
-        var isDuplicate = await _unitOfWork.Repository<ProgressUpdate>()
-                             .IsExistAsync(pu =>
-                                pu.BoxId == request.BoxId &&
-                                pu.BoxActivityId == request.BoxActivityId &&
-                                pu.ProgressPercentage == request.ProgressPercentage &&
-                                pu.Status == inferredStatus);
+        //var isDuplicate = await _unitOfWork.Repository<ProgressUpdate>()
+        //                     .IsExistAsync(pu =>
+        //                        pu.BoxId == request.BoxId &&
+        //                        pu.BoxActivityId == request.BoxActivityId &&
+        //                        pu.ProgressPercentage == request.ProgressPercentage &&
+        //                        pu.Status == inferredStatus);
 
-        if (isDuplicate)
-            return Result.Failure<ProgressUpdateDto>("A progress update with the exact same details already exists for this activity.");
+        //if (isDuplicate)
+        //    return Result.Failure<ProgressUpdateDto>("A progress update with the exact same details already exists for this activity.");
 
         var progressUpdate = request.Adapt<ProgressUpdate>();
         progressUpdate.Status = inferredStatus;

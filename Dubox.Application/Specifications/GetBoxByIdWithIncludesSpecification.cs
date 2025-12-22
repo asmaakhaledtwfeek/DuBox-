@@ -10,7 +10,7 @@ namespace Dubox.Application.Specifications
             AddCriteria(box => box.BoxId == boxId);
             AddInclude(nameof(Box.Project));
             // AddInclude(nameof(Box.BoxAssets));
-            // AddInclude(nameof(Box.BoxActivities));
+            AddInclude(nameof(Box.BoxActivities)); // Needed for ActivitiesCount in BoxDto
             // AddInclude(nameof(Box.ProgressUpdates));
             AddInclude(nameof(Box.CurrentLocation));
             AddInclude(nameof(Box.BoxType));

@@ -395,6 +395,13 @@ export class BoxService {
   }
 
   /**
+   * Get download URL for a box drawing file
+   */
+  getBoxDrawingDownloadUrl(drawingId: string): string {
+    return `${(this.apiService as any).baseUrl}/boxdrawings/${drawingId}/file`;
+  }
+
+  /**
    * Upload box drawing
    */
   uploadDrawing(boxId: string, file: File, description?: string): Observable<BoxDrawing> {

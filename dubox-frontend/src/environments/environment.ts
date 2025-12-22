@@ -1,6 +1,6 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://localhost:7098/api', // Backend API URL
+  apiUrl: 'https://localhost:44333/api', // Backend API URL
   apiVersion: 'v1',
 };
 

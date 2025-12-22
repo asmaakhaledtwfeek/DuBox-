@@ -6,7 +6,7 @@
     <!-- Loading State -->
     <div class="loading-container" *ngIf="loading">
       <div class="spinner"></div>
-      <p>Loading teams...</p>
+      <p>Loading crews...</p>
     </div>
 
     <!-- Error State -->
@@ -20,13 +20,13 @@
       <!-- Dashboard Header -->
       <div class="dashboard-header">
         <div class="header-info">
-          <h1 class="dashboard-title">Teams Dashboard</h1>
+          <h1 class="dashboard-title">Crews Dashboard</h1>
           <div class="dashboard-meta">
             <span class="meta-item">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/>
               </svg>
-              {{ stats.total }} Total Teams
+              {{ stats.total }} Total Crews
             </span>
             <span class="meta-item">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -45,7 +45,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 5v14M5 12h14"/>
             </svg>
-            Create Team
+            Create Crew
           </button>
         </div>
       </div>
@@ -60,7 +60,7 @@
           </div>
           <div class="kpi-content">
             <div class="kpi-value">{{ stats.total }}</div>
-            <div class="kpi-label">Total Teams</div>
+            <div class="kpi-label">Total Crews</div>
           </div>
         </div>
 
@@ -72,7 +72,7 @@
           </div>
           <div class="kpi-content">
             <div class="kpi-value">{{ stats.active }}</div>
-            <div class="kpi-label">Active Teams</div>
+            <div class="kpi-label">Active Crews</div>
           </div>
         </div>
 
@@ -96,7 +96,7 @@
           </div>
           <div class="kpi-content">
             <div class="kpi-value">{{ stats.inactive }}</div>
-            <div class="kpi-label">Inactive Teams</div>
+            <div class="kpi-label">Inactive Crews</div>
           </div>
         </div>
       </div>
@@ -153,7 +153,7 @@
 
       <!-- Teams Table -->
       <div class="teams-table-card card">
-        <h2 class="card-title">Teams List</h2>
+        <h2 class="card-title">Crews List</h2>
         <div class="table-container">
           <table class="teams-table">
           <thead>
@@ -162,8 +162,8 @@
               <th>Name</th>
               <th>Department</th>
               <th>Trade</th>
-              <th>Team Leader</th>
-              <th>Team Size</th>
+              <th>Crew Leader</th>
+              <th>Crew Size</th>
               <th>Status</th>
               <th>Created Date</th>
               <th>Actions</th>
@@ -228,14 +228,14 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/>
             </svg>
-            <h3>No Teams Found</h3>
-            <p>{{ teams.length === 0 ? 'Create your first team to get started.' : 'No teams match your filters.' }}</p>
+            <h3>No Crews Found</h3>
+            <p>{{ teams.length === 0 ? 'Create your first crew to get started.' : 'No crews match your filters.' }}</p>
             <button 
               *ngIf="canCreate && teams.length === 0"
               class="btn btn-primary"
               (click)="createTeam()"
             >
-              Create Team
+              Create Crew
             </button>
           </div>
         </div>
@@ -246,7 +246,7 @@
             <span class="pagination-text">
               Showing <strong>{{ getStartIndex() }}</strong> - 
               <strong>{{ getEndIndex() }}</strong> of 
-              <strong>{{ totalCount }}</strong> teams
+              <strong>{{ totalCount }}</strong> crews
             </span>
             <span class="page-info">
               (Page {{ currentPage }} of {{ totalPages }})
@@ -323,11 +323,11 @@
   </div>
 </div>
 
-<!-- Team Activities Modal -->
+<!-- Crew Activities Modal -->
 <div class="modal-overlay" *ngIf="showActivitiesModal" (click)="closeActivitiesModal()">
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h2>Team Activities - {{ selectedTeam?.teamName }}</h2>
+      <h2>Crew Activities - {{ selectedTeam?.teamName }}</h2>
       <button class="btn-close-modal" (click)="closeActivitiesModal()" title="Close">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18"/>
@@ -390,7 +390,7 @@
         </div>
 
         <div class="empty-state" *ngIf="teamActivities.activities.length === 0">
-          <p>No activities found for this team.</p>
+          <p>No activities found for this crew.</p>
         </div>
       </div>
     </div>

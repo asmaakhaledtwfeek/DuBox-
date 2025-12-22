@@ -45,8 +45,15 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
                 .GetWithSpec(new GetWIRCheckPointsByBoxIdSpecification(request.BoxId)).Data
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
+            var checkpointDtos = new List<WIRCheckpointDto>();
+            try
+            {
 
-            var checkpointDtos = checkpoints.Adapt<List<WIRCheckpointDto>>();
+                 checkpointDtos = checkpoints.Adapt<List<WIRCheckpointDto>>();
+            }catch(Exception ex)
+            {
+
+            }
 
             // Enrich checklist items with section and checklist information
             EnrichChecklistItems(checkpoints, checkpointDtos);

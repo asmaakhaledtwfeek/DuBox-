@@ -10,10 +10,12 @@ namespace Dubox.Application.Features.Projects.MappingConfig
         public void Register(TypeAdapterConfig config)
         {
             config.NewConfig<CreateProjectCommand, Project>()
+                  .Map(dest => dest.CategoryId, src => src.ProjectCategoryId)
                   .Map(dest => dest.Status, src => ProjectStatusEnum.Active)
                   .Map(dest => dest.IsActive, src => true)
                   .Map(dest => dest.TotalBoxes, src => 0)
                   .Map(dest => dest.CreatedDate, src => DateTime.UtcNow)
+                  .Ignore(dest => dest.Category)
                .PreserveReference(true);
         }
     }

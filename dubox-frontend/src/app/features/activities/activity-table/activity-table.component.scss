@@ -457,6 +457,23 @@
   box-shadow: 0 2px 6px rgba(255, 193, 7, 0.15);
 }
 
+.wir-status-under-review {
+  color: #0891b2; // Cyan-600
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(8, 145, 178, 0.15) 100%);
+  border-color: #06b6d4; // Cyan-500
+  box-shadow: 0 2px 6px rgba(6, 182, 212, 0.2);
+  animation: pulse-under-review 2s ease-in-out infinite;
+}
+
+@keyframes pulse-under-review {
+  0%, 100% {
+    box-shadow: 0 2px 6px rgba(6, 182, 212, 0.2);
+  }
+  50% {
+    box-shadow: 0 2px 8px rgba(6, 182, 212, 0.35);
+  }
+}
+
 .wir-status-approved {
   color: var(--amana-green-dark);
   background: linear-gradient(135deg, rgba(45, 106, 79, 0.2) 0%, rgba(82, 183, 136, 0.2) 100%);

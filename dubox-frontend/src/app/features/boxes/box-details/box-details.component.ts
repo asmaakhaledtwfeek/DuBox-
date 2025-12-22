@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, Inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule, FormControl, Validators } from '@angular/forms';
 import { trigger, state, style, transition, animate } from '@angular/animations';
@@ -50,7 +50,7 @@ type BoxDrawing = {
 @Component({
   selector: 'app-box-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, HttpClientModule, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent, HeaderComponent, BoxLogDetailsModalComponent, UploadDrawingModalComponent, QualityIssueDetailsModalComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent, HeaderComponent, BoxLogDetailsModalComponent, UploadDrawingModalComponent, QualityIssueDetailsModalComponent],
   providers: [LocationService],
   animations: [
     trigger('slideDown', [
@@ -65,7 +65,7 @@ type BoxDrawing = {
     ])
   ],
   templateUrl: './box-details.component.html',
-  styleUrls: ['./box-details.component.scss']
+  styleUrls: ['./box-details.component.scss', './box-details-attachments.scss']
 })
 export class BoxDetailsComponent implements OnInit, OnDestroy {
   box: Box | null = null;
@@ -2367,12 +2367,46 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const link = document.createElement('a');
-    link.href = drawing.displayUrl;
-    link.download = drawing.fileName;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    // Check if it's an API URL (requires authentication) or a data URL
+    if (drawing.displayUrl.startsWith('data:')) {
+      // For data URLs (base64), use the old method
+      const link = document.createElement('a');
+      link.href = drawing.displayUrl;
+      link.download = drawing.fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } else {
+      // For API URLs, use HttpClient to include auth headers
+      this.http.get(drawing.displayUrl, { responseType: 'blob', observe: 'response' }).subscribe({
+        next: (response) => {
+          const blob = response.body;
+          if (!blob) {
+            console.error('No file data received');
+            return;
+          }
+
+          // Create blob URL and download
+          const blobUrl = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = blobUrl;
+          link.download = drawing.fileName;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          
+          // Clean up blob URL
+          setTimeout(() => window.URL.revokeObjectURL(blobUrl), 100);
+        },
+        error: (err) => {
+          console.error('Error downloading file:', err);
+          // Show error toast
+          document.dispatchEvent(new CustomEvent('app-toast', {
+            detail: { message: 'Failed to download file', type: 'error' }
+          }));
+        }
+      });
+    }
   }
 
   // Open file drawing (for PDFs, open in new tab; for DWG, download)
@@ -2384,8 +2418,27 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
     const extension = drawing.fileExtension?.toLowerCase() || '';
     if (extension === '.pdf') {
-      // Open PDF in new tab
-      window.open(drawing.displayUrl, '_blank');
+      // For PDFs, download and open in new tab using blob URL
+      if (drawing.displayUrl.startsWith('data:')) {
+        // For data URLs, open directly
+        window.open(drawing.displayUrl, '_blank');
+      } else {
+        // For API URLs, fetch with auth then open
+        this.http.get(drawing.displayUrl, { responseType: 'blob' }).subscribe({
+          next: (blob) => {
+            const blobUrl = window.URL.createObjectURL(blob);
+            window.open(blobUrl, '_blank');
+            // Clean up after a delay
+            setTimeout(() => window.URL.revokeObjectURL(blobUrl), 60000);
+          },
+          error: (err) => {
+            console.error('Error opening PDF:', err);
+            document.dispatchEvent(new CustomEvent('app-toast', {
+              detail: { message: 'Failed to open PDF', type: 'error' }
+            }));
+          }
+        });
+      }
     } else {
       // For DWG and other files, download
       this.downloadFileDrawing(drawing);
@@ -2638,14 +2691,10 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
             
             imageUrl = drawing.drawingUrl;
             displayUrl = drawing.drawingUrl;
-          } else if (fileType === 'file' && drawing.fileData) {
-            // File type drawing - convert base64 to data URL for download
-            const extension = drawing.fileExtension?.toLowerCase() || '';
-            const mimeType = extension === '.pdf' ? 'application/pdf' : 
-                            extension === '.dwg' ? 'application/acad' : 
-                            'application/octet-stream';
-            imageUrl = `data:${mimeType};base64,${drawing.fileData}`;
-            displayUrl = imageUrl; // For PDF/DWG, this will be used for download
+          } else if (fileType === 'file') {
+            // File type drawing - use API endpoint for download
+            displayUrl = this.boxService.getBoxDrawingDownloadUrl(drawing.boxDrawingId);
+            imageUrl = displayUrl; // For PDF/DWG, this will be used for download
           }
           
           return {

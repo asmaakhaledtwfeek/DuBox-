@@ -864,7 +864,16 @@
             <ng-container *ngFor="let group of getGroupedReviewChecklistItems()">
               <div class="checklist-category-group" *ngIf="group.sections.length > 0">
                 <div class="category-header">
-                  <h4 class="category-title">{{ group.checklistName }}</h4>
+                  <h4 class="category-title">
+                    {{ group.checklistName }}
+                    <span *ngIf="areAllItemsPassInGroup(group.sections)" class="auto-approved-badge">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                      </svg>
+                      APPROVED
+                    </span>
+                  </h4>
                   <span class="category-count">
                     {{ getTotalItemsCount(group.sections) }} item(s)
                   </span>

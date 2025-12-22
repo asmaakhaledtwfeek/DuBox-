@@ -141,9 +141,24 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
             $"Project progress recalculated due to new box '{box.BoxTag}' creation.",
             cancellationToken);
 
+        // Generate QR code image (handle null QRCodeString)
+        string? qrCodeImage = null;
+        if (!string.IsNullOrEmpty(box.QRCodeString))
+        {
+            try
+            {
+                qrCodeImage = _qrCodeService.GenerateQRCodeBase64(box.QRCodeString);
+            }
+            catch (Exception ex)
+            {
+                // Log but don't fail the entire operation
+                Console.WriteLine($"Warning: Failed to generate QR code: {ex.Message}");
+            }
+        }
+
         var boxDto = box.Adapt<BoxDto>() with
         { 
-            QRCodeImage = _qrCodeService.GenerateQRCodeBase64(box.QRCodeString),
+            QRCodeImage = qrCodeImage,
             FactoryId = box.FactoryId,
             FactoryCode = box.Factory?.FactoryCode,
             FactoryName = box.Factory?.FactoryName

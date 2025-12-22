@@ -17,6 +17,7 @@ namespace Dubox.Application.Specifications
             AddInclude($"{nameof(WIRCheckpoint.QualityIssues)}.{nameof(QualityIssue.Images)}");
             AddInclude(nameof(WIRCheckpoint.Images));
             AddInclude(nameof(WIRCheckpoint.Box));
+            AddInclude($"{nameof(WIRCheckpoint.Box)}.{nameof(Box.Project)}");
 
             // Enable split query to avoid Cartesian explosion with collection includes
             EnableSplitQuery();

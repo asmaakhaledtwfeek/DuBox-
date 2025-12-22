@@ -28,7 +28,7 @@ public class Project
     public int CategoryId { get; set; }
 
     [ForeignKey(nameof(CategoryId))]
-    public ProjectTypeCategory Category { get; set; } = new();
+    public ProjectTypeCategory? Category { get; set; }
     public DateTime? PlannedStartDate { get; set; }
     public DateTime? ActualStartDate { get; set; }
     public int? Duration { get; set; }

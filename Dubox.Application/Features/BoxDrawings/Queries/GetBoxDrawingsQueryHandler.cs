@@ -35,8 +35,20 @@ public class GetBoxDrawingsQueryHandler : IRequestHandler<GetBoxDrawingsQuery, R
             .OrderByDescending(bd => bd.CreatedDate)
             .ToList();
 
-        // Map to DTOs
-        var boxDrawingDtos = boxDrawings.Adapt<List<BoxDrawingDto>>();
+        // Map to DTOs (excluding FileData for performance - use download endpoint instead)
+        var boxDrawingDtos = boxDrawings.Select(bd => new BoxDrawingDto
+        {
+            BoxDrawingId = bd.BoxDrawingId,
+            BoxId = bd.BoxId,
+            DrawingUrl = bd.DrawingUrl,
+            FileData = null, // Don't return large base64 data - use download endpoint instead
+            OriginalFileName = bd.OriginalFileName,
+            FileExtension = bd.FileExtension,
+            FileType = bd.FileType,
+            FileSize = bd.FileSize,
+            CreatedDate = bd.CreatedDate,
+            CreatedBy = bd.CreatedBy
+        }).ToList();
 
         return Result.Success(boxDrawingDtos);
     }

@@ -163,7 +163,7 @@ export class TeamsDashboardComponent implements OnInit, OnDestroy {
         console.error('Error error:', err.error);
         console.error('Error message:', err.message);
         
-        const errorMessage = err.error?.title || err.error?.detail || err.error?.message || err.message || 'Failed to load teams';
+        const errorMessage = err.error?.title || err.error?.detail || err.error?.message || err.message || 'Failed to load crews';
         this.error = `Error ${err.status || 'Unknown'}: ${errorMessage}`;
         this.loading = false;
       }
@@ -297,9 +297,9 @@ export class TeamsDashboardComponent implements OnInit, OnDestroy {
         this.loadingActivities = false;
       },
       error: (err) => {
-        console.error('Failed to load team activities:', err);
+        console.error('Failed to load crew activities:', err);
         this.loadingActivities = false;
-        alert('Failed to load team activities. Please try again.');
+        alert('Failed to load crew activities. Please try again.');
       }
     });
   }

@@ -11,6 +11,11 @@ public interface IExcelService
     byte[] GenerateTemplate<T>(string[] headers) where T : class;
     
     /// <summary>
+    /// Generate an Excel template with reference data sheets for validation
+    /// </summary>
+    byte[] GenerateTemplateWithReference<T>(string[] headers, Dictionary<string, List<string>> referenceData, Dictionary<string, List<string>> groupedReferenceData, string projectCode, string sheetName) where T : class;
+    
+    /// <summary>
     /// Read data from Excel file and convert to list of objects
     /// </summary>
     Task<List<T>> ReadFromExcelAsync<T>(Stream fileStream, Func<Dictionary<string, object?>, T> mapper) where T : class;

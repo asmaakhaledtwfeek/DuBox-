@@ -4,6 +4,7 @@ using Dubox.Infrastructure.ApplicationContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Dubox.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251223171137_UpdateBimFields")]
+    partial class UpdateBimFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -48,7 +51,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("PredecessorActivityId");
 
-                    b.ToTable("ActivityDependencies", (string)null);
+                    b.ToTable("ActivityDependencies");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.ActivityMaster", b =>
@@ -118,7 +121,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("StageNumber", "SequenceInStage");
 
-                    b.ToTable("ActivityMaster", (string)null);
+                    b.ToTable("ActivityMaster");
 
                     b.HasData(
                         new
@@ -575,7 +578,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("MaterialId");
 
-                    b.ToTable("ActivityMaterials", (string)null);
+                    b.ToTable("ActivityMaterials");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.AuditLog", b =>
@@ -621,7 +624,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasKey("AuditId");
 
-                    b.ToTable("AuditLog", (string)null);
+                    b.ToTable("AuditLog");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.Box", b =>
@@ -778,7 +781,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("Status", "ProjectId");
 
-                    b.ToTable("Boxes", (string)null);
+                    b.ToTable("Boxes");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.BoxActivity", b =>
@@ -874,7 +877,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("BoxId", "Status");
 
-                    b.ToTable("BoxActivities", (string)null);
+                    b.ToTable("BoxActivities");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.BoxAsset", b =>
@@ -921,7 +924,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("BoxId");
 
-                    b.ToTable("BoxAssets", (string)null);
+                    b.ToTable("BoxAssets");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.BoxCost", b =>
@@ -970,7 +973,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("BoxCosts", (string)null);
+                    b.ToTable("BoxCosts");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.BoxDrawing", b =>
@@ -1026,7 +1029,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("BoxId");
 
-                    b.ToTable("BoxDrawings", (string)null);
+                    b.ToTable("BoxDrawings");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.BoxLocationHistory", b =>
@@ -1067,7 +1070,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("MovedFromLocationId");
 
-                    b.ToTable("BoxLocationHistory", (string)null);
+                    b.ToTable("BoxLocationHistory");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.BoxMaterial", b =>
@@ -1107,7 +1110,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("MaterialId");
 
-                    b.ToTable("BoxMaterials", (string)null);
+                    b.ToTable("BoxMaterials");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.BoxSubType", b =>
@@ -1134,7 +1137,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("BoxTypeId");
 
-                    b.ToTable("BoxSubTypes", (string)null);
+                    b.ToTable("BoxSubTypes");
 
                     b.HasData(
                         new
@@ -1485,7 +1488,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("CategoryId");
 
-                    b.ToTable("BoxTypes", (string)null);
+                    b.ToTable("BoxTypes");
 
                     b.HasData(
                         new
@@ -2096,7 +2099,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasKey("ChecklistId");
 
-                    b.ToTable("Checklists", (string)null);
+                    b.ToTable("Checklists");
 
                     b.HasData(
                         new
@@ -2564,7 +2567,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("Order");
 
-                    b.ToTable("ChecklistSections", (string)null);
+                    b.ToTable("ChecklistSections");
 
                     b.HasData(
                         new
@@ -3390,7 +3393,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("ParentCategoryId");
 
-                    b.ToTable("CostCategories", (string)null);
+                    b.ToTable("CostCategories");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.DailyProductionLog", b =>
@@ -3437,7 +3440,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("LogDate", "TeamId");
 
-                    b.ToTable("DailyProductionLog", (string)null);
+                    b.ToTable("DailyProductionLog");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.Department", b =>
@@ -3486,7 +3489,7 @@ namespace Dubox.Infrastructure.Migrations
                         .IsUnique()
                         .HasFilter("[ManagerId] IS NOT NULL");
 
-                    b.ToTable("Departments", (string)null);
+                    b.ToTable("Departments");
 
                     b.HasData(
                         new
@@ -3605,7 +3608,7 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasIndex("FactoryCode")
                         .IsUnique();
 
-                    b.ToTable("Factories", (string)null);
+                    b.ToTable("Factories");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.FactoryLocation", b =>
@@ -3659,7 +3662,7 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasIndex("LocationCode")
                         .IsUnique();
 
-                    b.ToTable("FactoryLocations", (string)null);
+                    b.ToTable("FactoryLocations");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.Group", b =>
@@ -3688,7 +3691,7 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasIndex("GroupName")
                         .IsUnique();
 
-                    b.ToTable("Groups", (string)null);
+                    b.ToTable("Groups");
 
                     b.HasData(
                         new
@@ -3779,7 +3782,7 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasIndex("GroupId", "RoleId")
                         .IsUnique();
 
-                    b.ToTable("GroupRoles", (string)null);
+                    b.ToTable("GroupRoles");
 
                     b.HasData(
                         new
@@ -3933,7 +3936,7 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasIndex("MaterialCode")
                         .IsUnique();
 
-                    b.ToTable("Materials", (string)null);
+                    b.ToTable("Materials");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.MaterialTransaction", b =>
@@ -3981,7 +3984,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("PerformedById");
 
-                    b.ToTable("MaterialTransactions", (string)null);
+                    b.ToTable("MaterialTransactions");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.NavigationMenuItem", b =>
@@ -4047,7 +4050,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("ParentMenuItemId");
 
-                    b.ToTable("NavigationMenuItems", (string)null);
+                    b.ToTable("NavigationMenuItems");
 
                     b.HasData(
                         new
@@ -4233,7 +4236,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("RelatedBoxId");
 
-                    b.ToTable("Notifications", (string)null);
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.Permission", b =>
@@ -4285,7 +4288,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("Module", "Action");
 
-                    b.ToTable("Permissions", (string)null);
+                    b.ToTable("Permissions");
 
                     b.HasData(
                         new
@@ -5452,7 +5455,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("ChecklistSectionId");
 
-                    b.ToTable("PredefinedChecklistItems", (string)null);
+                    b.ToTable("PredefinedChecklistItems");
 
                     b.HasData(
                         new
@@ -11290,7 +11293,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("BoxId", "UpdateDate");
 
-                    b.ToTable("ProgressUpdates", (string)null);
+                    b.ToTable("ProgressUpdates");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.ProgressUpdateImage", b =>
@@ -11331,7 +11334,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("ProgressUpdateId", "Sequence");
 
-                    b.ToTable("ProgressUpdateImages", (string)null);
+                    b.ToTable("ProgressUpdateImages");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.Project", b =>
@@ -11419,7 +11422,7 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasIndex("ProjectCode")
                         .IsUnique();
 
-                    b.ToTable("Projects", (string)null);
+                    b.ToTable("Projects");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.ProjectBoxFunction", b =>
@@ -11455,7 +11458,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("ProjectBoxFunctions", (string)null);
+                    b.ToTable("ProjectBoxFunctions");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.ProjectBoxSubType", b =>
@@ -11491,7 +11494,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("ProjectBoxTypeId");
 
-                    b.ToTable("ProjectBoxSubTypes", (string)null);
+                    b.ToTable("ProjectBoxSubTypes");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.ProjectBoxType", b =>
@@ -11530,7 +11533,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("ProjectBoxTypes", (string)null);
+                    b.ToTable("ProjectBoxTypes");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.ProjectBuilding", b =>
@@ -11566,7 +11569,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("ProjectBuildings", (string)null);
+                    b.ToTable("ProjectBuildings");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.ProjectLevel", b =>
@@ -11602,7 +11605,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("ProjectLevels", (string)null);
+                    b.ToTable("ProjectLevels");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.ProjectTypeCategory", b =>
@@ -11624,7 +11627,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasKey("CategoryId");
 
-                    b.ToTable("ProjectTypeCategories", (string)null);
+                    b.ToTable("ProjectTypeCategories");
 
                     b.HasData(
                         new
@@ -11704,7 +11707,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("ProjectZones", (string)null);
+                    b.ToTable("ProjectZones");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.QualityIssue", b =>
@@ -11774,7 +11777,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("WIRId");
 
-                    b.ToTable("QualityIssues", (string)null);
+                    b.ToTable("QualityIssues");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.QualityIssueImage", b =>
@@ -11815,7 +11818,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("IssueId", "Sequence");
 
-                    b.ToTable("QualityIssueImages", (string)null);
+                    b.ToTable("QualityIssueImages");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.Risk", b =>
@@ -11876,7 +11879,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("Risks", (string)null);
+                    b.ToTable("Risks");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.Role", b =>
@@ -11905,7 +11908,7 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasIndex("RoleName")
                         .IsUnique();
 
-                    b.ToTable("Roles", (string)null);
+                    b.ToTable("Roles");
 
                     b.HasData(
                         new
@@ -12009,7 +12012,7 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasIndex("RoleId", "PermissionId")
                         .IsUnique();
 
-                    b.ToTable("RolePermissions", (string)null);
+                    b.ToTable("RolePermissions");
 
                     b.HasData(
                         new
@@ -13850,7 +13853,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("TeamLeaderMemberId");
 
-                    b.ToTable("Teams", (string)null);
+                    b.ToTable("Teams");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.TeamGroup", b =>
@@ -13893,7 +13896,7 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasIndex("TeamId", "GroupTag")
                         .IsUnique();
 
-                    b.ToTable("TeamGroups", (string)null);
+                    b.ToTable("TeamGroups");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.TeamMember", b =>
@@ -13936,7 +13939,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("TeamMembers", (string)null);
+                    b.ToTable("TeamMembers");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.User", b =>
@@ -13977,7 +13980,7 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
 
                     b.HasData(
                         new
@@ -14194,7 +14197,7 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasIndex("UserId", "GroupId")
                         .IsUnique();
 
-                    b.ToTable("UserGroups", (string)null);
+                    b.ToTable("UserGroups");
 
                     b.HasData(
                         new
@@ -14354,7 +14357,7 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasIndex("UserId", "RoleId")
                         .IsUnique();
 
-                    b.ToTable("UserRoles", (string)null);
+                    b.ToTable("UserRoles");
 
                     b.HasData(
                         new
@@ -14410,7 +14413,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("WIRId");
 
-                    b.ToTable("WIRChecklistItems", (string)null);
+                    b.ToTable("WIRChecklistItems");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.WIRCheckpoint", b =>
@@ -14476,7 +14479,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("BoxId");
 
-                    b.ToTable("WIRCheckpoints", (string)null);
+                    b.ToTable("WIRCheckpoints");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.WIRCheckpointImage", b =>
@@ -14517,7 +14520,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("WIRId", "Sequence");
 
-                    b.ToTable("WIRCheckpointImages", (string)null);
+                    b.ToTable("WIRCheckpointImages");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.WIRRecord", b =>
@@ -14588,7 +14591,7 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasIndex("Status", "RequestedDate");
 
-                    b.ToTable("WIRRecords", (string)null);
+                    b.ToTable("WIRRecords");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.ActivityDependency", b =>

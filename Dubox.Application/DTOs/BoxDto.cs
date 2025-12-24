@@ -27,7 +27,6 @@ public record BoxDto
     public decimal? Width { get; init; }
     public decimal? Height { get; init; }
     public string? UnitOfMeasure { get; init; }
-    public string? BIMModelReference { get; init; }
     public string? RevitElementId { get; init; }
     public int? Duration { get; init; }
     public DateTime? PlannedStartDate { get; init; }
@@ -61,7 +60,6 @@ public record CreateBoxDto
     public decimal? Length { get; init; }
     public decimal? Width { get; init; }
     public decimal? Height { get; init; }
-    public string? BIMModelReference { get; init; }
     public string? RevitElementId { get; init; }
     public Guid? FactoryId { get; init; }
     public List<CreateBoxAssetDto>? Assets { get; init; }
@@ -97,14 +95,14 @@ public record ImportBoxFromExcelDto
     public string BoxTag { get; init; } = string.Empty;
     public string? BoxName { get; init; }
     public string BoxType { get; init; } = string.Empty;
+    public string? BoxSubType { get; init; }
     public string Floor { get; init; } = string.Empty;
     public string? BuildingNumber { get; init; }
     public string? BoxFunction { get; init; }
-    public BoxZone? Zone { get; init; }
+    public string? Zone { get; init; } // Changed to string to send zone display name instead of enum number
     public decimal? Length { get; init; }
     public decimal? Width { get; init; }
     public decimal? Height { get; init; }
-    public string? BIMModelReference { get; init; }
     public string? Notes { get; init; }
     
 }
@@ -123,6 +121,8 @@ public record BoxLogDto
     public Guid BoxId { get; init; }
     public string Action { get; init; } = string.Empty;
     public string Description { get; init; } = string.Empty;
+    public string? TableName { get; init; } // Table name from audit log (e.g., "Box", "QualityIssue")
+    public string? EntityDisplayName { get; init; } // Display name of the entity
     public string? Field { get; init; }
     public string? OldValue { get; init; }
     public string? NewValue { get; init; }

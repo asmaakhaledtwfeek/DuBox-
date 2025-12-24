@@ -253,20 +253,39 @@
           ></textarea>
         </div>
 
-        <!-- WIR Position Section (always shown - values sent regardless of WIR record status) -->
-        <div class="form-group wir-position-section" >
+        <!-- WIR Position Section (always shown with fields) -->
+        <div class="form-group wir-position-section">
           <div class="wir-position-header">
             <label>WIR Position</label>
             <span class="wir-position-note">
-              Location for {{ nearestWIR?.wirCode||"WIR" }}
-              <span *ngIf="progressForm.get('wirBay')?.disabled || progressForm.get('wirRow')?.disabled" class="locked-indicator" title="Position locked for this WIR section">
+              <span *ngIf="nearestWIR" title="All activities up to {{ nearestWIR.wirCode }} share this position">
+                Shared position for {{ nearestWIR.wirCode }}
+              </span>
+              <span *ngIf="!nearestWIR && hasWIRActivityBelow">
+                Set position for next WIR checkpoint
+              </span>
+              <span *ngIf="!nearestWIR && !hasWIRActivityBelow">
+                No WIR checkpoint found
+              </span>
+              <span *ngIf="progressForm.get('wirBay')?.disabled || progressForm.get('wirRow')?.disabled" class="locked-indicator" title="Position locked - cannot edit">
                 🔒 Locked
               </span>
-              <span *ngIf="!progressForm.get('wirBay')?.disabled && !progressForm.get('wirRow')?.disabled" class="editable-indicator" title="You can set position for this WIR section">
+              <span *ngIf="!progressForm.get('wirBay')?.disabled && !progressForm.get('wirRow')?.disabled" class="editable-indicator" title="Position editable - you can set values">
                 ✏️ Editable
               </span>
             </span>
           </div>
+          
+          <!-- Locked Reason Message (shown when fields are locked due to WIR status) -->
+          <div *ngIf="positionLockedReason" class="alert alert-warning position-locked-alert">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span>{{ positionLockedReason }}</span>
+          </div>
+          
+          <!-- Position Fields (always shown) -->
           <div class="wir-position-fields">
             <div class="form-group-inline">
               <label for="wirBay">Bay</label>

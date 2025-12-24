@@ -79,6 +79,7 @@ export class ActivityDetailsComponent implements OnInit {
   isUpdatingStatus = false;
   isAssigningTeam = false;
   isIssuingMaterial = false;
+  loadingMembers = false;
   isSettingSchedule = false;
 
   // Error messages
@@ -138,7 +139,7 @@ export class ActivityDetailsComponent implements OnInit {
 
     this.assignTeamForm = this.fb.group({
       teamId: ['', Validators.required],
-      groupId: ['']
+      memberId: ['']
     });
 
     this.issueMaterialForm = this.fb.group({
@@ -198,6 +199,39 @@ export class ActivityDetailsComponent implements OnInit {
       error: (err) => {
         console.error('❌ Error loading team groups:', err);
         this.availableGroups = [];
+        if (onComplete) {
+          onComplete([]);
+        }
+      }
+    });
+  }
+
+  /**
+   * Load team members when a team is selected
+   */
+  loadTeamMembers(teamId: string, onComplete?: (members: TeamMember[]) => void): void {
+    if (!teamId) {
+      this.availableMembers = [];
+      if (onComplete) {
+        onComplete([]);
+      }
+      return;
+    }
+
+    this.loadingMembers = true;
+    this.teamService.getTeamMembers(teamId).subscribe({
+      next: (response: any) => {
+        this.availableMembers = response.members || [];
+        console.log('✅ Team members loaded:', this.availableMembers);
+        this.loadingMembers = false;
+        if (onComplete) {
+          onComplete(this.availableMembers);
+        }
+      },
+      error: (err: any) => {
+        console.error('❌ Error loading team members:', err);
+        this.availableMembers = [];
+        this.loadingMembers = false;
         if (onComplete) {
           onComplete([]);
         }
@@ -704,6 +738,11 @@ export class ActivityDetailsComponent implements OnInit {
       this.router.navigate(['/projects', this.projectId, 'boxes', this.boxId], {
         queryParams: { tab: 'progress-updates' }
       });
+    } else if (this.returnTo === 'attachments') {
+      // Navigate back to box details page with attachments tab active
+      this.router.navigate(['/projects', this.projectId, 'boxes', this.boxId], {
+        queryParams: { tab: 'attachments' }
+      });
     } else {
       // Default: navigate back to activities table (box details page with activities tab)
       this.router.navigate(['/projects', this.projectId, 'boxes', this.boxId], {
@@ -853,43 +892,43 @@ export class ActivityDetailsComponent implements OnInit {
   openAssignTeamModal(): void {
     this.assignTeamSuccess = false; // Reset success state
     
-    // Pre-select team and group if they exist
+    // Pre-select team if it exists
     if (this.activityDetail?.teamId) {
       const teamId = this.activityDetail.teamId.toString();
-      const groupId = this.activityDetail.assignedGroupId || '';
+      const assignedMemberId = this.activityDetail.assignedMemberId?.toString() || '';
       
-      // First, set the teamId (without emitting events to avoid triggering valueChanges)
+      // Set the teamId and load members
       this.assignTeamForm.patchValue({
         teamId: teamId,
-        groupId: '' // Clear group first, will set after groups load
+        memberId: '' // Will be set after members load
       }, { emitEvent: false });
       
-      // Load team groups for the pre-selected team, then set groupId
-      this.loadTeamGroups(teamId, (groups) => {
-        // After team groups are loaded, set the groupId if it exists and is valid
-        if (groupId && groups.some(g => g.teamGroupId === groupId)) {
+      // Load members and pre-select the assigned member
+      this.loadTeamMembers(teamId, (members) => {
+        // Pre-select member if it exists and is in the loaded members
+        if (assignedMemberId && members.some(m => m.teamMemberId === assignedMemberId)) {
           this.assignTeamForm.patchValue({
-            groupId: groupId
+            memberId: assignedMemberId
           }, { emitEvent: false });
         }
       });
     } else {
-      this.availableGroups = [];
+      this.availableMembers = [];
       this.assignTeamForm.patchValue({
         teamId: '',
-        groupId: ''
+        memberId: ''
       }, { emitEvent: false });
     }
 
-    // Listen to team selection changes to load groups
+    // Listen to team selection changes to load members
     this.assignTeamForm.get('teamId')?.valueChanges.subscribe(teamId => {
       if (teamId) {
-        this.loadTeamGroups(teamId);
-        // Clear group selection when team changes
-        this.assignTeamForm.patchValue({ groupId: '' }, { emitEvent: false });
+        this.loadTeamMembers(teamId);
+        // Clear member selection when team changes
+        this.assignTeamForm.patchValue({ memberId: '' }, { emitEvent: false });
       } else {
-        this.availableGroups = [];
-        this.assignTeamForm.patchValue({ groupId: '' }, { emitEvent: false });
+        this.availableMembers = [];
+        this.assignTeamForm.patchValue({ memberId: '' }, { emitEvent: false });
       }
     });
 
@@ -912,14 +951,15 @@ export class ActivityDetailsComponent implements OnInit {
     console.log('🔄 Assigning team:', {
       activityId: this.activityId,
       teamId: formValue.teamId,
-      groupId: formValue.groupId
+      memberId: formValue.memberId
     });
 
     // Call API to assign team
     this.boxService.assignActivityToTeam(
       this.activityId,
       formValue.teamId,
-      formValue.groupId
+      null, // teamGroupId - no longer used
+      formValue.memberId || null
     ).subscribe({
       next: (response) => {
         console.log('✅ Team assigned successfully:', response);

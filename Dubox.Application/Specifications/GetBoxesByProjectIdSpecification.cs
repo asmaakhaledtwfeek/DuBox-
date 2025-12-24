@@ -10,8 +10,8 @@ namespace Dubox.Application.Specifications
             AddCriteria(b => b.ProjectId == projectId);
             //AddInclude(nameof(Box.BoxActivities));
             AddInclude(nameof(Box.Project));
-            AddInclude(nameof(Box.BoxType));
-            AddInclude(nameof(Box.BoxSubType));
+            // Note: BoxType and BoxSubType navigation properties are ignored
+            // BoxTypeId/BoxSubTypeId now reference ProjectBoxTypes/ProjectBoxSubTypes
             AddInclude(nameof(Box.Factory));
             AddInclude(nameof(Box.CurrentLocation));
 

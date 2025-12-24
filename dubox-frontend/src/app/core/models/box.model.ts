@@ -4,6 +4,7 @@ export interface Box {
   code: string;
   serialNumber?: string;
   projectId: string;
+  projectCode?: string;
   status: BoxStatus;
   type?: string;
   subType?:string;
@@ -19,7 +20,6 @@ export interface Box {
   length?: number;
   width?: number;
   height?: number;
-  bimModelReference?: string;
   revitElementId?: string;
   assignedTeam?: string;
   assignedTo?: string;
@@ -198,6 +198,8 @@ export interface BoxAttachmentDto {
   referenceId: string;
   referenceType: string;
   referenceName?: string;
+  boxActivityId?: string;
+  activityName?: string;
 }
 
 export interface BoxLog {
@@ -205,6 +207,8 @@ export interface BoxLog {
   boxId: string;
   action: string;
   description: string;
+  tableName?: string; // Table name from audit log (e.g., "Box", "QualityIssue")
+  entityDisplayName?: string; // Display name of the entity
   field?: string;
   oldValue?: string;
   newValue?: string;

@@ -16,6 +16,7 @@ public class BoxAttachmentDto
     public string? OriginalName { get; set; }
     public long? FileSize { get; set; }
     public int Sequence { get; set; }
+    public int Version { get; set; } = 1; // Version number for files with same name
     public DateTime CreatedDate { get; set; }
     public Guid? CreatedBy { get; set; }
     
@@ -23,5 +24,9 @@ public class BoxAttachmentDto
     public Guid ReferenceId { get; set; } // WIRId, ProgressUpdateId, or IssueId
     public string ReferenceType { get; set; } = string.Empty; // "WIRCheckpoint", "ProgressUpdate", or "QualityIssue"
     public string? ReferenceName { get; set; } // WIR Code, Progress Update title, or Issue description
+    
+    // Activity information (for Progress Update images)
+    public Guid? BoxActivityId { get; set; }
+    public string? ActivityName { get; set; }
 }
 

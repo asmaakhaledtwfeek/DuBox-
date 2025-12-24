@@ -447,6 +447,22 @@
   }
 }
 
+// Coming Soon Badge
+.coming-soon-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-left: 8px;
+  box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+}
+
 // Responsive
 @media (max-width: 1024px) {
   .page-container {

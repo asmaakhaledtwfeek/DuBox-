@@ -2,6 +2,6 @@
 {
     public enum WIRRecordStatusEnum
     {
-        Pending = 1, Approved, Rejected
+        Pending = 1, Approved, Rejected, ConditionallyApproved
     }
 }

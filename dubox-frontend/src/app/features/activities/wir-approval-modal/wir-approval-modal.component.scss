@@ -145,12 +145,19 @@
 }
 
 .alert-error {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid var(--error-color, #ef4444);
+  background: rgba(239, 68, 68, 0.15);
+  border: 2px solid var(--error-color, #ef4444);
   color: var(--error-dark, #dc2626);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
 
   svg {
     color: var(--error-color, #ef4444);
+  }
+
+  span {
+    line-height: 1.5;
+    word-break: break-word;
   }
 }
 

@@ -64,14 +64,9 @@ export class EditBoxComponent implements OnInit {
   // Box Functions from project config
   boxFunctions: ProjectBoxFunction[] = [];
 
-  // Factory dropdown
-  factories: Factory[] = [];
-  loadingFactories = false;
-
   constructor(
     private fb: FormBuilder,
     private boxService: BoxService,
-    private factoryService: FactoryService,
     private router: Router,
     private route: ActivatedRoute,
     private projectService: ProjectService
@@ -115,11 +110,6 @@ export class EditBoxComponent implements OnInit {
         
         console.log('📂 Project Category ID:', categoryId);
         console.log('📍 Project Location:', this.projectLocation);
-
-        // Load factories based on project location
-        if (this.projectLocation) {
-          this.loadFactoriesByLocation();
-        }
         
         // Load project configuration
         this.loadProjectConfiguration();
@@ -371,11 +361,9 @@ export class EditBoxComponent implements OnInit {
       floor: ['GF', Validators.required],
       boxFunction: [''],
       zone: [null], // Zone is a number (BoxZone enum value)
-      factoryId: [null],
       length: ['', [Validators.min(0), Validators.max(99999)]],
       width: ['', [Validators.min(0), Validators.max(99999)]],
       height: ['', [Validators.min(0), Validators.max(99999)]],
-      bimModelReference: ['', Validators.maxLength(100)],
       revitElementId: ['', Validators.maxLength(100)],
       boxPlannedStartDate: [''],
       boxDuration: [null, [Validators.min(1)]],
@@ -473,7 +461,6 @@ export class EditBoxComponent implements OnInit {
       length: box.length,
       width: box.width,
       height: box.height,
-      bimModelReference: box.bimModelReference,
       revitElementId: box.revitElementId,
       boxTypeId: box.type,
       boxSubTypeId: box.subType
@@ -490,11 +477,9 @@ export class EditBoxComponent implements OnInit {
       boxFunction: (box as any).boxFunction || '',
       // Don't set zone here - let preselectZone handle it after zones are loaded
       // zone: box.zone || '',
-      factoryId: box.factoryId || null,
       length: box.length || '',
       width: box.width || '',
       height: box.height || '',
-      bimModelReference: box.bimModelReference || '',
       revitElementId: box.revitElementId || '',
       boxPlannedStartDate: box.plannedStartDate ? box.plannedStartDate.toISOString().split('T')[0] : '',
       boxDuration: box.duration ?? null,
@@ -512,12 +497,6 @@ export class EditBoxComponent implements OnInit {
     // This will work if zones are already loaded, otherwise it will be called from loadZones
     setTimeout(() => {
       this.preselectZone();
-    }, 100);
-    
-    // Preselect factory after form is populated
-    // This will work if factories are already loaded, otherwise it will be called from loadFactoriesByLocation
-    setTimeout(() => {
-      this.preselectFactory();
     }, 100);
     
     console.log('✅ Form populated, current values:', this.boxForm.value);
@@ -680,12 +659,10 @@ export class EditBoxComponent implements OnInit {
       buildingNumber: formValue.buildingNumber || null,
       boxFunction: formValue.boxFunction || null,
       zone: formValue.zone || null,
-      factoryId: formValue.factoryId || null,
       status: statusNumber,  // REQUIRED (int) - converted from string
       length: formValue.length ? parseFloat(formValue.length) : null,
       width: formValue.width ? parseFloat(formValue.width) : null,
       height: formValue.height ? parseFloat(formValue.height) : null,
-      bimModelReference: formValue.bimModelReference || null,
       revitElementId: formValue.revitElementId || null,
       plannedStartDate: plannedStartDate ? plannedStartDate.toISOString() : null,
       duration,
@@ -770,80 +747,12 @@ export class EditBoxComponent implements OnInit {
       length: 'Length',
       width: 'Width',
       height: 'Height',
-      bimModelReference: 'BIM model reference',
       revitElementId: 'Revit element ID',
       boxPlannedStartDate: 'Box planned start date',
       boxDuration: 'Box duration',
-      notes: 'Notes',
-      factoryId: 'Factory'
+      notes: 'Notes'
     };
     return labels[fieldName] || fieldName;
-  }
-
-  /**
-   * Load factories based on project location
-   */
-  private loadFactoriesByLocation(): void {
-    if (!this.projectLocation) {
-      return;
-    }
-
-    // Map project location string to ProjectLocation enum
-    let locationEnum: ProjectLocation;
-    const locationUpper = this.projectLocation.toUpperCase();
-    if (locationUpper === 'KSA') {
-      locationEnum = ProjectLocation.KSA;
-    } else if (locationUpper === 'UAE') {
-      locationEnum = ProjectLocation.UAE;
-    } else {
-      console.warn('⚠️ Unknown project location:', this.projectLocation);
-      return;
-    }
-
-    this.loadingFactories = true;
-    this.factoryService.getFactoriesByLocation(locationEnum).subscribe({
-      next: (factories) => {
-        this.factories = factories;
-        this.loadingFactories = false;
-        console.log(`✅ Loaded ${factories.length} factory(ies) for location: ${this.projectLocation}`);
-        
-        // After factories are loaded, preselect if box is already loaded
-        if (this.box) {
-          this.preselectFactory();
-        }
-      },
-      error: (err) => {
-        console.error('❌ Error loading factories:', err);
-        this.loadingFactories = false;
-        this.factories = [];
-      }
-    });
-  }
-
-  /**
-   * Preselect the factory based on the current box data
-   */
-  private preselectFactory(): void {
-    if (!this.box || !this.box.factoryId) {
-      return;
-    }
-
-    // Check if factories are loaded
-    if (this.factories.length === 0) {
-      console.log('⏳ Factories not loaded yet, will preselect after they load');
-      return;
-    }
-
-    // Find the factory in the loaded list
-    const factory = this.factories.find(f => f.factoryId === this.box!.factoryId);
-    if (factory) {
-      this.boxForm.patchValue({ factoryId: factory.factoryId });
-      console.log(`✅ Preselected Factory: ${factory.factoryCode} - ${factory.factoryName}`);
-    } else {
-      console.warn(`⚠️ Factory ID ${this.box.factoryId} not found in loaded factories`);
-      // Still set the factoryId even if not in the list (in case it's from a different location)
-      this.boxForm.patchValue({ factoryId: this.box.factoryId });
-    }
   }
 
   private validateSchedule(): void {

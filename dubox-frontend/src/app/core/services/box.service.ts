@@ -66,6 +66,7 @@ export class BoxService {
       code: backendBox.boxTag || backendBox.boxCode || backendBox.code,
       serialNumber: backendBox.serialNumber || backendBox.SerialNumber,
       projectId: backendBox.projectId,
+      projectCode: backendBox.projectCode || backendBox.ProjectCode,
       status: mappedStatus as any,
       type: backendBox.boxType || backendBox.type || backendBox.boxTypeName || '',
       boxTypeId: backendBox.boxTypeId || backendBox.typeId || null,
@@ -82,7 +83,6 @@ export class BoxService {
       width: backendBox.width,
       height: backendBox.height,
       duration: backendBox.duration ?? backendBox.Duration,
-      bimModelReference: backendBox.bimModelReference || backendBox.bimModelRef,
       revitElementId: backendBox.revitElementId,
       assignedTeam: backendBox.assignedTeam,
       assignedTo: backendBox.assignedTo,
@@ -323,13 +323,14 @@ export class BoxService {
   /**
    * Assign activity to team
    */
-  assignActivityToTeam(activityId: string, teamId: string, teamGroupId: string): Observable<any> {
+  assignActivityToTeam(activityId: string, teamId: string, teamGroupId: string | null, assignedMemberId?: string | null): Observable<any> {
     return this.apiService.put<any>(
       'activities/Assign-team',
       {
         boxActivityId: activityId,
         teamId: teamId,
-        teamGroupId: teamGroupId
+        teamGroupId: teamGroupId,
+        assignedMemberId: assignedMemberId
       }
     );
   }
@@ -427,6 +428,7 @@ export class BoxService {
     
     if (request.file) {
       formData.append('File', request.file);
+      console.log('📤 Uploading drawing with filename:', request.file.name);
     }
     
     return this.apiService.postFormData<any>('boxdrawings', formData);
@@ -528,8 +530,8 @@ export class BoxService {
   /**
    * Download Excel template for bulk box import
    */
-  downloadBoxesTemplate(): Observable<Blob> {
-    return this.apiService.download(`${this.endpoint}/template`);
+  downloadBoxesTemplate(projectId: string): Observable<Blob> {
+    return this.apiService.download(`${this.endpoint}/template?projectId=${projectId}`);
   }
 
   /**

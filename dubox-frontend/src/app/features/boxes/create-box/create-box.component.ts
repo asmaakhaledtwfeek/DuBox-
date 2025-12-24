@@ -67,15 +67,10 @@ export class CreateBoxComponent implements OnInit {
   // Box Functions from project config
   boxFunctions: ProjectBoxFunction[] = [];
 
-  // Factory dropdown
-  factories: Factory[] = [];
-  loadingFactories = false;
-
   constructor(
     private fb: FormBuilder,
     private boxService: BoxService,
     private projectService: ProjectService,
-    private factoryService: FactoryService,
     private router: Router,
     private route: ActivatedRoute
   ) {}
@@ -114,11 +109,6 @@ export class CreateBoxComponent implements OnInit {
           category: this.projectCategoryName,
           location: this.projectLocation
         });
-
-        // Load factories based on project location
-        if (this.projectLocation) {
-          this.loadFactoriesByLocation();
-        }
         
         // Extract category ID for fallback
         const categoryId = projectData?.categoryId || projectData?.projectCategoryId;
@@ -431,11 +421,9 @@ export class CreateBoxComponent implements OnInit {
       floor: ['GF', Validators.required],
       boxFunction: [''],
       zone: ['', Validators.maxLength(50)],
-      factoryId: [null],
       length: ['', [Validators.min(0), Validators.max(99999)]],
       width: ['', [Validators.min(0), Validators.max(99999)]],
       height: ['', [Validators.min(0), Validators.max(99999)]],
-      bimModelReference: ['', Validators.maxLength(100)],
       revitElementId: ['', Validators.maxLength(100)],
       boxPlannedStartDate: [''],
       boxDuration: [null, [Validators.min(1)]],
@@ -636,11 +624,9 @@ export class CreateBoxComponent implements OnInit {
       length: formValue.length ? parseFloat(formValue.length) : undefined,
       width: formValue.width ? parseFloat(formValue.width) : undefined,
       height: formValue.height ? parseFloat(formValue.height) : undefined,
-      bimModelReference: formValue.bimModelReference || undefined,
       revitElementId: formValue.revitElementId || undefined,
       boxPlannedStartDate: formValue.boxPlannedStartDate ? new Date(formValue.boxPlannedStartDate).toISOString() : undefined,
       boxDuration: formValue.boxDuration ? parseInt(formValue.boxDuration, 10) : undefined,
-      factoryId: formValue.factoryId || undefined,
       assets: this.getAssetsPayload()
     };
 
@@ -707,48 +693,11 @@ export class CreateBoxComponent implements OnInit {
       length: 'Length',
       width: 'Width',
       height: 'Height',
-      bimModelReference: 'BIM model reference',
       revitElementId: 'Revit element ID',
       boxPlannedStartDate: 'Box planned start date',
-      boxDuration: 'Box duration',
-      factoryId: 'Factory'
+      boxDuration: 'Box duration'
     };
     return labels[fieldName] || fieldName;
-  }
-
-  /**
-   * Load factories based on project location
-   */
-  private loadFactoriesByLocation(): void {
-    if (!this.projectLocation) {
-      return;
-    }
-
-    // Map project location string to ProjectLocation enum
-    let locationEnum: ProjectLocation;
-    const locationUpper = this.projectLocation.toUpperCase();
-    if (locationUpper === 'KSA') {
-      locationEnum = ProjectLocation.KSA;
-    } else if (locationUpper === 'UAE') {
-      locationEnum = ProjectLocation.UAE;
-    } else {
-      console.warn('⚠️ Unknown project location:', this.projectLocation);
-      return;
-    }
-
-    this.loadingFactories = true;
-    this.factoryService.getFactoriesByLocation(locationEnum).subscribe({
-      next: (factories) => {
-        this.factories = factories;
-        this.loadingFactories = false;
-        console.log(`✅ Loaded ${factories.length} factory(ies) for location: ${this.projectLocation}`);
-      },
-      error: (err) => {
-        console.error('❌ Error loading factories:', err);
-        this.loadingFactories = false;
-        this.factories = [];
-      }
-    });
   }
 
   private getAssetsPayload() {

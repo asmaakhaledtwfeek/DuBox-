@@ -6,7 +6,15 @@
     <main class="main-content">
       <div class="page-header">
         <h1 class="page-title">Create WIR Checkpoint</h1>
-        <p class="page-subtitle" *ngIf="wirRecord">{{ wirRecord.wirCode }} - {{ wirRecord.activityName }}</p>
+        <p class="page-subtitle" *ngIf="wirRecord">
+          {{ wirRecord.wirCode }} - 
+          <span *ngIf="wirRecord.activityNames && wirRecord.activityNames.length > 0">
+            {{ wirRecord.activityCount }} {{ wirRecord.activityCount === 1 ? 'Activity' : 'Activities' }}
+          </span>
+          <span *ngIf="!wirRecord.activityNames || wirRecord.activityNames.length === 0">
+            {{ wirRecord.activityName }}
+          </span>
+        </p>
       </div>
 
       <!-- Loading State -->
@@ -47,7 +55,12 @@
               </div>
               <div class="info-item">
                 <span class="label">Activity Name</span>
-                <span class="value">{{ wirRecord.activityName }}</span>
+                <span class="value" *ngIf="wirRecord.activityNames && wirRecord.activityNames.length > 0">
+                  {{ wirRecord.activityNames.join(', ') }} ({{ wirRecord.activityCount }} {{ wirRecord.activityCount === 1 ? 'activity' : 'activities' }})
+                </span>
+                <span class="value" *ngIf="!wirRecord.activityNames || wirRecord.activityNames.length === 0">
+                  {{ wirRecord.activityName }}
+                </span>
               </div>
             </div>
           </div>

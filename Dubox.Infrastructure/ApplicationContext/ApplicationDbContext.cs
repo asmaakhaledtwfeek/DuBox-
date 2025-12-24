@@ -288,7 +288,9 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(b => b.ProjectId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Box Type and SubType - Mark as optional, no foreign key (IDs reference project config tables)
+        // Box Type and SubType - No foreign key relationships
+        // BoxTypeId and BoxSubTypeId now reference ProjectBoxTypes/ProjectBoxSubTypes tables
+        // The navigation properties BoxType and BoxSubType are kept for backward compatibility but are not used
         modelBuilder.Entity<Box>()
             .Property(b => b.BoxTypeId)
             .IsRequired(false);
@@ -296,20 +298,14 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .Property(b => b.BoxSubTypeId)
             .IsRequired(false);
         
-        // Explicitly configure to NOT create foreign key relationships
+        // Ignore navigation properties to prevent foreign key creation
+        // BoxTypeId references ProjectBoxTypes.Id, not BoxTypes.BoxTypeId
+        // BoxSubTypeId references ProjectBoxSubTypes.Id, not BoxSubTypes.BoxSubTypeId
         modelBuilder.Entity<Box>()
-            .HasOne(b => b.BoxType)
-            .WithMany()
-            .HasForeignKey(b => b.BoxTypeId)
-            .OnDelete(DeleteBehavior.NoAction)
-            .IsRequired(false);
+            .Ignore(b => b.BoxType);
             
         modelBuilder.Entity<Box>()
-            .HasOne(b => b.BoxSubType)
-            .WithMany()
-            .HasForeignKey(b => b.BoxSubTypeId)
-            .OnDelete(DeleteBehavior.NoAction)
-            .IsRequired(false);
+            .Ignore(b => b.BoxSubType);
 
         // 10. BoxAsset relationships
         modelBuilder.Entity<BoxAsset>()

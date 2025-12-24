@@ -13,8 +13,8 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(Box.BoxActivities)); // Needed for ActivitiesCount in BoxDto
             // AddInclude(nameof(Box.ProgressUpdates));
             AddInclude(nameof(Box.CurrentLocation));
-            AddInclude(nameof(Box.BoxType));
-            AddInclude(nameof(Box.BoxSubType));
+            // Note: BoxType and BoxSubType navigation properties are ignored
+            // BoxTypeId/BoxSubTypeId now reference ProjectBoxTypes/ProjectBoxSubTypes
             AddInclude(nameof(Box.Factory));
         }
     }

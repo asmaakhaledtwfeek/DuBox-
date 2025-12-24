@@ -281,6 +281,48 @@
     margin-bottom: 2px;
   }
 
+  .image-activity {
+    font-size: 12px;
+    margin-top: 4px;
+    
+    .activity-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: linear-gradient(135deg, rgba(27, 154, 170, 0.1) 0%, rgba(27, 154, 170, 0.05) 100%);
+      border: 1.5px solid rgba(27, 154, 170, 0.2);
+      border-radius: 8px;
+      color: #1b9aaa;
+      font-weight: 600;
+      text-decoration: none;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      white-space: nowrap;
+      
+      svg {
+        flex-shrink: 0;
+        width: 14px;
+        height: 14px;
+        transition: transform 0.3s ease;
+      }
+      
+      &:hover {
+        background: linear-gradient(135deg, rgba(27, 154, 170, 0.15) 0%, rgba(27, 154, 170, 0.08) 100%);
+        border-color: #1b9aaa;
+        transform: translateX(2px);
+        box-shadow: 0 2px 8px rgba(27, 154, 170, 0.15);
+        
+        svg {
+          transform: translateX(2px);
+        }
+      }
+      
+      &:active {
+        transform: translateX(1px) scale(0.98);
+      }
+    }
+  }
+
   .image-ref {
     font-size: 12px;
     font-weight: 600;
@@ -743,6 +785,51 @@
       0 6px 20px rgba(245, 158, 11, 0.5),
       0 3px 10px rgba(15, 23, 42, 0.25);
     background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  }
+}
+
+.activity-badge {
+  position: absolute;
+  top: 56px;
+  left: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: 32px;
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  color: #ffffff;
+  border-radius: 16px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  box-shadow: 
+    0 4px 12px rgba(20, 184, 166, 0.4),
+    0 2px 6px rgba(15, 23, 42, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  z-index: 10;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  text-decoration: none;
+
+  svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 
+      0 6px 20px rgba(20, 184, 166, 0.5),
+      0 3px 10px rgba(15, 23, 42, 0.25);
+    background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
+  }
+
+  &:active {
+    transform: scale(0.98);
   }
 }
 
@@ -1651,6 +1738,14 @@
     font-size: 0.75rem;
   }
 
+  .activity-badge {
+    top: 48px;
+    left: 12px;
+    height: 28px;
+    font-size: 0.75rem;
+    padding: 0 10px;
+  }
+
   .file-group-header {
     padding: 14px 16px;
     flex-wrap: wrap;
@@ -1781,6 +1876,20 @@
     height: 26px;
     font-size: 0.7rem;
     padding: 0 8px;
+  }
+
+  .activity-badge {
+    top: 44px;
+    left: 12px;
+    height: 26px;
+    font-size: 0.7rem;
+    padding: 0 8px;
+    gap: 4px;
+
+    svg {
+      width: 12px;
+      height: 12px;
+    }
   }
 
   .file-group {

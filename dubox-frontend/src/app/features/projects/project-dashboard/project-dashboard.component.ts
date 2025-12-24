@@ -316,8 +316,13 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (!this.projectId) {
+      console.error('Project ID is required to download template');
+      return;
+    }
+
     this.templateDownloading = true;
-    this.boxService.downloadBoxesTemplate().subscribe({
+    this.boxService.downloadBoxesTemplate(this.projectId).subscribe({
       next: (blob) => {
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');

@@ -60,21 +60,21 @@ type BoxDrawing = {
     trigger('slideDown', [
       transition(':enter', [
         style({ height: '0', opacity: '0', overflow: 'hidden' }),
-        animate('300ms ease-out', style({ height: '*', opacity: '1' }))
+        animate('150ms ease-out', style({ height: '*', opacity: '1' }))
       ]),
       transition(':leave', [
         style({ height: '*', opacity: '1', overflow: 'hidden' }),
-        animate('300ms ease-in', style({ height: '0', opacity: '0' }))
+        animate('150ms ease-in', style({ height: '0', opacity: '0' }))
       ])
     ]),
     trigger('slideIn', [
       transition(':enter', [
         style({ transform: 'translateX(100%)', opacity: '0' }),
-        animate('350ms cubic-bezier(0.4, 0, 0.2, 1)', style({ transform: 'translateX(0)', opacity: '1' }))
+        animate('200ms cubic-bezier(0.4, 0, 0.2, 1)', style({ transform: 'translateX(0)', opacity: '1' }))
       ]),
       transition(':leave', [
         style({ transform: 'translateX(0)', opacity: '1' }),
-        animate('300ms cubic-bezier(0.4, 0, 0.2, 1)', style({ transform: 'translateX(100%)', opacity: '0' }))
+        animate('150ms cubic-bezier(0.4, 0, 0.2, 1)', style({ transform: 'translateX(100%)', opacity: '0' }))
       ])
     ])
   ],
@@ -259,20 +259,6 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   boxStatusUpdateError = '';
   selectedBoxStatus: BoxStatus | null = null;
   availableBoxStatuses: BoxStatus[] = [BoxStatus.Dispatched, BoxStatus.InProgress, BoxStatus.OnHold];
-
-  // Location Management
-  isMoveLocationModalOpen = false;
-  locations: FactoryLocation[] = [];
-  locationsLoading = false;
-  moveLocationLoading = false;
-  moveLocationError = '';
-  selectedLocationId = new FormControl<string>('', [Validators.required]);
-  moveReason = new FormControl<string>('');
-  locationHistory: BoxLocationHistory[] = [];
-  filteredLocationHistory: BoxLocationHistory[] = [];
-  locationHistoryLoading = false;
-  showLocationHistory = false;
-  locationHistorySearchControl = new FormControl('');
   
   // Box Logs
   boxLogs: BoxLog[] = [];
@@ -337,7 +323,6 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         this.checkPermissions();
       });
     
-    this.setupLocationHistorySearch();
     this.setupBoxLogsSearch();
     this.loadBox();
   }
@@ -356,39 +341,6 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       canUpdateBoxStatus: this.canUpdateBoxStatus,
       canCreateQualityIssue: this.canCreateQualityIssue
     });
-  }
-
-  private setupLocationHistorySearch(): void {
-    this.locationHistorySearchControl.valueChanges
-      .pipe(
-        debounceTime(300),
-        distinctUntilChanged(),
-        takeUntil(this.destroy$)
-      )
-      .subscribe(() => {
-        this.applyLocationHistoryFilters();
-      });
-  }
-
-  applyLocationHistoryFilters(): void {
-    const searchTerm = this.locationHistorySearchControl.value?.toLowerCase() || '';
-    
-    if (!searchTerm) {
-      this.filteredLocationHistory = [...this.locationHistory];
-      return;
-    }
-
-    this.filteredLocationHistory = this.locationHistory.filter(history =>
-      history.locationCode?.toLowerCase().includes(searchTerm) ||
-      history.locationName?.toLowerCase().includes(searchTerm) ||
-      history.movedFromLocationCode?.toLowerCase().includes(searchTerm) ||
-      history.movedFromLocationName?.toLowerCase().includes(searchTerm) ||
-      history.reason?.toLowerCase().includes(searchTerm) ||
-      history.movedByUsername?.toLowerCase().includes(searchTerm) ||
-      history.movedByFullName?.toLowerCase().includes(searchTerm) ||
-      history.boxTag?.toLowerCase().includes(searchTerm) ||
-      history.serialNumber?.toLowerCase().includes(searchTerm)
-    );
   }
 
   loadBox(): void {
@@ -498,6 +450,50 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     this.router.navigate(['/projects', this.projectId, 'boxes']);
+  }
+
+  // Activity chart methods
+  getActivityCountByStatus(status: string): number {
+    if (!this.box || !this.box.activities) {
+      console.log('⚠️ Chart Debug: No box or activities', { box: !!this.box, activities: !!this.box?.activities });
+      return 0;
+    }
+    const count = this.box.activities.filter(activity => activity.status === status).length;
+    console.log(`📊 Chart Debug: ${status} count = ${count} out of ${this.box.activities.length} total activities`);
+    return count;
+  }
+
+  getActivityPercentage(status: string): number {
+    if (!this.box || !this.box.activities || this.box.activities.length === 0) return 0;
+    const count = this.getActivityCountByStatus(status);
+    const percentage = Math.round((count / this.box.activities.length) * 100);
+    console.log(`📊 Chart Debug: ${status} percentage = ${percentage}%`);
+    return percentage;
+  }
+
+  // Donut chart calculations
+  getCircleSegment(status: string): string {
+    const percentage = this.getActivityPercentage(status);
+    const circumference = 2 * Math.PI * 80; // radius = 80
+    const segmentLength = (percentage / 100) * circumference;
+    return `${segmentLength} ${circumference}`;
+  }
+
+  getCircleOffset(status: string): number {
+    const circumference = 2 * Math.PI * 80;
+    let offset = 0;
+    
+    // Calculate cumulative offset based on previous segments
+    if (status === 'InProgress') {
+      const completedPercentage = this.getActivityPercentage('Completed');
+      offset = -((completedPercentage / 100) * circumference);
+    } else if (status === 'NotStarted') {
+      const completedPercentage = this.getActivityPercentage('Completed');
+      const inProgressPercentage = this.getActivityPercentage('InProgress');
+      offset = -(((completedPercentage + inProgressPercentage) / 100) * circumference);
+    }
+    
+    return offset;
   }
 
   editBox(): void {
@@ -998,16 +994,20 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     // Separate files from URLs
     const files: File[] = [];
     const imageUrls: string[] = [];
+    const fileNames: string[] = [];
 
     this.qualityIssueImages.forEach(img => {
       if (img.type === 'url' && img.url) {
         imageUrls.push(img.url.trim());
       } else if ((img.type === 'file' || img.type === 'camera') && img.file) {
         files.push(img.file);
+        fileNames.push(img.name || img.file.name);
       } else if (img.preview && img.preview.startsWith('data:image/')) {
         imageUrls.push(img.preview);
       }
     });
+
+    console.log('📎 VERSION DEBUG - Quality Issue uploading files with names:', fileNames);
 
     const request: CreateQualityIssueForBoxRequest = {
       boxId: this.boxId,
@@ -1018,7 +1018,8 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       assignedToUserId: this.newQualityIssueForm.assignedToUserId?.trim() || undefined, // User ID within team
       dueDate: this.newQualityIssueForm.dueDate || undefined,
       imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
-      files: files.length > 0 ? files : undefined
+      files: files.length > 0 ? files : undefined,
+      fileNames: fileNames.length > 0 ? fileNames : undefined
     };
 
     console.log('📤 Creating quality issue with request:', {
@@ -1723,6 +1724,17 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   getQualityIssueStatusClass(status?: QualityIssueStatus | string): string {
     const normalized = (status || 'Open') as QualityIssueStatus;
     return this.qualityIssueStatusMeta[normalized]?.class || 'status-open';
+  }
+
+  formatDate(date?: string | Date): string {
+    if (!date) {
+      return '—';
+    }
+    const parsed = date instanceof Date ? date : new Date(date);
+    if (isNaN(parsed.getTime())) {
+      return '—';
+    }
+    return parsed.toISOString().split('T')[0];
   }
 
   openIssueDetails(issue: QualityIssueDetails): void {
@@ -2438,17 +2450,23 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     });
 
     // Convert to array and sort versions (newest first: V5, V4, V3, V2, V1)
-    return Array.from(grouped.entries())
-      .map(([fileName, versions]) => ({
-        fileName,
-        versions: versions.sort((a, b) => (b.version || 1) - (a.version || 1))
-      }))
+    const result = Array.from(grouped.entries())
+      .map(([fileName, versions]) => {
+        const sorted = versions.sort((a, b) => (b.version || 1) - (a.version || 1));
+        console.log(`📊 VERSION DEBUG - File "${fileName}":`, sorted.map(v => ({ version: v.version, date: v.createdDate })));
+        return {
+          fileName,
+          versions: sorted
+        };
+      })
       .sort((a, b) => {
         // Sort groups by the most recent upload date
         const aLatestDate = Math.max(...a.versions.map(v => new Date(v.updateDate || v.createdDate || 0).getTime()));
         const bLatestDate = Math.max(...b.versions.map(v => new Date(v.updateDate || v.createdDate || 0).getTime()));
         return bLatestDate - aLatestDate; // Newest first
       });
+    
+    return result;
   }
 
   // Group URL drawings by URL with version history
@@ -2850,6 +2868,11 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.boxService.getBoxDrawingsFromEndpoint(this.boxId).subscribe({
       next: (drawings) => {
         console.log('✅ Box drawings loaded from endpoint:', drawings);
+        console.log('📊 VERSION DEBUG - Drawings with versions:', drawings.map(d => ({
+          fileName: d.originalFileName || d.drawingUrl,
+          version: d.version,
+          createdDate: d.createdDate
+        })));
         
         // Process drawings and resolve URLs/data
         type ResolvedDrawing = { 
@@ -2861,12 +2884,16 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
           imageType: 'file' | 'url';
           originalUrl?: string;
           fileName?: string;
+          originalFileName?: string; // Original filename
           fileExtension?: string;
           fileSize?: number;
           fileData?: string;
           boxDrawingId?: string;
           createdBy?: string;
           createdByName?: string;
+          version?: number; // Version number for files with same name
+          createdDate?: Date; // Creation date
+          drawingUrl?: string; // URL for drawing
         };
 
         const processedDrawings = drawings.map((drawing, index) => {
@@ -2915,12 +2942,16 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
             imageType: fileType, // This determines which section to show in
             originalUrl: drawing.drawingUrl || undefined,
             fileName: fileName,
+            originalFileName: drawing.originalFileName,
             fileExtension: fileExtension,
             fileSize: drawing.fileSize,
             fileData: drawing.fileData,
             boxDrawingId: drawing.boxDrawingId,
             createdBy: drawing.createdBy,
-            createdByName: drawing.createdByName // Include user name from backend
+            createdByName: drawing.createdByName, // Include user name from backend
+            version: drawing.version, // Include version number from backend
+            createdDate: drawing.createdDate,
+            drawingUrl: drawing.drawingUrl
           } as ResolvedDrawing;
         });
 
@@ -2978,6 +3009,21 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.boxService.getAllBoxAttachments(this.boxId).subscribe({
       next: (response) => {
         console.log('✅ Box attachments loaded:', response);
+        
+        // Debug: Log versions for each attachment type
+        console.log('📊 VERSION DEBUG - WIR Images:', response.wirCheckpointImages?.map((img: any) => ({
+          name: img.originalName,
+          version: img.version
+        })));
+        console.log('📊 VERSION DEBUG - Progress Images:', response.progressUpdateImages?.map((img: any) => ({
+          name: img.originalName,
+          version: img.version
+        })));
+        console.log('📊 VERSION DEBUG - Quality Images:', response.qualityIssueImages?.map((img: any) => ({
+          name: img.originalName,
+          version: img.version
+        })));
+        
         this.boxAttachments = response;
         
         // Load user names for all attachments
@@ -3713,85 +3759,6 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     return this.getStatusLabel(status);
   }
 
-  // Location Management Methods
-  openMoveLocationModal(): void {
-    this.isMoveLocationModalOpen = true;
-    this.moveLocationError = '';
-    this.selectedLocationId.setValue('');
-    this.moveReason.setValue('');
-    this.loadLocations();
-  }
-
-  closeMoveLocationModal(): void {
-    this.isMoveLocationModalOpen = false;
-    this.selectedLocationId.setValue('');
-    this.moveReason.setValue('');
-    this.moveLocationError = '';
-  }
-
-  loadLocations(): void {
-    this.locationsLoading = true;
-    this.locationService.getLocations().subscribe({
-      next: (locations) => {
-        this.locations = locations.filter(l => l.isActive);
-        this.locationsLoading = false;
-      },
-      error: (err) => {
-        console.error('Error loading locations:', err);
-        this.locationsLoading = false;
-        this.moveLocationError = 'Failed to load locations';
-      }
-    });
-  }
-
-  moveBoxToLocation(): void {
-    if (!this.selectedLocationId.value || !this.box) {
-      return;
-    }
-
-    this.moveLocationLoading = true;
-    this.moveLocationError = '';
-
-    this.locationService.moveBoxToLocation({
-      boxId: this.boxId,
-      toLocationId: this.selectedLocationId.value,
-      reason: this.moveReason.value || undefined
-    }).subscribe({
-      next: (history) => {
-        this.moveLocationLoading = false;
-        this.closeMoveLocationModal();
-        this.loadBox(); // Reload box to get updated location
-        console.log('✅ Box moved to location successfully');
-      },
-      error: (err) => {
-        console.error('❌ Failed to move box to location:', err);
-        this.moveLocationLoading = false;
-        this.moveLocationError = err?.error?.message || err?.message || 'Failed to move box to location';
-      }
-    });
-  }
-
-  loadLocationHistory(): void {
-    this.locationHistoryLoading = true;
-    this.locationService.getBoxLocationHistory(this.boxId).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (history) => {
-        this.locationHistory = history;
-        this.applyLocationHistoryFilters();
-        this.locationHistoryLoading = false;
-      },
-      error: (err) => {
-        console.error('Error loading location history:', err);
-        this.locationHistoryLoading = false;
-      }
-    });
-  }
-
-  toggleLocationHistory(): void {
-    this.showLocationHistory = !this.showLocationHistory;
-    if (this.showLocationHistory && this.locationHistory.length === 0) {
-      this.loadLocationHistory();
-    }
-  }
 
   private setupBoxLogsSearch(): void {
     this.boxLogsSearchControl.valueChanges
@@ -3953,6 +3920,10 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       return 'assignment';
     }
     return 'default';
+  }
+
+  isQualityIssueLog(log: any): boolean {
+    return log.tableName?.toLowerCase().includes('qualityissue');
   }
 
   formatBoxLogDate(date?: string | Date): string {

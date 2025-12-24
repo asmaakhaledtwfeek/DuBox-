@@ -8,8 +8,8 @@ namespace Dubox.Application.Specifications
         public GetAllWIRRecordWithIncludesSpecification()
         {
             AddInclude(nameof(WIRRecord.BoxActivity));
-            AddInclude($"{nameof(ProgressUpdate.BoxActivity)}.{nameof(ProgressUpdate.BoxActivity.ActivityMaster)}");
-            AddInclude($"{nameof(ProgressUpdate.BoxActivity)}.{nameof(ProgressUpdate.BoxActivity.Box)}");
+            AddInclude($"{nameof(WIRRecord.BoxActivity)}.{nameof(BoxActivity.ActivityMaster)}");
+            AddInclude($"{nameof(WIRRecord.BoxActivity)}.{nameof(BoxActivity.Box)}");
             AddInclude(nameof(WIRRecord.RequestedByUser));
             AddInclude(nameof(WIRRecord.InspectedByUser));
             AddOrderByDescending(w => w.RequestedDate);

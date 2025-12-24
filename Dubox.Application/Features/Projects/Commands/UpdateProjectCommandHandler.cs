@@ -120,6 +120,8 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
             project.Duration = request.Duration.Value;
         if (!string.IsNullOrEmpty(request.Description))
             project.Description = request.Description;
+        if (request.BimLink != null)
+            project.BimLink = string.IsNullOrWhiteSpace(request.BimLink) ? null : request.BimLink;
         if (request.IsActive.HasValue)
             project.IsActive = request.IsActive.Value;
     }

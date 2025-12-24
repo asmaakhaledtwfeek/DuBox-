@@ -96,7 +96,12 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                 return Result.Failure<QualityIssueDetailsDto>($"Error saving quality issue: {ex.Message}. Inner exception: {ex.InnerException?.Message}");
             }
 
-            (bool, string) imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<QualityIssueImage>(newIssue.IssueId, request.Files, request.ImageUrls, cancellationToken);
+            (bool, string) imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<QualityIssueImage>(
+                newIssue.IssueId, 
+                request.Files, 
+                request.ImageUrls, 
+                cancellationToken,
+                fileNames: request.FileNames);
             if (!imagesProcessResult.Item1)
             {
                 return Result.Failure<QualityIssueDetailsDto>(imagesProcessResult.Item2);

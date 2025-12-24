@@ -39,23 +39,40 @@ public class UploadBoxDrawingCommandHandler : IRequestHandler<UploadBoxDrawingCo
         int version = 1;
         string fileName = request.FileName ?? request.DrawingUrl ?? "unknown";
         
-        var existingDrawings = _unitOfWork.Repository<BoxDrawing>()
-            .Get()
-            .Where(d => d.BoxId == request.BoxId && d.IsActive)
-            .ToList();
+        Console.WriteLine($"🔍 VERSION DEBUG - Uploading file: {fileName}");
         
-        // Find all drawings with the same filename
+        // Get existing drawings - use FindAsync to execute immediately and avoid race conditions
+        var existingDrawings = await _unitOfWork.Repository<BoxDrawing>()
+            .FindAsync(
+                filter: d => d.BoxId == request.BoxId && d.IsActive,
+                cancellationToken: cancellationToken
+            );
+        
+        Console.WriteLine($"🔍 VERSION DEBUG - Found {existingDrawings.Count} existing drawings for this box");
+        Console.WriteLine($"🔍 VERSION DEBUG - Existing files: {string.Join(", ", existingDrawings.Select(d => $"{d.OriginalFileName ?? d.DrawingUrl} (V{d.Version})"))}");
+        
+        // Find all drawings with the same filename (case-insensitive, in-memory comparison)
+        // Note: This is done in-memory after loading, so we can use StringComparison.OrdinalIgnoreCase
+        var fileNameLower = fileName.ToLower();
         var sameNameDrawings = existingDrawings
             .Where(d => 
-                (d.OriginalFileName != null && d.OriginalFileName.Equals(fileName, StringComparison.OrdinalIgnoreCase)) ||
-                (d.DrawingUrl != null && d.DrawingUrl.Equals(fileName, StringComparison.OrdinalIgnoreCase))
+                (d.OriginalFileName != null && d.OriginalFileName.ToLower() == fileNameLower) ||
+                (d.DrawingUrl != null && d.DrawingUrl.ToLower() == fileNameLower)
             )
             .ToList();
+        
+        Console.WriteLine($"🔍 VERSION DEBUG - Found {sameNameDrawings.Count} drawings with same name '{fileName}'");
         
         if (sameNameDrawings.Any())
         {
             // Get the highest version number and increment
-            version = sameNameDrawings.Max(d => d.Version) + 1;
+            var maxVersion = sameNameDrawings.Max(d => d.Version);
+            version = maxVersion + 1;
+            Console.WriteLine($"🔍 VERSION DEBUG - Max existing version: V{maxVersion}, New version will be: V{version}");
+        }
+        else
+        {
+            Console.WriteLine($"🔍 VERSION DEBUG - No existing files with same name, using V1");
         }
 
         // Create the BoxDrawing entity
@@ -92,6 +109,8 @@ public class UploadBoxDrawingCommandHandler : IRequestHandler<UploadBoxDrawingCo
                 boxDrawing.FileExtension = extension;
                 boxDrawing.FileType = "file";
                 boxDrawing.FileSize = request.File.Length;
+                
+                Console.WriteLine($"🔍 VERSION DEBUG - Setting OriginalFileName to: {request.FileName}");
             }
             catch (Exception ex)
             {
@@ -106,8 +125,37 @@ public class UploadBoxDrawingCommandHandler : IRequestHandler<UploadBoxDrawingCo
         // Save to database
         try
         {
+            // Double-check version right before saving to handle race conditions
+            // Load all active drawings for this box and compare in-memory
+            var allDrawingsBeforeSave = await _unitOfWork.Repository<BoxDrawing>()
+                .FindAsync(
+                    filter: d => d.BoxId == request.BoxId && d.IsActive,
+                    cancellationToken: cancellationToken
+                );
+            
+            // Compare in-memory (case-insensitive)
+            var finalCheck = allDrawingsBeforeSave
+                .Where(d => 
+                    (d.OriginalFileName != null && d.OriginalFileName.ToLower() == fileNameLower) ||
+                    (d.DrawingUrl != null && d.DrawingUrl.ToLower() == fileNameLower)
+                )
+                .ToList();
+            
+            if (finalCheck.Any())
+            {
+                var finalMaxVersion = finalCheck.Max(d => d.Version);
+                if (finalMaxVersion >= version)
+                {
+                    version = finalMaxVersion + 1;
+                    boxDrawing.Version = version;
+                    Console.WriteLine($"🔍 VERSION DEBUG - Race condition detected! Updated version to V{version}");
+                }
+            }
+            
             await _unitOfWork.Repository<BoxDrawing>().AddAsync(boxDrawing, cancellationToken);
+            Console.WriteLine($"🔍 VERSION DEBUG - Saving drawing with Version: V{boxDrawing.Version}, FileName: {boxDrawing.OriginalFileName ?? boxDrawing.DrawingUrl}");
             await _unitOfWork.CompleteAsync(cancellationToken);
+            Console.WriteLine($"✅ VERSION DEBUG - Successfully saved drawing with Version: V{boxDrawing.Version}");
         }
         catch (Exception ex)
         {

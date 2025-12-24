@@ -37,6 +37,8 @@ export class CreateProjectComponent implements OnInit {
   canEditPlannedStartDate = true;
   categories: ProjectTypeCategory[] = [];
   loadingCategories = false;
+  minStartDate: string = '';
+  maxStartDate: string = '';
   
   locations = [
     { value: 1, label: 'KSA' },
@@ -68,9 +70,24 @@ export class CreateProjectComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.setDateLimits();
     this.initForm();
     this.loadCategories();
     this.detectModeAndLoadProject();
+  }
+
+  private setDateLimits(): void {
+    const today = new Date();
+    
+    // Set minimum date to 1 month ago
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(today.getMonth() - 1);
+    this.minStartDate = this.formatDateForInput(oneMonthAgo);
+    
+    // Set maximum date to 5 years in the future (reasonable limit)
+    const fiveYearsFromNow = new Date();
+    fiveYearsFromNow.setFullYear(today.getFullYear() + 5);
+    this.maxStartDate = this.formatDateForInput(fiveYearsFromNow);
   }
 
   private initForm(): void {
@@ -82,7 +99,8 @@ export class CreateProjectComponent implements OnInit {
       projectCategoryId: [null, Validators.required],
       duration: [null, [Validators.required, Validators.min(1)]],
       plannedStartDate: ['', Validators.required],
-      description: ['', Validators.maxLength(500)]
+      description: ['', Validators.maxLength(500)],
+      bimLink: ['', Validators.maxLength(500)]
     });
   }
 
@@ -171,7 +189,8 @@ export class CreateProjectComponent implements OnInit {
       projectCategoryId: project.categoryId || null,
       duration: duration,
       plannedStartDate: this.formatDateForInput(plannedStart),
-      description: project.description || ''
+      description: project.description || '',
+      bimLink: project.bimLink || ''
     });
   }
 
@@ -218,7 +237,8 @@ export class CreateProjectComponent implements OnInit {
         projectCategoryId: formValue.projectCategoryId,
         duration: formValue.duration,
         plannedStartDate: formValue.plannedStartDate ? new Date(formValue.plannedStartDate).toISOString() : undefined,
-        description: formValue.description || undefined
+        description: formValue.description || undefined,
+        bimLink: formValue.bimLink || undefined
       };
     } else {
       projectData = {};
@@ -242,6 +262,9 @@ export class CreateProjectComponent implements OnInit {
         }
         if (compare(formValue.description, this.originalProject.description)) {
           projectData.description = formValue.description || undefined;
+        }
+        if (compare(formValue.bimLink, this.originalProject.bimLink)) {
+          projectData.bimLink = formValue.bimLink || undefined;
         }
         if (compare(formValue.duration, this.getDurationValue(this.originalProject))) {
           projectData.duration = formValue.duration;
@@ -377,7 +400,8 @@ export class CreateProjectComponent implements OnInit {
       projectCategoryId: 'Project category',
       duration: 'Duration',
       plannedStartDate: 'Planned start date',
-      description: 'Description'
+      description: 'Description',
+      bimLink: 'BIM Link'
     };
     return labels[fieldName] || fieldName;
   }
@@ -387,9 +411,17 @@ export class CreateProjectComponent implements OnInit {
   // Building methods
   addBuilding(): void {
     if (this.newBuilding.trim()) {
+      // Split by comma and add each item
+      const items = this.newBuilding.split(',').map(item => item.trim()).filter(item => item);
+      items.forEach(item => {
+        // Check if building already exists
+        const exists = this.buildings.some(b => b.buildingCode.toLowerCase() === item.toLowerCase());
+        if (!exists) {
       this.buildings.push({
-        buildingCode: this.newBuilding.trim(),
-        buildingName: this.newBuilding.trim()
+            buildingCode: item,
+            buildingName: item
+          });
+        }
       });
       this.newBuilding = '';
     }
@@ -402,9 +434,17 @@ export class CreateProjectComponent implements OnInit {
   // Level methods
   addLevel(): void {
     if (this.newLevel.trim()) {
+      // Split by comma and add each item
+      const items = this.newLevel.split(',').map(item => item.trim()).filter(item => item);
+      items.forEach(item => {
+        // Check if level already exists
+        const exists = this.levels.some(l => l.levelCode.toLowerCase() === item.toLowerCase());
+        if (!exists) {
       this.levels.push({
-        levelCode: this.newLevel.trim(),
-        levelName: this.newLevel.trim()
+            levelCode: item,
+            levelName: item
+          });
+        }
       });
       this.newLevel = '';
     }
@@ -417,10 +457,18 @@ export class CreateProjectComponent implements OnInit {
   // Box Type methods
   addBoxType(): void {
     if (this.newBoxType.trim()) {
+      // Split by comma and add each item
+      const items = this.newBoxType.split(',').map(item => item.trim()).filter(item => item);
+      items.forEach(item => {
+        // Check if box type already exists
+        const exists = this.boxTypes.some(t => t.typeName.toLowerCase() === item.toLowerCase());
+        if (!exists) {
       this.boxTypes.push({
-        typeName: this.newBoxType.trim(),
+            typeName: item,
         hasSubTypes: false,
         subTypes: []
+          });
+        }
       });
       this.newBoxType = '';
     }
@@ -444,8 +492,16 @@ export class CreateProjectComponent implements OnInit {
       if (!this.boxTypes[typeIndex].subTypes) {
         this.boxTypes[typeIndex].subTypes = [];
       }
+      // Split by comma and add each item
+      const items = this.newBoxSubType.split(',').map(item => item.trim()).filter(item => item);
+      items.forEach(item => {
+        // Check if subtype already exists
+        const exists = this.boxTypes[typeIndex].subTypes?.some(s => s.subTypeName.toLowerCase() === item.toLowerCase());
+        if (!exists) {
       this.boxTypes[typeIndex].subTypes!.push({
-        subTypeName: this.newBoxSubType.trim()
+            subTypeName: item
+          });
+        }
       });
       this.newBoxSubType = '';
       this.selectedTypeForSubType = -1;
@@ -459,9 +515,17 @@ export class CreateProjectComponent implements OnInit {
   // Zone methods
   addZone(): void {
     if (this.newZone.trim()) {
+      // Split by comma and add each item
+      const items = this.newZone.split(',').map(item => item.trim()).filter(item => item);
+      items.forEach(item => {
+        // Check if zone already exists
+        const exists = this.zones.some(z => z.zoneCode.toLowerCase() === item.toLowerCase());
+        if (!exists) {
       this.zones.push({
-        zoneCode: this.newZone.trim(),
-        zoneName: this.newZone.trim()
+            zoneCode: item,
+            zoneName: item
+          });
+        }
       });
       this.newZone = '';
     }
@@ -474,8 +538,16 @@ export class CreateProjectComponent implements OnInit {
   // Box Function methods
   addBoxFunction(): void {
     if (this.newBoxFunction.trim()) {
+      // Split by comma and add each item
+      const items = this.newBoxFunction.split(',').map(item => item.trim()).filter(item => item);
+      items.forEach(item => {
+        // Check if function already exists
+        const exists = this.boxFunctions.some(f => f.functionName.toLowerCase() === item.toLowerCase());
+        if (!exists) {
       this.boxFunctions.push({
-        functionName: this.newBoxFunction.trim()
+            functionName: item
+          });
+        }
       });
       this.newBoxFunction = '';
     }

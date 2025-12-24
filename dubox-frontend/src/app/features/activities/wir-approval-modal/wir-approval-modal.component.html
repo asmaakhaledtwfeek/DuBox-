@@ -26,6 +26,10 @@
           <span class="value">{{ wirRecord?.boxTag }}</span>
         </div>
         <div class="info-item">
+          <span class="label">Box Name:</span>
+          <span class="value">{{ wirRecord?.boxName }}</span>
+        </div>
+        <div class="info-item">
           <span class="label">Status:</span>
           <span class="value status-badge" [ngClass]="'status-' + wirRecord?.status?.toLowerCase()">
             {{ wirRecord?.status }}
@@ -65,7 +69,7 @@
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
             <polyline points="22 4 12 14.01 9 11.01"/>
           </svg>
-          Approve
+          Start
         </button>
         <button 
           class="tab" 
@@ -130,7 +134,7 @@
               <span *ngIf="processing">Processing...</span>
               <span *ngIf="!processing">
                 <span *ngIf="wirRecord?.status === WIRStatus.Approved">Already Approved</span>
-                <span *ngIf="wirRecord?.status !== WIRStatus.Approved">Approve WIR</span>
+                <span *ngIf="wirRecord?.status !== WIRStatus.Approved">Start WIR</span>
               </span>
             </button>
           </div>

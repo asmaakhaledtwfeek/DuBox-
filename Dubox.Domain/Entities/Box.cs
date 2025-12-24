@@ -73,9 +73,6 @@ public class Box
     public UnitOfMeasureEnum? UnitOfMeasure { get; set; } = UnitOfMeasureEnum.m;
 
     // BIM reference
-    [MaxLength(200)]
-    public string? BIMModelReference { get; set; }
-
     [MaxLength(100)]
     public string? RevitElementId { get; set; }
 

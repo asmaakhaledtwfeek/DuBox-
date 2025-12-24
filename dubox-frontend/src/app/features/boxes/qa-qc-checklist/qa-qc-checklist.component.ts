@@ -725,11 +725,18 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
           // Get the rejected WIR record (since we're coming from rejection)
           this.wirRecord = wirs.find(w => w.status === 'Rejected') || wirs.find(w => w.status === 'Pending') || wirs[0];
           
+      
+          
           // Pre-fill create checkpoint form with suggested values
           if (this.wirRecord && this.createCheckpointForm) {
+            // Use activity names list if available, otherwise use single activity name
+            const activityDisplay = this.wirRecord.activityNames && this.wirRecord.activityNames.length > 0
+              ? `${this.wirRecord.activityCount} Activities: ${this.wirRecord.activityNames.join(', ')}`
+              : this.wirRecord.activityName;
+            
             this.createCheckpointForm.patchValue({
-              wirName: `${this.wirRecord.wirCode} - ${this.wirRecord.activityName}`,
-              wirDescription: `WIR checkpoint for ${this.wirRecord.activityName}`
+              wirName: `${this.wirRecord.wirCode} - ${activityDisplay}`,
+              wirDescription: `WIR checkpoint for ${activityDisplay}`
             });
           }
           
@@ -938,6 +945,13 @@ console.log(expectedWirCode);
       .filter(img => img.type === 'url' && img.url)
       .map(img => img.url!);
     
+    // Extract file names (preserve original filenames for versioning)
+    const fileNames: string[] = this.attachmentImages
+      .filter(img => (img.type === 'file' || img.type === 'camera') && img.file)
+      .map(img => img.name || img.file!.name);
+
+    console.log('📎 VERSION DEBUG - WIR uploading files with names:', fileNames);
+    
     // For backward compatibility, set attachmentPath to first URL if no files
     let attachmentPath: string | undefined = undefined;
     if (imageUrls.length > 0 && files.length === 0) {
@@ -952,7 +966,8 @@ console.log(expectedWirCode);
       attachmentPath: attachmentPath || formValue.attachmentPath?.trim() || undefined,
       comments: formValue.comments?.trim() || undefined,
       files: files.length > 0 ? files : undefined,
-      imageUrls: imageUrls.length > 0 ? imageUrls : undefined
+      imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
+      fileNames: fileNames.length > 0 ? fileNames : undefined
     };
 
     this.wirService.createWIRCheckpoint(request).subscribe({
@@ -1474,6 +1489,203 @@ console.log(expectedWirCode);
     this.availableTeamUsers = [];
   }
 
+  // Modal state for bulk operations
+  isBulkPassModalOpen = false;
+  isBulkRejectModalOpen = false;
+  bulkReasonControl = new FormControl<string>('');
+
+  /**
+   * Open Pass All modal
+   */
+  passAllItems(): void {
+    if (this.isChecklistLocked || this.checklistItems.length === 0 || !this.wirCheckpoint) {
+      return;
+    }
+    this.bulkReasonControl.reset();
+    this.isBulkPassModalOpen = true;
+  }
+
+  /**
+   * Close Pass All modal
+   */
+  closeBulkPassModal(): void {
+    if (!this.submitting) {
+      this.isBulkPassModalOpen = false;
+      this.bulkReasonControl.reset();
+    }
+  }
+
+  /**
+   * Execute Pass All operation - mark all items as PASS and save to database
+   */
+  onBulkPass(): void {
+    if (this.submitting || !this.wirCheckpoint) {
+      return;
+    }
+
+    // Update all items to Pass status in form
+    this.checklistItems.controls.forEach((control) => {
+      control.patchValue({
+        status: CheckpointStatus.Pass,
+        remarks: '' // Clear remarks for Pass status
+      });
+    });
+
+    // Prepare API requests for all items
+    const updateRequests: Observable<any>[] = [];
+    
+    this.checklistItems.controls.forEach((control) => {
+      const itemValue = control.value;
+      const checklistItemId = itemValue.checklistItemId;
+      
+      if (checklistItemId) {
+        const request: UpdateChecklistItemRequest = {
+          checklistItemId: checklistItemId,
+          checkpointDescription: itemValue.checkpointDescription?.trim(),
+          referenceDocument: itemValue.referenceDocument?.trim() || undefined,
+          status: CheckListItemStatus.Pass,
+          remarks: undefined, // Clear remarks for Pass
+          sequence: itemValue.sequence
+        };
+        updateRequests.push(this.wirService.updateChecklistItem(request));
+      }
+    });
+
+    if (updateRequests.length === 0) {
+      this.error = 'No valid checklist items to update';
+      return;
+    }
+
+    // Show loading state
+    this.submitting = true;
+
+    // Execute all API calls in parallel
+    forkJoin(updateRequests).subscribe({
+      next: () => {
+        this.submitting = false;
+        this.isBulkPassModalOpen = false;
+        this.bulkReasonControl.reset();
+        this.refreshCheckpointDetails(true);
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: {
+            message: `✅ All ${updateRequests.length} items marked as PASS and saved to database`,
+            type: 'success'
+          }
+        }));
+      },
+      error: (err) => {
+        this.submitting = false;
+        this.error = err.error?.message || err.message || 'Failed to update all checklist items';
+        console.error('Error in bulk pass operation:', err);
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: {
+            message: 'Failed to save some items. Please try again.',
+            type: 'error'
+          }
+        }));
+      }
+    });
+  }
+
+  /**
+   * Open Reject All modal
+   */
+  rejectAllItems(): void {
+    if (this.isChecklistLocked || this.checklistItems.length === 0 || !this.wirCheckpoint) {
+      return;
+    }
+    this.bulkReasonControl.reset();
+    this.isBulkRejectModalOpen = true;
+  }
+
+  /**
+   * Close Reject All modal
+   */
+  closeBulkRejectModal(): void {
+    if (!this.submitting) {
+      this.isBulkRejectModalOpen = false;
+      this.bulkReasonControl.reset();
+    }
+  }
+
+  /**
+   * Execute Reject All operation - mark all items as FAIL and save to database
+   */
+  onBulkReject(): void {
+    if (this.submitting || !this.wirCheckpoint) {
+      return;
+    }
+
+    const reason = this.bulkReasonControl.value?.trim();
+    if (!reason) {
+      this.bulkReasonControl.markAsTouched();
+      return;
+    }
+
+    // Update all items to Fail status with the provided reason in form
+    this.checklistItems.controls.forEach((control) => {
+      control.patchValue({
+        status: CheckpointStatus.Fail,
+        remarks: reason
+      });
+    });
+
+    // Prepare API requests for all items
+    const updateRequests: Observable<any>[] = [];
+    
+    this.checklistItems.controls.forEach((control) => {
+      const itemValue = control.value;
+      const checklistItemId = itemValue.checklistItemId;
+      
+      if (checklistItemId) {
+        const request: UpdateChecklistItemRequest = {
+          checklistItemId: checklistItemId,
+          checkpointDescription: itemValue.checkpointDescription?.trim(),
+          referenceDocument: itemValue.referenceDocument?.trim() || undefined,
+          status: CheckListItemStatus.Fail,
+          remarks: reason,
+          sequence: itemValue.sequence
+        };
+        updateRequests.push(this.wirService.updateChecklistItem(request));
+      }
+    });
+
+    if (updateRequests.length === 0) {
+      this.error = 'No valid checklist items to update';
+      return;
+    }
+
+    // Show loading state
+    this.submitting = true;
+
+    // Execute all API calls in parallel
+    forkJoin(updateRequests).subscribe({
+      next: () => {
+        this.submitting = false;
+        this.isBulkRejectModalOpen = false;
+        this.bulkReasonControl.reset();
+        this.refreshCheckpointDetails(true);
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: {
+            message: `❌ All ${updateRequests.length} items marked as FAIL and saved to database`,
+            type: 'warning'
+          }
+        }));
+      },
+      error: (err) => {
+        this.submitting = false;
+        this.error = err.error?.message || err.message || 'Failed to update all checklist items';
+        console.error('Error in bulk reject operation:', err);
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: {
+            message: 'Failed to save some items. Please try again.',
+            type: 'error'
+          }
+        }));
+      }
+    });
+  }
+
   openItemReviewModal(itemIndex: number): void {
     if (this.isChecklistLocked || itemIndex < 0 || itemIndex >= this.checklistItems.length) {
       return;
@@ -1715,7 +1927,7 @@ console.log(expectedWirCode);
 
 
   closeWorkflowStep(): void {
-    this.currentStep = null;
+    this.goBack();
   }
 
   get hasChecklistItems(): boolean {

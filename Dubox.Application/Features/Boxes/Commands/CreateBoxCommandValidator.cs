@@ -63,11 +63,6 @@ namespace Dubox.Application.Features.Boxes.Commands
                 .WithMessage("Height must be greater than 0")
                 .When(x => x.Height.HasValue);
 
-            RuleFor(x => x.BIMModelReference)
-                .MaximumLength(200)
-                .WithMessage("BIM model reference cannot exceed 200 characters")
-                .When(x => !string.IsNullOrEmpty(x.BIMModelReference));
-
             RuleFor(x => x.RevitElementId)
                 .MaximumLength(100)
                 .WithMessage("Revit element ID cannot exceed 100 characters")

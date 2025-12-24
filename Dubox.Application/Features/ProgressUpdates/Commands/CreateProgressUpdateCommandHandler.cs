@@ -100,12 +100,41 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             return Result.Failure<ProgressUpdateDto>($"Failed to save progress update: {ex.Message}");
         }
 
-        (bool, string) imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<ProgressUpdateImage>(progressUpdate.ProgressUpdateId, request.Files, request.ImageUrls, cancellationToken, fileNames: request.FileNames);
+        // Get ALL existing ProgressUpdateImages for this box (across all progress updates) for version checking
+        var allProgressUpdatesForBox = _dbContext.ProgressUpdates
+            .Where(pu => pu.BoxId == progressUpdate.BoxId)
+            .Select(pu => pu.ProgressUpdateId)
+            .ToList();
+        
+        var existingImagesForBox = _dbContext.Set<ProgressUpdateImage>()
+            .Where(img => allProgressUpdatesForBox.Contains(img.ProgressUpdateId))
+            .ToList();
+        
+        Console.WriteLine($"🔍 VERSION DEBUG - Found {existingImagesForBox.Count} existing ProgressUpdateImages across all progress updates for Box {progressUpdate.BoxId}");
+        
+        (bool, string) imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<ProgressUpdateImage>(
+            progressUpdate.ProgressUpdateId, 
+            request.Files, 
+            request.ImageUrls, 
+            cancellationToken, 
+            fileNames: request.FileNames,
+            existingImagesForVersioning: existingImagesForBox
+        );
         if (!imagesProcessResult.Item1)
         {
             return Result.Failure<ProgressUpdateDto>(imagesProcessResult.Item2);
         }
-        await AddAuditLogAndWIRRecord(request, boxActivity, inferredStatus, currentUserId, cancellationToken);
+        
+        try
+        {
+            await AddAuditLogAndWIRRecord(request, boxActivity, inferredStatus, currentUserId, cancellationToken);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Handle WIR validation errors (location conflicts, previous WIR approval, etc.)
+            return Result.Failure<ProgressUpdateDto>(ex.Message);
+        }
+        
         progressUpdate.BoxProgressSnapshot = await UpdateBoxProgress(request.BoxId, currentUserId, cancellationToken);
         _unitOfWork.Repository<ProgressUpdate>().Update(progressUpdate);
 
@@ -437,6 +466,21 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         if (nextWIRActivity == null)
             return;
 
+        // Validate that location (Bay/Row/Position) is unique in the same factory
+        // Only validate if position data is being provided
+        if (!string.IsNullOrWhiteSpace(request.WirBay) || !string.IsNullOrWhiteSpace(request.WirRow) || !string.IsNullOrWhiteSpace(request.WirPosition))
+        {
+            await ValidateUniqueLocationInFactory(
+                request.WirBay ?? string.Empty, 
+                request.WirRow ?? string.Empty, 
+                request.WirPosition ?? string.Empty, 
+                currentActivity.BoxId, 
+                cancellationToken);
+
+            // Validate that previous WIR (if any) is approved before updating position for the current WIR
+            await ValidatePreviousWIRApproved(nextWIRActivity, currentActivity.BoxId, cancellationToken);
+        }
+
         WIRRecord? nearestWIR = _unitOfWork.Repository<WIRRecord>()
             .Get().Where(w => w.BoxActivityId == nextWIRActivity.BoxActivityId).FirstOrDefault();
         string oldBay = string.Empty;
@@ -518,6 +562,14 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
                     
                     if (boxNeedsUpdate)
                     {
+                        // Validate that this location is not already occupied by another box in the same factory
+                        await ValidateUniqueLocationInFactory(
+                            latestWIRWithPosition.Bay ?? string.Empty,
+                            latestWIRWithPosition.Row ?? string.Empty,
+                            latestWIRWithPosition.Position ?? string.Empty,
+                            currentActivity.BoxId,
+                            cancellationToken);
+                        
                         string boxOldBay = box.Bay ?? string.Empty;
                         string boxOldRow = box.Row ?? string.Empty;
                         string boxOldPosition = box.Position ?? string.Empty;
@@ -601,5 +653,156 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             positionUpdated = true;
         }
         return positionUpdated;
+    }
+
+    /// <summary>
+    /// Validates that the previous WIR (if any) is fully approved before allowing position updates
+    /// 
+    /// CRITICAL: A WIR is considered "fully approved" ONLY when:
+    /// 1. Status is Approved or ConditionallyApproved, AND
+    /// 2. All checklist items have "Pass" status (not Under Review)
+    /// 
+    /// "Under Review" state: Status = Approved but NOT all checklist items are Pass
+    /// </summary>
+    private async Task ValidatePreviousWIRApproved(BoxActivity currentWIRActivity, Guid boxId, CancellationToken cancellationToken)
+    {
+        // Find the previous WIR activity for this box (by sequence)
+        var previousWIRActivity = await _dbContext.BoxActivities
+            .Include(x => x.ActivityMaster)
+            .Where(x => x.BoxId == boxId &&
+                       x.Sequence < currentWIRActivity.Sequence &&
+                       x.ActivityMaster.IsWIRCheckpoint)
+            .OrderByDescending(x => x.Sequence)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        // If no previous WIR exists, validation passes (this is the first WIR)
+        if (previousWIRActivity == null)
+        {
+            return;
+        }
+
+        // Check if previous WIR record exists and its status
+        var previousWIR = await _dbContext.WIRRecords
+            .Where(w => w.BoxActivityId == previousWIRActivity.BoxActivityId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        // If previous WIR record doesn't exist yet, don't allow current WIR position update
+        if (previousWIR == null)
+        {
+            throw new InvalidOperationException(
+                $"Cannot update WIR position. Previous WIR '{previousWIRActivity.ActivityMaster.WIRCode}' has not been created yet.");
+        }
+
+        // Load the WIR checkpoint to get the effective status
+        // The checkpoint status is the source of truth (matches frontend logic)
+        var previousCheckpoint = await _dbContext.WIRCheckpoints
+            .Include(cp => cp.ChecklistItems)
+            .Where(cp => cp.BoxId == boxId && cp.WIRCode == previousWIR.WIRCode)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        // Use checkpoint status if available, otherwise fall back to WIR record status
+        // Cast WIRRecordStatusEnum to WIRCheckpointStatusEnum (both have same values)
+        var effectiveStatus = previousCheckpoint?.Status ?? (WIRCheckpointStatusEnum)previousWIR.Status;
+
+        // ConditionallyApproved is ALWAYS acceptable - validation passes immediately
+        if (effectiveStatus == WIRCheckpointStatusEnum.ConditionalApproval)
+        {
+            return; // Allow position update for conditionally approved WIRs
+        }
+
+        // Check if previous WIR status is Pending or Rejected
+        if (effectiveStatus == WIRCheckpointStatusEnum.Pending)
+        {
+            throw new InvalidOperationException(
+                $"Cannot update WIR position. Previous WIR '{previousWIR.WIRCode}' is still Pending. " +
+                $"It must be approved first.");
+        }
+
+        if (effectiveStatus == WIRCheckpointStatusEnum.Rejected)
+        {
+            throw new InvalidOperationException(
+                $"Cannot update WIR position. Previous WIR '{previousWIR.WIRCode}' was Rejected. " +
+                $"Issues must be resolved and it must be approved.");
+        }
+
+        // If status is Approved, check if it's "Under Review" (not all checklist items are Pass)
+        if (effectiveStatus == WIRCheckpointStatusEnum.Approved)
+        {
+            if (previousCheckpoint != null)
+            {
+                // If no checklist items exist OR checklist is empty, consider it Under Review
+                if (previousCheckpoint.ChecklistItems == null || !previousCheckpoint.ChecklistItems.Any())
+                {
+                    throw new InvalidOperationException(
+                        $"Cannot update WIR position. Previous WIR '{previousWIR.WIRCode}' is Under Review. " +
+                        $"Checklist items must be added and approved before proceeding.");
+                }
+                
+                // Check if all checklist items have "Pass" status
+                bool allItemsPass = previousCheckpoint.ChecklistItems.All(item => 
+                    item.Status == CheckListItemStatusEnum.Pass);
+
+                if (!allItemsPass)
+                {
+                    throw new InvalidOperationException(
+                        $"Cannot update WIR position. Previous WIR '{previousWIR.WIRCode}' is Under Review. " +
+                        $"All checklist items must have 'Pass' status before proceeding.");
+                }
+            }
+            else
+            {
+                // No checkpoint exists for an Approved WIR - inconsistent state
+                throw new InvalidOperationException(
+                    $"Cannot update WIR position. Previous WIR '{previousWIR.WIRCode}' is Approved but has no checkpoint. " +
+                    $"A QA/QC checkpoint must be created and approved before proceeding.");
+            }
+        }
+
+        // If we reach here, previous WIR is fully approved - validation passes
+    }
+
+    /// <summary>
+    /// Validates that the Bay/Row/Position combination is unique within the same factory
+    /// Prevents two boxes from occupying the same location in a factory
+    /// </summary>
+    private async Task ValidateUniqueLocationInFactory(string bayValue, string rowValue, string positionValue, Guid currentBoxId, CancellationToken cancellationToken)
+    {
+        // Only validate if position data is being provided
+        if (string.IsNullOrWhiteSpace(bayValue) && 
+            string.IsNullOrWhiteSpace(rowValue) && 
+            string.IsNullOrWhiteSpace(positionValue))
+        {
+            return;
+        }
+
+        // Get the current box to find its factory
+        var currentBox = await _unitOfWork.Repository<Box>().GetByIdAsync(currentBoxId, cancellationToken);
+        if (currentBox == null || !currentBox.FactoryId.HasValue)
+        {
+            return; // No factory assigned, skip validation
+        }
+
+        bayValue = bayValue?.Trim() ?? string.Empty;
+        rowValue = rowValue?.Trim() ?? string.Empty;
+        positionValue = positionValue?.Trim() ?? string.Empty;
+
+        // Check if another box in the same factory has the same Bay/Row/Position combination
+        var conflictingBox = await _dbContext.Boxes
+            .Where(b => b.FactoryId == currentBox.FactoryId &&
+                       b.BoxId != currentBoxId && // Exclude current box
+                       b.Bay == bayValue &&
+                       b.Row == rowValue &&
+                       b.Position == positionValue &&
+                       !string.IsNullOrWhiteSpace(b.Bay) && // Ensure not comparing empty strings
+                       !string.IsNullOrWhiteSpace(b.Row))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (conflictingBox != null)
+        {
+            throw new InvalidOperationException(
+                $"Location conflict: Bay '{bayValue}', Row '{rowValue}', Position '{positionValue}' " +
+                $"is already occupied by Box '{conflictingBox.BoxTag}' in this factory. " +
+                $"Please select a different location.");
+        }
     }
 }

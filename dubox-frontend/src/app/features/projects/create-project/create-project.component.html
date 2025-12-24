@@ -259,6 +259,8 @@
                   type="date"
                   formControlName="plannedStartDate"
                   class="form-control"
+                  [min]="minStartDate"
+                  [max]="maxStartDate"
                   [class.invalid]="isFieldInvalid('plannedStartDate')"
                 />
                 <div class="error-text" *ngIf="isFieldInvalid('plannedStartDate')">
@@ -345,6 +347,33 @@
                   {{ getFieldError('description') }}
                 </div>
               </div>
+
+              <!-- BIM Link -->
+              <div class="form-group full-width">
+                <label for="bimLink">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                  </svg>
+                  BIM Link
+                </label>
+                <input
+                  id="bimLink"
+                  type="url"
+                  formControlName="bimLink"
+                  class="form-control"
+                  placeholder="https://example.com/bim-model"
+                  [class.invalid]="isFieldInvalid('bimLink')"
+                />
+                <div class="error-text" *ngIf="isFieldInvalid('bimLink')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  {{ getFieldError('bimLink') }}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -358,7 +387,7 @@
               </svg>
               <div>
                 <h3 class="section-title">Project Configuration</h3>
-                <p class="section-description">Define buildings, levels, box types, zones, and functions (optional)</p>
+                <p class="section-description">Add items one at a time or multiple comma-separated values (press Enter or click Add) - Optional</p>
               </div>
             </div>
 
@@ -370,9 +399,9 @@
                   type="text" 
                   [(ngModel)]="newBuilding" 
                   [ngModelOptions]="{standalone: true}"
-                  placeholder="e.g., B01, B02" 
+                  placeholder="e.g., B01, B02, B03" 
                   class="form-control config-input"
-                  (keyup.enter)="addBuilding()"
+                  (keydown.enter)="$event.preventDefault(); addBuilding()"
                 />
                 <button type="button" class="btn-config-add" (click)="addBuilding()">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -399,9 +428,9 @@
                   type="text" 
                   [(ngModel)]="newLevel" 
                   [ngModelOptions]="{standalone: true}"
-                  placeholder="e.g., GF, 1F, 2F" 
+                  placeholder="e.g., GF, 1F, 2F, 3F" 
                   class="form-control config-input"
-                  (keyup.enter)="addLevel()"
+                  (keydown.enter)="$event.preventDefault(); addLevel()"
                 />
                 <button type="button" class="btn-config-add" (click)="addLevel()">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -428,9 +457,9 @@
                   type="text" 
                   [(ngModel)]="newBoxType" 
                   [ngModelOptions]="{standalone: true}"
-                  placeholder="e.g., S1 ,S2 ,S3" 
+                  placeholder="e.g., S1, S2, S3, S4" 
                   class="form-control config-input"
-                  (keyup.enter)="addBoxType()"
+                  (keydown.enter)="$event.preventDefault(); addBoxType()"
                 />
                 <button type="button" class="btn-config-add" (click)="addBoxType()">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -462,9 +491,9 @@
                         type="text" 
                         [(ngModel)]="newBoxSubType" 
                         [ngModelOptions]="{standalone: true}"
-                        placeholder="Sub-type name" 
+                        placeholder="e.g., Type A, Type B, Type C" 
                         class="form-control config-input-sm"
-                        (keyup.enter)="addSubType(i)"
+                        (keydown.enter)="$event.preventDefault(); addSubType(i)"
                         (focus)="selectedTypeForSubType = i"
                       />
                       <button 
@@ -497,9 +526,9 @@
                   type="text" 
                   [(ngModel)]="newZone" 
                   [ngModelOptions]="{standalone: true}"
-                  placeholder="e.g., Zone A, Zone B" 
+                  placeholder="e.g., Zone A, Zone B, Zone C" 
                   class="form-control config-input"
-                  (keyup.enter)="addZone()"
+                  (keydown.enter)="$event.preventDefault(); addZone()"
                 />
                 <button type="button" class="btn-config-add" (click)="addZone()">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -526,9 +555,9 @@
                   type="text" 
                   [(ngModel)]="newBoxFunction" 
                   [ngModelOptions]="{standalone: true}"
-                  placeholder="e.g., Kitchen, Bathroom" 
+                  placeholder="e.g., Storage, Distribution, Assembly" 
                   class="form-control config-input"
-                  (keyup.enter)="addBoxFunction()"
+                  (keydown.enter)="$event.preventDefault(); addBoxFunction()"
                 />
                 <button type="button" class="btn-config-add" (click)="addBoxFunction()">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

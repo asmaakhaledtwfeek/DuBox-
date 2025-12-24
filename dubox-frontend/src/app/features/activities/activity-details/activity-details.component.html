@@ -33,13 +33,14 @@
           </svg>
           Assign to Team
         </button>
-        <button class="btn btn-secondary" (click)="openIssueMaterialModal()" *ngIf="canIssueMaterial">
+        <button class="btn btn-secondary" disabled *ngIf="canIssueMaterial">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
             <line x1="3" y1="6" x2="21" y2="6"/>
             <path d="M16 10a4 4 0 0 1-8 0"/>
           </svg>
           Issue Material
+          <span class="coming-soon-badge">Coming Soon</span>
         </button>
         <button class="btn btn-secondary" (click)="openSetScheduleModal()" *ngIf="canSetSchedule">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -779,22 +780,25 @@
             <option *ngFor="let team of availableTeams" [value]="team.teamId">{{ team.teamName }}</option>
           </select>
         </div>
-        <div class="form-group modern-form-group">
+
+        <div class="form-group modern-form-group" *ngIf="assignTeamForm.get('teamId')?.value">
           <label class="form-label modern-label">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+              <circle cx="12" cy="7" r="4"/>
             </svg>
-            Team Group <span class="optional">(Optional)</span>
+            Member <span class="optional">(Optional)</span>
           </label>
-          <select formControlName="groupId" class="form-control modern-select" [disabled]="!assignTeamForm.get('teamId')?.value">
-            <option value="">Select a team group</option>
-            <option *ngFor="let group of availableGroups" [value]="group.teamGroupId">
-              {{ group.groupTag }} ({{ group.groupType }})
+          <select formControlName="memberId" class="form-control modern-select" [disabled]="loadingMembers">
+            <option value="">Select a member</option>
+            <option *ngFor="let member of availableMembers" [value]="member.teamMemberId">
+              {{ member.employeeName || member.fullName || member.email }}
             </option>
           </select>
+          <div class="loading-text" *ngIf="loadingMembers">Loading members...</div>
+          <small class="helper-text" *ngIf="!loadingMembers && availableMembers.length === 0 && assignTeamForm.get('teamId')?.value">
+            No members available for this team.
+          </small>
         </div>
         <div class="modal-actions modern-actions">
           <button type="button" class="btn btn-secondary modern-btn" (click)="closeAssignTeamModal()">Cancel</button>

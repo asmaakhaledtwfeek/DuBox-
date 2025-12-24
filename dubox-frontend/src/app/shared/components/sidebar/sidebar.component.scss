@@ -82,6 +82,25 @@
 .nav-label {
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+
+  .coming-soon-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-radius: 10px;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+  }
 }
 
 .collapsed {

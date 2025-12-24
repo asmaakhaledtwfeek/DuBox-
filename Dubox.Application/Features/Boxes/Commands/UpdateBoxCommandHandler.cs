@@ -243,16 +243,19 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
             RecordChange("Duration", box.Duration, request.Duration.Value);
             box.Duration = request.Duration.Value;
         }
-        if (request.FactoryId.HasValue && box.FactoryId != request.FactoryId.Value)
-        {
-            RecordChange("FactoryId", box.FactoryId?.ToString() ?? "N/A", request.FactoryId.Value.ToString());
-            box.FactoryId = request.FactoryId.Value;
-        }
-        else if (!request.FactoryId.HasValue && box.FactoryId.HasValue)
-        {
-            RecordChange("FactoryId", box.FactoryId.Value.ToString(), "N/A");
-            box.FactoryId = null;
-        }
+        
+        // Factory is now automatically assigned based on project location
+        // FactoryId updates from the UI are ignored
+        // if (request.FactoryId.HasValue && box.FactoryId != request.FactoryId.Value)
+        // {
+        //     RecordChange("FactoryId", box.FactoryId?.ToString() ?? "N/A", request.FactoryId.Value.ToString());
+        //     box.FactoryId = request.FactoryId.Value;
+        // }
+        // else if (!request.FactoryId.HasValue && box.FactoryId.HasValue)
+        // {
+        //     RecordChange("FactoryId", box.FactoryId.Value.ToString(), "N/A");
+        //     box.FactoryId = null;
+        // }
 
         var oldPlannedEndDate = box.PlannedEndDate;
         if (box.PlannedStartDate.HasValue && box.Duration.HasValue && box.Duration > 0)

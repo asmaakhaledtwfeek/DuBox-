@@ -43,6 +43,7 @@ export class WIRService {
       wirRecordId: backendWIR.wirRecordId || backendWIR.WIRRecordId,
       boxActivityId: backendWIR.boxActivityId || backendWIR.BoxActivityId,
       boxTag: backendWIR.boxTag || backendWIR.BoxTag || '',
+      boxName: backendWIR.boxName || backendWIR.BoxName,
       activityName: backendWIR.activityName || backendWIR.ActivityName || '',
       wirCode: backendWIR.wirCode || backendWIR.WIRCode || '',
       status: backendWIR.status || backendWIR.Status,
@@ -58,7 +59,9 @@ export class WIRService {
       rejectionReason: backendWIR.rejectionReason || backendWIR.RejectionReason,
       bay: backendWIR.bay || backendWIR.Bay,
       row: backendWIR.row || backendWIR.Row,
-      position: backendWIR.position || backendWIR.Position
+      position: backendWIR.position || backendWIR.Position,
+      activityNames:backendWIR.activityNames,
+      activityCount:backendWIR.activityCount
     };
   }
 
@@ -249,6 +252,14 @@ export class WIRService {
         request.imageUrls.forEach(url => {
           formData.append('ImageUrls', url);
         });
+      }
+      
+      // Append file names if any (for version tracking)
+      if (request.fileNames && request.fileNames.length > 0) {
+        request.fileNames.forEach(name => {
+          formData.append('FileNames', name);
+        });
+        console.log('📎 VERSION DEBUG - Sending FileNames to backend (WIR):', request.fileNames);
       }
       
       return this.apiService.postFormData<any>('wircheckpoints', formData).pipe(
@@ -568,6 +579,14 @@ export class WIRService {
       request.files.forEach((file: File) => {
         formData.append('Files', file);
       });
+    }
+    
+    // Append file names if any (for version tracking)
+    if (request.fileNames && request.fileNames.length > 0) {
+      request.fileNames.forEach((name: string) => {
+        formData.append('FileNames', name);
+      });
+      console.log('📎 VERSION DEBUG - Sending FileNames to backend (Quality Issue):', request.fileNames);
     }
     
     return this.apiService.postFormData<any>('qualityissues', formData).pipe(

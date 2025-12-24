@@ -64,13 +64,31 @@ public class GetBoxesByProjectQueryHandler : IRequestHandler<GetBoxesByProjectQu
             var projectCode = box.Project?.ProjectCode ?? string.Empty;
             var client = box.Project?.ClientName ?? string.Empty;
 
-            // Safely get BoxType information
-            var boxType = box.BoxType?.BoxTypeName ?? string.Empty;
+            // Get BoxType and BoxSubType names from project configuration
             var boxTypeId = box.BoxTypeId;
             var boxSubTypeId = box.BoxSubTypeId;
-            var boxSubTypeName = box.BoxSubType?.BoxSubTypeName;
+            string boxType = string.Empty;
+            string? boxSubTypeName = null;
+            
+            // Fetch BoxType name from ProjectBoxTypes
+            if (boxTypeId.HasValue)
+            {
+                var projectBoxType = _unitOfWork.Repository<ProjectBoxType>()
+                    .Get()
+                    .FirstOrDefault(pbt => pbt.Id == boxTypeId.Value && pbt.ProjectId == box.ProjectId);
+                boxType = projectBoxType?.TypeName ?? string.Empty;
+            }
+            
+            // Fetch BoxSubType name from ProjectBoxSubTypes
+            if (boxSubTypeId.HasValue)
+            {
+                var projectBoxSubType = _unitOfWork.Repository<ProjectBoxSubType>()
+                    .Get()
+                    .FirstOrDefault(pbst => pbst.Id == boxSubTypeId.Value);
+                boxSubTypeName = projectBoxSubType?.SubTypeName;
+            }
 
-            // Safely get Zone (enum conversion)
+            // Get Zone - stored as ZoneCode string in database
             string? zoneString = null;
             if (box.Zone.HasValue)
             {
@@ -125,7 +143,6 @@ public class GetBoxesByProjectQueryHandler : IRequestHandler<GetBoxesByProjectQu
                 Width = box.Width,
                 Height = box.Height,
                 UnitOfMeasure = unitOfMeasureString,
-                BIMModelReference = box.BIMModelReference,
                 RevitElementId = box.RevitElementId,
                 Duration = box.Duration,
                 PlannedStartDate = box.PlannedStartDate,

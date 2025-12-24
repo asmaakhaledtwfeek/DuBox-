@@ -73,17 +73,58 @@ namespace Dubox.Infrastructure.Services
                 throw new Exception($"Failed to download image from URL: {imageUrl}. Error: {ex.Message}", ex);
             }
         }
-        public async Task<(bool IsSuccess, string ErrorMessage)> ProcessImagesAsync<TEntity>(Guid parentId, List<byte[]>? files, List<string>? imageUrls, CancellationToken ct, int sequence = 0, List<string>? fileNames = null) where TEntity : BaseImageEntity, new()
+        public async Task<(bool IsSuccess, string ErrorMessage)> ProcessImagesAsync<TEntity>(
+            Guid parentId, 
+            List<byte[]>? files, 
+            List<string>? imageUrls, 
+            CancellationToken ct, 
+            int sequence = 0, 
+            List<string>? fileNames = null,
+            List<TEntity>? existingImagesForVersioning = null) where TEntity : BaseImageEntity, new()
         {
             var images = new List<TEntity>();
 
+            Console.WriteLine($"🔍 VERSION DEBUG - {typeof(TEntity).Name}: ProcessImagesAsync called with:");
+            Console.WriteLine($"   - Parent ID: {parentId}");
+            Console.WriteLine($"   - Files count: {files?.Count ?? 0}");
+            Console.WriteLine($"   - FileNames count: {fileNames?.Count ?? 0}");
+            Console.WriteLine($"   - FileNames: {(fileNames != null ? string.Join(", ", fileNames) : "NULL")}");
+            Console.WriteLine($"   - Existing images provided for versioning: {existingImagesForVersioning?.Count ?? 0}");
+
             // Get existing images for version checking
+            IReadOnlyList<TEntity> existingImages;
+            
+            if (existingImagesForVersioning != null)
+            {
+                // Use provided existing images (for cross-entity version checking like all ProgressUpdates in a Box)
+                existingImages = existingImagesForVersioning;
+                Console.WriteLine($"🔍 VERSION DEBUG - Using {existingImages.Count} pre-loaded images for version checking");
+            }
+            else
+            {
+                // Query for existing images by parent ID (default behavior)
             var config = _factory.GetConfig<TEntity>();
+                Console.WriteLine($"🔍 VERSION DEBUG - {typeof(TEntity).Name}: Looking for existing images with {config.ForeignKeyName} = {parentId}");
+                
             var predicate = BuildForeignKeyPredicate<TEntity>(config.ForeignKeyName, parentId);
-            var existingImages = await _unitOfWork.Repository<TEntity>().FindAsync(
+                existingImages = await _unitOfWork.Repository<TEntity>().FindAsync(
                 predicate, 
                 ct
             );
+            }
+
+            Console.WriteLine($"🔍 VERSION DEBUG - {typeof(TEntity).Name}: Found {existingImages.Count()} existing images for version checking");
+            if (existingImages.Any())
+            {
+                Console.WriteLine($"🔍 VERSION DEBUG - Existing images: {string.Join(", ", existingImages.Select(img => $"{img.OriginalName} (V{img.Version})"))}");
+            }
+            else
+            {
+                Console.WriteLine($"🔍 VERSION DEBUG - No existing images found. This might be the first upload.");
+            }
+
+            // Track versions for files being uploaded in this batch to avoid conflicts
+            var versionTracker = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
             if (files?.Any() == true)
             {
@@ -107,15 +148,38 @@ namespace Dubox.Infrastructure.Services
 
                     // Check for existing file with same name and determine version
                     int version = 1;
+                    var originalNameLower = originalName.ToLower();
+                    
+                    Console.WriteLine($"🔍 VERSION DEBUG - Processing file: {originalName}");
+                    
+                    // First, check existing database records (in-memory comparison)
                     var sameNameImages = existingImages
                         .Where(img => img.OriginalName != null && 
-                                     img.OriginalName.Equals(originalName, StringComparison.OrdinalIgnoreCase))
+                                     img.OriginalName.ToLower() == originalNameLower)
                         .ToList();
                     
                     if (sameNameImages.Any())
                     {
-                        version = sameNameImages.Max(img => img.Version) + 1;
+                        var maxExistingVersion = sameNameImages.Max(img => img.Version);
+                        version = maxExistingVersion + 1;
+                        Console.WriteLine($"🔍 VERSION DEBUG - Found {sameNameImages.Count} existing files with name '{originalName}', max version: V{maxExistingVersion}, assigning V{version}");
                     }
+                    else
+                    {
+                        Console.WriteLine($"🔍 VERSION DEBUG - No existing files with name '{originalName}', assigning V1");
+                    }
+                    
+                    // Second, check if this filename was already processed in this batch
+                    if (versionTracker.ContainsKey(originalName))
+                    {
+                        var batchVersion = versionTracker[originalName];
+                        version = Math.Max(version, batchVersion + 1);
+                        Console.WriteLine($"🔍 VERSION DEBUG - File '{originalName}' already processed in this batch with V{batchVersion}, updating to V{version}");
+                    }
+                    
+                    // Update tracker with the version we're using
+                    versionTracker[originalName] = version;
+                    Console.WriteLine($"✅ VERSION DEBUG - Final version for '{originalName}': V{version}");
 
                     var entity = new TEntity
                     {
@@ -147,17 +211,27 @@ namespace Dubox.Infrastructure.Services
                         var commaIndex = trimmed.IndexOf(',');
                         bytes = Convert.FromBase64String(trimmed.Substring(commaIndex + 1));
                         originalName = $"Captured_Image_{DateTime.UtcNow:yyyyMMdd_HHmmss}.jpg";
+                        var originalNameLower = originalName.ToLower();
 
-                        // Check for existing images with same name
+                        // Check for existing images with same name (in-memory comparison)
                         var sameNameImages = existingImages
                             .Where(img => img.OriginalName != null && 
-                                         img.OriginalName.Equals(originalName, StringComparison.OrdinalIgnoreCase))
+                                         img.OriginalName.ToLower() == originalNameLower)
                             .ToList();
                         
                         if (sameNameImages.Any())
                         {
                             version = sameNameImages.Max(img => img.Version) + 1;
                         }
+                        
+                        // Check if this filename was already processed in this batch
+                        if (versionTracker.ContainsKey(originalName))
+                        {
+                            version = Math.Max(version, versionTracker[originalName] + 1);
+                        }
+                        
+                        // Update tracker
+                        versionTracker[originalName] = version;
 
                         var entity = new TEntity
                         {
@@ -179,17 +253,27 @@ namespace Dubox.Infrastructure.Services
 
                         var base64 = Convert.ToBase64String(bytes);
                         originalName = trimmed.Length > 500 ? trimmed[..500] : trimmed;
+                        var originalNameLower = originalName.ToLower();
 
-                        // Check for existing images with same URL
+                        // Check for existing images with same URL (in-memory comparison)
                         var sameNameImages = existingImages
                             .Where(img => img.OriginalName != null && 
-                                         img.OriginalName.Equals(originalName, StringComparison.OrdinalIgnoreCase))
+                                         img.OriginalName.ToLower() == originalNameLower)
                             .ToList();
                         
                         if (sameNameImages.Any())
                         {
                             version = sameNameImages.Max(img => img.Version) + 1;
                         }
+                        
+                        // Check if this URL was already processed in this batch
+                        if (versionTracker.ContainsKey(originalName))
+                        {
+                            version = Math.Max(version, versionTracker[originalName] + 1);
+                        }
+                        
+                        // Update tracker
+                        versionTracker[originalName] = version;
 
                         var entity = new TEntity
                         {
@@ -209,7 +293,11 @@ namespace Dubox.Infrastructure.Services
             }
 
             if (images.Any())
+            {
+                Console.WriteLine($"💾 VERSION DEBUG - Saving {images.Count} images to database");
                 await _unitOfWork.Repository<TEntity>().AddRangeAsync(images, ct);
+                Console.WriteLine($"✅ VERSION DEBUG - Successfully saved {images.Count} images");
+            }
 
             return (true, string.Empty);
         }

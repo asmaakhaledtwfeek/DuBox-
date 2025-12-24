@@ -23,7 +23,10 @@
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [innerHTML]="getIconSvg(item.icon)">
         </svg>
-        <span class="nav-label" *ngIf="!isCollapsed">{{ item.label }}</span>
+        <span class="nav-label" *ngIf="!isCollapsed">
+          {{ item.label }}
+          <span class="coming-soon-badge" *ngIf="item.label === 'Materials'">Coming Soon</span>
+        </span>
       </a>
     </nav>
   </div>

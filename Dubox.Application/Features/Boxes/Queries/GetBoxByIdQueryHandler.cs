@@ -57,16 +57,37 @@ public class GetBoxByIdQueryHandler : IRequestHandler<GetBoxByIdQuery, Result<Bo
             var projectCode = box.Project?.ProjectCode ?? string.Empty;
             var client = box.Project?.ClientName ?? string.Empty;
 
-            // Safely get BoxType information
-            var boxType = box.BoxType?.BoxTypeName ?? string.Empty;
+            // Get BoxType and BoxSubType names from project configuration
             var boxTypeId = box.BoxTypeId;
             var boxSubTypeId = box.BoxSubTypeId;
-            var boxSubTypeName = box.BoxSubType?.BoxSubTypeName;
+            string boxType = string.Empty;
+            string? boxSubTypeName = null;
+            
+            // Fetch BoxType name from ProjectBoxTypes
+            if (boxTypeId.HasValue)
+            {
+                var projectBoxType = _unitOfWork.Repository<ProjectBoxType>()
+                    .Get()
+                    .FirstOrDefault(pbt => pbt.Id == boxTypeId.Value && pbt.ProjectId == box.ProjectId);
+                boxType = projectBoxType?.TypeName ?? string.Empty;
+            }
+            
+            // Fetch BoxSubType name from ProjectBoxSubTypes
+            if (boxSubTypeId.HasValue)
+            {
+                var projectBoxSubType = _unitOfWork.Repository<ProjectBoxSubType>()
+                    .Get()
+                    .FirstOrDefault(pbst => pbst.Id == boxSubTypeId.Value);
+                boxSubTypeName = projectBoxSubType?.SubTypeName;
+            }
 
-            // Safely get Zone (enum conversion)
+            // Get Zone - stored as ZoneCode string in database (e.g., "15", "A1", etc.)
+            // The BoxZone enum doesn't match - just convert to string as-is
             string? zoneString = null;
             if (box.Zone.HasValue)
             {
+                // Zone is stored as string in DB but entity uses enum
+                // Just convert the enum value to string (will be the ZoneCode)
                 zoneString = box.Zone.Value.ToString();
             }
 
@@ -130,7 +151,6 @@ public class GetBoxByIdQueryHandler : IRequestHandler<GetBoxByIdQuery, Result<Bo
                 Width = box.Width,
                 Height = box.Height,
                 UnitOfMeasure = unitOfMeasureString,
-                BIMModelReference = box.BIMModelReference,
                 RevitElementId = box.RevitElementId,
                 Duration = box.Duration,
                 PlannedStartDate = box.PlannedStartDate,

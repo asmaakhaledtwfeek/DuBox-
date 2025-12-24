@@ -87,9 +87,17 @@ export class ProjectConfigurationComponent implements OnInit {
   // Building methods
   addBuilding(): void {
     if (this.newBuilding.trim()) {
-      this.buildings.push({
-        buildingCode: this.newBuilding.trim(),
-        buildingName: this.newBuilding.trim()
+      // Split by comma and add each item
+      const items = this.newBuilding.split(',').map(item => item.trim()).filter(item => item);
+      items.forEach(item => {
+        // Check if building already exists
+        const exists = this.buildings.some(b => b.buildingCode.toLowerCase() === item.toLowerCase());
+        if (!exists) {
+          this.buildings.push({
+            buildingCode: item,
+            buildingName: item
+          });
+        }
       });
       this.newBuilding = '';
     }
@@ -102,9 +110,17 @@ export class ProjectConfigurationComponent implements OnInit {
   // Level methods
   addLevel(): void {
     if (this.newLevel.trim()) {
-      this.levels.push({
-        levelCode: this.newLevel.trim(),
-        levelName: this.newLevel.trim()
+      // Split by comma and add each item
+      const items = this.newLevel.split(',').map(item => item.trim()).filter(item => item);
+      items.forEach(item => {
+        // Check if level already exists
+        const exists = this.levels.some(l => l.levelCode.toLowerCase() === item.toLowerCase());
+        if (!exists) {
+          this.levels.push({
+            levelCode: item,
+            levelName: item
+          });
+        }
       });
       this.newLevel = '';
     }
@@ -117,10 +133,18 @@ export class ProjectConfigurationComponent implements OnInit {
   // Box Type methods
   addBoxType(): void {
     if (this.newBoxType.trim()) {
-      this.boxTypes.push({
-        typeName: this.newBoxType.trim(),
-        hasSubTypes: false,
-        subTypes: []
+      // Split by comma and add each item
+      const items = this.newBoxType.split(',').map(item => item.trim()).filter(item => item);
+      items.forEach(item => {
+        // Check if box type already exists
+        const exists = this.boxTypes.some(t => t.typeName.toLowerCase() === item.toLowerCase());
+        if (!exists) {
+          this.boxTypes.push({
+            typeName: item,
+            hasSubTypes: false,
+            subTypes: []
+          });
+        }
       });
       this.newBoxType = '';
     }
@@ -144,8 +168,16 @@ export class ProjectConfigurationComponent implements OnInit {
       if (!this.boxTypes[typeIndex].subTypes) {
         this.boxTypes[typeIndex].subTypes = [];
       }
-      this.boxTypes[typeIndex].subTypes!.push({
-        subTypeName: this.newBoxSubType.trim()
+      // Split by comma and add each item
+      const items = this.newBoxSubType.split(',').map(item => item.trim()).filter(item => item);
+      items.forEach(item => {
+        // Check if subtype already exists
+        const exists = this.boxTypes[typeIndex].subTypes?.some(s => s.subTypeName.toLowerCase() === item.toLowerCase());
+        if (!exists) {
+          this.boxTypes[typeIndex].subTypes!.push({
+            subTypeName: item
+          });
+        }
       });
       this.newBoxSubType = '';
       this.selectedTypeForSubType = -1;
@@ -159,9 +191,17 @@ export class ProjectConfigurationComponent implements OnInit {
   // Zone methods
   addZone(): void {
     if (this.newZone.trim()) {
-      this.zones.push({
-        zoneCode: this.newZone.trim(),
-        zoneName: this.newZone.trim()
+      // Split by comma and add each item
+      const items = this.newZone.split(',').map(item => item.trim()).filter(item => item);
+      items.forEach(item => {
+        // Check if zone already exists
+        const exists = this.zones.some(z => z.zoneCode.toLowerCase() === item.toLowerCase());
+        if (!exists) {
+          this.zones.push({
+            zoneCode: item,
+            zoneName: item
+          });
+        }
       });
       this.newZone = '';
     }
@@ -174,8 +214,16 @@ export class ProjectConfigurationComponent implements OnInit {
   // Box Function methods
   addBoxFunction(): void {
     if (this.newBoxFunction.trim()) {
-      this.boxFunctions.push({
-        functionName: this.newBoxFunction.trim()
+      // Split by comma and add each item
+      const items = this.newBoxFunction.split(',').map(item => item.trim()).filter(item => item);
+      items.forEach(item => {
+        // Check if function already exists
+        const exists = this.boxFunctions.some(f => f.functionName.toLowerCase() === item.toLowerCase());
+        if (!exists) {
+          this.boxFunctions.push({
+            functionName: item
+          });
+        }
       });
       this.newBoxFunction = '';
     }

@@ -33,7 +33,8 @@ export class ProgressUpdateService {
   createProgressUpdate(
     request: CreateProgressUpdateRequest, 
     files?: File[], 
-    imageUrls?: string[]
+    imageUrls?: string[],
+    fileNames?: string[]
   ): Observable<ProgressUpdateResponse> {
     // ALWAYS send as multipart/form-data because backend API expects it
     // Backend has [Consumes("multipart/form-data")] attribute
@@ -84,6 +85,14 @@ export class ProgressUpdateService {
       imageUrls.forEach((url) => {
         formData.append('ImageUrls', url);
       });
+    }
+    
+    // Append file names if provided - for version tracking
+    if (fileNames && fileNames.length > 0) {
+      fileNames.forEach((name) => {
+        formData.append('FileNames', name);
+      });
+      console.log('📎 VERSION DEBUG - Sending FileNames to backend:', fileNames);
     }
     
     formData.append('UpdateMethod', request.updateMethod);

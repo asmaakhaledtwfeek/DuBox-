@@ -3,5 +3,5 @@ using MediatR;
 
 namespace Dubox.Application.Features.Boxes.Queries;
 
-public record GenerateBoxesTemplateQuery() : IRequest<Result<byte[]>>;
+public record GenerateBoxesTemplateQuery(Guid ProjectId) : IRequest<Result<byte[]>>;
 

@@ -15,7 +15,15 @@
         </button>
         <h1 class="page-title" *ngIf="!qualityIssuesOnlyView">QA/QC Activity Approval Checklist</h1>
         <h1 class="page-title" *ngIf="qualityIssuesOnlyView">All Quality Issues</h1>
-        <p class="page-subtitle" *ngIf="!qualityIssuesOnlyView && wirRecord">{{ wirRecord.wirCode }} - {{ wirRecord.activityName }}</p>
+        <p class="page-subtitle" *ngIf="!qualityIssuesOnlyView && wirRecord">
+          {{ wirRecord.wirCode }} - 
+          <span *ngIf="wirRecord && wirRecord.activityNames && wirRecord.activityNames.length > 0">
+            {{ wirRecord.activityCount }} {{ wirRecord.activityCount === 1 ? 'Activity' : 'Activities' }}
+          </span>
+          <span *ngIf="!wirRecord || !wirRecord.activityNames || wirRecord.activityNames.length === 0">
+            {{ wirRecord?.activityName }}
+          </span>
+        </p>
         <p class="page-subtitle" *ngIf="qualityIssuesOnlyView">
           Box-wide quality issues across every WIR checkpoint.
         </p>
@@ -131,7 +139,15 @@
         <div class="summary-header">
           <div>
             <h2 class="card-title">Inspection Request</h2>
-            <p class="card-subtitle">{{ wirRecord?.wirCode }} • {{ wirRecord?.activityName }}</p>
+            <p class="card-subtitle">
+              {{ wirRecord?.wirCode }} • 
+              <span *ngIf="wirRecord && wirRecord.activityNames && wirRecord.activityNames.length > 0">
+                {{ wirRecord.activityCount }} {{ wirRecord.activityCount === 1 ? 'Activity' : 'Activities' }}
+              </span>
+              <span *ngIf="!wirRecord || !wirRecord.activityNames || wirRecord.activityNames.length === 0">
+                {{ wirRecord?.activityName }}
+              </span>
+            </p>
           </div>
           <span class="status-chip" [ngClass]="getCheckpointStatusClass(wirCheckpoint!.status)">
             {{ getCheckpointStatusLabel(wirCheckpoint!.status) }}
@@ -254,9 +270,15 @@
                 <span class="label">WIR Number</span>
                 <span class="value">{{ wirRecord.wirCode }}</span>
               </div>
-              <div class="info-item">
-                <span class="label">Activity Name</span>
-                <span class="value">{{ wirRecord.activityName }}</span>
+              <div class="info-item" style="grid-column: span 3;">
+                <span class="label">Activities Included</span>
+                <span class="value" *ngIf="wirRecord && wirRecord.activityNames && wirRecord.activityNames.length > 0">
+                  <strong>({{ wirRecord.activityCount }} {{ wirRecord.activityCount === 1 ? 'Activity' : 'Activities' }})</strong><br/>
+                  <span style="display: block; margin-top: 4px;">{{ wirRecord.activityNames.join(', ') }}</span>
+                </span>
+                <span class="value" *ngIf="!wirRecord || !wirRecord.activityNames || wirRecord.activityNames.length === 0">
+                  {{ wirRecord?.activityName || 'Loading...' }}
+                </span>
               </div>
             </div>
           </div>
@@ -472,7 +494,15 @@
         <div class="summary-header">
           <div>
             <h2 class="card-title">Inspection Request</h2>
-            <p class="card-subtitle">{{ wirRecord?.wirCode }} • {{ wirRecord?.activityName }}</p>
+            <p class="card-subtitle">
+              {{ wirRecord?.wirCode }} • 
+              <span *ngIf="wirRecord && wirRecord.activityNames && wirRecord.activityNames.length > 0">
+                {{ wirRecord.activityCount }} {{ wirRecord.activityCount === 1 ? 'Activity' : 'Activities' }}
+              </span>
+              <span *ngIf="!wirRecord || !wirRecord.activityNames || wirRecord.activityNames.length === 0">
+                {{ wirRecord?.activityName }}
+              </span>
+            </p>
           </div>
           <span class="status-chip" [ngClass]="getCheckpointStatusClass(wirCheckpoint!.status)">
             {{ getCheckpointStatusLabel(wirCheckpoint!.status) }}
@@ -615,7 +645,15 @@
             <div class="summary-header">
               <div>
                 <h2 class="card-title">Inspection Request</h2>
-                <p class="card-subtitle">{{ wirRecord?.wirCode }} • {{ wirRecord?.activityName }}</p>
+                <p class="card-subtitle">
+              {{ wirRecord?.wirCode }} • 
+              <span *ngIf="wirRecord && wirRecord.activityNames && wirRecord.activityNames.length > 0">
+                {{ wirRecord.activityCount }} {{ wirRecord.activityCount === 1 ? 'Activity' : 'Activities' }}
+              </span>
+              <span *ngIf="!wirRecord || !wirRecord.activityNames || wirRecord.activityNames.length === 0">
+                {{ wirRecord?.activityName }}
+              </span>
+            </p>
           </div>
               <span class="status-chip" [ngClass]="getCheckpointStatusClass(wirCheckpoint!.status)">
                 {{ getCheckpointStatusLabel(wirCheckpoint!.status) }}
@@ -851,13 +889,45 @@
 
       <!-- Checklist Items -->
       <div class="checklist-card">
-        <h2 class="card-title">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 11l3 3L22 4"/>
-            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-          </svg>
-              Checklist Validation
-        </h2>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h2 class="card-title" style="margin-bottom: 0;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 11l3 3L22 4"/>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+            Checklist Validation
+          </h2>
+          <div style="display: flex; gap: 10px; align-items: center;">
+            <button 
+              type="button" 
+              class="btn btn-success btn-sm"
+              (click)="passAllItems()"
+              [disabled]="isChecklistLocked || checklistItems.length === 0"
+              title="Mark all checklist items as PASS and save to database"
+              style="padding: 10px 18px; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              Pass All ({{ checklistItems.length }})
+            </button>
+            <button 
+              type="button" 
+              class="btn btn-danger btn-sm"
+              (click)="rejectAllItems()"
+              [disabled]="isChecklistLocked || checklistItems.length === 0"
+              title="Mark all checklist items as FAIL with reason and save to database"
+              style="padding: 10px 18px; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 6px; transition: all 0.2s;"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="15" y1="9" x2="9" y2="15"/>
+                <line x1="9" y1="9" x2="15" y2="15"/>
+              </svg>
+              Reject All ({{ checklistItems.length }})
+            </button>
+          </div>
+        </div>
         
         <div class="checklist-table-wrapper" formArrayName="checklistItems">
           <div *ngIf="checklistItems.length > 0; else noChecklistItems" class="grouped-checklist-table">
@@ -1042,7 +1112,15 @@
           <div class="summary-header">
             <div>
               <h2 class="card-title">Inspection Request</h2>
-              <p class="card-subtitle">{{ wirRecord?.wirCode }} • {{ wirRecord?.activityName }}</p>
+              <p class="card-subtitle">
+              {{ wirRecord?.wirCode }} • 
+              <span *ngIf="wirRecord && wirRecord.activityNames && wirRecord.activityNames.length > 0">
+                {{ wirRecord.activityCount }} {{ wirRecord.activityCount === 1 ? 'Activity' : 'Activities' }}
+              </span>
+              <span *ngIf="!wirRecord || !wirRecord.activityNames || wirRecord.activityNames.length === 0">
+                {{ wirRecord?.activityName }}
+              </span>
+            </p>
             </div>
             <span class="status-chip" [ngClass]="getCheckpointStatusClass(wirCheckpoint!.status)">
               {{ getCheckpointStatusLabel(wirCheckpoint!.status) }}
@@ -1870,6 +1948,178 @@
   [isOpen]="isQualityIssueDetailsModalOpen"
   (close)="closeQualityIssueDetailsModal()"
 ></app-quality-issue-details-modal>
+
+<!-- Pass All Confirmation Modal -->
+<div class="modal-backdrop" *ngIf="isBulkPassModalOpen" (click)="closeBulkPassModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()" style="max-width: 500px;">
+    <div class="modal-header">
+      <div>
+        <h2>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px; color: #10b981;">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Pass All Checklist Items
+        </h2>
+        <p style="margin-top: 8px; color: #6b7280;">
+          This will mark all {{ checklistItems.length }} checklist items as <strong style="color: #10b981;">PASS</strong> and save them to the database.
+        </p>
+      </div>
+      <button class="icon-button" (click)="closeBulkPassModal()" [disabled]="submitting">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="bulkPassReason">Optional Note</label>
+        <textarea 
+          id="bulkPassReason"
+          [formControl]="bulkReasonControl"
+          rows="3"
+          placeholder="Add an optional note for passing all items..."
+          class="form-control"
+          [disabled]="submitting"
+        ></textarea>
+        <small style="display: block; margin-top: 4px; color: #6b7280;">
+          This note is optional. Any existing remarks will be cleared.
+        </small>
+      </div>
+      <div class="warning-box" style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; margin-top: 16px; border-radius: 4px;">
+        <div style="display: flex; gap: 8px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <div>
+            <strong style="color: #92400e;">Warning:</strong>
+            <p style="color: #78350f; margin: 4px 0 0 0; font-size: 13px;">
+              This action will overwrite the status and remarks of <strong>all {{ checklistItems.length }} items</strong>. This cannot be undone.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button 
+        type="button" 
+        class="btn btn-secondary" 
+        (click)="closeBulkPassModal()"
+        [disabled]="submitting"
+      >
+        Cancel
+      </button>
+      <button 
+        type="button" 
+        class="btn btn-success" 
+        (click)="onBulkPass()"
+        [disabled]="submitting"
+      >
+        <span class="spinner small" *ngIf="submitting" style="margin-right: 8px;"></span>
+        <svg *ngIf="!submitting" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        {{ submitting ? 'Saving...' : 'Pass All Items' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Reject All Modal -->
+<div class="modal-backdrop" *ngIf="isBulkRejectModalOpen" (click)="closeBulkRejectModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()" style="max-width: 500px;">
+    <div class="modal-header">
+      <div>
+        <h2>
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px; color: #ef4444;">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+          Reject All Checklist Items
+        </h2>
+        <p style="margin-top: 8px; color: #6b7280;">
+          This will mark all {{ checklistItems.length }} checklist items as <strong style="color: #ef4444;">FAIL</strong> and save them to the database.
+        </p>
+      </div>
+      <button class="icon-button" (click)="closeBulkRejectModal()" [disabled]="submitting">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="bulkRejectReason">
+          Rejection Reason <span class="required">*</span>
+        </label>
+        <textarea 
+          id="bulkRejectReason"
+          [formControl]="bulkReasonControl"
+          rows="4"
+          placeholder="Enter the reason for rejecting all items..."
+          class="form-control"
+          [disabled]="submitting"
+          [class.error]="bulkReasonControl.touched && !bulkReasonControl.value?.trim()"
+        ></textarea>
+        <small style="display: block; margin-top: 4px; color: #6b7280;">
+          A rejection reason is required for all items.
+        </small>
+        <div *ngIf="bulkReasonControl.touched && !bulkReasonControl.value?.trim()" 
+             style="color: #dc2626; font-size: 13px; margin-top: 4px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; margin-right: 4px;">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          Please provide a reason for the rejection
+        </div>
+      </div>
+      <div class="warning-box" style="background: #fee2e2; border-left: 4px solid #ef4444; padding: 12px; margin-top: 16px; border-radius: 4px;">
+        <div style="display: flex; gap: 8px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <div>
+            <strong style="color: #991b1b;">Critical Action:</strong>
+            <p style="color: #7f1d1d; margin: 4px 0 0 0; font-size: 13px;">
+              This will mark <strong>all {{ checklistItems.length }} items</strong> as FAILED with the same reason. This cannot be undone.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button 
+        type="button" 
+        class="btn btn-secondary" 
+        (click)="closeBulkRejectModal()"
+        [disabled]="submitting"
+      >
+        Cancel
+      </button>
+      <button 
+        type="button" 
+        class="btn btn-danger" 
+        (click)="onBulkReject()"
+        [disabled]="submitting || !bulkReasonControl.value?.trim()"
+      >
+        <span class="spinner small" *ngIf="submitting" style="margin-right: 8px;"></span>
+        <svg *ngIf="!submitting" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="15" y1="9" x2="9" y2="15"/>
+          <line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
+        {{ submitting ? 'Saving...' : 'Reject All Items' }}
+      </button>
+    </div>
+  </div>
+</div>
 
 <!-- Lightbox Modal -->
 <div class="lightbox-overlay" *ngIf="lightboxOpen" (click)="closeLightbox()">

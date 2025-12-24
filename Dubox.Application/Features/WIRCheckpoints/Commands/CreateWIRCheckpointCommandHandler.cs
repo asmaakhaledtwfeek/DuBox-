@@ -92,7 +92,8 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                         request.Files, 
                         request.ImageUrls, 
                         cancellationToken, 
-                        sequence);
+                        sequence,
+                        fileNames: request.FileNames);
                     
                     if (!imagesProcessResult.Item1)
                     {
@@ -160,7 +161,8 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                     request.Files, 
                     request.ImageUrls, 
                     cancellationToken, 
-                    sequence);
+                    sequence,
+                    fileNames: request.FileNames);
                 
                 if (!imagesProcessResult.Item1)
                 {

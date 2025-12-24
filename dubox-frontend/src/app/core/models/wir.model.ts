@@ -4,7 +4,10 @@ export interface WIRRecord {
   wirRecordId: string;
   boxActivityId: string;
   boxTag: string;
+  boxName?: string;
   activityName: string;
+  activityNames?: string[]; // List of all activities up to this WIR
+  activityCount?: number; // Count of activities
   wirCode: string;
   status: WIRStatus;
   checkpointStatus: WIRStatus;
@@ -37,7 +40,7 @@ export enum WIRStatus {
   Pending = 'Pending',
   Approved = 'Approved',
   Rejected = 'Rejected',
-  ConditionalApproval = 'ConditionalApproval'
+  ConditionalApproval = 'ConditionalApproval'  // Backend sends ConditionalApproval
 }
 
 export enum CheckpointStatus {
@@ -217,6 +220,7 @@ export interface CreateWIRCheckpointRequest {
   comments?: string; // User input
   files?: File[]; // Image files to upload
   imageUrls?: string[]; // Image URLs
+  fileNames?: string[]; // Original filenames for versioning
 }
 
 export interface AddChecklistItemsRequest {
@@ -336,6 +340,7 @@ export interface CreateQualityIssueForBoxRequest {
   dueDate?: string | Date;
   imageUrls?: string[];
   files?: File[];
+  fileNames?: string[]; // Original filenames for versioning
 }
 
 export interface UpdateQualityIssueStatusRequest {

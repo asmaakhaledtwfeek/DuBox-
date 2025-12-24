@@ -42,6 +42,9 @@ public class Project
     [MaxLength(500)]
     public string? Description { get; set; }
 
+    [MaxLength(500)]
+    public string? BimLink { get; set; }
+
     public int TotalBoxes { get; set; }
     public decimal ProgressPercentage { get; set; } = 0;
     public bool IsActive { get; set; } = true;

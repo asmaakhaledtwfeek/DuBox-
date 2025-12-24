@@ -21,7 +21,6 @@ namespace Dubox.Application.Features.Boxes.MappingConfig
            .Map(dest => dest.Floor, src => src.Floor)
            .Map(dest => dest.BuildingNumber, src => src.BuildingNumber)
            .Map(dest => dest.Zone, src => src.Zone)
-           .Map(dest => dest.BIMModelReference, src => src.BIMModelReference)
            .Map(dest => dest.RevitElementId, src => src.RevitElementId)
            .Map(dest => dest.Length, src => src.Length)
            .Map(dest => dest.Width, src => src.Width)

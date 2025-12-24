@@ -81,7 +81,21 @@ namespace Dubox.Application.Features.Activities.Commands
 
             activity.TeamId = request.TeamId;
             activity.AssignedGroupId = request.TeamGroupId;
-            activity.AssignedMemberId = teamGroup.GroupLeaderId!=null? teamGroup.GroupLeaderId:null;
+            
+            // Set assigned member - use member from request if provided, otherwise use group leader if available
+            if (request.AssignedMemberId.HasValue && request.AssignedMemberId.Value != Guid.Empty)
+            {
+                activity.AssignedMemberId = request.AssignedMemberId;
+            }
+            else if (teamGroup != null && teamGroup.GroupLeaderId.HasValue)
+            {
+                activity.AssignedMemberId = teamGroup.GroupLeaderId;
+            }
+            else
+            {
+                activity.AssignedMemberId = null;
+            }
+            
             var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
             activity.ModifiedBy = currentUserId;
             activity.ModifiedDate = DateTime.UtcNow;

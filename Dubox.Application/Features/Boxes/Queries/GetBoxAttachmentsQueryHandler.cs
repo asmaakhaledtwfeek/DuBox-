@@ -47,6 +47,7 @@ public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQu
             OriginalName = x.Image.OriginalName,
             FileSize = x.Image.FileSize,
             Sequence = x.Image.Sequence,
+            Version = x.Image.Version,
             CreatedDate = x.Image.CreatedDate,
             CreatedBy = x.CreatedBy, // Use WIRCheckpoint.CreatedBy
             ReferenceId = x.WIRId,
@@ -54,15 +55,21 @@ public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQu
             ReferenceName = x.WIRCode
         }).ToList();
 
-        // Get ProgressUpdate Images
+        // Get ProgressUpdate Images with Activity information
         var progressUpdateImages = await _context.ProgressUpdates
             .Where(pu => pu.BoxId == request.BoxId)
+            .Include(pu => pu.BoxActivity)
+            .ThenInclude(ba => ba.ActivityMaster)
             .SelectMany(pu => pu.Images.Select(img => new
             {
                 Image = img,
                 ProgressUpdateId = pu.ProgressUpdateId,
                 UpdateTitle = "Progress Update",
-                UpdatedBy = pu.UpdatedBy
+                UpdatedBy = pu.UpdatedBy,
+                BoxActivityId = pu.BoxActivityId,
+                ActivityName = pu.BoxActivity != null && pu.BoxActivity.ActivityMaster != null 
+                    ? pu.BoxActivity.ActivityMaster.ActivityName 
+                    : "Unknown Activity"
             }))
             .OrderByDescending(x => x.Image.CreatedDate)
             .ToListAsync(cancellationToken);
@@ -75,11 +82,14 @@ public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQu
             OriginalName = x.Image.OriginalName,
             FileSize = x.Image.FileSize,
             Sequence = x.Image.Sequence,
+            Version = x.Image.Version,
             CreatedDate = x.Image.CreatedDate,
             CreatedBy = x.UpdatedBy, // Use ProgressUpdate.UpdatedBy as the creator
             ReferenceId = x.ProgressUpdateId,
             ReferenceType = "ProgressUpdate",
-            ReferenceName = x.UpdateTitle
+            ReferenceName = x.UpdateTitle,
+            BoxActivityId = x.BoxActivityId,
+            ActivityName = x.ActivityName
         }).ToList();
 
         // Get QualityIssue Images
@@ -103,6 +113,7 @@ public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQu
             OriginalName = x.Image.OriginalName,
             FileSize = x.Image.FileSize,
             Sequence = x.Image.Sequence,
+            Version = x.Image.Version,
             CreatedDate = x.Image.CreatedDate,
             CreatedBy = x.CreatedBy, // Use QualityIssue.CreatedBy
             ReferenceId = x.IssueId,

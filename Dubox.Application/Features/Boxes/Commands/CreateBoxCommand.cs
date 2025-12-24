@@ -18,7 +18,6 @@ public record CreateBoxCommand(
     decimal? Length,
     decimal? Width,
     decimal? Height,
-    string? BIMModelReference,
     string? RevitElementId,
     DateTime? BoxPlannedStartDate,
     int? BoxDuration,

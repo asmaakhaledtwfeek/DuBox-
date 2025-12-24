@@ -17,6 +17,7 @@ public record ProjectDto
     public DateTime? CompressionStartDate { get; init; }
     public string Status { get; init; } = string.Empty;
     public string? Description { get; init; }
+    public string? BimLink { get; init; }
     public int TotalBoxes { get; init; }
     public decimal ProgressPercentage { get; init; }
     public bool IsActive { get; init; }
@@ -33,6 +34,7 @@ public record CreateProjectDto
     public DateTime? StartDate { get; init; }
     public DateTime? PlannedEndDate { get; init; }
     public string? Description { get; init; }
+    public string? BimLink { get; init; }
 }
 
 public record UpdateProjectDto
@@ -47,6 +49,7 @@ public record UpdateProjectDto
     public DateTime? ActualEndDate { get; init; }
     public string Status { get; init; } = string.Empty;
     public string? Description { get; init; }
+    public string? BimLink { get; init; }
     public bool IsActive { get; init; }
 }
 

@@ -14,7 +14,8 @@ namespace Dubox.Application.Features.QualityIssues.Commands
         Guid? AssignedToUserId = null,
         DateTime? DueDate = null,
         List<string>? ImageUrls = null,
-        List<byte[]>? Files = null
+        List<byte[]>? Files = null,
+        List<string>? FileNames = null
     ) : IRequest<Result<QualityIssueDetailsDto>>;
 }
 

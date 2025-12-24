@@ -5,6 +5,7 @@ export interface Project {
   location: string;
   clientName?: string;
   description?: string;
+  bimLink?: string;
   categoryId?: number;
   categoryName?: string;
   startDate?: Date;

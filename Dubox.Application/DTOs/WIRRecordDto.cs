@@ -6,7 +6,10 @@ public record WIRRecordDto
     public Guid BoxActivityId { get; init; }
     public Guid BoxId { get; init; }
     public string BoxTag { get; init; } = string.Empty;
+    public string? BoxName { get; init; }
     public string ActivityName { get; init; } = string.Empty;
+    public List<string>? ActivityNames { get; init; } // List of all activities up to this WIR
+    public int ActivityCount { get; init; } // Count of activities
     public string WIRCode { get; init; } = string.Empty;
     public string Status { get; init; } = string.Empty;
     public DateTime RequestedDate { get; init; }

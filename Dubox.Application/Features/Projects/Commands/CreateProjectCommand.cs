@@ -14,6 +14,7 @@ public record CreateProjectCommand(
     int ProjectCategoryId,
     int Duration,
     DateTime PlannedStartDate,
-    string? Description
+    string? Description,
+    string? BimLink
 ) : IRequest<Result<ProjectDto>>;
 

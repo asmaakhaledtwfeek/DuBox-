@@ -45,6 +45,176 @@ public class ExcelService : IExcelService
         return package.GetAsByteArray();
     }
 
+    public byte[] GenerateTemplateWithReference<T>(string[] headers, Dictionary<string, List<string>> referenceData, Dictionary<string, List<string>> groupedReferenceData, string projectCode, string sheetName) where T : class
+    {
+        using var package = new ExcelPackage();
+        
+        // Create main data entry sheet
+        var dataSheet = package.Workbook.Worksheets.Add("Data Entry");
+
+        // Add headers with styling
+        for (int i = 0; i < headers.Length; i++)
+        {
+            var cell = dataSheet.Cells[1, i + 1];
+            cell.Value = headers[i];
+            cell.Style.Font.Bold = true;
+            cell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+            cell.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(79, 129, 189)); // Professional blue
+            cell.Style.Font.Color.SetColor(Color.White);
+            cell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            cell.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+            cell.Style.Border.BorderAround(ExcelBorderStyle.Thin);
+            
+            // Add comment to Box Tag column to explain it's auto-filled
+            if (headers[i].Contains("Box Tag"))
+            {
+                cell.AddComment("This column shows a PREVIEW of the Box Tag.\n\n" +
+                               "Format: Project-Building-Floor-Type-SubType\n\n" +
+                               "The actual Box Tag will be generated during import using abbreviations from your project configuration.\n\n" +
+                               "Example: 169-B01-FF-S1-B",
+                               "System");
+                cell.Comment.AutoFit = true;
+            }
+        }
+
+        // Add instruction row
+        var instructionRow = 2;
+        dataSheet.Cells[instructionRow, 1, instructionRow, headers.Length].Merge = true;
+        var instructionCell = dataSheet.Cells[instructionRow, 1];
+        instructionCell.Value = $"⚠️ INSTRUCTIONS: Row 3 shows an EXAMPLE - delete it before importing. Fill your data starting from Row 4. Box Tag is AUTO-GENERATED on import (format: {projectCode}-Building-Floor-Type-SubType). REQUIRED: Box Type, Floor. Use values from Reference Data sheets. Delete rows 2-3 before importing.";
+        instructionCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+        instructionCell.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(255, 242, 204)); // Light yellow
+        instructionCell.Style.Font.Bold = true;
+        instructionCell.Style.Font.Size = 10;
+        instructionCell.Style.WrapText = true;
+        dataSheet.Row(instructionRow).Height = 50;
+
+        // Freeze top rows
+        dataSheet.View.FreezePanes(3, 1);
+
+        // Auto-fit columns
+        for (int i = 1; i <= headers.Length; i++)
+        {
+            dataSheet.Column(i).Width = 20;
+        }
+        
+        // Make the last column (Box Tag) wider and add note
+        dataSheet.Column(headers.Length).Width = 35;
+        
+        // Add example data row at row 3 to show how Box Tag will look
+        var exampleRow = 3;
+        
+        // Column indices based on headers: BoxName=1, BoxType=2, BoxSubType=3, Floor=4, BuildingNumber=5, etc.
+        dataSheet.Cells[exampleRow, 1].Value = "Kitchen Cabinet Box"; // Box Name
+        dataSheet.Cells[exampleRow, 2].Value = "ElectricalPanel"; // Box Type (example)
+        dataSheet.Cells[exampleRow, 3].Value = "MainPanel"; // Box Sub Type (example)
+        dataSheet.Cells[exampleRow, 4].Value = "GF"; // Floor (example)
+        dataSheet.Cells[exampleRow, 5].Value = "B01"; // Building Number (example)
+        dataSheet.Cells[exampleRow, 6].Value = "Kitchen"; // Box Function (example)
+        dataSheet.Cells[exampleRow, 7].Value = "Zone 01"; // Zone (example)
+        dataSheet.Cells[exampleRow, 8].Value = 6000; // Length
+        dataSheet.Cells[exampleRow, 9].Value = 3000; // Width
+        dataSheet.Cells[exampleRow, 10].Value = 2800; // Height
+        dataSheet.Cells[exampleRow, 11].Value = "Example box"; // Notes
+        
+        // Box Tag preview (manual concatenation for the example)
+        var exampleBoxTag = $"{projectCode}-B01-GF-ElectricalPanel-MainPanel";
+        dataSheet.Cells[exampleRow, headers.Length].Value = exampleBoxTag;
+        dataSheet.Cells[exampleRow, headers.Length].Style.Fill.PatternType = ExcelFillStyle.Solid;
+        dataSheet.Cells[exampleRow, headers.Length].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(255, 250, 205)); // Lemon chiffon
+        dataSheet.Cells[exampleRow, headers.Length].Style.Font.Bold = true;
+        dataSheet.Cells[exampleRow, headers.Length].Style.Font.Color.SetColor(Color.FromArgb(184, 134, 11)); // Dark goldenrod
+        
+        // Style the example row
+        for (int col = 1; col < headers.Length; col++)
+        {
+            dataSheet.Cells[exampleRow, col].Style.Font.Italic = true;
+            dataSheet.Cells[exampleRow, col].Style.Fill.PatternType = ExcelFillStyle.Solid;
+            dataSheet.Cells[exampleRow, col].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(240, 248, 255)); // Alice blue
+            dataSheet.Cells[exampleRow, col].Style.Font.Color.SetColor(Color.FromArgb(105, 105, 105)); // Dim gray
+        }
+        
+        // Add note to Box Tag column for subsequent rows
+        for (int row = exampleRow + 1; row <= exampleRow + 5; row++)
+        {
+            dataSheet.Cells[row, headers.Length].Value = "(auto-generated on import)";
+            dataSheet.Cells[row, headers.Length].Style.Fill.PatternType = ExcelFillStyle.Solid;
+            dataSheet.Cells[row, headers.Length].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(245, 245, 245)); // White smoke
+            dataSheet.Cells[row, headers.Length].Style.Font.Italic = true;
+            dataSheet.Cells[row, headers.Length].Style.Font.Size = 9;
+            dataSheet.Cells[row, headers.Length].Style.Font.Color.SetColor(Color.FromArgb(169, 169, 169)); // Dark gray
+            dataSheet.Cells[row, headers.Length].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+        }
+
+        // Create reference data sheets
+        foreach (var reference in referenceData)
+        {
+            if (reference.Value == null || reference.Value.Count == 0)
+                continue;
+
+            var refSheet = package.Workbook.Worksheets.Add($"Ref: {reference.Key}");
+            
+            // Add header
+            refSheet.Cells[1, 1].Value = reference.Key;
+            refSheet.Cells[1, 1].Style.Font.Bold = true;
+            refSheet.Cells[1, 1].Style.Fill.PatternType = ExcelFillStyle.Solid;
+            refSheet.Cells[1, 1].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(146, 208, 80)); // Green
+            refSheet.Cells[1, 1].Style.Font.Color.SetColor(Color.White);
+            refSheet.Cells[1, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+
+            // Add description
+            refSheet.Cells[1, 2].Value = $"Valid values configured for this project";
+            refSheet.Cells[1, 2].Style.Font.Italic = true;
+            refSheet.Cells[1, 2].Style.Font.Color.SetColor(Color.Gray);
+
+            // Add values
+            for (int i = 0; i < reference.Value.Count; i++)
+            {
+                refSheet.Cells[i + 2, 1].Value = reference.Value[i];
+                refSheet.Cells[i + 2, 1].Style.Border.BorderAround(ExcelBorderStyle.Thin);
+            }
+
+            refSheet.Column(1).Width = 30;
+            refSheet.Column(2).Width = 40;
+        }
+
+        // Create grouped reference data sheets (for Box Sub Types grouped by Box Type)
+        if (groupedReferenceData != null && groupedReferenceData.Any())
+        {
+            var subTypesSheet = package.Workbook.Worksheets.Add("Ref: Box Sub Types");
+            
+            // Add header
+            subTypesSheet.Cells[1, 1].Value = "Box Type";
+            subTypesSheet.Cells[1, 2].Value = "Box Sub Type";
+            subTypesSheet.Cells[1, 1, 1, 2].Style.Font.Bold = true;
+            subTypesSheet.Cells[1, 1, 1, 2].Style.Fill.PatternType = ExcelFillStyle.Solid;
+            subTypesSheet.Cells[1, 1, 1, 2].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(146, 208, 80)); // Green
+            subTypesSheet.Cells[1, 1, 1, 2].Style.Font.Color.SetColor(Color.White);
+            subTypesSheet.Cells[1, 1, 1, 2].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            subTypesSheet.Cells[1, 1, 1, 2].Style.Border.BorderAround(ExcelBorderStyle.Thin);
+
+            int currentRow = 2;
+            foreach (var group in groupedReferenceData.OrderBy(g => g.Key))
+            {
+                var boxTypeName = group.Key;
+                var subTypes = group.Value;
+
+                foreach (var subType in subTypes)
+                {
+                    subTypesSheet.Cells[currentRow, 1].Value = boxTypeName;
+                    subTypesSheet.Cells[currentRow, 2].Value = subType;
+                    subTypesSheet.Cells[currentRow, 1, currentRow, 2].Style.Border.BorderAround(ExcelBorderStyle.Thin);
+                    currentRow++;
+                }
+            }
+
+            subTypesSheet.Column(1).Width = 30;
+            subTypesSheet.Column(2).Width = 30;
+        }
+
+        return package.GetAsByteArray();
+    }
+
     public async Task<List<T>> ReadFromExcelAsync<T>(Stream fileStream, Func<Dictionary<string, object?>, T> mapper) where T : class
     {
         var result = new List<T>();

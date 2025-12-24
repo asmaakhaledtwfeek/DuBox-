@@ -12,6 +12,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
     string? AttachmentPath,
     string? Comments,
     List<byte[]>? Files,
-    List<string>? ImageUrls
+    List<string>? ImageUrls,
+    List<string>? FileNames = null
 ) : IRequest<Result<CreateWIRCheckpointDto>>;
 }

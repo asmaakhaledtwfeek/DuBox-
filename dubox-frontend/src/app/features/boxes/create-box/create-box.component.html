@@ -14,6 +14,8 @@
           Projects
         </a>
         <span class="breadcrumb-separator">/</span>
+        <a [routerLink]="['/projects', projectId, 'dashboard']" class="breadcrumb-item">Project</a>
+        <span class="breadcrumb-separator">/</span>
         <a [routerLink]="['/projects', projectId, 'boxes']" class="breadcrumb-item">Boxes</a>
         <span class="breadcrumb-separator">/</span>
         <span class="breadcrumb-item active">Create Box</span>
@@ -340,47 +342,6 @@
                     {{ getFieldError('zone') }}
                   </div>
                 </div>
-
-                <!-- Factory -->
-                <div class="form-group">
-                  <label for="factoryId">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M2 20h.01"/><path d="M7 20h.01"/><path d="M12 20h.01"/><path d="M17 20h.01"/><path d="M22 20h.01"/><path d="M2 15h.01"/><path d="M7 15h.01"/><path d="M12 15h.01"/><path d="M17 15h.01"/><path d="M22 15h.01"/><path d="M2 10h.01"/><path d="M7 10h.01"/><path d="M12 10h.01"/><path d="M17 10h.01"/><path d="M22 10h.01"/><path d="M2 5h.01"/><path d="M7 5h.01"/><path d="M12 5h.01"/><path d="M17 5h.01"/><path d="M22 5h.01"/>
-                    </svg>
-                    Factory
-                  </label>
-                  <select
-                    id="factoryId"
-                    formControlName="factoryId"
-                    class="form-control"
-                    [class.invalid]="isFieldInvalid('factoryId')"
-                    [disabled]="loadingFactories"
-                  >
-                    <option [ngValue]="null">Select Factory</option>
-                    <option *ngFor="let factory of factories" [ngValue]="factory.factoryId">
-                      {{ factory.factoryCode }} - {{ factory.factoryName }}
-                      <span *ngIf="factory.isFull"> (Full)</span>
-                      <span *ngIf="!factory.isFull && factory.capacity"> ({{ factory.availableCapacity }} available)</span>
-                    </option>
-                  </select>
-                  <div class="helper-text" *ngIf="loadingFactories">
-                    Loading factories for {{ projectLocation }}...
-                  </div>
-                  <small *ngIf="!loadingFactories && factories.length === 0 && projectLocation" style="color: #f59e0b; font-size: 12px; display: block; margin-top: 4px;">
-                    ⚠️ No factories available for location: {{ projectLocation }}
-                  </small>
-                  <small *ngIf="!loadingFactories && factories.length > 0 && projectLocation" style="color: #10b981; font-size: 12px; display: block; margin-top: 4px;">
-                    📍 Showing {{ factories.length }} factory(ies) for location: <strong>{{ projectLocation }}</strong>
-                  </small>
-                  <div class="error-text" *ngIf="isFieldInvalid('factoryId')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="12" cy="12" r="10"/>
-                      <line x1="12" y1="8" x2="12" y2="12"/>
-                      <line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                    {{ getFieldError('factoryId') }}
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -560,38 +521,11 @@
                 </svg>
                 <div>
                   <h3 class="section-title">BIM Information</h3>
-                  <p class="section-description">Link to BIM model and Revit elements (optional)</p>
+                  <p class="section-description">Revit element information (optional)</p>
                 </div>
               </div>
 
               <div class="form-grid">
-                <!-- BIM Model Reference -->
-                <div class="form-group">
-                  <label for="bimModelReference">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                      <polyline points="14 2 14 8 20 8"/>
-                    </svg>
-                    BIM Model Reference
-                  </label>
-                  <input
-                    id="bimModelReference"
-                    type="text"
-                    formControlName="bimModelReference"
-                    class="form-control"
-                    [class.invalid]="isFieldInvalid('bimModelReference')"
-                    placeholder="e.g., REV-2024-001"
-                  />
-                  <div class="error-text" *ngIf="isFieldInvalid('bimModelReference')">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <circle cx="12" cy="12" r="10"/>
-                      <line x1="12" y1="8" x2="12" y2="12"/>
-                      <line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                    {{ getFieldError('bimModelReference') }}
-                  </div>
-                </div>
-
                 <!-- Revit Element ID -->
                 <div class="form-group">
                   <label for="revitElementId">
@@ -630,12 +564,15 @@
                   <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
                 </svg>
                 <div>
-                  <h3 class="section-title">Assets</h3>
+                  <h3 class="section-title">
+                    Assets
+                    <span class="coming-soon-badge">Coming Soon</span>
+                  </h3>
                   <p class="section-description">Add equipment, materials, or MEP components for this box</p>
                 </div>
               </div>
 
-              <button type="button" class="btn btn-primary" (click)="openAssetModal()" style="margin-bottom: 20px;">
+              <button type="button" class="btn btn-primary" style="margin-bottom: 20px;" disabled>
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="12" y1="5" x2="12" y2="19"/>
                   <line x1="5" y1="12" x2="19" y2="12"/>
@@ -643,11 +580,11 @@
                 Add Asset
               </button>
 
-              <div class="empty-assets" *ngIf="assets.length === 0">
+              <div class="empty-assets">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin: 0 auto 12px; opacity: 0.4;">
                   <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
                 </svg>
-                No assets added yet. Click "Add Asset" to include equipment or materials for this box.
+                Asset management is coming soon!
               </div>
 
               <div class="assets-table" *ngIf="assets.length > 0">
@@ -841,12 +778,13 @@
         <button type="button" class="btn btn-secondary" (click)="closeAssetModal()">
           Cancel
         </button>
-        <button type="submit" class="btn btn-primary">
+        <button type="button" class="btn btn-primary" disabled style="cursor: not-allowed; opacity: 0.6;">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-            <polyline points="22 4 12 14.01 9 11.01"/>
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
-          {{ editingAssetIndex !== null ? 'Update' : 'Add' }} Asset
+          Coming Soon
         </button>
       </div>
     </form>

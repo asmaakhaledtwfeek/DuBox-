@@ -37,15 +37,15 @@
       <div class="config-section">
         <div class="section-header">
           <h2>Building Numbers</h2>
-          <p>Define the building numbers for this project</p>
+          <p>Add building numbers one at a time or multiple comma-separated values (press Enter or click Add)</p>
         </div>
         <div class="add-item-row">
           <input 
             type="text" 
             [(ngModel)]="newBuilding" 
-            placeholder="e.g., B01" 
+            placeholder="e.g., B01, B02, B03" 
             class="input-field"
-            (keyup.enter)="addBuilding()"
+            (keydown.enter)="$event.preventDefault(); addBuilding()"
           />
           <button type="button" class="btn-add" (click)="addBuilding()">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -75,15 +75,15 @@
       <div class="config-section">
         <div class="section-header">
           <h2>Building Levels/Floors</h2>
-          <p>Define the floor levels for this project</p>
+          <p>Add floor levels one at a time or multiple comma-separated values (press Enter or click Add)</p>
         </div>
         <div class="add-item-row">
           <input 
             type="text" 
             [(ngModel)]="newLevel" 
-            placeholder="e.g., GF, 1F, 2F" 
+            placeholder="e.g., GF, 1F, 2F, 3F" 
             class="input-field"
-            (keyup.enter)="addLevel()"
+            (keydown.enter)="$event.preventDefault(); addLevel()"
           />
           <button type="button" class="btn-add" (click)="addLevel()">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -113,15 +113,15 @@
       <div class="config-section">
         <div class="section-header">
           <h2>Box Types</h2>
-          <p>Define custom box types for this project</p>
+          <p>Add box types one at a time or multiple comma-separated values (press Enter or click Add)</p>
         </div>
         <div class="add-item-row">
           <input 
             type="text" 
             [(ngModel)]="newBoxType" 
-            placeholder="e.g., S1, S2, S3" 
+            placeholder="e.g., S1, S2, S3, S4" 
             class="input-field"
-            (keyup.enter)="addBoxType()"
+            (keydown.enter)="$event.preventDefault(); addBoxType()"
           />
           <button type="button" class="btn-add" (click)="addBoxType()">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -159,9 +159,9 @@
                 <input 
                   type="text" 
                   [(ngModel)]="newBoxSubType" 
-                  placeholder="Enter sub-type name" 
+                  placeholder="e.g., Type A, Type B, Type C" 
                   class="input-field-sm"
-                  (keyup.enter)="addSubType(i)"
+                  (keydown.enter)="$event.preventDefault(); addSubType(i)"
                   (focus)="selectedTypeForSubType = i"
                 />
                 <button 
@@ -199,15 +199,15 @@
       <div class="config-section">
         <div class="section-header">
           <h2>Zones</h2>
-          <p>Define zones for organizing boxes</p>
+          <p>Add zones one at a time or multiple comma-separated values (press Enter or click Add)</p>
         </div>
         <div class="add-item-row">
           <input 
             type="text" 
             [(ngModel)]="newZone" 
-            placeholder="e.g., Zone A, Zone B" 
+            placeholder="e.g., Zone A, Zone B, Zone C" 
             class="input-field"
-            (keyup.enter)="addZone()"
+            (keydown.enter)="$event.preventDefault(); addZone()"
           />
           <button type="button" class="btn-add" (click)="addZone()">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -237,15 +237,15 @@
       <div class="config-section">
         <div class="section-header">
           <h2>Box Functions</h2>
-          <p>Define functional purposes for boxes</p>
+          <p>Add functions one at a time or multiple comma-separated values (press Enter or click Add)</p>
         </div>
         <div class="add-item-row">
           <input 
             type="text" 
             [(ngModel)]="newBoxFunction" 
-            placeholder="e.g., S1 ,S2 ,S3" 
+            placeholder="e.g., Storage, Distribution, Assembly" 
             class="input-field"
-            (keyup.enter)="addBoxFunction()"
+            (keydown.enter)="$event.preventDefault(); addBoxFunction()"
           />
           <button type="button" class="btn-add" (click)="addBoxFunction()">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

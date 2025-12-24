@@ -100,30 +100,75 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                 var boxDto = importedDtos[i];
                 var rowNumber = i + 2;
                 int boxTypeId;
+                int? boxSubTypeId = null;
+                ProjectBoxType? projectBoxType = null;
+                ProjectBoxSubType? projectBoxSubType = null;
+                
                 try
                 {
-                    if (string.IsNullOrWhiteSpace(boxDto.BoxTag))
-                    {
-                        errors.Add($"Row {rowNumber}: BoxTag is required");
-                        failureCount++;
-                        continue;
-                    }
+                    // Validate Box Type (required)
                     if (string.IsNullOrWhiteSpace(boxDto.BoxType))
                     {
-                        errors.Add($"Row {rowNumber}: BoxType (Type) is required");
+                        errors.Add($"Row {rowNumber}: Box Type is required");
                         failureCount++;
                         continue;
                     }
-                    else
+                    
+                    // Look up box type from project configuration (ProjectBoxType)
+                    projectBoxType = _unitOfWork.Repository<ProjectBoxType>()
+                        .Get()
+                        .FirstOrDefault(x => x.ProjectId == request.ProjectId 
+                            && x.TypeName.ToUpper() == boxDto.BoxType.Trim().ToUpper() 
+                            && x.IsActive);
+                    
+                    if (projectBoxType == null)
                     {
-                         var boxType = _unitOfWork.Repository<BoxType>()
-                        .Get().Where(x => x.BoxTypeName.ToUpper() == boxDto.BoxType.Trim().ToUpper()).FirstOrDefault();
-                        if (boxType == null)
+                        errors.Add($"Row {rowNumber}: Box Type '{boxDto.BoxType}' is not configured for this project. Please use one of the valid box types from the template.");
+                        failureCount++;
+                        continue;
+                    }
+                    boxTypeId = projectBoxType.Id;
+                    
+                    // Validate Box Sub Type if provided
+                    if (!string.IsNullOrWhiteSpace(boxDto.BoxSubType))
+                    {
+                        // Check if the box type supports sub-types
+                        if (!projectBoxType.HasSubTypes)
                         {
+                            errors.Add($"Row {rowNumber}: Box Type '{boxDto.BoxType}' does not support sub-types. Please leave the Box Sub Type field empty.");
                             failureCount++;
                             continue;
                         }
-                        boxTypeId = boxType.BoxTypeId;
+                        
+                        // Look up sub-type and verify it belongs to the selected box type
+                        projectBoxSubType = _unitOfWork.Repository<ProjectBoxSubType>()
+                            .Get()
+                            .FirstOrDefault(st => st.ProjectBoxTypeId == boxTypeId
+                                && st.SubTypeName.ToUpper() == boxDto.BoxSubType.Trim().ToUpper()
+                                && st.IsActive);
+                        
+                        if (projectBoxSubType == null)
+                        {
+                            errors.Add($"Row {rowNumber}: Box Sub Type '{boxDto.BoxSubType}' is not valid for Box Type '{boxDto.BoxType}'. Please check the 'Ref: Box Sub Types' sheet.");
+                            failureCount++;
+                            continue;
+                        }
+                        
+                        boxSubTypeId = projectBoxSubType.Id;
+                    }
+                    else if (projectBoxType.HasSubTypes)
+                    {
+                        // Check if sub-types exist for this box type
+                        var hasSubTypes = _unitOfWork.Repository<ProjectBoxSubType>()
+                            .Get()
+                            .Any(st => st.ProjectBoxTypeId == boxTypeId && st.IsActive);
+                        
+                        if (hasSubTypes)
+                        {
+                            errors.Add($"Row {rowNumber}: Box Type '{boxDto.BoxType}' requires a Box Sub Type. Please select one from the 'Ref: Box Sub Types' sheet.");
+                            failureCount++;
+                            continue;
+                        }
                     }
                     if (string.IsNullOrWhiteSpace(boxDto.Floor))
                     {
@@ -131,16 +176,115 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                         failureCount++;
                         continue;
                     }
-                    if (existingBoxTags.Contains(boxDto.BoxTag.ToLower()))
+                    
+                    // Validate Floor against project configuration
+                    var validFloor = await _dbContext.ProjectLevels
+                        .AnyAsync(l => l.ProjectId == request.ProjectId 
+                            && l.LevelCode.ToUpper() == boxDto.Floor.Trim().ToUpper() 
+                            && l.IsActive, cancellationToken);
+                    
+                    if (!validFloor)
                     {
-                        errors.Add($"Row {rowNumber}: Box with tag '{boxDto.BoxTag}' already exists in this project");
+                        errors.Add($"Row {rowNumber}: Floor '{boxDto.Floor}' is not configured for this project. Please use one of the valid floors from the template.");
                         failureCount++;
                         continue;
                     }
-                    var duplicateInFile = importedDtos.Take(i).Any(b => b.BoxTag.Equals(boxDto.BoxTag, StringComparison.OrdinalIgnoreCase));
-                    if (duplicateInFile)
+                    
+                    // Validate Building Number if provided
+                    if (!string.IsNullOrWhiteSpace(boxDto.BuildingNumber))
                     {
-                        errors.Add($"Row {rowNumber}: Duplicate BoxTag '{boxDto.BoxTag}' found in the import file");
+                        var validBuilding = await _dbContext.ProjectBuildings
+                            .AnyAsync(b => b.ProjectId == request.ProjectId 
+                                && b.BuildingCode.ToUpper() == boxDto.BuildingNumber.Trim().ToUpper() 
+                                && b.IsActive, cancellationToken);
+                        
+                        if (!validBuilding)
+                        {
+                            errors.Add($"Row {rowNumber}: Building Number '{boxDto.BuildingNumber}' is not configured for this project. Please use one of the valid buildings from the template.");
+                            failureCount++;
+                            continue;
+                        }
+                    }
+                    
+                    // Validate Zone if provided
+                    if (!string.IsNullOrWhiteSpace(boxDto.Zone))
+                    {
+                        var validZone = await _dbContext.ProjectZones
+                            .AnyAsync(z => z.ProjectId == request.ProjectId 
+                                && z.ZoneCode.ToUpper() == boxDto.Zone.Trim().ToUpper() 
+                                && z.IsActive, cancellationToken);
+                        
+                        if (!validZone)
+                        {
+                            errors.Add($"Row {rowNumber}: Zone '{boxDto.Zone}' is not configured for this project. Please use one of the valid zones from the template.");
+                            failureCount++;
+                            continue;
+                        }
+                    }
+                    
+                    // Validate Box Function if provided
+                    if (!string.IsNullOrWhiteSpace(boxDto.BoxFunction))
+                    {
+                        var validFunction = await _dbContext.ProjectBoxFunctions
+                            .AnyAsync(f => f.ProjectId == request.ProjectId 
+                                && f.FunctionName.ToUpper() == boxDto.BoxFunction.Trim().ToUpper() 
+                                && f.IsActive, cancellationToken);
+                        
+                        if (!validFunction)
+                        {
+                            errors.Add($"Row {rowNumber}: Box Function '{boxDto.BoxFunction}' is not configured for this project. Please use one of the valid functions from the template.");
+                            failureCount++;
+                            continue;
+                        }
+                    }
+                    
+                    // Auto-generate Box Tag from: Project-Building-Floor-Type-SubType
+                    var boxTagParts = new List<string>();
+                    
+                    // 1. Project Code
+                    boxTagParts.Add(project.ProjectCode);
+                    
+                    // 2. Building Number (optional)
+                    if (!string.IsNullOrWhiteSpace(boxDto.BuildingNumber))
+                    {
+                        boxTagParts.Add(boxDto.BuildingNumber.Trim());
+                    }
+                    
+                    // 3. Floor
+                    boxTagParts.Add(boxDto.Floor.Trim());
+                    
+                    // 4. Box Type Abbreviation
+                    var typeAbbreviation = !string.IsNullOrWhiteSpace(projectBoxType.Abbreviation) 
+                        ? projectBoxType.Abbreviation 
+                        : projectBoxType.TypeName.Substring(0, Math.Min(2, projectBoxType.TypeName.Length)).ToUpper();
+                    boxTagParts.Add(typeAbbreviation);
+                    
+                    // 5. Box Sub Type Abbreviation (optional)
+                    if (projectBoxSubType != null)
+                    {
+                        var subTypeAbbreviation = !string.IsNullOrWhiteSpace(projectBoxSubType.Abbreviation) 
+                            ? projectBoxSubType.Abbreviation 
+                            : projectBoxSubType.SubTypeName.Substring(0, Math.Min(1, projectBoxSubType.SubTypeName.Length)).ToUpper();
+                        boxTagParts.Add(subTypeAbbreviation);
+                    }
+                    
+                    // Generate the Box Tag
+                    var generatedBoxTag = string.Join("-", boxTagParts);
+                    
+                    // Check for duplicates
+                    if (existingBoxTags.Contains(generatedBoxTag.ToLower()))
+                    {
+                        errors.Add($"Row {rowNumber}: Box with tag '{generatedBoxTag}' already exists in this project");
+                        failureCount++;
+                        continue;
+                    }
+                    
+                    // Check for duplicates in the current import batch
+                    // We need to check against previously generated tags in this batch
+                    var duplicateInBatch = boxesToCreate.Any(b => b.BoxTag.Equals(generatedBoxTag, StringComparison.OrdinalIgnoreCase));
+                    if (duplicateInBatch)
+                    {
+                        errors.Add($"Row {rowNumber}: Duplicate BoxTag '{generatedBoxTag}' found in the import file (same combination of Project-Building-Floor-Type-SubType)");
                         failureCount++;
                         continue;
                     }
@@ -150,25 +294,35 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                    var SequentialNumber = lastSeq + 1;
                     var yearOfProject = project.CreatedDate.Year.ToString().Substring(2, 2);
                     var serialNumber = _serialNumberService.GenerateSerialNumber("X", lastSeq, yearOfProject);
+                    // Try to parse Zone enum if provided
+                    BoxZone? parsedZone = null;
+                    if (!string.IsNullOrWhiteSpace(boxDto.Zone))
+                    {
+                        if (Enum.TryParse<BoxZone>(boxDto.Zone.Trim(), true, out var zone))
+                        {
+                            parsedZone = zone;
+                        }
+                    }
+                    
                     var newBox = new Box
                     {
                         ProjectId = request.ProjectId,
-                        BoxTag = boxDto.BoxTag.Trim(),
+                        BoxTag = generatedBoxTag,
                         BoxName = boxDto.BoxName?.Trim(),
                         BoxTypeId = boxTypeId,
+                        BoxSubTypeId = boxSubTypeId,
                         Floor = boxDto.Floor.Trim(),
                         BuildingNumber = boxDto.BuildingNumber?.Trim(),
                         BoxFunction = boxDto.BoxFunction?.Trim(),
-                        Zone = boxDto.Zone ?? BoxZone.ZoneA,
+                        Zone = parsedZone,
                         Length = boxDto.Length,
                         Width = boxDto.Width,
                         Height = boxDto.Height,
                         UnitOfMeasure = UnitOfMeasureEnum.m,
-                        BIMModelReference = boxDto.BIMModelReference?.Trim(),
                         Notes = boxDto.Notes?.Trim(),
                         SerialNumber = serialNumber,
                         SequentialNumber = SequentialNumber,
-                        QRCodeString = $"ProjectCode: {project.ProjectCode}\nBoxTag: {boxDto.BoxTag.Trim()}\nSerialNumber: {serialNumber}",
+                        QRCodeString = $"ProjectCode: {project.ProjectCode}\nBoxTag: {generatedBoxTag}\nSerialNumber: {serialNumber}",
                         Status = BoxStatusEnum.NotStarted,
                         ProgressPercentage = 0,
                         IsActive = true,
@@ -188,7 +342,7 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                     boxLogs.Add(logEntry);
 
                     boxesToCreate.Add(newBox);
-                    existingBoxTags.Add(boxDto.BoxTag.ToLower());
+                    existingBoxTags.Add(generatedBoxTag.ToLower());
                     successCount++;
                 }
                 catch (Exception ex)
@@ -280,17 +434,17 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
     {
         return new ImportBoxFromExcelDto
         {
-            BoxTag = GetStringValue(row, "Box Tag"),
+            BoxTag = string.Empty, // Box Tag is auto-generated, not read from Excel
             BoxName = GetStringValue(row, "Box Name"),
             BoxType = GetStringValue(row, "Box Type"),
+            BoxSubType = GetStringValue(row, "Box Sub Type"),
             Floor = GetStringValue(row, "Floor"),
             BuildingNumber = GetStringValue(row, "Building Number"),
             BoxFunction = GetStringValue(row, "Box Function"),
-            Zone = GetBoxZoneValue(row, "Zone"),
+            Zone = GetStringValue(row, "Zone"),
             Length = GetDecimalValue(row, "Length"),
             Width = GetDecimalValue(row, "Width"),
             Height = GetDecimalValue(row, "Height"),
-            BIMModelReference = GetStringValue(row, "BIMModelReference"),
             Notes = GetStringValue(row, "Notes")
         };
     }

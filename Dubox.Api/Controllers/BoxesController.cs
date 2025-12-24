@@ -119,9 +119,12 @@ public class BoxesController : ControllerBase
     }
 
     [HttpGet("template")]
-    public async Task<IActionResult> DownloadTemplate(CancellationToken cancellationToken)
+    public async Task<IActionResult> DownloadTemplate([FromQuery] Guid projectId, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GenerateBoxesTemplateQuery(), cancellationToken);
+        if (projectId == Guid.Empty)
+            return BadRequest("Project ID is required");
+
+        var result = await _mediator.Send(new GenerateBoxesTemplateQuery(projectId), cancellationToken);
 
         if (!result.IsSuccess)
             return BadRequest(result);

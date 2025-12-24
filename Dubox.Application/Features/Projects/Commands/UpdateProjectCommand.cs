@@ -13,6 +13,7 @@ public record UpdateProjectCommand(
     ProjectLocationEnum? Location,
     int? CategoryId,
     string? Description,
+    string? BimLink,
     bool? IsActive,
     DateTime? PlannedStartDate,
     int? Duration

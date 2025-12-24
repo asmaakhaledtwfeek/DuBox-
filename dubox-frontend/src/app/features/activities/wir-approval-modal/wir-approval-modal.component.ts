@@ -129,8 +129,25 @@ export class WIRApprovalModalComponent implements OnInit, OnChanges {
       },
       error: (err) => {
         this.processing = false;
-        this.error = err.error?.message || err.message || 'Failed to approve WIR record. Please try again.';
-        console.error('Error approving WIR:', err);
+        // Extract error message from various possible structures
+        this.error = err.error?.error?.description || 
+                     err.error?.message || 
+                     err.error?.error?.message ||
+                     err.message || 
+                     'Failed to approve WIR record. Please try again.';
+        console.error('❌ Error approving WIR:', err);
+        console.error('📋 Error structure:', {
+          errorObj: err.error,
+          message: this.error
+        });
+        
+        // Scroll error into view after a brief delay
+        setTimeout(() => {
+          const errorAlert = document.querySelector('.alert-error');
+          if (errorAlert) {
+            errorAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }, 100);
       }
     });
   }
@@ -171,8 +188,25 @@ export class WIRApprovalModalComponent implements OnInit, OnChanges {
       },
       error: (err) => {
         this.processing = false;
-        this.error = err.error?.message || err.message || 'Failed to reject WIR record. Please try again.';
-        console.error('Error rejecting WIR:', err);
+        // Extract error message from various possible structures
+        this.error = err.error?.error?.description || 
+                     err.error?.message || 
+                     err.error?.error?.message ||
+                     err.message || 
+                     'Failed to reject WIR record. Please try again.';
+        console.error('❌ Error rejecting WIR:', err);
+        console.error('📋 Error structure:', {
+          errorObj: err.error,
+          message: this.error
+        });
+        
+        // Scroll error into view after a brief delay
+        setTimeout(() => {
+          const errorAlert = document.querySelector('.alert-error');
+          if (errorAlert) {
+            errorAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }, 100);
       }
     });
   }

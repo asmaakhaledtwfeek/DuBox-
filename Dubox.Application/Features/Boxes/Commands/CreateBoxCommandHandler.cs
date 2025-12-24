@@ -91,6 +91,25 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
         // Generate QR code string with structured format
         box.QRCodeString = $"ProjectCode: {project.ProjectCode}\nBoxTag: {request.BoxTag}\nSerialNumber: {box.SerialNumber}";
         box.CreatedBy = currentUserId;
+        
+        // Automatically assign factory based on project location
+        // Get the first available factory for the project's location
+        var factory = _unitOfWork.Repository<Factory>()
+            .Get()
+            .Where(f => f.Location == project.Location && f.IsActive)
+            .OrderBy(f => f.CurrentOccupancy) // Prefer factories with lower occupancy
+            .FirstOrDefault();
+        
+        if (factory != null)
+        {
+            box.FactoryId = factory.FactoryId;
+            Console.WriteLine($"✅ Auto-assigned Factory: {factory.FactoryCode} for project location: {project.Location}");
+        }
+        else
+        {
+            Console.WriteLine($"⚠️ No active factory found for location: {project.Location}");
+        }
+        
         box.BoxAssets = request.Assets?.Adapt<List<BoxAsset>>() ?? new List<BoxAsset>();
         foreach (var asset in box.BoxAssets)
             asset.Box = box;

@@ -590,16 +590,21 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
       this.loadWIRCheckpoint(wir.wirCode);
     }
     
-    // LOCKING LOGIC: Lock if WIR already has position values set
+    // LOCKING LOGIC: Only lock if WIR already has position values set
+    // If position is not set, allow editing regardless of WIR status
     if (hasPositionValues) {
         this.progressForm.get('wirBay')?.disable();
         this.progressForm.get('wirRow')?.disable();
       this.positionLockedReason = `Position is locked. ${wir.wirCode} already has position values set (Bay: ${bayValue || '-'}, Row: ${rowValue || '-'}, Position: ${positionValue || '-'}).`;
       console.log('🔒 Locking position fields: WIR has values set');
     } else {
-      // WIR has no position values yet - check WIR status and previous WIR for locking
-      console.log('🔍 WIR has no position values yet - checking WIR status and previous WIR');
-      this.checkWIRStatusAndPreviousWIRForLocking(wir);
+      // WIR has no position values yet - allow editing, but check previous WIR for dependencies
+      console.log('✅ WIR has no position values yet - fields are editable, checking previous WIR dependencies');
+      this.progressForm.get('wirBay')?.enable();
+      this.progressForm.get('wirRow')?.enable();
+      this.positionLockedReason = ''; // Clear any lock reason
+      // Only check previous WIR - don't lock based on current WIR status when position is not set
+      this.checkPreviousWIRForLocking();
     }
   }
 

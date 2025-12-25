@@ -698,16 +698,16 @@
     .coming-soon-badge {
       display: inline-flex;
       align-items: center;
-      padding: 6px 14px;
-      background: linear-gradient(135deg, rgba(255, 193, 7, 0.15), rgba(255, 152, 0, 0.1));
-      border: 2px solid rgba(255, 193, 7, 0.3);
-      border-radius: 12px;
-      color: #f57c00;
-      font-size: 12px;
+      padding: 3px 8px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: black;
+      font-size: 10px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      animation: pulse-badge 2s ease-in-out infinite;
+      border-radius: 10px;
+      white-space: nowrap;
+      box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
     }
   }
 
@@ -860,7 +860,7 @@
     font-weight: 900;
     color: white;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-family: 'QA', sans-serif;
   }
 }
 

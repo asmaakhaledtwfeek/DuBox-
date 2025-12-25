@@ -596,7 +596,7 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
 
     // Create checkpoint form (only user-filled fields)
     this.createCheckpointForm = this.fb.group({
-      wirName: ['', [Validators.maxLength(200)]],
+      wirName: ['', [Validators.maxLength(1000)]],
       wirDescription: ['', [Validators.maxLength(500)]],
       attachmentPath: ['', [Validators.maxLength(500)]],
       comments: ['', [Validators.maxLength(1000)]]
@@ -926,8 +926,23 @@ console.log(expectedWirCode);
   }
 
   onCreateCheckpoint(): void {
-    if (this.createCheckpointForm.invalid || !this.wirRecord) {
+    console.log('🔵 onCreateCheckpoint called', {
+      formValid: this.createCheckpointForm.valid,
+      formInvalid: this.createCheckpointForm.invalid,
+      wirRecord: !!this.wirRecord,
+      formErrors: this.getFormValidationErrors(this.createCheckpointForm)
+    });
+
+    if (!this.wirRecord) {
+      console.error('❌ Cannot create checkpoint: wirRecord is null');
+      this.error = 'WIR Record is not loaded. Please refresh the page.';
+      return;
+    }
+
+    if (this.createCheckpointForm.invalid) {
+      console.error('❌ Form is invalid:', this.getFormValidationErrors(this.createCheckpointForm));
       this.markFormGroupTouched(this.createCheckpointForm);
+      this.error = 'Please fix the form errors before submitting.';
       return;
     }
 
@@ -3788,6 +3803,17 @@ console.log(expectedWirCode);
     });
   }
 
+  private getFormValidationErrors(formGroup: FormGroup): any {
+    const errors: any = {};
+    Object.keys(formGroup.controls).forEach(key => {
+      const control = formGroup.get(key);
+      if (control && control.errors) {
+        errors[key] = control.errors;
+      }
+    });
+    return errors;
+  }
+
   getStepNumber(step: ReviewStep): number {
     return this.stepFlow.indexOf(step) + 1;
   }
@@ -3931,6 +3957,14 @@ console.log(expectedWirCode);
     if (this.currentStep) return this.currentStep;
     if (this.pendingAction) return this.pendingAction;
     return this.wirCheckpoint ? 'review' : 'create-checkpoint';
+  }
+  getFormControls() {
+    return Object.keys(this.createCheckpointForm.controls).map(key => ({
+      key: key,
+      valid: this.createCheckpointForm.get(key)?.valid,
+      value: this.createCheckpointForm.get(key)?.value,
+      errors: this.createCheckpointForm.get(key)?.errors
+    }));
   }
 }
 

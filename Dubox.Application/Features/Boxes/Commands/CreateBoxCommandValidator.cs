@@ -65,7 +65,7 @@ namespace Dubox.Application.Features.Boxes.Commands
 
             RuleFor(x => x.RevitElementId)
                 .MaximumLength(100)
-                .WithMessage("Revit element ID cannot exceed 100 characters")
+                .WithMessage("Revit Group Element ID cannot exceed 100 characters")
                 .When(x => !string.IsNullOrEmpty(x.RevitElementId));
             RuleForEach(x => x.Assets)
                 .SetValidator(new CreateBoxAssetDtoValidator())

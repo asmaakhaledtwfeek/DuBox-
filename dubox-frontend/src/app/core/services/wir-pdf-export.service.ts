@@ -441,7 +441,7 @@ export class WirPdfExportService {
     return `
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body {
-        font-family: Arial, sans-serif;
+        font-family: 'QA', sans-serif;
         padding: 20px;
         color: #000;
         background: white;

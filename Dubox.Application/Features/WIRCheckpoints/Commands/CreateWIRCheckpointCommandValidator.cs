@@ -14,7 +14,7 @@
                 .MaximumLength(20).WithMessage("WIR Number cannot exceed 20 characters.");
 
             RuleFor(x => x.WIRName)
-                .MaximumLength(200).WithMessage("WIR Name cannot exceed 200 characters.");
+                .MaximumLength(1000).WithMessage("WIR Name cannot exceed 200 characters.");
 
             RuleFor(x => x.WIRDescription)
                 .MaximumLength(500).WithMessage("WIR Description cannot exceed 500 characters.");

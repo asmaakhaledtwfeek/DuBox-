@@ -4,6 +4,7 @@ import { Router, RouterModule } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
+import { QualityIssueDetailsModalComponent } from '../../../shared/components/quality-issue-details-modal/quality-issue-details-modal.component';
 import { WIRService } from '../../../core/services/wir.service';
 import { QualityIssueItem, QualityIssueDetails, QualityIssueStatus, UpdateQualityIssueStatusRequest, WIRCheckpoint, WIRCheckpointStatus } from '../../../core/models/wir.model';
 import { FormsModule } from '@angular/forms';
@@ -37,7 +38,7 @@ type AggregatedQualityIssue = QualityIssueItem & {
 @Component({
   selector: 'app-quality-control-dashboard',
   standalone: true,
-  imports: [HeaderComponent, CommonModule, RouterModule,SidebarComponent, ReactiveFormsModule, FormsModule],
+  imports: [HeaderComponent, CommonModule, RouterModule, SidebarComponent, ReactiveFormsModule, FormsModule, QualityIssueDetailsModalComponent],
   templateUrl: './quality-control-dashboard.component.html',
   styleUrl: './quality-control-dashboard.component.scss'
 })
@@ -727,162 +728,6 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     this.selectedIssueDetails = null;
   }
 
-  getQualityIssueImageUrls(issue: QualityIssueDetails | null): string[] {
-    if (!issue) return [];
-    
-    // First, try to use the new Images array
-    if (issue.images && Array.isArray(issue.images) && issue.images.length > 0) {
-      return issue.images
-        .sort((a, b) => (a.sequence || 0) - (b.sequence || 0))
-        .map((img) => {
-          // Use imageUrl if available (new API returns URL for on-demand loading)
-          if (img.imageUrl) {
-            // Convert relative URL to full API URL
-            const baseUrl = this.getApiBaseUrl();
-            return img.imageUrl.startsWith('/') ? `${baseUrl}${img.imageUrl}` : img.imageUrl;
-          }
-          
-          // Fallback to imageData for backward compatibility
-          const imageData = img.imageData || '';
-          // If it's already a data URL, return as is
-          if (imageData.startsWith('data:image/')) {
-            return imageData;
-          }
-          // If it's a URL, return as is
-          if (imageData.startsWith('http://') || imageData.startsWith('https://')) {
-            return imageData;
-          }
-          // Otherwise, assume it's base64 and add data URI prefix
-          if (imageData) {
-            return `data:image/jpeg;base64,${imageData}`;
-          }
-          return '';
-        })
-        .filter((url: string) => url && url.trim().length > 0);
-    }
-    
-    // Fallback to old PhotoPath field (backward compatibility)
-    if (issue.photoPath) {
-      return [issue.photoPath];
-    }
-    
-    return [];
-  }
-  
-  /**
-   * Get the API base URL (without /api suffix, since imageUrl already includes /api)
-   */
-  private getApiBaseUrl(): string {
-    // Use environment.apiUrl and remove /api suffix if present
-    return environment.apiUrl.replace(/\/api\/?$/, '');
-  }
-
-  openImageInNewTab(imageUrl: string): void {
-    if (!imageUrl) {
-      console.error('No image URL provided');
-      return;
-    }
-
-    // Ensure URL is absolute
-    let absoluteUrl = imageUrl;
-    
-    // If it's a relative URL, make it absolute
-    if (imageUrl.startsWith('/')) {
-      const baseUrl = this.getApiBaseUrl();
-      absoluteUrl = `${baseUrl}${imageUrl}`;
-    }
-    // If it's a data URL, we can't open it in a new tab - create a blob URL instead
-    else if (imageUrl.startsWith('data:image/')) {
-      // For data URLs, convert to blob URL
-      fetch(imageUrl)
-        .then(response => response.blob())
-        .then(blob => {
-          const blobUrl = URL.createObjectURL(blob);
-          const newWindow = window.open(blobUrl, '_blank', 'noopener,noreferrer');
-          if (!newWindow) {
-            console.error('Failed to open image in new tab. Popup may be blocked.');
-           
-          }
-        })
-        .catch(error => {
-          console.error('Error converting data URL to blob:', error);
-          // Fallback: try to open data URL directly (may not work in all browsers)
-          window.open(imageUrl, '_blank', 'noopener,noreferrer');
-        });
-      return;
-    }
-    // If it's already an absolute URL (http/https), use as is
-    else if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
-      // Relative URL without leading slash - prepend base URL
-      const baseUrl = this.getApiBaseUrl();
-      absoluteUrl = `${baseUrl}/${imageUrl}`;
-    }
-
-    // Open in new tab
-    console.log('Opening image URL:', absoluteUrl);
-    const newWindow = window.open(absoluteUrl, '_blank', 'noopener,noreferrer');
-    
-    if (!newWindow) {
-      console.error('Failed to open image in new tab. Popup may be blocked.');
-      // Fallback: try to download instead
-  
-    }
-  }
-
-  downloadImage(imageUrl: string): void {
-    try {
-      const link = document.createElement('a');
-      link.href = imageUrl;
-      link.download = `quality-issue-image-${Date.now()}.jpg`;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (error) {
-      console.error('Error downloading image:', error);
-      // Fallback: open in new tab
-      this.openImageInNewTab(imageUrl);
-    }
-  }
-
-  onImageError(event: Event): void {
-    const img = event.target as HTMLImageElement;
-    img.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5JbWFnZSBub3QgYXZhaWxhYmxlPC90ZXh0Pjwvc3ZnPg==';
-  }
-
-  // Lightbox functionality
-  lightboxOpen = false;
-  lightboxImageIndex = 0;
-  lightboxImages: string[] = [];
-
-  openLightbox(imageUrl: string, allImages: string[]): void {
-    this.lightboxImages = allImages;
-    this.lightboxImageIndex = allImages.indexOf(imageUrl);
-    if (this.lightboxImageIndex === -1) this.lightboxImageIndex = 0;
-    this.lightboxOpen = true;
-    document.body.style.overflow = 'hidden';
-  }
-
-  closeLightbox(): void {
-    this.lightboxOpen = false;
-    document.body.style.overflow = '';
-  }
-
-  nextImage(): void {
-    if (this.lightboxImageIndex < this.lightboxImages.length - 1) {
-      this.lightboxImageIndex++;
-    } else {
-      this.lightboxImageIndex = 0;
-    }
-  }
-
-  previousImage(): void {
-    if (this.lightboxImageIndex > 0) {
-      this.lightboxImageIndex--;
-    } else {
-      this.lightboxImageIndex = this.lightboxImages.length - 1;
-    }
-  }
 
   openAssignModal(issue: AggregatedQualityIssue): void {
     // Close other modals first
@@ -1424,7 +1269,6 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     }
     
     this.stopCamera();
-    this.closeLightbox();
   }
 
   private applyUpdatedQualityIssue(updated: QualityIssueDetails): void {

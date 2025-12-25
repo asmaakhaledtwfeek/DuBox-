@@ -357,6 +357,11 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
           this.generateQRCode();
         }
         
+        // Load activities if not already loaded (needed for Activity Progress Overview chart)
+        if (!box.activities || box.activities.length === 0) {
+          this.loadActivities();
+        }
+        
         this.loading = false;
         
         // After box is loaded, if we have a tab query parameter, trigger data loading for that tab
@@ -458,8 +463,19 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       console.log('⚠️ Chart Debug: No box or activities', { box: !!this.box, activities: !!this.box?.activities });
       return 0;
     }
-    const count = this.box.activities.filter(activity => activity.status === status).length;
-    console.log(`📊 Chart Debug: ${status} count = ${count} out of ${this.box.activities.length} total activities`);
+    
+    // Normalize status for comparison (case-insensitive, handle enum values)
+    const normalizedStatus = status.toString().toLowerCase();
+    const count = this.box.activities.filter(activity => {
+      if (!activity.status) return false;
+      const activityStatus = activity.status.toString().toLowerCase();
+      return activityStatus === normalizedStatus;
+    }).length;
+    
+    console.log(`📊 Chart Debug: ${status} count = ${count} out of ${this.box.activities.length} total activities`, {
+      status,
+      activities: this.box.activities.map(a => ({ name: a.name, status: a.status }))
+    });
     return count;
   }
 

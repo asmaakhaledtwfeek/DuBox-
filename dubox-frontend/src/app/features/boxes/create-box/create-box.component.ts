@@ -693,7 +693,7 @@ export class CreateBoxComponent implements OnInit {
       length: 'Length',
       width: 'Width',
       height: 'Height',
-      revitElementId: 'Revit element ID',
+      revitElementId: 'Revit Group Element ID',
       boxPlannedStartDate: 'Box planned start date',
       boxDuration: 'Box duration'
     };

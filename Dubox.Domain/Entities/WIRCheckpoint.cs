@@ -22,7 +22,7 @@ namespace Dubox.Domain.Entities
         [MaxLength(20)]
         public string WIRCode { get; set; } = string.Empty; // WIR-1, WIR-2, WIR-3, WIR-4, WIR-5, WIR-6
 
-        [MaxLength(200)]
+        [MaxLength(1000)]
         public string? WIRName { get; set; }
 
         [MaxLength(500)]

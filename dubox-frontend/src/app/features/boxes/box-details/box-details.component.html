@@ -211,7 +211,7 @@
                   <span class="value">{{ box.duration }} days</span>
                 </div>
                 <div class="info-item" *ngIf="box.revitElementId">
-                  <span class="label">Revit Element ID</span>
+                  <span class="label">Revit Group Element ID</span>
                   <span class="value">{{ box.revitElementId }}</span>
                 </div>
                 <div class="info-item" *ngIf="box.currentLocationCode">
@@ -439,36 +439,7 @@
                 </div>
               </div>
 
-              <!-- Visual Progress Bars -->
-              <div class="progress-bars">
-                <div class="progress-bar-item">
-                  <div class="progress-bar-header">
-                    <span>Not Started</span>
-                    <span class="percentage">{{ getActivityPercentage('NotStarted') }}%</span>
-                  </div>
-                  <div class="progress-bar-track">
-                    <div class="progress-bar-fill not-started" [style.width.%]="getActivityPercentage('NotStarted')"></div>
-                  </div>
-                </div>
-                <div class="progress-bar-item">
-                  <div class="progress-bar-header">
-                    <span>In Progress</span>
-                    <span class="percentage">{{ getActivityPercentage('InProgress') }}%</span>
-                  </div>
-                  <div class="progress-bar-track">
-                    <div class="progress-bar-fill in-progress" [style.width.%]="getActivityPercentage('InProgress')"></div>
-                  </div>
-                </div>
-                <div class="progress-bar-item">
-                  <div class="progress-bar-header">
-                    <span>Completed</span>
-                    <span class="percentage">{{ getActivityPercentage('Completed') }}%</span>
-                  </div>
-                  <div class="progress-bar-track">
-                    <div class="progress-bar-fill completed" [style.width.%]="getActivityPercentage('Completed')"></div>
-                  </div>
-                </div>
-              </div>
+           
             </div>
           </div>
 

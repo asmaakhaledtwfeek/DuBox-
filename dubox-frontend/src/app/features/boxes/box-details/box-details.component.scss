@@ -381,7 +381,7 @@
         font-weight: 700;
         color: var(--amana-teal);
         letter-spacing: 0.5px;
-        font-family: 'Courier New', monospace;
+        font-family: 'QA', monospace;
         padding: 6px 12px;
         border-radius: 6px;
         background: rgba(27, 154, 170, 0.08);
@@ -536,7 +536,7 @@
         font-size: 36px;
         font-weight: 800;
         fill: var(--gray-900);
-        font-family: 'Segoe UI', system-ui, sans-serif;
+        font-family: 'QA', sans-serif;
       }
 
       .chart-center-label {
@@ -822,7 +822,7 @@
             font-weight: 700;
             color: var(--amana-teal);
             letter-spacing: 0.5px;
-            font-family: 'Courier New', 'Monaco', monospace;
+            font-family: 'QA', monospace;
             background: linear-gradient(135deg, var(--amana-teal) 0%, var(--amana-blue) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;

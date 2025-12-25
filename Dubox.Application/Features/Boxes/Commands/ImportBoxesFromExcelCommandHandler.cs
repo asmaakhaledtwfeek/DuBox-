@@ -24,9 +24,10 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
 
     private static readonly string[] RequiredHeaders = new[]
     {
-        "Box Tag",
+        "Box Tag (Auto-Generated)",
         "Box Type",
         "Floor",
+        "Building Number"
     };
 
     public ImportBoxesFromExcelCommandHandler(
@@ -68,6 +69,9 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
         var failureCount = 0;
         var boxLogs = new List<AuditLog>();
         var boxesToCreate = new List<Box>();
+        // Dictionary to store box type and sub type names for DTO mapping
+        var boxTypeMap = new Dictionary<int, string>();
+        var boxSubTypeMap = new Dictionary<int, string>();
 
         try
         {
@@ -129,6 +133,12 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                     }
                     boxTypeId = projectBoxType.Id;
                     
+                    // Store box type name in map for later use in DTO
+                    if (!boxTypeMap.ContainsKey(boxTypeId))
+                    {
+                        boxTypeMap[boxTypeId] = projectBoxType.TypeName;
+                    }
+                    
                     // Validate Box Sub Type if provided
                     if (!string.IsNullOrWhiteSpace(boxDto.BoxSubType))
                     {
@@ -155,6 +165,12 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                         }
                         
                         boxSubTypeId = projectBoxSubType.Id;
+                        
+                        // Store box sub type name in map for later use in DTO
+                        if (!boxSubTypeMap.ContainsKey(boxSubTypeId.Value))
+                        {
+                            boxSubTypeMap[boxSubTypeId.Value] = projectBoxSubType.SubTypeName;
+                        }
                     }
                     else if (projectBoxType.HasSubTypes)
                     {
@@ -409,10 +425,23 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                     cancellationToken);
             }
 
-            var importedBoxesDtos = boxesToCreate.Adapt<List<BoxDto>>().Select(dto => dto with
+            var importedBoxesDtos = boxesToCreate.Adapt<List<BoxDto>>().Select(dto =>
             {
-                ProjectCode = project.ProjectCode,
-                QRCodeImage = _qrCodeService.GenerateQRCodeBase64(dto.QRCodeString)
+                var boxTypeName = dto.BoxTypeId.HasValue && boxTypeMap.ContainsKey(dto.BoxTypeId.Value)
+                    ? boxTypeMap[dto.BoxTypeId.Value]
+                    : string.Empty;
+                    
+                var boxSubTypeName = dto.BoxSubTypeId.HasValue && boxSubTypeMap.ContainsKey(dto.BoxSubTypeId.Value)
+                    ? boxSubTypeMap[dto.BoxSubTypeId.Value]
+                    : null;
+                
+                return dto with
+                {
+                    ProjectCode = project.ProjectCode,
+                    QRCodeImage = _qrCodeService.GenerateQRCodeBase64(dto.QRCodeString),
+                    BoxType = boxTypeName,
+                    BoxSubTypeName = boxSubTypeName
+                };
             }).ToList();
 
             var result = new BoxImportResultDto
@@ -434,7 +463,7 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
     {
         return new ImportBoxFromExcelDto
         {
-            BoxTag = string.Empty, // Box Tag is auto-generated, not read from Excel
+            BoxTag = GetStringValue(row, "Box Tag (Auto-Generated)"), // Box Tag is auto-generated, not read from Excel
             BoxName = GetStringValue(row, "Box Name"),
             BoxType = GetStringValue(row, "Box Type"),
             BoxSubType = GetStringValue(row, "Box Sub Type"),

@@ -283,15 +283,16 @@
       .coming-soon-badge {
         display: inline-flex;
         align-items: center;
-        padding: 4px 10px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        font-size: 11px;
-        font-weight: 600;
+        padding: 3px 8px;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: black;
+        font-size: 10px;
+        font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+        border-radius: 10px;
+        white-space: nowrap;
+        box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
       }
     }
     

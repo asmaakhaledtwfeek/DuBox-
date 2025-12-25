@@ -70,7 +70,7 @@ export class DetailedFormViewComponent {
               <title>${this.wir.wirNumber} - ${this.wir.wirName}</title>
               <style>
                 /* Copy print styles */
-                body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+                body { margin: 0; padding: 20px; font-family: 'QA', sans-serif; }
                 ${this.getPrintStyles()}
               </style>
             </head>

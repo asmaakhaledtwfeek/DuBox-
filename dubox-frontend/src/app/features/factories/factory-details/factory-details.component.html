@@ -218,7 +218,7 @@
                      [class.in-progress]="cell.box?.status === 'InProgress'"
                      [class.completed]="cell.box?.status === 'Completed'"
                      [class.empty]="!cell.box"
-                     (click)="cell.box && navigateToBox(cell.box.id)"
+                     (click)="cell.box && viewBox(cell.box.id)"
                      [title]="getCellTooltip(cell)">
                   
                   <!-- Box Content -->

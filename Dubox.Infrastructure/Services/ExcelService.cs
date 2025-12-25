@@ -81,8 +81,7 @@ public class ExcelService : IExcelService
         var instructionRow = 2;
         dataSheet.Cells[instructionRow, 1, instructionRow, headers.Length].Merge = true;
         var instructionCell = dataSheet.Cells[instructionRow, 1];
-        instructionCell.Value = $"⚠️ INSTRUCTIONS: Row 3 shows an EXAMPLE - delete it before importing. Fill your data starting from Row 4. Box Tag is AUTO-GENERATED on import (format: {projectCode}-Building-Floor-Type-SubType). REQUIRED: Box Type, Floor. Use values from Reference Data sheets. Delete rows 2-3 before importing.";
-        instructionCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+        instructionCell.Value = $"⚠️ INSTRUCTIONS: Row 3 contains an example – please delete it before importing.Enter your data starting from the next row.Box Tag is AUTO-GENERATED during import using the format: {projectCode}-Building-Floor-Type-SubType. REQUIRED fields: Box Type and Floor. Use values from Reference Data sheets. Make sure to delete rows 2 and 3 before importing.";
         instructionCell.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(255, 242, 204)); // Light yellow
         instructionCell.Style.Font.Bold = true;
         instructionCell.Style.Font.Size = 10;
@@ -227,7 +226,6 @@ public class ExcelService : IExcelService
             return result;
         }
 
-        var rowCount = worksheet.Dimension.Rows;
         var colCount = worksheet.Dimension.Columns;
 
         // Read headers from first row
@@ -241,11 +239,53 @@ public class ExcelService : IExcelService
             }
         }
 
-        // Read data rows (skip header row)
-        for (int row = 2; row <= rowCount; row++)
+        // Find the actual last row with data (instead of using Dimension.Rows which includes empty formatted rows)
+        // Start from the end row and work backwards to find the last row that actually contains meaningful data
+        // Ignore rows that only have placeholder text like "(auto-generated on import)"
+        int lastRowWithData = 2; // Default to row 2 (after header), will be updated if data found
+        int maxRow = worksheet.Dimension.End.Row;
+        string[] placeholderTexts = { "(auto-generated on import)", "auto-generated on import" };
+        
+        for (int row = maxRow; row >= 3; row--)
+        {
+            bool hasMeaningfulData = false;
+            
+            for (int col = 1; col <= colCount; col++)
+            {
+                var cellValue = worksheet.Cells[row, col].Value;
+                if (cellValue != null)
+                {
+                    var cellText = cellValue.ToString()?.Trim() ?? string.Empty;
+                    // Check if it's not empty and not just placeholder text
+                    if (!string.IsNullOrWhiteSpace(cellText))
+                    {
+                        // Check if this cell contains placeholder text
+                        bool isPlaceholder = placeholderTexts.Any(placeholder => 
+                            cellText.Equals(placeholder, StringComparison.OrdinalIgnoreCase));
+                        
+                        if (!isPlaceholder)
+                        {
+                            hasMeaningfulData = true;
+                            break; // Found meaningful data, this row should be processed
+                        }
+                    }
+                }
+            }
+            
+            if (hasMeaningfulData)
+            {
+                lastRowWithData = row;
+                break;
+            }
+        }
+
+        // Read data rows (skip header row and instruction row, start from row 3)
+        // Ignore rows that only contain placeholder text
+        
+        for (int row = 2; row <= lastRowWithData; row++)
         {
             var rowData = new Dictionary<string, object?>();
-            bool hasData = false;
+            bool hasMeaningfulData = false;
 
             for (int col = 1; col <= colCount; col++)
             {
@@ -254,15 +294,26 @@ public class ExcelService : IExcelService
                     var cellValue = worksheet.Cells[row, col].Value;
                     rowData[headers[col]] = cellValue;
 
-                    if (cellValue != null && !string.IsNullOrWhiteSpace(cellValue.ToString()))
+                    if (cellValue != null)
                     {
-                        hasData = true;
+                        var cellText = cellValue.ToString()?.Trim() ?? string.Empty;
+                        // Check if it's not empty and not just placeholder text
+                        if (!string.IsNullOrWhiteSpace(cellText))
+                        {
+                            bool isPlaceholder = placeholderTexts.Any(placeholder => 
+                                cellText.Equals(placeholder, StringComparison.OrdinalIgnoreCase));
+                            
+                            if (!isPlaceholder)
+                            {
+                                hasMeaningfulData = true;
+                            }
+                        }
                     }
                 }
             }
 
-            // Only process rows that have at least some data
-            if (hasData)
+            // Only process rows that have meaningful data (not just placeholder text)
+            if (hasMeaningfulData)
             {
                 var mappedObject = mapper(rowData);
                 result.Add(mappedObject);

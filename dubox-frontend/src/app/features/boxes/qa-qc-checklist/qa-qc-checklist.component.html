@@ -246,7 +246,7 @@
         <p class="step-description" *ngIf="!wirCheckpoint">Create a new WIR checkpoint for this activity</p>
         <p class="step-description" *ngIf="wirCheckpoint">Update WIR checkpoint information for this activity</p>
       </div>
-
+     
       <form [formGroup]="createCheckpointForm" (ngSubmit)="onCreateCheckpoint()">
         <div class="form-card">
           <div *ngIf="error" class="alert alert-error">
@@ -478,6 +478,7 @@
               <span *ngIf="creatingCheckpoint">{{ wirCheckpoint ? 'Updating...' : 'Creating...' }}</span>
               <span *ngIf="!creatingCheckpoint">{{ wirCheckpoint ? 'Update Checkpoint' : 'Create Checkpoint' }}</span>
             </button>
+            
           </div>
         </div>
       </form>
@@ -909,7 +910,7 @@
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <polyline points="20 6 9 17 4 12"/>
               </svg>
-              Pass All ({{ checklistItems.length }})
+              Approve All ({{ checklistItems.length }})
             </button>
             <button 
               type="button" 
@@ -1958,7 +1959,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px; color: #10b981;">
             <polyline points="20 6 9 17 4 12"/>
           </svg>
-          Pass All Checklist Items
+          Approve All Checklist Items
         </h2>
         <p style="margin-top: 8px; color: #6b7280;">
           This will mark all {{ checklistItems.length }} checklist items as <strong style="color: #10b981;">PASS</strong> and save them to the database.

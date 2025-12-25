@@ -567,7 +567,7 @@ export class WirExportService {
       <!-- Yellow Box -->
       <polygon class="logo-yellow" points="0 0 0 56.54 40.1 56.54 56.59 40.05 56.59 0 0 0"/>
       <!-- Company Text -->
-      <text x="206" y="75" text-anchor="middle" font-size="14" font-weight="600" class="logo-text" font-family="Arial, sans-serif">INDUSTRIAL PRECAST PRODUCTS</text>
+      <text x="206" y="75" text-anchor="middle" font-size="14" font-weight="600" class="logo-text" font-family="QA, sans-serif">INDUSTRIAL PRECAST PRODUCTS</text>
     </svg>`;
   }
 
@@ -584,7 +584,7 @@ export class WirExportService {
       }
       
       body { 
-        font-family: Arial, sans-serif; 
+        font-family: 'QA', sans-serif; 
         background: white; 
         padding: 0;
         margin: 0;

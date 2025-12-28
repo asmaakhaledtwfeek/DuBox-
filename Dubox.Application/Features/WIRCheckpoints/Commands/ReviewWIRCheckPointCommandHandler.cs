@@ -66,8 +66,8 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                 checklistItem.Status = item.Status;
                 checklistItem.Remarks = item.Remarks;
             }
-
-            wir.InspectionDate = DateTime.UtcNow;
+            if(wir.InspectionDate ==null)
+                  wir.InspectionDate = DateTime.UtcNow;
 
             var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId)
                 ? parsedUserId
@@ -87,7 +87,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             }
 
             wir.Status = request.Status;
-            if (request.Status == WIRCheckpointStatusEnum.Approved || request.Status == WIRCheckpointStatusEnum.ConditionalApproval)
+            if ((request.Status == WIRCheckpointStatusEnum.Approved  || request.Status == WIRCheckpointStatusEnum.ConditionalApproval) && wir.ApprovalDate == null)
                 wir.ApprovalDate = DateTime.UtcNow;
 
             if (!string.IsNullOrWhiteSpace(request.Comment))

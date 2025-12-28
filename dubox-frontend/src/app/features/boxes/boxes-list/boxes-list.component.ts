@@ -442,4 +442,16 @@ export class BoxesListComponent implements OnInit, OnDestroy {
 
   // Expose Math to template
   Math = Math;
+
+  /**
+   * Rounds a number to one decimal place
+   * @param value The number to round
+   * @returns The number rounded to 1 decimal place
+   */
+  roundToOneDecimal(value: number | undefined | null): number {
+    if (value === undefined || value === null) {
+      return 0;
+    }
+    return Math.round(value * 10) / 10;
+  }
 }

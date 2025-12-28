@@ -179,7 +179,7 @@ export class CreateBoxComponent implements OnInit {
           this.zones = config.zones
             .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
             .map(z => ({
-              value: z.id,
+              value: z.zoneCode,  // Use zoneCode (string) instead of id (numeric)
               name: z.zoneCode,
               displayName: z.zoneName || z.zoneCode
             }));
@@ -226,25 +226,36 @@ export class CreateBoxComponent implements OnInit {
     this.boxService.getBoxZones().subscribe({
       next: (response: any) => {
         const zonesData = response?.data || response;
-        this.zones = zonesData || [];
+        
+        // Map zones to ensure value is the zone code string, not numeric
+        if (Array.isArray(zonesData)) {
+          this.zones = zonesData.map((z: any) => ({
+            value: z.zoneCode || z.name || z.value,
+            name: z.zoneCode || z.name,
+            displayName: z.zoneName || z.displayName || z.zoneCode || z.name
+          }));
+        } else {
+          this.zones = [];
+        }
+        
         console.log('✅ Zones loaded:', this.zones);
         this.loadingZones = false;
       },
       error: (error) => {
         console.error('❌ Error loading zones:', error);
         this.loadingZones = false;
-        // Fallback to default zones if API fails
+        // Fallback to default zones if API fails - use string codes
         this.zones = [
-          { value: 0, name: 'ZoneA', displayName: 'Zone A' },
-          { value: 1, name: 'ZoneB', displayName: 'Zone B' },
-          { value: 2, name: 'ZoneC', displayName: 'Zone C' },
-          { value: 3, name: 'ZoneD', displayName: 'Zone D' },
-          { value: 4, name: 'ZoneE', displayName: 'Zone E' },
-          { value: 5, name: 'ZoneF', displayName: 'Zone F' },
-          { value: 6, name: 'ZoneG', displayName: 'Zone G' },
-          { value: 7, name: 'ZoneH', displayName: 'Zone H' },
-          { value: 8, name: 'ZoneI', displayName: 'Zone I' },
-          { value: 9, name: 'ZoneJ', displayName: 'Zone J' }
+          { value: 'Zone A', name: 'ZoneA', displayName: 'Zone A' },
+          { value: 'Zone B', name: 'ZoneB', displayName: 'Zone B' },
+          { value: 'Zone C', name: 'ZoneC', displayName: 'Zone C' },
+          { value: 'Zone D', name: 'ZoneD', displayName: 'Zone D' },
+          { value: 'Zone E', name: 'ZoneE', displayName: 'Zone E' },
+          { value: 'Zone F', name: 'ZoneF', displayName: 'Zone F' },
+          { value: 'Zone G', name: 'ZoneG', displayName: 'Zone G' },
+          { value: 'Zone H', name: 'ZoneH', displayName: 'Zone H' },
+          { value: 'Zone I', name: 'ZoneI', displayName: 'Zone I' },
+          { value: 'Zone J', name: 'ZoneJ', displayName: 'Zone J' }
         ];
       }
     });

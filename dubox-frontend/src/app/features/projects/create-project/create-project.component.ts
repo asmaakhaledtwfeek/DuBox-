@@ -180,12 +180,30 @@ export class CreateProjectComponent implements OnInit {
   private patchForm(project: Project): void {
     const plannedStart = project.plannedStartDate || project.startDate;
     const duration = this.getDurationValue(project);
+    
+    // Convert location string/number to numeric value for dropdown
+    let locationValue: number | null = null;
+    if (project.location) {
+      // If location is already a number (string representation)
+      const locationNum = Number(project.location);
+      if (!isNaN(locationNum) && (locationNum === 1 || locationNum === 2)) {
+        locationValue = locationNum;
+      } else {
+        // If location is a string like "KSA" or "UAE", convert to number
+        const locationStr = project.location.toString().toUpperCase();
+        if (locationStr === 'KSA' || locationStr === '1') {
+          locationValue = 1;
+        } else if (locationStr === 'UAE' || locationStr === '2') {
+          locationValue = 2;
+        }
+      }
+    }
 
     this.projectForm.patchValue({
       projectName: project.name || '',
       projectCode: project.code || '',
       clientName: project.clientName || '',
-      location: project.location || null,
+      location: locationValue,
       projectCategoryId: project.categoryId || null,
       duration: duration,
       plannedStartDate: this.formatDateForInput(plannedStart),

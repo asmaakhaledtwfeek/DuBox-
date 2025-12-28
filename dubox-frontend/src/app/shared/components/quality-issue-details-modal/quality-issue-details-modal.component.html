@@ -143,7 +143,7 @@
               <span class="info-value">{{ formatIssueDate(issue.resolutionDate) }}</span>
             </div>
           </div>
-          <div class="info-item" *ngIf="issue.inspectorName">
+         <!-- <div class="info-item" *ngIf="issue.inspectorName">
             <div class="info-icon">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
@@ -154,7 +154,7 @@
               <span class="info-label">Inspector</span>
               <span class="info-value">{{ issue.inspectorName }}</span>
             </div>
-          </div>
+          </div>-->
         </div>
         <div class="description-content" *ngIf="issue.resolutionDescription">
           <p>{{ issue.resolutionDescription }}</p>
@@ -183,7 +183,12 @@
             </div>
             <div class="info-content">
               <span class="info-label">Box</span>
-              <span class="info-value">{{ issue.boxName || issue.boxTag || '—' }}</span>
+              <span class="info-value">
+                <span *ngIf="issue.boxTag">{{ issue.boxTag }}</span>
+                <span *ngIf="issue.boxTag && issue.boxName"> - </span>
+                <span *ngIf="issue.boxName">{{ issue.boxName }}</span>
+                <span *ngIf="!issue.boxTag && !issue.boxName">—</span>
+              </span>
             </div>
           </div>
           <div class="info-item">

@@ -189,7 +189,7 @@
           <div class="box-progress">
             <div class="progress-header">
               <span class="progress-label">Overall Progress</span>
-              <span class="progress-value">{{ Math.round(boxType.overallProgress) }}%</span>
+              <span class="progress-value">{{ roundToOneDecimal(boxType.overallProgress) }}%</span>
             </div>
             <div class="progress-bar">
               <div class="progress-fill" [style.width.%]="boxType.overallProgress"></div>
@@ -203,7 +203,7 @@
             </div>
             <div class="stat-item">
               <span class="stat-label">Progress</span>
-              <span class="stat-value">{{ Math.round(boxType.overallProgress) }}%</span>
+              <span class="stat-value">{{ roundToOneDecimal(boxType.overallProgress) }}%</span>
             </div>
           </div>
 
@@ -222,7 +222,7 @@
                 </div>
                 <div class="sub-type-stats">
                   <span class="sub-type-count">{{ subType.boxCount }} {{ subType.boxCount === 1 ? 'box' : 'boxes' }}</span>
-                  <span class="sub-type-progress">{{ Math.round(subType.progress) }}%</span>
+                  <span class="sub-type-progress">{{ roundToOneDecimal(subType.progress) }}%</span>
                 </div>
               </div>
             </div>
@@ -307,7 +307,7 @@
           <div class="box-progress">
             <div class="progress-header">
               <span class="progress-label">Progress</span>
-              <span class="progress-value">{{ box.progress }}%</span>
+              <span class="progress-value">{{ roundToOneDecimal(box.progress) }}%</span>
             </div>
             <div class="progress-bar">
               <div class="progress-fill" [style.width.%]="box.progress"></div>

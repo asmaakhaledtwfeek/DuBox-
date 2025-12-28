@@ -263,36 +263,39 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     
     const { issue, formIssue, images } = this.selectedQualityIssueDetails;
     
+    // Cast issue to QualityIssueDetails to access all possible fields
+    const issueDetails = issue as QualityIssueDetails & QualityIssueItem;
+    
     // Build QualityIssueDetails from available data
     const details: QualityIssueDetails = {
-      issueId: (issue as any)?.issueId || '',
+      issueId: (issue as any)?.issueId || (issueDetails as any)?.issueId || '',
       issueType: this.getQualityIssueDetail('issueType') || issue?.issueType || 'Defect',
       severity: this.getQualityIssueDetail('severity') || issue?.severity || 'Minor',
       issueDescription: this.getQualityIssueDetail('issueDescription') || issue?.issueDescription || '',
-      assignedTeamName: this.getQualityIssueDetail('assignedTeam') || issue?.assignedTeam || issue?.assignedTo || undefined,
-      dueDate: this.getQualityIssueDetail('dueDate') || issue?.dueDate,
-      reportedBy: this.getQualityIssueDetail('reportedBy') || issue?.reportedBy,
-      issueDate: this.getQualityIssueDetail('issueDate') || issue?.issueDate,
-      status: (this.getQualityIssueDetail('status') || issue?.status || 'Open') as QualityIssueStatus,
-      resolutionDescription: this.getQualityIssueDetail('resolutionDescription'),
-      resolutionDate: this.getQualityIssueDetail('resolutionDate'),
-      boxName: this.getQualityIssueDetail('boxName'),
-      boxTag: this.getQualityIssueDetail('boxTag'),
-      wirNumber: this.getQualityIssueDetail('wirNumber') || this.wirCheckpoint?.wirNumber,
-      wirName: this.getQualityIssueDetail('wirName') || this.wirCheckpoint?.wirName,
-      wirRequestedDate: this.getQualityIssueDetail('wirRequestedDate') || this.wirCheckpoint?.requestedDate,
-      inspectorName: this.getQualityIssueDetail('inspectorName'),
-      photoPath: issue?.photoPath,
+      assignedTeamName: this.getQualityIssueDetail('assignedTeam') || issue?.assignedTeam || issue?.assignedTo || issueDetails?.assignedTeamName || undefined,
+      dueDate: this.getQualityIssueDetail('dueDate') || issue?.dueDate || issueDetails?.dueDate,
+      reportedBy: this.getQualityIssueDetail('reportedBy') || issue?.reportedBy || issueDetails?.reportedBy,
+      issueDate: this.getQualityIssueDetail('issueDate') || issue?.issueDate || issueDetails?.issueDate,
+      status: (this.getQualityIssueDetail('status') || issue?.status || issueDetails?.status || 'Open') as QualityIssueStatus,
+      resolutionDescription: this.getQualityIssueDetail('resolutionDescription') || issueDetails?.resolutionDescription || undefined,
+      resolutionDate: this.getQualityIssueDetail('resolutionDate') || issueDetails?.resolutionDate || undefined,
+      boxName: this.getQualityIssueDetail('boxName') || issueDetails?.boxName || this.wirRecord?.boxName || this.wirCheckpoint?.box?.boxName || undefined,
+      boxTag: this.getQualityIssueDetail('boxTag') || issueDetails?.boxTag || this.wirRecord?.boxTag || this.wirCheckpoint?.box?.boxTag || undefined,
+      wirNumber: this.getQualityIssueDetail('wirNumber') || issueDetails?.wirNumber || this.wirCheckpoint?.wirNumber || this.wirRecord?.wirCode || undefined,
+      wirName: this.getQualityIssueDetail('wirName') || issueDetails?.wirName || this.wirCheckpoint?.wirName || undefined,
+      wirRequestedDate: this.getQualityIssueDetail('wirRequestedDate') || issueDetails?.wirRequestedDate || this.wirCheckpoint?.requestedDate || this.wirRecord?.requestedDate || undefined,
+      inspectorName: this.getQualityIssueDetail('inspectorName') || issueDetails?.inspectorName || this.wirCheckpoint?.inspectorName || undefined,
+      photoPath: issue?.photoPath || issueDetails?.photoPath,
       // Convert images array to QualityIssueImage format
       images: images?.map((imgUrl, index) => ({
         qualityIssueImageId: `temp-${index}`,
-        issueId: (issue as any)?.issueId || '',
+        issueId: (issue as any)?.issueId || (issueDetails as any)?.issueId || '',
         imageData: imgUrl.startsWith('data:') ? imgUrl.split(',')[1] : (imgUrl.startsWith('http') ? undefined : imgUrl),
         imageUrl: imgUrl.startsWith('http') ? imgUrl : undefined,
         imageType: imgUrl.startsWith('http') ? 'url' : 'file' as 'file' | 'url',
         sequence: index,
         createdDate: new Date()
-      })) || []
+      })) || issueDetails?.images || []
     };
     
     return details;
@@ -2167,15 +2170,35 @@ console.log(expectedWirCode);
     console.log('[QA/QC] Total images extracted:', images.length);
     console.log('[QA/QC] Image URLs:', images);
 
-    // Store selected issue details
+    // Store selected issue details (with initial data)
     this.selectedQualityIssueDetails = {
       issue: issue,
       formIssue: formIssue,
       images: images.length > 0 ? images : undefined
     };
 
-    // Open the modal
+    // Open the modal immediately with available data
     this.isQualityIssueDetailsModalOpen = true;
+
+    // If we have an issueId, fetch full details from backend to get resolution info, etc.
+    const issueId = (issue as any)?.issueId || (issue as QualityIssueDetails)?.issueId;
+    if (issueId) {
+      this.wirService.getQualityIssueById(issueId).subscribe({
+        next: (fullIssue) => {
+          console.log('[QA/QC] ✅ Loaded full quality issue details:', fullIssue);
+          // Update the selected issue with full details
+          this.selectedQualityIssueDetails = {
+            issue: fullIssue,
+            formIssue: formIssue, // Keep form issue reference
+            images: this.selectedQualityIssueDetails?.images // Keep existing images
+          };
+        },
+        error: (err) => {
+          console.error('[QA/QC] ❌ Failed to fetch quality issue details:', err);
+          // Keep showing the initial data if fetch fails
+        }
+      });
+    }
   }
 
   closeQualityIssueDetailsModal(): void {

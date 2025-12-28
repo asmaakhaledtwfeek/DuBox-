@@ -635,7 +635,7 @@ export class BoxService {
   }
 
   /**
-   * Get box zones from enum
+   * Get box zones (now returns zone codes from ProjectZone configurations)
    */
   getBoxZones(): Observable<any[]> {
     return this.apiService.get<any>(`${this.endpoint}/zones`).pipe(

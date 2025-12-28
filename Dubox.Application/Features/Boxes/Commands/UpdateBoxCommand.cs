@@ -15,7 +15,7 @@ public record UpdateBoxCommand(
     string? Floor,
     string? BuildingNumber,
     string? BoxFunction,
-    BoxZone? Zone,
+    string? Zone,
     decimal? Length,
     decimal? Width,
     decimal? Height,

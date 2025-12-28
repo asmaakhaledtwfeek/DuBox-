@@ -81,15 +81,9 @@ public class GetBoxByIdQueryHandler : IRequestHandler<GetBoxByIdQuery, Result<Bo
                 boxSubTypeName = projectBoxSubType?.SubTypeName;
             }
 
-            // Get Zone - stored as ZoneCode string in database (e.g., "15", "A1", etc.)
-            // The BoxZone enum doesn't match - just convert to string as-is
             string? zoneString = null;
-            if (box.Zone.HasValue)
-            {
-                // Zone is stored as string in DB but entity uses enum
-                // Just convert the enum value to string (will be the ZoneCode)
-                zoneString = box.Zone.Value.ToString();
-            }
+            if (!string.IsNullOrEmpty(box.Zone))
+                zoneString = box.Zone;
 
             // Safely get Status (enum conversion)
             var statusString = box.Status.ToString();

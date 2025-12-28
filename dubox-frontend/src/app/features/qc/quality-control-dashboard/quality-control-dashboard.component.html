@@ -112,7 +112,7 @@
             <tr *ngFor="let checkpoint of checkpoints">
               <td>
                 <strong>{{ checkpoint.wirNumber }}</strong>
-                <div class="text-muted" *ngIf="checkpoint.wirName">{{ checkpoint.wirName }}</div>
+               <!--<div class="text-muted" *ngIf="checkpoint.wirName">{{ checkpoint.wirName }}</div>-->
               </td>
               <td>
                 <div>{{ checkpoint.box?.boxTag || '—' }}</div>

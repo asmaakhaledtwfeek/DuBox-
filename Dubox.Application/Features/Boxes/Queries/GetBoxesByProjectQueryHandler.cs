@@ -90,9 +90,9 @@ public class GetBoxesByProjectQueryHandler : IRequestHandler<GetBoxesByProjectQu
 
             // Get Zone - stored as ZoneCode string in database
             string? zoneString = null;
-            if (box.Zone.HasValue)
+            if (!string.IsNullOrEmpty(box.Zone))
             {
-                zoneString = box.Zone.Value.ToString();
+                zoneString = box.Zone;
             }
 
             // Safely get Status (enum conversion)

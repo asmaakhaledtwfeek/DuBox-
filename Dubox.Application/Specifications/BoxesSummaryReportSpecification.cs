@@ -32,8 +32,8 @@ public class BoxesSummaryReportSpecification : Specification<Box>
         if (!string.IsNullOrWhiteSpace(query.BuildingNumber))
             AddCriteria(b => b.BuildingNumber == query.BuildingNumber);
 
-        if (query.Zone.HasValue)
-            AddCriteria(b => b.Zone == query.Zone.Value);
+        if (!string.IsNullOrEmpty(query.Zone))
+            AddCriteria(b => b.Zone == query.Zone);
 
         if (query.Status != null && query.Status.Any())
             AddCriteria(b => query.Status.Contains((int)b.Status));

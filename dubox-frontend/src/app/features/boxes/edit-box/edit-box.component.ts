@@ -180,7 +180,7 @@ export class EditBoxComponent implements OnInit {
           this.zones = config.zones
             .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
             .map(z => ({
-              value: z.id,
+              value: z.zoneCode,  // Use zoneCode (string) instead of id (numeric)
               name: z.zoneCode,
               displayName: z.zoneName || z.zoneCode
             }));
@@ -317,7 +317,18 @@ export class EditBoxComponent implements OnInit {
     this.boxService.getBoxZones().subscribe({
       next: (response: any) => {
         const zonesData = response?.data || response;
-        this.zones = zonesData || [];
+        
+        // Map zones to ensure value is the zone code string, not numeric
+        if (Array.isArray(zonesData)) {
+          this.zones = zonesData.map((z: any) => ({
+            value: z.zoneCode || z.name || z.value,
+            name: z.zoneCode || z.name,
+            displayName: z.zoneName || z.displayName || z.zoneCode || z.name
+          }));
+        } else {
+          this.zones = [];
+        }
+        
         this.loadingZones = false;
         
         // After zones are loaded, preselect if box is already loaded
@@ -328,18 +339,18 @@ export class EditBoxComponent implements OnInit {
       error: (error) => {
         console.error('❌ Error loading zones:', error);
         this.loadingZones = false;
-        // Fallback to default zones if API fails
+        // Fallback to default zones if API fails - use string codes
         this.zones = [
-          { value: 0, name: 'ZoneA', displayName: 'Zone A' },
-          { value: 1, name: 'ZoneB', displayName: 'Zone B' },
-          { value: 2, name: 'ZoneC', displayName: 'Zone C' },
-          { value: 3, name: 'ZoneD', displayName: 'Zone D' },
-          { value: 4, name: 'ZoneE', displayName: 'Zone E' },
-          { value: 5, name: 'ZoneF', displayName: 'Zone F' },
-          { value: 6, name: 'ZoneG', displayName: 'Zone G' },
-          { value: 7, name: 'ZoneH', displayName: 'Zone H' },
-          { value: 8, name: 'ZoneI', displayName: 'Zone I' },
-          { value: 9, name: 'ZoneJ', displayName: 'Zone J' }
+          { value: 'Zone A', name: 'ZoneA', displayName: 'Zone A' },
+          { value: 'Zone B', name: 'ZoneB', displayName: 'Zone B' },
+          { value: 'Zone C', name: 'ZoneC', displayName: 'Zone C' },
+          { value: 'Zone D', name: 'ZoneD', displayName: 'Zone D' },
+          { value: 'Zone E', name: 'ZoneE', displayName: 'Zone E' },
+          { value: 'Zone F', name: 'ZoneF', displayName: 'Zone F' },
+          { value: 'Zone G', name: 'ZoneG', displayName: 'Zone G' },
+          { value: 'Zone H', name: 'ZoneH', displayName: 'Zone H' },
+          { value: 'Zone I', name: 'ZoneI', displayName: 'Zone I' },
+          { value: 'Zone J', name: 'ZoneJ', displayName: 'Zone J' }
         ];
         
         // After fallback zones are set, preselect if box is already loaded
@@ -360,7 +371,7 @@ export class EditBoxComponent implements OnInit {
       buildingNumber: ['', Validators.required],
       floor: ['GF', Validators.required],
       boxFunction: [''],
-      zone: [null], // Zone is a number (BoxZone enum value)
+      zone: [''], // Zone is a string (ZoneCode from ProjectZone)
       length: ['', [Validators.min(0), Validators.max(99999)]],
       width: ['', [Validators.min(0), Validators.max(99999)]],
       height: ['', [Validators.min(0), Validators.max(99999)]],
@@ -516,41 +527,24 @@ export class EditBoxComponent implements OnInit {
       return;
     }
 
-    // Convert zone to number if it's a string or enum name
-    let zoneValue: number | null = null;
+    // Zone is now a string (ZoneCode from ProjectZone)
+    const zoneValue = this.box.zone as string;
     
-    if (typeof this.box.zone === 'number') {
-      zoneValue = this.box.zone;
-    } else if (typeof this.box.zone === 'string') {
-      // Try to parse as number first
-      const parsed = Number(this.box.zone);
-      if (!isNaN(parsed)) {
-        zoneValue = parsed;
-      } else {
-        // Try to find by name (e.g., "ZoneA", "Zone B", etc.)
-        const zone = this.zones.find(z => 
-          z.name === this.box!.zone || 
-          z.displayName === this.box!.zone ||
-          z.name.toLowerCase() === (this.box!.zone as string).toLowerCase() ||
-          z.displayName.toLowerCase() === (this.box!.zone as string).toLowerCase()
-        );
-        if (zone) {
-          zoneValue = zone.value;
-        }
-      }
-    }
+    // Try to find the zone by matching value (zoneCode), name, or displayName
+    const zone = this.zones.find(z => 
+      z.value === zoneValue || 
+      z.name === zoneValue || 
+      z.displayName === zoneValue ||
+      z.value?.toLowerCase() === zoneValue?.toLowerCase() ||
+      z.name?.toLowerCase() === zoneValue?.toLowerCase() ||
+      z.displayName?.toLowerCase() === zoneValue?.toLowerCase()
+    );
 
-    if (zoneValue !== null) {
-      // Check if the zone value exists in the zones list
-      const zoneExists = this.zones.some(z => z.value === zoneValue);
-      if (zoneExists) {
-        this.boxForm.patchValue({ zone: zoneValue });
-        console.log(`✅ Preselected Zone: ${zoneValue}`);
-      } else {
-        console.warn(`⚠️ Zone value ${zoneValue} not found in loaded zones`);
-      }
+    if (zone) {
+      this.boxForm.patchValue({ zone: zone.value });
+      console.log(`✅ Preselected Zone: ${zone.value} (${zone.displayName})`);
     } else {
-      console.warn(`⚠️ Could not determine zone value from: ${this.box.zone}`);
+      console.warn(`⚠️ Zone "${zoneValue}" not found in zones list. Available zones:`, this.zones.map(z => z.value));
     }
   }
 

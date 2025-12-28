@@ -311,14 +311,10 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                     var yearOfProject = project.CreatedDate.Year.ToString().Substring(2, 2);
                     var serialNumber = _serialNumberService.GenerateSerialNumber("X", lastSeq, yearOfProject);
                     // Try to parse Zone enum if provided
-                    BoxZone? parsedZone = null;
+                    string? parsedZone = null;
                     if (!string.IsNullOrWhiteSpace(boxDto.Zone))
-                    {
-                        if (Enum.TryParse<BoxZone>(boxDto.Zone.Trim(), true, out var zone))
-                        {
-                            parsedZone = zone;
-                        }
-                    }
+                            parsedZone = boxDto.Zone;
+                     
                     
                     var newBox = new Box
                     {
@@ -499,18 +495,18 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
         return null;
     }
 
-    private BoxZone? GetBoxZoneValue(Dictionary<string, object?> row, string key)
-    {
-        if (row.TryGetValue(key, out var value) && value != null)
-        {
-            var strValue = value.ToString()?.Trim();
-            if (!string.IsNullOrEmpty(strValue) && Enum.TryParse<BoxZone>(strValue, true, out var zone))
-            {
-                return zone;
-            }
-        }
-        return null;
-    }
+    //private BoxZone? GetBoxZoneValue(Dictionary<string, object?> row, string key)
+    //{
+    //    if (row.TryGetValue(key, out var value) && value != null)
+    //    {
+    //        var strValue = value.ToString()?.Trim();
+    //        if (!string.IsNullOrEmpty(strValue) && Enum.TryParse<BoxZone>(strValue, true, out var zone))
+    //        {
+    //            return zone;
+    //        }
+    //    }
+    //    return null;
+    //}
 
 }
 

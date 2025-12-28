@@ -187,21 +187,21 @@ public class BoxesController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    [HttpGet("zones")]
-    public IActionResult GetBoxZones()
-    {
-        var zones = Enum.GetValues(typeof(Dubox.Domain.Enums.BoxZone))
-            .Cast<Dubox.Domain.Enums.BoxZone>()
-            .Select(z => new 
-            { 
-                value = (int)z,
-                name = z.ToString(),
-                displayName = GetEnumDisplayName(z)
-            })
-            .ToList();
+    //[HttpGet("zones")]
+    //public IActionResult GetBoxZones()
+    //{
+    //    var zones = Enum.GetValues(typeof(Dubox.Domain.Enums.BoxZone))
+    //        .Cast<Dubox.Domain.Enums.BoxZone>()
+    //        .Select(z => new 
+    //        { 
+    //            value = (int)z,
+    //            name = z.ToString(),
+    //            displayName = GetEnumDisplayName(z)
+    //        })
+    //        .ToList();
 
-        return Ok(Dubox.Domain.Shared.Result.Success(zones));
-    }
+    //    return Ok(Dubox.Domain.Shared.Result.Success(zones));
+    //}
 
     private string GetEnumDisplayName(Enum enumValue)
     {

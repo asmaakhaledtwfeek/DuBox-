@@ -689,7 +689,15 @@ export class WIRService {
             boxTag: rawBox.boxTag || rawBox.BoxTag,
             boxName: rawBox.boxName || rawBox.BoxName
           }
-        : undefined,
+        : (backendCheckpoint.boxTag || backendCheckpoint.BoxTag || backendCheckpoint.boxName || backendCheckpoint.BoxName
+          ? {
+              boxId: backendCheckpoint.boxId || backendCheckpoint.BoxId || '',
+              projectId: backendCheckpoint.projectId || backendCheckpoint.ProjectId,
+              projectCode: backendCheckpoint.projectCode || backendCheckpoint.ProjectCode,
+              boxTag: backendCheckpoint.boxTag || backendCheckpoint.BoxTag || '',
+              boxName: backendCheckpoint.boxName || backendCheckpoint.BoxName || ''
+            }
+          : undefined),
       wirNumber: backendCheckpoint.wirNumber || backendCheckpoint.WIRNumber || '',
       wirName: backendCheckpoint.wirName || backendCheckpoint.WIRName,
       wirDescription: backendCheckpoint.wirDescription || backendCheckpoint.WIRDescription,

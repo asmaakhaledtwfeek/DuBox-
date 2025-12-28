@@ -41,7 +41,7 @@ public class Box
     public string? BoxFunction { get; set; }
 
     [MaxLength(100)]
-    public BoxZone? Zone { get; set; }
+    public string? Zone { get; set; }
     [ForeignKey(nameof(Factory))]
     public Guid? FactoryId { get; set; }
 

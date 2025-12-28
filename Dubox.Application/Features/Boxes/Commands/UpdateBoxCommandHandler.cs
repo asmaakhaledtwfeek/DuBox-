@@ -205,7 +205,7 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
             RecordChange("BoxFunction", box.BoxFunction, request.BoxFunction);
             box.BoxFunction = request.BoxFunction;
         }
-        if (request.Zone.HasValue && box.Zone != request.Zone)
+        if (!string.IsNullOrEmpty(request.Zone) && box.Zone != request.Zone)
         {
             RecordChange("Zone", box.Zone, request.Zone);
             box.Zone = request.Zone;

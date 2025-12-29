@@ -17,6 +17,8 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
   @Input() activity!: BoxActivityDetail;
   @Input() isOpen: boolean = false;
   @Input() allActivities: BoxActivityDetail[] = []; // All activities to find nearest WIR
+  @Input() isProjectOnHold: boolean = false; // Track if project is on hold
+  @Input() isProjectArchived: boolean = false; // Track if project is archived
   @Output() closeModal = new EventEmitter<void>();
   @Output() progressUpdated = new EventEmitter<any>();
 
@@ -963,6 +965,13 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
   }
 
   async onSubmit(): Promise<void> {
+    if (this.isProjectArchived || this.isProjectOnHold) {
+      this.errorMessage = this.isProjectArchived 
+        ? 'Cannot update progress. This project is archived and read-only.' 
+        : 'Cannot update progress. This project is on hold. Only project status changes are allowed.';
+      return;
+    }
+
     if (this.progressForm.invalid) {
       this.errorMessage = 'Please fill in all required fields correctly';
       console.error('❌ Form is invalid:', this.progressForm.errors);

@@ -9,6 +9,7 @@ namespace Dubox.Application.Specifications
     {
         public GetProjectsSpecification(GetAllProjectsQuery query, List<Guid>? accessibleProjectIds)
         {
+            AddCriteria(p => p.IsActive);
             // Include Category navigation property to get CategoryId and CategoryName
             AddInclude(nameof(Project.Category));
 

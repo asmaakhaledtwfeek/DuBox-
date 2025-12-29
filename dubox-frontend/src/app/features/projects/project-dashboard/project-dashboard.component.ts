@@ -7,7 +7,7 @@ import { skip } from 'rxjs/operators';
 import { ProjectService } from '../../../core/services/project.service';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
-import { Project, ProjectStatus } from '../../../core/models/project.model';
+import { Project, ProjectStatus, getAvailableProjectStatuses, canChangeProjectStatus } from '../../../core/models/project.model';
 import { Box, BoxImportResult, BoxStatus } from '../../../core/models/box.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
@@ -55,12 +55,11 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
   importErrorMessage = '';
   importResult: BoxImportResult | null = null;
   showStatusModal = false;
-  statusOptions = Object.values(ProjectStatus).filter(
-    (status) => status !== ProjectStatus.Completed
-  ) as ProjectStatus[];
+  statusOptions: ProjectStatus[] = [];
   selectedStatus: ProjectStatus | '' = '';
   statusUpdating = false;
   statusError = '';
+  canChangeProjectStatus = canChangeProjectStatus;
   
   showCompressionDateModal = false;
   selectedCompressionDate: Date | null = null;
@@ -248,8 +247,31 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
     if (!this.project) {
       return;
     }
-    this.selectedStatus = (this.project.status as ProjectStatus) || ProjectStatus.Active;
-    this.statusError = '';
+    
+    // Check if project status can be changed
+    if (!canChangeProjectStatus(this.project.status)) {
+      this.statusError = 'Archived projects cannot have their status changed. The project is locked.';
+      return;
+    }
+    
+    // Get available statuses based on current status and progress
+    // For OnHold projects, progress determines available transitions
+    const progress = this.project.progress || 0;
+    this.statusOptions = getAvailableProjectStatuses(this.project.status, progress);
+    
+    // Show appropriate message for OnHold projects
+    if (this.project.status === ProjectStatus.OnHold) {
+      if (progress >= 100) {
+        this.statusError = 'Project is on hold with 100% progress. You can change status to Completed or Archived.';
+      } else {
+        this.statusError = 'Project is on hold with less than 100% progress. You can only change status to Active.';
+      }
+    } else {
+      this.statusError = '';
+    }
+    
+    // Set default selection to first available option
+    this.selectedStatus = this.statusOptions.length > 0 ? this.statusOptions[0] : '';
     this.showStatusModal = true;
     document.body.style.overflow = 'hidden';
   }

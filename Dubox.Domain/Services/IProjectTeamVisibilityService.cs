@@ -40,5 +40,17 @@ public interface IProjectTeamVisibilityService
     /// Viewer role has read-only access and cannot modify data
     /// </summary>
     Task<bool> CanModifyDataAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Check if a project is archived
+    /// Archived projects are read-only and cannot be modified
+    /// </summary>
+    Task<bool> IsProjectArchivedAsync(Guid projectId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Check if a project is on hold
+    /// OnHold projects only allow status changes based on progress
+    /// </summary>
+    Task<bool> IsProjectOnHoldAsync(Guid projectId, CancellationToken cancellationToken = default);
 }
 

@@ -4,6 +4,7 @@ using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
@@ -12,10 +13,13 @@ public class IssueMaterialToActivityCommandHandler : IRequestHandler<IssueMateri
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
-    public IssueMaterialToActivityCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    private readonly IProjectTeamVisibilityService _visibilityService;
+    
+    public IssueMaterialToActivityCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService, IProjectTeamVisibilityService visibilityService)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<MaterialTransactionDto>> Handle(IssueMaterialToActivityCommand request, CancellationToken cancellationToken)
@@ -27,6 +31,25 @@ public class IssueMaterialToActivityCommandHandler : IRequestHandler<IssueMateri
             return Result.Failure<MaterialTransactionDto>("Material not found.");
         if (activity == null)
             return Result.Failure<MaterialTransactionDto>("Activity not found.");
+
+        // Get the box to check project status
+        var box = await _unitOfWork.Repository<Box>().GetByIdAsync(activity.BoxId, cancellationToken);
+        if (box == null)
+            return Result.Failure<MaterialTransactionDto>("Box not found.");
+
+        // Check if project is archived
+        var isArchived = await _visibilityService.IsProjectArchivedAsync(box.ProjectId, cancellationToken);
+        if (isArchived)
+        {
+            return Result.Failure<MaterialTransactionDto>("Cannot issue materials in an archived project. Archived projects are read-only.");
+        }
+
+        // Check if project is on hold
+        var isOnHold = await _visibilityService.IsProjectOnHoldAsync(box.ProjectId, cancellationToken);
+        if (isOnHold)
+        {
+            return Result.Failure<MaterialTransactionDto>("Cannot issue materials in a project on hold. Projects on hold only allow project status changes.");
+        }
 
         var oldCurrentStock = material.CurrentStock ?? 0;
         var oldAllocatedStock = material.AllocatedStock ?? 0;

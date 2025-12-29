@@ -235,6 +235,9 @@
   gap: var(--spacing-md);
   margin-bottom: var(--spacing-lg);
 }
+.badge-warning {
+  color: #070707c1 !important;
+}
 
 .stat-item {
   display: flex;

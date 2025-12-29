@@ -16,6 +16,8 @@ import { ProgressUpdatesTableComponent } from '../../../shared/components/progre
 import { AuditLogService } from '../../../core/services/audit-log.service';
 import { AuditLog, AuditLogQueryParams } from '../../../core/models/audit-log.model';
 import { DiffUtil } from '../../../core/utils/diff.util';
+import { calculateAndFormatDuration, calculateDurationValues } from '../../../core/utils/duration.util';
+import { ProjectService } from '../../../core/services/project.service';
 
 @Component({
   selector: 'app-activity-details',
@@ -98,6 +100,11 @@ export class ActivityDetailsComponent implements OnInit {
   canIssueMaterial = true;
   canSetSchedule = true;
   canUpdateProgress = true;
+  
+  // Project status flags
+  isProjectOnHold = false;
+  isProjectArchived = false;
+  project: any = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -106,7 +113,8 @@ export class ActivityDetailsComponent implements OnInit {
     private boxService: BoxService,
     private progressUpdateService: ProgressUpdateService,
     private teamService: TeamService,
-    private auditLogService: AuditLogService
+    private auditLogService: AuditLogService,
+    private projectService: ProjectService
   ) {}
 
   returnTo: string | null = null; // Store return context
@@ -126,9 +134,43 @@ export class ActivityDetailsComponent implements OnInit {
     }
     
     this.initForms();
+    this.loadProjectDetails();
     this.loadActivity();
     this.loadAllActivities(); // Load all activities for WIR position feature
     this.loadDropdownData();
+  }
+
+  private loadProjectDetails(): void {
+    if (!this.projectId) return;
+    
+    this.projectService.getProject(this.projectId).subscribe({
+      next: (project) => {
+        this.project = project;
+        this.isProjectArchived = project.status === 'Archived';
+        this.isProjectOnHold = project.status === 'OnHold';
+        this.updatePermissions();
+        console.log('📁 Project loaded in activity details. Status:', project.status, 'Is Archived:', this.isProjectArchived, 'Is OnHold:', this.isProjectOnHold);
+      },
+      error: (err) => {
+        console.error('Error loading project details:', err);
+      }
+    });
+  }
+
+  private updatePermissions(): void {
+    // Disable all actions if project is archived or on hold
+    this.canAssignTeam = !this.isProjectArchived && !this.isProjectOnHold;
+    this.canIssueMaterial = !this.isProjectArchived && !this.isProjectOnHold;
+    this.canSetSchedule = !this.isProjectArchived && !this.isProjectOnHold;
+    this.canUpdateProgress = !this.isProjectArchived && !this.isProjectOnHold;
+    
+    // Disable forms if project is on hold or archived
+    if (this.isProjectArchived || this.isProjectOnHold) {
+      this.statusForm?.disable();
+      this.assignTeamForm?.disable();
+      this.issueMaterialForm?.disable();
+      this.scheduleForm?.disable();
+    }
   }
 
   initForms(): void {
@@ -751,6 +793,97 @@ export class ActivityDetailsComponent implements OnInit {
     }
   }
 
+  /**
+   * Get formatted actual duration display text
+   * - Less than 24 hours: shows hours (e.g., "5 hours", "12.5 hours")
+   * - 24 hours or more: shows days and hours (e.g., "2 days 5 hours")
+   */
+  getActualDurationDisplay(): string {
+    if (!this.activityDetail) return '—';
+    
+    // If we have actual start and end dates, calculate precise duration
+    if (this.activityDetail.actualStartDate && this.activityDetail.actualEndDate) {
+      const formatted = calculateAndFormatDuration(
+        this.activityDetail.actualStartDate,
+        this.activityDetail.actualEndDate
+      );
+      if (formatted) return formatted;
+    }
+    
+    // Fallback: If actualDuration is explicitly set (legacy days value), show it
+    if (this.activityDetail.actualDuration !== undefined && this.activityDetail.actualDuration !== null) {
+      return this.activityDetail.actualDuration === 1 
+        ? '1 day' 
+        : `${this.activityDetail.actualDuration} days`;
+    }
+    
+    return '—';
+  }
+
+  /**
+   * Get variance between actual and planned duration
+   * Returns formatted string with sign
+   */
+  getDurationVariance(): string {
+    if (!this.activityDetail || !this.activityDetail.actualStartDate || !this.activityDetail.actualEndDate) {
+      return '—';
+    }
+    
+    const plannedDays = this.activityDetail.duration || this.activity?.plannedDuration || 0;
+    if (!plannedDays) return '—';
+    
+    // Calculate actual duration values
+    const durationValues = calculateDurationValues(
+      this.activityDetail.actualStartDate,
+      this.activityDetail.actualEndDate
+    );
+    
+    if (!durationValues) return '—';
+    
+    // Convert planned days to hours for accurate comparison
+    const plannedHours = plannedDays * 24;
+    const actualHours = durationValues.totalHours;
+    const varianceHours = actualHours - plannedHours;
+    
+    // Format variance
+    if (Math.abs(varianceHours) < 24) {
+      const hours = Math.round(varianceHours * 10) / 10;
+      const sign = hours > 0 ? '+' : '';
+      return `${sign}${hours} hours`;
+    } else {
+      const days = Math.floor(Math.abs(varianceHours) / 24);
+      const hours = Math.round(Math.abs(varianceHours) % 24);
+      const sign = varianceHours > 0 ? '+' : '-';
+      
+      if (hours === 0) {
+        return `${sign}${days} ${days === 1 ? 'day' : 'days'}`;
+      }
+      return `${sign}${days} ${days === 1 ? 'day' : 'days'} ${hours} ${hours === 1 ? 'hour' : 'hours'}`;
+    }
+  }
+
+  /**
+   * Check if actual duration exceeded planned duration
+   */
+  isDelayed(): boolean {
+    if (!this.activityDetail || !this.activityDetail.actualStartDate || !this.activityDetail.actualEndDate) {
+      return false;
+    }
+    
+    const plannedDays = this.activityDetail.duration || this.activity?.plannedDuration || 0;
+    if (!plannedDays) return false;
+    
+    const durationValues = calculateDurationValues(
+      this.activityDetail.actualStartDate,
+      this.activityDetail.actualEndDate
+    );
+    
+    if (!durationValues) return false;
+    
+    const plannedHours = plannedDays * 24;
+    return durationValues.totalHours > plannedHours;
+  }
+
   getStatusClass(status: string): string {
     const statusMap: Record<string, string> = {
       'NotStarted': 'badge-secondary',
@@ -810,6 +943,18 @@ export class ActivityDetailsComponent implements OnInit {
 
   // Update Status Modal
   openUpdateStatusModal(): void {
+    if (this.isProjectArchived || this.isProjectOnHold) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: this.isProjectArchived 
+            ? 'Cannot update activity status. This project is archived and read-only.' 
+            : 'Cannot update activity status. This project is on hold. Only project status changes are allowed.',
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+    
     if (this.activity) {
       this.statusForm.patchValue({
         status: this.activity.status,
@@ -839,6 +984,18 @@ export class ActivityDetailsComponent implements OnInit {
   }
 
   onUpdateStatus(): void {
+    if (this.isProjectArchived || this.isProjectOnHold) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: this.isProjectArchived 
+            ? 'Cannot update activity status. This project is archived and read-only.' 
+            : 'Cannot update activity status. This project is on hold. Only project status changes are allowed.',
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+
     if (this.statusForm.invalid || !this.activityDetail) return;
 
     this.isUpdatingStatus = true;
@@ -1012,6 +1169,18 @@ export class ActivityDetailsComponent implements OnInit {
 
   // Issue Material Modal
   openIssueMaterialModal(): void {
+    if (this.isProjectArchived || this.isProjectOnHold) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: this.isProjectArchived 
+            ? 'Cannot issue materials. This project is archived and read-only.' 
+            : 'Cannot issue materials. This project is on hold. Only project status changes are allowed.',
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+    
     this.issueMaterialForm.reset();
     this.isIssueMaterialModalOpen = true;
   }
@@ -1040,6 +1209,18 @@ export class ActivityDetailsComponent implements OnInit {
 
   // Set Schedule Modal
   openSetScheduleModal(): void {
+    if (this.isProjectArchived || this.isProjectOnHold) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: this.isProjectArchived 
+            ? 'Cannot set schedule. This project is archived and read-only.' 
+            : 'Cannot set schedule. This project is on hold. Only project status changes are allowed.',
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+    
     this.scheduleError = ''; // Clear any previous errors
     this.scheduleSuccess = false; // Reset success state
     if (this.activityDetail) {

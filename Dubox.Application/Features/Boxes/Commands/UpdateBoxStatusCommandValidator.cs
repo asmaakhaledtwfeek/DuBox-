@@ -25,7 +25,7 @@ namespace Dubox.Application.Features.Boxes.Commands
 
             RuleFor(x => x)
                 .MustAsync(BeValidStatusTransition)
-                .WithMessage("The status change is invalid. Status cannot be set to 'Completed' manually or 'InProgress' via this command.");
+                .WithMessage("Invalid status transition. The status change is not allowed based on the current box status and progress.");
 
         }
 
@@ -37,17 +37,60 @@ namespace Dubox.Application.Features.Boxes.Commands
 
             var newStatus = (BoxStatusEnum)command.Status;
             var currentStatus = box.Status;
-            if (newStatus == BoxStatusEnum.Completed)
-                return false;
+            var progress = box.ProgressPercentage;
 
-            if (newStatus == BoxStatusEnum.InProgress)
+            // Business rules for status transitions
+            switch (currentStatus)
             {
-                if (currentStatus != BoxStatusEnum.OnHold)
+                case BoxStatusEnum.NotStarted:
+                    // NotStarted can only change to OnHold
+                    if (newStatus != BoxStatusEnum.OnHold)
+                        return false;
+                    break;
+
+                case BoxStatusEnum.InProgress:
+                    // InProgress can only change to OnHold
+                    if (newStatus != BoxStatusEnum.OnHold)
+                        return false;
+                    break;
+
+                case BoxStatusEnum.Completed:
+                    // Completed can only change to Dispatched or OnHold
+                    if (newStatus != BoxStatusEnum.Dispatched && newStatus != BoxStatusEnum.OnHold)
+                        return false;
+                    break;
+
+                case BoxStatusEnum.OnHold:
+                    // OnHold transitions depend on progress
+                    if (progress == 0)
+                    {
+                        // Can only change to NotStarted
+                        if (newStatus != BoxStatusEnum.NotStarted)
+                            return false;
+                    }
+                    else if (progress < 100)
+                    {
+                        // Can only change to InProgress
+                        if (newStatus != BoxStatusEnum.InProgress)
+                            return false;
+                    }
+                    else // progress >= 100
+                    {
+                        // Can change to Completed or Dispatched
+                        if (newStatus != BoxStatusEnum.Completed && newStatus != BoxStatusEnum.Dispatched)
+                            return false;
+                    }
+                    break;
+
+                case BoxStatusEnum.Dispatched:
+                    // Dispatched typically shouldn't be changed, but allow OnHold if needed
+                    if (newStatus != BoxStatusEnum.OnHold)
+                        return false;
+                    break;
+
+                default:
                     return false;
             }
-
-            if (newStatus == BoxStatusEnum.NotStarted && box.ActualStartDate.HasValue)
-                return false;
 
             return true;
         }

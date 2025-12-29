@@ -52,7 +52,8 @@ public class Project
     public DateTime? ModifiedDate { get; set; }
     public string? CreatedBy { get; set; }
     public string? ModifiedBy { get; set; }
-
+    public DateTime? DeletedDated { get; set; }
+    public DateTime? ArchivedDated { get; set; }
     // Navigation properties
     public ICollection<Box> Boxes { get; set; } = new List<Box>();
     

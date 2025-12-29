@@ -16,6 +16,7 @@ import {
   ActivitiesSummary
 } from '../../../core/models/activities-report.model';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
+import { calculateAndFormatDuration } from '../../../core/utils/duration.util';
 
 @Component({
   selector: 'app-activities-report',
@@ -240,6 +241,31 @@ export class ActivitiesReportComponent implements OnInit, OnDestroy {
     } catch {
       return dateString;
     }
+  }
+
+  /**
+   * Format actual duration with flexible display
+   * - Less than 24 hours: shows hours
+   * - 24 hours or more: shows days and hours
+   */
+  formatActualDuration(activity: ReportActivity): string {
+    if (!activity.actualStartDate || !activity.actualEndDate) {
+      return 'N/A';
+    }
+    
+    const formatted = calculateAndFormatDuration(
+      activity.actualStartDate,
+      activity.actualEndDate
+    );
+    
+    if (formatted) return formatted;
+    
+    // Fallback to legacy actualDuration if available
+    if (activity.actualDuration !== undefined && activity.actualDuration !== null) {
+      return activity.actualDuration === 1 ? '1 day' : `${activity.actualDuration} days`;
+    }
+    
+    return 'N/A';
   }
 
   formatProgress(progress: number): string {

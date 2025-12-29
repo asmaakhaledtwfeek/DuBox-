@@ -178,6 +178,8 @@
 
 <!-- Progress Update Modal -->
 <app-update-progress-modal
+            [isProjectOnHold]="isProjectOnHold"
+            [isProjectArchived]="isProjectArchived"
   *ngIf="selectedActivity"
   [activity]="selectedActivity"
   [allActivities]="activitiesWithDetails"

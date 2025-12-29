@@ -14,6 +14,8 @@ export class UploadDrawingModalComponent implements OnInit, OnChanges {
   @Input() isOpen = false;
   @Input() boxId: string = '';
   @Input() boxName: string = '';
+  @Input() isProjectOnHold: boolean = false; // Track if project is on hold
+  @Input() isProjectArchived: boolean = false; // Track if project is archived
   @Output() closed = new EventEmitter<void>();
   @Output() uploaded = new EventEmitter<void>();
 
@@ -40,6 +42,13 @@ export class UploadDrawingModalComponent implements OnInit, OnChanges {
     if (changes['isOpen'] && changes['isOpen'].currentValue) {
       this.resetForm();
     }
+    
+    // Show error message when modal opens if project is on hold or archived
+    if (changes['isOpen'] && changes['isOpen'].currentValue && (this.isProjectOnHold || this.isProjectArchived)) {
+      this.errorMessage = this.isProjectArchived 
+        ? 'Cannot upload drawings. This project is archived and read-only.' 
+        : 'Cannot upload drawings. This project is on hold. Only project status changes are allowed.';
+    }
   }
 
   close(): void {
@@ -60,12 +69,24 @@ export class UploadDrawingModalComponent implements OnInit, OnChanges {
   }
 
   setInputMethod(method: 'url' | 'file'): void {
+    if (this.isProjectOnHold || this.isProjectArchived) {
+      this.errorMessage = this.isProjectArchived 
+        ? 'Cannot upload drawings. This project is archived and read-only.' 
+        : 'Cannot upload drawings. This project is on hold. Only project status changes are allowed.';
+      return;
+    }
     this.inputMethod = method;
     this.errorMessage = '';
     this.successMessage = '';
   }
 
   openFileInput(): void {
+    if (this.isProjectOnHold || this.isProjectArchived) {
+      this.errorMessage = this.isProjectArchived 
+        ? 'Cannot upload drawings. This project is archived and read-only.' 
+        : 'Cannot upload drawings. This project is on hold. Only project status changes are allowed.';
+      return;
+    }
     this.setInputMethod('file');
     const fileInput = document.getElementById('drawing-file-input') as HTMLInputElement;
     if (fileInput) {
@@ -134,6 +155,13 @@ export class UploadDrawingModalComponent implements OnInit, OnChanges {
   }
 
   onSubmit(): void {
+    if (this.isProjectArchived || this.isProjectOnHold) {
+      this.errorMessage = this.isProjectArchived 
+        ? 'Cannot upload drawings. This project is archived and read-only.' 
+        : 'Cannot upload drawings. This project is on hold. Only project status changes are allowed.';
+      return;
+    }
+
     if (!this.canSubmit()) return;
     
     this.errorMessage = '';

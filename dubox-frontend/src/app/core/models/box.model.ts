@@ -78,6 +78,46 @@ export function getBoxStatusNumber(status: BoxStatus | string): number {
   return statusMap[status] || 1;  // Default to NotStarted
 }
 
+/**
+ * Get available status transitions based on current status and progress
+ * Business Rules:
+ * - NotStarted: can only change to OnHold
+ * - InProgress: can only change to OnHold
+ * - Completed: can only change to Dispatched or OnHold
+ * - OnHold:
+ *   - If progress = 0: can change to NotStarted
+ *   - If progress < 100: can change to InProgress
+ *   - If progress >= 100: can change to Completed or Dispatched
+ * - Dispatched: can change to OnHold
+ */
+export function getAvailableBoxStatuses(currentStatus: BoxStatus, progress: number): BoxStatus[] {
+  switch (currentStatus) {
+    case BoxStatus.NotStarted:
+      return [BoxStatus.OnHold];
+    
+    case BoxStatus.InProgress:
+      return [BoxStatus.OnHold];
+    
+    case BoxStatus.Completed:
+      return [BoxStatus.Dispatched, BoxStatus.OnHold];
+    
+    case BoxStatus.OnHold:
+      if (progress === 0) {
+        return [BoxStatus.NotStarted];
+      } else if (progress < 100) {
+        return [BoxStatus.InProgress];
+      } else {
+        return [BoxStatus.Completed, BoxStatus.Dispatched];
+      }
+    
+    case BoxStatus.Dispatched:
+      return [BoxStatus.OnHold];
+    
+    default:
+      return [];
+  }
+}
+
 export interface BoxActivity {
   id: string;
   boxId: string;

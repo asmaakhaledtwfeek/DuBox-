@@ -2,6 +2,7 @@
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
@@ -14,10 +15,13 @@ namespace Dubox.Application.Features.Activities.Commands
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserService _currentUserService;
-        public SetBoxActivityScheduleCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+        private readonly IProjectTeamVisibilityService _visibilityService;
+        
+        public SetBoxActivityScheduleCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService, IProjectTeamVisibilityService visibilityService)
         {
             _unitOfWork = unitOfWork;
             _currentUserService = currentUserService;
+            _visibilityService = visibilityService;
         }
 
         public async Task<Result<BoxActivityDto>> Handle(SetBoxActivityScheduleCommand request, CancellationToken cancellationToken)
@@ -27,6 +31,21 @@ namespace Dubox.Application.Features.Activities.Commands
 
             if (activity == null)
                 return Result.Failure<BoxActivityDto>("Box Activity not found.");
+
+            // Check if project is archived
+            var isArchived = await _visibilityService.IsProjectArchivedAsync(activity.Box.ProjectId, cancellationToken);
+            if (isArchived)
+            {
+                return Result.Failure<BoxActivityDto>("Cannot set activity schedule in an archived project. Archived projects are read-only.");
+            }
+
+            // Check if project is on hold
+            var isOnHold = await _visibilityService.IsProjectOnHoldAsync(activity.Box.ProjectId, cancellationToken);
+            if (isOnHold)
+            {
+                return Result.Failure<BoxActivityDto>("Cannot set activity schedule in a project on hold. Projects on hold only allow project status changes.");
+            }
+
             var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
             const string dateFormat = "yyyy-MM-dd HH:mm:ss";
 

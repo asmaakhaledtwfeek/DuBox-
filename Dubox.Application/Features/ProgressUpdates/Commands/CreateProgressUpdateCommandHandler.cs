@@ -3,6 +3,7 @@ using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
@@ -16,17 +17,20 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
     private readonly IDbContext _dbContext;
     private readonly ICurrentUserService _currentUserService;
     private readonly IImageProcessingService _imageProcessingService;
+    private readonly IProjectTeamVisibilityService _visibilityService;
 
     public CreateProgressUpdateCommandHandler(
         IUnitOfWork unitOfWork,
         IDbContext dbContext,
         ICurrentUserService currentUserService,
-        IImageProcessingService imageProcessingService)
+        IImageProcessingService imageProcessingService,
+        IProjectTeamVisibilityService visibilityService)
     {
         _unitOfWork = unitOfWork;
         _dbContext = dbContext;
         _currentUserService = currentUserService;
         _imageProcessingService = imageProcessingService;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<ProgressUpdateDto>> Handle(CreateProgressUpdateCommand request, CancellationToken cancellationToken)
@@ -37,6 +41,20 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
 
         if (boxActivity == null)
             return Result.Failure<ProgressUpdateDto>("Box activity not found");
+
+        // Check if project is archived
+        var isArchived = await _visibilityService.IsProjectArchivedAsync(boxActivity.Box.ProjectId, cancellationToken);
+        if (isArchived)
+        {
+            return Result.Failure<ProgressUpdateDto>("Cannot create progress updates in an archived project. Archived projects are read-only.");
+        }
+
+        // Check if project is on hold
+        var isOnHold = await _visibilityService.IsProjectOnHoldAsync(boxActivity.Box.ProjectId, cancellationToken);
+        if (isOnHold)
+        {
+            return Result.Failure<ProgressUpdateDto>("Cannot create progress updates in a project on hold. Projects on hold only allow project status changes.");
+        }
 
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
         var user = await _unitOfWork.Repository<User>().GetByIdAsync(currentUserId, cancellationToken);

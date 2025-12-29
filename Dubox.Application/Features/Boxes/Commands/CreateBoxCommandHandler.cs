@@ -67,6 +67,20 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
             return Result.Failure<BoxDto>("Access denied. You do not have permission to create boxes for this project.");
         }
 
+        // Check if project is archived
+        var isArchived = await _visibilityService.IsProjectArchivedAsync(request.ProjectId, cancellationToken);
+        if (isArchived)
+        {
+            return Result.Failure<BoxDto>("Cannot create boxes for an archived project. Archived projects are read-only.");
+        }
+
+        // Check if project is on hold
+        var isOnHold = await _visibilityService.IsProjectOnHoldAsync(request.ProjectId, cancellationToken);
+        if (isOnHold)
+        {
+            return Result.Failure<BoxDto>("Cannot create boxes for a project on hold. Projects on hold only allow status changes.");
+        }
+
         var boxExists = await _unitOfWork.Repository<Box>()
             .IsExistAsync(b => b.ProjectId == request.ProjectId && b.BoxTag == request.BoxTag, cancellationToken);
 

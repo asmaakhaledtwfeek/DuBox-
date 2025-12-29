@@ -28,7 +28,7 @@
         <span class="breadcrumb-separator">/</span>
         <a [routerLink]="['/projects', box.projectId, 'dashboard']" class="breadcrumb-item">{{ box.projectCode || 'Project' }}</a>
         <span class="breadcrumb-separator">/</span>
-        <a [routerLink]="['/projects', box.projectId, 'boxes']" class="breadcrumb-item">Boxes</a>
+        <a class="breadcrumb-item" (click)="goBack()">Boxes</a>
         <ng-container *ngIf="box.boxTypeName">
           <span class="breadcrumb-separator">/</span>
           <a [routerLink]="['/projects', box.projectId, 'boxes']" [queryParams]="{boxType: box.boxTypeName}" class="breadcrumb-item">{{ box.boxTypeName }}</a>
@@ -43,47 +43,36 @@
 
       <!-- Page Header -->
       <div class="page-header">
-        <div class="header-left">
-          <button class="btn-back" (click)="goBack()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="19" y1="12" x2="5" y2="12"/>
-              <polyline points="12 19 5 12 12 5"/>
-            </svg>
-            Back to Boxes
-          </button>
-          <div class="title-section">
-            <h1 class="page-title">{{ box.name || box.code }}</h1>
-            <span class="badge" [ngClass]="getStatusClass(box.status)">
+        <div class="header-content">
+          <div class="box-info">
+            <h1 class="box-name">{{ box.name || box.code }}</h1>
+            <span class="box-id">{{ box.code }}</span>
+            <span class="status-badge" [ngClass]="getStatusClass(box.status)">
               {{ getStatusLabel(box.status) }}
             </span>
           </div>
-          <p class="page-subtitle">
-            {{ box.code }} 
-           
-           
-          </p>
-        </div>
-        <div class="header-right">
-          <button class="btn btn-primary" (click)="openBoxStatusModal()" *ngIf="canUpdateBoxStatus">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 2v20M2 12h20"/>
-            </svg>
-            Update Status
-          </button>
-          <button class="btn btn-secondary" (click)="editBox()" *ngIf="canEdit">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-            Edit
-          </button>
-          <button class="btn btn-danger" (click)="openDeleteConfirm()" *ngIf="canDelete">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-            </svg>
-            Delete
-          </button>
+          <div class="header-actions">
+            <button class="action-btn btn-update" (click)="openBoxStatusModal()" *ngIf="canUpdateBoxStatus" title="Update Status">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+              </svg>
+              <span>Update Status</span>
+            </button>
+            <button class="action-btn btn-edit" (click)="editBox()" *ngIf="canEdit" title="Edit Box">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+              <span>Edit</span>
+            </button>
+            <button class="action-btn btn-delete" (click)="openDeleteConfirm()" *ngIf="canDelete" title="Delete Box">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+              <span>Delete</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -492,6 +481,8 @@
             [activities]="box.activities || []" 
             [projectId]="projectId"
             [boxId]="boxId"
+            [isProjectOnHold]="isProjectOnHold"
+            [isProjectArchived]="isProjectArchived"
             (boxDataChanged)="loadBox()"
             (activityCountChanged)="onActivityCountChanged($event)"
           ></app-activity-table>
@@ -618,8 +609,22 @@
             </div>
 
             <div class="wir-empty-state" *ngIf="!wirLoading && !wirError && wirCheckpoints.length === 0">
-              <p>No WIR checkpoints created for this box yet.</p>
-              <small>Complete a checkpoint activity to generate its WIR.</small>
+              <div class="empty-state-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 11l3 3L22 4"/>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                </svg>
+              </div>
+              <h3 class="empty-state-title">No WIR Checkpoints Yet</h3>
+              <p class="empty-state-description">Work Inspection Request checkpoints are automatically generated when you complete checkpoint activities.</p>
+              <div class="empty-state-action">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 16v-4"/>
+                  <path d="M12 8h.01"/>
+                </svg>
+                <span>Complete a checkpoint activity to generate its WIR</span>
+              </div>
             </div>
 
             <div class="wir-checkpoints-list" *ngIf="!wirLoading && !wirError && wirCheckpoints.length > 0">
@@ -832,8 +837,31 @@
             </div>
 
             <div class="quality-empty-state" *ngIf="!qualityIssuesLoading && !qualityIssuesError && qualityIssues.length === 0">
-              <p>No quality issues logged for this box.</p>
-              <small>Quality issues will appear here once created.</small>
+              <div class="empty-state-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                  <path d="m9 12 2 2 4-4"/>
+                </svg>
+              </div>
+              <h3 class="empty-state-title">No Quality Issues Logged</h3>
+              <p class="empty-state-description">This box has a clean record with no quality issues reported. Quality issues will appear here once they are created and logged.</p>
+              <div class="empty-state-action" *ngIf="canCreateQualityIssue">
+                <button class="create-issue-btn" (click)="openCreateQualityIssueModal()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                  </svg>
+                  <span>Create Quality Issue</span>
+                </button>
+              </div>
+              <div class="empty-state-hint" *ngIf="!canCreateQualityIssue">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 16v-4"/>
+                  <path d="M12 8h.01"/>
+                </svg>
+                <span>Quality issues can be created by authorized team members</span>
+              </div>
             </div>
 
             <div class="quality-table-wrapper" *ngIf="!qualityIssuesLoading && !qualityIssuesError && qualityIssues.length > 0">
@@ -1828,7 +1856,12 @@
                 <span class="count-badge">{{ getUrlTypeImages().length }}</span>
               </button>
             </div>
-            <button class="btn btn-primary btn-upload-drawing" (click)="openUploadDrawingModal()">
+            <button 
+              *ngIf="!isProjectOnHold && !isProjectArchived"
+              class="btn btn-primary btn-upload-drawing" 
+              (click)="openUploadDrawingModal()"
+              title="Upload Drawing"
+            >
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                 <polyline points="17 8 12 3 7 8"/>
@@ -2959,6 +2992,8 @@
   [isOpen]="isUploadDrawingModalOpen"
   [boxId]="boxId"
   [boxName]="box?.name || box?.code || ''"
+  [isProjectOnHold]="isProjectOnHold"
+  [isProjectArchived]="isProjectArchived"
   (closed)="closeUploadDrawingModal()"
   (uploaded)="onDrawingUploaded()"
 ></app-upload-drawing-modal>

@@ -70,7 +70,7 @@
               class="tab-button"
               [class.active]="inputMethod === 'url'"
               (click)="setInputMethod('url')"
-              [disabled]="isSubmitting"
+              [disabled]="isSubmitting || isProjectOnHold || isProjectArchived"
             >
               <div class="tab-button-content">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -85,7 +85,7 @@
               class="tab-button"
               [class.active]="inputMethod === 'file'"
               (click)="openFileInput()"
-              [disabled]="isSubmitting"
+              [disabled]="isSubmitting || isProjectOnHold || isProjectArchived"
             >
               <div class="tab-button-content">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -112,7 +112,7 @@
                   placeholder="Enter drawing URL (e.g., https://example.com/drawing.pdf)"
                   [(ngModel)]="drawingUrl"
                   name="drawingUrl"
-                  [disabled]="isSubmitting"
+                  [disabled]="isSubmitting || isProjectOnHold || isProjectArchived"
                   required
                 />
               </div>
@@ -126,7 +126,7 @@
             accept=".pdf,.dwg"
             style="display: none"
             (change)="onFileSelected($event)"
-            [disabled]="isSubmitting"
+            [disabled]="isSubmitting || isProjectOnHold || isProjectArchived"
           />
 
           <!-- File Preview -->
@@ -184,7 +184,7 @@
           <button type="button" class="btn btn-secondary" (click)="close()" [disabled]="isSubmitting">
             Cancel
           </button>
-          <button type="submit" class="btn btn-primary" [disabled]="!canSubmit() || isSubmitting">
+          <button type="submit" class="btn btn-primary" [disabled]="!canSubmit() || isSubmitting || isProjectOnHold || isProjectArchived">
             <span *ngIf="!isSubmitting" class="btn-content">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>

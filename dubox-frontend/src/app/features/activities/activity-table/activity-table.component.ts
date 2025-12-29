@@ -11,6 +11,7 @@ import { BoxActivityDetail } from '../../../core/models/progress-update.model';
 import { WIRService } from '../../../core/services/wir.service';
 import { WIRRecord, WIRStatus, WIRCheckpoint } from '../../../core/models/wir.model';
 import { PermissionService } from '../../../core/services/permission.service';
+import { calculateAndFormatDuration, calculateDurationInDays } from '../../../core/utils/duration.util';
 
 // Combined type for activities and WIR rows
 export interface TableRow {
@@ -32,6 +33,8 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   @Input() activities: BoxActivity[] = [];
   @Input() projectId: string = '';
   @Input() boxId: string = '';
+  @Input() isProjectOnHold: boolean = false; // Track if project is on hold
+  @Input() isProjectArchived: boolean = false; // Track if project is archived
   @Output() boxDataChanged = new EventEmitter<void>();
   @Output() activityCountChanged = new EventEmitter<number>();
 
@@ -59,25 +62,27 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
     private cdr: ChangeDetectorRef,
     private permissionService: PermissionService
   ) {
-    // Check permissions
-    this.canUpdateProgress = this.permissionService.hasPermission('activities', 'update-progress');
+    this.updatePermissions();
+  }
+
+  private updatePermissions(): void {
+    const baseCanUpdateProgress = this.permissionService.hasPermission('activities', 'update-progress');
+    const baseCanViewWIR = this.permissionService.hasPermission('wir', 'view') ||
+                          this.permissionService.hasPermission('wir', 'approve') || 
+                          this.permissionService.hasPermission('wir', 'reject') ||
+                          this.permissionService.hasPermission('wir', 'review') ||
+                          this.permissionService.hasPermission('wir', 'manage');
+    const baseCanReviewWIR = this.permissionService.hasPermission('wir', 'review') || 
+                            this.permissionService.hasPermission('wir', 'manage');
+    const baseCanManageCheckpoint = this.permissionService.hasPermission('wir', 'create') ||
+                                   this.permissionService.hasPermission('wir', 'review') ||
+                                   this.permissionService.hasPermission('wir', 'manage');
     
-    // Can view WIR (QA/QC button) - for viewing WIR status and details
-    this.canViewWIR = this.permissionService.hasPermission('wir', 'view') ||
-                      this.permissionService.hasPermission('wir', 'approve') || 
-                      this.permissionService.hasPermission('wir', 'reject') ||
-                      this.permissionService.hasPermission('wir', 'review') ||
-                      this.permissionService.hasPermission('wir', 'manage');
-    
-    // Can review WIR - for approval/rejection workflow
-    this.canReviewWIR = this.permissionService.hasPermission('wir', 'review') || 
-                        this.permissionService.hasPermission('wir', 'manage');
-    
-    // Can manage checkpoints (view/add checkpoint button) - requires create, review, or manage permission
-    // NOT just wir.view - users need higher permissions to access checkpoints
-    this.canManageCheckpoint = this.permissionService.hasPermission('wir', 'create') ||
-                               this.permissionService.hasPermission('wir', 'review') ||
-                               this.permissionService.hasPermission('wir', 'manage');
+    // Disable all actions if project is archived or on hold
+    this.canUpdateProgress = baseCanUpdateProgress && !this.isProjectArchived && !this.isProjectOnHold;
+    this.canViewWIR = baseCanViewWIR && !this.isProjectArchived && !this.isProjectOnHold;
+    this.canReviewWIR = baseCanReviewWIR && !this.isProjectArchived && !this.isProjectOnHold;
+    this.canManageCheckpoint = baseCanManageCheckpoint && !this.isProjectArchived && !this.isProjectOnHold;
   }
 
   ngOnInit(): void {
@@ -98,6 +103,11 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
     // Reload data when boxId changes
     if (changes['boxId'] && !changes['boxId'].firstChange && changes['boxId'].currentValue) {
       this.loadActivitiesWithDetails();
+    }
+    
+    // Update permissions when project status changes
+    if (changes['isProjectOnHold'] || changes['isProjectArchived']) {
+      this.updatePermissions();
     }
   }
 
@@ -415,51 +425,30 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
-   * Calculate actual duration in days: (actual end date - actual start date) + 1
-   * If same calendar day, return 1 day
+   * Calculate actual duration in days (legacy - for backward compatibility)
+   * Use calculateAndFormatDuration from utils for display
    */
   calculateActualDuration(actualStartDate?: Date | string, actualEndDate?: Date | string): number | undefined {
-    if (!actualStartDate || !actualEndDate) return undefined;
-    
-    try {
-      const start = typeof actualStartDate === 'string' ? new Date(actualStartDate) : actualStartDate;
-      const end = typeof actualEndDate === 'string' ? new Date(actualEndDate) : actualEndDate;
-      
-      if (isNaN(start.getTime()) || isNaN(end.getTime())) return undefined;
-      
-      // Check if same calendar day (ignoring time)
-      const startDate = new Date(start.getFullYear(), start.getMonth(), start.getDate());
-      const endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate());
-      
-      if (startDate.getTime() === endDate.getTime()) {
-        return 1; // Same day = 1 day
-      }
-      
-      // Calculate difference in days and add 1 for inclusive range
-      const diff = endDate.getTime() - startDate.getTime();
-      const days = Math.ceil(diff / (1000 * 60 * 60 * 24)) + 1;
-      // Return at least 1 day
-      return days >= 1 ? days : 1;
-    } catch {
-      return undefined;
-    }
+    return calculateDurationInDays(actualStartDate, actualEndDate);
   }
 
   /**
-   * Get display text for actual duration
+   * Get display text for actual duration with flexible formatting:
+   * - Less than 24 hours: shows hours (e.g., "5 hours", "12.5 hours")
+   * - 24 hours or more: shows days and hours (e.g., "2 days 5 hours")
    */
   getActualDurationDisplay(activity: BoxActivityDetail | null): string {
     if (!activity) return '-';
     
-    // If actualDuration is explicitly set, use it
-    if (activity.actualDuration !== undefined && activity.actualDuration !== null) {
-      return `${activity.actualDuration} days`;
+    // If we have actual start and end dates, calculate precise duration
+    if (activity.actualStartDate && activity.actualEndDate) {
+      const formatted = calculateAndFormatDuration(activity.actualStartDate, activity.actualEndDate);
+      if (formatted) return formatted;
     }
     
-    // Otherwise, try to calculate from dates
-    const calculated = this.calculateActualDuration(activity.actualStartDate, activity.actualEndDate);
-    if (calculated !== undefined && calculated !== null) {
-      return `${calculated} days`;
+    // Fallback: If actualDuration is explicitly set (legacy days value), show it
+    if (activity.actualDuration !== undefined && activity.actualDuration !== null) {
+      return activity.actualDuration === 1 ? '1 day' : `${activity.actualDuration} days`;
     }
     
     // If we can't calculate, show "-"

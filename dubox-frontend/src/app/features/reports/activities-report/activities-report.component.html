@@ -253,7 +253,7 @@
               <td class="date-cell">{{ formatDate(activity.plannedEndDate) }}</td>
               <td class="date-cell">{{ formatDate(activity.actualStartDate) }}</td>
               <td class="date-cell">{{ formatDate(activity.actualEndDate) }}</td>
-              <td class="duration-cell">{{ activity.actualDuration ? activity.actualDuration + ' days' : 'N/A' }}</td>
+              <td class="duration-cell">{{ formatActualDuration(activity) }}</td>
               <td class="delay-cell" [class.delayed]="activity.delayDays && activity.delayDays > 0">
                 {{ activity.delayDays !== null && activity.delayDays !== undefined ? activity.delayDays + ' days' : 'N/A' }}
               </td>

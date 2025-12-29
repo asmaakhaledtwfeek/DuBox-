@@ -80,6 +80,7 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   newQualityIssueForm!: FormGroup;
   isChecklistModalOpen = false;
   isDeleteModalOpen = false;
+  isDeleteSectionModalOpen = false;
   isQualityIssueModalOpen = false;
   isQualityIssueDetailsModalOpen = false;
   selectedQualityIssueDetails: {
@@ -342,6 +343,8 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   isItemReviewModalOpen = false;
   pendingDeleteIndex: number | null = null;
   pendingDeleteChecklistItemId: string | null = null;
+  pendingDeleteSection: { sectionName: string; items: any[] } | null = null;
+  collapsedSections: Set<string> = new Set();
   selectedReviewItemIndex: number | null = null;
   itemReviewForm!: FormGroup;
   savingItemReview = false;
@@ -1398,6 +1401,87 @@ console.log(expectedWirCode);
     this.pendingDeleteIndex = index;
     this.pendingDeleteChecklistItemId = checklistItemId;
     this.isDeleteModalOpen = true;
+  }
+
+  confirmRemoveSection(section: { sectionName: string; items: any[] }): void {
+    if (this.isChecklistLocked) {
+      this.notifyChecklistLocked();
+      return;
+    }
+    
+    this.pendingDeleteSection = section;
+    this.isDeleteSectionModalOpen = true;
+  }
+
+  cancelDeleteSection(): void {
+    this.pendingDeleteSection = null;
+    this.isDeleteSectionModalOpen = false;
+  }
+
+  executeDeleteSection(): void {
+    if (!this.pendingDeleteSection) {
+      return;
+    }
+
+    const section = this.pendingDeleteSection;
+    const itemCount = section.items.length;
+    const sectionName = section.sectionName;
+    
+    // Get all indices from the section items
+    const indicesToRemove = section.items.map(item => item.index).sort((a, b) => b - a);
+    
+    // Check if any items have checklistItemId (exist in backend)
+    const itemsToDeleteFromBackend: string[] = [];
+    indicesToRemove.forEach(index => {
+      const itemControl = this.addChecklistItemsArray.at(index);
+      const checklistItemId = itemControl?.value?.checklistItemId;
+      if (checklistItemId) {
+        itemsToDeleteFromBackend.push(checklistItemId);
+      }
+    });
+    
+    // Remove items from form array (in reverse order to maintain correct indices)
+    indicesToRemove.forEach(index => {
+      this.addChecklistItemsArray.removeAt(index);
+    });
+    
+    // Update sequences after removal
+    this.updateAddChecklistSequences();
+    
+    // If items exist in backend, delete them via API
+    if (itemsToDeleteFromBackend.length > 0) {
+      itemsToDeleteFromBackend.forEach(checklistItemId => {
+        this.deleteChecklistItem(checklistItemId, false);
+      });
+    }
+    
+    // Update the wirCheckpoint if it exists
+    const currentCheckpoint = this.wirCheckpoint;
+    if (currentCheckpoint && currentCheckpoint.checklistItems) {
+      this.wirCheckpoint = {
+        ...currentCheckpoint,
+        checklistItems: currentCheckpoint.checklistItems.filter((_, idx) => !indicesToRemove.includes(idx))
+      };
+    }
+    
+    // Close modal and reset
+    this.isDeleteSectionModalOpen = false;
+    this.pendingDeleteSection = null;
+    
+    // Show success message (you can replace this with a toast notification if you have one)
+    console.log(`Successfully deleted "${sectionName}" section with ${itemCount} item(s).`);
+  }
+
+  toggleSectionCollapse(sectionName: string): void {
+    if (this.collapsedSections.has(sectionName)) {
+      this.collapsedSections.delete(sectionName);
+    } else {
+      this.collapsedSections.add(sectionName);
+    }
+  }
+
+  isSectionCollapsed(sectionName: string): boolean {
+    return this.collapsedSections.has(sectionName);
   }
 
   private updateAddChecklistSequences(): void {
@@ -3514,7 +3598,10 @@ console.log(expectedWirCode);
     this.syncReviewFormFromCheckpoint();
     this.pendingAction = null;
     this.finalStatusControl.setValue(status);
-    this.qualityIssuesArray.clear();
+    
+    // Reset and reload quality issues from the updated checkpoint
+    this.resetQualityIssuesForm();
+    
     const messageMap: Record<WIRCheckpointStatus, string> = {
       [WIRCheckpointStatus.Approved]: 'WIR checkpoint approved successfully.',
       [WIRCheckpointStatus.Rejected]: 'WIR checkpoint rejected and sent for rework.',

@@ -280,5 +280,31 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
         // Viewer cannot modify data
         return !isViewer;
     }
+
+    public async Task<bool> IsProjectArchivedAsync(Guid projectId, CancellationToken cancellationToken = default)
+    {
+        var project = await _context.Projects
+            .FirstOrDefaultAsync(p => p.ProjectId == projectId, cancellationToken);
+
+        if (project == null)
+        {
+            return false;
+        }
+
+        return project.Status == Domain.Enums.ProjectStatusEnum.Archived;
+    }
+
+    public async Task<bool> IsProjectOnHoldAsync(Guid projectId, CancellationToken cancellationToken = default)
+    {
+        var project = await _context.Projects
+            .FirstOrDefaultAsync(p => p.ProjectId == projectId, cancellationToken);
+
+        if (project == null)
+        {
+            return false;
+        }
+
+        return project.Status == Domain.Enums.ProjectStatusEnum.OnHold;
+    }
 }
 

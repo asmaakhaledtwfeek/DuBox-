@@ -33,6 +33,9 @@ export class EditBoxComponent implements OnInit {
   projectId!: string;
   boxId!: string;
   box: Box | null = null;
+  project: any = null; // Store project details
+  isProjectArchived = false; // Track if project is archived
+  isProjectOnHold = false; // Track if project is on hold
   projectPlannedStartDate?: Date;
   projectPlannedEndDate?: Date;
   scheduleErrorMessage: string | null = null;
@@ -99,6 +102,18 @@ export class EditBoxComponent implements OnInit {
     this.projectService.getProject(this.projectId).subscribe({
       next: (project: any) => {
         const projectData = project?.data || project;
+        this.project = projectData;
+        
+        // Check if project is archived or on hold
+        this.isProjectArchived = projectData?.status === 'Archived';
+        this.isProjectOnHold = projectData?.status === 'OnHold';
+        if (this.isProjectArchived) {
+          this.boxForm.disable();
+          this.error = 'This project is archived. You can only view the box details but cannot make any modifications.';
+        } else if (this.isProjectOnHold) {
+          this.boxForm.disable();
+          this.error = 'This project is on hold. You can only view the box details but cannot make any modifications. Only project status changes are allowed.';
+        }
         
         // Extract project details
         this.projectCategoryName = projectData?.categoryName || '';
@@ -612,6 +627,15 @@ export class EditBoxComponent implements OnInit {
   }
 
   onSubmit(): void {
+    if (this.isProjectArchived) {
+      this.error = 'Cannot save changes. This project is archived and read-only.';
+      return;
+    }
+    if (this.isProjectOnHold) {
+      this.error = 'Cannot save changes. This project is on hold. Only project status changes are allowed.';
+      return;
+    }
+
     this.validateSchedule();
     if (this.boxForm.invalid) {
       this.markFormGroupTouched(this.boxForm);

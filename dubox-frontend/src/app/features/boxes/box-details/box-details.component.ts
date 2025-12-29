@@ -8,8 +8,9 @@ import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { UserService } from '../../../core/services/user.service';
 import { TeamService } from '../../../core/services/team.service';
+import { ProjectService } from '../../../core/services/project.service';
 import { Team } from '../../../core/models/team.model';
-import { Box, BoxStatus, BoxLog, getBoxStatusNumber } from '../../../core/models/box.model';
+import { Box, BoxStatus, BoxLog, getBoxStatusNumber, getAvailableBoxStatuses } from '../../../core/models/box.model';
 import { WIRService } from '../../../core/services/wir.service';
 import { ProgressUpdate, ProgressUpdatesSearchParams } from '../../../core/models/progress-update.model';
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
@@ -85,6 +86,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   box: Box | null = null;
   boxId!: string;
   projectId!: string;
+  project: any = null; // Store project details to check if archived
   loading = true;
   error = '';
   deleting = false;
@@ -97,6 +99,8 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   canDelete = false;
   canUpdateBoxStatus = false;
   canUpdateQualityIssueStatus = false;
+  isProjectArchived = false; // Track if project is archived
+  isProjectOnHold = false; // Track if project is on hold
   BoxStatus = BoxStatus;
   Math = Math;
   
@@ -258,7 +262,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   boxStatusUpdateLoading = false;
   boxStatusUpdateError = '';
   selectedBoxStatus: BoxStatus | null = null;
-  availableBoxStatuses: BoxStatus[] = [BoxStatus.Dispatched, BoxStatus.InProgress, BoxStatus.OnHold];
+  availableBoxStatuses: BoxStatus[] = [];
   
   // Box Logs
   boxLogs: BoxLog[] = [];
@@ -296,7 +300,8 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     private apiService: ApiService,
     private http: HttpClient,
     private wirExportService: WirExportService,
-    private teamService: TeamService
+    private teamService: TeamService,
+    private projectService: ProjectService
   ) {}
 
   ngOnInit(): void {
@@ -305,7 +310,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     
     // Check for tab query parameter to set active tab
     const tabParam = this.route.snapshot.queryParams['tab'];
-    if (tabParam && ['overview', 'activities', 'wir', 'quality-issues', 'logs', 'drawings', 'progress-updates'].includes(tabParam)) {
+    if (tabParam && ['overview', 'activities', 'wir', 'quality-issues', 'logs', 'drawings', 'progress-updates', 'attachments'].includes(tabParam)) {
       this.activeTab = tabParam as any;
     }
     
@@ -325,21 +330,50 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     
     this.setupBoxLogsSearch();
     this.loadBox();
+    this.loadProjectDetails();
+  }
+  
+  private loadProjectDetails(): void {
+    if (!this.projectId) return;
+    
+    this.projectService.getProject(this.projectId).subscribe({
+      next: (project) => {
+        this.project = project;
+        this.isProjectArchived = project.status === 'Archived';
+        this.isProjectOnHold = project.status === 'OnHold';
+        // Re-check permissions after loading project status
+        this.checkPermissions();
+        console.log('📁 Project loaded. Status:', project.status, 'Is Archived:', this.isProjectArchived, 'Is OnHold:', this.isProjectOnHold);
+      },
+      error: (err) => {
+        console.error('Error loading project details:', err);
+      }
+    });
   }
   
   private checkPermissions(): void {
-    this.canEdit = this.permissionService.canEdit('boxes');
-    this.canDelete = this.permissionService.canDelete('boxes');
-    this.canUpdateBoxStatus = this.permissionService.canEdit('boxes') || 
+    const baseCanEdit = this.permissionService.canEdit('boxes');
+    const baseCanDelete = this.permissionService.canDelete('boxes');
+    const baseCanUpdateStatus = this.permissionService.canEdit('boxes') || 
                               this.permissionService.hasPermission('boxes', 'update-status');
-    this.canUpdateQualityIssueStatus = this.permissionService.hasPermission('quality-issues', 'edit') || 
+    const baseCanUpdateQualityIssueStatus = this.permissionService.hasPermission('quality-issues', 'edit') || 
                                        this.permissionService.hasPermission('quality-issues', 'resolve');
-    this.canCreateQualityIssue = this.permissionService.canCreate('quality-issues');
+    const baseCanCreateQualityIssue = this.permissionService.canCreate('quality-issues');
+    
+    // Disable all actions if project is archived or on hold
+    this.canEdit = baseCanEdit && !this.isProjectArchived && !this.isProjectOnHold;
+    this.canDelete = baseCanDelete && !this.isProjectArchived && !this.isProjectOnHold;
+    this.canUpdateBoxStatus = baseCanUpdateStatus && !this.isProjectArchived && !this.isProjectOnHold;
+    this.canUpdateQualityIssueStatus = baseCanUpdateQualityIssueStatus && !this.isProjectArchived && !this.isProjectOnHold;
+    this.canCreateQualityIssue = baseCanCreateQualityIssue && !this.isProjectArchived && !this.isProjectOnHold;
+    
     console.log('✅ Box permissions checked:', {
       canEdit: this.canEdit,
       canDelete: this.canDelete,
       canUpdateBoxStatus: this.canUpdateBoxStatus,
-      canCreateQualityIssue: this.canCreateQualityIssue
+      canCreateQualityIssue: this.canCreateQualityIssue,
+      isProjectArchived: this.isProjectArchived,
+      isProjectOnHold: this.isProjectOnHold
     });
   }
 
@@ -454,7 +488,18 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   }
 
   goBack(): void {
-    this.router.navigate(['/projects', this.projectId, 'boxes']);
+    // Navigate back to boxes filtered by current box type
+    const queryParams: any = {};
+    
+    if (this.box?.boxTypeName) {
+      queryParams.boxType = this.box.boxTypeName;
+      
+      if (this.box.boxSubTypeName) {
+        queryParams.boxSubType = this.box.boxSubTypeName;
+      }
+    }
+    
+    this.router.navigate(['/projects', this.projectId, 'boxes'], { queryParams });
   }
 
   // Activity chart methods
@@ -543,7 +588,15 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         // Show success message and navigate after a delay
         setTimeout(() => {
           this.showDeleteConfirm = false;
-          this.router.navigate(['/projects', this.projectId, 'boxes']);
+          // Navigate back to boxes filtered by the deleted box's type
+          const queryParams: any = {};
+          if (this.box?.boxTypeName) {
+            queryParams.boxType = this.box.boxTypeName;
+            if (this.box.boxSubTypeName) {
+              queryParams.boxSubType = this.box.boxSubTypeName;
+            }
+          }
+          this.router.navigate(['/projects', this.projectId, 'boxes'], { queryParams });
         }, 1500);
       },
       error: (err) => {
@@ -646,6 +699,9 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'drawings' | 'progress-updates' | 'attachments'): void {
     this.activeTab = tab;
+    
+    // Scroll to top of page for better UX when switching tabs
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     
     // Lazy load data when tab is clicked
     if (tab === 'activities') {
@@ -2993,6 +3049,17 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   // Upload Drawing Modal Methods
   openUploadDrawingModal(): void {
+    if (this.isProjectOnHold || this.isProjectArchived) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: this.isProjectOnHold 
+            ? 'Cannot upload drawings. This project is on hold. Only project status changes are allowed.' 
+            : 'Cannot upload drawings. This project is archived and read-only.',
+          type: 'error' 
+        }
+      }));
+      return;
+    }
     this.isUploadDrawingModalOpen = true;
   }
 
@@ -3734,6 +3801,14 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.isBoxStatusModalOpen = true;
     this.boxStatusUpdateError = '';
     this.selectedBoxStatus = null;
+    
+    // Get available statuses based on current status and progress
+    if (this.box) {
+      this.availableBoxStatuses = getAvailableBoxStatuses(this.box.status, this.box.progress);
+    } else {
+      this.availableBoxStatuses = [];
+    }
+    
     document.body.style.overflow = 'hidden';
   }
 

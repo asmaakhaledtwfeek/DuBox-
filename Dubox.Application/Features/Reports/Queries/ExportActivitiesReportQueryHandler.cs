@@ -1,5 +1,6 @@
 using Dubox.Application.DTOs;
 using Dubox.Application.Specifications;
+using Dubox.Application.Utilities;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Services;
@@ -66,8 +67,9 @@ public class ExportActivitiesReportQueryHandler : IRequestHandler<ExportActiviti
                     ActualStartDate = ba.ActualStartDate,
                     ActualEndDate = ba.ActualEndDate,
                     ActualDuration = ba.ActualStartDate.HasValue && ba.ActualEndDate.HasValue
-                        ? (int?)(ba.ActualEndDate.Value.Date - ba.ActualStartDate.Value.Date).Days + 1
+                        ? DurationFormatter.CalculateDurationInDays(ba.ActualStartDate, ba.ActualEndDate)
                         : null,
+                    ActualDurationFormatted = DurationFormatter.FormatDuration(ba.ActualStartDate, ba.ActualEndDate),
                     DelayDays = ba.PlannedEndDate.HasValue &&
                                 !ba.ActualEndDate.HasValue &&
                                 ba.PlannedEndDate < DateTime.UtcNow
@@ -97,7 +99,7 @@ public class ExportActivitiesReportQueryHandler : IRequestHandler<ExportActiviti
                     PlannedEndDate = item.PlannedEndDate?.ToString("yyyy-MM-dd") ?? string.Empty,
                     ActualStartDate = item.ActualStartDate?.ToString("yyyy-MM-dd") ?? string.Empty,
                     ActualEndDate = item.ActualEndDate?.ToString("yyyy-MM-dd") ?? string.Empty,
-                    ActualDuration = item.ActualDuration?.ToString() ?? string.Empty,
+                    ActualDuration = item.ActualDurationFormatted ?? item.ActualDuration?.ToString() ?? string.Empty,
                     DelayDays = item.DelayDays?.ToString() ?? string.Empty
                 });
             }

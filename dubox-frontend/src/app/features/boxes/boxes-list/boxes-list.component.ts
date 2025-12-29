@@ -22,6 +22,9 @@ export class BoxesListComponent implements OnInit, OnDestroy {
   projectId: string = '';
   projectName = '';
   projectCode = '';
+  project: any = null; // Store project details
+  isProjectArchived = false; // Track if project is archived
+  isProjectOnHold = false; // Track if project is on hold
   boxes: Box[] = [];
   filteredBoxes: Box[] = [];
   boxTypes: BoxTypeStat[] = [];
@@ -85,8 +88,10 @@ export class BoxesListComponent implements OnInit, OnDestroy {
   }
   
   private checkPermissions(): void {
-    this.canCreate = this.permissionService.canCreate('boxes');
-    console.log('✅ Can create box:', this.canCreate);
+    const baseCanCreate = this.permissionService.canCreate('boxes');
+    // Disable create if project is archived or on hold
+    this.canCreate = baseCanCreate && !this.isProjectArchived && !this.isProjectOnHold;
+    console.log('✅ Can create box:', this.canCreate, 'Is Project Archived:', this.isProjectArchived, 'Is OnHold:', this.isProjectOnHold);
   }
 
   loadProjectDetails(): void {
@@ -96,8 +101,14 @@ export class BoxesListComponent implements OnInit, OnDestroy {
 
     this.projectService.getProject(this.projectId).subscribe({
       next: (project) => {
+        this.project = project;
         this.projectName = project.name || '';
         this.projectCode = project.code || '';
+        this.isProjectArchived = project.status === 'Archived';
+        this.isProjectOnHold = project.status === 'OnHold';
+        // Re-check permissions after loading project status
+        this.checkPermissions();
+        console.log('📁 Project loaded. Status:', project.status, 'Is Archived:', this.isProjectArchived, 'Is OnHold:', this.isProjectOnHold);
       },
       error: (err) => {
         console.error('Error loading project details:', err);

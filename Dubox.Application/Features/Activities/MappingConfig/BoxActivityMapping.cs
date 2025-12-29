@@ -1,4 +1,5 @@
 ﻿using Dubox.Application.DTOs;
+using Dubox.Application.Utilities;
 using Dubox.Domain.Entities;
 using Mapster;
 
@@ -25,12 +26,12 @@ namespace Dubox.Application.Features.Activities.MappingConfig
                             : src.AssignedMember.User.FullName)
                         : null)
                 .Map(dest => dest.Status, src => src.Status.ToString())
+                // Legacy ActualDuration: calendar days + 1 (for backward compatibility)
                 .Map(dest => dest.ActualDuration, src =>
-                    !src.ActualStartDate.HasValue || !src.ActualEndDate.HasValue
-                        ? null
-                        : src.ActualStartDate.Value.Date == src.ActualEndDate.Value.Date
-                            ? (int?)1
-                            : (int?)Math.Max(1, (int)Math.Ceiling((src.ActualEndDate.Value.Date - src.ActualStartDate.Value.Date).TotalDays) + 1));
+                    DurationFormatter.CalculateDurationInDays(src.ActualStartDate, src.ActualEndDate))
+                // New ActualDurationFormatted: flexible formatting (hours, days + hours)
+                .Map(dest => dest.ActualDurationFormatted, src =>
+                    DurationFormatter.FormatDuration(src.ActualStartDate, src.ActualEndDate));
         }
     }
 }

@@ -45,6 +45,20 @@ namespace Dubox.Application.Features.Activities.Commands
                 return Result.Failure<AssignBoxActivityTeamDto>("Access denied. You do not have permission to modify activities in this project.");
             }
 
+            // Check if project is archived
+            var isArchived = await _visibilityService.IsProjectArchivedAsync(activity.Box.ProjectId, cancellationToken);
+            if (isArchived)
+            {
+                return Result.Failure<AssignBoxActivityTeamDto>("Cannot assign activities in an archived project. Archived projects are read-only.");
+            }
+
+            // Check if project is on hold
+            var isOnHold = await _visibilityService.IsProjectOnHoldAsync(activity.Box.ProjectId, cancellationToken);
+            if (isOnHold)
+            {
+                return Result.Failure<AssignBoxActivityTeamDto>("Cannot assign activities in a project on hold. Projects on hold only allow project status changes.");
+            }
+
             var team = await _unitOfWork.Repository<Team>().GetByIdAsync(request.TeamId);
 
             if (team == null)

@@ -30,6 +30,9 @@ export class CreateBoxComponent implements OnInit {
   error = '';
   successMessage = '';
   projectId!: string;
+  project: any = null; // Store project details
+  isProjectArchived = false; // Track if project is archived
+  isProjectOnHold = false; // Track if project is on hold
   projectNumber: string = '';
   projectName: string = '';
   projectCategoryId: number | null = null;
@@ -96,6 +99,25 @@ export class CreateBoxComponent implements OnInit {
     this.projectService.getProject(this.projectId).subscribe({
       next: (project: any) => {
         const projectData = project?.data || project;
+        this.project = projectData;
+        
+        // Check if project is archived or on hold
+        this.isProjectArchived = projectData?.status === 'Archived';
+        this.isProjectOnHold = projectData?.status === 'OnHold';
+        if (this.isProjectArchived) {
+          this.error = 'This project is archived. You cannot create new boxes in an archived project.';
+          this.boxForm.disable();
+          this.loadingConfiguration = false;
+          this.loadingBoxTypes = false;
+          return;
+        }
+        if (this.isProjectOnHold) {
+          this.error = 'This project is on hold. You cannot create new boxes. Only project status changes are allowed.';
+          this.boxForm.disable();
+          this.loadingConfiguration = false;
+          this.loadingBoxTypes = false;
+          return;
+        }
         
         // Extract project details
         this.projectNumber = projectData?.code || projectData?.projectNumber || '';
@@ -598,6 +620,15 @@ export class CreateBoxComponent implements OnInit {
 
 
   onSubmit(): void {
+    if (this.isProjectArchived) {
+      this.error = 'Cannot create box. This project is archived and read-only.';
+      return;
+    }
+    if (this.isProjectOnHold) {
+      this.error = 'Cannot create box. This project is on hold. Only project status changes are allowed.';
+      return;
+    }
+
     // Validate step 1 before submission
     if (!this.validateStep1()) {
       this.currentStep = 1;

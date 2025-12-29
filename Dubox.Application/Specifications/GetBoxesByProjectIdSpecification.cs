@@ -8,6 +8,7 @@ namespace Dubox.Application.Specifications
         public GetBoxesByProjectIdSpecification(Guid projectId)
         {
             AddCriteria(b => b.ProjectId == projectId);
+            AddCriteria(b => b.IsActive);
             //AddInclude(nameof(Box.BoxActivities));
             AddInclude(nameof(Box.Project));
             // Note: BoxType and BoxSubType navigation properties are ignored

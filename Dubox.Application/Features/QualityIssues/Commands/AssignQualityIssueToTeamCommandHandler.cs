@@ -46,6 +46,20 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                 return Result.Failure<QualityIssueDetailsDto>("Access denied. You do not have permission to modify this quality issue.");
             }
 
+            // Check if project is archived
+            var isArchived = await _visibilityService.IsProjectArchivedAsync(issue.Box.ProjectId, cancellationToken);
+            if (isArchived)
+            {
+                return Result.Failure<QualityIssueDetailsDto>("Cannot assign quality issues in an archived project. Archived projects are read-only.");
+            }
+
+            // Check if project is on hold
+            var isOnHold = await _visibilityService.IsProjectOnHoldAsync(issue.Box.ProjectId, cancellationToken);
+            if (isOnHold)
+            {
+                return Result.Failure<QualityIssueDetailsDto>("Cannot assign quality issues in a project on hold. Projects on hold only allow project status changes.");
+            }
+
             // If TeamId is provided, validate the team exists and user has access
             if (request.TeamId.HasValue && request.TeamId.Value != Guid.Empty)
             {

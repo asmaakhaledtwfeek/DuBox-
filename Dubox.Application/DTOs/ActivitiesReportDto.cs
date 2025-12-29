@@ -33,7 +33,8 @@ public record ReportActivityDto
     public DateTime? PlannedEndDate { get; init; }
     public DateTime? ActualStartDate { get; init; }
     public DateTime? ActualEndDate { get; init; }
-    public int? ActualDuration { get; init; }
+    public int? ActualDuration { get; init; } // Legacy: calendar days + 1
+    public string? ActualDurationFormatted { get; init; } // New: flexible formatted duration
     public int? DelayDays { get; init; }
     public Guid BoxId { get; init; }
     public Guid ProjectId { get; init; }

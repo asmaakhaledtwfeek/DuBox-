@@ -1,4 +1,5 @@
 using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
 using Dubox.Domain.Specification;
 
 namespace Dubox.Application.Specifications;
@@ -7,7 +8,9 @@ public class GetBoxesByFactoryIdSpecification : Specification<Box>
 {
     public GetBoxesByFactoryIdSpecification(Guid factoryId)
     {
+        AddCriteria(b => b.IsActive);
         AddCriteria(b => b.FactoryId == factoryId);
+        AddCriteria(b => b.Status == BoxStatusEnum.InProgress || b.Status == BoxStatusEnum.Completed);
         AddInclude(nameof(Box.Project));
         // Note: BoxType and BoxSubType navigation properties are ignored
         // BoxTypeId/BoxSubTypeId now reference ProjectBoxTypes/ProjectBoxSubTypes

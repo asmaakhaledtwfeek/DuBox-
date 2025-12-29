@@ -168,14 +168,14 @@
               <span class="label">Planned Duration</span>
               <span class="value">{{ activityDetail?.duration || activity.plannedDuration || '—' }} days</span>
             </div>
-            <div class="info-item" *ngIf="activityDetail?.actualDuration">
+            <div class="info-item" *ngIf="activityDetail?.actualStartDate && activityDetail?.actualEndDate">
               <span class="label">Actual Duration</span>
-              <span class="value">{{ activityDetail?.actualDuration }} days</span>
+              <span class="value">{{ getActualDurationDisplay() }}</span>
             </div>
-            <div class="info-item" *ngIf="activityDetail?.actualDuration && (activityDetail?.duration || activity.plannedDuration)">
+            <div class="info-item" *ngIf="activityDetail?.actualStartDate && activityDetail?.actualEndDate && (activityDetail?.duration || activity.plannedDuration)">
               <span class="label">Variance</span>
-              <span class="value" [class.delayed]="(activityDetail?.actualDuration ?? 0) > ((activityDetail?.duration ?? activity.plannedDuration) || 0)">
-                {{ ((activityDetail?.actualDuration ?? 0) - ((activityDetail?.duration ?? activity.plannedDuration) || 0)) > 0 ? '+' : '' }}{{ (activityDetail?.actualDuration ?? 0) - ((activityDetail?.duration ?? activity.plannedDuration) || 0) }} days
+              <span class="value" [class.delayed]="isDelayed()">
+                {{ getDurationVariance() }}
               </span>
             </div>
           </div>

@@ -1,4 +1,5 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Utilities;
 using Dubox.Domain.Entities;
 using Mapster;
 
@@ -23,10 +24,12 @@ public class ReportActivityMapping : IRegister
             .Map(dest => dest.PlannedEndDate, src => src.PlannedEndDate)
             .Map(dest => dest.ActualStartDate, src => src.ActualStartDate)
             .Map(dest => dest.ActualEndDate, src => src.ActualEndDate)
+            // Legacy ActualDuration: calendar days + 1 (for backward compatibility)
             .Map(dest => dest.ActualDuration, src => 
-                src.ActualStartDate.HasValue && src.ActualEndDate.HasValue
-                    ? (int?)(src.ActualEndDate.Value.Date - src.ActualStartDate.Value.Date).Days + 1
-                    : null)
+                DurationFormatter.CalculateDurationInDays(src.ActualStartDate, src.ActualEndDate))
+            // New ActualDurationFormatted: flexible formatting (hours, days + hours)
+            .Map(dest => dest.ActualDurationFormatted, src =>
+                DurationFormatter.FormatDuration(src.ActualStartDate, src.ActualEndDate))
             .Map(dest => dest.DelayDays, src => 
                 src.PlannedEndDate.HasValue && 
                 !src.ActualEndDate.HasValue && 

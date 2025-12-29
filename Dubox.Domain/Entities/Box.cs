@@ -100,8 +100,8 @@ public class Box
 
     [MaxLength(50)]
     public string? Position { get; set; } = string.Empty;
+    public DateTime? DeletedDated { get; set; }
     // Navigation properties
-    // NOTE: These are kept for backward compatibility but may be null since we use project-specific configs
     public virtual BoxType? BoxType { get; set; }
     public virtual BoxSubType? BoxSubType { get; set; }
     public ICollection<BoxAsset> BoxAssets { get; set; } = new List<BoxAsset>();

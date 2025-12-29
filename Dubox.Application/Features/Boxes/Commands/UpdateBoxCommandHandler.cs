@@ -56,6 +56,20 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
             return Result.Failure<BoxDto>("Access denied. You do not have permission to update this box.");
         }
 
+        // Check if project is archived
+        var isArchived = await _visibilityService.IsProjectArchivedAsync(box.ProjectId, cancellationToken);
+        if (isArchived)
+        {
+            return Result.Failure<BoxDto>("Cannot update boxes in an archived project. Archived projects are read-only.");
+        }
+
+        // Check if project is on hold
+        var isOnHold = await _visibilityService.IsProjectOnHoldAsync(box.ProjectId, cancellationToken);
+        if (isOnHold)
+        {
+            return Result.Failure<BoxDto>("Cannot update boxes in a project on hold. Projects on hold only allow status changes.");
+        }
+
         if (!string.IsNullOrEmpty(request.BoxTag) && box.BoxTag != request.BoxTag)
         {
             var tagExists = await _unitOfWork.Repository<Box>()

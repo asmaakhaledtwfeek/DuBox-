@@ -589,10 +589,36 @@
                   <ng-container *ngFor="let section of group.sections">
                     <div class="section-subgroup" *ngIf="section.items.length > 0">
                       <div class="section-subheader">
-                        <h5 class="section-subtitle">{{ section.sectionName }}</h5>
-                        <span class="section-subcount">{{ section.items.length }} item(s)</span>
+                        <div class="section-header-left">
+                          <button 
+                            type="button" 
+                            class="btn-collapse" 
+                            (click)="toggleSectionCollapse(section.sectionName)"
+                            [class.collapsed]="isSectionCollapsed(section.sectionName)"
+                            title="{{ isSectionCollapsed(section.sectionName) ? 'Expand section' : 'Collapse section' }}"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                              <polyline points="6 9 12 15 18 9"/>
+                            </svg>
+                          </button>
+                          <h5 class="section-subtitle">{{ section.sectionName }}</h5>
+                          <span class="section-subcount">{{ section.items.length }} item(s)</span>
+                        </div>
+                        <button 
+                          type="button" 
+                          class="btn-delete-section" 
+                          (click)="confirmRemoveSection(section)"
+                          title="Delete entire section"
+                          [disabled]="isChecklistLocked"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                          </svg>
+                          Delete Section
+                        </button>
                       </div>
-                      <table class="designer-table">
+                      <table class="designer-table" *ngIf="!isSectionCollapsed(section.sectionName)">
                         <thead>
                           <tr>
                             <th style="width: 60px; text-align: center;">Seq</th>
@@ -601,8 +627,8 @@
                           </tr>
                         </thead>
                         <tbody>
-                          <tr *ngFor="let itemData of section.items" [formGroupName]="itemData.index">
-                            <td class="text-center">{{ itemData.index + 1 }}</td>
+                          <tr *ngFor="let itemData of section.items; let i = index" [formGroupName]="itemData.index">
+                            <td class="text-center">{{ i + 1 }}</td>
                             <td>{{ itemData.control.get('checkpointDescription')?.value }}</td>
                             <td class="text-center actions-cell">
                               <button 
@@ -954,10 +980,21 @@
                 <ng-container *ngFor="let section of group.sections">
                   <div class="section-subgroup" *ngIf="section.items.length > 0">
                     <div class="section-subheader">
+                      <button 
+                        type="button" 
+                        class="btn-collapse" 
+                        (click)="toggleSectionCollapse(section.sectionName)"
+                        [class.collapsed]="isSectionCollapsed(section.sectionName)"
+                        title="{{ isSectionCollapsed(section.sectionName) ? 'Expand section' : 'Collapse section' }}"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="6 9 12 15 18 9"/>
+                        </svg>
+                      </button>
                       <h5 class="section-subtitle">{{ section.sectionName }}</h5>
                       <span class="section-subcount">{{ section.items.length }} item(s)</span>
                     </div>
-                    <table class="checklist-table">
+                    <table class="checklist-table" *ngIf="!isSectionCollapsed(section.sectionName)">
                       <thead>
                         <tr>
                           <th style="width: 60px; text-align: center;">Seq</th>
@@ -967,8 +1004,8 @@
                         </tr>
                       </thead>
                       <tbody>
-                        <tr *ngFor="let itemData of section.items" [formGroupName]="itemData.index">
-                          <td class="text-center">{{ itemData.index + 1 }}</td>
+                        <tr *ngFor="let itemData of section.items; let i = index" [formGroupName]="itemData.index">
+                          <td class="text-center">{{ i + 1 }}</td>
                           <td class="checkpoint-desc">
                             <div class="checkpoint-description-text">
                               {{ itemData.control.get('checkpointDescription')?.value || '—' }}
@@ -1673,6 +1710,49 @@
   </div>
 </div>
 
+<!-- Delete Section Confirmation Modal -->
+<div class="modal-backdrop" *ngIf="isDeleteSectionModalOpen" (click)="cancelDeleteSection()">
+  <div class="delete-section-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header-custom">
+      <div class="header-icon warning">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      <h3>Delete Entire Section?</h3>
+    </div>
+    <div class="modal-body-custom">
+      <p class="section-info">
+        Are you sure you want to delete the entire 
+        <strong>"{{ pendingDeleteSection?.sectionName }}"</strong> section with 
+        <strong>{{ pendingDeleteSection?.items?.length }} item(s)</strong>?
+      </p>
+      <div class="warning-message">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>This action cannot be undone.</span>
+      </div>
+    </div>
+    <div class="modal-footer-custom">
+      <button type="button" class="btn-modal btn-cancel" (click)="cancelDeleteSection()">
+        Cancel
+      </button>
+      <button type="button" class="btn-modal btn-delete" (click)="executeDeleteSection()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+        </svg>
+        Delete Section
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Add Predefined Checklist Items Modal -->
 <div class="modal-backdrop" *ngIf="isAddPredefinedItemsModalOpen" (click)="closeAddPredefinedItemsModal()">
   <div class="modal-container" (click)="$event.stopPropagation()">
@@ -1952,61 +2032,67 @@
 
 <!-- Pass All Confirmation Modal -->
 <div class="modal-backdrop" *ngIf="isBulkPassModalOpen" (click)="closeBulkPassModal()">
-  <div class="modal-container" (click)="$event.stopPropagation()" style="max-width: 500px;">
-    <div class="modal-header">
-      <div>
-        <h2>
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px; color: #10b981;">
-            <polyline points="20 6 9 17 4 12"/>
-          </svg>
-          Approve All Checklist Items
-        </h2>
-        <p style="margin-top: 8px; color: #6b7280;">
-          This will mark all {{ checklistItems.length }} checklist items as <strong style="color: #10b981;">PASS</strong> and save them to the database.
-        </p>
+  <div class="bulk-action-modal approve-modal" (click)="$event.stopPropagation()">
+    <div class="bulk-modal-header">
+      <div class="header-icon-circle success">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
       </div>
-      <button class="icon-button" (click)="closeBulkPassModal()" [disabled]="submitting">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <h3 class="bulk-modal-title">Approve All Checklist Items</h3>
+      <p class="bulk-modal-description">
+        This will mark all <strong>{{ checklistItems.length }} checklist items</strong> as <span class="status-badge pass">PASS</span> and save them to the database.
+      </p>
+      <button class="bulk-close-btn" (click)="closeBulkPassModal()" [disabled]="submitting" title="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18"/>
           <line x1="6" y1="6" x2="18" y2="18"/>
         </svg>
       </button>
     </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label for="bulkPassReason">Optional Note</label>
+    <div class="bulk-modal-body">
+      <div class="form-group-modern">
+        <label for="bulkPassReason" class="form-label-modern">
+          Optional Note
+          <span class="label-badge optional">Optional</span>
+        </label>
         <textarea 
           id="bulkPassReason"
           [formControl]="bulkReasonControl"
           rows="3"
           placeholder="Add an optional note for passing all items..."
-          class="form-control"
+          class="form-control-modern"
           [disabled]="submitting"
         ></textarea>
-        <small style="display: block; margin-top: 4px; color: #6b7280;">
-          This note is optional. Any existing remarks will be cleared.
-        </small>
+        <div class="form-hint">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 16v-4"/>
+            <path d="M12 8h.01"/>
+          </svg>
+          <span>This note is optional. Any existing remarks will be cleared.</span>
+        </div>
       </div>
-      <div class="warning-box" style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; margin-top: 16px; border-radius: 4px;">
-        <div style="display: flex; gap: 8px;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;">
+      <div class="warning-banner amber">
+        <div class="warning-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
             <line x1="12" y1="9" x2="12" y2="13"/>
             <line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
-          <div>
-            <strong style="color: #92400e;">Warning:</strong>
-            <p style="color: #78350f; margin: 4px 0 0 0; font-size: 13px;">
-              This action will overwrite the status and remarks of <strong>all {{ checklistItems.length }} items</strong>. This cannot be undone.
-            </p>
+        </div>
+        <div class="warning-content">
+          <div class="warning-title">Warning</div>
+          <div class="warning-text">
+            This action will overwrite the status and remarks of <strong>all {{ checklistItems.length }} items</strong>. This cannot be undone.
           </div>
         </div>
       </div>
     </div>
-    <div class="modal-footer">
+    <div class="bulk-modal-footer">
       <button 
         type="button" 
-        class="btn btn-secondary" 
+        class="bulk-btn bulk-btn-cancel" 
         (click)="closeBulkPassModal()"
         [disabled]="submitting"
       >
@@ -2014,15 +2100,15 @@
       </button>
       <button 
         type="button" 
-        class="btn btn-success" 
+        class="bulk-btn bulk-btn-success" 
         (click)="onBulkPass()"
         [disabled]="submitting"
       >
-        <span class="spinner small" *ngIf="submitting" style="margin-right: 8px;"></span>
-        <svg *ngIf="!submitting" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+        <span class="spinner small" *ngIf="submitting"></span>
+        <svg *ngIf="!submitting" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <polyline points="20 6 9 17 4 12"/>
         </svg>
-        {{ submitting ? 'Saving...' : 'Pass All Items' }}
+        <span>{{ submitting ? 'Saving...' : 'Pass All Items' }}</span>
       </button>
     </div>
   </div>
@@ -2030,75 +2116,78 @@
 
 <!-- Reject All Modal -->
 <div class="modal-backdrop" *ngIf="isBulkRejectModalOpen" (click)="closeBulkRejectModal()">
-  <div class="modal-container" (click)="$event.stopPropagation()" style="max-width: 500px;">
-    <div class="modal-header">
-      <div>
-        <h2>
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px; color: #ef4444;">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="15" y1="9" x2="9" y2="15"/>
-            <line x1="9" y1="9" x2="15" y2="15"/>
-          </svg>
-          Reject All Checklist Items
-        </h2>
-        <p style="margin-top: 8px; color: #6b7280;">
-          This will mark all {{ checklistItems.length }} checklist items as <strong style="color: #ef4444;">FAIL</strong> and save them to the database.
-        </p>
+  <div class="bulk-action-modal reject-modal" (click)="$event.stopPropagation()">
+    <div class="bulk-modal-header">
+      <div class="header-icon-circle danger">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="15" y1="9" x2="9" y2="15"/>
+          <line x1="9" y1="9" x2="15" y2="15"/>
+        </svg>
       </div>
-      <button class="icon-button" (click)="closeBulkRejectModal()" [disabled]="submitting">
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <h3 class="bulk-modal-title">Reject All Checklist Items</h3>
+      <p class="bulk-modal-description">
+        This will mark all <strong>{{ checklistItems.length }} checklist items</strong> as <span class="status-badge fail">FAIL</span> and save them to the database.
+      </p>
+      <button class="bulk-close-btn" (click)="closeBulkRejectModal()" [disabled]="submitting" title="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18"/>
           <line x1="6" y1="6" x2="18" y2="18"/>
         </svg>
       </button>
     </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label for="bulkRejectReason">
-          Rejection Reason <span class="required">*</span>
+    <div class="bulk-modal-body">
+      <div class="form-group-modern">
+        <label for="bulkRejectReason" class="form-label-modern">
+          Rejection Reason
+          <span class="label-badge required">Required</span>
         </label>
         <textarea 
           id="bulkRejectReason"
           [formControl]="bulkReasonControl"
           rows="4"
           placeholder="Enter the reason for rejecting all items..."
-          class="form-control"
+          class="form-control-modern"
           [disabled]="submitting"
           [class.error]="bulkReasonControl.touched && !bulkReasonControl.value?.trim()"
         ></textarea>
-        <small style="display: block; margin-top: 4px; color: #6b7280;">
-          A rejection reason is required for all items.
-        </small>
-        <div *ngIf="bulkReasonControl.touched && !bulkReasonControl.value?.trim()" 
-             style="color: #dc2626; font-size: 13px; margin-top: 4px;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; margin-right: 4px;">
+        <div class="form-hint">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <path d="M12 16v-4"/>
+            <path d="M12 8h.01"/>
+          </svg>
+          <span>A rejection reason is required for all items.</span>
+        </div>
+        <div class="form-error" *ngIf="bulkReasonControl.touched && !bulkReasonControl.value?.trim()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="10"/>
             <line x1="12" y1="8" x2="12" y2="12"/>
             <line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
-          Please provide a reason for the rejection
+          <span>Please provide a reason for the rejection</span>
         </div>
       </div>
-      <div class="warning-box" style="background: #fee2e2; border-left: 4px solid #ef4444; padding: 12px; margin-top: 16px; border-radius: 4px;">
-        <div style="display: flex; gap: 8px;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;">
+      <div class="warning-banner danger">
+        <div class="warning-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
             <line x1="12" y1="9" x2="12" y2="13"/>
             <line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
-          <div>
-            <strong style="color: #991b1b;">Critical Action:</strong>
-            <p style="color: #7f1d1d; margin: 4px 0 0 0; font-size: 13px;">
-              This will mark <strong>all {{ checklistItems.length }} items</strong> as FAILED with the same reason. This cannot be undone.
-            </p>
+        </div>
+        <div class="warning-content">
+          <div class="warning-title">Critical Action</div>
+          <div class="warning-text">
+            This will mark <strong>all {{ checklistItems.length }} items</strong> as FAILED with the same reason. This cannot be undone.
           </div>
         </div>
       </div>
     </div>
-    <div class="modal-footer">
+    <div class="bulk-modal-footer">
       <button 
         type="button" 
-        class="btn btn-secondary" 
+        class="bulk-btn bulk-btn-cancel" 
         (click)="closeBulkRejectModal()"
         [disabled]="submitting"
       >
@@ -2106,17 +2195,17 @@
       </button>
       <button 
         type="button" 
-        class="btn btn-danger" 
+        class="bulk-btn bulk-btn-danger" 
         (click)="onBulkReject()"
         [disabled]="submitting || !bulkReasonControl.value?.trim()"
       >
-        <span class="spinner small" *ngIf="submitting" style="margin-right: 8px;"></span>
-        <svg *ngIf="!submitting" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+        <span class="spinner small" *ngIf="submitting"></span>
+        <svg *ngIf="!submitting" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <circle cx="12" cy="12" r="10"/>
           <line x1="15" y1="9" x2="9" y2="15"/>
           <line x1="9" y1="9" x2="15" y2="15"/>
         </svg>
-        {{ submitting ? 'Saving...' : 'Reject All Items' }}
+        <span>{{ submitting ? 'Saving...' : 'Reject All Items' }}</span>
       </button>
     </div>
   </div>

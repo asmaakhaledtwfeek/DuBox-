@@ -1,6 +1,7 @@
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using MediatR;
 
@@ -11,12 +12,14 @@ public class DeleteBoxCommandHandler : IRequestHandler<DeleteBoxCommand, Result<
     private readonly IUnitOfWork _unitOfWork;
     private readonly IGenericRepository<Box> _genericRepository;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IProjectTeamVisibilityService _visibilityService;
 
-    public DeleteBoxCommandHandler(IUnitOfWork unitOfWork, IGenericRepository<Box> genericRepository, ICurrentUserService currentUserService)
+    public DeleteBoxCommandHandler(IUnitOfWork unitOfWork, IGenericRepository<Box> genericRepository, ICurrentUserService currentUserService, IProjectTeamVisibilityService visibilityService)
     {
         _unitOfWork = unitOfWork;
         _genericRepository = genericRepository;
         _currentUserService = currentUserService;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<bool>> Handle(DeleteBoxCommand request, CancellationToken cancellationToken)
@@ -29,10 +32,25 @@ public class DeleteBoxCommandHandler : IRequestHandler<DeleteBoxCommand, Result<
             if (box == null)
                 return Result.Failure<bool>("Box not found");
 
+            // Check if project is archived
+            var isArchived = await _visibilityService.IsProjectArchivedAsync(box.ProjectId, cancellationToken);
+            if (isArchived)
+            {
+                return Result.Failure<bool>("Cannot delete boxes from an archived project. Archived projects are read-only.");
+            }
+
+            // Check if project is on hold
+            var isOnHold = await _visibilityService.IsProjectOnHoldAsync(box.ProjectId, cancellationToken);
+            if (isOnHold)
+            {
+                return Result.Failure<bool>("Cannot delete boxes from a project on hold. Projects on hold only allow status changes.");
+            }
+
             var projectId = box.ProjectId;
             var boxTag = box.BoxTag;
-
-            _unitOfWork.Repository<Box>().Delete(box);
+            box.IsActive = false;
+            box.DeletedDated = DateTime.UtcNow;
+            _unitOfWork.Repository<Box>().Update(box);
 
             var boxLog = new AuditLog
             {

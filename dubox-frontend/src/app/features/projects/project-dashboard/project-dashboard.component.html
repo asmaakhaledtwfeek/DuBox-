@@ -71,7 +71,14 @@
             </svg>
             Edit
           </button>
-          <button class="btn btn-outline" type="button" (click)="openStatusModal()" *ngIf="canChangeStatus" [disabled]="!project">
+          <button 
+            class="btn btn-outline" 
+            type="button" 
+            (click)="openStatusModal()" 
+            *ngIf="canChangeStatus" 
+            [disabled]="!project || (project && !canChangeProjectStatus(project.status))"
+            [title]="project && !canChangeProjectStatus(project.status) ? 'Archived projects cannot have their status changed' : 'Change project status'"
+          >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M12 5v14"/>
               <path d="M5 12h14"/>
@@ -369,7 +376,7 @@
       </div>
 
       <!-- Status Selection -->
-      <div class="status-selection-wrapper">
+      <div class="status-selection-wrapper" *ngIf="statusOptions.length > 0">
         <label class="form-label" for="statusSelect">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
@@ -391,6 +398,16 @@
             <polyline points="6 9 12 15 18 9"/>
           </svg>
         </div>
+      </div>
+      
+      <!-- No Options Available Message -->
+      <div class="info-message" *ngIf="statusOptions.length === 0 && !statusError">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        <span>No status changes available for archived projects.</span>
       </div>
 
       <!-- Error Message -->

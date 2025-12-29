@@ -30,7 +30,8 @@ public record BoxActivityDto
     public string Status { get; init; } = string.Empty;
     public decimal ProgressPercentage { get; init; }
     public int? Duration { get; init; }
-    public int? ActualDuration { get; init; }
+    public int? ActualDuration { get; init; } // Legacy: calendar days + 1
+    public string? ActualDurationFormatted { get; init; } // New: flexible formatted duration (e.g., "5.5 hours", "2 days 5 hours")
     public DateTime? PlannedStartDate { get; init; }
     public DateTime? PlannedEndDate { get; init; }
     public DateTime? ActualStartDate { get; init; }

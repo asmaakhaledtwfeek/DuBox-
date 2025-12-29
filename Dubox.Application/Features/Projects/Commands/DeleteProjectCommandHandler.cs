@@ -36,8 +36,9 @@ public class DeleteProjectCommandHandler : IRequestHandler<DeleteProjectCommand,
 
         if (hasBoxes)
             return Result.Failure<bool>("Cannot delete project with existing boxes. Delete boxes first.");
-
-        _unitOfWork.Repository<Project>().Delete(project);
+        project.IsActive = false;
+        project.DeletedDated = DateTime.UtcNow;
+        _unitOfWork.Repository<Project>().Update(project);
 
         var projectLog = new AuditLog
         {

@@ -10,7 +10,10 @@ public class GetBoxesByFactoryIdSpecification : Specification<Box>
     {
         AddCriteria(b => b.IsActive);
         AddCriteria(b => b.FactoryId == factoryId);
-        AddCriteria(b => b.Status == BoxStatusEnum.InProgress || b.Status == BoxStatusEnum.Completed);
+        // Include InProgress, Completed, and Dispatched boxes
+        AddCriteria(b => b.Status == BoxStatusEnum.InProgress || 
+                        b.Status == BoxStatusEnum.Completed || 
+                        b.Status == BoxStatusEnum.Dispatched);
         AddInclude(nameof(Box.Project));
         // Note: BoxType and BoxSubType navigation properties are ignored
         // BoxTypeId/BoxSubTypeId now reference ProjectBoxTypes/ProjectBoxSubTypes

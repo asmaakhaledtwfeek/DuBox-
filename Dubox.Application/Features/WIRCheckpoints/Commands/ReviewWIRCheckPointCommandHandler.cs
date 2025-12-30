@@ -52,6 +52,12 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                 return Result.Failure<WIRCheckpointDto>("Access denied. You do not have permission to review this WIR checkpoint.");
             }
 
+            // Check if box is dispatched - no actions allowed on dispatched boxes
+            if (wir.Box.Status == BoxStatusEnum.Dispatched)
+            {
+                return Result.Failure<WIRCheckpointDto>("Cannot review WIR checkpoint. The box is dispatched and no actions are allowed on checkpoints. Only viewing is permitted.");
+            }
+
             var invalidIds = request.Items
                 .Select(i => i.ChecklistItemId)
                 .Except(wir.ChecklistItems.Select(c => c.ChecklistItemId))
@@ -84,6 +90,13 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             if (!string.IsNullOrWhiteSpace(request.InspectorRole))
             {
                 wir.InspectorRole = request.InspectorRole.Trim();
+            }
+
+            // Prevent changing from Approved or ConditionalApproval to Rejected
+            if ((wir.Status == WIRCheckpointStatusEnum.Approved || wir.Status == WIRCheckpointStatusEnum.ConditionalApproval) 
+                && request.Status == WIRCheckpointStatusEnum.Rejected)
+            {
+                return Result.Failure<WIRCheckpointDto>($"Cannot change WIR checkpoint status from '{wir.Status}' to 'Rejected'. Once a checkpoint is approved or conditionally approved, it cannot be rejected.");
             }
 
             wir.Status = request.Status;

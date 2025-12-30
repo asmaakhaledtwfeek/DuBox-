@@ -4,7 +4,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
 import { BoxService } from '../../../core/services/box.service';
-import { BoxActivity } from '../../../core/models/box.model';
+import { BoxActivity, Box, BoxStatus, canPerformActivityActions, getAvailableActivityStatuses, canPerformActivityActionsByStatus, ActivityStatus } from '../../../core/models/box.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { UpdateProgressModalComponent } from '../update-progress-modal/update-progress-modal.component';
@@ -100,11 +100,17 @@ export class ActivityDetailsComponent implements OnInit {
   canIssueMaterial = true;
   canSetSchedule = true;
   canUpdateProgress = true;
+  canChangeStatus = true;
+  availableStatuses: ActivityStatus[] = [];
   
   // Project status flags
   isProjectOnHold = false;
   isProjectArchived = false;
   project: any = null;
+  
+  // Box status
+  box: Box | null = null;
+  boxStatus: BoxStatus | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -135,6 +141,7 @@ export class ActivityDetailsComponent implements OnInit {
     
     this.initForms();
     this.loadProjectDetails();
+    this.loadBox(); // Load box to check its status
     this.loadActivity();
     this.loadAllActivities(); // Load all activities for WIR position feature
     this.loadDropdownData();
@@ -157,20 +164,80 @@ export class ActivityDetailsComponent implements OnInit {
     });
   }
 
-  private updatePermissions(): void {
-    // Disable all actions if project is archived or on hold
-    this.canAssignTeam = !this.isProjectArchived && !this.isProjectOnHold;
-    this.canIssueMaterial = !this.isProjectArchived && !this.isProjectOnHold;
-    this.canSetSchedule = !this.isProjectArchived && !this.isProjectOnHold;
-    this.canUpdateProgress = !this.isProjectArchived && !this.isProjectOnHold;
+  private loadBox(): void {
+    if (!this.boxId) return;
     
-    // Disable forms if project is on hold or archived
-    if (this.isProjectArchived || this.isProjectOnHold) {
+    this.boxService.getBox(this.boxId).subscribe({
+      next: (box) => {
+        this.box = box;
+        this.boxStatus = box.status;
+        this.updatePermissions();
+        console.log('📦 Box loaded in activity details. Status:', box.status);
+      },
+      error: (err) => {
+        console.error('Error loading box details:', err);
+        // Still update permissions even if box load fails
+        this.updatePermissions();
+      }
+    });
+  }
+
+  private updatePermissions(): void {
+    // Check if activity actions are allowed based on box status
+    const canPerformActivityActionsBasedOnBoxStatus = this.boxStatus 
+      ? canPerformActivityActions(this.boxStatus)
+      : true;
+    
+    // Check if activity actions are allowed based on activity status
+    // Allow progress updates for completed activities (to update position only)
+    const isCompleted = this.activity?.status === ActivityStatus.Completed || this.activity?.status === ActivityStatus.Delayed;
+    const canPerformActionsByActivityStatus = this.activity 
+      ? (isCompleted || canPerformActivityActionsByStatus(this.activity.status as ActivityStatus))
+      : true;
+    
+    // Update available statuses for dropdown
+    if (this.activity && this.activityDetail) {
+      const progress = this.activity.weightPercentage || this.activityDetail.progressPercentage || 0;
+      this.availableStatuses = getAvailableActivityStatuses(this.activity.status as ActivityStatus, progress);
+      this.canChangeStatus = this.availableStatuses.length > 0;
+    } else {
+      this.availableStatuses = [];
+      this.canChangeStatus = false;
+    }
+    
+    // Disable all actions if:
+    // - Project is archived or on hold
+    // - Box status doesn't allow activity actions
+    // - Activity status doesn't allow actions (OnHold only, Completed is allowed for position updates)
+    const baseCanPerformActions = !this.isProjectArchived && !this.isProjectOnHold && canPerformActivityActionsBasedOnBoxStatus && canPerformActionsByActivityStatus;
+    
+    this.canAssignTeam = baseCanPerformActions && !isCompleted; // Don't allow team assignment for completed
+    this.canIssueMaterial = baseCanPerformActions && !isCompleted; // Don't allow material issuance for completed
+    this.canSetSchedule = baseCanPerformActions && !isCompleted; // Don't allow schedule changes for completed
+    this.canUpdateProgress = baseCanPerformActions && !isCompleted; // Allow progress modal for completed (position updates only)
+    
+    // Disable forms if project is on hold or archived, or if box/activity status doesn't allow activity actions
+    if (this.isProjectArchived || this.isProjectOnHold || !canPerformActivityActionsBasedOnBoxStatus || !canPerformActionsByActivityStatus) {
       this.statusForm?.disable();
       this.assignTeamForm?.disable();
       this.issueMaterialForm?.disable();
       this.scheduleForm?.disable();
     }
+    
+    console.log('✅ Activity permissions updated:', {
+      canAssignTeam: this.canAssignTeam,
+      canIssueMaterial: this.canIssueMaterial,
+      canSetSchedule: this.canSetSchedule,
+      canUpdateProgress: this.canUpdateProgress,
+      canChangeStatus: this.canChangeStatus,
+      availableStatuses: this.availableStatuses,
+      isProjectArchived: this.isProjectArchived,
+      isProjectOnHold: this.isProjectOnHold,
+      boxStatus: this.boxStatus,
+      activityStatus: this.activity?.status,
+      canPerformActivityActionsBasedOnBoxStatus,
+      canPerformActionsByActivityStatus
+    });
   }
 
   initForms(): void {
@@ -292,6 +359,9 @@ export class ActivityDetailsComponent implements OnInit {
         this.activity = this.convertToBoxActivity(activityDetail);
         this.loading = false;
         console.log('✅ Activity loaded:', activityDetail);
+        
+        // Update permissions after activity is loaded
+        this.updatePermissions();
         
         // Load progress history
         this.loadProgressHistory();
@@ -610,6 +680,33 @@ export class ActivityDetailsComponent implements OnInit {
   }
 
   openProgressModal(): void {
+    // Check if project status allows actions
+    if (this.isProjectArchived || this.isProjectOnHold) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: this.isProjectArchived 
+            ? 'Cannot update progress. This project is archived and read-only.' 
+            : 'Cannot update progress. This project is on hold. Only project status changes are allowed.',
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+    
+    // Check if box status allows activity actions
+    if (this.boxStatus && !canPerformActivityActions(this.boxStatus)) {
+      const statusMessage = this.boxStatus === 'Dispatched' 
+        ? 'Cannot update progress. The box is dispatched and no actions are allowed on activities.'
+        : 'Cannot update progress. The box is on hold and no actions are allowed on activities. Only box status changes are allowed.';
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: statusMessage,
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+    
     if (this.activityDetail) {
       this.isModalOpen = true;
     }
@@ -955,9 +1052,47 @@ export class ActivityDetailsComponent implements OnInit {
       return;
     }
     
+    // Check if box status allows activity actions
+    if (this.boxStatus && !canPerformActivityActions(this.boxStatus)) {
+      const statusMessage = this.boxStatus === 'Dispatched' 
+        ? 'Cannot update activity status. The box is dispatched and no actions are allowed on activities.'
+        : 'Cannot update activity status. The box is on hold and no actions are allowed on activities. Only box status changes are allowed.';
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: statusMessage,
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+    
+    // Check if activity status allows status changes
+    if (this.activity && !this.canChangeStatus) {
+      const activityStatus = this.activity.status;
+      let message = 'Cannot update activity status.';
+      if (activityStatus === 'Completed') {
+        message = 'Cannot update activity status. Activities in "Completed" status cannot be modified.';
+      } else if (activityStatus === 'OnHold') {
+        message = 'Cannot update activity status. Activities in "OnHold" status can only be changed to "NotStarted" (if progress = 0%) or "InProgress" (if progress < 100%).';
+      }
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: message,
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+    
     if (this.activity) {
+      // Set default status to first available status if current status is not available
+      const currentStatus = this.activity.status as ActivityStatus;
+      const defaultStatus = this.availableStatuses.length > 0 
+        ? (this.availableStatuses.includes(currentStatus) ? currentStatus : this.availableStatuses[0])
+        : currentStatus;
+      
       this.statusForm.patchValue({
-        status: this.activity.status,
+        status: defaultStatus,
         notes: ''
       });
     }
@@ -1047,6 +1182,33 @@ export class ActivityDetailsComponent implements OnInit {
 
   // Assign Team Modal
   openAssignTeamModal(): void {
+    // Check if project status allows actions
+    if (this.isProjectArchived || this.isProjectOnHold) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: this.isProjectArchived 
+            ? 'Cannot assign activity to team. This project is archived and read-only.' 
+            : 'Cannot assign activity to team. This project is on hold. Only project status changes are allowed.',
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+    
+    // Check if box status allows activity actions
+    if (this.boxStatus && !canPerformActivityActions(this.boxStatus)) {
+      const statusMessage = this.boxStatus === 'Dispatched' 
+        ? 'Cannot assign activity to team. The box is dispatched and no actions are allowed on activities.'
+        : 'Cannot assign activity to team. The box is on hold and no actions are allowed on activities. Only box status changes are allowed.';
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: statusMessage,
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+    
     this.assignTeamSuccess = false; // Reset success state
     
     // Pre-select team if it exists
@@ -1215,6 +1377,20 @@ export class ActivityDetailsComponent implements OnInit {
           message: this.isProjectArchived 
             ? 'Cannot set schedule. This project is archived and read-only.' 
             : 'Cannot set schedule. This project is on hold. Only project status changes are allowed.',
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+    
+    // Check if box status allows activity actions
+    if (this.boxStatus && !canPerformActivityActions(this.boxStatus)) {
+      const statusMessage = this.boxStatus === 'Dispatched' 
+        ? 'Cannot set schedule. The box is dispatched and no actions are allowed on activities.'
+        : 'Cannot set schedule. The box is on hold and no actions are allowed on activities. Only box status changes are allowed.';
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: statusMessage,
           type: 'error' 
         }
       }));

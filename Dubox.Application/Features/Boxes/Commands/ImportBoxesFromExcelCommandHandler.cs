@@ -63,6 +63,12 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
         if (project == null)
             return Result.Failure<BoxImportResultDto>("Project not found");
 
+        // Check if project is on hold - cannot import boxes for projects on hold
+        if (project.Status == ProjectStatusEnum.OnHold)
+        {
+            return Result.Failure<BoxImportResultDto>("Cannot import boxes. Projects on hold cannot be modified. Only project status changes are allowed.");
+        }
+
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
         var errors = new List<string>();
         var successCount = 0;

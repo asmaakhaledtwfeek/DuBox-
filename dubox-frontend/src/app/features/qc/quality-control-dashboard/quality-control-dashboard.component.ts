@@ -13,6 +13,8 @@ import { PermissionService } from '../../../core/services/permission.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { TeamService } from '../../../core/services/team.service';
 import { Team } from '../../../core/models/team.model';
+import { BoxService } from '../../../core/services/box.service';
+import { BoxStatus } from '../../../core/models/box.model';
 import { map } from 'rxjs/operators';
 import * as ExcelJS from 'exceljs';
 import { environment } from '../../../../environments/environment';
@@ -130,6 +132,10 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   assignError = '';
   selectedTeamId: string | null = null;
 
+  // Cache for box statuses to avoid multiple API calls
+  private boxStatusCache: Map<string, BoxStatus | null> = new Map();
+  private boxStatusLoading: Set<string> = new Set();
+
   constructor(
     private fb: FormBuilder,
     private wirService: WIRService,
@@ -137,7 +143,8 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     private apiService: ApiService,
     private permissionService: PermissionService,
     private authService: AuthService,
-    private teamService: TeamService
+    private teamService: TeamService,
+    private boxService: BoxService
   ) {
     this.isSystemAdmin = this.authService.isSystemAdmin();
     this.filterForm = this.fb.group({
@@ -295,6 +302,11 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
       return false;
     }
     
+    // Check if box is dispatched - no actions allowed
+    if (this.isBoxDispatched(checkpoint.boxId)) {
+      return false;
+    }
+    
     // Check if user has permission to create/manage WIR checkpoints
     return this.permissionService.hasPermission('wir', 'create') || 
            this.permissionService.hasPermission('wir', 'manage');
@@ -313,17 +325,100 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
       return false;
     }
     
+    // Check if box is dispatched - no actions allowed
+    if (this.isBoxDispatched(checkpoint.boxId)) {
+      return false;
+    }
+    
     // Check if user has permission to review WIR checkpoints
     return this.permissionService.hasPermission('wir', 'review') || 
            this.permissionService.hasPermission('wir', 'manage');
   }
 
+  /**
+   * Check if box is dispatched (cached)
+   */
+  isBoxDispatched(boxId: string | undefined): boolean {
+    if (!boxId) {
+      return false;
+    }
+    
+    const cachedStatus = this.boxStatusCache.get(boxId);
+    if (cachedStatus !== undefined) {
+      return cachedStatus === BoxStatus.Dispatched;
+    }
+    
+    // If not cached and not currently loading, fetch it
+    if (!this.boxStatusLoading.has(boxId)) {
+      this.fetchBoxStatus(boxId);
+    }
+    
+    // Return false by default (optimistic - allow actions until we know box is dispatched)
+    return false;
+  }
+
+  /**
+   * Fetch box status and cache it
+   */
+  private fetchBoxStatus(boxId: string): void {
+    if (this.boxStatusLoading.has(boxId)) {
+      return; // Already loading
+    }
+    
+    this.boxStatusLoading.add(boxId);
+    this.boxService.getBox(boxId).subscribe({
+      next: (box) => {
+        const status = box.status as BoxStatus;
+        this.boxStatusCache.set(boxId, status);
+        this.boxStatusLoading.delete(boxId);
+      },
+      error: (err) => {
+        console.error('Error fetching box status:', err);
+        this.boxStatusCache.set(boxId, null); // Cache null to avoid repeated calls
+        this.boxStatusLoading.delete(boxId);
+      }
+    });
+  }
+
+  /**
+   * Check if quality issue actions are allowed (box not dispatched)
+   */
+  canPerformQualityIssueActions(issue: AggregatedQualityIssue): boolean {
+    if (!issue.boxId) {
+      return true; // Allow if no boxId (shouldn't happen, but be safe)
+    }
+    
+    return !this.isBoxDispatched(issue.boxId);
+  }
+
   onAddChecklist(checkpoint: EnrichedCheckpoint): void {
+    // Check if box is dispatched
+    if (this.isBoxDispatched(checkpoint.boxId)) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: {
+          message: 'Cannot perform actions. The box is dispatched and no actions are allowed on checkpoints.',
+          type: 'error'
+        }
+      }));
+      return;
+    }
+    
     // Navigate to add-items step (Step 2) since checkpoint already exists
     this.navigateToCheckpoint(checkpoint, { step: 'add-items', from: 'quality-control' });
   }
 
   onReviewCheckpoint(checkpoint: EnrichedCheckpoint): void {
+    // Check if box is dispatched
+    if (this.isBoxDispatched(checkpoint.boxId)) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: {
+          message: 'Cannot perform actions. The box is dispatched and no actions are allowed on checkpoints.',
+          type: 'error'
+        }
+      }));
+      return;
+    }
+    
     // Determine the appropriate step based on checkpoint status
     // If checklist items exist, go to review step, otherwise go to add-items
     let targetStep: string = 'review';
@@ -408,6 +503,13 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
           this.checkpointsTotalCount = this.checkpoints.length;
           this.checkpointsTotalPages = 1;
         }
+        
+        // Pre-fetch box statuses for all checkpoints
+        this.checkpoints.forEach(checkpoint => {
+          if (checkpoint.boxId && !this.boxStatusCache.has(checkpoint.boxId) && !this.boxStatusLoading.has(checkpoint.boxId)) {
+            this.fetchBoxStatus(checkpoint.boxId);
+          }
+        });
         
         // Update summary - note: we use totalCount from backend for accurate counts
         this.updateSummaryFromBackend(response.totalCount || this.checkpoints.length);
@@ -534,41 +636,47 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     ];
   }
 
-  /**
-   * Build quality issues list from paginated response
-   */
-  private buildQualityIssuesListFromPaginatedResponse(response: any): void {
-    const issues = response.items || [];
-    
-    console.log('📋 Raw quality issues from API:', issues);
-    
-    this.qualityIssues = issues.map((issue: any) => {
-      const mapped = {
-        issueId: issue.issueId || issue.IssueId || issue.qualityIssueId || issue.QualityIssueId,
-        issueType: issue.issueType,
-        severity: issue.severity,
-        issueDescription: issue.issueDescription,
-        assignedTo: issue.assignedTo,
-        assignedTeamName: issue.assignedTeamName || issue.assignedTeam || undefined,
-        dueDate: issue.dueDate,
-        photoPath: issue.photoPath,
-        reportedBy: issue.reportedBy,
-        issueDate: issue.issueDate,
-        status: issue.status,
-        boxId: issue.boxId,
-        wirNumber: issue.wirNumber || undefined,
-        wirName: issue.wirName || undefined,
-        boxTag: issue.boxTag,
-        boxName: issue.boxName,
-        projectCode: issue.projectCode || undefined,
-        projectName: issue.projectName || undefined,
-        projectId: issue.projectId || undefined,
-        checkpointStatus: issue.wirStatus as WIRCheckpointStatus | undefined,
-        issueStatus: issue.status
-      };
-      console.log('📋 Mapped issue projectName:', mapped.projectName);
-      return mapped;
-    });
+    /**
+     * Build quality issues list from paginated response
+     */
+    private buildQualityIssuesListFromPaginatedResponse(response: any): void {
+      const issues = response.items || [];
+      
+      console.log('📋 Raw quality issues from API:', issues);
+      
+      this.qualityIssues = issues.map((issue: any) => {
+        const mapped = {
+          issueId: issue.issueId || issue.IssueId || issue.qualityIssueId || issue.QualityIssueId,
+          issueType: issue.issueType,
+          severity: issue.severity,
+          issueDescription: issue.issueDescription,
+          assignedTo: issue.assignedTo,
+          assignedTeamName: issue.assignedTeamName || issue.assignedTeam || undefined,
+          dueDate: issue.dueDate,
+          photoPath: issue.photoPath,
+          reportedBy: issue.reportedBy,
+          issueDate: issue.issueDate,
+          status: issue.status,
+          boxId: issue.boxId,
+          wirNumber: issue.wirNumber || undefined,
+          wirName: issue.wirName || undefined,
+          boxTag: issue.boxTag,
+          boxName: issue.boxName,
+          projectCode: issue.projectCode || undefined,
+          projectName: issue.projectName || undefined,
+          projectId: issue.projectId || undefined,
+          checkpointStatus: issue.wirStatus as WIRCheckpointStatus | undefined,
+          issueStatus: issue.status
+        };
+        console.log('📋 Mapped issue projectName:', mapped.projectName);
+        
+        // Pre-fetch box status for this issue
+        if (mapped.boxId && !this.boxStatusCache.has(mapped.boxId) && !this.boxStatusLoading.has(mapped.boxId)) {
+          this.fetchBoxStatus(mapped.boxId);
+        }
+        
+        return mapped;
+      });
     
     // Update pagination info from response
     this.qualityIssuesTotalCount = response.totalCount || 0;
@@ -730,6 +838,17 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
 
 
   openAssignModal(issue: AggregatedQualityIssue): void {
+    // Check if box is dispatched
+    if (!this.canPerformQualityIssueActions(issue)) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: {
+          message: 'Cannot perform actions. The box is dispatched and no actions are allowed on quality issues.',
+          type: 'error'
+        }
+      }));
+      return;
+    }
+    
     // Close other modals first
     if (this.isDetailsModalOpen) {
       this.closeIssueDetails();
@@ -829,6 +948,17 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   }
 
   openStatusModal(issue: AggregatedQualityIssue): void {
+    // Check if box is dispatched
+    if (!this.canPerformQualityIssueActions(issue)) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: {
+          message: 'Cannot perform actions. The box is dispatched and no actions are allowed on quality issues.',
+          type: 'error'
+        }
+      }));
+      return;
+    }
+    
     // Close other modals first
     if (this.isDetailsModalOpen) {
       this.closeIssueDetails();

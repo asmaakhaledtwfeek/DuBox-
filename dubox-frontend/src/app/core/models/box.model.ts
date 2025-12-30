@@ -88,7 +88,7 @@ export function getBoxStatusNumber(status: BoxStatus | string): number {
  *   - If progress = 0: can change to NotStarted
  *   - If progress < 100: can change to InProgress
  *   - If progress >= 100: can change to Completed or Dispatched
- * - Dispatched: can change to OnHold
+ * - Dispatched: cannot change status (read-only)
  */
 export function getAvailableBoxStatuses(currentStatus: BoxStatus, progress: number): BoxStatus[] {
   switch (currentStatus) {
@@ -111,10 +111,55 @@ export function getAvailableBoxStatuses(currentStatus: BoxStatus, progress: numb
       }
     
     case BoxStatus.Dispatched:
-      return [BoxStatus.OnHold];
+      // Dispatched cannot change status
+      return [];
     
     default:
       return [];
+  }
+}
+
+/**
+ * Check if box actions (edit, delete, etc.) are allowed based on box status
+ * Rules:
+ * - NotStarted/InProgress: All actions allowed
+ * - Completed: All actions allowed
+ * - OnHold: No box actions allowed (only status changes)
+ * - Dispatched: No actions allowed (read-only)
+ */
+export function canPerformBoxActions(boxStatus: BoxStatus): boolean {
+  switch (boxStatus) {
+    case BoxStatus.NotStarted:
+    case BoxStatus.InProgress:
+    case BoxStatus.Completed:
+      return true;
+    case BoxStatus.OnHold:
+    case BoxStatus.Dispatched:
+      return false;
+    default:
+      return false;
+  }
+}
+
+/**
+ * Check if activity actions are allowed based on box status
+ * Rules:
+ * - NotStarted/InProgress: All activity actions allowed
+ * - Completed: All activity actions allowed
+ * - OnHold: No activity actions allowed
+ * - Dispatched: No activity actions allowed
+ */
+export function canPerformActivityActions(boxStatus: BoxStatus): boolean {
+  switch (boxStatus) {
+    case BoxStatus.NotStarted:
+    case BoxStatus.InProgress:
+    case BoxStatus.Completed:
+      return true;
+    case BoxStatus.OnHold:
+    case BoxStatus.Dispatched:
+      return false;
+    default:
+      return false;
   }
 }
 
@@ -143,9 +188,64 @@ export enum ActivityStatus {
   NotStarted = 'NotStarted',
   InProgress = 'InProgress',
   Completed = 'Completed',
+  Delayed = 'Delayed',
   Approved = 'Approved',
   Rejected = 'Rejected',
   OnHold = 'OnHold'
+}
+
+/**
+ * Get available activity status transitions based on current status and progress
+ * Business Rules:
+ * - NotStarted/InProgress: can only change to OnHold
+ * - Completed: cannot change status
+ * - OnHold: 
+ *   - If progress = 0: can change to NotStarted
+ *   - If progress < 100: can change to InProgress
+ */
+export function getAvailableActivityStatuses(currentStatus: ActivityStatus, progress: number): ActivityStatus[] {
+  switch (currentStatus) {
+    case ActivityStatus.NotStarted:
+    case ActivityStatus.InProgress:
+      return [ActivityStatus.OnHold];
+    
+    case ActivityStatus.Completed:
+      // Cannot change status from Completed
+      return [];
+    
+    case ActivityStatus.OnHold:
+      if (progress === 0) {
+        return [ActivityStatus.NotStarted];
+      } else if (progress < 100) {
+        return [ActivityStatus.InProgress];
+      } else {
+        // Progress >= 100, but still on hold - can change to InProgress or Completed
+        return [ActivityStatus.InProgress, ActivityStatus.Completed];
+      }
+    
+    default:
+      return [];
+  }
+}
+
+/**
+ * Check if activity actions are allowed based on activity status
+ * Rules:
+ * - NotStarted/InProgress: All actions allowed
+ * - Completed: No actions allowed (read-only)
+ * - OnHold: No actions allowed (only status changes)
+ */
+export function canPerformActivityActionsByStatus(activityStatus: ActivityStatus): boolean {
+  switch (activityStatus) {
+    case ActivityStatus.NotStarted:
+    case ActivityStatus.InProgress:
+      return true;
+    case ActivityStatus.Completed:
+    case ActivityStatus.OnHold:
+      return false;
+    default:
+      return false;
+  }
 }
 
 export interface ChecklistItem {

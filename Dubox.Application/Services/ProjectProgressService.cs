@@ -27,7 +27,7 @@ public class ProjectProgressService : IProjectProgressService
             throw new InvalidOperationException("Project not found while updating progress.");
 
         var boxes = await _unitOfWork.Repository<Box>()
-            .FindAsync(b => b.ProjectId == projectId, cancellationToken);
+            .FindAsync(b => b.ProjectId == projectId && b.IsActive, cancellationToken);
 
         decimal newProgress = 0;
         if (boxes.Any())

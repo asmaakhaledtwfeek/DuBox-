@@ -97,7 +97,8 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
   }
 
   applyFilters(): void {
-    let filtered = [...this.boxes];
+    // Filter out dispatched boxes from display (but keep them for counting)
+    let filtered = this.boxes.filter(box => box.status !== BoxStatus.Dispatched);
     const searchTerm = this.searchControl.value?.toLowerCase() || '';
     
     if (searchTerm) {
@@ -182,14 +183,21 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
     return this.boxes.filter(box => box.status === BoxStatus.InProgress).length;
   }
 
+  getNonDispatchedBoxCount(): number {
+    // Return count of boxes excluding dispatched (for display purposes)
+    return this.boxes.filter(box => box.status !== BoxStatus.Dispatched).length;
+  }
+
   // Grid Layout Methods
   toggleGridView(): void {
     this.showGridView = !this.showGridView;
   }
 
   getGridLayout(): any {
-    // Filter boxes that have position information
-    const boxesWithPosition = this.boxes.filter(box => box.bay || box.row || box.position);
+    // Filter boxes that have position information and exclude dispatched boxes
+    const boxesWithPosition = this.boxes.filter(box => 
+      (box.bay || box.row || box.position) && box.status !== BoxStatus.Dispatched
+    );
     
     if (boxesWithPosition.length === 0) {
       return { rows: [], columns: [], matrix: [] };
@@ -238,7 +246,7 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
       rows,
       columns,
       matrix,
-      totalBoxes: boxesWithPosition.length
+      totalBoxes: boxesWithPosition.length // Already excludes dispatched boxes
     };
   }
 

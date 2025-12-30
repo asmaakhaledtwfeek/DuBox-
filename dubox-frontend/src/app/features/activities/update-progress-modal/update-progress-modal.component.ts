@@ -92,13 +92,54 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
     this.stopCamera();
   }
 
+  /**
+   * Check if the Update Progress button should be disabled
+   * For completed activities: Disabled until user fills WIR Position inputs (Bay and Row) when fields are editable
+   * If position is already locked (has values), button is enabled (user can still update progress)
+   */
+  get isUpdateButtonDisabled(): boolean {
+    if (!this.activity || !this.progressForm) return false;
+    
+    const isCompleted = this.activity.status === ActivityProgressStatus.Completed || 
+                       this.activity.status === ActivityProgressStatus.Delayed;
+    
+    const wirBayDisabled = this.progressForm.get('wirBay')?.disabled ?? false;
+    const wirRowDisabled = this.progressForm.get('wirRow')?.disabled ?? false;
+    const isWirPositionLocked = this.positionLockedReason !== '' || wirBayDisabled || wirRowDisabled;
+    
+    if (!isCompleted) {
+      // For non-completed activities, allow update (don't disable based on position)
+      return false;
+    }
+    
+    // For completed activities:
+    // If position is locked (already has values set), allow update (button enabled)
+    // User can't change locked position fields, but they can still submit the update
+    if (isWirPositionLocked) {
+      return false;
+    }
+    
+    // If position fields are editable, check if Bay and Row are filled
+    // For completed activities, require both Bay and Row to be filled before allowing update
+    const wirBayValue = this.progressForm.get('wirBay')?.value?.toString().trim() || '';
+    const wirRowValue = this.progressForm.get('wirRow')?.value?.toString().trim() || '';
+    
+    // Disable if either Bay or Row is empty (user must fill both when fields are editable)
+    const isBayOrRowEmpty = !wirBayValue || !wirRowValue;
+    
+    return isBayOrRowEmpty;
+  }
+
   initializeForm(): void {
     if (!this.activity) return;
+    
+    const isCompleted = this.activity.status === ActivityProgressStatus.Completed || this.activity.status === ActivityProgressStatus.Delayed;
     
     console.log('🔧 Initializing form for activity:', {
       name: this.activity.activityName,
       isWIRCheckpoint: this.isWIRCheckpoint,
-      sequence: this.activity.sequence
+      sequence: this.activity.sequence,
+      isCompleted: isCompleted
     });
     
     // Clear checkpoint and WIR from previous activity
@@ -111,11 +152,11 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
     
     this.progressForm = this.fb.group({
       progressPercentage: [
-        this.activity.progressPercentage || 0, 
-        [Validators.required, Validators.min(0), Validators.max(100)]
+        {value: this.activity.progressPercentage || 0, disabled: isCompleted}, 
+        isCompleted ? [] : [Validators.required, Validators.min(0), Validators.max(100)]
       ],
-      workDescription: [''],
-      issuesEncountered: [''],
+      workDescription: [{value: '', disabled: isCompleted}],
+      issuesEncountered: [{value: '', disabled: isCompleted}],
       // WIR Position fields - always start empty, NOT required
       wirBay: [''],
       wirRow: [''],
@@ -972,11 +1013,26 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
       return;
     }
 
-    if (this.progressForm.invalid) {
+    const isCompleted = this.activity.status === ActivityProgressStatus.Completed || this.activity.status === ActivityProgressStatus.Delayed;
+    
+    // For completed activities, only validate position fields (if WIR checkpoint)
+    // Progress percentage is disabled and will use current value
+    if (!isCompleted && this.progressForm.invalid) {
       this.errorMessage = 'Please fill in all required fields correctly';
       console.error('❌ Form is invalid:', this.progressForm.errors);
       console.error('❌ Invalid fields:', Object.keys(this.progressForm.controls).filter(key => this.progressForm.get(key)?.invalid));
       return;
+    }
+    
+    // For completed activities, check if there's any position data to update
+    if (isCompleted) {
+      const formValues = this.progressForm.getRawValue();
+      const hasPositionData = !!(formValues.wirBay?.toString().trim() || formValues.wirRow?.toString().trim());
+      
+      if (!hasPositionData && !this.isWIRCheckpoint) {
+        this.errorMessage = 'For completed activities, you can only update the position. Please provide Bay and/or Row values.';
+        return;
+      }
     }
 
     console.log('✅ Submitting progress update:', {
@@ -1012,13 +1068,19 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
 
       // Use getRawValue() to include disabled field values (wirBay, wirRow, wirPosition)
       const formValues = this.progressForm.getRawValue();
+      const isCompleted = this.activity.status === ActivityProgressStatus.Completed || this.activity.status === ActivityProgressStatus.Delayed;
+      
+      // For completed activities, use the current progress percentage (don't allow changes)
+      const progressPercentage = isCompleted 
+        ? (this.activity.progressPercentage || 100)
+        : (formValues.progressPercentage || 0);
 
       const request = {
         boxId: this.activity.boxId,
         boxActivityId: this.activity.boxActivityId,
-        progressPercentage: formValues.progressPercentage || 0,
-        workDescription: formValues.workDescription || undefined,
-        issuesEncountered: formValues.issuesEncountered || undefined,
+        progressPercentage: progressPercentage,
+        workDescription: isCompleted ? undefined : (formValues.workDescription || undefined),
+        issuesEncountered: isCompleted ? undefined : (formValues.issuesEncountered || undefined),
         updateMethod: 'Web',
         deviceInfo: deviceInfo,
         // Include WIR position fields for ALL activities (if they have values)

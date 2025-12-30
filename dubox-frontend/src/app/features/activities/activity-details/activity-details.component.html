@@ -674,12 +674,12 @@
               id="activityStatusSelect" 
               formControlName="status" 
               class="status-select"
-              [disabled]="isUpdatingStatus"
+              [disabled]="isUpdatingStatus || !canChangeStatus"
             >
-              <option value="NotStarted">Not Started</option>
-              <option value="InProgress">In Progress</option>
-              <option value="OnHold">On Hold</option>
-              <option value="Delayed">Delayed</option>
+              <option *ngFor="let status of availableStatuses" [value]="status">
+                {{ status === 'NotStarted' ? 'Not Started' : status === 'InProgress' ? 'In Progress' : status === 'OnHold' ? 'On Hold' : status }}
+              </option>
+              <option *ngIf="availableStatuses.length === 0" value="" disabled>No status changes allowed</option>
             </select>
             <svg class="select-arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="6 9 12 15 18 9"/>

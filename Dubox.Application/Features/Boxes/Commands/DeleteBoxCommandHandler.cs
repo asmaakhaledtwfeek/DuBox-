@@ -1,6 +1,8 @@
+using Dubox.Application.Services;
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using MediatR;
@@ -13,13 +15,15 @@ public class DeleteBoxCommandHandler : IRequestHandler<DeleteBoxCommand, Result<
     private readonly IGenericRepository<Box> _genericRepository;
     private readonly ICurrentUserService _currentUserService;
     private readonly IProjectTeamVisibilityService _visibilityService;
+    private readonly IProjectProgressService _projectProgressService;
 
-    public DeleteBoxCommandHandler(IUnitOfWork unitOfWork, IGenericRepository<Box> genericRepository, ICurrentUserService currentUserService, IProjectTeamVisibilityService visibilityService)
+    public DeleteBoxCommandHandler(IUnitOfWork unitOfWork, IGenericRepository<Box> genericRepository, ICurrentUserService currentUserService, IProjectTeamVisibilityService visibilityService , IProjectProgressService projectProgressService)
     {
         _unitOfWork = unitOfWork;
         _genericRepository = genericRepository;
         _currentUserService = currentUserService;
         _visibilityService = visibilityService;
+        _projectProgressService = projectProgressService;
     }
 
     public async Task<Result<bool>> Handle(DeleteBoxCommand request, CancellationToken cancellationToken)
@@ -46,12 +50,18 @@ public class DeleteBoxCommandHandler : IRequestHandler<DeleteBoxCommand, Result<
                 return Result.Failure<bool>("Cannot delete boxes from a project on hold. Projects on hold only allow status changes.");
             }
 
+            // Check if box is Dispatched - cannot delete
+            if (box.Status == BoxStatusEnum.Dispatched)
+            {
+                return Result.Failure<bool>("Cannot delete a dispatched box. Dispatched boxes are read-only and no actions are allowed.");
+            }
+
             var projectId = box.ProjectId;
             var boxTag = box.BoxTag;
             box.IsActive = false;
             box.DeletedDated = DateTime.UtcNow;
             _unitOfWork.Repository<Box>().Update(box);
-
+            
             var boxLog = new AuditLog
             {
                 TableName = nameof(Box),
@@ -64,6 +74,7 @@ public class DeleteBoxCommandHandler : IRequestHandler<DeleteBoxCommand, Result<
                 Description = $"Box '{boxTag}' was deleted. Related Activities, Progress, and WIR records were deleted via cascade."
             };
             await _unitOfWork.Repository<AuditLog>().AddAsync(boxLog, cancellationToken);
+            await _unitOfWork.CompleteAsync();
 
             var project = await _unitOfWork.Repository<Project>().GetByIdAsync(projectId, cancellationToken);
             if (project != null)
@@ -74,6 +85,7 @@ public class DeleteBoxCommandHandler : IRequestHandler<DeleteBoxCommand, Result<
                     .CountAsync(b => b.ProjectId == projectId && b.BoxId != request.BoxId, cancellationToken);
 
                 project.TotalBoxes = boxCount;
+               await _projectProgressService.UpdateProjectProgressAsync(projectId, currentUserId, $"Project progress recalculated due to delete '{box.BoxTag}'.",cancellationToken);
                 _unitOfWork.Repository<Project>().Update(project);
 
                 if (oldTotalBoxes != project.TotalBoxes)

@@ -2,6 +2,7 @@ using Dubox.Application.DTOs;
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
@@ -68,6 +69,18 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
         if (isOnHold)
         {
             return Result.Failure<BoxDto>("Cannot update boxes in a project on hold. Projects on hold only allow status changes.");
+        }
+
+        // Check if box is Dispatched - cannot perform any actions
+        if (box.Status == BoxStatusEnum.Dispatched)
+        {
+            return Result.Failure<BoxDto>("Cannot update a dispatched box. Dispatched boxes are read-only and no actions are allowed.");
+        }
+
+        // Check if box is OnHold - cannot perform box actions (only status changes allowed)
+        if (box.Status == BoxStatusEnum.OnHold)
+        {
+            return Result.Failure<BoxDto>("Cannot update a box that is on hold. Only status changes are allowed for boxes on hold.");
         }
 
         if (!string.IsNullOrEmpty(request.BoxTag) && box.BoxTag != request.BoxTag)

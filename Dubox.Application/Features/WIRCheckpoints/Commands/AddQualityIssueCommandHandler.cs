@@ -52,6 +52,12 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                 return Result.Failure<WIRCheckpointDto>("Access denied. You do not have permission to add quality issues to this WIR checkpoint.");
             }
 
+            // Check if box is dispatched - no actions allowed on dispatched boxes
+            if (wir.Box.Status == BoxStatusEnum.Dispatched)
+            {
+                return Result.Failure<WIRCheckpointDto>("Cannot add quality issue. The box is dispatched and no actions are allowed on checkpoints. Only viewing is permitted.");
+            }
+
             var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId)
                 ? parsedUserId
                 : Guid.Empty;

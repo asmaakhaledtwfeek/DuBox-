@@ -2,6 +2,7 @@
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using MediatR;
@@ -57,6 +58,28 @@ namespace Dubox.Application.Features.Activities.Commands
             if (isOnHold)
             {
                 return Result.Failure<AssignBoxActivityTeamDto>("Cannot assign activities in a project on hold. Projects on hold only allow project status changes.");
+            }
+
+            // Check if box is Dispatched - cannot perform any actions on activities
+            if (activity.Box.Status == BoxStatusEnum.Dispatched)
+            {
+                return Result.Failure<AssignBoxActivityTeamDto>("Cannot assign activity to team. The box is dispatched and no actions are allowed on boxes or activities.");
+            }
+
+            // Check if box is OnHold - cannot perform actions on activities
+            if (activity.Box.Status == BoxStatusEnum.OnHold)
+            {
+                return Result.Failure<AssignBoxActivityTeamDto>("Cannot assign activity to team. The box is on hold and no actions are allowed on activities. Only box status changes are allowed.");
+            }
+
+            // Check activity status - cannot perform actions if activity is Completed or OnHold
+            if (activity.Status == BoxStatusEnum.Completed)
+            {
+                return Result.Failure<AssignBoxActivityTeamDto>("Cannot assign activity to team. Activities in 'Completed' status cannot be modified.");
+            }
+            if (activity.Status == BoxStatusEnum.OnHold)
+            {
+                return Result.Failure<AssignBoxActivityTeamDto>("Cannot assign activity to team. Activities in 'OnHold' status cannot be modified. Please change the activity status first.");
             }
 
             var team = await _unitOfWork.Repository<Team>().GetByIdAsync(request.TeamId);

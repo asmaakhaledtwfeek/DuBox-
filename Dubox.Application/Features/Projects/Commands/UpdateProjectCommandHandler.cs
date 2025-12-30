@@ -48,6 +48,13 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
             return Result.Failure<ProjectDto>("Access denied. You do not have permission to update this project.");
         }
 
+        // Check if project is on hold - cannot edit projects on hold
+        var isOnHold = await _visibilityService.IsProjectOnHoldAsync(request.ProjectId, cancellationToken);
+        if (isOnHold)
+        {
+            return Result.Failure<ProjectDto>("Cannot edit project. Projects on hold cannot be modified. Only project status changes are allowed.");
+        }
+
         if (!string.IsNullOrEmpty(request.ProjectCode) && project.ProjectCode != request.ProjectCode)
         {
             var codeExists = await _unitOfWork.Repository<Project>()

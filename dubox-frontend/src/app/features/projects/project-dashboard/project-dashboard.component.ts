@@ -47,6 +47,7 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
   canDelete = false;
   canChangeStatus = false;
   canImportBoxes = false;
+  isProjectOnHold = false;
   templateDownloading = false;
   isDraggingFile = false;
   selectedFile: File | null = null;
@@ -149,6 +150,9 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
           actualStartDate: project.actualStartDate ? new Date(project.actualStartDate) : undefined,
           compressionStartDate: project.compressionStartDate ? new Date(project.compressionStartDate) : undefined
         };
+        
+        // Check if project is on hold
+        this.isProjectOnHold = this.project.status === 'OnHold';
 
         // Load boxes to calculate accurate counts
         this.loadBoxesAndCalculateCounts();
@@ -366,12 +370,38 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
     if (!this.fileInputRef) {
       return;
     }
+    
+    // Check if project is on hold
+    if (this.isProjectOnHold) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: 'Cannot upload files. Projects on hold cannot be modified. Only project status changes are allowed.',
+          type: 'error' 
+        }
+      }));
+      return;
+    }
 
     this.fileInputRef.nativeElement.value = '';
     this.fileInputRef.nativeElement.click();
   }
 
   onFileChange(event: Event): void {
+    // Check if project is on hold
+    if (this.isProjectOnHold) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: 'Cannot upload files. Projects on hold cannot be modified. Only project status changes are allowed.',
+          type: 'error' 
+        }
+      }));
+      const input = event.target as HTMLInputElement;
+      if (input) {
+        input.value = '';
+      }
+      return;
+    }
+    
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
       this.setSelectedFile(input.files[0]);
@@ -379,6 +409,12 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
   }
 
   onDragOver(event: DragEvent): void {
+    // Prevent drag & drop if project is on hold
+    if (this.isProjectOnHold) {
+      event.preventDefault();
+      return;
+    }
+    
     event.preventDefault();
     event.stopPropagation();
     this.isDraggingFile = true;
@@ -395,6 +431,17 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
     event.stopPropagation();
     this.isDraggingFile = false;
 
+    // Check if project is on hold
+    if (this.isProjectOnHold) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: 'Cannot upload files. Projects on hold cannot be modified. Only project status changes are allowed.',
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+
     if (event.dataTransfer && event.dataTransfer.files.length > 0) {
       this.setSelectedFile(event.dataTransfer.files[0]);
       event.dataTransfer.clearData();
@@ -402,6 +449,17 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
   }
 
   private setSelectedFile(file: File): void {
+    // Check if project is on hold
+    if (this.isProjectOnHold) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: 'Cannot upload files. Projects on hold cannot be modified. Only project status changes are allowed.',
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+    
     if (!this.isValidExcelFile(file)) {
       this.importErrorMessage = 'Please upload a valid Excel file (.xlsx or .xls).';
       this.selectedFile = null;
@@ -488,6 +546,17 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
 
   editProject(): void {
     if (!this.projectId) {
+      return;
+    }
+    
+    // Check if project is on hold
+    if (this.isProjectOnHold) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: 'Cannot edit project. Projects on hold cannot be modified. Only project status changes are allowed.',
+          type: 'error' 
+        }
+      }));
       return;
     }
 
@@ -645,6 +714,18 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
     if (!this.project) {
       return;
     }
+    
+    // Check if project is on hold
+    if (this.isProjectOnHold) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: 'Cannot set compression start date. Projects on hold cannot be modified. Only project status changes are allowed.',
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+    
     this.selectedCompressionDate = this.project.compressionStartDate ? new Date(this.project.compressionStartDate) : null;
     this.compressionDateError = '';
     this.showCompressionDateModal = true;

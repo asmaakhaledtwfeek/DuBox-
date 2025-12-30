@@ -10,7 +10,7 @@ import { UserService } from '../../../core/services/user.service';
 import { TeamService } from '../../../core/services/team.service';
 import { ProjectService } from '../../../core/services/project.service';
 import { Team } from '../../../core/models/team.model';
-import { Box, BoxStatus, BoxLog, getBoxStatusNumber, getAvailableBoxStatuses } from '../../../core/models/box.model';
+import { Box, BoxStatus, BoxLog, getBoxStatusNumber, getAvailableBoxStatuses, canPerformBoxActions, canPerformActivityActions } from '../../../core/models/box.model';
 import { WIRService } from '../../../core/services/wir.service';
 import { ProgressUpdate, ProgressUpdatesSearchParams } from '../../../core/models/progress-update.model';
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
@@ -99,6 +99,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   canDelete = false;
   canUpdateBoxStatus = false;
   canUpdateQualityIssueStatus = false;
+  canUploadDrawing = false;
   isProjectArchived = false; // Track if project is archived
   isProjectOnHold = false; // Track if project is on hold
   BoxStatus = BoxStatus;
@@ -359,13 +360,21 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     const baseCanUpdateQualityIssueStatus = this.permissionService.hasPermission('quality-issues', 'edit') || 
                                        this.permissionService.hasPermission('quality-issues', 'resolve');
     const baseCanCreateQualityIssue = this.permissionService.canCreate('quality-issues');
+    const baseCanUploadDrawing = this.permissionService.canEdit('boxes');
+    
+    // Check if box actions are allowed based on box status
+    const canPerformBoxActionsBasedOnStatus = this.box ? canPerformBoxActions(this.box.status) : true;
+    // For status updates, check if there are available status transitions
+    const canChangeStatusBasedOnBoxStatus = this.box ? getAvailableBoxStatuses(this.box.status, this.box.progress).length > 0 : true;
     
     // Disable all actions if project is archived or on hold
-    this.canEdit = baseCanEdit && !this.isProjectArchived && !this.isProjectOnHold;
-    this.canDelete = baseCanDelete && !this.isProjectArchived && !this.isProjectOnHold;
-    this.canUpdateBoxStatus = baseCanUpdateStatus && !this.isProjectArchived && !this.isProjectOnHold;
-    this.canUpdateQualityIssueStatus = baseCanUpdateQualityIssueStatus && !this.isProjectArchived && !this.isProjectOnHold;
-    this.canCreateQualityIssue = baseCanCreateQualityIssue && !this.isProjectArchived && !this.isProjectOnHold;
+    // Also disable box actions if box status doesn't allow them (OnHold or Dispatched)
+    this.canEdit = baseCanEdit && !this.isProjectArchived && !this.isProjectOnHold && canPerformBoxActionsBasedOnStatus;
+    this.canDelete = baseCanDelete && !this.isProjectArchived && !this.isProjectOnHold && canPerformBoxActionsBasedOnStatus;
+    this.canUpdateBoxStatus = baseCanUpdateStatus && !this.isProjectArchived && !this.isProjectOnHold && canChangeStatusBasedOnBoxStatus;
+    this.canUpdateQualityIssueStatus = baseCanUpdateQualityIssueStatus && !this.isProjectArchived && !this.isProjectOnHold && canPerformBoxActionsBasedOnStatus;
+    this.canCreateQualityIssue = baseCanCreateQualityIssue && !this.isProjectArchived && !this.isProjectOnHold && canPerformBoxActionsBasedOnStatus;
+    this.canUploadDrawing = baseCanUploadDrawing && !this.isProjectArchived && !this.isProjectOnHold && canPerformBoxActionsBasedOnStatus;
     
     console.log('✅ Box permissions checked:', {
       canEdit: this.canEdit,
@@ -373,7 +382,10 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       canUpdateBoxStatus: this.canUpdateBoxStatus,
       canCreateQualityIssue: this.canCreateQualityIssue,
       isProjectArchived: this.isProjectArchived,
-      isProjectOnHold: this.isProjectOnHold
+      isProjectOnHold: this.isProjectOnHold,
+      boxStatus: this.box?.status,
+      canPerformBoxActionsBasedOnStatus,
+      canChangeStatusBasedOnBoxStatus
     });
   }
 
@@ -384,6 +396,9 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.boxService.getBox(this.boxId).subscribe({
       next: (box) => {
         this.box = box;
+        
+        // Re-check permissions after box is loaded to account for box status
+        this.checkPermissions();
         
         // Generate QR code if it doesn't exist
         if (!box.qrCode) {
@@ -869,6 +884,14 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     if (!checkpoint?.wirId || !checkpoint?.boxActivityId) {
       return false;
     }
+    // Check if box status allows actions
+    if (this.box && !canPerformBoxActions(this.box.status)) {
+      return false;
+    }
+    // Check if project is archived or on hold
+    if (this.isProjectArchived || this.isProjectOnHold) {
+      return false;
+    }
     // Check if user has permission to create/manage WIR checkpoints
     return this.permissionService.hasPermission('wir', 'create') || 
            this.permissionService.hasPermission('wir', 'manage');
@@ -877,6 +900,14 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   canNavigateToReview(checkpoint: WIRCheckpoint | null): boolean {
     // Check if checkpoint exists and has required data
     if (!checkpoint?.boxActivityId) {
+      return false;
+    }
+    // Check if box status allows actions
+    if (this.box && !canPerformBoxActions(this.box.status)) {
+      return false;
+    }
+    // Check if project is archived or on hold
+    if (this.isProjectArchived || this.isProjectOnHold) {
       return false;
     }
     // Check if user has permission to review WIR checkpoints
@@ -910,6 +941,15 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   navigateToAddChecklist(checkpoint: WIRCheckpoint): void {
     if (!this.canNavigateToAddChecklist(checkpoint)) {
+      // Check if blocked by box status
+      if (this.box && !canPerformBoxActions(this.box.status)) {
+        const statusMessage = this.box.status === 'Dispatched' 
+          ? 'Cannot add checklist items. The box is dispatched and no actions are allowed.'
+          : 'Cannot add checklist items. The box is on hold and no actions are allowed. Only box status changes are allowed.';
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { message: statusMessage, type: 'error' }
+        }));
+      }
       return;
     }
 
@@ -929,6 +969,15 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   navigateToReview(checkpoint: WIRCheckpoint): void {
     if (!this.canNavigateToReview(checkpoint)) {
+      // Check if blocked by box status
+      if (this.box && !canPerformBoxActions(this.box.status)) {
+        const statusMessage = this.box.status === 'Dispatched' 
+          ? 'Cannot review checkpoint. The box is dispatched and no actions are allowed.'
+          : 'Cannot review checkpoint. The box is on hold and no actions are allowed. Only box status changes are allowed.';
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { message: statusMessage, type: 'error' }
+        }));
+      }
       return;
     }
 
@@ -1054,6 +1103,15 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   }
 
   createQualityIssue(): void {
+    // Check if box status allows actions
+    if (this.box && !canPerformBoxActions(this.box.status)) {
+      const statusMessage = this.box.status === 'Dispatched' 
+        ? 'Cannot create quality issue. The box is dispatched and no actions are allowed.'
+        : 'Cannot create quality issue. The box is on hold and no actions are allowed. Only box status changes are allowed.';
+      this.createQualityIssueError = statusMessage;
+      return;
+    }
+    
     // Validate form
     if (!this.newQualityIssueForm.issueDescription?.trim()) {
       this.createQualityIssueError = 'Issue description is required.';
@@ -3049,6 +3107,19 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   // Upload Drawing Modal Methods
   openUploadDrawingModal(): void {
+    // Check if box status allows actions
+    if (this.box && !canPerformBoxActions(this.box.status)) {
+      const statusMessage = this.box.status === 'Dispatched' 
+        ? 'Cannot upload drawings. The box is dispatched and no actions are allowed.'
+        : 'Cannot upload drawings. The box is on hold and no actions are allowed. Only box status changes are allowed.';
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: statusMessage,
+          type: 'error' 
+        }
+      }));
+      return;
+    }
     if (this.isProjectOnHold || this.isProjectArchived) {
       document.dispatchEvent(new CustomEvent('app-toast', {
         detail: { 

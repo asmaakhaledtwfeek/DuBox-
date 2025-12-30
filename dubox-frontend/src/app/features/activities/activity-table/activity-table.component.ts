@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { filter } from 'rxjs/operators';
-import { BoxActivity } from '../../../core/models/box.model';
+import { BoxActivity, canPerformActivityActions, canPerformActivityActionsByStatus } from '../../../core/models/box.model';
 import { UpdateProgressModalComponent } from '../update-progress-modal/update-progress-modal.component';
 import { WIRApprovalModalComponent } from '../wir-approval-modal/wir-approval-modal.component';
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
@@ -33,6 +33,7 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   @Input() activities: BoxActivity[] = [];
   @Input() projectId: string = '';
   @Input() boxId: string = '';
+  @Input() boxStatus?: string; // Box status to check if activity actions are allowed
   @Input() isProjectOnHold: boolean = false; // Track if project is on hold
   @Input() isProjectArchived: boolean = false; // Track if project is archived
   @Output() boxDataChanged = new EventEmitter<void>();
@@ -78,11 +79,16 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
                                    this.permissionService.hasPermission('wir', 'review') ||
                                    this.permissionService.hasPermission('wir', 'manage');
     
-    // Disable all actions if project is archived or on hold
-    this.canUpdateProgress = baseCanUpdateProgress && !this.isProjectArchived && !this.isProjectOnHold;
-    this.canViewWIR = baseCanViewWIR && !this.isProjectArchived && !this.isProjectOnHold;
-    this.canReviewWIR = baseCanReviewWIR && !this.isProjectArchived && !this.isProjectOnHold;
-    this.canManageCheckpoint = baseCanManageCheckpoint && !this.isProjectArchived && !this.isProjectOnHold;
+    // Check if activity actions are allowed based on box status
+    const canPerformActivityActionsBasedOnBoxStatus = this.boxStatus 
+      ? canPerformActivityActions(this.boxStatus as any)
+      : true;
+    
+    // Disable all actions if project is archived or on hold, or if box status doesn't allow activity actions
+    this.canUpdateProgress = baseCanUpdateProgress && !this.isProjectArchived && !this.isProjectOnHold && canPerformActivityActionsBasedOnBoxStatus;
+    this.canViewWIR = baseCanViewWIR && !this.isProjectArchived && !this.isProjectOnHold && canPerformActivityActionsBasedOnBoxStatus;
+    this.canReviewWIR = baseCanReviewWIR && !this.isProjectArchived && !this.isProjectOnHold && canPerformActivityActionsBasedOnBoxStatus;
+    this.canManageCheckpoint = baseCanManageCheckpoint && !this.isProjectArchived && !this.isProjectOnHold && canPerformActivityActionsBasedOnBoxStatus;
   }
 
   ngOnInit(): void {
@@ -105,8 +111,8 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
       this.loadActivitiesWithDetails();
     }
     
-    // Update permissions when project status changes
-    if (changes['isProjectOnHold'] || changes['isProjectArchived']) {
+    // Update permissions when project status or box status changes
+    if (changes['isProjectOnHold'] || changes['isProjectArchived'] || changes['boxStatus']) {
       this.updatePermissions();
     }
   }
@@ -338,6 +344,29 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
    * Open progress update modal
    */
   openProgressModal(activity: BoxActivityDetail): void {
+    // Allow opening modal for completed activities (to update position only)
+    // Only block OnHold activities
+    if (activity.status === 'OnHold') {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: 'Cannot update progress. Activities in "OnHold" status cannot be modified. Please change the activity status first.',
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+
+    // Block if activity is completed and next WIR has position disabled
+    if (this.shouldDisableUpdateProgress(activity)) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: 'Cannot update progress. Activity is completed and the next WIR position is locked.',
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+
     this.selectedActivity = activity;
     this.isModalOpen = true;
   }
@@ -400,7 +429,8 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   /**
    * Get status badge class
    */
-  getStatusClass(status: string): string {
+  getStatusClass(status?: string | null): string {
+    if (!status) return 'status-default';
     const statusMap: Record<string, string> = {
       'NotStarted': 'status-not-started',
       'InProgress': 'status-in-progress',
@@ -409,6 +439,23 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
       'OnHold': 'status-on-hold'
     };
     return statusMap[status] || 'status-default';
+  }
+
+  /**
+   * Get status label for display
+   */
+  getStatusLabel(status?: string): string {
+    if (!status) return '—';
+    
+    const statusMap: Record<string, string> = {
+      'NotStarted': 'Not Started',
+      'InProgress': 'In Progress',
+      'Completed': 'Completed',
+      'Approved': 'Approved',
+      'OnHold': 'On Hold',
+      'Delayed': 'Delayed'
+    };
+    return statusMap[status] || status;
   }
 
   /**
@@ -575,47 +622,75 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
    * If all checklist items are PASS, use approved class, otherwise use under-review class
    */
   getWIRStatusClass(status: any, wirRecord?: WIRRecord | null): string {
-    if (!status) return 'wir-status-pending';
+    if (!wirRecord) return 'wir-status-pending';
 
-    console.log('WIR status:', status);
-    const statusStr = String(status);
+    const checkpoint = this.getCheckpoint(wirRecord);
     
-    // When status is "Approved", check if all items are PASS
-    if (statusStr === 'Approved' && wirRecord) {
-      const checkpoint = this.getCheckpoint(wirRecord);
-      if (checkpoint && this.areAllChecklistItemsPass(checkpoint)) {
-        return 'wir-status-approved'; // All items passed
-      }
-      return 'wir-status-under-review'; // Still under review
+    // No checkpoint created → pending class
+    if (!checkpoint) {
+      return 'wir-status-pending';
     }
     
+    // Checkpoint exists - check its status
+    const checkpointStatus = checkpoint.status ? String(checkpoint.status) : 'Pending';
+    
+    // If checkpoint status is Pending → under-review class
+    if (checkpointStatus === 'Pending') {
+      return 'wir-status-under-review';
+    }
+    
+    // If checkpoint status is Approved, check if all items are Pass
+    if (checkpointStatus === 'Approved') {
+      if (this.areAllChecklistItemsPass(checkpoint)) {
+        return 'wir-status-approved'; // All items passed
+      }
+      return 'wir-status-under-review'; // Approved but still reviewing items
+    }
+    
+    // Map other statuses to their classes
     const statusMap: Record<string, string> = {
-      'Pending': 'wir-status-pending',
-      'Rejected': 'wir-status-rejected'
+      'Rejected': 'wir-status-rejected',
+      'ConditionalApproval': 'wir-status-conditional'
     };
-    return statusMap[statusStr] || 'wir-status-pending';
+    return statusMap[checkpointStatus] || 'wir-status-pending';
   }
 
   /**
    * Format WIR status label
-   * Note: "Approved" status means the WIR is approved for review
-   * If all checklist items are PASS, show "Approved", otherwise show "Under Review"
+   * Logic:
+   * - Not created (no checkpoint) → "Pending"
+   * - Created but not reviewed (checkpoint status is Pending) → "Under Review"
+   * - Reviewed (checkpoint has final status) → Show final status (Approved, Rejected, ConditionalApproval)
+   *   - If Approved but not all items are Pass → "Under Review"
    */
   getWIRStatusLabel(status: any, wirRecord?: WIRRecord | null): string {
-    if (!status) return 'Pending';
+    if (!wirRecord) return 'Pending';
     
-    const statusStr = String(status);
+    const checkpoint = this.getCheckpoint(wirRecord);
     
-    // When WIR status is "Approved", check if all checklist items are PASS
-    if (statusStr === 'Approved' && wirRecord) {
-      const checkpoint = this.getCheckpoint(wirRecord);
-      if (checkpoint && this.areAllChecklistItemsPass(checkpoint)) {
-        return 'Approved'; // All items passed - show as approved
-      }
-      return 'Under Review'; // Still has items to review
+    // No checkpoint created → "Pending"
+    if (!checkpoint) {
+      return 'Pending';
     }
     
-    return statusStr;
+    // Checkpoint exists - check its status
+    const checkpointStatus = checkpoint.status ? String(checkpoint.status) : 'Pending';
+    
+    // If checkpoint status is Pending → "Under Review"
+    if (checkpointStatus === 'Pending') {
+      return 'Under Review';
+    }
+    
+    // If checkpoint status is Approved, check if all items are Pass
+    if (checkpointStatus === 'Approved') {
+      if (this.areAllChecklistItemsPass(checkpoint)) {
+        return 'Approved'; // All items passed - fully approved
+      }
+      return 'Under Review'; // Approved but still reviewing items
+    }
+    
+    // For other statuses (Rejected, ConditionalApproval), show the actual status
+    return checkpointStatus;
   }
 
   /**
@@ -901,5 +976,70 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
       ['/projects', this.projectId, 'boxes', this.boxId, 'activities', activity.boxActivityId],
       { queryParams: { returnTo: 'activities' } }
     );
+  }
+
+  /**
+   * Check if update progress button should be disabled
+   * Disabled when: activity is completed AND next WIR has position disabled (position values already set)
+   */
+  shouldDisableUpdateProgress(activity: BoxActivityDetail): boolean {
+    // Only disable if activity is completed
+    if (!activity || activity.status !== 'Completed') {
+      return false;
+    }
+
+    // Find the next WIR (at or after this activity's sequence)
+    const currentSequence = activity.sequence || 0;
+    const nextWIR = this.findNextWIR(currentSequence);
+
+    if (!nextWIR) {
+      // No next WIR found - allow update
+      return false;
+    }
+
+    // Check if the next WIR has position values set (which means position is disabled/locked)
+    const hasPositionValues = this.hasWIRPositionValues(nextWIR);
+    
+    // Disable button if next WIR has position values set
+    return hasPositionValues;
+  }
+
+  /**
+   * Find the next WIR record (at or after the given sequence)
+   * This finds the WIR checkpoint that controls position values for activities at or after this sequence
+   */
+  private findNextWIR(sequence: number): WIRRecord | null {
+    // Find WIR records that are at or after this sequence
+    // These are the WIRs that would control position values for the current activity
+    const nextWIRRecords = this.wirRecords
+      .filter(wir => {
+        // Find the activity this WIR belongs to
+        const activity = this.activitiesWithDetails.find(a => a.boxActivityId === wir.boxActivityId);
+        if (!activity) return false;
+        // Include WIRs at or after the current sequence (they control position for this activity)
+        return (activity.sequence || 0) >= sequence;
+      })
+      .sort((a, b) => {
+        // Sort by sequence ascending to get the nearest/first WIR
+        const seqA = this.activitiesWithDetails.find(a2 => a2.boxActivityId === a.boxActivityId)?.sequence || 0;
+        const seqB = this.activitiesWithDetails.find(a2 => a2.boxActivityId === b.boxActivityId)?.sequence || 0;
+        return seqA - seqB;
+      });
+
+    return nextWIRRecords.length > 0 ? nextWIRRecords[0] : null;
+  }
+
+  /**
+   * Check if WIR has position values set (bay, row, or position)
+   */
+  private hasWIRPositionValues(wir: WIRRecord): boolean {
+    if (!wir) return false;
+    
+    const bayValue = (wir.bay && wir.bay.trim() !== '' && wir.bay !== '-') ? wir.bay : '';
+    const rowValue = (wir.row && wir.row.trim() !== '' && wir.row !== '-') ? wir.row : '';
+    const positionValue = (wir.position && wir.position.trim() !== '' && wir.position !== '-') ? wir.position : '';
+    
+    // Check if any position value is set
+    return !!(bayValue || rowValue || positionValue);
   }
 }

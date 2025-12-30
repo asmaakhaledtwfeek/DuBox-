@@ -30,6 +30,17 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             if (wir == null)
                 return Result.Failure<CreateWIRCheckpointDto>("WIR Checkpoint not found");
 
+            // Load box to check status
+            var box = await _unitOfWork.Repository<Box>().GetByIdAsync(wir.BoxId, cancellationToken);
+            if (box == null)
+                return Result.Failure<CreateWIRCheckpointDto>("Box not found");
+
+            // Check if box is dispatched - no actions allowed on dispatched boxes
+            if (box.Status == BoxStatusEnum.Dispatched)
+            {
+                return Result.Failure<CreateWIRCheckpointDto>("Cannot add checklist items. The box is dispatched and no actions are allowed on checkpoints. Only viewing is permitted.");
+            }
+
             // Get existing checklist items to determine the next sequence number
             var existingItems = await wirChecklistRepository.FindAsync(x => x.WIRId == request.WIRId, cancellationToken);
             var maxSequence = existingItems.Any() ? existingItems.Max(x => x.Sequence) : 0;

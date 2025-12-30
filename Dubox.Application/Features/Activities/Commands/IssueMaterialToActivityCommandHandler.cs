@@ -51,6 +51,28 @@ public class IssueMaterialToActivityCommandHandler : IRequestHandler<IssueMateri
             return Result.Failure<MaterialTransactionDto>("Cannot issue materials in a project on hold. Projects on hold only allow project status changes.");
         }
 
+        // Check if box is Dispatched - cannot perform any actions on activities
+        if (box.Status == BoxStatusEnum.Dispatched)
+        {
+            return Result.Failure<MaterialTransactionDto>("Cannot issue materials to activity. The box is dispatched and no actions are allowed on boxes or activities.");
+        }
+
+        // Check if box is OnHold - cannot perform actions on activities
+        if (box.Status == BoxStatusEnum.OnHold)
+        {
+            return Result.Failure<MaterialTransactionDto>("Cannot issue materials to activity. The box is on hold and no actions are allowed on activities. Only box status changes are allowed.");
+        }
+
+        // Check activity status - cannot perform actions if activity is Completed or OnHold
+        if (activity.Status == BoxStatusEnum.Completed)
+        {
+            return Result.Failure<MaterialTransactionDto>("Cannot issue materials to activity. Activities in 'Completed' status cannot be modified.");
+        }
+        if (activity.Status == BoxStatusEnum.OnHold)
+        {
+            return Result.Failure<MaterialTransactionDto>("Cannot issue materials to activity. Activities in 'OnHold' status cannot be modified. Please change the activity status first.");
+        }
+
         var oldCurrentStock = material.CurrentStock ?? 0;
         var oldAllocatedStock = material.AllocatedStock ?? 0;
 

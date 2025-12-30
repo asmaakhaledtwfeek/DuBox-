@@ -83,10 +83,8 @@ namespace Dubox.Application.Features.Boxes.Commands
                     break;
 
                 case BoxStatusEnum.Dispatched:
-                    // Dispatched typically shouldn't be changed, but allow OnHold if needed
-                    if (newStatus != BoxStatusEnum.OnHold)
-                        return false;
-                    break;
+                    // Dispatched cannot be changed - no status transitions allowed
+                    return false;
 
                 default:
                     return false;

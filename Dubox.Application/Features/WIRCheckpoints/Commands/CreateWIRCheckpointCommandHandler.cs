@@ -54,6 +54,12 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                 return Result.Failure<CreateWIRCheckpointDto>("Access denied. You do not have permission to create WIR checkpoints for this project.");
             }
 
+            // Check if box is dispatched - no actions allowed on dispatched boxes
+            if (box.Status == BoxStatusEnum.Dispatched)
+            {
+                return Result.Failure<CreateWIRCheckpointDto>("Cannot create WIR checkpoint. The box is dispatched and no actions are allowed on checkpoints. Only viewing is permitted.");
+            }
+
             var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
             var user = await _unitOfWork.Repository<User>().GetByIdAsync(currentUserId);
             var currentUserName = user != null ? user.FullName : string.Empty;

@@ -41,14 +41,27 @@
         </div>
       </div>
 
+      <!-- Completed Activity Notice -->
+      <div *ngIf="activity?.status === ActivityProgressStatus.Completed || activity?.status === ActivityProgressStatus.Delayed" class="alert alert-info">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <div>
+          <strong>Activity Completed</strong>
+          <p>This activity is completed. You can only update the position (Bay/Row) if this is a WIR checkpoint.</p>
+        </div>
+      </div>
+
       <!-- Progress Form -->
       <form [formGroup]="progressForm" (ngSubmit)="onSubmit()">
         <!-- Progress Percentage -->
         <div class="form-group">
-          <label for="progressPercentage">Progress Percentage *</label>
+          <label for="progressPercentage">Progress Percentage <span *ngIf="activity?.status !== 'Completed' && activity?.status !== 'Delayed'">*</span></label>
           <div class="progress-input-group">
-            <button type="button" class="btn-adjust" (click)="incrementProgress(-10)">-10%</button>
-            <button type="button" class="btn-adjust" (click)="incrementProgress(-5)">-5%</button>
+            <button type="button" class="btn-adjust" (click)="incrementProgress(-10)" [disabled]="activity?.status === ActivityProgressStatus.Completed || activity?.status === ActivityProgressStatus.Delayed">-10%</button>
+            <button type="button" class="btn-adjust" (click)="incrementProgress(-5)" [disabled]="activity?.status === ActivityProgressStatus.Completed || activity?.status === ActivityProgressStatus.Delayed">-5%</button>
             <input 
               type="number" 
               id="progressPercentage" 
@@ -56,10 +69,11 @@
               min="0"
               max="100"
               class="form-control"
+              [readonly]="activity?.status === ActivityProgressStatus.Completed || activity?.status === ActivityProgressStatus.Delayed"
             />
             <span class="percentage-label">%</span>
-            <button type="button" class="btn-adjust" (click)="incrementProgress(5)">+5%</button>
-            <button type="button" class="btn-adjust" (click)="incrementProgress(10)">+10%</button>
+            <button type="button" class="btn-adjust" (click)="incrementProgress(5)" [disabled]="activity?.status === ActivityProgressStatus.Completed || activity?.status === ActivityProgressStatus.Delayed">+5%</button>
+            <button type="button" class="btn-adjust" (click)="incrementProgress(10)" [disabled]="activity?.status === ActivityProgressStatus.Completed || activity?.status === ActivityProgressStatus.Delayed">+10%</button>
           </div>
           <div class="progress-bar-container">
             <div class="progress-bar-fill" [style.width.%]="progressForm.get('progressPercentage')?.value"></div>
@@ -330,7 +344,7 @@
           <button type="button" class="btn btn-secondary" (click)="close()" [disabled]="isSubmitting">
             Cancel
           </button>
-          <button type="submit" class="btn btn-primary" [disabled]="progressForm.invalid || isSubmitting">
+          <button type="submit" class="btn btn-primary" [disabled]="progressForm.invalid || isSubmitting || progressForm.get('progressPercentage')?.value === 0 || isUpdateButtonDisabled">
             <span *ngIf="!isSubmitting">Update Progress</span>
             <span *ngIf="isSubmitting">Updating...</span>
           </button>

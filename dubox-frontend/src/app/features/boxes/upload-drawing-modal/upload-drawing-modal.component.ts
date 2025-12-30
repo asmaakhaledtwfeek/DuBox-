@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, Output, OnInit, OnChanges, SimpleChange
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BoxService } from '../../../core/services/box.service';
+import { BoxStatus, canPerformBoxActions } from '../../../core/models/box.model';
 
 @Component({
   selector: 'app-upload-drawing-modal',
@@ -14,6 +15,7 @@ export class UploadDrawingModalComponent implements OnInit, OnChanges {
   @Input() isOpen = false;
   @Input() boxId: string = '';
   @Input() boxName: string = '';
+  @Input() boxStatus?: BoxStatus; // Box status to check if actions are allowed
   @Input() isProjectOnHold: boolean = false; // Track if project is on hold
   @Input() isProjectArchived: boolean = false; // Track if project is archived
   @Output() closed = new EventEmitter<void>();
@@ -159,6 +161,15 @@ export class UploadDrawingModalComponent implements OnInit, OnChanges {
       this.errorMessage = this.isProjectArchived 
         ? 'Cannot upload drawings. This project is archived and read-only.' 
         : 'Cannot upload drawings. This project is on hold. Only project status changes are allowed.';
+      return;
+    }
+    
+    // Check if box status allows actions
+    if (this.boxStatus && !canPerformBoxActions(this.boxStatus)) {
+      const statusMessage = this.boxStatus === 'Dispatched' 
+        ? 'Cannot upload drawings. The box is dispatched and no actions are allowed.'
+        : 'Cannot upload drawings. The box is on hold and no actions are allowed. Only box status changes are allowed.';
+      this.errorMessage = statusMessage;
       return;
     }
 

@@ -25,7 +25,7 @@ namespace Dubox.Domain.Entities
         [MaxLength(1000)]
         public string? WIRName { get; set; }
 
-        [MaxLength(500)]
+        [MaxLength(1000)]
         public string? WIRDescription { get; set; }
 
         public DateTime? RequestedDate { get; set; }

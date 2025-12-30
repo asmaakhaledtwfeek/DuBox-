@@ -481,6 +481,7 @@
             [activities]="box.activities || []" 
             [projectId]="projectId"
             [boxId]="boxId"
+            [boxStatus]="box.status"
             [isProjectOnHold]="isProjectOnHold"
             [isProjectArchived]="isProjectArchived"
             (boxDataChanged)="loadBox()"
@@ -1857,7 +1858,7 @@
               </button>
             </div>
             <button 
-              *ngIf="!isProjectOnHold && !isProjectArchived"
+              *ngIf="canUploadDrawing"
               class="btn btn-primary btn-upload-drawing" 
               (click)="openUploadDrawingModal()"
               title="Upload Drawing"
@@ -2992,6 +2993,7 @@
   [isOpen]="isUploadDrawingModalOpen"
   [boxId]="boxId"
   [boxName]="box?.name || box?.code || ''"
+  [boxStatus]="box?.status"
   [isProjectOnHold]="isProjectOnHold"
   [isProjectArchived]="isProjectArchived"
   (closed)="closeUploadDrawingModal()"

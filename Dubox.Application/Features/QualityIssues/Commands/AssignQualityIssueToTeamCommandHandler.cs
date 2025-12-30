@@ -2,6 +2,7 @@ using Dubox.Application.DTOs;
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
@@ -58,6 +59,12 @@ namespace Dubox.Application.Features.QualityIssues.Commands
             if (isOnHold)
             {
                 return Result.Failure<QualityIssueDetailsDto>("Cannot assign quality issues in a project on hold. Projects on hold only allow project status changes.");
+            }
+
+            // Check if box is dispatched - no actions allowed on dispatched boxes
+            if (issue.Box.Status == BoxStatusEnum.Dispatched)
+            {
+                return Result.Failure<QualityIssueDetailsDto>("Cannot assign quality issue. The box is dispatched and no actions are allowed on quality issues. Only viewing is permitted.");
             }
 
             // If TeamId is provided, validate the team exists and user has access

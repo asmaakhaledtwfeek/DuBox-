@@ -38,6 +38,30 @@ public class UpdateProjectStatusCommandHandler : IRequestHandler<UpdateProjectSt
             return Result.Success(project.Adapt<ProjectDto>(), "Status unchanged.");
         }
 
+        // Validate transition to Archived
+        // Project can only be archived if:
+        // 1. Current status is Completed, Closed, or OnHold
+        // 2. AND progress is 100%
+        if (newStatus == ProjectStatusEnum.Archived)
+        {
+            var progress = project.ProgressPercentage;
+            var canBeArchived = (oldStatus == ProjectStatusEnum.Completed || 
+                                oldStatus == ProjectStatusEnum.Closed || 
+                                oldStatus == ProjectStatusEnum.OnHold) && 
+                               progress >= 100;
+
+            if (!canBeArchived)
+            {
+                var statusMessage = oldStatus == ProjectStatusEnum.Completed || 
+                                   oldStatus == ProjectStatusEnum.Closed || 
+                                   oldStatus == ProjectStatusEnum.OnHold
+                    ? $"Cannot archive project. Project must have 100% progress. Current progress is {progress}%."
+                    : $"Cannot archive project. Project status must be Completed, Closed, or OnHold. Current status is {oldStatus}.";
+                
+                return Result.Failure<ProjectDto>(statusMessage);
+            }
+        }
+
         // Validate OnHold project status transitions
         if (oldStatus == ProjectStatusEnum.OnHold)
         {

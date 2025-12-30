@@ -12,11 +12,16 @@ public class UpdateCompressionStartDateCommandHandler : IRequestHandler<UpdateCo
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IProjectTeamVisibilityService _visibilityService;
 
-    public UpdateCompressionStartDateCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public UpdateCompressionStartDateCommandHandler(
+        IUnitOfWork unitOfWork, 
+        ICurrentUserService currentUserService,
+        IProjectTeamVisibilityService visibilityService)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<ProjectDto>> Handle(UpdateCompressionStartDateCommand request, CancellationToken cancellationToken)
@@ -27,6 +32,13 @@ public class UpdateCompressionStartDateCommandHandler : IRequestHandler<UpdateCo
         if (project is null)
         {
             return Result.Failure<ProjectDto>("Project not found.");
+        }
+
+        // Check if project is on hold - cannot set compression start date for projects on hold
+        var isOnHold = await _visibilityService.IsProjectOnHoldAsync(request.ProjectId, cancellationToken);
+        if (isOnHold)
+        {
+            return Result.Failure<ProjectDto>("Cannot set compression start date. Projects on hold cannot be modified. Only project status changes are allowed.");
         }
 
         var oldCompressionStartDate = project.CompressionStartDate;

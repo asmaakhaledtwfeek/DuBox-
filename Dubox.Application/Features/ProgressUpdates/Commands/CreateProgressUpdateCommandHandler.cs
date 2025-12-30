@@ -41,19 +41,16 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
 
         if (boxActivity == null)
             return Result.Failure<ProgressUpdateDto>("Box activity not found");
+        if (request.BoxId == Guid.Empty)
+            return Result.Failure<ProgressUpdateDto>("Invalid BoxId");
 
-        // Check if project is archived
-        var isArchived = await _visibilityService.IsProjectArchivedAsync(boxActivity.Box.ProjectId, cancellationToken);
-        if (isArchived)
-        {
-            return Result.Failure<ProgressUpdateDto>("Cannot create progress updates in an archived project. Archived projects are read-only.");
-        }
+        if (request.BoxActivityId == Guid.Empty)
+            return Result.Failure<ProgressUpdateDto>("Invalid BoxActivityId");
 
-        // Check if project is on hold
-        var isOnHold = await _visibilityService.IsProjectOnHoldAsync(boxActivity.Box.ProjectId, cancellationToken);
-        if (isOnHold)
+        var validationResult= await ValidateProgressUpdateAsync(request ,boxActivity, cancellationToken);
+        if (validationResult.IsFailure)
         {
-            return Result.Failure<ProgressUpdateDto>("Cannot create progress updates in a project on hold. Projects on hold only allow project status changes.");
+            return Result.Failure<ProgressUpdateDto>(validationResult.Error);
         }
 
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
@@ -63,7 +60,10 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             return Result.Failure<ProgressUpdateDto>("User not found");
         BoxStatusEnum inferredStatus;
         if (request.ProgressPercentage >= 100)
-            inferredStatus = BoxStatusEnum.Completed;
+        {
+            // When progress reaches 100%, check duration to determine if Completed or Delayed
+            inferredStatus = DetermineActivityStatusAtCompletion(boxActivity);
+        }
         else if (request.ProgressPercentage > 0)
             inferredStatus = BoxStatusEnum.InProgress;
         else
@@ -72,15 +72,32 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             if (boxActivity.Status == BoxStatusEnum.OnHold)
                 inferredStatus = BoxStatusEnum.OnHold;
         }
-        //var isDuplicate = await _unitOfWork.Repository<ProgressUpdate>()
-        //                     .IsExistAsync(pu =>
-        //                        pu.BoxId == request.BoxId &&
-        //                        pu.BoxActivityId == request.BoxActivityId &&
-        //                        pu.ProgressPercentage == request.ProgressPercentage &&
-        //                        pu.Status == inferredStatus);
+        var duplicatedProgress =  _unitOfWork.Repository<ProgressUpdate>()
+                             .Get().Where(pu =>
+                                pu.BoxId == request.BoxId &&
+                                pu.BoxActivityId == request.BoxActivityId &&
+                                pu.ProgressPercentage == request.ProgressPercentage &&
+                                pu.Status == inferredStatus).FirstOrDefault();
 
-        //if (isDuplicate)
-        //    return Result.Failure<ProgressUpdateDto>("A progress update with the exact same details already exists for this activity.");
+        if (duplicatedProgress !=null)
+        {
+           var result= await CreateWIRRecordOrUpdatePositionIfWIRExist(request, boxActivity, currentUserId, cancellationToken);
+            if(!result.IsSuccess)
+            return Result.Failure<ProgressUpdateDto>(result.ErrorMessage);
+            else
+            {
+               await _unitOfWork.CompleteAsync();
+                var duplicatedDto = duplicatedProgress.Adapt<ProgressUpdateDto>() with
+                {
+                    BoxTag = boxActivity.Box.BoxTag,
+                    ActivityName = boxActivity.ActivityMaster.ActivityName,
+                    UpdatedByName = user.FullName ?? user.Email,
+                };
+
+                return Result.Success(duplicatedDto);
+            }
+
+        }
 
         var progressUpdate = request.Adapt<ProgressUpdate>();
         progressUpdate.Status = inferredStatus;
@@ -102,16 +119,27 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             progressUpdate.DeviceInfo = progressUpdate.DeviceInfo.Substring(0, 100);
         }
 
-        if (progressUpdate.BoxId == Guid.Empty)
-            return Result.Failure<ProgressUpdateDto>("Invalid BoxId");
-
-        if (progressUpdate.BoxActivityId == Guid.Empty)
-            return Result.Failure<ProgressUpdateDto>("Invalid BoxActivityId");
-
         try
         {
             await _unitOfWork.Repository<ProgressUpdate>().AddAsync(progressUpdate, cancellationToken);
-            await _unitOfWork.CompleteAsync(cancellationToken); // Save to get ProgressUpdateId
+            var result=await CreateWIRRecordOrUpdatePositionIfWIRExist(request, boxActivity, currentUserId, cancellationToken);
+            if(!result.IsSuccess)
+                return Result.Failure<ProgressUpdateDto>(result.ErrorMessage);
+            await _unitOfWork.CompleteAsync(cancellationToken);
+
+            await UpdateBoxActivityAndAddAuditLog(request, boxActivity, inferredStatus, currentUserId, cancellationToken);
+            await _unitOfWork.CompleteAsync(cancellationToken);
+
+            progressUpdate.BoxProgressSnapshot = await UpdateBoxProgress(request.BoxId, currentUserId, cancellationToken);
+            _unitOfWork.Repository<ProgressUpdate>().Update(progressUpdate);
+            await _unitOfWork.CompleteAsync(cancellationToken);
+
+            if (boxActivity.Box != null)
+                await UpdateProjectProgress(boxActivity.Box.ProjectId, currentUserId, cancellationToken);
+            
+                await _unitOfWork.CompleteAsync(cancellationToken);
+           
+
         }
         catch (Exception ex)
         {
@@ -142,30 +170,8 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         {
             return Result.Failure<ProgressUpdateDto>(imagesProcessResult.Item2);
         }
+       
         
-        try
-        {
-            await AddAuditLogAndWIRRecord(request, boxActivity, inferredStatus, currentUserId, cancellationToken);
-        }
-        catch (InvalidOperationException ex)
-        {
-            // Handle WIR validation errors (location conflicts, previous WIR approval, etc.)
-            return Result.Failure<ProgressUpdateDto>(ex.Message);
-        }
-        
-        progressUpdate.BoxProgressSnapshot = await UpdateBoxProgress(request.BoxId, currentUserId, cancellationToken);
-        _unitOfWork.Repository<ProgressUpdate>().Update(progressUpdate);
-
-        if (boxActivity.Box != null)
-            await UpdateProjectProgress(boxActivity.Box.ProjectId, currentUserId, cancellationToken);
-        try
-        {
-            await _unitOfWork.CompleteAsync(cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            return Result.Failure<ProgressUpdateDto>($"Failed to save changes: {ex.Message}. Inner: {ex.InnerException?.Message}");
-        }
         var dto = progressUpdate.Adapt<ProgressUpdateDto>() with
         {
             BoxTag = boxActivity.Box.BoxTag,
@@ -176,117 +182,7 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         return Result.Success(dto);
     }
 
-    private async Task<(bool, string)> ImagesProcessing(Guid ProgressId, List<byte[]>? files, List<string>? imageUrls, CancellationToken cancellationToken)
-    {
-        int sequence = 0;
-        var imagesToAdd = new List<ProgressUpdateImage>();
-
-        if (files != null && files.Count > 0)
-        {
-            try
-            {
-                foreach (var fileBytes in files.Where(f => f != null && f.Length > 0))
-                {
-                    var base64 = Convert.ToBase64String(fileBytes);
-                    var imageData = $"data:image/jpeg;base64,{base64}";
-
-                    var image = new ProgressUpdateImage
-                    {
-                        ProgressUpdateId = ProgressId,
-                        ImageData = imageData,
-                        ImageType = "file",
-                        FileSize = fileBytes.Length,
-                        Sequence = sequence++,
-                        CreatedDate = DateTime.UtcNow
-                    };
-
-                    imagesToAdd.Add(image);
-                }
-            }
-            catch (Exception ex)
-            {
-                return (false, "Error processing uploaded files: " + ex.Message);
-            }
-        }
-
-        if (imageUrls != null && imageUrls.Count > 0)
-        {
-            foreach (var url in imageUrls.Where(url => !string.IsNullOrWhiteSpace(url)))
-            {
-                try
-                {
-                    string imageType = "url";
-                    string imageData;
-                    long fileSize;
-                    byte[]? imageBytes = null;
-
-                    var trimmedUrl = url.Trim();
-
-                    if (trimmedUrl.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase))
-                    {
-                        imageData = trimmedUrl;
-                        imageType = "file";
-                        var base64Index = trimmedUrl.IndexOf(',');
-                        if (base64Index >= 0 && base64Index < trimmedUrl.Length - 1)
-                        {
-                            var base64Part = trimmedUrl.Substring(base64Index + 1);
-                            imageBytes = Convert.FromBase64String(base64Part);
-                            fileSize = imageBytes.Length;
-                        }
-                        else
-                        {
-                            fileSize = 0;
-                        }
-                    }
-                    else
-                    {
-                        imageBytes = await _imageProcessingService.DownloadImageFromUrlAsync(trimmedUrl, cancellationToken);
-
-                        if (imageBytes == null || imageBytes.Length == 0)
-                        {
-                            return (false, $"Failed to download image from URL: {trimmedUrl}");
-                        }
-
-                        var base64 = Convert.ToBase64String(imageBytes);
-                        imageData = $"data:image/jpeg;base64,{base64}";
-                        fileSize = imageBytes.Length;
-                    }
-
-                    var originalName = trimmedUrl;
-                    if (trimmedUrl.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
-                    {
-                        originalName = $"Captured Image {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}";
-                    }
-                    else if (originalName.Length > 500)
-                    {
-                        originalName = originalName.Substring(0, 500);
-                    }
-
-                    var image = new ProgressUpdateImage
-                    {
-                        ProgressUpdateId = ProgressId,
-                        ImageData = imageData,
-                        ImageType = imageType,
-                        OriginalName = originalName,
-                        FileSize = fileSize,
-                        Sequence = sequence++,
-                        CreatedDate = DateTime.UtcNow
-                    };
-
-                    imagesToAdd.Add(image);
-                }
-                catch (Exception ex)
-                {
-                    return (false, $"Error processing image from URL '{url}': {ex.Message}");
-                }
-
-            }
-        }
-        if (imagesToAdd.Count > 0)
-            await _unitOfWork.Repository<ProgressUpdateImage>().AddRangeAsync(imagesToAdd, cancellationToken);
-        return (true, string.Empty);
-
-    }
+    
     private async Task<decimal> UpdateBoxProgress(Guid boxId, Guid currentUserId, CancellationToken cancellationToken)
     {
         var boxActivities = await _unitOfWork.Repository<BoxActivity>()
@@ -296,7 +192,8 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             return 0;
 
         var averageProgress = boxActivities.Average(ba => ba.ProgressPercentage);
-        var allCompleted = boxActivities.All(ba => ba.Status == BoxStatusEnum.Completed);
+      
+        var allCompleted = boxActivities.All(ba => ba.ProgressPercentage >= 100);
 
         var box = await _unitOfWork.Repository<Box>().GetByIdAsync(boxId, cancellationToken);
         if (box != null)
@@ -414,8 +311,52 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             }
         }
     }
+    private async Task<Result> ValidateProgressUpdateAsync(CreateProgressUpdateCommand request, BoxActivity boxActivity, CancellationToken cancellationToken)
+    {
+        // Check if project is archived (read-only)
+        var isArchived = await _visibilityService
+            .IsProjectArchivedAsync(boxActivity.Box.ProjectId, cancellationToken);
 
-    private async Task AddAuditLogAndWIRRecord(CreateProgressUpdateCommand request, BoxActivity boxActivity, BoxStatusEnum inferredStatus, Guid currentUserId, CancellationToken cancellationToken)
+        if (isArchived)
+            return Result.Failure("Cannot create progress updates in an archived project. Archived projects are read-only.");
+
+        // Check if project is on hold
+        var isOnHold = await _visibilityService.IsProjectOnHoldAsync(boxActivity.Box.ProjectId, cancellationToken);
+
+        if (isOnHold)
+            return Result.Failure( "Cannot create progress updates in a project on hold. Projects on hold only allow project status changes.");
+
+        // Check if box is Dispatched
+        if (boxActivity.Box.Status == BoxStatusEnum.Dispatched)
+            return Result.Failure( "Cannot create progress update. The box is dispatched and no actions are allowed on boxes or activities.");
+
+        // Check if box is OnHold
+        if (boxActivity.Box.Status == BoxStatusEnum.OnHold)
+            return Result.Failure("Cannot create progress update. The box is on hold and no actions are allowed on activities. Only box status changes are allowed.");
+
+        // Check activity status
+        // Allow position-only updates for completed activities (if WIR position data is provided)
+        bool isPositionOnlyUpdate = !string.IsNullOrWhiteSpace(request.WirBay) || 
+                                   !string.IsNullOrWhiteSpace(request.WirRow) || 
+                                   !string.IsNullOrWhiteSpace(request.WirPosition);
+        
+        if (boxActivity.Status == BoxStatusEnum.Completed || boxActivity.Status == BoxStatusEnum.Delayed)
+        {
+            // For completed activities, only allow position updates
+            // Progress percentage must match current progress (no changes allowed)
+            if (!isPositionOnlyUpdate || request.ProgressPercentage != boxActivity.ProgressPercentage)
+            {
+                return Result.Failure("Cannot update progress for completed activities. Only position (Bay/Row) can be updated for completed activities.");
+            }
+        }
+
+        if (boxActivity.Status == BoxStatusEnum.OnHold)
+            return Result.Failure("Cannot create progress update. Activities in 'OnHold' status cannot be modified. Please change the activity status first.");
+
+        return Result.Success();
+    }
+
+    private async Task UpdateBoxActivityAndAddAuditLog(CreateProgressUpdateCommand request, BoxActivity boxActivity, BoxStatusEnum inferredStatus, Guid currentUserId, CancellationToken cancellationToken)
     {
         const string dateFormat = "yyyy-MM-dd HH:mm:ss";
         var oldStatus = boxActivity.Status;
@@ -430,10 +371,11 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         boxActivity.ModifiedDate = DateTime.UtcNow;
         boxActivity.ModifiedBy = currentUserId;
 
-        if ((inferredStatus == BoxStatusEnum.InProgress || inferredStatus == BoxStatusEnum.Completed )&& boxActivity.ActualStartDate == null)
+        if ((inferredStatus == BoxStatusEnum.InProgress || inferredStatus == BoxStatusEnum.Completed || inferredStatus == BoxStatusEnum.Delayed) && boxActivity.ActualStartDate == null)
             boxActivity.ActualStartDate = DateTime.UtcNow;
 
-        if (inferredStatus == BoxStatusEnum.Completed && oldStatus != BoxStatusEnum.Completed)
+        // Set ActualEndDate when activity reaches 100% progress (either Completed or Delayed)
+        if ((inferredStatus == BoxStatusEnum.Completed || inferredStatus == BoxStatusEnum.Delayed) && oldStatus != BoxStatusEnum.Completed && oldStatus != BoxStatusEnum.Delayed)
         {
             boxActivity.ActualEndDate = DateTime.UtcNow;
             boxActivity.ProgressPercentage = 100;
@@ -455,12 +397,12 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             Description = $"Progress updated to {boxActivity.ProgressPercentage}%. Status inferred to {boxActivity.Status.ToString()}."
         };
         await _unitOfWork.Repository<AuditLog>().AddAsync(log, cancellationToken);
+        await _unitOfWork.CompleteAsync(cancellationToken);
 
-        await CreateWIRRecordOrUpdatePositionIfWIRExist(request, boxActivity, currentUserId,cancellationToken);
     }
 
     
-    private async Task CreateWIRRecordOrUpdatePositionIfWIRExist(CreateProgressUpdateCommand request, BoxActivity currentActivity, Guid currentUserId, CancellationToken cancellationToken)
+    private async Task<(bool IsSuccess, string ErrorMessage)> CreateWIRRecordOrUpdatePositionIfWIRExist(CreateProgressUpdateCommand request, BoxActivity currentActivity, Guid currentUserId, CancellationToken cancellationToken)
     {
         BoxActivity? nextWIRActivity = null;
         if (currentActivity.ActivityMaster.IsWIRCheckpoint)
@@ -482,18 +424,20 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
 
         // If no WIR activity found, return
         if (nextWIRActivity == null)
-            return;
+            return (true,"");
 
         // Validate that location (Bay/Row/Position) is unique in the same factory
         // Only validate if position data is being provided
         if (!string.IsNullOrWhiteSpace(request.WirBay) || !string.IsNullOrWhiteSpace(request.WirRow) || !string.IsNullOrWhiteSpace(request.WirPosition))
         {
-            await ValidateUniqueLocationInFactory(
+          var isValideLocation=  await ValidateUniqueLocationInFactory(
                 request.WirBay ?? string.Empty, 
                 request.WirRow ?? string.Empty, 
                 request.WirPosition ?? string.Empty, 
                 currentActivity.BoxId, 
                 cancellationToken);
+            if (!isValideLocation)
+                return (false, $"Location conflict: Bay {request.WirBay}, Row {request.WirRow}, Position {request.WirPosition} is already occupied by another Box in this factory. Please select a different location.");
 
             // Validate that previous WIR (if any) is approved before updating position for the current WIR
             await ValidatePreviousWIRApproved(nextWIRActivity, currentActivity.BoxId, cancellationToken);
@@ -581,13 +525,14 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
                     if (boxNeedsUpdate)
                     {
                         // Validate that this location is not already occupied by another box in the same factory
-                        await ValidateUniqueLocationInFactory(
+                        var isValidateLocation = await ValidateUniqueLocationInFactory(
                             latestWIRWithPosition.Bay ?? string.Empty,
                             latestWIRWithPosition.Row ?? string.Empty,
                             latestWIRWithPosition.Position ?? string.Empty,
                             currentActivity.BoxId,
                             cancellationToken);
-                        
+                        if (!isValidateLocation)
+                            return (false, $"Location conflict: Bay {request.WirBay}, Row {request.WirRow}, Position {request.WirPosition} is already occupied by another Box in this factory. Please select a different location.");
                         string boxOldBay = box.Bay ?? string.Empty;
                         string boxOldRow = box.Row ?? string.Empty;
                         string boxOldPosition = box.Position ?? string.Empty;
@@ -633,6 +578,8 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             await _unitOfWork.Repository<AuditLog>().AddAsync(wIRAuditLog, cancellationToken);
             }
         }
+        
+        return (true,string.Empty);
     }
     private bool UpdateWIRPosition(WIRRecord nearestWIR, CreateProgressUpdateCommand request)
     {
@@ -783,44 +730,83 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
     /// Validates that the Bay/Row/Position combination is unique within the same factory
     /// Prevents two boxes from occupying the same location in a factory
     /// </summary>
-    private async Task ValidateUniqueLocationInFactory(string bayValue, string rowValue, string positionValue, Guid currentBoxId, CancellationToken cancellationToken)
+    private async Task<bool> ValidateUniqueLocationInFactory(string bayValue, string rowValue, string positionValue, Guid currentBoxId, CancellationToken cancellationToken)
     {
         // Only validate if position data is being provided
         if (string.IsNullOrWhiteSpace(bayValue) && 
             string.IsNullOrWhiteSpace(rowValue) && 
             string.IsNullOrWhiteSpace(positionValue))
         {
-            return;
+            return true;
         }
 
         // Get the current box to find its factory
         var currentBox = await _unitOfWork.Repository<Box>().GetByIdAsync(currentBoxId, cancellationToken);
         if (currentBox == null || !currentBox.FactoryId.HasValue)
         {
-            return; // No factory assigned, skip validation
+            return true; // No factory assigned, skip validation
         }
 
         bayValue = bayValue?.Trim() ?? string.Empty;
         rowValue = rowValue?.Trim() ?? string.Empty;
         positionValue = positionValue?.Trim() ?? string.Empty;
 
+        // If the current box already has this exact position, allow it (no conflict)
+        if (currentBox.Bay?.Trim() == bayValue && 
+            currentBox.Row?.Trim() == rowValue && 
+            currentBox.Position?.Trim() == positionValue)
+        {
+            return true; // Same position, no conflict
+        }
+
         // Check if another box in the same factory has the same Bay/Row/Position combination
         var conflictingBox = await _dbContext.Boxes
             .Where(b => b.FactoryId == currentBox.FactoryId &&
-                       b.BoxId != currentBoxId && // Exclude current box
-                       b.Bay == bayValue &&
-                       b.Row == rowValue &&
-                       b.Position == positionValue &&
-                       !string.IsNullOrWhiteSpace(b.Bay) && // Ensure not comparing empty strings
-                       !string.IsNullOrWhiteSpace(b.Row))
+                      b.Status != BoxStatusEnum.Dispatched &&
+                      b.BoxId != currentBoxId && // Exclude current box
+                      b.Bay == bayValue &&
+                      b.Row == rowValue &&
+                      b.Position == positionValue &&
+                      !string.IsNullOrWhiteSpace(b.Bay) && // Ensure not comparing empty strings
+                      !string.IsNullOrWhiteSpace(b.Row))
             .FirstOrDefaultAsync(cancellationToken);
 
         if (conflictingBox != null)
         {
-            throw new InvalidOperationException(
-                $"Location conflict: Bay '{bayValue}', Row '{rowValue}', Position '{positionValue}' " +
-                $"is already occupied by Box '{conflictingBox.BoxTag}' in this factory. " +
-                $"Please select a different location.");
+            return false;
         }
+        return true;
+    }
+
+ 
+    private BoxStatusEnum DetermineActivityStatusAtCompletion(BoxActivity boxActivity)
+    {
+        // If no planned duration is set, default to Completed
+        if (!boxActivity.Duration.HasValue || boxActivity.Duration.Value <= 0)
+        {
+            return BoxStatusEnum.Completed;
+        }
+
+        // Calculate actual duration in days
+        DateTime? actualStart = boxActivity.ActualStartDate;
+        DateTime actualEnd = boxActivity.ActualEndDate ?? DateTime.UtcNow; // Use existing end date or current time
+
+        // If we don't have an actual start date yet, we'll set it now, so duration will be 0
+        if (!actualStart.HasValue)
+        {
+            return BoxStatusEnum.Completed; // Can't determine delay without start date
+        }
+
+        // Calculate actual duration in days
+        var actualDurationDays = (actualEnd - actualStart.Value).TotalDays;
+        var plannedDurationDays = boxActivity.Duration.Value;
+
+        // If actual duration exceeds planned duration, mark as Delayed
+        if (actualDurationDays > plannedDurationDays)
+        {
+            return BoxStatusEnum.Delayed;
+        }
+
+        return BoxStatusEnum.Completed;
     }
 }

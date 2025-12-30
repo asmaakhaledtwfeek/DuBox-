@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule, FormsModule, FormControl } from '@angular/forms';
 import { WIRService } from '../../../core/services/wir.service';
 import { BoxService } from '../../../core/services/box.service';
+import { BoxStatus, canPerformBoxActions } from '../../../core/models/box.model';
 import { AuthService } from '../../../core/services/auth.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { ApiService } from '../../../core/services/api.service';
@@ -69,6 +70,10 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   activityId!: string;
   fromContext: 'quality-control' | 'box-details' = 'box-details';
   readonly highlightSection = 'quality-control';
+  
+  // Box status
+  box: any = null;
+  boxStatus: string | null = null;
   
   // Forms
   checklistForm!: FormGroup;
@@ -413,6 +418,19 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     { label: 'Conditional Approval', value: WIRCheckpointStatus.ConditionalApproval },
     { label: 'Rejected', value: WIRCheckpointStatus.Rejected }
   ];
+
+  // Get available final status options based on current checkpoint status
+  get availableFinalStatusOptions(): Array<{ label: string; value: WIRCheckpointStatus }> {
+    const currentStatus = this.wirCheckpoint?.status as WIRCheckpointStatus;
+    
+    // If checkpoint is already Approved or ConditionallyApproved, exclude Rejected option
+    if (currentStatus === WIRCheckpointStatus.Approved || 
+        currentStatus === WIRCheckpointStatus.ConditionalApproval) {
+      return this.finalStatusOptions.filter(opt => opt.value !== WIRCheckpointStatus.Rejected);
+    }
+    
+    return this.finalStatusOptions;
+  }
   readonly issueTypes: IssueType[] = ['Defect', 'NonConformance', 'Observation'];
   readonly severityLevels: SeverityType[] = ['Critical', 'Major', 'Minor'];
 
@@ -472,6 +490,7 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     }
     
     this.initForm();
+    this.loadBox(); // Load box to get its status
     this.loadWIRRecord();
     this.loadBoxQualityIssues();
     // Don't load predefined items here - will load when modal opens with correct WIR filter
@@ -603,7 +622,7 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     // Create checkpoint form (only user-filled fields)
     this.createCheckpointForm = this.fb.group({
       wirName: ['', [Validators.maxLength(1000)]],
-      wirDescription: ['', [Validators.maxLength(500)]],
+      wirDescription: ['', [Validators.maxLength(1000)]],
       attachmentPath: ['', [Validators.maxLength(500)]],
       comments: ['', [Validators.maxLength(1000)]]
     });
@@ -1069,6 +1088,18 @@ console.log(expectedWirCode);
   }
 
   onAddChecklistItems(): void {
+    // Check if box status allows actions
+    if (this.boxStatus && !canPerformBoxActions(this.boxStatus as BoxStatus)) {
+      const statusMessage = this.boxStatus === 'Dispatched' 
+        ? 'Cannot add checklist items. The box is dispatched and no actions are allowed.'
+        : 'Cannot add checklist items. The box is on hold and no actions are allowed. Only box status changes are allowed.';
+      this.error = statusMessage;
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: statusMessage, type: 'error' }
+      }));
+      return;
+    }
+    
     if (!this.wirCheckpoint || this.selectedPredefinedItemIds.length === 0) {
       this.error = 'Please select at least one predefined checklist item to add.';
       return;
@@ -1600,7 +1631,18 @@ console.log(expectedWirCode);
    * Open Pass All modal
    */
   passAllItems(): void {
-    if (this.isChecklistLocked || this.checklistItems.length === 0 || !this.wirCheckpoint) {
+    // Check if box status allows actions
+    if (this.boxStatus && !canPerformBoxActions(this.boxStatus as BoxStatus)) {
+      const statusMessage = this.boxStatus === 'Dispatched' 
+        ? 'Cannot approve all items. The box is dispatched and no actions are allowed.'
+        : 'Cannot approve all items. The box is on hold and no actions are allowed. Only box status changes are allowed.';
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: statusMessage, type: 'error' }
+      }));
+      return;
+    }
+    
+    if (this.checklistItems.length === 0 || !this.wirCheckpoint) {
       return;
     }
     this.bulkReasonControl.reset();
@@ -1693,7 +1735,18 @@ console.log(expectedWirCode);
    * Open Reject All modal
    */
   rejectAllItems(): void {
-    if (this.isChecklistLocked || this.checklistItems.length === 0 || !this.wirCheckpoint) {
+    // Check if box status allows actions
+    if (this.boxStatus && !canPerformBoxActions(this.boxStatus as BoxStatus)) {
+      const statusMessage = this.boxStatus === 'Dispatched' 
+        ? 'Cannot reject all items. The box is dispatched and no actions are allowed.'
+        : 'Cannot reject all items. The box is on hold and no actions are allowed. Only box status changes are allowed.';
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: statusMessage, type: 'error' }
+      }));
+      return;
+    }
+    
+    if (this.checklistItems.length === 0 || !this.wirCheckpoint) {
       return;
     }
     this.bulkReasonControl.reset();
@@ -1789,7 +1842,8 @@ console.log(expectedWirCode);
   }
 
   openItemReviewModal(itemIndex: number): void {
-    if (this.isChecklistLocked || itemIndex < 0 || itemIndex >= this.checklistItems.length) {
+    // Allow opening review modal at any time - users can change reviews
+    if (itemIndex < 0 || itemIndex >= this.checklistItems.length) {
       return;
     }
     this.selectedReviewItemIndex = itemIndex;
@@ -1840,7 +1894,34 @@ console.log(expectedWirCode);
     return false;
   }
 
+  private loadBox(): void {
+    if (!this.boxId) return;
+    
+    this.boxService.getBox(this.boxId).subscribe({
+      next: (box) => {
+        this.box = box;
+        this.boxStatus = box.status;
+        console.log('📦 Box loaded in checklist. Status:', box.status);
+      },
+      error: (err) => {
+        console.error('Error loading box details:', err);
+      }
+    });
+  }
+
   saveItemReview(): void {
+    // Check if box status allows actions
+    if (this.boxStatus && !canPerformBoxActions(this.boxStatus as BoxStatus)) {
+      const statusMessage = this.boxStatus === 'Dispatched' 
+        ? 'Cannot review checkpoint. The box is dispatched and no actions are allowed.'
+        : 'Cannot review checkpoint. The box is on hold and no actions are allowed. Only box status changes are allowed.';
+      this.error = statusMessage;
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: statusMessage, type: 'error' }
+      }));
+      return;
+    }
+    
     if (this.itemReviewForm.invalid || this.selectedReviewItemIndex === null) {
       this.itemReviewForm.markAllAsTouched();
       return;
@@ -1902,6 +1983,17 @@ console.log(expectedWirCode);
   savingQualityIssue: boolean = false; // Loading state for single issue submission
 
   addQualityIssueFromModal(): void {
+    // Check if box status allows actions
+    if (this.boxStatus && !canPerformBoxActions(this.boxStatus as BoxStatus)) {
+      const statusMessage = this.boxStatus === 'Dispatched' 
+        ? 'Cannot add quality issue. The box is dispatched and no actions are allowed.'
+        : 'Cannot add quality issue. The box is on hold and no actions are allowed. Only box status changes are allowed.';
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: statusMessage, type: 'error' }
+      }));
+      return;
+    }
+    
     if (this.newQualityIssueForm.invalid) {
       this.newQualityIssueForm.markAllAsTouched();
       return;
@@ -2963,24 +3055,13 @@ console.log(expectedWirCode);
   }
 
   canReviewItem(status: CheckpointStatus | string | undefined): boolean {
-    if (!status) return true; // Pending items can be reviewed
-    const statusStr = typeof status === 'string' ? status : String(status);
-    // Only allow review for Fail or Pending status
-    return statusStr === CheckpointStatus.Fail || 
-           statusStr === 'Fail' || 
-           statusStr === CheckpointStatus.Pending || 
-           statusStr === 'Pending';
+    // Allow review for all statuses - users can change reviews any time
+    return true;
   }
 
   getReviewButtonTitle(status: CheckpointStatus | string | undefined, isLocked: boolean): string {
-    if (isLocked) {
-      return 'Checklist is locked after review';
-    }
-    const statusStr = typeof status === 'string' ? status : String(status);
-    if (statusStr === CheckpointStatus.Pass || statusStr === 'Pass') {
-      return 'Cannot review passed items';
-    }
-    return 'Review item';
+    // Allow review at any time - users can change reviews
+    return 'Review or change item status';
   }
 
   get addChecklistItemsArray(): FormArray {
@@ -3528,6 +3609,17 @@ console.log(expectedWirCode);
   }
 
   onSubmitReview(): void {
+    // Check if box status allows actions
+    if (this.boxStatus && !canPerformBoxActions(this.boxStatus as BoxStatus)) {
+      const statusMessage = this.boxStatus === 'Dispatched' 
+        ? 'Cannot review checkpoint. The box is dispatched and no actions are allowed.'
+        : 'Cannot review checkpoint. The box is on hold and no actions are allowed. Only box status changes are allowed.';
+      this.error = statusMessage;
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: statusMessage, type: 'error' }
+      }));
+      return;
+    }
     if (!this.canSubmitReview() || !this.wirCheckpoint) {
       this.markFormGroupTouched(this.checklistForm);
       return;

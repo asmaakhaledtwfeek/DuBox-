@@ -64,10 +64,22 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                 return Result.Failure<QualityIssueDetailsDto>("Cannot update quality issues in a project on hold. Projects on hold only allow project status changes.");
             }
 
-            // Check if box is dispatched - no actions allowed on dispatched boxes
+            // Check if project is closed
+            var isClosed = await _visibilityService.IsProjectClosedAsync(issue.Box.ProjectId, cancellationToken);
+            if (isClosed)
+            {
+                return Result.Failure<QualityIssueDetailsDto>("Cannot update quality issues in a closed project. Closed projects only allow project status changes.");
+            }
+
+            // Check if box is dispatched or on hold - no actions allowed
             if (issue.Box.Status == BoxStatusEnum.Dispatched)
             {
                 return Result.Failure<QualityIssueDetailsDto>("Cannot update quality issue. The box is dispatched and no actions are allowed on quality issues. Only viewing is permitted.");
+            }
+            
+            if (issue.Box.Status == BoxStatusEnum.OnHold)
+            {
+                return Result.Failure<QualityIssueDetailsDto>("Cannot update quality issue. The box is on hold and no actions are allowed on quality issues. Only viewing is permitted.");
             }
 
             // Capture old values for audit log

@@ -26,6 +26,15 @@ namespace Dubox.Application.Specifications
             ApplyPaging(pageSize, page);
             // IsTotalCountEnable = true;
 
+            // Filter out quality issues for inactive boxes or projects
+            AddCriteria(q => q.Box.IsActive);
+            AddCriteria(q => q.Box.Project.IsActive);
+            
+            // Filter out quality issues for projects that are on hold, closed, or archived
+            AddCriteria(q => q.Box.Project.Status != Domain.Enums.ProjectStatusEnum.OnHold);
+            AddCriteria(q => q.Box.Project.Status != Domain.Enums.ProjectStatusEnum.Closed);
+            AddCriteria(q => q.Box.Project.Status != Domain.Enums.ProjectStatusEnum.Archived);
+
             // Apply visibility filtering based on accessible projects
             // null means access to all projects (SystemAdmin/Viewer)
             if (accessibleProjectIds != null)

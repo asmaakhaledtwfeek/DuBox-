@@ -7,10 +7,13 @@ export interface BoxSummaryReportItem {
   projectId: string;
   projectCode: string;
   projectName: string;
+  projectStatus?: string;
   boxTag: string;
   serialNumber?: string;
   boxName?: string;
   boxType: string;
+  boxTypeName?: string;
+  boxSubTypeName?: string;
   floor?: string;
   buildingNumber?: string;
   boxFunction?: string;
@@ -20,6 +23,8 @@ export interface BoxSummaryReportItem {
   status: string;
   currentLocationId?: string;
   currentLocationName?: string;
+  factoryName?: string;
+  factoryPosition?: string;
   plannedStartDate?: Date;
   plannedEndDate?: Date;
   actualStartDate?: Date;
@@ -36,6 +41,7 @@ export interface BoxSummaryReportKpis {
   inProgressCount: number;
   completedCount: number;
   notStartedCount: number;
+  dispatchedCount: number;
   averageProgress: number;
   averageProgressFormatted: string;
 }

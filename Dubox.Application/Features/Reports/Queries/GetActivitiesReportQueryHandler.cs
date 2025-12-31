@@ -1,5 +1,6 @@
 using Dubox.Application.DTOs;
 using Dubox.Application.Specifications;
+using Dubox.Application.Utilities;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
@@ -45,6 +46,51 @@ public class GetActivitiesReportQueryHandler : IRequestHandler<GetActivitiesRepo
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
             var items = activities.Adapt<List<ReportActivityDto>>();
+            
+            // Calculate delay days and formatted delay for each activity
+            for (int i = 0; i < items.Count; i++)
+            {
+                var item = items[i];
+                var activity = activities.FirstOrDefault(a => a.BoxActivityId == item.ActivityId);
+                if (activity != null && activity.Duration.HasValue && activity.ActualStartDate.HasValue && activity.ActualEndDate.HasValue)
+                {
+                    var durationValues = DurationFormatter.CalculateDurationValues(activity.ActualStartDate, activity.ActualEndDate);
+                    if (durationValues != null)
+                    {
+                        var plannedHours = activity.Duration.Value * 24.0;
+                        var actualHours = durationValues.TotalHours;
+                        var delayHours = actualHours - plannedHours;
+                        
+                        if (delayHours > 0)
+                        {
+                            var delayDays = (int)Math.Floor(delayHours / 24.0);
+                            var remainingHours = (int)Math.Round(delayHours % 24);
+                            
+                            // If remaining hours is 24, it means it's a full extra day
+                            if (remainingHours == 24)
+                            {
+                                delayDays++;
+                                remainingHours = 0;
+                            }
+                            
+                            // Format delay: "X days Y hours" or just "X days" if no hours
+                            string? delayFormatted = null;
+                            if (remainingHours == 0)
+                            {
+                                delayFormatted = delayDays == 1 ? "1 day" : $"{delayDays} days";
+                            }
+                            else
+                            {
+                                var daysText = delayDays == 1 ? "1 day" : $"{delayDays} days";
+                                var hoursText = remainingHours == 1 ? "1 hour" : $"{remainingHours} hours";
+                                delayFormatted = $"{daysText} {hoursText}";
+                            }
+                            
+                            items[i] = item with { DelayDays = delayDays, DelayDaysFormatted = delayFormatted };
+                        }
+                    }
+                }
+            }
 
             var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 

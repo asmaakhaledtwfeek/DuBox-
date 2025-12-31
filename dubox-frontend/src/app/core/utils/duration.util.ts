@@ -45,8 +45,14 @@ export function calculateAndFormatDuration(
     }
 
     // If 24 hours or more, show days and hours
-    const days = Math.floor(totalHours / 24);
-    const remainingHours = Math.round(totalHours % 24);
+    let days = Math.floor(totalHours / 24);
+    let remainingHours = Math.round(totalHours % 24);
+
+    // If remainingHours rounds to 24, convert it to an additional day
+    if (remainingHours === 24) {
+      days += 1;
+      remainingHours = 0;
+    }
 
     if (remainingHours === 0) {
       return days === 1 ? '1 day' : `${days} days`;
@@ -84,8 +90,14 @@ export function calculateDurationValues(
     if (diffMs < 0) return undefined;
 
     const totalHours = diffMs / (1000 * 60 * 60);
-    const days = Math.floor(totalHours / 24);
-    const hours = Math.round(totalHours % 24);
+    let days = Math.floor(totalHours / 24);
+    let hours = Math.round(totalHours % 24);
+
+    // If hours rounds to 24, convert it to an additional day
+    if (hours === 24) {
+      days += 1;
+      hours = 0;
+    }
 
     return { days, hours, totalHours };
   } catch {

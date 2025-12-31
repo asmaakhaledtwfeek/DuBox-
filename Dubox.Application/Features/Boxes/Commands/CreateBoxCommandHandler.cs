@@ -81,6 +81,13 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
             return Result.Failure<BoxDto>("Cannot create boxes for a project on hold. Projects on hold only allow status changes.");
         }
 
+        // Check if project is closed
+        var isClosed = await _visibilityService.IsProjectClosedAsync(request.ProjectId, cancellationToken);
+        if (isClosed)
+        {
+            return Result.Failure<BoxDto>("Cannot create boxes for a closed project. Closed projects only allow project status changes.");
+        }
+
         var boxExists = await _unitOfWork.Repository<Box>()
             .IsExistAsync(b => b.ProjectId == request.ProjectId && b.BoxTag == request.BoxTag, cancellationToken);
 

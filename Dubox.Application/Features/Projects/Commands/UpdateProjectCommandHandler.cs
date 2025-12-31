@@ -48,11 +48,25 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
             return Result.Failure<ProjectDto>("Access denied. You do not have permission to update this project.");
         }
 
+        // Check if project is archived - cannot edit archived projects
+        var isArchived = await _visibilityService.IsProjectArchivedAsync(request.ProjectId, cancellationToken);
+        if (isArchived)
+        {
+            return Result.Failure<ProjectDto>("Cannot edit project. Archived projects are read-only and cannot be modified.");
+        }
+
         // Check if project is on hold - cannot edit projects on hold
         var isOnHold = await _visibilityService.IsProjectOnHoldAsync(request.ProjectId, cancellationToken);
         if (isOnHold)
         {
             return Result.Failure<ProjectDto>("Cannot edit project. Projects on hold cannot be modified. Only project status changes are allowed.");
+        }
+
+        // Check if project is closed - cannot edit closed projects
+        var isClosed = await _visibilityService.IsProjectClosedAsync(request.ProjectId, cancellationToken);
+        if (isClosed)
+        {
+            return Result.Failure<ProjectDto>("Cannot edit project. Closed projects cannot be modified. Only project status changes are allowed.");
         }
 
         if (!string.IsNullOrEmpty(request.ProjectCode) && project.ProjectCode != request.ProjectCode)

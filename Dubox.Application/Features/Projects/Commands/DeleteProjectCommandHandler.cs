@@ -1,5 +1,7 @@
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using MediatR;
 
@@ -9,11 +11,13 @@ public class DeleteProjectCommandHandler : IRequestHandler<DeleteProjectCommand,
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IProjectTeamVisibilityService _visibilityService;
 
-    public DeleteProjectCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService)
+    public DeleteProjectCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService, IProjectTeamVisibilityService visibilityService)
     {
         _unitOfWork = unitOfWork;
         _currentUserService = currentUserService;
+        _visibilityService = visibilityService;
     }
 
     public async Task<Result<bool>> Handle(DeleteProjectCommand request, CancellationToken cancellationToken)
@@ -25,6 +29,12 @@ public class DeleteProjectCommandHandler : IRequestHandler<DeleteProjectCommand,
 
         if (project == null)
             return Result.Failure<bool>("Project not found");
+
+        // Check if project is archived - cannot delete archived projects
+        if (project.Status == ProjectStatusEnum.Archived)
+        {
+            return Result.Failure<bool>("Cannot delete project. Archived projects are read-only and cannot be deleted.");
+        }
 
         var projectCode = project.ProjectCode;
         var projectName = project.ProjectName;

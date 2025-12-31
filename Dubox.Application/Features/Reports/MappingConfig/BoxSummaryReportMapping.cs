@@ -12,6 +12,7 @@ public class BoxSummaryReportMapping : IRegister
         config.NewConfig<Box, BoxSummaryReportItemDto>()
             .Map(dest => dest.ProjectCode, src => src.Project != null ? src.Project.ProjectCode : string.Empty)
             .Map(dest => dest.ProjectName, src => src.Project != null ? src.Project.ProjectName : string.Empty)
+            .Map(dest => dest.ProjectStatus, src => src.Project != null ? src.Project.Status.ToString() : string.Empty)
             .Map(dest => dest.ProgressPercentageFormatted, src => ProgressFormatter.FormatProgress(src.ProgressPercentage))
             .Map(dest => dest.Status, src => src.Status.ToString())
             .Map(dest => dest.CurrentLocationName, src => src.CurrentLocation != null ? src.CurrentLocation.LocationName : null)

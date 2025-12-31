@@ -88,6 +88,7 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   isDeleteSectionModalOpen = false;
   isQualityIssueModalOpen = false;
   isQualityIssueDetailsModalOpen = false;
+  qualityIssueFormError: string = '';
   selectedQualityIssueDetails: {
     issue?: QualityIssueItem;
     formIssue?: any;
@@ -891,24 +892,8 @@ console.log(expectedWirCode);
             inspectorRole: this.wirCheckpoint.inspectorRole || ''
           });
           
-          // Load existing attachment path into images array if it exists
-          if (this.wirCheckpoint.attachmentPath) {
-            // Check if it's a URL or a file path
-            if (this.wirCheckpoint.attachmentPath.startsWith('http://') || this.wirCheckpoint.attachmentPath.startsWith('https://')) {
-              this.attachmentImages = [{
-                type: 'url',
-                url: this.wirCheckpoint.attachmentPath,
-                preview: this.wirCheckpoint.attachmentPath
-              }];
-            } else {
-              // For file paths, we'll just show it as a URL for now
-              this.attachmentImages = [{
-                type: 'url',
-                url: this.wirCheckpoint.attachmentPath,
-                preview: this.wirCheckpoint.attachmentPath
-              }];
-            }
-          }
+          // Load existing images from checkpoint
+          this.loadCheckpointImages();
           
           this.initialStepApplied = true;
         } else {
@@ -1609,6 +1594,7 @@ console.log(expectedWirCode);
     });
     this.availableTeamUsers = [];
     this.qualityIssueImages = [];
+    this.qualityIssueFormError = '';
     this.qualityIssueCurrentUrlInput = '';
     this.showQualityIssueCamera = false;
     this.qualityIssuePhotoInputMethod = 'upload';
@@ -2008,6 +1994,16 @@ console.log(expectedWirCode);
 
     const value = this.newQualityIssueForm.value;
     
+    // Ensure issueDescription is not empty (form validation should catch this, but double-check)
+    const issueDescription = value.issueDescription?.trim();
+    if (!issueDescription) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: 'Issue description is required.', type: 'error' }
+      }));
+      this.newQualityIssueForm.get('issueDescription')?.markAsTouched();
+      return;
+    }
+    
     // Separate files from URLs
     const files: File[] = [];
     const imageUrls: string[] = [];
@@ -2030,7 +2026,7 @@ console.log(expectedWirCode);
       wirId: this.wirCheckpoint.wirId,
       issueType: value.issueType,
       severity: value.severity,
-      issueDescription: value.issueDescription?.trim() || '',
+      issueDescription: issueDescription,
       assignedTo: value.assignedTo?.trim() || undefined,
       assignedToUserId: value.assignedToUserId?.trim() || undefined,
       dueDate: value.dueDate || undefined,
@@ -2065,9 +2061,42 @@ console.log(expectedWirCode);
       },
       error: (err) => {
         console.error('Failed to add quality issue:', err);
+        console.error('Error details:', JSON.stringify(err, null, 2));
         this.savingQualityIssue = false;
         
-        const errorMessage = err.error?.message || err.message || 'Failed to add quality issue. Please try again.';
+        // Extract error message from various possible response structures
+        let errorMessage = 'Failed to add quality issue. Please try again.';
+        
+        if (err.error) {
+          // Check for different error response formats
+          // 1. Simple string error from BadRequest("message")
+          if (typeof err.error === 'string') {
+            errorMessage = err.error;
+          }
+          // 2. ProblemDetails object (ASP.NET Core standard)
+          else if (err.error.detail || err.error.title) {
+            errorMessage = err.error.detail || err.error.title || errorMessage;
+          }
+          // 3. Backend Result object structure (PascalCase or camelCase)
+          else if (err.error.message || err.error.Message) {
+            errorMessage = err.error.message || err.error.Message;
+          }
+          // 4. Nested error object
+          else if (err.error.error?.description || err.error.Error?.Description) {
+            errorMessage = err.error.error.description || err.error.Error.Description;
+          }
+          // 5. Check for validation errors array
+          else if (err.error.errors && Array.isArray(err.error.errors)) {
+            errorMessage = err.error.errors.join(', ');
+          }
+        } else if (err.message) {
+          errorMessage = err.message;
+        }
+        
+        // Store error message to display in form
+        this.qualityIssueFormError = errorMessage;
+        
+        // Show error toast
         document.dispatchEvent(new CustomEvent('app-toast', {
           detail: { message: errorMessage, type: 'error' }
         }));
@@ -2611,22 +2640,11 @@ console.log(expectedWirCode);
             inspectorRole: this.wirCheckpoint.inspectorRole || ''
           });
           
-          // Load existing attachment path into images array if it exists
-          if (this.wirCheckpoint.attachmentPath) {
-            if (this.wirCheckpoint.attachmentPath.startsWith('http://') || this.wirCheckpoint.attachmentPath.startsWith('https://')) {
-              this.attachmentImages = [{
-                type: 'url',
-                url: this.wirCheckpoint.attachmentPath,
-                preview: this.wirCheckpoint.attachmentPath
-              }];
-            } else {
-              this.attachmentImages = [{
-                type: 'url',
-                url: this.wirCheckpoint.attachmentPath,
-                preview: this.wirCheckpoint.attachmentPath
-              }];
-            }
-          }
+          // Load existing images from checkpoint
+          this.loadCheckpointImages();
+        } else if (this.wirCheckpoint) {
+          // Even if not Pending, load images if checkpoint exists
+          this.loadCheckpointImages();
         }
         break;
       case 'add-items':
@@ -2690,6 +2708,9 @@ console.log(expectedWirCode);
               inspectorName: this.wirCheckpoint.inspectorName || '',
               inspectorRole: this.wirCheckpoint.inspectorRole || ''
             });
+            
+            // Load existing images from checkpoint
+            this.loadCheckpointImages();
             
             // Load existing attachment path into images array if it exists
             if (this.wirCheckpoint.attachmentPath) {
@@ -3787,6 +3808,83 @@ console.log(expectedWirCode);
       .filter((url: string) => url && url.trim().length > 0);
   }
   
+  /**
+   * Load checkpoint images into attachmentImages array
+   */
+  private loadCheckpointImages(): void {
+    this.attachmentImages = [];
+    
+    if (!this.wirCheckpoint) {
+      return;
+    }
+    
+    // First, try to load from images array (preferred method)
+    if (this.wirCheckpoint.images && Array.isArray(this.wirCheckpoint.images) && this.wirCheckpoint.images.length > 0) {
+      console.log('Loading checkpoint images from images array:', this.wirCheckpoint.images.length);
+      
+      // Sort by sequence
+      const sortedImages = [...this.wirCheckpoint.images].sort((a, b) => (a.sequence || 0) - (b.sequence || 0));
+      
+      sortedImages.forEach((img) => {
+        let imageUrl = '';
+        let preview = '';
+        
+        // Use imageUrl if available (new API returns URL for on-demand loading)
+        if (img.imageUrl) {
+          const baseUrl = this.getApiBaseUrl();
+          imageUrl = img.imageUrl.startsWith('/') ? `${baseUrl}${img.imageUrl}` : img.imageUrl;
+          preview = imageUrl;
+        } else if (img.imageData) {
+          // Fallback to imageData for backward compatibility
+          const imageData = img.imageData;
+          // If it's already a data URL, use as is
+          if (imageData.startsWith('data:image/')) {
+            imageUrl = imageData;
+            preview = imageData;
+          } else if (imageData.startsWith('http://') || imageData.startsWith('https://')) {
+            // If it's a URL, use as is
+            imageUrl = imageData;
+            preview = imageData;
+          } else if (imageData) {
+            // Otherwise, assume it's base64 and add data URI prefix
+            imageUrl = `data:image/jpeg;base64,${imageData}`;
+            preview = imageUrl;
+          }
+        }
+        
+        if (imageUrl) {
+          this.attachmentImages.push({
+            type: 'url',
+            url: imageUrl,
+            preview: preview,
+            name: img.originalName || `Image ${img.sequence || 0}`,
+            size: img.fileSize
+          });
+        }
+      });
+    } else if (this.wirCheckpoint.attachmentPath) {
+      // Fallback to legacy attachmentPath if images array is not available
+      console.log('Loading checkpoint image from attachmentPath (legacy)');
+      const attachmentPath = this.wirCheckpoint.attachmentPath;
+      if (attachmentPath.startsWith('http://') || attachmentPath.startsWith('https://') || attachmentPath.startsWith('data:image/')) {
+        this.attachmentImages = [{
+          type: 'url',
+          url: attachmentPath,
+          preview: attachmentPath
+        }];
+      } else {
+        // For file paths, try to construct a URL or show as base64
+        this.attachmentImages = [{
+          type: 'url',
+          url: attachmentPath,
+          preview: attachmentPath
+        }];
+      }
+    }
+    
+    console.log('Loaded checkpoint images:', this.attachmentImages.length);
+  }
+
   /**
    * Get the API base URL (without /api suffix, since imageUrl already includes /api)
    */

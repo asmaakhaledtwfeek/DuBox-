@@ -71,6 +71,13 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
             return Result.Failure<BoxDto>("Cannot update boxes in a project on hold. Projects on hold only allow status changes.");
         }
 
+        // Check if project is closed
+        var isClosed = await _visibilityService.IsProjectClosedAsync(box.ProjectId, cancellationToken);
+        if (isClosed)
+        {
+            return Result.Failure<BoxDto>("Cannot update boxes in a closed project. Closed projects only allow project status changes.");
+        }
+
         // Check if box is Dispatched - cannot perform any actions
         if (box.Status == BoxStatusEnum.Dispatched)
         {

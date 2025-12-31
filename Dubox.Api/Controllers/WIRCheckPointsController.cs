@@ -193,11 +193,14 @@ namespace Dubox.Api.Controllers
                 if (string.IsNullOrWhiteSpace(issueDescription))
                     return BadRequest("IssueDescription is required");
 
-                Guid assignedToTemp;
-                if (!Guid.TryParse(form["AssignedTo"].FirstOrDefault(), out assignedToTemp))
-                    return BadRequest("Invalid or missing AssignedTo");
+                var assignedToValue = form["AssignedTo"].FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(assignedToValue))
+                {
+                    if (!Guid.TryParse(assignedToValue, out var assignedToTemp))
+                        return BadRequest("Invalid AssignedTo");
 
-                assignedTo = assignedToTemp;
+                    assignedTo = assignedToTemp;
+                }
 
                 // Parse AssignedToUserId if provided
                 if (Guid.TryParse(form["AssignedToUserId"].FirstOrDefault(), out var assignedToUserTemp))

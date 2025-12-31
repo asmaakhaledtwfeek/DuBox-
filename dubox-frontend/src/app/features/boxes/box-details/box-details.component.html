@@ -477,7 +477,8 @@
 
         <!-- Activities Tab -->
         <div *ngIf="activeTab === 'activities'" class="activities-tab">
-          <app-activity-table 
+          <app-activity-table
+            [isProjectClosed]="isProjectClosed"
             [activities]="box.activities || []" 
             [projectId]="projectId"
             [boxId]="boxId"

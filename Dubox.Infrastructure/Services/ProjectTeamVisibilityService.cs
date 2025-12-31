@@ -306,5 +306,18 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
 
         return project.Status == Domain.Enums.ProjectStatusEnum.OnHold;
     }
+
+    public async Task<bool> IsProjectClosedAsync(Guid projectId, CancellationToken cancellationToken = default)
+    {
+        var project = await _context.Projects
+            .FirstOrDefaultAsync(p => p.ProjectId == projectId, cancellationToken);
+
+        if (project == null)
+        {
+            return false;
+        }
+
+        return project.Status == Domain.Enums.ProjectStatusEnum.Closed;
+    }
 }
 

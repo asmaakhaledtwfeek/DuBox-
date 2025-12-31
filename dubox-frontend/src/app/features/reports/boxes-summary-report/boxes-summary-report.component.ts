@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
@@ -33,11 +33,8 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
 
   // Filter state
   filtersCollapsed = false;
-  boxTypeMultiselectOpen = false;
   projects: Project[] = [];
   selectedProjectId = '';
-  selectedBoxTypes: string[] = [];
-  availableBoxTypes: string[] = [];
   availableFloors: string[] = [];
   availableBuildingNumbers: string[] = [];
   availableZones: string[] = [];
@@ -89,13 +86,6 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
     this.searchSubject.complete();
   }
 
-  @HostListener('document:click', ['$event'])
-  handleDocumentClick(event: MouseEvent): void {
-    const target = event.target as HTMLElement;
-    if (!target.closest('.multiselect-container')) {
-      this.boxTypeMultiselectOpen = false;
-    }
-  }
 
   private setupSearchDebounce(): void {
     this.searchSubject
@@ -132,7 +122,6 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
       sortDir: this.sortDir,
       search: this.searchTerm || undefined,
       projectId: this.selectedProjectId || undefined,
-      boxType: this.selectedBoxTypes.length > 0 ? this.selectedBoxTypes : undefined,
       floor: this.selectedFloor || undefined,
       buildingNumber: this.selectedBuildingNumber || undefined,
       zone: this.selectedZone || undefined,
@@ -161,19 +150,16 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
   }
 
   private updateAvailableFilters(items: BoxSummaryReportItem[]): void {
-    const boxTypes = new Set<string>();
     const floors = new Set<string>();
     const buildings = new Set<string>();
     const zones = new Set<string>();
 
     items.forEach(item => {
-      if (item.boxType) boxTypes.add(item.boxType);
       if (item.floor) floors.add(item.floor);
       if (item.buildingNumber) buildings.add(item.buildingNumber);
       if (item.zone) zones.add(item.zone);
     });
 
-    this.availableBoxTypes = Array.from(boxTypes).sort();
     this.availableFloors = Array.from(floors).sort();
     this.availableBuildingNumbers = Array.from(buildings).sort();
     this.availableZones = Array.from(zones).sort();
@@ -195,7 +181,6 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
 
   onResetFilters(): void {
     this.selectedProjectId = '';
-    this.selectedBoxTypes = [];
     this.selectedFloor = '';
     this.selectedBuildingNumber = '';
     this.selectedZone = '';
@@ -234,18 +219,6 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
     this.loadReportData();
   }
 
-  toggleBoxType(boxType: string): void {
-    const index = this.selectedBoxTypes.indexOf(boxType);
-    if (index >= 0) {
-      this.selectedBoxTypes.splice(index, 1);
-    } else {
-      this.selectedBoxTypes.push(boxType);
-    }
-  }
-
-  toggleBoxTypeMultiselect(): void {
-    this.boxTypeMultiselectOpen = !this.boxTypeMultiselectOpen;
-  }
 
   toggleStatus(status: BoxStatus): void {
     const statusNum = getBoxStatusNumber(status);
@@ -288,6 +261,16 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
     return 'badge-default';
   }
 
+  getProjectStatusBadgeClass(status: string): string {
+    const statusLower = status.toLowerCase();
+    if (statusLower.includes('active')) return 'badge-project-active';
+    if (statusLower.includes('completed')) return 'badge-project-completed';
+    if (statusLower.includes('onhold')) return 'badge-project-onhold';
+    if (statusLower.includes('closed')) return 'badge-project-closed';
+    if (statusLower.includes('archived')) return 'badge-project-archived';
+    return 'badge-project-default';
+  }
+
   getProgressBarClass(progress: number): string {
     if (progress >= 75) return 'progress-high';
     if (progress >= 50) return 'progress-medium';
@@ -307,24 +290,35 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
 
     const headers = [
       'Box Tag', 'Serial Number', 'Project', 'Box Type', 'Floor', 'Building Number', 'Zone',
-      'Progress', 'Status', 'Non-Resolved Issues', 'Current Location', 'Activities', 'Assets'
+      'Progress', 'Status', 'Non-Resolved Issues', 'Location', 'Factory', 'Position', 'Activities', 'Assets'
     ];
 
-    const rows = items.map(item => [
-      item.boxTag,
-      item.serialNumber || '',
-      item.projectName,
-      item.boxType,
-      item.floor || '',
-      item.buildingNumber || '',
-      item.zone || '',
-      item.progressPercentageFormatted,
-      item.status,
-      item.qualityIssuesCount || 0,
-      item.currentLocationName || '',
-      item.activitiesCount,
-      item.assetsCount
-    ]);
+    const rows = items.map(item => {
+      const boxTypeDisplay = item.boxTypeName 
+        ? (item.boxSubTypeName ? `${item.boxTypeName} / ${item.boxSubTypeName}` : item.boxTypeName)
+        : (item.boxType || '');
+      const locationDisplay = item.currentLocationName || '';
+      const factoryDisplay = item.factoryName || '';
+      const positionDisplay = item.factoryPosition || '';
+      
+      return [
+        item.boxTag,
+        item.serialNumber || '',
+        item.projectName,
+        boxTypeDisplay,
+        item.floor || '',
+        item.buildingNumber || '',
+        item.zone || '',
+        item.progressPercentageFormatted,
+        item.status,
+        item.qualityIssuesCount || 0,
+        locationDisplay,
+        factoryDisplay,
+        positionDisplay,
+        item.activitiesCount,
+        item.assetsCount
+      ];
+    });
 
     const csvContent = [
       headers.join(','),
@@ -352,21 +346,29 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const exportData = items.map(item => ({
-      'Box Tag': item.boxTag,
-      'Serial Number': item.serialNumber || '',
-      'Project': item.projectName,
-      'Box Type': item.boxType,
-      'Floor': item.floor || '',
-      'Building Number': item.buildingNumber || '',
-      'Zone': item.zone || '',
-      'Progress': item.progressPercentageFormatted,
-      'Status': item.status,
-      'Non-Resolved Issues': item.qualityIssuesCount || 0,
-      'Current Location': item.currentLocationName || '',
-      'Activities': item.activitiesCount,
-      'Assets': item.assetsCount
-    }));
+    const exportData = items.map(item => {
+      const boxTypeDisplay = item.boxTypeName 
+        ? (item.boxSubTypeName ? `${item.boxTypeName} / ${item.boxSubTypeName}` : item.boxTypeName)
+        : (item.boxType || '');
+      
+      return {
+        'Box Tag': item.boxTag,
+        'Serial Number': item.serialNumber || '',
+        'Project': item.projectName,
+        'Box Type': boxTypeDisplay,
+        'Floor': item.floor || '',
+        'Building Number': item.buildingNumber || '',
+        'Zone': item.zone || '',
+        'Progress': item.progressPercentageFormatted,
+        'Status': item.status,
+        'Non-Resolved Issues': item.qualityIssuesCount || 0,
+        'Location': item.currentLocationName || '',
+        'Factory': item.factoryName || '',
+        'Position': item.factoryPosition || '',
+        'Activities': item.activitiesCount,
+        'Assets': item.assetsCount
+      };
+    });
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();

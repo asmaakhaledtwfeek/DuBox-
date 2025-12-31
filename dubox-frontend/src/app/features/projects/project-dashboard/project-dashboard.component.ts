@@ -48,6 +48,8 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
   canChangeStatus = false;
   canImportBoxes = false;
   isProjectOnHold = false;
+  isProjectClosed = false;
+  isProjectArchived = false;
   templateDownloading = false;
   isDraggingFile = false;
   selectedFile: File | null = null;
@@ -67,12 +69,13 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
   compressionDateUpdating = false;
   compressionDateError = '';
 
+  boxes: Box[] = [];
 
   dashboardData = {
     totalBoxes: 0,
     completedBoxes: 0,
     inProgressBoxes: 0,
-    readyForDelivery: 0,
+    dispatchedBoxes: 0,
     notStarted: 0,
     onHold: 0
   };
@@ -151,8 +154,10 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
           compressionStartDate: project.compressionStartDate ? new Date(project.compressionStartDate) : undefined
         };
         
-        // Check if project is on hold
+        // Check if project is on hold, closed, or archived
         this.isProjectOnHold = this.project.status === 'OnHold';
+        this.isProjectClosed = this.project.status === 'Closed';
+        this.isProjectArchived = this.project.status === 'Archived';
 
         // Load boxes to calculate accurate counts
         this.loadBoxesAndCalculateCounts();
@@ -170,12 +175,15 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
       next: (boxes) => {
         console.log('✅ Boxes loaded:', boxes.length);
         
+        // Store boxes for status modal checks
+        this.boxes = boxes;
+        
         // Calculate counts based on actual box statuses
         const counts = {
           totalBoxes: boxes.length,
           completedBoxes: 0,
           inProgressBoxes: 0,
-          readyForDelivery: 0,
+          dispatchedBoxes: 0,
           notStarted: 0,
           onHold: 0
         };
@@ -197,15 +205,15 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
               counts.completedBoxes++;
               break;
             case BoxStatus.ReadyForDelivery:
-              counts.readyForDelivery++;
+              // ReadyForDelivery is also considered in progress
+              counts.inProgressBoxes++;
               break;
             case BoxStatus.Delivered:
               // Delivered is also considered completed
               counts.completedBoxes++;
               break;
             case BoxStatus.Dispatched:
-              // Dispatched is also considered completed
-              counts.completedBoxes++;
+              counts.dispatchedBoxes++;
               break;
             case BoxStatus.OnHold:
               counts.onHold++;
@@ -237,7 +245,7 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
             totalBoxes: this.project.totalBoxes || 0,
             completedBoxes: this.project.completedBoxes || 0,
             inProgressBoxes: this.project.inProgressBoxes || 0,
-            readyForDelivery: this.project.readyForDeliveryBoxes || 0,
+            dispatchedBoxes: 0,
             notStarted: 0,
             onHold: 0
           };
@@ -259,16 +267,45 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
     }
     
     // Get available statuses based on current status and progress
-    // For OnHold projects, progress determines available transitions
+    // For OnHold and Closed projects, progress determines available transitions
     const progress = this.project.progress || 0;
-    this.statusOptions = getAvailableProjectStatuses(this.project.status, progress);
     
-    // Show appropriate message for OnHold projects
+    // Check if all boxes are completed or dispatched (for Closed -> Completed transition)
+    const allBoxesCompletedOrDispatched = this.boxes.length > 0 && this.boxes.every((box: Box) => 
+      box.status === 'Completed' || box.status === 'Dispatched'
+    );
+    
+    // Check if all boxes are dispatched (required for Archived status)
+    const allBoxesDispatched = this.boxes.length > 0 && this.boxes.every((box: Box) => 
+      box.status === 'Dispatched'
+    );
+    
+    this.statusOptions = getAvailableProjectStatuses(this.project.status, progress, allBoxesCompletedOrDispatched, allBoxesDispatched);
+    
+    // Show appropriate message for OnHold, Closed, and Completed projects
     if (this.project.status === ProjectStatus.OnHold) {
       if (progress >= 100) {
-        this.statusError = 'Project is on hold with 100% progress. You can change status to Completed or Archived.';
+        if (allBoxesDispatched) {
+          this.statusError = 'Project is on hold with 100% progress and all boxes dispatched. You can change status to Completed, Archived, or Closed.';
+        } else {
+          this.statusError = 'Project is on hold with 100% progress. You can change status to Completed or Closed. All boxes must be dispatched before archiving.';
+        }
       } else {
-        this.statusError = 'Project is on hold with less than 100% progress. You can only change status to Active.';
+        this.statusError = 'Project is on hold with less than 100% progress. You can change status to Active or Closed.';
+      }
+    } else if (this.project.status === ProjectStatus.Closed) {
+      if (progress >= 100 && allBoxesCompletedOrDispatched) {
+        this.statusError = 'Project is closed with 100% progress and all boxes completed or dispatched. You can change status to Completed.';
+      } else if (progress < 100) {
+        this.statusError = 'Project is closed with less than 100% progress. You can change status to OnHold or Active.';
+      } else {
+        this.statusError = 'Project is closed with 100% progress, but not all boxes are completed or dispatched. Complete or dispatch all boxes before changing to Completed.';
+      }
+    } else if (this.project.status === ProjectStatus.Completed) {
+      if (allBoxesDispatched) {
+        this.statusError = 'Project is completed and all boxes are dispatched. You can change status to OnHold, Closed, or Archived.';
+      } else {
+        this.statusError = 'Project is completed. You can change status to OnHold or Closed. All boxes must be dispatched before archiving.';
       }
     } else {
       this.statusError = '';
@@ -371,11 +408,22 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
       return;
     }
     
-    // Check if project is on hold
-    if (this.isProjectOnHold) {
+    // Check if project is archived, on hold, or closed
+    if (this.isProjectArchived) {
       document.dispatchEvent(new CustomEvent('app-toast', {
         detail: { 
-          message: 'Cannot upload files. Projects on hold cannot be modified. Only project status changes are allowed.',
+          message: 'Cannot upload files. Archived projects are read-only and cannot be modified.',
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+    
+    if (this.isProjectOnHold || this.isProjectClosed) {
+      const status = this.isProjectClosed ? 'closed' : 'on hold';
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: `Cannot upload files. Projects ${status} cannot be modified. Only project status changes are allowed.`,
           type: 'error' 
         }
       }));
@@ -387,11 +435,15 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
   }
 
   onFileChange(event: Event): void {
-    // Check if project is on hold
-    if (this.isProjectOnHold) {
+    // Check if project is archived, on hold, or closed
+    if (this.isProjectArchived || this.isProjectOnHold || this.isProjectClosed) {
+      const status = this.isProjectArchived ? 'archived' : (this.isProjectClosed ? 'closed' : 'on hold');
+      const message = this.isProjectArchived 
+        ? 'Cannot upload files. Archived projects are read-only and cannot be modified.'
+        : `Cannot upload files. Projects ${status} cannot be modified. Only project status changes are allowed.`;
       document.dispatchEvent(new CustomEvent('app-toast', {
         detail: { 
-          message: 'Cannot upload files. Projects on hold cannot be modified. Only project status changes are allowed.',
+          message: message,
           type: 'error' 
         }
       }));
@@ -409,8 +461,8 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
   }
 
   onDragOver(event: DragEvent): void {
-    // Prevent drag & drop if project is on hold
-    if (this.isProjectOnHold) {
+    // Prevent drag & drop if project is archived, on hold, or closed
+    if (this.isProjectArchived || this.isProjectOnHold || this.isProjectClosed) {
       event.preventDefault();
       return;
     }
@@ -431,11 +483,22 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
     event.stopPropagation();
     this.isDraggingFile = false;
 
-    // Check if project is on hold
-    if (this.isProjectOnHold) {
+    // Check if project is archived, on hold, or closed
+    if (this.isProjectArchived) {
       document.dispatchEvent(new CustomEvent('app-toast', {
         detail: { 
-          message: 'Cannot upload files. Projects on hold cannot be modified. Only project status changes are allowed.',
+          message: 'Cannot upload files. Archived projects are read-only and cannot be modified.',
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+    
+    if (this.isProjectOnHold || this.isProjectClosed) {
+      const status = this.isProjectClosed ? 'closed' : 'on hold';
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: `Cannot upload files. Projects ${status} cannot be modified. Only project status changes are allowed.`,
           type: 'error' 
         }
       }));
@@ -449,11 +512,22 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
   }
 
   private setSelectedFile(file: File): void {
-    // Check if project is on hold
-    if (this.isProjectOnHold) {
+    // Check if project is archived, on hold, or closed
+    if (this.isProjectArchived) {
       document.dispatchEvent(new CustomEvent('app-toast', {
         detail: { 
-          message: 'Cannot upload files. Projects on hold cannot be modified. Only project status changes are allowed.',
+          message: 'Cannot upload files. Archived projects are read-only and cannot be modified.',
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+    
+    if (this.isProjectOnHold || this.isProjectClosed) {
+      const status = this.isProjectClosed ? 'closed' : 'on hold';
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: `Cannot upload files. Projects ${status} cannot be modified. Only project status changes are allowed.`,
           type: 'error' 
         }
       }));
@@ -549,11 +623,22 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
       return;
     }
     
-    // Check if project is on hold
-    if (this.isProjectOnHold) {
+    // Check if project is archived, on hold, or closed
+    if (this.isProjectArchived) {
       document.dispatchEvent(new CustomEvent('app-toast', {
         detail: { 
-          message: 'Cannot edit project. Projects on hold cannot be modified. Only project status changes are allowed.',
+          message: 'Cannot edit project. Archived projects are read-only and cannot be modified.',
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+    
+    if (this.isProjectOnHold || this.isProjectClosed) {
+      const status = this.isProjectClosed ? 'closed' : 'on hold';
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: `Cannot edit project. Projects ${status} cannot be modified. Only project status changes are allowed.`,
           type: 'error' 
         }
       }));
@@ -564,6 +649,15 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
   }
 
   openDeleteConfirm(): void {
+    if (this.isProjectArchived) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: 'Cannot delete project. Archived projects are read-only and cannot be deleted.',
+          type: 'error' 
+        }
+      }));
+      return;
+    }
     this.showDeleteConfirm = true;
   }
 
@@ -573,6 +667,17 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
 
   deleteProject(): void {
     if (this.deleting || !this.projectId) {
+      return;
+    }
+    
+    if (this.isProjectArchived) {
+      this.showDeleteConfirm = false;
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: 'Cannot delete project. Archived projects are read-only and cannot be deleted.',
+          type: 'error' 
+        }
+      }));
       return;
     }
 
@@ -715,11 +820,22 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
       return;
     }
     
-    // Check if project is on hold
-    if (this.isProjectOnHold) {
+    // Check if project is archived, on hold, or closed
+    if (this.isProjectArchived) {
       document.dispatchEvent(new CustomEvent('app-toast', {
         detail: { 
-          message: 'Cannot set compression start date. Projects on hold cannot be modified. Only project status changes are allowed.',
+          message: 'Cannot set compression start date. Archived projects are read-only and cannot be modified.',
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+    
+    if (this.isProjectOnHold || this.isProjectClosed) {
+      const status = this.isProjectClosed ? 'closed' : 'on hold';
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: `Cannot set compression start date. Projects ${status} cannot be modified. Only project status changes are allowed.`,
           type: 'error' 
         }
       }));

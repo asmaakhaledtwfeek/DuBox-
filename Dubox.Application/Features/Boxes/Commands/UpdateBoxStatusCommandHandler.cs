@@ -57,6 +57,13 @@ namespace Dubox.Application.Features.Boxes.Commands
                 return Result.Failure<BoxDto>("Cannot update box status in a project on hold. Projects on hold only allow project status changes.");
             }
 
+            // Check if project is closed
+            var isClosed = await _visibilityService.IsProjectClosedAsync(box.ProjectId, cancellationToken);
+            if (isClosed)
+            {
+                return Result.Failure<BoxDto>("Cannot update box status in a closed project. Closed projects only allow project status changes.");
+            }
+
             // Check if box is Dispatched - cannot change status
             if (box.Status == BoxStatusEnum.Dispatched)
             {

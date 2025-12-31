@@ -65,6 +65,24 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                 return Result.Failure<QualityIssueDetailsDto>("Cannot create quality issues in a project on hold. Projects on hold only allow project status changes.");
             }
 
+            // Check if project is closed
+            var isClosed = await _visibilityService.IsProjectClosedAsync(box.ProjectId, cancellationToken);
+            if (isClosed)
+            {
+                return Result.Failure<QualityIssueDetailsDto>("Cannot create quality issues in a closed project. Closed projects only allow project status changes.");
+            }
+
+            // Check if box is dispatched or on hold - no actions allowed
+            if (box.Status == BoxStatusEnum.Dispatched)
+            {
+                return Result.Failure<QualityIssueDetailsDto>("Cannot create quality issues. The box is dispatched and no actions are allowed. Only viewing is permitted.");
+            }
+            
+            if (box.Status == BoxStatusEnum.OnHold)
+            {
+                return Result.Failure<QualityIssueDetailsDto>("Cannot create quality issues. The box is on hold and no actions are allowed. Only viewing is permitted.");
+            }
+
             var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId)
                 ? parsedUserId
                 : Guid.Empty;

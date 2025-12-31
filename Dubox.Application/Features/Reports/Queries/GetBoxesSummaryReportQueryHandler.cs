@@ -83,12 +83,87 @@ public class GetBoxesSummaryReportQueryHandler : IRequestHandler<GetBoxesSummary
                     .ToDictionaryAsync(x => x.BoxId, x => x.Count, cancellationToken)
                 : new Dictionary<Guid, int>();
 
+            // Fetch box type and subtype names for all boxes
+            // Group by project to ensure we query the correct project-specific types
+            var boxTypeLookup = boxes
+                .Where(b => b.BoxTypeId.HasValue)
+                .Select(b => new { b.ProjectId, BoxTypeId = b.BoxTypeId!.Value })
+                .Distinct()
+                .ToList();
+            
+            var boxSubTypeIds = boxes.Where(b => b.BoxSubTypeId.HasValue).Select(b => b.BoxSubTypeId!.Value).Distinct().ToList();
+            
+            // Fetch all box types in a single query
+            var boxTypeNames = new Dictionary<(Guid ProjectId, int BoxTypeId), string>();
+            if (boxTypeLookup.Any())
+            {
+                var projectIds = boxTypeLookup.Select(l => l.ProjectId).Distinct().ToList();
+                var typeIds = boxTypeLookup.Select(l => l.BoxTypeId).Distinct().ToList();
+                
+                var allProjectBoxTypes = await _dbContext.ProjectBoxTypes
+                    .Where(pbt => projectIds.Contains(pbt.ProjectId) && typeIds.Contains(pbt.Id))
+                    .ToListAsync(cancellationToken);
+                
+                foreach (var lookup in boxTypeLookup)
+                {
+                    var projectBoxType = allProjectBoxTypes
+                        .FirstOrDefault(pbt => pbt.Id == lookup.BoxTypeId && pbt.ProjectId == lookup.ProjectId);
+                    if (projectBoxType != null)
+                    {
+                        boxTypeNames[(lookup.ProjectId, lookup.BoxTypeId)] = projectBoxType.TypeName;
+                    }
+                }
+            }
+            
+            var boxSubTypeNames = boxSubTypeIds.Any()
+                ? await _dbContext.ProjectBoxSubTypes
+                    .Where(pbst => boxSubTypeIds.Contains(pbst.Id))
+                    .ToDictionaryAsync(pbst => pbst.Id, pbst => pbst.SubTypeName, cancellationToken)
+                : new Dictionary<int, string>();
+
             var items = boxes.Select(box =>
             {
                 var dto = box.Adapt<BoxSummaryReportItemDto>();
 
+                // Get box type and subtype names
+                string? boxTypeName = null;
+                string? boxSubTypeName = null;
+                if (box.BoxTypeId.HasValue && boxTypeNames.ContainsKey((box.ProjectId, box.BoxTypeId.Value)))
+                {
+                    boxTypeName = boxTypeNames[(box.ProjectId, box.BoxTypeId.Value)];
+                }
+                if (box.BoxSubTypeId.HasValue && boxSubTypeNames.ContainsKey(box.BoxSubTypeId.Value))
+                {
+                    boxSubTypeName = boxSubTypeNames[box.BoxSubTypeId.Value];
+                }
+
+                // Get factory name and position
+                string? factoryName = null;
+                string? factoryPosition = null;
+                if (box.FactoryId != null)
+                {
+                    factoryName = box.Factory?.FactoryName;
+                    // Build position string from Bay, Row, Position
+                    var positionParts = string.Empty;
+                    if (!string.IsNullOrWhiteSpace(box.Position))
+                        positionParts=$"Pos: {box.Position}";
+                  
+                    
+                    factoryPosition = positionParts;
+                }
+                else if (!string.IsNullOrWhiteSpace(box.Bay) || !string.IsNullOrWhiteSpace(box.Row) || !string.IsNullOrWhiteSpace(box.Position))
+                {
+                    var positionParts = string.Empty;
+                    if (!string.IsNullOrWhiteSpace(box.Position))
+                        positionParts = $"Pos: {box.Position}";
+                }
+
                 dto = dto with
                 {
+                    BoxTypeName = boxTypeName,
+                    BoxSubTypeName = boxSubTypeName,
+                    FactoryName = factoryName,
+                    FactoryPosition = factoryPosition,
                     LastUpdateDate = lastUpdateDates.ContainsKey(box.BoxId)
                         ? lastUpdateDates[box.BoxId]
                         : box.ModifiedDate,
@@ -139,6 +214,7 @@ public class GetBoxesSummaryReportQueryHandler : IRequestHandler<GetBoxesSummary
                 InProgressCount = g.Count(b => b.Status == BoxStatusEnum.InProgress),
                 CompletedCount = g.Count(b => b.Status == BoxStatusEnum.Completed),
                 NotStartedCount = g.Count(b => b.Status == BoxStatusEnum.NotStarted),
+                DispatchedCount = g.Count(b => b.Status == BoxStatusEnum.Dispatched),
                 AverageProgress = (decimal?)g.Average(b => b.ProgressPercentage)
             })
             .FirstOrDefaultAsync(cancellationToken);
@@ -151,6 +227,7 @@ public class GetBoxesSummaryReportQueryHandler : IRequestHandler<GetBoxesSummary
                 InProgressCount = 0,
                 CompletedCount = 0,
                 NotStartedCount = 0,
+                DispatchedCount = 0,
                 AverageProgress = 0,
                 AverageProgressFormatted = ProgressFormatter.FormatProgress(0)
             };
@@ -164,6 +241,7 @@ public class GetBoxesSummaryReportQueryHandler : IRequestHandler<GetBoxesSummary
             InProgressCount = stats.InProgressCount,
             CompletedCount = stats.CompletedCount,
             NotStartedCount = stats.NotStartedCount,
+            DispatchedCount = stats.DispatchedCount,
             AverageProgress = averageProgress,
             AverageProgressFormatted = ProgressFormatter.FormatProgress(averageProgress)
         };

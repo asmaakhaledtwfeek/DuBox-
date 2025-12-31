@@ -1,19 +1,8 @@
 namespace Dubox.Application.Utilities;
 
-/// <summary>
-/// Utility class for flexible duration calculation and formatting
-/// </summary>
+
 public static class DurationFormatter
 {
-    /// <summary>
-    /// Calculate and format duration between two timestamps with flexible formatting:
-    /// - Less than 1 hour: shows minutes (e.g., "45 minutes")
-    /// - 1-23 hours: shows hours (e.g., "5.5 hours", "12 hours")
-    /// - 24+ hours: shows days and hours (e.g., "2 days 5 hours")
-    /// </summary>
-    /// <param name="startDate">Start date/timestamp</param>
-    /// <param name="endDate">End date/timestamp</param>
-    /// <returns>Formatted duration string or null if dates are invalid</returns>
     public static string? FormatDuration(DateTime? startDate, DateTime? endDate)
     {
         if (!startDate.HasValue || !endDate.HasValue)
@@ -53,6 +42,13 @@ public static class DurationFormatter
             var days = (int)Math.Floor(totalHours / 24);
             var remainingHours = (int)Math.Round(totalHours % 24);
 
+            // If remainingHours rounds to 24, convert it to an additional day
+            if (remainingHours == 24)
+            {
+                days += 1;
+                remainingHours = 0;
+            }
+
             if (remainingHours == 0)
             {
                 return days == 1 ? "1 day" : $"{days} days";
@@ -68,12 +64,6 @@ public static class DurationFormatter
         }
     }
 
-    /// <summary>
-    /// Calculate duration values between two timestamps
-    /// </summary>
-    /// <param name="startDate">Start date/timestamp</param>
-    /// <param name="endDate">End date/timestamp</param>
-    /// <returns>DurationValues object with days, hours, and total hours, or null if invalid</returns>
     public static DurationValues? CalculateDurationValues(DateTime? startDate, DateTime? endDate)
     {
         if (!startDate.HasValue || !endDate.HasValue)
@@ -92,6 +82,13 @@ public static class DurationFormatter
             var days = (int)Math.Floor(totalHours / 24);
             var hours = (int)Math.Round(totalHours % 24);
 
+            // If hours rounds to 24, convert it to an additional day
+            if (hours == 24)
+            {
+                days += 1;
+                hours = 0;
+            }
+
             return new DurationValues
             {
                 Days = days,
@@ -105,13 +102,6 @@ public static class DurationFormatter
         }
     }
 
-    /// <summary>
-    /// Calculate duration in calendar days (legacy method for backward compatibility)
-    /// Returns (end date - start date) + 1
-    /// </summary>
-    /// <param name="startDate">Start date</param>
-    /// <param name="endDate">End date</param>
-    /// <returns>Number of calendar days + 1, or null if dates are invalid</returns>
     public static int? CalculateDurationInDays(DateTime? startDate, DateTime? endDate)
     {
         if (!startDate.HasValue || !endDate.HasValue)
@@ -144,24 +134,10 @@ public static class DurationFormatter
     }
 }
 
-/// <summary>
-/// Duration values structure
-/// </summary>
 public class DurationValues
 {
-    /// <summary>
-    /// Full days (24-hour periods)
-    /// </summary>
     public int Days { get; init; }
-
-    /// <summary>
-    /// Remaining hours (0-23)
-    /// </summary>
     public int Hours { get; init; }
-
-    /// <summary>
-    /// Total duration in hours (including fractional hours)
-    /// </summary>
     public double TotalHours { get; init; }
 }
 

@@ -113,15 +113,51 @@
           </div>
         </div>
 
-        <div class="kpi-card kpi-inactive">
+        <div class="kpi-card kpi-onhold">
           <div class="kpi-icon">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <div class="kpi-content">
-            <div class="kpi-value">{{ reportData.kpis.inactiveProjects }}</div>
-            <div class="kpi-label">Inactive Projects</div>
+            <div class="kpi-value">{{ reportData.kpis.onHoldProjects }}</div>
+            <div class="kpi-label">OnHold Projects</div>
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-completed">
+          <div class="kpi-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ reportData.kpis.completedProjects }}</div>
+            <div class="kpi-label">Completed Projects</div>
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-archived">
+          <div class="kpi-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ reportData.kpis.archivedProjects }}</div>
+            <div class="kpi-label">Archived Projects</div>
+          </div>
+        </div>
+
+        <div class="kpi-card kpi-closed">
+          <div class="kpi-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ reportData.kpis.closedProjects }}</div>
+            <div class="kpi-label">Closed Projects</div>
           </div>
         </div>
 

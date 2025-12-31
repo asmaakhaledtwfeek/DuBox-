@@ -15,6 +15,8 @@ import { TeamService } from '../../../core/services/team.service';
 import { Team } from '../../../core/models/team.model';
 import { BoxService } from '../../../core/services/box.service';
 import { BoxStatus } from '../../../core/models/box.model';
+import { ProjectService } from '../../../core/services/project.service';
+import { ProjectStatus } from '../../../core/models/project.model';
 import { map } from 'rxjs/operators';
 import * as ExcelJS from 'exceljs';
 import { environment } from '../../../../environments/environment';
@@ -135,6 +137,10 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   // Cache for box statuses to avoid multiple API calls
   private boxStatusCache: Map<string, BoxStatus | null> = new Map();
   private boxStatusLoading: Set<string> = new Set();
+  
+  // Cache for project statuses to avoid multiple API calls
+  private projectStatusCache: Map<string, ProjectStatus | null> = new Map();
+  private projectStatusLoading: Set<string> = new Set();
 
   constructor(
     private fb: FormBuilder,
@@ -144,7 +150,8 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     private permissionService: PermissionService,
     private authService: AuthService,
     private teamService: TeamService,
-    private boxService: BoxService
+    private boxService: BoxService,
+    private projectService: ProjectService
   ) {
     this.isSystemAdmin = this.authService.isSystemAdmin();
     this.filterForm = this.fb.group({
@@ -302,8 +309,15 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
       return false;
     }
     
-    // Check if box is dispatched - no actions allowed
-    if (this.isBoxDispatched(checkpoint.boxId)) {
+    const projectId = checkpoint.projectId || checkpoint.box?.projectId;
+    
+    // Check if box is dispatched or on hold - no actions allowed
+    if (this.isBoxDispatched(checkpoint.boxId) || this.isBoxOnHold(checkpoint.boxId)) {
+      return false;
+    }
+    
+    // Check if project is on hold, closed, or archived - no actions allowed
+    if (projectId && this.isProjectRestricted(projectId)) {
       return false;
     }
     
@@ -325,8 +339,15 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
       return false;
     }
     
-    // Check if box is dispatched - no actions allowed
-    if (this.isBoxDispatched(checkpoint.boxId)) {
+    const projectId = checkpoint.projectId || checkpoint.box?.projectId;
+    
+    // Check if box is dispatched or on hold - no actions allowed
+    if (this.isBoxDispatched(checkpoint.boxId) || this.isBoxOnHold(checkpoint.boxId)) {
+      return false;
+    }
+    
+    // Check if project is on hold, closed, or archived - no actions allowed
+    if (projectId && this.isProjectRestricted(projectId)) {
       return false;
     }
     
@@ -336,7 +357,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Check if box is dispatched (cached)
+   * Check if box is dispatched or on hold (cached)
    */
   isBoxDispatched(boxId: string | undefined): boolean {
     if (!boxId) {
@@ -354,6 +375,52 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     }
     
     // Return false by default (optimistic - allow actions until we know box is dispatched)
+    return false;
+  }
+
+  /**
+   * Check if box is on hold (cached)
+   */
+  isBoxOnHold(boxId: string | undefined): boolean {
+    if (!boxId) {
+      return false;
+    }
+    
+    const cachedStatus = this.boxStatusCache.get(boxId);
+    if (cachedStatus !== undefined) {
+      return cachedStatus === BoxStatus.OnHold;
+    }
+    
+    // If not cached and not currently loading, fetch it
+    if (!this.boxStatusLoading.has(boxId)) {
+      this.fetchBoxStatus(boxId);
+    }
+    
+    // Return false by default (optimistic - allow actions until we know box is on hold)
+    return false;
+  }
+
+  /**
+   * Check if project is on hold, closed, or archived (cached)
+   */
+  isProjectRestricted(projectId: string | undefined): boolean {
+    if (!projectId) {
+      return false;
+    }
+    
+    const cachedStatus = this.projectStatusCache.get(projectId);
+    if (cachedStatus !== undefined) {
+      return cachedStatus === ProjectStatus.OnHold || 
+             cachedStatus === ProjectStatus.Closed || 
+             cachedStatus === ProjectStatus.Archived;
+    }
+    
+    // If not cached and not currently loading, fetch it
+    if (!this.projectStatusLoading.has(projectId)) {
+      this.fetchProjectStatus(projectId);
+    }
+    
+    // Return false by default (optimistic - allow actions until we know project is restricted)
     return false;
   }
 
@@ -381,22 +448,70 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Check if quality issue actions are allowed (box not dispatched)
+   * Fetch project status and cache it
+   */
+  private fetchProjectStatus(projectId: string): void {
+    if (this.projectStatusLoading.has(projectId)) {
+      return; // Already loading
+    }
+    
+    this.projectStatusLoading.add(projectId);
+    this.projectService.getProject(projectId).subscribe({
+      next: (project) => {
+        const status = project.status as ProjectStatus;
+        this.projectStatusCache.set(projectId, status);
+        this.projectStatusLoading.delete(projectId);
+      },
+      error: (err) => {
+        console.error('Error fetching project status:', err);
+        this.projectStatusCache.set(projectId, null); // Cache null to avoid repeated calls
+        this.projectStatusLoading.delete(projectId);
+      }
+    });
+  }
+
+  /**
+   * Check if quality issue actions are allowed (box not dispatched/on hold, project not restricted)
    */
   canPerformQualityIssueActions(issue: AggregatedQualityIssue): boolean {
     if (!issue.boxId) {
       return true; // Allow if no boxId (shouldn't happen, but be safe)
     }
     
-    return !this.isBoxDispatched(issue.boxId);
+    // Check if box is dispatched or on hold - no actions allowed
+    if (this.isBoxDispatched(issue.boxId) || this.isBoxOnHold(issue.boxId)) {
+      return false;
+    }
+    
+    // Check if project is on hold, closed, or archived - no actions allowed
+    if (issue.projectId && this.isProjectRestricted(issue.projectId)) {
+      return false;
+    }
+    
+    return true;
   }
 
   onAddChecklist(checkpoint: EnrichedCheckpoint): void {
-    // Check if box is dispatched
-    if (this.isBoxDispatched(checkpoint.boxId)) {
+    // Check if box is dispatched or on hold
+    if (this.isBoxDispatched(checkpoint.boxId) || this.isBoxOnHold(checkpoint.boxId)) {
+      const boxStatus = this.isBoxDispatched(checkpoint.boxId) ? 'dispatched' : 'on hold';
       document.dispatchEvent(new CustomEvent('app-toast', {
         detail: {
-          message: 'Cannot perform actions. The box is dispatched and no actions are allowed on checkpoints.',
+          message: `Cannot perform actions. The box is ${boxStatus} and no actions are allowed on checkpoints.`,
+          type: 'error'
+        }
+      }));
+      return;
+    }
+    
+    const projectId = checkpoint.projectId || checkpoint.box?.projectId;
+    if (projectId && this.isProjectRestricted(projectId)) {
+      const cachedStatus = this.projectStatusCache.get(projectId);
+      const statusText = cachedStatus === ProjectStatus.OnHold ? 'on hold' : 
+                         cachedStatus === ProjectStatus.Closed ? 'closed' : 'archived';
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: {
+          message: `Cannot perform actions. The project is ${statusText} and no actions are allowed on checkpoints.`,
           type: 'error'
         }
       }));
@@ -408,11 +523,26 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   }
 
   onReviewCheckpoint(checkpoint: EnrichedCheckpoint): void {
-    // Check if box is dispatched
-    if (this.isBoxDispatched(checkpoint.boxId)) {
+    // Check if box is dispatched or on hold
+    if (this.isBoxDispatched(checkpoint.boxId) || this.isBoxOnHold(checkpoint.boxId)) {
+      const boxStatus = this.isBoxDispatched(checkpoint.boxId) ? 'dispatched' : 'on hold';
       document.dispatchEvent(new CustomEvent('app-toast', {
         detail: {
-          message: 'Cannot perform actions. The box is dispatched and no actions are allowed on checkpoints.',
+          message: `Cannot perform actions. The box is ${boxStatus} and no actions are allowed on checkpoints.`,
+          type: 'error'
+        }
+      }));
+      return;
+    }
+    
+    const projectId = checkpoint.projectId || checkpoint.box?.projectId;
+    if (projectId && this.isProjectRestricted(projectId)) {
+      const cachedStatus = this.projectStatusCache.get(projectId);
+      const statusText = cachedStatus === ProjectStatus.OnHold ? 'on hold' : 
+                         cachedStatus === ProjectStatus.Closed ? 'closed' : 'archived';
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: {
+          message: `Cannot perform actions. The project is ${statusText} and no actions are allowed on checkpoints.`,
           type: 'error'
         }
       }));
@@ -504,10 +634,14 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
           this.checkpointsTotalPages = 1;
         }
         
-        // Pre-fetch box statuses for all checkpoints
+        // Pre-fetch box statuses and project statuses for all checkpoints
         this.checkpoints.forEach(checkpoint => {
           if (checkpoint.boxId && !this.boxStatusCache.has(checkpoint.boxId) && !this.boxStatusLoading.has(checkpoint.boxId)) {
             this.fetchBoxStatus(checkpoint.boxId);
+          }
+          const projectId = checkpoint.projectId || checkpoint.box?.projectId;
+          if (projectId && !this.projectStatusCache.has(projectId) && !this.projectStatusLoading.has(projectId)) {
+            this.fetchProjectStatus(projectId);
           }
         });
         
@@ -670,9 +804,12 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
         };
         console.log('📋 Mapped issue projectName:', mapped.projectName);
         
-        // Pre-fetch box status for this issue
+        // Pre-fetch box status and project status for this issue
         if (mapped.boxId && !this.boxStatusCache.has(mapped.boxId) && !this.boxStatusLoading.has(mapped.boxId)) {
           this.fetchBoxStatus(mapped.boxId);
+        }
+        if (mapped.projectId && !this.projectStatusCache.has(mapped.projectId) && !this.projectStatusLoading.has(mapped.projectId)) {
+          this.fetchProjectStatus(mapped.projectId);
         }
         
         return mapped;
@@ -838,11 +975,24 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
 
 
   openAssignModal(issue: AggregatedQualityIssue): void {
-    // Check if box is dispatched
+    // Check if box is dispatched/on hold or project is restricted
     if (!this.canPerformQualityIssueActions(issue)) {
+      let message = 'Cannot perform actions. ';
+      if (issue.boxId) {
+        if (this.isBoxDispatched(issue.boxId)) {
+          message += 'The box is dispatched and no actions are allowed on quality issues.';
+        } else if (this.isBoxOnHold(issue.boxId)) {
+          message += 'The box is on hold and no actions are allowed on quality issues.';
+        } else if (issue.projectId && this.isProjectRestricted(issue.projectId)) {
+          const cachedStatus = this.projectStatusCache.get(issue.projectId);
+          const statusText = cachedStatus === ProjectStatus.OnHold ? 'on hold' : 
+                             cachedStatus === ProjectStatus.Closed ? 'closed' : 'archived';
+          message += `The project is ${statusText} and no actions are allowed on quality issues.`;
+        }
+      }
       document.dispatchEvent(new CustomEvent('app-toast', {
         detail: {
-          message: 'Cannot perform actions. The box is dispatched and no actions are allowed on quality issues.',
+          message: message,
           type: 'error'
         }
       }));
@@ -948,11 +1098,24 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   }
 
   openStatusModal(issue: AggregatedQualityIssue): void {
-    // Check if box is dispatched
+    // Check if box is dispatched/on hold or project is restricted
     if (!this.canPerformQualityIssueActions(issue)) {
+      let message = 'Cannot perform actions. ';
+      if (issue.boxId) {
+        if (this.isBoxDispatched(issue.boxId)) {
+          message += 'The box is dispatched and no actions are allowed on quality issues.';
+        } else if (this.isBoxOnHold(issue.boxId)) {
+          message += 'The box is on hold and no actions are allowed on quality issues.';
+        } else if (issue.projectId && this.isProjectRestricted(issue.projectId)) {
+          const cachedStatus = this.projectStatusCache.get(issue.projectId);
+          const statusText = cachedStatus === ProjectStatus.OnHold ? 'on hold' : 
+                             cachedStatus === ProjectStatus.Closed ? 'closed' : 'archived';
+          message += `The project is ${statusText} and no actions are allowed on quality issues.`;
+        }
+      }
       document.dispatchEvent(new CustomEvent('app-toast', {
         detail: {
-          message: 'Cannot perform actions. The box is dispatched and no actions are allowed on quality issues.',
+          message: message,
           type: 'error'
         }
       }));

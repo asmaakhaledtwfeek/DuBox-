@@ -106,6 +106,7 @@ export class ActivityDetailsComponent implements OnInit {
   // Project status flags
   isProjectOnHold = false;
   isProjectArchived = false;
+  isProjectClosed = false;
   project: any = null;
   
   // Box status
@@ -155,8 +156,9 @@ export class ActivityDetailsComponent implements OnInit {
         this.project = project;
         this.isProjectArchived = project.status === 'Archived';
         this.isProjectOnHold = project.status === 'OnHold';
+        this.isProjectClosed = project.status === 'Closed';
         this.updatePermissions();
-        console.log('📁 Project loaded in activity details. Status:', project.status, 'Is Archived:', this.isProjectArchived, 'Is OnHold:', this.isProjectOnHold);
+        console.log('📁 Project loaded in activity details. Status:', project.status, 'Is Archived:', this.isProjectArchived, 'Is OnHold:', this.isProjectOnHold, 'Is Closed:', this.isProjectClosed);
       },
       error: (err) => {
         console.error('Error loading project details:', err);
@@ -206,18 +208,18 @@ export class ActivityDetailsComponent implements OnInit {
     }
     
     // Disable all actions if:
-    // - Project is archived or on hold
+    // - Project is archived, on hold, or closed
     // - Box status doesn't allow activity actions
     // - Activity status doesn't allow actions (OnHold only, Completed is allowed for position updates)
-    const baseCanPerformActions = !this.isProjectArchived && !this.isProjectOnHold && canPerformActivityActionsBasedOnBoxStatus && canPerformActionsByActivityStatus;
+    const baseCanPerformActions = !this.isProjectArchived && !this.isProjectOnHold && !this.isProjectClosed && canPerformActivityActionsBasedOnBoxStatus && canPerformActionsByActivityStatus;
     
-    this.canAssignTeam = baseCanPerformActions && !isCompleted; // Don't allow team assignment for completed
-    this.canIssueMaterial = baseCanPerformActions && !isCompleted; // Don't allow material issuance for completed
-    this.canSetSchedule = baseCanPerformActions && !isCompleted; // Don't allow schedule changes for completed
-    this.canUpdateProgress = baseCanPerformActions && !isCompleted; // Allow progress modal for completed (position updates only)
+    this.canAssignTeam = baseCanPerformActions && !isCompleted; // Don't allow team assignment for completed/delayed
+    this.canIssueMaterial = baseCanPerformActions && !isCompleted; // Don't allow material issuance for completed/delayed
+    this.canSetSchedule = baseCanPerformActions && !isCompleted; // Don't allow schedule changes for completed/delayed
+    this.canUpdateProgress = baseCanPerformActions; // Allow progress modal for completed/delayed (position updates only, handled by modal)
     
-    // Disable forms if project is on hold or archived, or if box/activity status doesn't allow activity actions
-    if (this.isProjectArchived || this.isProjectOnHold || !canPerformActivityActionsBasedOnBoxStatus || !canPerformActionsByActivityStatus) {
+    // Disable forms if project is on hold, closed, or archived, or if box/activity status doesn't allow activity actions
+    if (this.isProjectArchived || this.isProjectOnHold || this.isProjectClosed || !canPerformActivityActionsBasedOnBoxStatus || !canPerformActionsByActivityStatus) {
       this.statusForm?.disable();
       this.assignTeamForm?.disable();
       this.issueMaterialForm?.disable();
@@ -681,7 +683,7 @@ export class ActivityDetailsComponent implements OnInit {
 
   openProgressModal(): void {
     // Check if project status allows actions
-    if (this.isProjectArchived || this.isProjectOnHold) {
+    if (this.isProjectArchived || this.isProjectOnHold || this.isProjectClosed) {
       document.dispatchEvent(new CustomEvent('app-toast', {
         detail: { 
           message: this.isProjectArchived 
@@ -1040,12 +1042,18 @@ export class ActivityDetailsComponent implements OnInit {
 
   // Update Status Modal
   openUpdateStatusModal(): void {
-    if (this.isProjectArchived || this.isProjectOnHold) {
+    if (this.isProjectArchived || this.isProjectOnHold || this.isProjectClosed) {
+      let message = 'Cannot update activity status.';
+      if (this.isProjectArchived) {
+        message = 'Cannot update activity status. This project is archived and read-only.';
+      } else if (this.isProjectClosed) {
+        message = 'Cannot update activity status. This project is closed. Only project status changes are allowed.';
+      } else if (this.isProjectOnHold) {
+        message = 'Cannot update activity status. This project is on hold. Only project status changes are allowed.';
+      }
       document.dispatchEvent(new CustomEvent('app-toast', {
         detail: { 
-          message: this.isProjectArchived 
-            ? 'Cannot update activity status. This project is archived and read-only.' 
-            : 'Cannot update activity status. This project is on hold. Only project status changes are allowed.',
+          message: message,
           type: 'error' 
         }
       }));
@@ -1119,12 +1127,18 @@ export class ActivityDetailsComponent implements OnInit {
   }
 
   onUpdateStatus(): void {
-    if (this.isProjectArchived || this.isProjectOnHold) {
+    if (this.isProjectArchived || this.isProjectOnHold || this.isProjectClosed) {
+      let message = 'Cannot update activity status.';
+      if (this.isProjectArchived) {
+        message = 'Cannot update activity status. This project is archived and read-only.';
+      } else if (this.isProjectClosed) {
+        message = 'Cannot update activity status. This project is closed. Only project status changes are allowed.';
+      } else if (this.isProjectOnHold) {
+        message = 'Cannot update activity status. This project is on hold. Only project status changes are allowed.';
+      }
       document.dispatchEvent(new CustomEvent('app-toast', {
         detail: { 
-          message: this.isProjectArchived 
-            ? 'Cannot update activity status. This project is archived and read-only.' 
-            : 'Cannot update activity status. This project is on hold. Only project status changes are allowed.',
+          message: message,
           type: 'error' 
         }
       }));
@@ -1183,7 +1197,7 @@ export class ActivityDetailsComponent implements OnInit {
   // Assign Team Modal
   openAssignTeamModal(): void {
     // Check if project status allows actions
-    if (this.isProjectArchived || this.isProjectOnHold) {
+    if (this.isProjectArchived || this.isProjectOnHold || this.isProjectClosed) {
       document.dispatchEvent(new CustomEvent('app-toast', {
         detail: { 
           message: this.isProjectArchived 
@@ -1331,7 +1345,7 @@ export class ActivityDetailsComponent implements OnInit {
 
   // Issue Material Modal
   openIssueMaterialModal(): void {
-    if (this.isProjectArchived || this.isProjectOnHold) {
+    if (this.isProjectArchived || this.isProjectOnHold || this.isProjectClosed) {
       document.dispatchEvent(new CustomEvent('app-toast', {
         detail: { 
           message: this.isProjectArchived 
@@ -1371,7 +1385,7 @@ export class ActivityDetailsComponent implements OnInit {
 
   // Set Schedule Modal
   openSetScheduleModal(): void {
-    if (this.isProjectArchived || this.isProjectOnHold) {
+    if (this.isProjectArchived || this.isProjectOnHold || this.isProjectClosed) {
       document.dispatchEvent(new CustomEvent('app-toast', {
         detail: { 
           message: this.isProjectArchived 

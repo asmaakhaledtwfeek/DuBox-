@@ -53,6 +53,10 @@ public record ProjectsSummaryReportKpisDto
     public int TotalProjects { get; init; }
     public int ActiveProjects { get; init; }
     public int InactiveProjects { get; init; }
+    public int OnHoldProjects { get; init; }
+    public int CompletedProjects { get; init; }
+    public int ArchivedProjects { get; init; }
+    public int ClosedProjects { get; init; }
     public int TotalBoxes { get; init; }
     public decimal AverageProgressPercentage { get; init; }
     public string AverageProgressPercentageFormatted { get; init; } = string.Empty;
@@ -112,10 +116,13 @@ public record BoxSummaryReportItemDto
     public Guid ProjectId { get; init; }
     public string ProjectCode { get; init; } = string.Empty;
     public string ProjectName { get; init; } = string.Empty;
+    public string ProjectStatus { get; init; } = string.Empty;
     public string BoxTag { get; init; } = string.Empty;
     public string? SerialNumber { get; init; }
     public string? BoxName { get; init; }
     public string BoxType { get; init; } = string.Empty;
+    public string? BoxTypeName { get; init; }
+    public string? BoxSubTypeName { get; init; }
     public string? Floor { get; init; }
     public string? BuildingNumber { get; init; }
     public string? BoxLetter { get; init; }
@@ -125,6 +132,8 @@ public record BoxSummaryReportItemDto
     public string Status { get; init; } = string.Empty;
     public Guid? CurrentLocationId { get; init; }
     public string? CurrentLocationName { get; init; }
+    public string? FactoryName { get; init; }
+    public string? FactoryPosition { get; init; }
     public DateTime? PlannedStartDate { get; init; }
     public DateTime? PlannedEndDate { get; init; }
     public DateTime? ActualStartDate { get; init; }
@@ -145,6 +154,7 @@ public record BoxSummaryReportKpisDto
     public int InProgressCount { get; init; }
     public int CompletedCount { get; init; }
     public int NotStartedCount { get; init; }
+    public int DispatchedCount { get; init; }
     public decimal AverageProgress { get; init; }
     public string AverageProgressFormatted { get; init; } = string.Empty;
 }

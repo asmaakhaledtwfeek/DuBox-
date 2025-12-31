@@ -67,12 +67,4 @@ public class BoxActivity
     [NotMapped]
     public bool IsCompleted => Status == BoxStatusEnum.Completed || ProgressPercentage >= 100;
 
-    [NotMapped]
-    public bool IsDelayed => PlannedEndDate.HasValue &&
-                             !ActualEndDate.HasValue &&
-                             PlannedEndDate < DateTime.Today;
-
-    [NotMapped]
-    public int DelayDays => IsDelayed ?
-        (DateTime.Today - PlannedEndDate!.Value).Days : 0;
 }

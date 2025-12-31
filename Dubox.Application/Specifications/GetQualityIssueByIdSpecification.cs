@@ -8,6 +8,9 @@ namespace Dubox.Application.Specifications
         public GetQualityIssueByIdSpecification(Guid issueId)
         {
             AddCriteria(i => i.IssueId == issueId);
+            // Filter out quality issues for inactive boxes or projects
+            AddCriteria(i => i.Box.IsActive);
+            AddCriteria(i => i.Box.Project.IsActive);
             AddInclude(nameof(QualityIssue.Box));
             AddInclude($"{nameof(QualityIssue.Box)}.{nameof(Box.Project)}");
             AddInclude(nameof(QualityIssue.WIRCheckpoint));

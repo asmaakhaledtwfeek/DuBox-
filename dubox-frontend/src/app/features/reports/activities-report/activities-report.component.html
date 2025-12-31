@@ -71,7 +71,7 @@
           </div>
           <div class="kpi-content">
             <div class="kpi-value">{{ summary.pending | number }}</div>
-            <div class="kpi-label">Pending</div>
+            <div class="kpi-label">Not Started</div>
           </div>
         </div>
 
@@ -99,29 +99,6 @@
           </div>
         </div>
 
-        <div class="kpi-card">
-          <div class="kpi-icon red">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </div>
-          <div class="kpi-content">
-            <div class="kpi-value">{{ summary.overdue | number }}</div>
-            <div class="kpi-label">Overdue</div>
-          </div>
-        </div>
-
-        <div class="kpi-card">
-          <div class="kpi-icon yellow">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <div class="kpi-content">
-            <div class="kpi-value">{{ summary.dueThisWeek | number }}</div>
-            <div class="kpi-label">Due This Week</div>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -153,8 +130,8 @@
           <div class="filter-group">
             <label>Status</label>
             <select [(ngModel)]="selectedStatus" (change)="onFilterChange()">
-              <option [value]="null">All Statuses</option>
-              <option *ngFor="let status of statusOptions" [value]="status.value">{{ status.label }}</option>
+              <option [ngValue]="null">All Statuses</option>
+              <option *ngFor="let status of statusOptions" [ngValue]="status.value">{{ status.label }}</option>
             </select>
           </div>
 
@@ -221,11 +198,8 @@
               <th>Activity Name</th>
               <th>Box Tag</th>
               <th>Project</th>
-              <th>Team</th>
               <th>Status</th>
               <th>Progress</th>
-              <th>Planned Start</th>
-              <th>Planned End</th>
               <th>Actual Start</th>
               <th>Actual End</th>
               <th>Actual Duration</th>
@@ -237,7 +211,6 @@
               <td class="activity-name">{{ activity.activityName }}</td>
               <td class="box-tag">{{ activity.boxTag }}</td>
               <td class="project-name">{{ activity.projectName }}</td>
-              <td class="team-name">{{ activity.assignedTeam || 'N/A' }}</td>
               <td>
                 <span class="status-badge" [ngClass]="getStatusClass(activity.status)">
                   {{ getStatusLabel(activity.status) }}
@@ -249,13 +222,16 @@
                   <span class="progress-text">{{ formatProgress(activity.progressPercentage) }}</span>
                 </div>
               </td>
-              <td class="date-cell">{{ formatDate(activity.plannedStartDate) }}</td>
-              <td class="date-cell">{{ formatDate(activity.plannedEndDate) }}</td>
               <td class="date-cell">{{ formatDate(activity.actualStartDate) }}</td>
               <td class="date-cell">{{ formatDate(activity.actualEndDate) }}</td>
-              <td class="duration-cell">{{ formatActualDuration(activity) }}</td>
+              <td class="duration-cell">
+                <span>{{ formatActualDuration(activity) }}</span>
+              </td>
               <td class="delay-cell" [class.delayed]="activity.delayDays && activity.delayDays > 0">
-                {{ activity.delayDays !== null && activity.delayDays !== undefined ? activity.delayDays + ' days' : 'N/A' }}
+                <span *ngIf="activity.delayDays && activity.delayDays > 0; else noDelay">
+                  {{ activity.delayDaysFormatted || (activity.delayDays !== null && activity.delayDays !== undefined ? activity.delayDays + ' days' : 'N/A') }}
+                </span>
+                <ng-template #noDelay>N/A</ng-template>
               </td>
             </tr>
           </tbody>

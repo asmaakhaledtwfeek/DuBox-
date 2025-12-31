@@ -25,6 +25,7 @@ export interface ReportActivity {
   actualEndDate?: string;
   actualDuration?: number;
   delayDays?: number;
+  delayDaysFormatted?: string;
   boxId: string;
   projectId: string;
 }

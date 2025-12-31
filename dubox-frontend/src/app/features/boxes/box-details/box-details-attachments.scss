@@ -1,5 +1,5 @@
 .attachments-tab {
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.15s ease-out;
 }
 
 .attachments-summary {
@@ -8,9 +8,9 @@
   align-items: center;
   margin-bottom: 32px;
   padding: 20px 24px;
-  background: linear-gradient(135deg, rgba(27, 154, 170, 0.05), rgba(23, 137, 149, 0.02));
+  background: #f3f4f6;
   border-radius: 16px;
-  border: 2px solid rgba(27, 154, 170, 0.1);
+  border: 2px solid #e5e7eb;
 }
 
 .attachments-summary .summary-left {
@@ -23,7 +23,7 @@
   margin: 0;
   font-size: 24px;
   font-weight: 700;
-  color: #1e293b;
+  color: #1b9aaa;
 }
 
 .attachments-summary .summary-right {
@@ -53,26 +53,27 @@
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  background: #fff;
-  border: 2px solid #e2e8f0;
+  background: #f3f4f6;
+  border: 2px solid #e5e7eb;
   border-radius: 10px;
   font-size: 13px;
   font-weight: 600;
-  color: #64748b;
+  color: #1b9aaa;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.1s ease;
 }
 
 .btn-expand-collapse svg {
   width: 16px;
   height: 16px;
+  color: #1b9aaa;
 }
 
 .btn-expand-collapse:hover {
-  border-color: #1b9aaa;
+  background: #e5e7eb;
+  border-color: #d1d5db;
   color: #1b9aaa;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(27, 154, 170, 0.15);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 /* =========================================================
@@ -93,15 +94,15 @@
   padding: 16px 20px;
   margin-bottom: 24px;
   border-radius: 16px;
-  background: linear-gradient(135deg, rgba(27, 154, 170, 0.05), rgba(23, 137, 149, 0.02));
-  border: 2px solid rgba(27, 154, 170, 0.1);
+  background: #f3f4f6;
+  border: 2px solid #e5e7eb;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.1s ease;
 }
 
 .section-header:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(27, 154, 170, 0.1);
+  background: #e5e7eb;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
 .section-title {
@@ -110,12 +111,13 @@
   gap: 12px;
   font-size: 18px;
   font-weight: 700;
-  color: #1e293b;
+  color: #1b9aaa;
 }
 
 .section-title .chevron-icon {
   width: 20px;
-  transition: transform 0.3s ease;
+  transition: transform 0.15s ease;
+  color: #1b9aaa;
 }
 
 .section-title .chevron-icon.expanded {
@@ -164,27 +166,21 @@
   border: 3px solid #e2e8f0;
   background: #f8fafc;
   cursor: pointer;
-  transition: all 0.4s ease;
+  transition: all 0.15s ease;
 }
 
 .image-wrapper:hover {
   border-color: #1b9aaa;
-  transform: translateY(-6px) scale(1.02);
 }
 
 .image-wrapper:hover .image-overlay {
   opacity: 1;
 }
 
-.image-wrapper:hover img {
-  transform: scale(1.08);
-}
-
 .image-wrapper img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.4s ease;
 }
 
 .image-overlay {
@@ -195,7 +191,7 @@
   justify-content: center;
   background: linear-gradient(180deg, rgba(0,0,0,.3), rgba(0,0,0,.75));
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.15s ease;
 }
 
 .image-overlay .overlay-actions {
@@ -216,12 +212,12 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.1s ease;
   pointer-events: auto;
 }
 
 .image-overlay .overlay-actions .overlay-btn:hover {
-  transform: scale(1.15);
+  transform: scale(1.05);
 }
 
 .image-overlay .overlay-actions .overlay-btn.view-btn:hover {
@@ -439,9 +435,9 @@
   border-radius: 20px;
   padding: 24px;
   box-shadow: 
-    0 4px 16px rgba(15, 23, 42, 0.06),
-    0 2px 8px rgba(15, 23, 42, 0.04);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    0 4px 16px rgba(227, 229, 233, 0.06),
+    0 2px 8px rgba(230, 232, 237, 0.04);
+  transition: all 0.15s ease;
   margin-bottom: 32px;
   
   &:last-child {
@@ -451,9 +447,8 @@
   &:hover {
     border-color: #cbd5e1;
     box-shadow: 
-      0 8px 32px rgba(15, 23, 42, 0.1),
-      0 4px 16px rgba(15, 23, 42, 0.06);
-    transform: translateY(-2px);
+      0 6px 20px rgba(226, 229, 235, 0.08),
+      0 3px 12px rgba(232, 233, 236, 0.05);
   }
 
   // For single-version files (no header)
@@ -470,8 +465,8 @@
 
     .file-drawing-card {
       box-shadow: 
-        0 4px 12px rgba(15, 23, 42, 0.06),
-        0 2px 6px rgba(15, 23, 42, 0.04),
+        0 4px 12px rgba(150, 169, 214, 0.06),
+        0 2px 6px rgba(140, 160, 208, 0.04),
         inset 0 1px 0 rgba(255, 255, 255, 0.8);
     }
   }
@@ -483,16 +478,15 @@
   border-radius: 20px;
   padding: 24px;
   box-shadow: 
-    0 4px 16px rgba(15, 23, 42, 0.06),
-    0 2px 8px rgba(15, 23, 42, 0.04);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    0 4px 16px rgba(173, 184, 208, 0.06),
+    0 2px 8px rgba(177, 187, 207, 0.04);
+  transition: all 0.15s ease;
   
   &:hover {
     border-color: #cbd5e1;
     box-shadow: 
-      0 8px 32px rgba(15, 23, 42, 0.1),
-      0 4px 16px rgba(15, 23, 42, 0.06);
-    transform: translateY(-2px);
+      0 6px 20px rgba(15, 23, 42, 0.08),
+      0 3px 12px rgba(15, 23, 42, 0.05);
   }
 }
 
@@ -510,15 +504,7 @@
 
 .file-drawing-item {
   position: relative;
-  animation: fadeIn 0.4s ease-out forwards;
-  opacity: 0;
-
-  // Staggered animation for each item
-  @for $i from 1 through 20 {
-    &:nth-child(#{$i}) {
-      animation-delay: #{$i * 0.05}s;
-    }
-  }
+  opacity: 1;
 }
 
 .file-group-header {
@@ -527,11 +513,11 @@
   align-items: center;
   padding: 16px 20px;
   margin: -8px -8px 20px -8px;
-  background: linear-gradient(135deg, #1b9aaa 0%, #178995 100%);
+  background: linear-gradient(135deg, #a6dbe2 0%, #bbc1c2 100%);
   border-radius: 14px;
   box-shadow: 
-    0 4px 16px rgba(27, 154, 170, 0.25),
-    0 2px 8px rgba(27, 154, 170, 0.15);
+    0 4px 16px rgba(132, 132, 133, 0.25),
+    0 2px 8px rgba(140, 141, 141, 0.15);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   overflow: hidden;
@@ -574,7 +560,7 @@
 
     .version-count-badge {
       background: rgba(255, 255, 255, 0.95);
-      color: #10b981;
+      color: #75e0bd;
 
       &::before {
         content: '👁️';
@@ -606,7 +592,7 @@
     width: 24px;
     height: 24px;
     stroke: #ffffff;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.15s ease;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 
     &.rotated {
@@ -617,7 +603,7 @@
   .file-group-name {
     font-size: 1.125rem;
     font-weight: 700;
-    color: #ffffff;
+    color: #0a0909;
     margin: 0;
     display: flex;
     align-items: center;
@@ -767,24 +753,13 @@
     0 2px 6px rgba(15, 23, 42, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
   z-index: 10;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-transform: uppercase;
   border: 2px solid rgba(255, 255, 255, 0.2);
-  animation: pulse 2s ease-in-out infinite;
 
   &::before {
     content: '⭐';
     margin-right: 4px;
     font-size: 0.875rem;
-    animation: spin 3s linear infinite;
-  }
-
-  &:hover {
-    transform: scale(1.1);
-    box-shadow: 
-      0 6px 20px rgba(245, 158, 11, 0.5),
-      0 3px 10px rgba(15, 23, 42, 0.25);
-    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
   }
 }
 
@@ -833,14 +808,6 @@
   }
 }
 
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
 
 /* =========================================================
    Version History Sidebar
@@ -1316,7 +1283,7 @@
   border: 2px solid #e2e8f0;
   border-radius: 18px;
   cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s ease;
   box-shadow: 
     0 2px 8px rgba(15, 23, 42, 0.04),
     0 1px 4px rgba(15, 23, 42, 0.02),
@@ -1329,74 +1296,12 @@
     margin-bottom: 0;
   }
 
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(27, 154, 170, 0.08),
-      transparent
-    );
-    transition: left 0.6s ease;
-  }
-
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 4px;
-    height: 0;
-    background: linear-gradient(180deg, #1b9aaa 0%, #10b981 100%);
-    transition: height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    border-radius: 0 4px 4px 0;
-  }
-
   &:hover {
     border-color: #1b9aaa;
-    transform: translateY(-6px) translateX(4px);
     box-shadow: 
-      0 12px 40px rgba(27, 154, 170, 0.2),
-      0 6px 20px rgba(15, 23, 42, 0.1),
+      0 6px 20px rgba(27, 154, 170, 0.15),
+      0 3px 10px rgba(15, 23, 42, 0.08),
       inset 0 1px 0 rgba(255, 255, 255, 1);
-
-    &::before {
-      left: 100%;
-    }
-
-    &::after {
-      height: 100%;
-    }
-
-    .file-icon-wrapper {
-      background: linear-gradient(135deg, #1b9aaa 0%, #178995 100%);
-      transform: scale(1.08) rotate(-3deg);
-      box-shadow: 
-        0 8px 24px rgba(27, 154, 170, 0.35),
-        0 4px 12px rgba(15, 23, 42, 0.15);
-      
-      svg {
-        stroke: #ffffff;
-        transform: scale(1.1);
-      }
-    }
-
-    .btn-download {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-      color: #ffffff;
-      border-color: #10b981;
-      transform: scale(1.1) rotate(5deg);
-      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-      
-      svg {
-        animation: downloadBounce 0.6s ease infinite;
-      }
-    }
 
     .file-name {
       color: #1b9aaa;
@@ -1414,35 +1319,15 @@
   background: linear-gradient(135deg, rgba(27, 154, 170, 0.12) 0%, rgba(23, 137, 149, 0.08) 100%);
   border-radius: 18px;
   border: 3px solid rgba(27, 154, 170, 0.2);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 
     0 4px 12px rgba(27, 154, 170, 0.15),
     inset 0 2px 0 rgba(255, 255, 255, 0.5);
-  position: relative;
-  overflow: hidden;
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
-    opacity: 0;
-    transition: opacity 0.4s ease;
-  }
-
-  &:hover::before {
-    opacity: 1;
-  }
 
   svg {
     width: 52px;
     height: 52px;
     stroke: #1b9aaa;
     stroke-width: 2;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     filter: drop-shadow(0 2px 4px rgba(27, 154, 170, 0.2));
   }
 }
@@ -1598,55 +1483,27 @@
   border: 3px solid rgba(27, 154, 170, 0.25);
   border-radius: 14px;
   cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.15s ease;
   color: #1b9aaa;
-  position: relative;
-  overflow: hidden;
   box-shadow: 
     0 4px 10px rgba(27, 154, 170, 0.15),
     inset 0 1px 0 rgba(255, 255, 255, 0.5);
-
-  &::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
-    transform: translate(-50%, -50%);
-    transition: width 0.4s ease, height 0.4s ease;
-  }
 
   svg {
     width: 22px;
     height: 22px;
     stroke-width: 2.8;
-    position: relative;
-    z-index: 1;
-    transition: all 0.3s ease;
   }
 
   &:hover {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     border-color: #10b981;
     color: #ffffff;
-    transform: scale(1.1) rotate(5deg);
-    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-
-    &::before {
-      width: 100%;
-      height: 100%;
-    }
-
-    svg {
-      animation: downloadBounce 0.6s ease infinite;
-    }
+    box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
   }
 
   &:active {
-    transform: scale(0.95) rotate(5deg);
+    transform: scale(0.95);
   }
 }
 
@@ -1664,14 +1521,6 @@
   }
 }
 
-@keyframes downloadBounce {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(4px);
-  }
-}
 
 @keyframes shimmer {
   0% {
@@ -1682,14 +1531,6 @@
   }
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.8;
-  }
-}
 
 /* =========================================================
    Responsive Design

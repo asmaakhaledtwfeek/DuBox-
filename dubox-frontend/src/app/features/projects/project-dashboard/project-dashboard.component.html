@@ -67,7 +67,7 @@
           <button 
             class="btn btn-secondary" 
             (click)="editProject()" 
-            *ngIf="canEdit && !isProjectOnHold"
+            *ngIf="canEdit && !isProjectOnHold && !isProjectClosed && !isProjectArchived"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
@@ -79,7 +79,7 @@
             class="btn btn-outline" 
             type="button" 
             (click)="openStatusModal()" 
-            *ngIf="canChangeStatus" 
+            *ngIf="canChangeStatus && !isProjectArchived" 
             [disabled]="!project || (project && !canChangeProjectStatus(project.status))"
             [title]="project && !canChangeProjectStatus(project.status) ? 'Archived projects cannot have their status changed' : 'Change project status'"
           >
@@ -93,7 +93,7 @@
             class="btn btn-outline" 
             type="button" 
             (click)="openCompressionDateModal()" 
-            *ngIf="canEdit && !isProjectOnHold"
+            *ngIf="canEdit && !isProjectOnHold && !isProjectClosed && !isProjectArchived"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -103,7 +103,7 @@
             </svg>
             Set Compression Start Date
           </button>
-          <button class="btn btn-danger" (click)="openDeleteConfirm()" *ngIf="canDelete">
+          <button class="btn btn-danger" (click)="openDeleteConfirm()" *ngIf="canDelete && !isProjectArchived">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"/>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
@@ -154,14 +154,16 @@
         </div>
 
         <div class="kpi-card">
-          <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.1); color: var(--warning-color);">
+          <div class="kpi-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+              <line x1="12" y1="22.08" x2="12" y2="12"/>
             </svg>
           </div>
           <div class="kpi-content">
-            <div class="kpi-value">{{ dashboardData.readyForDelivery }}</div>
-            <div class="kpi-label">Ready for Delivery</div>
+            <div class="kpi-value">{{ dashboardData.dispatchedBoxes }}</div>
+            <div class="kpi-label">Dispatched</div>
           </div>
         </div>
       </div>
@@ -183,7 +185,7 @@
       </div>
 
       <!-- Excel Import Section -->
-      <div class="excel-import card" #excelSection *ngIf="canImportBoxes">
+      <div class="excel-import card" #excelSection *ngIf="canImportBoxes && !isProjectArchived">
         <div class="excel-header">
           <div>
             <h2 class="card-title">Bulk Import via Excel</h2>
@@ -199,8 +201,8 @@
         </div>
 
         <div class="upload-zone"
-             [class.dragging]="isDraggingFile && !isProjectOnHold"
-             [class.disabled]="isProjectOnHold"
+             [class.dragging]="isDraggingFile && !isProjectOnHold && !isProjectClosed && !isProjectArchived"
+             [class.disabled]="isProjectOnHold || isProjectClosed || isProjectArchived"
              (dragover)="onDragOver($event)"
              (dragleave)="onDragLeave($event)"
              (drop)="onDrop($event)">
@@ -208,7 +210,7 @@
                  #fileInput
                  accept=".xlsx,.xls"
                  hidden
-                 [disabled]="isProjectOnHold"
+                 [disabled]="isProjectOnHold || isProjectClosed || isProjectArchived"
                  (change)="onFileChange($event)">
 
           <ng-container *ngIf="!selectedFile">
@@ -219,19 +221,19 @@
                 <path d="M5 19h14"/>
               </svg>
             </div>
-            <p class="upload-title" *ngIf="!isProjectOnHold">Drag & drop your completed Excel file here</p>
-            <p class="upload-title" *ngIf="isProjectOnHold" style="color: #999;">File upload is disabled for projects on hold</p>
-            <p class="upload-subtitle" *ngIf="!isProjectOnHold">or</p>
+            <p class="upload-title" *ngIf="!isProjectOnHold && !isProjectClosed && !isProjectArchived">Drag & drop your completed Excel file here</p>
+            <p class="upload-title" *ngIf="isProjectOnHold || isProjectClosed || isProjectArchived" style="color: #999;">File upload is disabled for projects {{ isProjectArchived ? 'archived' : (isProjectClosed ? 'closed' : 'on hold') }}</p>
+            <p class="upload-subtitle" *ngIf="!isProjectOnHold && !isProjectClosed && !isProjectArchived">or</p>
             <button 
               class="btn btn-outline" 
               type="button" 
               (click)="onBrowseClick()"
-              [disabled]="isProjectOnHold"
-              *ngIf="!isProjectOnHold"
+              [disabled]="isProjectOnHold || isProjectClosed || isProjectArchived"
+              *ngIf="!isProjectOnHold && !isProjectClosed && !isProjectArchived"
             >
               Browse files
             </button>
-            <p class="upload-note" *ngIf="!isProjectOnHold">Accepted formats: .xlsx, .xls (max 10 MB)</p>
+            <p class="upload-note" *ngIf="!isProjectOnHold && !isProjectClosed && !isProjectArchived">Accepted formats: .xlsx, .xls (max 10 MB)</p>
           </ng-container>
 
           <div class="file-pill" *ngIf="selectedFile">

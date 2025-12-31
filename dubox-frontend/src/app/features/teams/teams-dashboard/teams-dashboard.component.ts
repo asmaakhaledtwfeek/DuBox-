@@ -112,7 +112,7 @@ export class TeamsDashboardComponent implements OnInit, OnDestroy {
         this.extractTrades();
         this.calculateStats();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error loading teams for stats:', err);
       }
     });
@@ -156,7 +156,7 @@ export class TeamsDashboardComponent implements OnInit, OnDestroy {
         this.currentPage = response.page;
         this.loading = false;
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error loading teams - Full error:', err);
         console.error('Error status:', err.status);
         console.error('Error statusText:', err.statusText);
@@ -296,7 +296,7 @@ export class TeamsDashboardComponent implements OnInit, OnDestroy {
         this.teamActivities = data;
         this.loadingActivities = false;
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Failed to load crew activities:', err);
         this.loadingActivities = false;
         alert('Failed to load crew activities. Please try again.');

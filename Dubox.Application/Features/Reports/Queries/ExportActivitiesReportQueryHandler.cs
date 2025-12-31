@@ -53,29 +53,6 @@ public class ExportActivitiesReportQueryHandler : IRequestHandler<ExportActiviti
                 .AsNoTracking()
                 .Skip(skip)
                 .Take(BatchSize)
-                .Select(ba => new
-                {
-                    ActivityId = ba.BoxActivityId,
-                    ActivityName = ba.ActivityMaster.ActivityName,
-                    BoxTag = ba.Box.BoxTag,
-                    ProjectName = ba.Box.Project.ProjectName,
-                    TeamName = ba.Team != null ? ba.Team.TeamName : null,
-                    Status = ba.Status.ToString(),
-                    ProgressPercentage = ba.ProgressPercentage,
-                    PlannedStartDate = ba.PlannedStartDate,
-                    PlannedEndDate = ba.PlannedEndDate,
-                    ActualStartDate = ba.ActualStartDate,
-                    ActualEndDate = ba.ActualEndDate,
-                    ActualDuration = ba.ActualStartDate.HasValue && ba.ActualEndDate.HasValue
-                        ? DurationFormatter.CalculateDurationInDays(ba.ActualStartDate, ba.ActualEndDate)
-                        : null,
-                    ActualDurationFormatted = DurationFormatter.FormatDuration(ba.ActualStartDate, ba.ActualEndDate),
-                    DelayDays = ba.PlannedEndDate.HasValue &&
-                                !ba.ActualEndDate.HasValue &&
-                                ba.PlannedEndDate < DateTime.UtcNow
-                                ? (int?)(DateTime.UtcNow.Date - ba.PlannedEndDate.Value.Date).Days
-                                : null
-                })
                 .ToListAsync(cancellationToken);
 
             if (batch.Count == 0)
@@ -86,21 +63,63 @@ public class ExportActivitiesReportQueryHandler : IRequestHandler<ExportActiviti
 
             foreach (var item in batch)
             {
+                var actualDurationValues = DurationFormatter.CalculateDurationValues(item.ActualStartDate, item.ActualEndDate);
+                var actualDurationFormatted = DurationFormatter.FormatDuration(item.ActualStartDate, item.ActualEndDate);
+                
+                int? delayDays = null;
+                string delayDaysFormatted = string.Empty;
+                if (item.Duration.HasValue && item.ActualStartDate.HasValue && item.ActualEndDate.HasValue && actualDurationValues != null)
+                {
+                    // Convert planned duration (days) to hours
+                    var plannedHours = item.Duration.Value * 24.0;
+                    var actualHours = actualDurationValues.TotalHours;
+                    
+                    // Calculate delay in hours
+                    var delayHours = actualHours - plannedHours;
+                    
+                    // Only calculate delay if actual exceeds planned
+                    if (delayHours > 0)
+                    {
+                        // Convert delay hours to days (round down for integer days)
+                        delayDays = (int)Math.Floor(delayHours / 24.0);
+                        var remainingHours = (int)Math.Round(delayHours % 24);
+                        
+                        // If remaining hours is 24, it means it's a full extra day
+                        if (remainingHours == 24)
+                        {
+                            delayDays++;
+                            remainingHours = 0;
+                        }
+                        
+                        // Format delay: "X days Y hours" or just "X days" if no hours
+                        if (remainingHours == 0)
+                        {
+                            delayDaysFormatted = delayDays == 1 ? "1 day" : $"{delayDays} days";
+                        }
+                        else
+                        {
+                            var daysText = delayDays == 1 ? "1 day" : $"{delayDays} days";
+                            var hoursText = remainingHours == 1 ? "1 hour" : $"{remainingHours} hours";
+                            delayDaysFormatted = $"{daysText} {hoursText}";
+                        }
+                    }
+                }
+
                 allActivities.Add(new ActivityExportDto
                 {
-                    ActivityId = item.ActivityId,
-                    ActivityName = item.ActivityName,
-                    BoxTag = item.BoxTag,
-                    ProjectName = item.ProjectName,
-                    AssignedTeam = item.TeamName ?? string.Empty,
-                    Status = item.Status,
+                    ActivityId = item.BoxActivityId,
+                    ActivityName = item.ActivityMaster.ActivityName,
+                    BoxTag = item.Box.BoxTag,
+                    ProjectName = item.Box.Project.ProjectName,
+                    AssignedTeam = item.Team != null ? item.Team.TeamName : string.Empty,
+                    Status = item.Status.ToString(),
                     ProgressPercentage = item.ProgressPercentage,
                     PlannedStartDate = item.PlannedStartDate?.ToString("yyyy-MM-dd") ?? string.Empty,
                     PlannedEndDate = item.PlannedEndDate?.ToString("yyyy-MM-dd") ?? string.Empty,
                     ActualStartDate = item.ActualStartDate?.ToString("yyyy-MM-dd") ?? string.Empty,
                     ActualEndDate = item.ActualEndDate?.ToString("yyyy-MM-dd") ?? string.Empty,
-                    ActualDuration = item.ActualDurationFormatted ?? item.ActualDuration?.ToString() ?? string.Empty,
-                    DelayDays = item.DelayDays?.ToString() ?? string.Empty
+                    ActualDuration = actualDurationFormatted ?? (actualDurationValues != null ? DurationFormatter.CalculateDurationInDays(item.ActualStartDate, item.ActualEndDate)?.ToString() : string.Empty) ?? string.Empty,
+                    DelayDays = delayDaysFormatted ?? delayDays?.ToString() ?? string.Empty
                 });
             }
 

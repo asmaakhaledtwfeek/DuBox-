@@ -11,6 +11,7 @@ public class BoxesSummaryReportSpecification : Specification<Box>
     {
         AddInclude(nameof(Box.Project));
         AddInclude(nameof(Box.CurrentLocation));
+        AddInclude(nameof(Box.Factory));
 
         // Apply visibility filtering
         // If accessibleProjectIds is null, user can access all projects (SystemAdmin)
@@ -19,6 +20,9 @@ public class BoxesSummaryReportSpecification : Specification<Box>
         {
             AddCriteria(b => accessibleProjectIds.Contains(b.ProjectId));
         }
+
+        // Filter out boxes from closed projects
+        AddCriteria(b => b.Project.Status != Domain.Enums.ProjectStatusEnum.Closed);
 
         if (query.ProjectId.HasValue && query.ProjectId.Value != Guid.Empty)
             AddCriteria(b => b.ProjectId == query.ProjectId.Value);

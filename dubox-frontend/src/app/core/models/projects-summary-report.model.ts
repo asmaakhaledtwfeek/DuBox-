@@ -20,6 +20,10 @@ export interface ProjectsSummaryReportKpis {
   totalProjects: number;
   activeProjects: number;
   inactiveProjects: number;
+  onHoldProjects: number;
+  completedProjects: number;
+  archivedProjects: number;
+  closedProjects: number;
   totalBoxes: number;
   averageProgressPercentage: number;
   averageProgressPercentageFormatted: string;

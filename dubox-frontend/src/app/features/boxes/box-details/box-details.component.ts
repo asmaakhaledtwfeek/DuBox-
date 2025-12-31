@@ -61,21 +61,21 @@ type BoxDrawing = {
     trigger('slideDown', [
       transition(':enter', [
         style({ height: '0', opacity: '0', overflow: 'hidden' }),
-        animate('150ms ease-out', style({ height: '*', opacity: '1' }))
+        animate('50ms ease-out', style({ height: '*', opacity: '1' }))
       ]),
       transition(':leave', [
         style({ height: '*', opacity: '1', overflow: 'hidden' }),
-        animate('150ms ease-in', style({ height: '0', opacity: '0' }))
+        animate('50ms ease-in', style({ height: '0', opacity: '0' }))
       ])
     ]),
     trigger('slideIn', [
       transition(':enter', [
         style({ transform: 'translateX(100%)', opacity: '0' }),
-        animate('200ms cubic-bezier(0.4, 0, 0.2, 1)', style({ transform: 'translateX(0)', opacity: '1' }))
+        animate('100ms ease-out', style({ transform: 'translateX(0)', opacity: '1' }))
       ]),
       transition(':leave', [
         style({ transform: 'translateX(0)', opacity: '1' }),
-        animate('150ms cubic-bezier(0.4, 0, 0.2, 1)', style({ transform: 'translateX(100%)', opacity: '0' }))
+        animate('80ms ease-in', style({ transform: 'translateX(100%)', opacity: '0' }))
       ])
     ])
   ],
@@ -102,6 +102,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   canUploadDrawing = false;
   isProjectArchived = false; // Track if project is archived
   isProjectOnHold = false; // Track if project is on hold
+  isProjectClosed = false; // Track if project is closed
   BoxStatus = BoxStatus;
   Math = Math;
   
@@ -342,9 +343,10 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         this.project = project;
         this.isProjectArchived = project.status === 'Archived';
         this.isProjectOnHold = project.status === 'OnHold';
+        this.isProjectClosed = project.status === 'Closed';
         // Re-check permissions after loading project status
         this.checkPermissions();
-        console.log('📁 Project loaded. Status:', project.status, 'Is Archived:', this.isProjectArchived, 'Is OnHold:', this.isProjectOnHold);
+        console.log('📁 Project loaded. Status:', project.status, 'Is Archived:', this.isProjectArchived, 'Is OnHold:', this.isProjectOnHold, 'Is Closed:', this.isProjectClosed);
       },
       error: (err) => {
         console.error('Error loading project details:', err);
@@ -367,14 +369,14 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     // For status updates, check if there are available status transitions
     const canChangeStatusBasedOnBoxStatus = this.box ? getAvailableBoxStatuses(this.box.status, this.box.progress).length > 0 : true;
     
-    // Disable all actions if project is archived or on hold
+    // Disable all actions if project is archived, on hold, or closed
     // Also disable box actions if box status doesn't allow them (OnHold or Dispatched)
-    this.canEdit = baseCanEdit && !this.isProjectArchived && !this.isProjectOnHold && canPerformBoxActionsBasedOnStatus;
-    this.canDelete = baseCanDelete && !this.isProjectArchived && !this.isProjectOnHold && canPerformBoxActionsBasedOnStatus;
-    this.canUpdateBoxStatus = baseCanUpdateStatus && !this.isProjectArchived && !this.isProjectOnHold && canChangeStatusBasedOnBoxStatus;
-    this.canUpdateQualityIssueStatus = baseCanUpdateQualityIssueStatus && !this.isProjectArchived && !this.isProjectOnHold && canPerformBoxActionsBasedOnStatus;
-    this.canCreateQualityIssue = baseCanCreateQualityIssue && !this.isProjectArchived && !this.isProjectOnHold && canPerformBoxActionsBasedOnStatus;
-    this.canUploadDrawing = baseCanUploadDrawing && !this.isProjectArchived && !this.isProjectOnHold && canPerformBoxActionsBasedOnStatus;
+    this.canEdit = baseCanEdit && !this.isProjectArchived && !this.isProjectOnHold && !this.isProjectClosed && canPerformBoxActionsBasedOnStatus;
+    this.canDelete = baseCanDelete && !this.isProjectArchived && !this.isProjectOnHold && !this.isProjectClosed && canPerformBoxActionsBasedOnStatus;
+    this.canUpdateBoxStatus = baseCanUpdateStatus && !this.isProjectArchived && !this.isProjectOnHold && !this.isProjectClosed && canChangeStatusBasedOnBoxStatus;
+    this.canUpdateQualityIssueStatus = baseCanUpdateQualityIssueStatus && !this.isProjectArchived && !this.isProjectOnHold && !this.isProjectClosed && canPerformBoxActionsBasedOnStatus;
+    this.canCreateQualityIssue = baseCanCreateQualityIssue && !this.isProjectArchived && !this.isProjectOnHold && !this.isProjectClosed && canPerformBoxActionsBasedOnStatus;
+    this.canUploadDrawing = baseCanUploadDrawing && !this.isProjectArchived && !this.isProjectOnHold && !this.isProjectClosed && canPerformBoxActionsBasedOnStatus;
     
     console.log('✅ Box permissions checked:', {
       canEdit: this.canEdit,
@@ -383,6 +385,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       canCreateQualityIssue: this.canCreateQualityIssue,
       isProjectArchived: this.isProjectArchived,
       isProjectOnHold: this.isProjectOnHold,
+      isProjectClosed: this.isProjectClosed,
       boxStatus: this.box?.status,
       canPerformBoxActionsBasedOnStatus,
       canChangeStatusBasedOnBoxStatus
@@ -529,12 +532,22 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     const count = this.box.activities.filter(activity => {
       if (!activity.status) return false;
       const activityStatus = activity.status.toString().toLowerCase();
+      
+      // For "Completed" status, also include "Delayed" activities with 100% progress
+      if (normalizedStatus === 'completed') {
+        const isCompleted = activityStatus === 'completed';
+        const isDelayedWith100Progress = activityStatus === 'delayed' && 
+                                         (activity.weightPercentage >= 100 || 
+                                          (activity as any).progressPercentage >= 100);
+        return isCompleted || isDelayedWith100Progress;
+      }
+      
       return activityStatus === normalizedStatus;
     }).length;
     
     console.log(`📊 Chart Debug: ${status} count = ${count} out of ${this.box.activities.length} total activities`, {
       status,
-      activities: this.box.activities.map(a => ({ name: a.name, status: a.status }))
+      activities: this.box.activities.map(a => ({ name: a.name, status: a.status, progress: a.weightPercentage || (a as any).progressPercentage }))
     });
     return count;
   }
@@ -889,7 +902,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       return false;
     }
     // Check if project is archived or on hold
-    if (this.isProjectArchived || this.isProjectOnHold) {
+    if (this.isProjectArchived || this.isProjectOnHold || this.isProjectClosed) {
       return false;
     }
     // Check if user has permission to create/manage WIR checkpoints
@@ -907,7 +920,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       return false;
     }
     // Check if project is archived or on hold
-    if (this.isProjectArchived || this.isProjectOnHold) {
+    if (this.isProjectArchived || this.isProjectOnHold || this.isProjectClosed) {
       return false;
     }
     // Check if user has permission to review WIR checkpoints
@@ -3120,10 +3133,12 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       }));
       return;
     }
-    if (this.isProjectOnHold || this.isProjectArchived) {
+    if (this.isProjectOnHold || this.isProjectArchived || this.isProjectClosed) {
       document.dispatchEvent(new CustomEvent('app-toast', {
         detail: { 
-          message: this.isProjectOnHold 
+          message: this.isProjectClosed 
+            ? 'Cannot upload drawings. This project is closed. Only project status changes are allowed.'
+            : this.isProjectOnHold 
             ? 'Cannot upload drawings. This project is on hold. Only project status changes are allowed.' 
             : 'Cannot upload drawings. This project is archived and read-only.',
           type: 'error' 

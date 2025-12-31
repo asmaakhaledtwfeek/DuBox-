@@ -760,15 +760,15 @@
       gap: 10px;
       width: 100%;
       padding: 12px 20px;
-      background: linear-gradient(135deg, var(--amana-teal), var(--primary-color));
+      background: #f3f4f6;
       border: none;
       border-radius: 10px;
-      color: white;
+      color: #1b9aaa;
       font-size: 15px;
       font-weight: 700;
       cursor: pointer;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      box-shadow: 0 2px 8px rgba(27, 154, 170, 0.25);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
       position: relative;
       overflow: hidden;
       
@@ -776,7 +776,7 @@
         content: '';
         position: absolute;
         inset: 0;
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent);
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.5), transparent);
         opacity: 0;
         transition: opacity 0.3s ease;
       }
@@ -785,12 +785,14 @@
         width: 18px;
         height: 18px;
         transition: transform 0.3s ease;
+        color: #1b9aaa;
       }
 
       &:hover {
         gap: 14px;
+        background: #e5e7eb;
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(27, 154, 170, 0.4);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
         
         &::before {
           opacity: 1;
@@ -803,7 +805,8 @@
       
       &:active {
         transform: translateY(0);
-        box-shadow: 0 2px 8px rgba(27, 154, 170, 0.3);
+        background: #d1d5db;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
       }
     }
   }

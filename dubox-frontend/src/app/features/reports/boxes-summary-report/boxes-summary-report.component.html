@@ -54,27 +54,6 @@
           </div>
 
           <div class="filter-group">
-            <label>Box Type</label>
-            <div class="multiselect-container">
-              <div class="multiselect-display" 
-                   [class.active]="boxTypeMultiselectOpen || selectedBoxTypes.length > 0"
-                   (click)="toggleBoxTypeMultiselect(); $event.stopPropagation()">
-                <span *ngIf="selectedBoxTypes.length === 0">All Types</span>
-                <span *ngIf="selectedBoxTypes.length > 0">{{ selectedBoxTypes.length }} type(s) selected</span>
-              </div>
-              <div class="multiselect-options" *ngIf="boxTypeMultiselectOpen && availableBoxTypes.length > 0" (click)="$event.stopPropagation()">
-                <label *ngFor="let type of availableBoxTypes" class="checkbox-label">
-                  <input 
-                    type="checkbox" 
-                    [checked]="selectedBoxTypes.includes(type)"
-                    (change)="toggleBoxType(type); onFilterChange()">
-                  {{ type }}
-                </label>
-              </div>
-            </div>
-          </div>
-
-          <div class="filter-group">
             <label>Floor</label>
             <select [(ngModel)]="selectedFloor" (change)="onFilterChange()">
               <option value="">All Floors</option>
@@ -224,6 +203,17 @@
           <div class="kpi-value">{{ reportData.kpis.notStartedCount }}</div>
         </div>
       </div>
+      <div class="kpi-card kpi-dispatched">
+        <div class="kpi-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+          </svg>
+        </div>
+        <div class="kpi-content">
+          <div class="kpi-label">Dispatched</div>
+          <div class="kpi-value">{{ reportData.kpis.dispatchedCount }}</div>
+        </div>
+      </div>
       <div class="kpi-card kpi-avg-progress">
         <div class="kpi-icon">
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -311,11 +301,7 @@
         <table class="boxes-table">
           <thead>
             <tr>
-              <th>
-                <input type="checkbox" 
-                       [checked]="selectedItems.size === reportData.items.length && reportData.items.length > 0"
-                       (change)="toggleSelectAll()">
-              </th>
+             
               <th (click)="onSort('boxtag')" class="sortable">
                 Box Tag <span *ngIf="sortBy === 'boxtag'">{{ sortDir === 'asc' ? '↑' : '↓' }}</span>
               </th>
@@ -344,17 +330,29 @@
             <tr *ngFor="let item of reportData.items" 
                 class="clickable-row"
                 (click)="navigateToBoxDetails(item.projectId, item.boxId, $event)">
-              <td (click)="$event.stopPropagation()">
-                <input type="checkbox" 
-                       [checked]="isSelected(item.boxId)"
-                       (change)="toggleSelectItem(item.boxId)">
-              </td>
-              <td>
-                {{ item.boxTag }}
+              <td class="box-tag-cell">
+                <span class="box-tag-value">{{ item.boxTag }}</span>
               </td>
               <td>{{ item.serialNumber || '-' }}</td>
-              <td>{{ item.projectName }}</td>
-              <td>{{ item.boxType }}</td>
+              <td>
+                <div *ngIf="item.projectStatus" class="project-status-badge">
+                  <span class="badge" [class]="getProjectStatusBadgeClass(item.projectStatus)">
+                    {{ item.projectStatus }}
+                  </span>
+                </div>
+                <div class="project-info">
+                  <div class="project-code">{{ item.projectCode }}</div>
+                  <div class="project-name">{{ item.projectName }}</div>
+                </div>
+              </td>
+              <td>
+                <span *ngIf="item.boxTypeName || item.boxSubTypeName">
+                  <span *ngIf="item.boxTypeName">{{ item.boxTypeName }}</span>
+                  <span *ngIf="item.boxTypeName && item.boxSubTypeName"> / </span>
+                  <span *ngIf="item.boxSubTypeName">{{ item.boxSubTypeName }}</span>
+                </span>
+                <span *ngIf="!item.boxTypeName && !item.boxSubTypeName">{{ item.boxType || '-' }}</span>
+              </td>
               <td>{{ item.floor || '-' }}</td>
               <td>{{ item.buildingNumber || '-' }} / {{ item.zone || '-' }}</td>
               <td>
@@ -374,7 +372,14 @@
                 </span>
               </td>
               <td>{{ item.qualityIssuesCount || 0 }}</td>
-              <td>{{ item.currentLocationName || '-' }}</td>
+              <td>
+                <div *ngIf="item.factoryName || item.factoryPosition || item.currentLocationName">
+                  <div *ngIf="item.currentLocationName" class="location-name">{{ item.currentLocationName }}</div>
+                  <div *ngIf="item.factoryName" class="factory-name">{{ item.factoryName }}</div>
+                  <div *ngIf="item.factoryPosition" class="factory-position">{{ item.factoryPosition }}</div>
+                </div>
+                <span *ngIf="!item.factoryName && !item.factoryPosition && !item.currentLocationName">-</span>
+              </td>
             </tr>
             <tr *ngIf="reportData.items.length === 0">
               <td colspan="11" class="empty-state">No boxes found matching the filters</td>

@@ -8,6 +8,9 @@ namespace Dubox.Application.Specifications
         public GetWIRCheckpointByIdSpecification(Guid checkPointId)
         {
             AddCriteria(c => c.WIRId == checkPointId);
+            // Filter out checkpoints for inactive boxes or projects
+            AddCriteria(c => c.Box.IsActive);
+            AddCriteria(c => c.Box.Project.IsActive);
             AddInclude(nameof(WIRCheckpoint.ChecklistItems));
             AddInclude($"{nameof(WIRCheckpoint.ChecklistItems)}.{nameof(WIRChecklistItem.PredefinedChecklistItem)}");
             AddInclude($"{nameof(WIRCheckpoint.ChecklistItems)}.{nameof(WIRChecklistItem.PredefinedChecklistItem)}.{nameof(PredefinedChecklistItem.ChecklistSection)}");

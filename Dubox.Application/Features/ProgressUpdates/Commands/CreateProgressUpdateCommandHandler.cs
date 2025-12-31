@@ -261,7 +261,7 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             return;
 
         var averageProgress = projectBoxes.Average(b => b.ProgressPercentage);
-        var allCompleted = projectBoxes.All(b => b.Status == BoxStatusEnum.Completed);
+        var allCompleted = projectBoxes.All(b => b.Status == BoxStatusEnum.Completed||b.Status== BoxStatusEnum.Dispatched);
 
         var project = await _unitOfWork.Repository<Project>().GetByIdAsync(projectId, cancellationToken);
 
@@ -326,6 +326,11 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         if (isOnHold)
             return Result.Failure( "Cannot create progress updates in a project on hold. Projects on hold only allow project status changes.");
 
+        // Check if project is closed
+        var isClosed = await _visibilityService.IsProjectClosedAsync(boxActivity.Box.ProjectId, cancellationToken);
+        if (isClosed)
+            return Result.Failure("Cannot create progress updates in a closed project. Closed projects only allow project status changes.");
+
         // Check if box is Dispatched
         if (boxActivity.Box.Status == BoxStatusEnum.Dispatched)
             return Result.Failure( "Cannot create progress update. The box is dispatched and no actions are allowed on boxes or activities.");
@@ -373,14 +378,15 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
 
         if ((inferredStatus == BoxStatusEnum.InProgress || inferredStatus == BoxStatusEnum.Completed || inferredStatus == BoxStatusEnum.Delayed) && boxActivity.ActualStartDate == null)
             boxActivity.ActualStartDate = DateTime.UtcNow;
-
+        
         // Set ActualEndDate when activity reaches 100% progress (either Completed or Delayed)
         if ((inferredStatus == BoxStatusEnum.Completed || inferredStatus == BoxStatusEnum.Delayed) && oldStatus != BoxStatusEnum.Completed && oldStatus != BoxStatusEnum.Delayed)
         {
             boxActivity.ActualEndDate = DateTime.UtcNow;
             boxActivity.ProgressPercentage = 100;
         }
-        var newActualStartDateString = boxActivity.ActualStartDate?.ToString(dateFormat) ?? "N/A";
+      
+      var newActualStartDateString = boxActivity.ActualStartDate?.ToString(dateFormat) ?? "N/A";
         var newActualEndDateString = boxActivity.ActualEndDate?.ToString(dateFormat) ?? "N/A";
 
         _unitOfWork.Repository<BoxActivity>().Update(boxActivity);
@@ -426,8 +432,6 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         if (nextWIRActivity == null)
             return (true,"");
 
-        // Validate that location (Bay/Row/Position) is unique in the same factory
-        // Only validate if position data is being provided
         if (!string.IsNullOrWhiteSpace(request.WirBay) || !string.IsNullOrWhiteSpace(request.WirRow) || !string.IsNullOrWhiteSpace(request.WirPosition))
         {
           var isValideLocation=  await ValidateUniqueLocationInFactory(
@@ -439,7 +443,6 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             if (!isValideLocation)
                 return (false, $"Location conflict: Bay {request.WirBay}, Row {request.WirRow}, Position {request.WirPosition} is already occupied by another Box in this factory. Please select a different location.");
 
-            // Validate that previous WIR (if any) is approved before updating position for the current WIR
             await ValidatePreviousWIRApproved(nextWIRActivity, currentActivity.BoxId, cancellationToken);
         }
 
@@ -452,9 +455,6 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         
         if (nearestWIR == null)
         {
-            // WIR record doesn't exist yet - create it
-            // Each WIR section should have its own position values
-            // Only use values from the current request (no inheritance from previous WIRs)
             string bayValue = request.WirBay ?? string.Empty;
             string rowValue = request.WirRow ?? string.Empty;
             string positionValue = request.WirPosition ?? string.Empty;
@@ -492,8 +492,6 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
                 _unitOfWork.Repository<WIRRecord>().Update(nearestWIR);
             }
             
-            // Check if WIR has position data (either newly set or already existing)
-            // This ensures box location is always synchronized with WIR position
             positionUpdated = !string.IsNullOrWhiteSpace(nearestWIR.Bay) || 
                              !string.IsNullOrWhiteSpace(nearestWIR.Row) || 
                              !string.IsNullOrWhiteSpace(nearestWIR.Position);
@@ -501,13 +499,9 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         
         if (positionUpdated)
         {
-            // Update box location to match the LATEST WIR position
-            // The box location should reflect the current WIR section
             var box = await _unitOfWork.Repository<Box>().GetByIdAsync(currentActivity.BoxId, cancellationToken);
             if (box != null)
             {
-                // Find the most recent WIR with position data for this box
-                // This ensures box location reflects the current/latest WIR section
                 var latestWIRWithPosition = await _dbContext.WIRRecords
                     .Include(w => w.BoxActivity)
                     .Where(w => w.BoxActivity.BoxId == currentActivity.BoxId)
@@ -592,8 +586,6 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             return positionUpdated; // No position data to update
         }
 
-        // Update WIR position fields only if they are currently empty
-        // Once set, position values should not be overwritten
         if (!string.IsNullOrWhiteSpace(request.WirBay) && string.IsNullOrWhiteSpace(nearestWIR.Bay))
         {
             nearestWIR.Bay = request.WirBay.Trim();
@@ -620,15 +612,7 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         return positionUpdated;
     }
 
-    /// <summary>
-    /// Validates that the previous WIR (if any) is fully approved before allowing position updates
-    /// 
-    /// CRITICAL: A WIR is considered "fully approved" ONLY when:
-    /// 1. Status is Approved or ConditionallyApproved, AND
-    /// 2. All checklist items have "Pass" status (not Under Review)
-    /// 
-    /// "Under Review" state: Status = Approved but NOT all checklist items are Pass
-    /// </summary>
+  
     private async Task ValidatePreviousWIRApproved(BoxActivity currentWIRActivity, Guid boxId, CancellationToken cancellationToken)
     {
         // Find the previous WIR activity for this box (by sequence)
@@ -658,15 +642,11 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
                 $"Cannot update WIR position. Previous WIR '{previousWIRActivity.ActivityMaster.WIRCode}' has not been created yet.");
         }
 
-        // Load the WIR checkpoint to get the effective status
-        // The checkpoint status is the source of truth (matches frontend logic)
         var previousCheckpoint = await _dbContext.WIRCheckpoints
             .Include(cp => cp.ChecklistItems)
             .Where(cp => cp.BoxId == boxId && cp.WIRCode == previousWIR.WIRCode)
             .FirstOrDefaultAsync(cancellationToken);
 
-        // Use checkpoint status if available, otherwise fall back to WIR record status
-        // Cast WIRRecordStatusEnum to WIRCheckpointStatusEnum (both have same values)
         var effectiveStatus = previousCheckpoint?.Status ?? (WIRCheckpointStatusEnum)previousWIR.Status;
 
         // ConditionallyApproved is ALWAYS acceptable - validation passes immediately
@@ -723,13 +703,8 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             }
         }
 
-        // If we reach here, previous WIR is fully approved - validation passes
     }
 
-    /// <summary>
-    /// Validates that the Bay/Row/Position combination is unique within the same factory
-    /// Prevents two boxes from occupying the same location in a factory
-    /// </summary>
     private async Task<bool> ValidateUniqueLocationInFactory(string bayValue, string rowValue, string positionValue, Guid currentBoxId, CancellationToken cancellationToken)
     {
         // Only validate if position data is being provided

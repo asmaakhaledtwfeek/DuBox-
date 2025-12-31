@@ -33,6 +33,7 @@ export class CreateBoxComponent implements OnInit {
   project: any = null; // Store project details
   isProjectArchived = false; // Track if project is archived
   isProjectOnHold = false; // Track if project is on hold
+  isProjectClosed = false; // Track if project is closed
   projectNumber: string = '';
   projectName: string = '';
   projectCategoryId: number | null = null;
@@ -101,9 +102,10 @@ export class CreateBoxComponent implements OnInit {
         const projectData = project?.data || project;
         this.project = projectData;
         
-        // Check if project is archived or on hold
+        // Check if project is archived, on hold, or closed
         this.isProjectArchived = projectData?.status === 'Archived';
         this.isProjectOnHold = projectData?.status === 'OnHold';
+        this.isProjectClosed = projectData?.status === 'Closed';
         if (this.isProjectArchived) {
           this.error = 'This project is archived. You cannot create new boxes in an archived project.';
           this.boxForm.disable();
@@ -113,6 +115,13 @@ export class CreateBoxComponent implements OnInit {
         }
         if (this.isProjectOnHold) {
           this.error = 'This project is on hold. You cannot create new boxes. Only project status changes are allowed.';
+          this.boxForm.disable();
+          this.loadingConfiguration = false;
+          this.loadingBoxTypes = false;
+          return;
+        }
+        if (this.isProjectClosed) {
+          this.error = 'This project is closed. You cannot create new boxes. Only project status changes are allowed.';
           this.boxForm.disable();
           this.loadingConfiguration = false;
           this.loadingBoxTypes = false;
@@ -620,11 +629,11 @@ export class CreateBoxComponent implements OnInit {
 
 
   onSubmit(): void {
-    if (this.isProjectArchived) {
+    if (this.isProjectArchived || this.isProjectClosed) {
       this.error = 'Cannot create box. This project is archived and read-only.';
       return;
     }
-    if (this.isProjectOnHold) {
+    if (this.isProjectOnHold || this.isProjectClosed) {
       this.error = 'Cannot create box. This project is on hold. Only project status changes are allowed.';
       return;
     }

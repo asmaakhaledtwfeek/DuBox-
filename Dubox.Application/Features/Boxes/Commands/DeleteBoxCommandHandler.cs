@@ -50,6 +50,13 @@ public class DeleteBoxCommandHandler : IRequestHandler<DeleteBoxCommand, Result<
                 return Result.Failure<bool>("Cannot delete boxes from a project on hold. Projects on hold only allow status changes.");
             }
 
+            // Check if project is closed
+            var isClosed = await _visibilityService.IsProjectClosedAsync(box.ProjectId, cancellationToken);
+            if (isClosed)
+            {
+                return Result.Failure<bool>("Cannot delete boxes from a closed project. Closed projects only allow project status changes.");
+            }
+
             // Check if box is Dispatched - cannot delete
             if (box.Status == BoxStatusEnum.Dispatched)
             {

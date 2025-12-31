@@ -51,6 +51,13 @@ public class IssueMaterialToActivityCommandHandler : IRequestHandler<IssueMateri
             return Result.Failure<MaterialTransactionDto>("Cannot issue materials in a project on hold. Projects on hold only allow project status changes.");
         }
 
+        // Check if project is closed
+        var isClosed = await _visibilityService.IsProjectClosedAsync(box.ProjectId, cancellationToken);
+        if (isClosed)
+        {
+            return Result.Failure<MaterialTransactionDto>("Cannot issue materials in a closed project. Closed projects only allow project status changes.");
+        }
+
         // Check if box is Dispatched - cannot perform any actions on activities
         if (box.Status == BoxStatusEnum.Dispatched)
         {

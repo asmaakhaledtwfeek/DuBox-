@@ -58,8 +58,7 @@ export class ActivitiesReportComponent implements OnInit, OnDestroy {
     { value: 2, label: 'In Progress' },
     { value: 3, label: 'Completed' },
     { value: 4, label: 'On Hold' },
-    { value: 5, label: 'Delayed' },
-    { value: 6, label: 'Dispatched' }
+    { value: 5, label: 'Delayed' }
   ];
 
   // Search debounce
@@ -230,6 +229,7 @@ export class ActivitiesReportComponent implements OnInit, OnDestroy {
     if (statusLower.includes('progress')) return 'status-in-progress';
     if (statusLower.includes('delayed')) return 'status-delayed';
     if (statusLower.includes('hold')) return 'status-on-hold';
+    if (statusLower.includes('not started') || statusLower.includes('notstarted')) return 'status-not-started';
     return 'status-default';
   }
 

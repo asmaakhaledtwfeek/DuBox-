@@ -52,5 +52,11 @@ public interface IProjectTeamVisibilityService
     /// OnHold projects only allow status changes based on progress
     /// </summary>
     Task<bool> IsProjectOnHoldAsync(Guid projectId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Check if a project is closed
+    /// Closed projects only allow status changes, no other actions are permitted
+    /// </summary>
+    Task<bool> IsProjectClosedAsync(Guid projectId, CancellationToken cancellationToken = default);
 }
 

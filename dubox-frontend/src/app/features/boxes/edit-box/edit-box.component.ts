@@ -36,6 +36,7 @@ export class EditBoxComponent implements OnInit {
   project: any = null; // Store project details
   isProjectArchived = false; // Track if project is archived
   isProjectOnHold = false; // Track if project is on hold
+  isProjectClosed = false; // Track if project is closed
   projectPlannedStartDate?: Date;
   projectPlannedEndDate?: Date;
   scheduleErrorMessage: string | null = null;
@@ -104,15 +105,19 @@ export class EditBoxComponent implements OnInit {
         const projectData = project?.data || project;
         this.project = projectData;
         
-        // Check if project is archived or on hold
+        // Check if project is archived, on hold, or closed
         this.isProjectArchived = projectData?.status === 'Archived';
         this.isProjectOnHold = projectData?.status === 'OnHold';
-        if (this.isProjectArchived) {
+        this.isProjectClosed = projectData?.status === 'Closed';
+        if (this.isProjectArchived || this.isProjectClosed) {
           this.boxForm.disable();
           this.error = 'This project is archived. You can only view the box details but cannot make any modifications.';
         } else if (this.isProjectOnHold) {
           this.boxForm.disable();
           this.error = 'This project is on hold. You can only view the box details but cannot make any modifications. Only project status changes are allowed.';
+        } else if (this.isProjectClosed) {
+          this.boxForm.disable();
+          this.error = 'This project is closed. You can only view the box details but cannot make any modifications. Only project status changes are allowed.';
         }
         
         // Extract project details
@@ -627,11 +632,11 @@ export class EditBoxComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.isProjectArchived) {
+    if (this.isProjectArchived || this.isProjectClosed) {
       this.error = 'Cannot save changes. This project is archived and read-only.';
       return;
     }
-    if (this.isProjectOnHold) {
+    if (this.isProjectOnHold || this.isProjectClosed) {
       this.error = 'Cannot save changes. This project is on hold. Only project status changes are allowed.';
       return;
     }

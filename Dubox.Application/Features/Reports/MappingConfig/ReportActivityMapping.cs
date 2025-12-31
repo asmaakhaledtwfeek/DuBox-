@@ -5,9 +5,7 @@ using Mapster;
 
 namespace Dubox.Application.Features.Reports.MappingConfig;
 
-/// <summary>
-/// Mapster configuration for mapping BoxActivity to ReportActivityDto
-/// </summary>
+
 public class ReportActivityMapping : IRegister
 {
     public void Register(TypeAdapterConfig config)
@@ -24,18 +22,12 @@ public class ReportActivityMapping : IRegister
             .Map(dest => dest.PlannedEndDate, src => src.PlannedEndDate)
             .Map(dest => dest.ActualStartDate, src => src.ActualStartDate)
             .Map(dest => dest.ActualEndDate, src => src.ActualEndDate)
-            // Legacy ActualDuration: calendar days + 1 (for backward compatibility)
             .Map(dest => dest.ActualDuration, src => 
                 DurationFormatter.CalculateDurationInDays(src.ActualStartDate, src.ActualEndDate))
-            // New ActualDurationFormatted: flexible formatting (hours, days + hours)
             .Map(dest => dest.ActualDurationFormatted, src =>
                 DurationFormatter.FormatDuration(src.ActualStartDate, src.ActualEndDate))
-            .Map(dest => dest.DelayDays, src => 
-                src.PlannedEndDate.HasValue && 
-                !src.ActualEndDate.HasValue && 
-                src.PlannedEndDate < DateTime.UtcNow
-                    ? (int?)(DateTime.UtcNow.Date - src.PlannedEndDate.Value.Date).Days
-                    : null)
+            .Map(dest => dest.DelayDays, src => (int?)null) // Will be calculated in query handler
+            .Map(dest => dest.DelayDaysFormatted, src => (string?)null) // Will be calculated in query handler
             .Map(dest => dest.BoxId, src => src.BoxId)
             .Map(dest => dest.ProjectId, src => src.Box != null ? src.Box.ProjectId : Guid.Empty);
     }

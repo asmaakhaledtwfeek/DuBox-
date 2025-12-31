@@ -1,5 +1,6 @@
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
 using System.Linq;
 
 namespace Dubox.Application.Services;
@@ -44,6 +45,13 @@ public class ProjectProgressService : IProjectProgressService
         }
 
         project.ProgressPercentage = newProgress;
+        var allCompilatedOrDispatched = boxes.All(b => b.Status == BoxStatusEnum.Completed || b.Status == BoxStatusEnum.Dispatched);
+        if (allCompilatedOrDispatched)
+            project.Status = ProjectStatusEnum.Completed;
+
+        else if (project.Status == ProjectStatusEnum.Completed)
+            project.Status = ProjectStatusEnum.Active;
+
         projectRepository.Update(project);
 
         var auditLog = new AuditLog

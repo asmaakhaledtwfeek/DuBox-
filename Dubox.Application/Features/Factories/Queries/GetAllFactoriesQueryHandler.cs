@@ -28,9 +28,9 @@ public class GetAllFactoriesQueryHandler : IRequestHandler<GetAllFactoriesQuery,
 
         var dtos = factories.Select(f =>
         {
-            // Calculate current occupancy from actual boxes, excluding NotStarted and Dispatched
+            // Calculate current occupancy from actual boxes, excluding NotStarted, Dispatched, and OnHold
             var currentOccupancy = f.Boxes?
-                .Count(b => b.Status != BoxStatusEnum.NotStarted && b.Status != BoxStatusEnum.Dispatched) ?? 0;
+                .Count(b => b.Status != BoxStatusEnum.NotStarted && b.Status != BoxStatusEnum.Dispatched && b.Status != BoxStatusEnum.OnHold) ?? 0;
             var availableCapacity = f.Capacity.HasValue 
                 ? Math.Max(0, f.Capacity.Value - currentOccupancy) 
                 : 0;

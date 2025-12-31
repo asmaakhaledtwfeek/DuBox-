@@ -70,6 +70,12 @@ public class ActivitiesReportSpecification : Specification<BoxActivity>
         EnableSplitQuery();
 
         AddCriteria(ba => ba.IsActive);
+        
+        // Filter out activities for inactive projects
+        AddCriteria(ba => ba.Box.Project.IsActive);
+        
+        // Filter out activities for closed projects
+        AddCriteria(ba => ba.Box.Project.Status != ProjectStatusEnum.Closed);
 
         // Apply project visibility filtering
         if (accessibleProjectIds != null)

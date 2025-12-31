@@ -64,7 +64,7 @@
                 *ngIf="getActivity(row) && canUpdateProgress"
                 class="btn-update-progress"
                 [disabled]="shouldDisableUpdateProgress(getActivity(row)!)"
-                [title]="shouldDisableUpdateProgress(getActivity(row)!) ? 'Update Progress disabled: Activity is completed and next WIR position is locked' : 'Update Progress'"
+                [title]="shouldDisableUpdateProgress(getActivity(row)!) ? 'Update Progress disabled: Activity is completed/delayed and next WIR position is locked' : 'Update Progress'"
                 (click)="openProgressModal(getActivity(row)!)"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">

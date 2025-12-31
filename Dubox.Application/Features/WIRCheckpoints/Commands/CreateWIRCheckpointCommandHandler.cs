@@ -54,10 +54,36 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                 return Result.Failure<CreateWIRCheckpointDto>("Access denied. You do not have permission to create WIR checkpoints for this project.");
             }
 
-            // Check if box is dispatched - no actions allowed on dispatched boxes
+            // Check if project is archived
+            var isArchived = await _visibilityService.IsProjectArchivedAsync(box.ProjectId, cancellationToken);
+            if (isArchived)
+            {
+                return Result.Failure<CreateWIRCheckpointDto>("Cannot create WIR checkpoint. The project is archived and no actions are allowed on checkpoints. Only viewing is permitted.");
+            }
+
+            // Check if project is on hold
+            var isOnHold = await _visibilityService.IsProjectOnHoldAsync(box.ProjectId, cancellationToken);
+            if (isOnHold)
+            {
+                return Result.Failure<CreateWIRCheckpointDto>("Cannot create WIR checkpoint. The project is on hold and no actions are allowed on checkpoints. Only viewing is permitted.");
+            }
+
+            // Check if project is closed
+            var isClosed = await _visibilityService.IsProjectClosedAsync(box.ProjectId, cancellationToken);
+            if (isClosed)
+            {
+                return Result.Failure<CreateWIRCheckpointDto>("Cannot create WIR checkpoint. The project is closed and no actions are allowed on checkpoints. Only viewing is permitted.");
+            }
+
+            // Check if box is dispatched or on hold - no actions allowed
             if (box.Status == BoxStatusEnum.Dispatched)
             {
                 return Result.Failure<CreateWIRCheckpointDto>("Cannot create WIR checkpoint. The box is dispatched and no actions are allowed on checkpoints. Only viewing is permitted.");
+            }
+            
+            if (box.Status == BoxStatusEnum.OnHold)
+            {
+                return Result.Failure<CreateWIRCheckpointDto>("Cannot create WIR checkpoint. The box is on hold and no actions are allowed on checkpoints. Only viewing is permitted.");
             }
 
             var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());

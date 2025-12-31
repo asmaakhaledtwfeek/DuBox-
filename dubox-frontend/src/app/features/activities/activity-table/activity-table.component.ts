@@ -36,6 +36,7 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   @Input() boxStatus?: string; // Box status to check if activity actions are allowed
   @Input() isProjectOnHold: boolean = false; // Track if project is on hold
   @Input() isProjectArchived: boolean = false; // Track if project is archived
+  @Input() isProjectClosed: boolean = false; // Track if project is closed
   @Output() boxDataChanged = new EventEmitter<void>();
   @Output() activityCountChanged = new EventEmitter<number>();
 
@@ -84,11 +85,11 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
       ? canPerformActivityActions(this.boxStatus as any)
       : true;
     
-    // Disable all actions if project is archived or on hold, or if box status doesn't allow activity actions
-    this.canUpdateProgress = baseCanUpdateProgress && !this.isProjectArchived && !this.isProjectOnHold && canPerformActivityActionsBasedOnBoxStatus;
-    this.canViewWIR = baseCanViewWIR && !this.isProjectArchived && !this.isProjectOnHold && canPerformActivityActionsBasedOnBoxStatus;
-    this.canReviewWIR = baseCanReviewWIR && !this.isProjectArchived && !this.isProjectOnHold && canPerformActivityActionsBasedOnBoxStatus;
-    this.canManageCheckpoint = baseCanManageCheckpoint && !this.isProjectArchived && !this.isProjectOnHold && canPerformActivityActionsBasedOnBoxStatus;
+    // Disable all actions if project is archived, on hold, or closed, or if box status doesn't allow activity actions
+    this.canUpdateProgress = baseCanUpdateProgress && !this.isProjectArchived && !this.isProjectOnHold && !this.isProjectClosed && canPerformActivityActionsBasedOnBoxStatus;
+    this.canViewWIR = baseCanViewWIR && !this.isProjectArchived && !this.isProjectOnHold && !this.isProjectClosed && canPerformActivityActionsBasedOnBoxStatus;
+    this.canReviewWIR = baseCanReviewWIR && !this.isProjectArchived && !this.isProjectOnHold && !this.isProjectClosed && canPerformActivityActionsBasedOnBoxStatus;
+    this.canManageCheckpoint = baseCanManageCheckpoint && !this.isProjectArchived && !this.isProjectOnHold && !this.isProjectClosed && canPerformActivityActionsBasedOnBoxStatus;
   }
 
   ngOnInit(): void {
@@ -112,7 +113,7 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
     }
     
     // Update permissions when project status or box status changes
-    if (changes['isProjectOnHold'] || changes['isProjectArchived'] || changes['boxStatus']) {
+    if (changes['isProjectOnHold'] || changes['isProjectArchived'] || changes['isProjectClosed'] || changes['boxStatus']) {
       this.updatePermissions();
     }
   }
@@ -356,11 +357,11 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
       return;
     }
 
-    // Block if activity is completed and next WIR has position disabled
+    // Block if activity is completed/delayed and next WIR has position disabled
     if (this.shouldDisableUpdateProgress(activity)) {
       document.dispatchEvent(new CustomEvent('app-toast', {
         detail: { 
-          message: 'Cannot update progress. Activity is completed and the next WIR position is locked.',
+          message: 'Cannot update progress. Activity is completed/delayed and the next WIR position is locked.',
           type: 'error' 
         }
       }));
@@ -980,11 +981,11 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
 
   /**
    * Check if update progress button should be disabled
-   * Disabled when: activity is completed AND next WIR has position disabled (position values already set)
+   * Disabled when: activity is completed or delayed AND next WIR has position disabled (position values already set)
    */
   shouldDisableUpdateProgress(activity: BoxActivityDetail): boolean {
-    // Only disable if activity is completed
-    if (!activity || activity.status !== 'Completed') {
+    // Only disable if activity is completed or delayed
+    if (!activity || (activity.status !== 'Completed' && activity.status !== 'Delayed')) {
       return false;
     }
 

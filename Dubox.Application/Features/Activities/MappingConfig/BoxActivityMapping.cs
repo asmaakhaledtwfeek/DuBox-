@@ -26,10 +26,8 @@ namespace Dubox.Application.Features.Activities.MappingConfig
                             : src.AssignedMember.User.FullName)
                         : null)
                 .Map(dest => dest.Status, src => src.Status.ToString())
-                // Legacy ActualDuration: calendar days + 1 (for backward compatibility)
                 .Map(dest => dest.ActualDuration, src =>
                     DurationFormatter.CalculateDurationInDays(src.ActualStartDate, src.ActualEndDate))
-                // New ActualDurationFormatted: flexible formatting (hours, days + hours)
                 .Map(dest => dest.ActualDurationFormatted, src =>
                     DurationFormatter.FormatDuration(src.ActualStartDate, src.ActualEndDate));
         }

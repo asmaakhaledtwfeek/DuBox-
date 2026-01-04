@@ -738,6 +738,7 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         var conflictingBox = await _dbContext.Boxes
             .Where(b => b.FactoryId == currentBox.FactoryId &&
                       b.Status != BoxStatusEnum.Dispatched &&
+                       b.Status != BoxStatusEnum.OnHold &&
                       b.BoxId != currentBoxId && // Exclude current box
                       b.Bay == bayValue &&
                       b.Row == rowValue &&

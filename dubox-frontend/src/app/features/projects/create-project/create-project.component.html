@@ -401,6 +401,7 @@
                   [ngModelOptions]="{standalone: true}"
                   placeholder="e.g., B01, B02, B03" 
                   class="form-control config-input"
+                  (input)="onBuildingInput($event)"
                   (keydown.enter)="$event.preventDefault(); addBuilding()"
                 />
                 <button type="button" class="btn-config-add" (click)="addBuilding()">
@@ -430,6 +431,7 @@
                   [ngModelOptions]="{standalone: true}"
                   placeholder="e.g., GF, 1F, 2F, 3F" 
                   class="form-control config-input"
+                  (input)="onLevelInput($event)"
                   (keydown.enter)="$event.preventDefault(); addLevel()"
                 />
                 <button type="button" class="btn-config-add" (click)="addLevel()">
@@ -459,6 +461,7 @@
                   [ngModelOptions]="{standalone: true}"
                   placeholder="e.g., S1, S2, S3, S4" 
                   class="form-control config-input"
+                  (input)="onBoxTypeInput($event)"
                   (keydown.enter)="$event.preventDefault(); addBoxType()"
                 />
                 <button type="button" class="btn-config-add" (click)="addBoxType()">
@@ -493,6 +496,7 @@
                         [ngModelOptions]="{standalone: true}"
                         placeholder="e.g., Type A, Type B, Type C" 
                         class="form-control config-input-sm"
+                        (input)="onSubTypeInput($event, i)"
                         (keydown.enter)="$event.preventDefault(); addSubType(i)"
                         (focus)="selectedTypeForSubType = i"
                       />
@@ -528,6 +532,7 @@
                   [ngModelOptions]="{standalone: true}"
                   placeholder="e.g., Zone A, Zone B, Zone C" 
                   class="form-control config-input"
+                  (input)="onZoneInput($event)"
                   (keydown.enter)="$event.preventDefault(); addZone()"
                 />
                 <button type="button" class="btn-config-add" (click)="addZone()">
@@ -557,6 +562,7 @@
                   [ngModelOptions]="{standalone: true}"
                   placeholder="e.g., Storage, Distribution, Assembly" 
                   class="form-control config-input"
+                  (input)="onBoxFunctionInput($event)"
                   (keydown.enter)="$event.preventDefault(); addBoxFunction()"
                 />
                 <button type="button" class="btn-config-add" (click)="addBoxFunction()">

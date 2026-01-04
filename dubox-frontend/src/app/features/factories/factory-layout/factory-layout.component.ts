@@ -194,7 +194,13 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
   }
 
   viewBox(boxId: string): void {
-    this.router.navigate(['/projects', 'box', boxId]);
+    // Find the box to get projectId
+    const box = this.boxes.find(b => b.id === boxId);
+    if (box && box.projectId) {
+      this.router.navigate(['/projects', box.projectId, 'boxes', boxId]);
+    } else {
+      console.error('Box not found or missing projectId:', boxId);
+    }
   }
 
   goBack(): void {

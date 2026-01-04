@@ -427,6 +427,37 @@ export class CreateProjectComponent implements OnInit {
   // Configuration Management Methods
 
   // Building methods
+  onBuildingInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value;
+    const commaIndex = value.indexOf(',');
+    
+    if (commaIndex !== -1) {
+      // Extract value before comma
+      const beforeComma = value.substring(0, commaIndex).trim();
+      const afterComma = value.substring(commaIndex + 1).trim();
+      
+      // Add the item before comma if it exists
+      if (beforeComma) {
+        const exists = this.buildings.some(b => b.buildingCode.toLowerCase() === beforeComma.toLowerCase());
+        if (!exists) {
+          this.buildings.push({
+            buildingCode: beforeComma,
+            buildingName: beforeComma
+          });
+        }
+      }
+      
+      // Update input to only contain text after comma
+      this.newBuilding = afterComma;
+      
+      // Set cursor position
+      setTimeout(() => {
+        input.setSelectionRange(afterComma.length, afterComma.length);
+      }, 0);
+    }
+  }
+
   addBuilding(): void {
     if (this.newBuilding.trim()) {
       // Split by comma and add each item
@@ -441,7 +472,7 @@ export class CreateProjectComponent implements OnInit {
           });
         }
       });
-      this.newBuilding = '';
+      // Don't clear input - keep the value so user can continue editing
     }
   }
 
@@ -450,6 +481,37 @@ export class CreateProjectComponent implements OnInit {
   }
 
   // Level methods
+  onLevelInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value;
+    const commaIndex = value.indexOf(',');
+    
+    if (commaIndex !== -1) {
+      // Extract value before comma
+      const beforeComma = value.substring(0, commaIndex).trim();
+      const afterComma = value.substring(commaIndex + 1).trim();
+      
+      // Add the item before comma if it exists
+      if (beforeComma) {
+        const exists = this.levels.some(l => l.levelCode.toLowerCase() === beforeComma.toLowerCase());
+        if (!exists) {
+          this.levels.push({
+            levelCode: beforeComma,
+            levelName: beforeComma
+          });
+        }
+      }
+      
+      // Update input to only contain text after comma
+      this.newLevel = afterComma;
+      
+      // Set cursor position
+      setTimeout(() => {
+        input.setSelectionRange(afterComma.length, afterComma.length);
+      }, 0);
+    }
+  }
+
   addLevel(): void {
     if (this.newLevel.trim()) {
       // Split by comma and add each item
@@ -464,7 +526,7 @@ export class CreateProjectComponent implements OnInit {
           });
         }
       });
-      this.newLevel = '';
+      // Don't clear input - keep the value so user can continue editing
     }
   }
 
@@ -473,6 +535,38 @@ export class CreateProjectComponent implements OnInit {
   }
 
   // Box Type methods
+  onBoxTypeInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value;
+    const commaIndex = value.indexOf(',');
+    
+    if (commaIndex !== -1) {
+      // Extract value before comma
+      const beforeComma = value.substring(0, commaIndex).trim();
+      const afterComma = value.substring(commaIndex + 1).trim();
+      
+      // Add the item before comma if it exists
+      if (beforeComma) {
+        const exists = this.boxTypes.some(t => t.typeName.toLowerCase() === beforeComma.toLowerCase());
+        if (!exists) {
+          this.boxTypes.push({
+            typeName: beforeComma,
+            hasSubTypes: false,
+            subTypes: []
+          });
+        }
+      }
+      
+      // Update input to only contain text after comma
+      this.newBoxType = afterComma;
+      
+      // Set cursor position
+      setTimeout(() => {
+        input.setSelectionRange(afterComma.length, afterComma.length);
+      }, 0);
+    }
+  }
+
   addBoxType(): void {
     if (this.newBoxType.trim()) {
       // Split by comma and add each item
@@ -488,7 +582,7 @@ export class CreateProjectComponent implements OnInit {
           });
         }
       });
-      this.newBoxType = '';
+      // Don't clear input - keep the value so user can continue editing
     }
   }
 
@@ -505,6 +599,40 @@ export class CreateProjectComponent implements OnInit {
   }
 
   // Box SubType methods
+  onSubTypeInput(event: Event, typeIndex: number): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value;
+    const commaIndex = value.indexOf(',');
+    
+    if (commaIndex !== -1) {
+      // Extract value before comma
+      const beforeComma = value.substring(0, commaIndex).trim();
+      const afterComma = value.substring(commaIndex + 1).trim();
+      
+      // Add the item before comma if it exists
+      if (beforeComma) {
+        if (!this.boxTypes[typeIndex].subTypes) {
+          this.boxTypes[typeIndex].subTypes = [];
+        }
+        const exists = this.boxTypes[typeIndex].subTypes?.some(s => s.subTypeName.toLowerCase() === beforeComma.toLowerCase());
+        if (!exists) {
+          this.boxTypes[typeIndex].subTypes!.push({
+            subTypeName: beforeComma
+          });
+        }
+      }
+      
+      // Update input to only contain text after comma
+      this.newBoxSubType = afterComma;
+      this.selectedTypeForSubType = typeIndex;
+      
+      // Set cursor position
+      setTimeout(() => {
+        input.setSelectionRange(afterComma.length, afterComma.length);
+      }, 0);
+    }
+  }
+
   addSubType(typeIndex: number): void {
     if (this.newBoxSubType.trim()) {
       if (!this.boxTypes[typeIndex].subTypes) {
@@ -521,8 +649,8 @@ export class CreateProjectComponent implements OnInit {
           });
         }
       });
-      this.newBoxSubType = '';
-      this.selectedTypeForSubType = -1;
+      // Don't clear input - keep the value so user can continue editing
+      // Keep selectedTypeForSubType so the input stays focused on the same type
     }
   }
 
@@ -531,6 +659,37 @@ export class CreateProjectComponent implements OnInit {
   }
 
   // Zone methods
+  onZoneInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value;
+    const commaIndex = value.indexOf(',');
+    
+    if (commaIndex !== -1) {
+      // Extract value before comma
+      const beforeComma = value.substring(0, commaIndex).trim();
+      const afterComma = value.substring(commaIndex + 1).trim();
+      
+      // Add the item before comma if it exists
+      if (beforeComma) {
+        const exists = this.zones.some(z => z.zoneCode.toLowerCase() === beforeComma.toLowerCase());
+        if (!exists) {
+          this.zones.push({
+            zoneCode: beforeComma,
+            zoneName: beforeComma
+          });
+        }
+      }
+      
+      // Update input to only contain text after comma
+      this.newZone = afterComma;
+      
+      // Set cursor position
+      setTimeout(() => {
+        input.setSelectionRange(afterComma.length, afterComma.length);
+      }, 0);
+    }
+  }
+
   addZone(): void {
     if (this.newZone.trim()) {
       // Split by comma and add each item
@@ -545,7 +704,7 @@ export class CreateProjectComponent implements OnInit {
           });
         }
       });
-      this.newZone = '';
+      // Don't clear input - keep the value so user can continue editing
     }
   }
 
@@ -554,6 +713,36 @@ export class CreateProjectComponent implements OnInit {
   }
 
   // Box Function methods
+  onBoxFunctionInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value;
+    const commaIndex = value.indexOf(',');
+    
+    if (commaIndex !== -1) {
+      // Extract value before comma
+      const beforeComma = value.substring(0, commaIndex).trim();
+      const afterComma = value.substring(commaIndex + 1).trim();
+      
+      // Add the item before comma if it exists
+      if (beforeComma) {
+        const exists = this.boxFunctions.some(f => f.functionName.toLowerCase() === beforeComma.toLowerCase());
+        if (!exists) {
+          this.boxFunctions.push({
+            functionName: beforeComma
+          });
+        }
+      }
+      
+      // Update input to only contain text after comma
+      this.newBoxFunction = afterComma;
+      
+      // Set cursor position
+      setTimeout(() => {
+        input.setSelectionRange(afterComma.length, afterComma.length);
+      }, 0);
+    }
+  }
+
   addBoxFunction(): void {
     if (this.newBoxFunction.trim()) {
       // Split by comma and add each item
@@ -567,7 +756,7 @@ export class CreateProjectComponent implements OnInit {
           });
         }
       });
-      this.newBoxFunction = '';
+      // Don't clear input - keep the value so user can continue editing
     }
   }
 

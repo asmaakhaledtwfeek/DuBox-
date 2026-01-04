@@ -10,6 +10,11 @@ export const routes: Routes = [
     redirectTo: '/projects',
     pathMatch: 'full'
   },
+  // Public routes (no authentication required)
+  {
+    path: 'box/view/:boxId',
+    loadComponent: () => import('./features/public/public-box-view/public-box-view.component').then(m => m.PublicBoxViewComponent)
+  },
   {
     path: 'login',
     loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent)

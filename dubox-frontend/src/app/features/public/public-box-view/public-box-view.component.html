@@ -1,0 +1,224 @@
+<div class="public-box-view">
+  <!-- Header Banner -->
+  <div class="header-banner">
+    <div class="banner-content">
+      <div class="logo-section">
+        <div class="logo-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12.378 1.602a.75.75 0 00-.756 0L3 6.632l9 5.25 9-5.25-8.622-5.03zM21.75 7.93l-9 5.25v9l8.628-5.032a.75.75 0 00.372-.648V7.93zM11.25 22.18v-9l-9-5.25v8.57a.75.75 0 00.372.648l8.628 5.033z" />
+          </svg>
+        </div>
+        <span class="logo-text">DuBox</span>
+      </div>
+      <div class="view-badge">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75v-.75zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" />
+        </svg>
+        View Only – Opened via QR Code
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="loading">
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <p>Loading box details...</p>
+    </div>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-container" *ngIf="!loading && error">
+    <div class="error-card">
+      <div class="error-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+        </svg>
+      </div>
+      <h2>Unable to Load Box</h2>
+      <p>{{ error }}</p>
+      <button class="retry-btn" (click)="loadBox()">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+        </svg>
+        Try Again
+      </button>
+    </div>
+  </div>
+
+  <!-- Box Details -->
+  <div class="content-container" *ngIf="!loading && !error && box">
+    <!-- Box Header Card -->
+    <div class="box-header-card">
+      <div class="box-identity">
+        <div class="box-tag-badge">{{ box.boxTag }}</div>
+        <h1 class="box-name">{{ box.boxName || box.boxTag }}</h1>
+        <div class="serial-number" *ngIf="box.serialNumber">
+          <span class="label">Serial:</span>
+          <span class="value">{{ box.serialNumber }}</span>
+        </div>
+      </div>
+      
+      <div class="status-progress-section">
+        <div class="status-badge" [style.background-color]="getStatusInfo(box.status).color">
+          {{ getStatusInfo(box.status).label }}
+        </div>
+        <div class="progress-container">
+          <div class="progress-header">
+            <span class="progress-label">Progress</span>
+            <span class="progress-value">{{ box.progressPercentage | number:'1.0-0' }}%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" 
+                 [style.width.%]="box.progressPercentage" 
+                 [style.background-color]="getProgressColor(box.progressPercentage)">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Project Information -->
+    <div class="info-card">
+      <div class="card-header">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 3.75h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
+        </svg>
+        <h2>Project Information</h2>
+      </div>
+      <div class="card-content">
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Project</span>
+            <span class="info-value">{{ box.projectName || box.projectCode }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Project Code</span>
+            <span class="info-value">{{ box.projectCode }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Client</span>
+            <span class="info-value">{{ box.clientName || '—' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Box Details Card -->
+    <div class="info-card">
+      <div class="card-header">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+        </svg>
+        <h2>Box Details</h2>
+      </div>
+      <div class="card-content">
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="info-label">Type</span>
+            <span class="info-value">{{ box.boxType || '—' }}</span>
+          </div>
+          <div class="info-item" *ngIf="box.boxSubTypeName">
+            <span class="info-label">Sub Type</span>
+            <span class="info-value">{{ box.boxSubTypeName }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Function</span>
+            <span class="info-value">{{ box.boxFunction || '—' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Floor</span>
+            <span class="info-value">{{ box.floor || '—' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Building</span>
+            <span class="info-value">{{ box.buildingNumber || '—' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Zone</span>
+            <span class="info-value">{{ box.zone || '—' }}</span>
+          </div>
+          <div class="info-item full-width">
+            <span class="info-label">Dimensions</span>
+            <span class="info-value">{{ getDimensions() }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Location Card -->
+    <div class="info-card">
+      <div class="card-header">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+        </svg>
+        <h2>Current Location</h2>
+      </div>
+      <div class="card-content">
+        <div class="location-display">
+          <span class="location-text">{{ getLocationDisplay() }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Schedule Card -->
+    <div class="info-card">
+      <div class="card-header">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+        </svg>
+        <h2>Schedule</h2>
+      </div>
+      <div class="card-content">
+        <div class="schedule-grid">
+          <div class="schedule-section">
+            <h3>Planned</h3>
+            <div class="date-row">
+              <span class="date-label">Start</span>
+              <span class="date-value">{{ formatDate(box.plannedStartDate) }}</span>
+            </div>
+            <div class="date-row">
+              <span class="date-label">End</span>
+              <span class="date-value">{{ formatDate(box.plannedEndDate) }}</span>
+            </div>
+          </div>
+          <div class="schedule-section">
+            <h3>Actual</h3>
+            <div class="date-row">
+              <span class="date-label">Start</span>
+              <span class="date-value">{{ formatDate(box.actualStartDate) }}</span>
+            </div>
+            <div class="date-row">
+              <span class="date-label">End</span>
+              <span class="date-value">{{ formatDate(box.actualEndDate) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Activities Count -->
+    <div class="info-card compact">
+      <div class="activities-summary">
+        <div class="activity-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
+          </svg>
+        </div>
+        <div class="activity-info">
+          <span class="activity-count">{{ box.activitiesCount }}</span>
+          <span class="activity-label">{{ box.activitiesCount === 1 ? 'Activity' : 'Activities' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="public-footer">
+    <p>This is a public view of the box details. For full access, please log in to the DuBox application.</p>
+    <p class="copyright">© {{ currentYear }} DuBox - Modular Construction Tracking</p>
+  </footer>
+</div>
+

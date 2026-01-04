@@ -18,6 +18,8 @@ import { AuditLog, AuditLogQueryParams } from '../../../core/models/audit-log.mo
 import { DiffUtil } from '../../../core/utils/diff.util';
 import { calculateAndFormatDuration, calculateDurationValues } from '../../../core/utils/duration.util';
 import { ProjectService } from '../../../core/services/project.service';
+import { WIRService } from '../../../core/services/wir.service';
+import { WIRRecord } from '../../../core/models/wir.model';
 
 @Component({
   selector: 'app-activity-details',
@@ -30,6 +32,7 @@ export class ActivityDetailsComponent implements OnInit {
   activity: BoxActivity | null = null;
   activityDetail: BoxActivityDetail | null = null;
   allActivities: BoxActivityDetail[] = []; // All activities for the box (for WIR position feature)
+  wirRecords: WIRRecord[] = []; // WIR records for the box (to check if next WIR has position)
   progressHistory: ProgressUpdate[] = [];
   progressHistoryLoading = false;
   progressHistoryError = '';
@@ -121,7 +124,8 @@ export class ActivityDetailsComponent implements OnInit {
     private progressUpdateService: ProgressUpdateService,
     private teamService: TeamService,
     private auditLogService: AuditLogService,
-    private projectService: ProjectService
+    private projectService: ProjectService,
+    private wirService: WIRService
   ) {}
 
   returnTo: string | null = null; // Store return context
@@ -145,6 +149,7 @@ export class ActivityDetailsComponent implements OnInit {
     this.loadBox(); // Load box to check its status
     this.loadActivity();
     this.loadAllActivities(); // Load all activities for WIR position feature
+    this.loadWIRRecords(); // Load WIR records to check if next WIR has position
     this.loadDropdownData();
   }
 
@@ -216,7 +221,11 @@ export class ActivityDetailsComponent implements OnInit {
     this.canAssignTeam = baseCanPerformActions && !isCompleted; // Don't allow team assignment for completed/delayed
     this.canIssueMaterial = baseCanPerformActions && !isCompleted; // Don't allow material issuance for completed/delayed
     this.canSetSchedule = baseCanPerformActions && !isCompleted; // Don't allow schedule changes for completed/delayed
-    this.canUpdateProgress = baseCanPerformActions; // Allow progress modal for completed/delayed (position updates only, handled by modal)
+    
+    // Check if Update Progress button should be shown
+    // Hide it if activity is completed/delayed AND next WIR has position
+    const shouldHideUpdateProgress = this.shouldHideUpdateProgressButton();
+    this.canUpdateProgress = baseCanPerformActions && !shouldHideUpdateProgress;
     
     // Disable forms if project is on hold, closed, or archived, or if box/activity status doesn't allow activity actions
     if (this.isProjectArchived || this.isProjectOnHold || this.isProjectClosed || !canPerformActivityActionsBasedOnBoxStatus || !canPerformActionsByActivityStatus) {
@@ -399,11 +408,37 @@ export class ActivityDetailsComponent implements OnInit {
       next: (activities) => {
         this.allActivities = activities || [];
         console.log(`✅ Loaded ${this.allActivities.length} activities for WIR position feature`);
+        // Update permissions after activities are loaded (needed for checking next WIR)
+        this.updatePermissions();
       },
       error: (err) => {
         console.error('❌ Error loading all activities:', err);
         // Don't show error to user, just log it - modal will work without WIR position feature
         this.allActivities = [];
+      }
+    });
+  }
+
+  /**
+   * Load WIR records for the box (to check if next WIR has position)
+   */
+  loadWIRRecords(): void {
+    if (!this.boxId) {
+      console.warn('⚠️ BoxId not available, cannot load WIR records');
+      return;
+    }
+
+    this.wirService.getWIRRecordsByBox(this.boxId).subscribe({
+      next: (wirRecords) => {
+        this.wirRecords = wirRecords || [];
+        console.log(`✅ Loaded ${this.wirRecords.length} WIR records`);
+        // Update permissions after WIR records are loaded (needed for checking next WIR)
+        this.updatePermissions();
+      },
+      error: (err) => {
+        console.error('❌ Error loading WIR records:', err);
+        // Don't show error to user, just log it
+        this.wirRecords = [];
       }
     });
   }
@@ -1533,5 +1568,77 @@ export class ActivityDetailsComponent implements OnInit {
       return 'delete';
     }
     return 'other';
+  }
+
+  /**
+   * Check if Update Progress button should be hidden
+   * Hide when: activity is completed or delayed AND next WIR has position values set
+   */
+  shouldHideUpdateProgressButton(): boolean {
+    // Only hide if activity is completed or delayed
+    if (!this.activity || !this.activityDetail) {
+      return false;
+    }
+
+    const isCompleted = this.activity.status === ActivityStatus.Completed || 
+                       this.activity.status === ActivityStatus.Delayed;
+    
+    if (!isCompleted) {
+      return false;
+    }
+
+    // Find the next WIR (at or after this activity's sequence)
+    const currentSequence = this.activityDetail.sequence || 0;
+    const nextWIR = this.findNextWIR(currentSequence);
+
+    if (!nextWIR) {
+      // No next WIR found - show button
+      return false;
+    }
+
+    // Check if the next WIR has position values set (which means position is disabled/locked)
+    const hasPositionValues = this.hasWIRPositionValues(nextWIR);
+    
+    // Hide button if next WIR has position values set
+    return hasPositionValues;
+  }
+
+  /**
+   * Find the next WIR record (at or after the given sequence)
+   * This finds the WIR checkpoint that controls position values for activities at or after this sequence
+   */
+  private findNextWIR(sequence: number): WIRRecord | null {
+    // Find WIR records that are at or after this sequence
+    // These are the WIRs that would control position values for the current activity
+    const nextWIRRecords = this.wirRecords
+      .filter(wir => {
+        // Find the activity this WIR belongs to
+        const activity = this.allActivities.find(a => a.boxActivityId === wir.boxActivityId);
+        if (!activity) return false;
+        // Include WIRs at or after the current sequence (they control position for this activity)
+        return (activity.sequence || 0) >= sequence;
+      })
+      .sort((a, b) => {
+        // Sort by sequence ascending to get the nearest/first WIR
+        const seqA = this.allActivities.find(a2 => a2.boxActivityId === a.boxActivityId)?.sequence || 0;
+        const seqB = this.allActivities.find(a2 => a2.boxActivityId === b.boxActivityId)?.sequence || 0;
+        return seqA - seqB;
+      });
+
+    return nextWIRRecords.length > 0 ? nextWIRRecords[0] : null;
+  }
+
+  /**
+   * Check if WIR has position values set (bay, row, or position)
+   */
+  private hasWIRPositionValues(wir: WIRRecord): boolean {
+    if (!wir) return false;
+    
+    const bayValue = (wir.bay && wir.bay.trim() !== '' && wir.bay !== '-') ? wir.bay : '';
+    const rowValue = (wir.row && wir.row.trim() !== '' && wir.row !== '-') ? wir.row : '';
+    const positionValue = (wir.position && wir.position.trim() !== '' && wir.position !== '-') ? wir.position : '';
+    
+    // Check if any position value is set
+    return !!(bayValue || rowValue || positionValue);
   }
 }

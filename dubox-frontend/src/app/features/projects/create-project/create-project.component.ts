@@ -430,30 +430,33 @@ export class CreateProjectComponent implements OnInit {
   onBuildingInput(event: Event): void {
     const input = event.target as HTMLInputElement;
     const value = input.value;
-    const commaIndex = value.indexOf(',');
     
-    if (commaIndex !== -1) {
-      // Extract value before comma
-      const beforeComma = value.substring(0, commaIndex).trim();
-      const afterComma = value.substring(commaIndex + 1).trim();
+    // Check if there's at least one comma
+    if (value.includes(',')) {
+      // Split by comma
+      const parts = value.split(',');
       
-      // Add the item before comma if it exists
-      if (beforeComma) {
-        const exists = this.buildings.some(b => b.buildingCode.toLowerCase() === beforeComma.toLowerCase());
-        if (!exists) {
-          this.buildings.push({
-            buildingCode: beforeComma,
-            buildingName: beforeComma
-          });
+      // Add all parts except the last one (the incomplete value) to the list
+      for (let i = 0; i < parts.length - 1; i++) {
+        const item = parts[i].trim();
+        if (item) {
+          const exists = this.buildings.some(b => b.buildingCode.toLowerCase() === item.toLowerCase());
+          if (!exists) {
+            this.buildings.push({
+              buildingCode: item,
+              buildingName: item
+            });
+          }
         }
       }
       
-      // Update input to only contain text after comma
-      this.newBuilding = afterComma;
+      // Keep only the last part (incomplete value) in the input
+      const remaining = parts[parts.length - 1];
+      this.newBuilding = remaining;
       
-      // Set cursor position
+      // Set cursor position at the end
       setTimeout(() => {
-        input.setSelectionRange(afterComma.length, afterComma.length);
+        input.setSelectionRange(remaining.length, remaining.length);
       }, 0);
     }
   }
@@ -484,30 +487,33 @@ export class CreateProjectComponent implements OnInit {
   onLevelInput(event: Event): void {
     const input = event.target as HTMLInputElement;
     const value = input.value;
-    const commaIndex = value.indexOf(',');
     
-    if (commaIndex !== -1) {
-      // Extract value before comma
-      const beforeComma = value.substring(0, commaIndex).trim();
-      const afterComma = value.substring(commaIndex + 1).trim();
+    // Check if there's at least one comma
+    if (value.includes(',')) {
+      // Split by comma
+      const parts = value.split(',');
       
-      // Add the item before comma if it exists
-      if (beforeComma) {
-        const exists = this.levels.some(l => l.levelCode.toLowerCase() === beforeComma.toLowerCase());
-        if (!exists) {
-          this.levels.push({
-            levelCode: beforeComma,
-            levelName: beforeComma
-          });
+      // Add all parts except the last one (the incomplete value) to the list
+      for (let i = 0; i < parts.length - 1; i++) {
+        const item = parts[i].trim();
+        if (item) {
+          const exists = this.levels.some(l => l.levelCode.toLowerCase() === item.toLowerCase());
+          if (!exists) {
+            this.levels.push({
+              levelCode: item,
+              levelName: item
+            });
+          }
         }
       }
       
-      // Update input to only contain text after comma
-      this.newLevel = afterComma;
+      // Keep only the last part (incomplete value) in the input
+      const remaining = parts[parts.length - 1];
+      this.newLevel = remaining;
       
-      // Set cursor position
+      // Set cursor position at the end
       setTimeout(() => {
-        input.setSelectionRange(afterComma.length, afterComma.length);
+        input.setSelectionRange(remaining.length, remaining.length);
       }, 0);
     }
   }
@@ -538,31 +544,34 @@ export class CreateProjectComponent implements OnInit {
   onBoxTypeInput(event: Event): void {
     const input = event.target as HTMLInputElement;
     const value = input.value;
-    const commaIndex = value.indexOf(',');
     
-    if (commaIndex !== -1) {
-      // Extract value before comma
-      const beforeComma = value.substring(0, commaIndex).trim();
-      const afterComma = value.substring(commaIndex + 1).trim();
+    // Check if there's at least one comma
+    if (value.includes(',')) {
+      // Split by comma
+      const parts = value.split(',');
       
-      // Add the item before comma if it exists
-      if (beforeComma) {
-        const exists = this.boxTypes.some(t => t.typeName.toLowerCase() === beforeComma.toLowerCase());
-        if (!exists) {
-          this.boxTypes.push({
-            typeName: beforeComma,
-            hasSubTypes: false,
-            subTypes: []
-          });
+      // Add all parts except the last one (the incomplete value) to the list
+      for (let i = 0; i < parts.length - 1; i++) {
+        const item = parts[i].trim();
+        if (item) {
+          const exists = this.boxTypes.some(t => t.typeName.toLowerCase() === item.toLowerCase());
+          if (!exists) {
+            this.boxTypes.push({
+              typeName: item,
+              hasSubTypes: false,
+              subTypes: []
+            });
+          }
         }
       }
       
-      // Update input to only contain text after comma
-      this.newBoxType = afterComma;
+      // Keep only the last part (incomplete value) in the input
+      const remaining = parts[parts.length - 1];
+      this.newBoxType = remaining;
       
-      // Set cursor position
+      // Set cursor position at the end
       setTimeout(() => {
-        input.setSelectionRange(afterComma.length, afterComma.length);
+        input.setSelectionRange(remaining.length, remaining.length);
       }, 0);
     }
   }
@@ -602,33 +611,38 @@ export class CreateProjectComponent implements OnInit {
   onSubTypeInput(event: Event, typeIndex: number): void {
     const input = event.target as HTMLInputElement;
     const value = input.value;
-    const commaIndex = value.indexOf(',');
     
-    if (commaIndex !== -1) {
-      // Extract value before comma
-      const beforeComma = value.substring(0, commaIndex).trim();
-      const afterComma = value.substring(commaIndex + 1).trim();
+    // Check if there's at least one comma
+    if (value.includes(',')) {
+      // Split by comma
+      const parts = value.split(',');
       
-      // Add the item before comma if it exists
-      if (beforeComma) {
-        if (!this.boxTypes[typeIndex].subTypes) {
-          this.boxTypes[typeIndex].subTypes = [];
-        }
-        const exists = this.boxTypes[typeIndex].subTypes?.some(s => s.subTypeName.toLowerCase() === beforeComma.toLowerCase());
-        if (!exists) {
-          this.boxTypes[typeIndex].subTypes!.push({
-            subTypeName: beforeComma
-          });
+      // Initialize subTypes array if needed
+      if (!this.boxTypes[typeIndex].subTypes) {
+        this.boxTypes[typeIndex].subTypes = [];
+      }
+      
+      // Add all parts except the last one (the incomplete value) to the list
+      for (let i = 0; i < parts.length - 1; i++) {
+        const item = parts[i].trim();
+        if (item) {
+          const exists = this.boxTypes[typeIndex].subTypes?.some(s => s.subTypeName.toLowerCase() === item.toLowerCase());
+          if (!exists) {
+            this.boxTypes[typeIndex].subTypes!.push({
+              subTypeName: item
+            });
+          }
         }
       }
       
-      // Update input to only contain text after comma
-      this.newBoxSubType = afterComma;
+      // Keep only the last part (incomplete value) in the input
+      const remaining = parts[parts.length - 1];
+      this.newBoxSubType = remaining;
       this.selectedTypeForSubType = typeIndex;
       
-      // Set cursor position
+      // Set cursor position at the end
       setTimeout(() => {
-        input.setSelectionRange(afterComma.length, afterComma.length);
+        input.setSelectionRange(remaining.length, remaining.length);
       }, 0);
     }
   }
@@ -662,30 +676,33 @@ export class CreateProjectComponent implements OnInit {
   onZoneInput(event: Event): void {
     const input = event.target as HTMLInputElement;
     const value = input.value;
-    const commaIndex = value.indexOf(',');
     
-    if (commaIndex !== -1) {
-      // Extract value before comma
-      const beforeComma = value.substring(0, commaIndex).trim();
-      const afterComma = value.substring(commaIndex + 1).trim();
+    // Check if there's at least one comma
+    if (value.includes(',')) {
+      // Split by comma
+      const parts = value.split(',');
       
-      // Add the item before comma if it exists
-      if (beforeComma) {
-        const exists = this.zones.some(z => z.zoneCode.toLowerCase() === beforeComma.toLowerCase());
-        if (!exists) {
-          this.zones.push({
-            zoneCode: beforeComma,
-            zoneName: beforeComma
-          });
+      // Add all parts except the last one (the incomplete value) to the list
+      for (let i = 0; i < parts.length - 1; i++) {
+        const item = parts[i].trim();
+        if (item) {
+          const exists = this.zones.some(z => z.zoneCode.toLowerCase() === item.toLowerCase());
+          if (!exists) {
+            this.zones.push({
+              zoneCode: item,
+              zoneName: item
+            });
+          }
         }
       }
       
-      // Update input to only contain text after comma
-      this.newZone = afterComma;
+      // Keep only the last part (incomplete value) in the input
+      const remaining = parts[parts.length - 1];
+      this.newZone = remaining;
       
-      // Set cursor position
+      // Set cursor position at the end
       setTimeout(() => {
-        input.setSelectionRange(afterComma.length, afterComma.length);
+        input.setSelectionRange(remaining.length, remaining.length);
       }, 0);
     }
   }
@@ -716,29 +733,32 @@ export class CreateProjectComponent implements OnInit {
   onBoxFunctionInput(event: Event): void {
     const input = event.target as HTMLInputElement;
     const value = input.value;
-    const commaIndex = value.indexOf(',');
     
-    if (commaIndex !== -1) {
-      // Extract value before comma
-      const beforeComma = value.substring(0, commaIndex).trim();
-      const afterComma = value.substring(commaIndex + 1).trim();
+    // Check if there's at least one comma
+    if (value.includes(',')) {
+      // Split by comma
+      const parts = value.split(',');
       
-      // Add the item before comma if it exists
-      if (beforeComma) {
-        const exists = this.boxFunctions.some(f => f.functionName.toLowerCase() === beforeComma.toLowerCase());
-        if (!exists) {
-          this.boxFunctions.push({
-            functionName: beforeComma
-          });
+      // Add all parts except the last one (the incomplete value) to the list
+      for (let i = 0; i < parts.length - 1; i++) {
+        const item = parts[i].trim();
+        if (item) {
+          const exists = this.boxFunctions.some(f => f.functionName.toLowerCase() === item.toLowerCase());
+          if (!exists) {
+            this.boxFunctions.push({
+              functionName: item
+            });
+          }
         }
       }
       
-      // Update input to only contain text after comma
-      this.newBoxFunction = afterComma;
+      // Keep only the last part (incomplete value) in the input
+      const remaining = parts[parts.length - 1];
+      this.newBoxFunction = remaining;
       
-      // Set cursor position
+      // Set cursor position at the end
       setTimeout(() => {
-        input.setSelectionRange(afterComma.length, afterComma.length);
+        input.setSelectionRange(remaining.length, remaining.length);
       }, 0);
     }
   }

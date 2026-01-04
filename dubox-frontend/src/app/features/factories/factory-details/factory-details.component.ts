@@ -29,7 +29,6 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
   selectedStatus: BoxStatus | 'All' = 'All';
   BoxStatus = BoxStatus;
   ProjectLocation = ProjectLocation; // Expose to template
-  showGridView = false; // Toggle for grid view
   
   private subscriptions: Subscription[] = [];
 
@@ -186,82 +185,6 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
   getNonDispatchedBoxCount(): number {
     // Return count of boxes excluding dispatched (for display purposes)
     return this.boxes.filter(box => box.status !== BoxStatus.Dispatched).length;
-  }
-
-  // Grid Layout Methods
-  toggleGridView(): void {
-    this.showGridView = !this.showGridView;
-  }
-
-  getGridLayout(): any {
-    // Filter boxes that have position information and exclude dispatched boxes
-    const boxesWithPosition = this.boxes.filter(box => 
-      (box.bay || box.row || box.position) && box.status !== BoxStatus.Dispatched
-    );
-    
-    if (boxesWithPosition.length === 0) {
-      return { rows: [], columns: [], matrix: [] };
-    }
-
-    // Get unique bays (columns - A, B, C, D) and rows (1, 2, 3, 4)
-    const baysSet = new Set<string>();
-    const rowsSet = new Set<string>();
-    
-    boxesWithPosition.forEach(box => {
-      baysSet.add(box.bay || 'A');
-      rowsSet.add(box.row || '1');
-    });
-
-    // Sort columns (bays) and rows
-    const columns = Array.from(baysSet).sort((a, b) => a.localeCompare(b));
-    const rows = Array.from(rowsSet).sort((a, b) => {
-      const numA = parseInt(a) || 0;
-      const numB = parseInt(b) || 0;
-      return numA - numB;
-    });
-
-    // Create matrix structure
-    const matrix: any[][] = [];
-    
-    rows.forEach(row => {
-      const rowCells: any[] = [];
-      columns.forEach(column => {
-        // Find box at this position
-        const box = boxesWithPosition.find(b => 
-          (b.bay || 'A') === column && (b.row || '1') === row
-        );
-        
-        rowCells.push({
-          row,
-          column,
-          bay: column,
-          box: box || null,
-          position: box?.position || null
-        });
-      });
-      matrix.push(rowCells);
-    });
-
-    return {
-      rows,
-      columns,
-      matrix,
-      totalBoxes: boxesWithPosition.length // Already excludes dispatched boxes
-    };
-  }
-
-  getPositionTooltip(positionGroup: any): string {
-    if (positionGroup.box) {
-      return `${positionGroup.box.code} - ${this.getStatusLabel(positionGroup.box.status)}`;
-    }
-    return 'Empty position';
-  }
-
-  getCellTooltip(cell: any): string {
-    if (cell.box) {
-      return `${cell.box.code} - ${this.getStatusLabel(cell.box.status)} - Position: ${cell.column}${cell.row}`;
-    }
-    return `Empty - Position: ${cell.column}${cell.row}`;
   }
 
   getStatusLabel(status: BoxStatus): string {

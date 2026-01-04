@@ -156,6 +156,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/factories/factory-details/factory-details.component').then(m => m.FactoryDetailsComponent)
   },
   {
+    path: 'factories/:id/layout',
+    canActivate: [authGuard, permissionGuard],
+    data: {
+      permission: { module: 'factories', action: 'view' }
+    },
+    loadComponent: () => import('./features/factories/factory-layout/factory-layout.component').then(m => m.FactoryLayoutComponent)
+  },
+  {
     path: 'admin',
     canActivate: [authGuard, permissionGuard],
     data: { 

@@ -337,6 +337,87 @@
               />
             </div>
           </div>
+
+          <!-- Simplified Factory Layout Grid (shown only when WIR Position is editable) -->
+          <div *ngIf="showFactoryLayout && !isLoadingFactoryLayout" class="factory-layout-mini">
+            <div class="layout-header">
+              <div class="header-content">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="7"/>
+                  <rect x="14" y="3" width="7" height="7"/>
+                  <rect x="14" y="14" width="7" height="7"/>
+                  <rect x="3" y="14" width="7" height="7"/>
+                </svg>
+                <span class="layout-title">Factory Layout</span>
+              </div>
+              <span class="layout-info">{{ getFactoryGridLayout().totalBoxes }} boxes positioned</span>
+            </div>
+
+            <div class="mini-grid-container">
+              <!-- Column Headers -->
+              <div class="mini-grid-header">
+                <div class="mini-corner-cell"></div>
+                <div class="mini-col-header" *ngFor="let column of getFactoryGridLayout().columns">
+                  <span>{{ column }}</span>
+                </div>
+              </div>
+
+              <!-- Grid Rows -->
+              <div class="mini-grid-row" *ngFor="let rowCells of getFactoryGridLayout().matrix">
+                <!-- Row Header -->
+                <div class="mini-row-header">
+                  <span>{{ rowCells[0]?.row }}</span>
+                </div>
+
+                <!-- Row Cells -->
+                <div class="mini-grid-cell"
+                     *ngFor="let cell of rowCells"
+                     [class.occupied]="cell.box"
+                     [class.available]="!cell.box"
+                     [class.current-box]="cell.isCurrentBox"
+                     [class.in-progress]="cell.box?.status === 'InProgress'"
+                     [class.completed]="cell.box?.status === 'Completed'"
+                     [title]="getGridCellTooltip(cell)">
+                  <!-- Occupied cell -->
+                  <div *ngIf="cell.box" class="cell-content">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                      <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                      <line x1="12" y1="22.08" x2="12" y2="12"/>
+                    </svg>
+                  </div>
+
+                  <!-- Available cell -->
+                  <div *ngIf="!cell.box" class="cell-empty"></div>
+
+                  <!-- Position Label -->
+                  <span class="cell-coord">{{ cell.column }}{{ cell.row }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="layout-legend">
+              <div class="legend-item">
+                <span class="legend-dot occupied"></span>
+                <span>Occupied</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot available"></span>
+                <span>Available</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot current"></span>
+                <span>Current Box</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loading State for Factory Layout -->
+          <div *ngIf="isLoadingFactoryLayout" class="factory-layout-loading">
+            <div class="loading-spinner"></div>
+            <span>Loading factory layout...</span>
+          </div>
         </div>
 
         <!-- Action Buttons -->

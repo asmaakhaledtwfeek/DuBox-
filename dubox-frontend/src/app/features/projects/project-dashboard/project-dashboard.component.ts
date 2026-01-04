@@ -395,10 +395,30 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
         window.URL.revokeObjectURL(url);
         this.templateDownloading = false;
       },
-      error: (error) => {
+      error: async (error) => {
         console.error('❌ Error downloading template:', error);
         this.templateDownloading = false;
-        this.importErrorMessage = error?.error?.message || 'Unable to download template right now.';
+        
+        // When downloading blob, error.error is also a Blob (containing JSON)
+        // We need to read it as text to get the actual error message
+        if (error.error instanceof Blob) {
+          try {
+            const errorText = await error.error.text();
+            const errorJson = JSON.parse(errorText);
+            this.importErrorMessage = errorJson.message || errorJson.title || 'Unable to download template right now.';
+            console.error('Parsed error:', errorJson);
+          } catch (e) {
+            console.error('Failed to parse error blob:', e);
+            this.importErrorMessage = 'Unable to download template right now.';
+          }
+        } else {
+          this.importErrorMessage = error?.error?.message || error?.message || 'Unable to download template right now.';
+        }
+        
+        // Scroll to error message
+        setTimeout(() => {
+          this.excelSectionRef?.nativeElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
       }
     });
   }

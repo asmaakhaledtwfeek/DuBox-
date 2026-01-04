@@ -3,8 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } from '@angular/forms';
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
 import { WIRService } from '../../../core/services/wir.service';
+import { BoxService } from '../../../core/services/box.service';
 import { ActivityProgressStatus, BoxActivityDetail } from '../../../core/models/progress-update.model';
 import { WIRRecord, WIRStatus, WIRCheckpoint, CheckpointStatus } from '../../../core/models/wir.model';
+import { Box, BoxStatus } from '../../../core/models/box.model';
 
 @Component({
   selector: 'app-update-progress-modal',
@@ -45,10 +47,17 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
   hasWIRActivityBelow: boolean = false; // Track if WIR activity exists (regardless of record)
   positionLockedReason: string = ''; // Reason why position fields are locked
 
+  // Factory Layout Grid
+  currentBox: Box | null = null;
+  factoryBoxes: Box[] = [];
+  isLoadingFactoryLayout = false;
+  showFactoryLayout = false; // Show only when WIR Position is editable
+
   constructor(
     private fb: FormBuilder,
     private progressUpdateService: ProgressUpdateService,
-    private wirService: WIRService
+    private wirService: WIRService,
+    private boxService: BoxService
   ) {}
 
   ngOnInit(): void {
@@ -61,13 +70,16 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
       this.initializeForm();
       // Clear previous errors and messages when opening
       if (this.isOpen) {
-      this.errorMessage = '';
-      this.successMessage = '';
-      this.selectedFiles = [];
-      this.selectedImages = [];
-      this.currentPhotoUrl = '';
-      this.showCamera = false;
-      this.stopCamera();
+        this.errorMessage = '';
+        this.successMessage = '';
+        this.selectedFiles = [];
+        this.selectedImages = [];
+        this.currentPhotoUrl = '';
+        this.showCamera = false;
+        this.stopCamera();
+        
+        // Load factory layout when modal opens
+        this.loadFactoryLayout();
       }
     }
   }
@@ -214,6 +226,141 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
       // Initial calculation in case values are loaded
       calculatePosition();
     }
+  }
+
+  /**
+   * Load factory layout data (current box and all boxes in the same factory)
+   */
+  private loadFactoryLayout(): void {
+    if (!this.activity?.boxId) {
+      this.showFactoryLayout = false;
+      return;
+    }
+
+    this.isLoadingFactoryLayout = true;
+
+    // First, get the current box to retrieve its factory ID
+    this.boxService.getBox(this.activity.boxId).subscribe({
+      next: (box) => {
+        this.currentBox = box;
+        
+        // Check if box has a factory assigned
+        if (!box.factoryId) {
+          this.showFactoryLayout = false;
+          this.isLoadingFactoryLayout = false;
+          return;
+        }
+
+        // Load all boxes in the same factory
+        this.boxService.getBoxesByFactory(box.factoryId).subscribe({
+          next: (boxes) => {
+            // Filter out dispatched boxes and boxes without position
+            this.factoryBoxes = boxes.filter(b => 
+              b.status !== BoxStatus.Dispatched && 
+              (b.bay || b.row || b.position)
+            );
+            
+            // Show layout only if WIR position fields are editable
+            this.updateFactoryLayoutVisibility();
+            this.isLoadingFactoryLayout = false;
+          },
+          error: (err) => {
+            console.error('Error loading factory boxes:', err);
+            this.isLoadingFactoryLayout = false;
+            this.showFactoryLayout = false;
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Error loading current box:', err);
+        this.isLoadingFactoryLayout = false;
+        this.showFactoryLayout = false;
+      }
+    });
+  }
+
+  /**
+   * Update visibility of factory layout based on WIR position field state
+   */
+  private updateFactoryLayoutVisibility(): void {
+    if (!this.progressForm || !this.currentBox?.factoryId) {
+      this.showFactoryLayout = false;
+      return;
+    }
+
+    // Show factory layout only when WIR Position fields are editable
+    const isBayEditable = !this.progressForm.get('wirBay')?.disabled;
+    const isRowEditable = !this.progressForm.get('wirRow')?.disabled;
+    this.showFactoryLayout = isBayEditable && isRowEditable && this.factoryBoxes.length > 0;
+  }
+
+  /**
+   * Get simplified factory grid layout for display in modal
+   * Similar to factory-details component but optimized for compact display
+   */
+  getFactoryGridLayout(): any {
+    if (this.factoryBoxes.length === 0) {
+      return { rows: [], columns: [], matrix: [], totalBoxes: 0 };
+    }
+
+    // Get unique bays (columns) and rows
+    const baysSet = new Set<string>();
+    const rowsSet = new Set<string>();
+    
+    this.factoryBoxes.forEach(box => {
+      if (box.bay) baysSet.add(box.bay);
+      if (box.row) rowsSet.add(box.row);
+    });
+
+    // Sort columns (bays) and rows
+    const columns = Array.from(baysSet).sort((a, b) => a.localeCompare(b));
+    const rows = Array.from(rowsSet).sort((a, b) => {
+      const numA = parseInt(a) || 0;
+      const numB = parseInt(b) || 0;
+      return numA - numB;
+    });
+
+    // Create matrix structure
+    const matrix: any[][] = [];
+    
+    rows.forEach(row => {
+      const rowCells: any[] = [];
+      columns.forEach(column => {
+        // Find box at this position
+        const box = this.factoryBoxes.find(b => 
+          b.bay === column && b.row === row
+        );
+        
+        rowCells.push({
+          row,
+          column,
+          bay: column,
+          box: box || null,
+          position: box?.position || null,
+          isCurrentBox: box?.id === this.currentBox?.id
+        });
+      });
+      matrix.push(rowCells);
+    });
+
+    return {
+      rows,
+      columns,
+      matrix,
+      totalBoxes: this.factoryBoxes.length
+    };
+  }
+
+  /**
+   * Get tooltip for grid cell
+   */
+  getGridCellTooltip(cell: any): string {
+    if (cell.box) {
+      const status = cell.box.status || 'Unknown';
+      const isCurrent = cell.isCurrentBox ? ' (Current Box)' : '';
+      return `${cell.box.code}${isCurrent}\nBay: ${cell.bay}, Row: ${cell.row}\nPosition: ${cell.position || '-'}\nStatus: ${status}`;
+    }
+    return `Available\nBay: ${cell.bay}, Row: ${cell.row}`;
   }
 
   /**
@@ -438,6 +585,7 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
       this.progressForm.get('wirBay')?.enable();
       this.progressForm.get('wirRow')?.enable();
       console.log('✅ No activity/allActivities - fields editable');
+      this.updateFactoryLayoutVisibility();
       return;
     }
 
@@ -463,6 +611,7 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
       this.progressForm.get('wirBay')?.enable();
       this.progressForm.get('wirRow')?.enable();
       console.log('✅ No previous WIR activity - fields editable');
+      this.updateFactoryLayoutVisibility();
       return;
     }
 
@@ -480,6 +629,7 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
             this.progressForm.get('wirRow')?.disable();
             this.positionLockedReason = `Position is locked. Previous WIR (${previousWIRActivity.activityMaster?.wirCode || previousWIRActivity.wirCode || 'WIR'}) must be created first.`;
             console.log('🔒 Locking: Previous WIR record not created yet');
+            this.updateFactoryLayoutVisibility();
             return;
           }
 
@@ -511,6 +661,7 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
                 this.progressForm.get('wirRow')?.enable();
                 this.positionLockedReason = ''; // Clear lock reason
                 console.log('✅ Previous WIR is Conditionally Approved - fields editable');
+                this.updateFactoryLayoutVisibility();
                 return;
               }
               
@@ -523,6 +674,7 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
                 this.progressForm.get('wirRow')?.disable();
                 this.positionLockedReason = `Position is locked. Previous WIR (${previousWIR.wirCode}) is Pending. It must be approved first.`;
                 console.log('🔒 Locking: Previous WIR is Pending');
+                this.updateFactoryLayoutVisibility();
                 return;
               }
               
@@ -532,6 +684,7 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
                 this.progressForm.get('wirRow')?.disable();
                 this.positionLockedReason = `Position is locked. Previous WIR (${previousWIR.wirCode}) was Rejected. Issues must be resolved.`;
                 console.log('🔒 Locking: Previous WIR is Rejected');
+                this.updateFactoryLayoutVisibility();
                 return;
               }
               
@@ -554,12 +707,14 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
                     this.positionLockedReason = ''; // Clear lock reason
                     console.log('✅ Previous WIR fully approved (all items Pass) - fields editable');
                   }
+                  this.updateFactoryLayoutVisibility();
                 } else {
                   // No checkpoint found but WIR is Approved - inconsistent state
                   this.progressForm.get('wirBay')?.disable();
                   this.progressForm.get('wirRow')?.disable();
                   this.positionLockedReason = `Position is locked. Previous WIR (${previousWIR.wirCode}) is Approved but has no checkpoint. Create QA/QC checkpoint first.`;
                   console.log('🔒 Locking: Previous WIR has no checkpoint');
+                  this.updateFactoryLayoutVisibility();
                 }
               } else {
                 // Other statuses - UNLOCK (fallback)
@@ -567,6 +722,7 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
                 this.progressForm.get('wirRow')?.enable();
                 this.positionLockedReason = ''; // Clear lock reason
                 console.log('✅ Previous WIR status allows editing - fields editable');
+                this.updateFactoryLayoutVisibility();
               }
             },
             error: () => {
@@ -575,6 +731,7 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
               this.progressForm.get('wirRow')?.disable();
               this.positionLockedReason = `Position is locked. Unable to verify previous WIR status.`;
               console.log('🔒 Locking: Error loading checkpoints (safe fallback)');
+              this.updateFactoryLayoutVisibility();
             }
           });
         },
@@ -649,6 +806,9 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
       // Only check previous WIR - don't lock based on current WIR status when position is not set
       this.checkPreviousWIRForLocking();
     }
+    
+    // Update factory layout visibility based on field editability
+    this.updateFactoryLayoutVisibility();
   }
 
 

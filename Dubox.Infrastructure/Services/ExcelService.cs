@@ -57,9 +57,13 @@ public class ExcelService : IExcelService
         {
             var cell = dataSheet.Cells[1, i + 1];
             cell.Value = headers[i];
-            cell.Style.Font.Bold = true;
+            
+            // Set pattern type FIRST before any color operations
             cell.Style.Fill.PatternType = ExcelFillStyle.Solid;
             cell.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(79, 129, 189)); // Professional blue
+            
+            // Now set other styling
+            cell.Style.Font.Bold = true;
             cell.Style.Font.Color.SetColor(Color.White);
             cell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
             cell.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
@@ -79,14 +83,21 @@ public class ExcelService : IExcelService
 
         // Add instruction row
         var instructionRow = 2;
-        dataSheet.Cells[instructionRow, 1, instructionRow, headers.Length].Merge = true;
         var instructionCell = dataSheet.Cells[instructionRow, 1];
-        instructionCell.Value = $"⚠️ INSTRUCTIONS: Row 3 contains an example – please delete it before importing.Enter your data starting from the next row.Box Tag is AUTO-GENERATED during import using the format: {projectCode}-Building-Floor-Type-SubType. REQUIRED fields: Box Type and Floor. Use values from Reference Data sheets. Make sure to delete rows 2 and 3 before importing.";
+        instructionCell.Value = $"⚠️ INSTRUCTIONS: Row 3 contains an example – please delete it before importing. Enter your data starting from the next row. Box Tag is AUTO-GENERATED during import using the format: {projectCode}-Building-Floor-Type-SubType. REQUIRED fields: Box Type and Floor. Use values from Reference Data sheets. Make sure to delete rows 2 and 3 before importing.";
+        
+        // Set pattern type FIRST before color operations on the first cell
+        instructionCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
         instructionCell.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(255, 242, 204)); // Light yellow
+        
+        // Now set other styling
         instructionCell.Style.Font.Bold = true;
         instructionCell.Style.Font.Size = 10;
         instructionCell.Style.WrapText = true;
         dataSheet.Row(instructionRow).Height = 50;
+        
+        // Merge cells AFTER all styling is applied
+        dataSheet.Cells[instructionRow, 1, instructionRow, headers.Length].Merge = true;
 
         // Freeze top rows
         dataSheet.View.FreezePanes(3, 1);
@@ -118,31 +129,46 @@ public class ExcelService : IExcelService
         
         // Box Tag preview (manual concatenation for the example)
         var exampleBoxTag = $"{projectCode}-B01-GF-ElectricalPanel-MainPanel";
-        dataSheet.Cells[exampleRow, headers.Length].Value = exampleBoxTag;
-        dataSheet.Cells[exampleRow, headers.Length].Style.Fill.PatternType = ExcelFillStyle.Solid;
-        dataSheet.Cells[exampleRow, headers.Length].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(255, 250, 205)); // Lemon chiffon
-        dataSheet.Cells[exampleRow, headers.Length].Style.Font.Bold = true;
-        dataSheet.Cells[exampleRow, headers.Length].Style.Font.Color.SetColor(Color.FromArgb(184, 134, 11)); // Dark goldenrod
+        var boxTagCell = dataSheet.Cells[exampleRow, headers.Length];
+        boxTagCell.Value = exampleBoxTag;
+        
+        // Set pattern type FIRST before any color operations
+        boxTagCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+        boxTagCell.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(255, 250, 205)); // Lemon chiffon
+        
+        // Now set font styling
+        boxTagCell.Style.Font.Bold = true;
+        boxTagCell.Style.Font.Color.SetColor(Color.FromArgb(184, 134, 11)); // Dark goldenrod
         
         // Style the example row
         for (int col = 1; col < headers.Length; col++)
         {
-            dataSheet.Cells[exampleRow, col].Style.Font.Italic = true;
-            dataSheet.Cells[exampleRow, col].Style.Fill.PatternType = ExcelFillStyle.Solid;
-            dataSheet.Cells[exampleRow, col].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(240, 248, 255)); // Alice blue
-            dataSheet.Cells[exampleRow, col].Style.Font.Color.SetColor(Color.FromArgb(105, 105, 105)); // Dim gray
+            var exampleCell = dataSheet.Cells[exampleRow, col];
+            
+            // Set pattern type FIRST before any color operations
+            exampleCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+            exampleCell.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(240, 248, 255)); // Alice blue
+            
+            // Now set font styling
+            exampleCell.Style.Font.Italic = true;
+            exampleCell.Style.Font.Color.SetColor(Color.FromArgb(105, 105, 105)); // Dim gray
         }
         
         // Add note to Box Tag column for subsequent rows
         for (int row = exampleRow + 1; row <= exampleRow + 5; row++)
         {
-            dataSheet.Cells[row, headers.Length].Value = "(auto-generated on import)";
-            dataSheet.Cells[row, headers.Length].Style.Fill.PatternType = ExcelFillStyle.Solid;
-            dataSheet.Cells[row, headers.Length].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(245, 245, 245)); // White smoke
-            dataSheet.Cells[row, headers.Length].Style.Font.Italic = true;
-            dataSheet.Cells[row, headers.Length].Style.Font.Size = 9;
-            dataSheet.Cells[row, headers.Length].Style.Font.Color.SetColor(Color.FromArgb(169, 169, 169)); // Dark gray
-            dataSheet.Cells[row, headers.Length].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            var noteCell = dataSheet.Cells[row, headers.Length];
+            noteCell.Value = "(auto-generated on import)";
+            
+            // Set pattern type FIRST before any color operations
+            noteCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+            noteCell.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(245, 245, 245)); // White smoke
+            
+            // Now set font styling
+            noteCell.Style.Font.Italic = true;
+            noteCell.Style.Font.Size = 9;
+            noteCell.Style.Font.Color.SetColor(Color.FromArgb(169, 169, 169)); // Dark gray
+            noteCell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
         }
 
         // Create reference data sheets
@@ -154,17 +180,23 @@ public class ExcelService : IExcelService
             var refSheet = package.Workbook.Worksheets.Add($"Ref: {reference.Key}");
             
             // Add header
-            refSheet.Cells[1, 1].Value = reference.Key;
-            refSheet.Cells[1, 1].Style.Font.Bold = true;
-            refSheet.Cells[1, 1].Style.Fill.PatternType = ExcelFillStyle.Solid;
-            refSheet.Cells[1, 1].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(146, 208, 80)); // Green
-            refSheet.Cells[1, 1].Style.Font.Color.SetColor(Color.White);
-            refSheet.Cells[1, 1].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            var refHeaderCell = refSheet.Cells[1, 1];
+            refHeaderCell.Value = reference.Key;
+            
+            // Set pattern type FIRST before any color operations
+            refHeaderCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
+            refHeaderCell.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(146, 208, 80)); // Green
+            
+            // Now set font styling
+            refHeaderCell.Style.Font.Bold = true;
+            refHeaderCell.Style.Font.Color.SetColor(Color.White);
+            refHeaderCell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
 
             // Add description
-            refSheet.Cells[1, 2].Value = $"Valid values configured for this project";
-            refSheet.Cells[1, 2].Style.Font.Italic = true;
-            refSheet.Cells[1, 2].Style.Font.Color.SetColor(Color.Gray);
+            var descCell = refSheet.Cells[1, 2];
+            descCell.Value = $"Valid values configured for this project";
+            descCell.Style.Font.Italic = true;
+            descCell.Style.Font.Color.SetColor(Color.Gray);
 
             // Add values
             for (int i = 0; i < reference.Value.Count; i++)
@@ -182,15 +214,24 @@ public class ExcelService : IExcelService
         {
             var subTypesSheet = package.Workbook.Worksheets.Add("Ref: Box Sub Types");
             
-            // Add header
-            subTypesSheet.Cells[1, 1].Value = "Box Type";
-            subTypesSheet.Cells[1, 2].Value = "Box Sub Type";
-            subTypesSheet.Cells[1, 1, 1, 2].Style.Font.Bold = true;
-            subTypesSheet.Cells[1, 1, 1, 2].Style.Fill.PatternType = ExcelFillStyle.Solid;
-            subTypesSheet.Cells[1, 1, 1, 2].Style.Fill.BackgroundColor.SetColor(Color.FromArgb(146, 208, 80)); // Green
-            subTypesSheet.Cells[1, 1, 1, 2].Style.Font.Color.SetColor(Color.White);
-            subTypesSheet.Cells[1, 1, 1, 2].Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-            subTypesSheet.Cells[1, 1, 1, 2].Style.Border.BorderAround(ExcelBorderStyle.Thin);
+            // Add header - style each cell individually to avoid EPPlus range styling issues
+            var subTypeHeader1 = subTypesSheet.Cells[1, 1];
+            subTypeHeader1.Value = "Box Type";
+            subTypeHeader1.Style.Fill.PatternType = ExcelFillStyle.Solid;
+            subTypeHeader1.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(146, 208, 80)); // Green
+            subTypeHeader1.Style.Font.Bold = true;
+            subTypeHeader1.Style.Font.Color.SetColor(Color.White);
+            subTypeHeader1.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            subTypeHeader1.Style.Border.BorderAround(ExcelBorderStyle.Thin);
+            
+            var subTypeHeader2 = subTypesSheet.Cells[1, 2];
+            subTypeHeader2.Value = "Box Sub Type";
+            subTypeHeader2.Style.Fill.PatternType = ExcelFillStyle.Solid;
+            subTypeHeader2.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(146, 208, 80)); // Green
+            subTypeHeader2.Style.Font.Bold = true;
+            subTypeHeader2.Style.Font.Color.SetColor(Color.White);
+            subTypeHeader2.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+            subTypeHeader2.Style.Border.BorderAround(ExcelBorderStyle.Thin);
 
             int currentRow = 2;
             foreach (var group in groupedReferenceData.OrderBy(g => g.Key))

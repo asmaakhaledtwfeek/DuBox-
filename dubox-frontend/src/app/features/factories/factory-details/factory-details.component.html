@@ -153,169 +153,27 @@
         </div>
       </div>
 
-      <!-- Grid Layout View Section -->
-      <div class="grid-layout-section">
-        <div class="section-header-with-toggle">
-          <div class="header-left">
-            <h2>Factory Layout</h2>
-            <span class="coming-soon-badge">Coming Soon</span>
-          </div>
-          <button class="toggle-view-btn" (click)="toggleGridView()">
-            <svg *ngIf="!showGridView" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <!-- Factory Layout Quick Link -->
+      <div class="factory-layout-link-section">
+        <div class="layout-link-card">
+          <div class="card-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="7" height="7"/>
               <rect x="14" y="3" width="7" height="7"/>
               <rect x="14" y="14" width="7" height="7"/>
               <rect x="3" y="14" width="7" height="7"/>
             </svg>
-            <svg *ngIf="showGridView" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="8" y1="6" x2="21" y2="6"/>
-              <line x1="8" y1="12" x2="21" y2="12"/>
-              <line x1="8" y1="18" x2="21" y2="18"/>
-              <line x1="3" y1="6" x2="3.01" y2="6"/>
-              <line x1="3" y1="12" x2="3.01" y2="12"/>
-              <line x1="3" y1="18" x2="3.01" y2="18"/>
+          </div>
+          <div class="card-info">
+            <h3>Factory Layout</h3>
+            <p>View the complete factory warehouse layout with bay, row, and position information for all boxes</p>
+          </div>
+          <button class="view-layout-btn" [routerLink]="['/factories', factoryId, 'layout']">
+            <span>View Full Layout</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
             </svg>
-            {{ showGridView ? 'Show List' : 'Show Grid Layout' }}
           </button>
-        </div>
-
-        <!-- Grid Layout View -->
-        <div class="warehouse-grid" *ngIf="showGridView">
-          <div class="matrix-container" *ngIf="getGridLayout().matrix.length > 0">
-            <!-- Matrix Table -->
-            <div class="warehouse-matrix">
-              <!-- Column Headers (Aisles: A, B, C, D) -->
-              <div class="matrix-header">
-                <div class="matrix-corner-cell">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="3" width="7" height="7"/>
-                    <rect x="14" y="3" width="7" height="7"/>
-                    <rect x="14" y="14" width="7" height="7"/>
-                    <rect x="3" y="14" width="7" height="7"/>
-                  </svg>
-                </div>
-                <div class="matrix-column-header" *ngFor="let column of getGridLayout().columns">
-                  <div class="aisle-indicator">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                    </svg>
-                  </div>
-                  <span class="column-label">Aisle {{ column }}</span>
-                </div>
-              </div>
-
-              <!-- Matrix Rows -->
-              <div class="matrix-row" *ngFor="let rowCells of getGridLayout().matrix; let rowIndex = index">
-                <!-- Row Header (Row Number) -->
-                <div class="matrix-row-header">
-                  <span class="row-number">{{ rowCells[0].row }}</span>
-                </div>
-
-                <!-- Row Cells -->
-                <div class="matrix-cell"
-                     *ngFor="let cell of rowCells"
-                     [class.has-box]="cell.box"
-                     [class.in-progress]="cell.box?.status === 'InProgress'"
-                     [class.completed]="cell.box?.status === 'Completed'"
-                     [class.empty]="!cell.box"
-                     (click)="cell.box && viewBox(cell.box.id)"
-                     [title]="getCellTooltip(cell)">
-                  
-                  <!-- Box Content -->
-                  <div class="cell-content" *ngIf="cell.box">
-                    <div class="box-icon-small">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                        <line x1="12" y1="22.08" x2="12" y2="12"/>
-                      </svg>
-                    </div>
-                    <div class="box-code-small">{{ cell.box.code }}</div>
-                    <div class="position-badge" *ngIf="cell.position">
-                      {{ cell.position }}
-                    </div>
-                  </div>
-
-                  <!-- Empty Cell -->
-                  <div class="empty-cell-content" *ngIf="!cell.box">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.2">
-                      <rect x="3" y="3" width="18" height="18" rx="2"/>
-                    </svg>
-                  </div>
-
-                  <!-- Cell Coordinates -->
-                  <div class="cell-coordinates">
-                    {{ cell.column }}{{ cell.row }}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Matrix Info -->
-            <div class="matrix-info">
-              <div class="info-item">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="5" y1="12" x2="19" y2="12"/>
-                  <polyline points="12 5 19 12 12 19"/>
-                </svg>
-                <span>{{ getGridLayout().columns.length }} Aisles</span>
-              </div>
-              <div class="info-item">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <line x1="12" y1="5" x2="12" y2="19"/>
-                  <polyline points="19 12 12 19 5 12"/>
-                </svg>
-                <span>{{ getGridLayout().rows.length }} Levels</span>
-              </div>
-              <div class="info-item">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                </svg>
-                <span>{{ getGridLayout().totalBoxes }} Boxes Positioned</span>
-              </div>
-            </div>
-          </div>
-
-            <!-- Empty state when no boxes have positions -->
-            <div class="grid-empty-state" *ngIf="getGridLayout().matrix.length === 0">
-              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <rect x="3" y="3" width="7" height="7"/>
-                <rect x="14" y="3" width="7" height="7"/>
-                <rect x="14" y="14" width="7" height="7"/>
-                <rect x="3" y="14" width="7" height="7"/>
-              </svg>
-              <h3>No Layout Data Available</h3>
-              <p>Boxes don't have bay, row, or position information yet.</p>
-            </div>
-
-          <!-- Legend -->
-          <div class="grid-legend" *ngIf="getGridLayout().matrix.length > 0">
-            <div class="legend-title">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="16" x2="12" y2="12"/>
-                <line x1="12" y1="8" x2="12.01" y2="8"/>
-              </svg>
-              Warehouse Color Indicators:
-            </div>
-            <div class="legend-items">
-              <div class="legend-item">
-                <div class="legend-box in-progress-box"></div>
-                <span>In Progress</span>
-                <span class="legend-percentage">{{ getInProgressPercentage() }}%</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-box completed-box"></div>
-                <span>Completed</span>
-                <span class="legend-percentage">{{ getCompletedPercentage() }}%</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-box empty-box"></div>
-                <span>Empty</span>
-                <span class="legend-percentage">{{ getEmptyPercentage() }}%</span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 

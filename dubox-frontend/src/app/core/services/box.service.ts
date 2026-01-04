@@ -538,9 +538,36 @@ export class BoxService {
    * Import boxes from Excel file
    */
   importBoxesFromExcel(projectId: string, file: File): Observable<BoxImportResult> {
+    // Try both query parameter and FormData for projectId to ensure compatibility
     const endpoint = `${this.endpoint}/import-excel?projectId=${projectId}`;
-    return this.apiService.upload<any>(endpoint, file).pipe(
-      map(result => this.transformImportResult(result))
+    
+    console.log('📤 Importing boxes from Excel:', {
+      endpoint,
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      projectId
+    });
+    
+    // Use FormData like other file uploads in the application
+    const formData = new FormData();
+    formData.append('file', file);
+    // Also include projectId in FormData as backup (backend can read from query string)
+    formData.append('projectId', projectId);
+    
+    // Log FormData contents for debugging
+    console.log('📦 FormData contents:', {
+      hasFile: formData.has('file'),
+      hasProjectId: formData.has('projectId'),
+      fileKey: 'file',
+      projectIdKey: 'projectId'
+    });
+    
+    return this.apiService.postFormData<any>(endpoint, formData).pipe(
+      map(result => {
+        console.log('✅ Excel import result received:', result);
+        return this.transformImportResult(result);
+      })
     );
   }
 

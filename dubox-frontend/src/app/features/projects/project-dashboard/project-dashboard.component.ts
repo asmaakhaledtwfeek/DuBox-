@@ -424,10 +424,6 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
   }
 
   onBrowseClick(): void {
-    if (!this.fileInputRef) {
-      return;
-    }
-    
     // Check if project is archived, on hold, or closed
     if (this.isProjectArchived) {
       document.dispatchEvent(new CustomEvent('app-toast', {
@@ -450,8 +446,29 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.fileInputRef.nativeElement.value = '';
-    this.fileInputRef.nativeElement.click();
+    // Try to get the file input element - use ViewChild first, fallback to querySelector
+    let fileInput: HTMLInputElement | null = null;
+    
+    if (this.fileInputRef?.nativeElement) {
+      fileInput = this.fileInputRef.nativeElement;
+    } else {
+      // Fallback: query the element within the excel section for better scoping
+      const excelSection = this.excelSectionRef?.nativeElement;
+      if (excelSection) {
+        fileInput = excelSection.querySelector('input[type="file"][accept=".xlsx,.xls"]') as HTMLInputElement;
+      } else {
+        // Last resort: query globally
+        fileInput = document.querySelector('input[type="file"][accept=".xlsx,.xls"]') as HTMLInputElement;
+      }
+    }
+
+    if (!fileInput) {
+      console.error('File input element not found');
+      return;
+    }
+
+    fileInput.value = '';
+    fileInput.click();
   }
 
   onFileChange(event: Event): void {
@@ -579,10 +596,30 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Validate file size (10 MB limit)
+    const maxSize = 10 * 1024 * 1024; // 10 MB in bytes
+    if (this.selectedFile.size > maxSize) {
+      this.importErrorMessage = 'File size exceeds the maximum limit of 10 MB. Please choose a smaller file.';
+      return;
+    }
+
+    // Validate file type
+    if (!this.isValidExcelFile(this.selectedFile)) {
+      this.importErrorMessage = 'Invalid file type. Please upload an Excel file (.xlsx or .xls).';
+      return;
+    }
+
     this.importingExcel = true;
     this.importErrorMessage = '';
     this.importSuccessMessage = '';
     this.importResult = null;
+
+    console.log('📤 Uploading file:', {
+      name: this.selectedFile.name,
+      size: this.selectedFile.size,
+      type: this.selectedFile.type,
+      projectId: this.projectId
+    });
 
     this.boxService.importBoxesFromExcel(this.projectId, this.selectedFile).subscribe({
       next: (result) => {
@@ -593,10 +630,40 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
           this.loadBoxesAndCalculateCounts();
         }
       },
-      error: (error) => {
+      error: async (error) => {
         this.importingExcel = false;
         console.error('❌ Excel import failed:', error);
-        this.importErrorMessage = error?.error?.message || 'Failed to import Excel file. Please try again.';
+        
+        let errorMessage = 'Failed to import Excel file. Please try again.';
+        
+        // Handle status 0 (network/CORS/connection issues)
+        if (error.status === 0) {
+          errorMessage = 'Network error: Unable to connect to the server. Please check your internet connection and ensure the server is running.';
+        } else if (error.error) {
+          // Try to extract error message from different response structures
+          if (typeof error.error === 'string') {
+            errorMessage = error.error;
+          } else if (error.error.message) {
+            errorMessage = error.error.message;
+          } else if (error.error.errors && Array.isArray(error.error.errors) && error.error.errors.length > 0) {
+            errorMessage = error.error.errors[0];
+          } else if (error.error.title) {
+            errorMessage = error.error.title;
+          } else if (error.error instanceof Blob) {
+            // Handle blob error response
+            try {
+              const text = await error.error.text();
+              const errorJson = JSON.parse(text);
+              errorMessage = errorJson.message || errorJson.title || errorMessage;
+            } catch (e) {
+              console.error('Failed to parse blob error:', e);
+            }
+          }
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        this.importErrorMessage = errorMessage;
       }
     });
   }

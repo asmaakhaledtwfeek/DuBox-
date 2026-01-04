@@ -138,16 +138,43 @@ public class BoxesController : ControllerBase
     [HttpPost("import-excel")]
     [RequestSizeLimit(10_485_760)] // 10 MB
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> ImportFromExcel(Guid projectId, [FromForm] IFormFile file, CancellationToken cancellationToken)
+    public async Task<IActionResult> ImportFromExcel([FromQuery] Guid? projectId, [FromForm] IFormFile? file, CancellationToken cancellationToken)
     {
-        if (file == null || file.Length == 0)
+        // Support projectId from both query string and FormData for flexibility
+        Guid actualProjectId;
+        if (projectId.HasValue)
+        {
+            actualProjectId = projectId.Value;
+        }
+        else if (Request.HasFormContentType)
+        {
+            var form = await Request.ReadFormAsync(cancellationToken);
+            if (!Guid.TryParse(form["projectId"].ToString(), out actualProjectId))
+            {
+                return BadRequest("ProjectId is required and must be a valid GUID");
+            }
+        }
+        else
+        {
+            return BadRequest("ProjectId is required");
+        }
+
+        // Support file from FormData
+        IFormFile? actualFile = file;
+        if (actualFile == null && Request.HasFormContentType)
+        {
+            var form = await Request.ReadFormAsync(cancellationToken);
+            actualFile = form.Files["file"];
+        }
+
+        if (actualFile == null || actualFile.Length == 0)
             return BadRequest("No file uploaded");
 
-        using var stream = file.OpenReadStream();
+        using var stream = actualFile.OpenReadStream();
         using var memoryStream = new MemoryStream();
         await stream.CopyToAsync(memoryStream, cancellationToken);
         memoryStream.Position = 0;
-        var command = new ImportBoxesFromExcelCommand(projectId, memoryStream, file.FileName);
+        var command = new ImportBoxesFromExcelCommand(actualProjectId, memoryStream, actualFile.FileName);
         var result = await _mediator.Send(command, cancellationToken);
 
         return result.IsSuccess ? Ok(result) : BadRequest(result);

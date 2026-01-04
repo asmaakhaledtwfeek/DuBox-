@@ -94,7 +94,18 @@ export class ApiService {
    * Important: Do NOT manually set Content-Type - let Angular/browser set it with boundary
    */
   postFormData<T>(endpoint: string, formData: FormData): Observable<T> {
-    return this.http.post<any>(`${this.baseUrl}/${endpoint}`, formData)
+    const url = `${this.baseUrl}/${endpoint}`;
+    console.log('📤 POST FormData Request:', {
+      url,
+      endpoint,
+      formDataKeys: Array.from(formData.keys()),
+      hasFile: formData.has('file') || formData.has('Files')
+    });
+    
+    return this.http.post<any>(url, formData, {
+      reportProgress: false,
+      observe: 'body'
+    })
       .pipe(
         map(response => {
           console.log('🌐 POST FormData API Response for', endpoint, ':', response);
@@ -102,7 +113,16 @@ export class ApiService {
           console.log('✅ Extracted data:', data);
           return data;
         }),
-        catchError(this.handleError)
+        catchError((error) => {
+          console.error('❌ POST FormData Error for', endpoint, ':', {
+            status: error.status,
+            statusText: error.statusText,
+            message: error.message,
+            url: error.url,
+            error: error.error
+          });
+          return this.handleError(error);
+        })
       );
   }
 
@@ -172,9 +192,18 @@ export class ApiService {
       });
     }
 
-    return this.http.post<ApiResponse<T>>(`${this.baseUrl}/${endpoint}`, formData)
+    return this.http.post<any>(`${this.baseUrl}/${endpoint}`, formData)
       .pipe(
-        map(response => response.data),
+        map(response => {
+          console.log('🌐 UPLOAD API Response for', endpoint, ':', response);
+          console.log('🔑 Response keys:', Object.keys(response));
+          
+          // Backend returns Result<T> with 'data' property (camelCase configured in Program.cs)
+          // Try: data (camelCase) -> Data (PascalCase) -> value -> Value -> raw response
+          const data = response.data || response.Data || response.value || response.Value || response;
+          console.log('✅ Extracted upload data:', data);
+          return data;
+        }),
         catchError(this.handleError)
       );
   }

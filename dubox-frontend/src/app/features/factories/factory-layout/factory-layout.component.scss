@@ -209,7 +209,122 @@
   }
 }
 
+// Layout wrapper for sidebar + grid
+.warehouse-layout-wrapper {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+
+  @media (max-width: 1200px) {
+    flex-direction: column;
+  }
+}
+
+// Business Flow Indicators Sidebar
+.business-flow-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  position: sticky;
+  top: 100px;
+
+  .sidebar-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e2e8f0;
+  }
+
+  .flow-indicators {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .flow-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+
+    .flow-color {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+      border: 2px solid rgba(255, 255, 255, 0.5);
+
+      // WIR Stage Colors - AMANA Palette
+      &.wir-stage-1 {
+        background: linear-gradient(145deg, #4ea8de 0%, #1b9aaa 100%);
+      }
+      &.wir-stage-2 {
+        background: linear-gradient(145deg, #52b788 0%, #2d6a4f 100%);
+      }
+      &.wir-stage-3 {
+        background: linear-gradient(145deg, #bef264 0%, #9bc53d 100%);
+      }
+      &.wir-stage-4 {
+        background: linear-gradient(145deg, #fde047 0%, #ffc107 100%);
+      }
+      &.wir-stage-5 {
+        background: linear-gradient(145deg, #fb923c 0%, #ff6b35 100%);
+      }
+      &.wir-stage-6 {
+        background: linear-gradient(145deg, #a78bfa 0%, #5e60ce 100%);
+      }
+      &.wir-completed {
+        background: linear-gradient(145deg, #34d399 0%, #10b981 100%);
+      }
+      &.empty-location {
+        background: repeating-linear-gradient(
+          45deg,
+          #e2e8f0,
+          #e2e8f0 3px,
+          #f1f5f9 3px,
+          #f1f5f9 6px
+        );
+        border: 1px dashed #94a3b8;
+      }
+    }
+
+    span {
+      font-size: 13px;
+      font-weight: 500;
+      color: #475569;
+    }
+  }
+
+  @media (max-width: 1200px) {
+    width: 100%;
+    position: static;
+
+    .flow-indicators {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .flow-item {
+      padding: 6px 12px;
+      background: #f8fafc;
+      border-radius: 8px;
+    }
+  }
+}
+
 .warehouse-grid {
+  flex: 1;
+  min-width: 0;
   animation: slideDown 0.4s ease-out;
 }
 
@@ -243,7 +358,7 @@
 
 .matrix-header {
   display: grid;
-  grid-template-columns: 90px repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: 60px repeat(auto-fit, minmax(120px, 1fr));
   background: linear-gradient(135deg, #1b9aaa 0%, #178995 100%);
   border-bottom: 3px solid #0f5761;
 }
@@ -266,9 +381,9 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 18px 20px;
+  padding: 10px 12px;
   border-right: 2px solid rgba(255, 255, 255, 0.15);
-  gap: 10px;
+  gap: 6px;
 
   &:last-child {
     border-right: none;
@@ -276,24 +391,26 @@
 
   .aisle-indicator {
     svg {
+      width: 16px;
+      height: 16px;
       color: white;
       filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
     }
   }
 
   .column-label {
-    font-size: 16px;
+    font-size: 12px;
     font-weight: 800;
     color: white;
     text-transform: uppercase;
-    letter-spacing: 1.2px;
+    letter-spacing: 0.8px;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   }
 }
 
 .matrix-row {
   display: grid;
-  grid-template-columns: 90px repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: 60px repeat(auto-fit, minmax(120px, 1fr));
   border-bottom: 2px solid #e2e8f0;
 
   &:last-child {
@@ -309,7 +426,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 12px;
   background: linear-gradient(135deg, #64748b 0%, #475569 100%);
   border-right: 2px solid #cbd5e1;
   position: relative;
@@ -325,7 +442,7 @@
   }
 
   .row-number {
-    font-size: 28px;
+    font-size: 20px;
     font-weight: 900;
     color: white;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
@@ -335,11 +452,11 @@
 
 .matrix-cell {
   position: relative;
-  min-height: 130px;
+  min-height: 95px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: 10px;
   border-right: 2px solid #e2e8f0;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
@@ -350,17 +467,58 @@
 
   .cell-coordinates {
     position: absolute;
-    top: 6px;
-    left: 6px;
-    font-size: 9px;
+    top: 4px;
+    left: 4px;
+    font-size: 8px;
     font-weight: 700;
     color: #94a3b8;
     background: rgba(255, 255, 255, 0.9);
-    padding: 3px 7px;
-    border-radius: 5px;
+    padding: 2px 5px;
+    border-radius: 4px;
     border: 1px solid #e2e8f0;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
     z-index: 2;
+  }
+
+  .progress-badge {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    font-size: 8px;
+    font-weight: 800;
+    color: #1e293b;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 2px 5px;
+    border-radius: 4px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    letter-spacing: 0.2px;
+    z-index: 3;
+    min-width: 28px;
+    text-align: center;
+    backdrop-filter: blur(4px);
+    
+    // Ensure visibility on colored backgrounds
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+  }
+
+  .collision-badge {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    font-size: 10px;
+    font-weight: 800;
+    color: #fff;
+    background: #ef4444;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    letter-spacing: 0.3px;
+    z-index: 4;
+    min-width: 24px;
+    text-align: center;
+    cursor: help;
   }
 
   &.empty {
@@ -455,37 +613,175 @@
     }
   }
 
+  // WIR Stage Colors - Using AMANA Palette
+  // WIR-1: Assembly Clearance - Teal (amana-teal)
+  &.wir-stage-1 {
+    background: linear-gradient(145deg, #4ea8de 0%, #1b9aaa 50%, #0d7a8a 100%);
+    box-shadow: 
+      inset 0 2px 4px rgba(255, 255, 255, 0.4),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+      0 2px 8px rgba(27, 154, 170, 0.3);
+    border-right-color: #0d7a8a;
+
+    .cell-content {
+      .box-icon-small svg { color: #fff; }
+      .box-code-small { color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); }
+      .position-badge { background: rgba(255, 255, 255, 0.9); color: #0d7a8a; }
+    }
+    .cell-coordinates { background: rgba(255, 255, 255, 0.95); color: #0d7a8a; border-color: #1b9aaa; }
+  }
+
+  // WIR-2: Mechanical Clearance - Green (amana-green)
+  &.wir-stage-2 {
+    background: linear-gradient(145deg, #52b788 0%, #2d6a4f 50%, #1b4332 100%);
+    box-shadow: 
+      inset 0 2px 4px rgba(255, 255, 255, 0.4),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+      0 2px 8px rgba(45, 106, 79, 0.3);
+    border-right-color: #1b4332;
+
+    .cell-content {
+      .box-icon-small svg { color: #fff; }
+      .box-code-small { color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); }
+      .position-badge { background: rgba(255, 255, 255, 0.9); color: #1b4332; }
+    }
+    .cell-coordinates { background: rgba(255, 255, 255, 0.95); color: #1b4332; border-color: #2d6a4f; }
+  }
+
+  // WIR-3: Electrical Clearance - Yellow-Green (amana-yellow-green)
+  &.wir-stage-3 {
+    background: linear-gradient(145deg, #bef264 0%, #9bc53d 50%, #7a9e2e 100%);
+    box-shadow: 
+      inset 0 2px 4px rgba(255, 255, 255, 0.4),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+      0 2px 8px rgba(155, 197, 61, 0.3);
+    border-right-color: #7a9e2e;
+
+    .cell-content {
+      .box-icon-small svg { color: #3d5a0f; }
+      .box-code-small { color: #3d5a0f; text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5); }
+      .position-badge { background: #3d5a0f; color: #ecfccb; }
+    }
+    .cell-coordinates { background: rgba(236, 252, 203, 0.95); color: #3d5a0f; border-color: #9bc53d; }
+  }
+
+  // WIR-4: 3rd Fix Installation - Yellow (amana-yellow)
+  &.wir-stage-4 {
+    background: linear-gradient(145deg, #fde047 0%, #ffc107 50%, #e6ac00 100%);
+    box-shadow: 
+      inset 0 2px 4px rgba(255, 255, 255, 0.4),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+      0 2px 8px rgba(255, 193, 7, 0.3);
+    border-right-color: #e6ac00;
+
+    .cell-content {
+      .box-icon-small svg { color: #713f12; }
+      .box-code-small { color: #713f12; text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5); }
+      .position-badge { background: #713f12; color: #fef9c3; }
+    }
+    .cell-coordinates { background: rgba(254, 249, 195, 0.95); color: #713f12; border-color: #ffc107; }
+  }
+
+  // WIR-5: 3rd Fix Installation - Orange (amana-orange)
+  &.wir-stage-5 {
+    background: linear-gradient(145deg, #fb923c 0%, #ff6b35 50%, #d45d1e 100%);
+    box-shadow: 
+      inset 0 2px 4px rgba(255, 255, 255, 0.4),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+      0 2px 8px rgba(255, 107, 53, 0.3);
+    border-right-color: #d45d1e;
+
+    .cell-content {
+      .box-icon-small svg { color: #fff; }
+      .box-code-small { color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); }
+      .position-badge { background: rgba(255, 255, 255, 0.9); color: #9a3412; }
+    }
+    .cell-coordinates { background: rgba(255, 255, 255, 0.95); color: #9a3412; border-color: #ff6b35; }
+  }
+
+  // WIR-6: Readiness for Dispatch - Purple (amana-purple)
+  &.wir-stage-6 {
+    background: linear-gradient(145deg, #a78bfa 0%, #5e60ce 50%, #5a189a 100%);
+    box-shadow: 
+      inset 0 2px 4px rgba(255, 255, 255, 0.4),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+      0 2px 8px rgba(94, 96, 206, 0.3);
+    border-right-color: #5a189a;
+
+    .cell-content {
+      .box-icon-small svg { color: #fff; }
+      .box-code-small { color: #fff; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3); }
+      .position-badge { background: rgba(255, 255, 255, 0.9); color: #5a189a; }
+    }
+    .cell-coordinates { background: rgba(255, 255, 255, 0.95); color: #5a189a; border-color: #5e60ce; }
+  }
+
+  // Completed WIR Stage - Green (same as completed status)
+  &.wir-completed {
+    background: 
+      linear-gradient(145deg, #34d399 0%, #10b981 50%, #059669 100%);
+    box-shadow: 
+      inset 0 2px 4px rgba(255, 255, 255, 0.4),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+      0 2px 8px rgba(52, 211, 153, 0.3);
+    border-right-color: #059669;
+
+    .cell-content {
+      .box-icon-small svg {
+        color: #064e3b;
+      }
+
+      .box-code-small {
+        color: #064e3b;
+        text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+      }
+
+      .position-badge {
+        background: #064e3b;
+        color: #d1fae5;
+      }
+    }
+
+    .cell-coordinates {
+      background: rgba(209, 250, 229, 0.95);
+      color: #064e3b;
+      border-color: #059669;
+    }
+  }
+
   .cell-content {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: var(--spacing-xs, 8px);
+    gap: 4px;
 
     .box-icon-small {
       svg {
+        width: 24px;
+        height: 24px;
         color: #6b7280;
         filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
       }
     }
 
     .box-code-small {
-      font-size: 13px;
+      font-size: 10px;
       font-weight: 800;
       text-align: center;
-      letter-spacing: 0.3px;
+      letter-spacing: 0.2px;
       line-height: 1.2;
       word-break: break-word;
     }
 
     .position-badge {
-      font-size: 11px;
+      font-size: 9px;
       font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 6px;
+      padding: 2px 6px;
+      border-radius: 4px;
       background: #1f2937;
       color: white;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.3px;
     }
   }
 }
@@ -510,6 +806,16 @@
     svg {
       color: var(--amana-teal);
       flex-shrink: 0;
+    }
+
+    &.warning {
+      svg {
+        color: #f59e0b;
+      }
+      
+      .warning-text {
+        color: #d97706;
+      }
     }
   }
 
@@ -551,7 +857,7 @@
 
 .grid-legend {
   background: white;
-  padding: 20px 24px;
+  padding: 16px 20px;
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   border: 1px solid #e2e8f0;
@@ -559,11 +865,13 @@
   .legend-title {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 14px;
+    gap: 8px;
+    font-size: 12px;
     font-weight: 700;
     color: #1e293b;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
 
     svg {
       color: var(--amana-teal);
@@ -574,57 +882,105 @@
   .legend-items {
     display: flex;
     flex-wrap: wrap;
-    gap: 24px;
+    gap: 8px 16px;
+    align-items: center;
 
     .legend-item {
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-size: 14px;
+      gap: 6px;
+      font-size: 20px;
       color: #64748b;
+      padding: 4px 10px;
+      background: #f8fafc;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      cursor: default;
+
+      &.compact {
+        gap: 4px;
+        padding: 4px 8px;
+      }
 
       .legend-box {
-        width: 32px;
-        height: 32px;
-        border-radius: 6px;
-        border: 2px solid #dee2e6;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        width: 30px;
+        height: 30px;
+        border-radius: 4px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         flex-shrink: 0;
 
         &.in-progress-box {
-          background: linear-gradient(145deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
-          border-color: #d97706;
+          background: linear-gradient(145deg, #fbbf24 0%, #f59e0b 100%);
         }
 
         &.completed-box {
-          background: linear-gradient(145deg, #34d399 0%, #10b981 50%, #059669 100%);
-          border-color: #059669;
+          background: linear-gradient(145deg, #34d399 0%, #10b981 100%);
         }
 
         &.empty-box {
           background: repeating-linear-gradient(
             45deg,
             rgba(226, 232, 240, 0.5),
-            rgba(226, 232, 240, 0.5) 4px,
-            rgba(241, 245, 249, 0.5) 4px,
-            rgba(241, 245, 249, 0.5) 8px
+            rgba(226, 232, 240, 0.5) 3px,
+            rgba(241, 245, 249, 0.5) 3px,
+            rgba(241, 245, 249, 0.5) 6px
           );
         }
+
+        // WIR Stage Legend Boxes - Using AMANA Palette
+        &.wir-stage-1 {
+          background: linear-gradient(145deg, #4ea8de 0%, #1b9aaa 100%);
+        }
+
+        &.wir-stage-2 {
+          background: linear-gradient(145deg, #52b788 0%, #2d6a4f 100%);
+        }
+
+        &.wir-stage-3 {
+          background: linear-gradient(145deg, #bef264 0%, #9bc53d 100%);
+        }
+
+        &.wir-stage-4 {
+          background: linear-gradient(145deg, #fde047 0%, #ffc107 100%);
+        }
+
+        &.wir-stage-5 {
+          background: linear-gradient(145deg, #fb923c 0%, #ff6b35 100%);
+        }
+
+        &.wir-stage-6 {
+          background: linear-gradient(145deg, #a78bfa 0%, #5e60ce 100%);
+        }
+
+        &.wir-completed {
+          background: linear-gradient(145deg, #34d399 0%, #10b981 100%);
+        }
+      }
+
+      .legend-label {
+        color: #475569;
+        font-weight: 500;
+        white-space: nowrap;
       }
 
       .legend-percentage {
         font-weight: 700;
         color: #1e293b;
-        margin-left: auto;
+        font-size: 11px;
+      }
+
+      &.compact .legend-percentage {
+        margin-left: 0;
       }
     }
   }
 
   @media (max-width: 768px) {
-    padding: 20px 16px;
+    padding: 14px 12px;
 
     .legend-items {
-      gap: 16px;
+      gap: 6px 10px;
     }
   }
 }
@@ -632,23 +988,23 @@
 @media (max-width: 1200px) {
   .matrix-header,
   .matrix-row {
-    grid-template-columns: 70px repeat(auto-fit, minmax(130px, 1fr));
+    grid-template-columns: 50px repeat(auto-fit, minmax(100px, 1fr));
   }
 
   .matrix-cell {
-    min-height: 115px;
-    padding: 14px;
+    min-height: 85px;
+    padding: 8px;
   }
 
   .matrix-row-header .row-number {
-    font-size: 24px;
+    font-size: 18px;
   }
 
   .matrix-column-header {
-    padding: 16px;
+    padding: 8px;
     
     .column-label {
-      font-size: 14px;
+      font-size: 11px;
     }
   }
 }
@@ -656,43 +1012,43 @@
 @media (max-width: 768px) {
   .matrix-header,
   .matrix-row {
-    grid-template-columns: 60px repeat(auto-fit, minmax(110px, 1fr));
+    grid-template-columns: 45px repeat(auto-fit, minmax(90px, 1fr));
   }
 
   .matrix-cell {
-    min-height: 100px;
-    padding: 12px;
+    min-height: 75px;
+    padding: 6px;
 
     .cell-content {
       .box-icon-small svg {
-        width: 26px;
-        height: 26px;
+        width: 20px;
+        height: 20px;
       }
 
       .box-code-small {
-        font-size: 11px;
+        font-size: 9px;
       }
 
       .position-badge {
-        font-size: 9px;
-        padding: 3px 8px;
+        font-size: 8px;
+        padding: 2px 5px;
       }
     }
   }
 
   .matrix-row-header {
-    padding: 16px;
+    padding: 10px;
     
     .row-number {
-      font-size: 20px;
+      font-size: 16px;
     }
   }
 
   .matrix-column-header {
-    padding: 14px;
+    padding: 8px;
     
     .column-label {
-      font-size: 13px;
+      font-size: 10px;
     }
   }
 }

@@ -5,6 +5,7 @@ export interface Box {
   serialNumber?: string;
   projectId: string;
   projectCode?: string;
+  projectStatus?: string; // Project status (Active, OnHold, Closed, Completed, Archived)
   status: BoxStatus;
   type?: string;
   subType?:string;

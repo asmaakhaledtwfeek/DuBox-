@@ -85,6 +85,7 @@ namespace Dubox.Application.Services
                     BoxId = box.BoxId,
                     ProjectId = box.ProjectId,
                     ProjectCode = projectCode,
+                    ProjectStatus = box.Project?.Status.ToString(),
                     Client = client,
                     BoxTag = box.BoxTag ?? string.Empty,
                     SerialNumber = box.SerialNumber,

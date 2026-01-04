@@ -76,7 +76,7 @@
             </svg>
           </div>
           <div class="card-content">
-            <div class="card-value">{{ factory.currentOccupancy }}</div>
+            <div class="card-value">{{ getCurrentOccupancy() }}</div>
             <div class="card-label">Current Occupancy</div>
           </div>
         </div>
@@ -89,7 +89,7 @@
             </svg>
           </div>
           <div class="card-content">
-            <div class="card-value">{{ factory.availableCapacity }}</div>
+            <div class="card-value">{{ getAvailableCapacity() }}</div>
             <div class="card-label">Available Capacity</div>
           </div>
         </div>
@@ -148,8 +148,8 @@
           <div class="progress-fill" [style.width.%]="getCapacityPercentage()" [class.full]="factory.isFull"></div>
         </div>
         <div class="progress-footer">
-          <span>{{ factory.currentOccupancy }} / {{ factory.capacity }} boxes</span>
-          <span [class.full]="factory.isFull">{{ factory.isFull ? 'Full' : 'Available' }}</span>
+          <span>{{ getCurrentOccupancy() }} / {{ factory.capacity }} boxes</span>
+          <span [class.full]="getCurrentOccupancy() >= (factory.capacity || 0)">{{ getCurrentOccupancy() >= (factory.capacity || 0) ? 'Full' : 'Available' }}</span>
         </div>
       </div>
 

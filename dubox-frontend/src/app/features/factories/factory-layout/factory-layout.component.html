@@ -55,11 +55,52 @@
         </div>
       </div>
 
-      <!-- Warehouse Grid Layout -->
-      <div class="warehouse-grid">
-        <div class="matrix-container" *ngIf="getGridLayout().matrix.length > 0">
-          <!-- Matrix Table -->
-          <div class="warehouse-matrix">
+      <!-- Warehouse Grid Layout with Sidebar -->
+      <div class="warehouse-layout-wrapper">
+        <!-- Business Flow Indicators Sidebar -->
+        <div class="business-flow-sidebar">
+          <div class="sidebar-title">BUSINESS FLOW INDICATORS</div>
+          <div class="flow-indicators">
+            <div class="flow-item">
+              <div class="flow-color wir-stage-1"></div>
+              <span>Assembly Clearance - WIR-1</span>
+            </div>
+            <div class="flow-item">
+              <div class="flow-color wir-stage-2"></div>
+              <span>Mechanical Clearance - WIR-2</span>
+            </div>
+            <div class="flow-item">
+              <div class="flow-color wir-stage-3"></div>
+              <span>Electrical Clearance - WIR-3</span>
+            </div>
+            <div class="flow-item">
+              <div class="flow-color wir-stage-4"></div>
+              <span>3rd Fix Installation - WIR-4</span>
+            </div>
+            <div class="flow-item">
+              <div class="flow-color wir-stage-5"></div>
+              <span>3rd Fix MEP - WIR-5</span>
+            </div>
+            <div class="flow-item">
+              <div class="flow-color wir-stage-6"></div>
+              <span>Ready for Dispatch - WIR-6</span>
+            </div>
+            <div class="flow-item">
+              <div class="flow-color wir-completed"></div>
+              <span>Completed</span>
+            </div>
+            <div class="flow-item">
+              <div class="flow-color empty-location"></div>
+              <span>Empty</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Factory Grid -->
+        <div class="warehouse-grid">
+          <div class="matrix-container" *ngIf="getGridLayout().matrix.length > 0">
+            <!-- Matrix Table -->
+            <div class="warehouse-matrix">
             <!-- Column Headers (Aisles: A, B, C, D) -->
             <div class="matrix-header">
               <div class="matrix-corner-cell">
@@ -91,12 +132,22 @@
               <div class="matrix-cell"
                    *ngFor="let cell of rowCells"
                    [class.has-box]="cell.box"
-                   [class.in-progress]="cell.box?.status === 'InProgress'"
-                   [class.completed]="cell.box?.status === 'Completed'"
                    [class.empty]="!cell.box"
+                   [ngClass]="cell.box ? getBoxColorClass(cell.box) : ''"
                    (click)="cell.box && viewBox(cell.box.id)"
                    [title]="getCellTooltip(cell)">
                 
+                <!-- Progress Percentage Badge (Top Right) -->
+                <div class="progress-badge" *ngIf="cell.box && cell.box.progress !== undefined">
+                  {{ cell.box.progress }}%
+                </div>
+
+                <!-- Collision Badge (when multiple boxes share same position) -->
+                <div class="collision-badge" *ngIf="cell.boxCount > 1" 
+                     [title]="'Multiple boxes at this position: ' + (cell.allBoxes | json)">
+                  +{{ cell.boxCount - 1 }}
+                </div>
+
                 <!-- Box Content -->
                 <div class="cell-content" *ngIf="cell.box">
                   <div class="box-icon-small">
@@ -149,6 +200,14 @@
               </svg>
               <span>{{ getGridLayout().totalBoxes }} Boxes Positioned</span>
             </div>
+            <div class="info-item warning" *ngIf="getGridLayout().totalBoxes !== getGridLayout().displayedBoxes">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                <line x1="12" y1="9" x2="12" y2="13"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+              <span class="warning-text">{{ getGridLayout().totalBoxes - getGridLayout().displayedBoxes }} boxes share positions</span>
+            </div>
           </div>
         </div>
 
@@ -164,31 +223,27 @@
           <p>Boxes don't have bay, row, or position information yet.</p>
         </div>
 
-        <!-- Legend -->
-        <div class="grid-legend" *ngIf="getGridLayout().matrix.length > 0">
-          <div class="legend-title">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="16" x2="12" y2="12"/>
-              <line x1="12" y1="8" x2="12.01" y2="8"/>
-            </svg>
-            Warehouse Color Indicators:
-          </div>
-          <div class="legend-items">
-            <div class="legend-item">
-              <div class="legend-box in-progress-box"></div>
-              <span>In Progress</span>
-              <span class="legend-percentage">{{ getInProgressPercentage() }}%</span>
+          <!-- Legend -->
+          <div class="grid-legend" *ngIf="getGridLayout().matrix.length > 0">
+            <div class="legend-title">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+              Business Flow Indicator (WIR Stages):
             </div>
-            <div class="legend-item">
-              <div class="legend-box completed-box"></div>
-              <span>Completed</span>
-              <span class="legend-percentage">{{ getCompletedPercentage() }}%</span>
-            </div>
-            <div class="legend-item">
-              <div class="legend-box empty-box"></div>
-              <span>Empty</span>
-              <span class="legend-percentage">{{ getEmptyPercentage() }}%</span>
+            <div class="legend-items">
+              <!-- Dynamic WIR Stage Legend Items - Color and Percentage only -->
+              <div class="legend-item compact" *ngFor="let stat of getWIRStageStats()" [title]="stat.stage?.displayName || 'Unknown'">
+                <div class="legend-box" [ngClass]="stat.stage?.colorClass || 'empty-box'"></div>
+                <span class="legend-percentage">{{ stat.percentage }}%</span>
+              </div>
+              <!-- Empty Cells -->
+              <div class="legend-item compact" title="Empty">
+                <div class="legend-box empty-box"></div>
+                <span class="legend-percentage">{{ getEmptyPercentage() }}%</span>
+              </div>
             </div>
           </div>
         </div>

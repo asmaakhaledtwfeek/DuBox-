@@ -78,7 +78,14 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
         // Dictionary to store box type and sub type names for DTO mapping
         var boxTypeMap = new Dictionary<int, string>();
         var boxSubTypeMap = new Dictionary<int, string>();
-
+        Guid? factoryId = null;
+        var factory = _unitOfWork.Repository<Factory>()
+        .Get()
+        .Where(f => f.Location == project.Location && f.IsActive)
+        .OrderBy(f => f.CurrentOccupancy) // Prefer factories with lower occupancy
+        .FirstOrDefault();
+        if (factory != null)
+            factoryId = factory.FactoryId;
         try
         {
             var stream = request.FileStream;
@@ -344,7 +351,8 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                         Status = BoxStatusEnum.NotStarted,
                         ProgressPercentage = 0,
                         IsActive = true,
-                        CreatedDate = DateTime.UtcNow
+                        CreatedDate = DateTime.UtcNow,
+                        FactoryId=factoryId
                     };
 
                     var logEntry = new AuditLog
@@ -436,7 +444,7 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                 var boxSubTypeName = dto.BoxSubTypeId.HasValue && boxSubTypeMap.ContainsKey(dto.BoxSubTypeId.Value)
                     ? boxSubTypeMap[dto.BoxSubTypeId.Value]
                     : null;
-                
+              
                 return dto with
                 {
                     ProjectCode = project.ProjectCode,

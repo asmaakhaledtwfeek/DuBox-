@@ -7,6 +7,7 @@ public record BoxDto
     public Guid BoxId { get; init; }
     public Guid ProjectId { get; init; }
     public string ProjectCode { get; init; } = string.Empty;
+    public string? ProjectStatus { get; init; } // Project status for filtering/display
     public string Client { get; init; } = string.Empty;
     public string BoxTag { get; init; } = string.Empty;
     public string? SerialNumber { get; init; }

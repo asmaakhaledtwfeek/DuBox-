@@ -254,13 +254,11 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
         // Load all boxes in the same factory
         this.boxService.getBoxesByFactory(box.factoryId).subscribe({
           next: (boxes) => {
-            // Filter out dispatched boxes and boxes without position
+            // Backend already filters boxes (InProgress/Completed from active projects)
+            // Only filter by position information for factory layout display
             this.factoryBoxes = boxes.filter(b => 
-              b.status !== BoxStatus.Dispatched && 
               (b.bay || b.row || b.position)
             );
-            
-            // Show layout only if WIR position fields are editable
             this.updateFactoryLayoutVisibility();
             this.isLoadingFactoryLayout = false;
           },
@@ -278,6 +276,7 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
       }
     });
   }
+
 
   /**
    * Update visibility of factory layout based on WIR position field state

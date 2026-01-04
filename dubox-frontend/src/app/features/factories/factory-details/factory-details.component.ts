@@ -7,6 +7,7 @@ import { Subscription } from 'rxjs';
 import { FactoryService, Factory, ProjectLocation } from '../../../core/services/factory.service';
 import { BoxService } from '../../../core/services/box.service';
 import { Box, BoxStatus } from '../../../core/models/box.model';
+import { ProjectStatus } from '../../../core/models/project.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 
@@ -70,6 +71,8 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
   loadBoxes(): void {
     this.boxService.getBoxesByFactory(this.factoryId).subscribe({
       next: (boxes) => {
+        // Backend already filters boxes (InProgress/Completed from active projects)
+        // Just use the boxes directly
         this.boxes = boxes;
         this.applyFilters();
         this.loading = false;
@@ -97,6 +100,7 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
 
   applyFilters(): void {
     // Filter out dispatched boxes from display (but keep them for counting)
+    // Note: Backend already filters boxes (InProgress/Completed from active projects)
     let filtered = this.boxes.filter(box => box.status !== BoxStatus.Dispatched);
     const searchTerm = this.searchControl.value?.toLowerCase() || '';
     
@@ -151,9 +155,44 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Calculate current occupancy based on filtered boxes
+   * Only counts boxes that are:
+   * - InProgress or Completed
+   * - From projects that are NOT OnHold, Closed, or Archived
+   */
+  getCurrentOccupancy(): number {
+    return this.boxes.filter(box => {
+      // Only count InProgress or Completed boxes
+      const isActiveStatus = box.status === BoxStatus.InProgress || box.status === BoxStatus.Completed;
+      
+      if (!isActiveStatus) {
+        return false;
+      }
+
+      // Exclude boxes from OnHold, Closed, or Archived projects
+      const projectStatus = box.projectStatus;
+      if (projectStatus === ProjectStatus.OnHold || 
+          projectStatus === ProjectStatus.Closed || 
+          projectStatus === ProjectStatus.Archived) {
+        return false;
+      }
+
+      return true;
+    }).length;
+  }
+
+  /**
+   * Calculate available capacity based on current occupancy
+   */
+  getAvailableCapacity(): number {
+    if (!this.factory || !this.factory.capacity) return 0;
+    return Math.max(0, this.factory.capacity - this.getCurrentOccupancy());
+  }
+
   getCapacityPercentage(): number {
     if (!this.factory || !this.factory.capacity || this.factory.capacity === 0) return 0;
-    return Math.min(100, (this.factory.currentOccupancy / this.factory.capacity) * 100);
+    return Math.min(100, (this.getCurrentOccupancy() / this.factory.capacity) * 100);
   }
 
   getStatusClass(status: BoxStatus): string {
@@ -171,7 +210,8 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
   }
 
   getDispatchedCount(): number {
-    return this.boxes.filter(box => box.status === BoxStatus.Dispatched).length;
+    // Use dispatched count from factory (includes all dispatched boxes, even from inactive projects)
+    return this.factory?.dispatchedBoxesCount || 0;
   }
 
   getCompletedCount(): number {
@@ -184,6 +224,7 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
 
   getNonDispatchedBoxCount(): number {
     // Return count of boxes excluding dispatched (for display purposes)
+    // This should match what's shown in the boxes list
     return this.boxes.filter(box => box.status !== BoxStatus.Dispatched).length;
   }
 

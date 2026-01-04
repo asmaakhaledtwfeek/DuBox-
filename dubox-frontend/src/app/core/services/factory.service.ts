@@ -18,6 +18,7 @@ export interface Factory {
   availableCapacity: number;
   isFull: boolean;
   isActive: boolean;
+  dispatchedBoxesCount?: number; // Count of dispatched boxes in the factory
 }
 
 export interface CreateFactoryRequest {
@@ -48,7 +49,8 @@ export class FactoryService {
       currentOccupancy: backendFactory.currentOccupancy || 0,
       availableCapacity: backendFactory.availableCapacity || 0,
       isFull: backendFactory.isFull || false,
-      isActive: backendFactory.isActive !== undefined ? backendFactory.isActive : true
+      isActive: backendFactory.isActive !== undefined ? backendFactory.isActive : true,
+      dispatchedBoxesCount: backendFactory.dispatchedBoxesCount || 0
     };
   }
 

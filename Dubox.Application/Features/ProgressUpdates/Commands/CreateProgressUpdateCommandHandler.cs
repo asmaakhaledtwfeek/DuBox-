@@ -739,6 +739,8 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             .Where(b => b.FactoryId == currentBox.FactoryId &&
                       b.Status != BoxStatusEnum.Dispatched &&
                        b.Status != BoxStatusEnum.OnHold &&
+                       b.Project.Status != ProjectStatusEnum.OnHold &&
+                        b.Project.Status != ProjectStatusEnum.Closed &&
                       b.BoxId != currentBoxId && // Exclude current box
                       b.Bay == bayValue &&
                       b.Row == rowValue &&

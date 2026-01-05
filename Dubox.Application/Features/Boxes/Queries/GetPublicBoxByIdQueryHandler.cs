@@ -7,10 +7,6 @@ using MediatR;
 
 namespace Dubox.Application.Features.Boxes.Queries;
 
-/// <summary>
-/// Handler for GetPublicBoxByIdQuery - returns read-only public box information
-/// No authentication or authorization required
-/// </summary>
 public class GetPublicBoxByIdQueryHandler : IRequestHandler<GetPublicBoxByIdQuery, Result<PublicBoxDto>>
 {
     private readonly IUnitOfWork _unitOfWork;

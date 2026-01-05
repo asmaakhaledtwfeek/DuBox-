@@ -4,5 +4,5 @@ using MediatR;
 
 namespace Dubox.Application.Features.Boxes.Queries;
 
-public record GetBoxByQRCodeQuery(string QRCodeString) : IRequest<Result<BoxDto>>;
+public record GetBoxSummaryQuery(Guid BoxId) : IRequest<Result<BoxSummaryDto>>;
 

@@ -199,17 +199,423 @@
       </div>
     </div>
 
-    <!-- Activities Count -->
-    <div class="info-card compact">
-      <div class="activities-summary">
-        <div class="activity-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 12h16.5m-16.5 3.75h16.5M3.75 19.5h16.5M5.625 4.5h12.75a1.875 1.875 0 010 3.75H5.625a1.875 1.875 0 010-3.75z" />
-          </svg>
+    <!-- Summary Section -->
+    <div class="summary-section">
+      <h3 class="summary-title">Summary</h3>
+      <div class="summary-grid" *ngIf="!loadingBoxSummary && boxSummary && !boxSummaryError">
+        <!-- Activity Status -->
+        <div class="summary-card">
+          <div class="summary-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+            </svg>
+          </div>
+          <div class="summary-content">
+            <div class="summary-value">{{ boxSummary.activityStatus.total }}</div>
+            <div class="summary-label">Activities</div>
+            <div class="summary-details">
+              <div class="detail-item">
+                <span class="detail-label">Not Started</span>
+                <span class="detail-value">{{ boxSummary.activityStatus.notStarted }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">In Progress</span>
+                <span class="detail-value">{{ boxSummary.activityStatus.inProgress }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Completed</span>
+                <span class="detail-value">{{ boxSummary.activityStatus.completed }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">On Hold</span>
+                <span class="detail-value">{{ boxSummary.activityStatus.onHold }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Delayed</span>
+                <span class="detail-value">{{ boxSummary.activityStatus.delayed }}</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div class="activity-info">
-          <span class="activity-count">{{ box.activitiesCount }}</span>
-          <span class="activity-label">{{ box.activitiesCount === 1 ? 'Activity' : 'Activities' }}</span>
+
+        <!-- WIR Checkpoints -->
+        <div class="summary-card">
+          <div class="summary-icon wir">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 11l3 3L22 4"/>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+          </div>
+          <div class="summary-content">
+            <div class="summary-value">{{ boxSummary.wirCheckpoint.total }}</div>
+            <div class="summary-label">WIR Checkpoints</div>
+            <div class="summary-details">
+              <div class="detail-item">
+                <span class="detail-label">Pending</span>
+                <span class="detail-value">{{ boxSummary.wirCheckpoint.pending }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Approved</span>
+                <span class="detail-value">{{ boxSummary.wirCheckpoint.approved }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Rejected</span>
+                <span class="detail-value">{{ boxSummary.wirCheckpoint.rejected }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Conditional</span>
+                <span class="detail-value">{{ boxSummary.wirCheckpoint.conditionalApproval }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quality Issues -->
+        <div class="summary-card">
+          <div class="summary-icon quality">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <div class="summary-content">
+            <div class="summary-value">{{ boxSummary.qualityIssue.total }}</div>
+            <div class="summary-label">Quality Issues</div>
+            <div class="summary-details">
+              <div class="detail-item">
+                <span class="detail-label">Open</span>
+                <span class="detail-value">{{ boxSummary.qualityIssue.open }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">In Progress</span>
+                <span class="detail-value">{{ boxSummary.qualityIssue.inProgress }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Resolved</span>
+                <span class="detail-value">{{ boxSummary.qualityIssue.resolved }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Critical</span>
+                <span class="detail-value critical">{{ boxSummary.qualityIssue.critical }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Major</span>
+                <span class="detail-value major">{{ boxSummary.qualityIssue.major }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Minor</span>
+                <span class="detail-value minor">{{ boxSummary.qualityIssue.minor }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Attachments -->
+        <div class="summary-card" [class.expanded]="showAttachments" (click)="showAttachments = !showAttachments">
+          <div class="summary-icon attachments">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+          </div>
+          <div class="summary-content">
+            <div class="summary-value">{{ boxSummary.attachment.total }}</div>
+            <div class="summary-label">Attachments</div>
+          </div>
+        </div>
+
+        <!-- Drawings -->
+        <div class="summary-card" [class.expanded]="showDrawings" (click)="showDrawings = !showDrawings">
+          <div class="summary-icon drawings">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <line x1="10" y1="9" x2="9" y2="9"/>
+            </svg>
+          </div>
+          <div class="summary-content">
+            <div class="summary-value">{{ boxSummary.drawing.total }}</div>
+            <div class="summary-label">Drawings</div>
+          </div>
+        </div>
+      </div>
+      <div class="summary-loading" *ngIf="loadingBoxSummary">
+        <div class="loading-spinner-small"></div>
+        <span>Loading summary...</span>
+      </div>
+      <div class="summary-error" *ngIf="boxSummaryError && !loadingBoxSummary">
+        <p class="error-text">{{ boxSummaryError }}</p>
+      </div>
+    </div>
+
+    <!-- Attachments List -->
+    <div class="attachments-section" *ngIf="showAttachments">
+      <div class="section-header">
+        <div class="header-content">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M18.375 12.739l-7.693 7.693a4.5 4.5 0 01-6.364-6.364l10.94-10.94A3 3 0 1119.5 7.372L8.552 18.32m.009-.01l-.01.01m5.699-9.941l-7.81 7.81a1.5 1.5 0 002.112 2.13" />
+          </svg>
+          <h2>Attachments</h2>
+          <span class="count-badge">{{ getAllAttachments().length }} {{ getAllAttachments().length === 1 ? 'file' : 'files' }}</span>
+        </div>
+        <div class="header-subtitle">View-only mode • Attachments from WIR Checkpoints, Progress Updates, and Quality Issues</div>
+      </div>
+      <div class="section-content">
+        <div *ngIf="loadingAttachments" class="loading-state">
+          <div class="spinner"></div>
+          <span>Loading attachments...</span>
+        </div>
+        <div *ngIf="attachmentsError" class="error-state">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+          <span>{{ attachmentsError }}</span>
+        </div>
+        <div *ngIf="!loadingAttachments && !attachmentsError && getAllAttachments().length === 0" class="empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 00-2.15-1.588H6.911a2.25 2.25 0 00-2.15 1.588L2.35 13.177a2.25 2.25 0 00-.1.661z" />
+          </svg>
+          <span>No attachments available</span>
+        </div>
+        <div *ngIf="!loadingAttachments && !attachmentsError && getAllAttachments().length > 0" class="attachments-grid">
+          <div *ngFor="let group of getGroupedAttachments()" class="attachment-group">
+            <div class="attachment-card">
+              <!-- Latest Version Preview -->
+              <div class="attachment-preview" 
+                   [class.has-image]="isImageFile(group.fileName) && isAttachmentAvailable(group.latestVersion)"
+                   [class.unavailable]="!isAttachmentAvailable(group.latestVersion)">
+                
+                <!-- File Type Badge -->
+                <div class="file-type-badge" [class.image]="isImageFile(group.fileName)">
+                  {{ getFileExtension(group.fileName) }}
+                </div>
+
+                <!-- Source Badge (WIR/Progress/Quality) -->
+                <div class="source-badge" [class]="group.latestVersion.sourceIcon">
+                  {{ group.latestVersion.sourceType }}
+                </div>
+
+                <!-- Version Count Badge (if multiple versions) -->
+                <div *ngIf="group.versionCount > 1" class="version-count-badge">
+                  {{ group.versionCount }} versions
+                </div>
+                
+                <!-- Actual Image Preview -->
+                <img *ngIf="isImageFile(group.fileName) && getImageUrl(group.latestVersion)" 
+                     [src]="getImageUrl(group.latestVersion)" 
+                     [alt]="group.fileName"
+                     class="attachment-image"
+                     (error)="onImageError($event)">
+                
+              <!-- Unavailable Overlay -->
+              <div *ngIf="!isAttachmentAvailable(group.latestVersion)" class="unavailable-overlay">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                </svg>
+                <span>Image Unavailable</span>
+              </div>
+
+                <!-- Non-Image File Icon -->
+                <div class="file-icon-large" *ngIf="!isImageFile(group.fileName) && isAttachmentAvailable(group.latestVersion)">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                  </svg>
+                </div>
+              </div>
+
+              <!-- Attachment Info -->
+              <div class="attachment-info">
+                <h3 class="attachment-name" [title]="group.fileName">
+                  {{ group.fileName }}
+                </h3>
+                
+                <div class="attachment-meta">
+                  <div class="meta-row" *ngIf="group.latestVersion.fileSize">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M20.25 6.375c0 2.278-3.694 4.125-8.25 4.125S3.75 8.653 3.75 6.375m16.5 0c0-2.278-3.694-4.125-8.25-4.125S3.75 4.097 3.75 6.375m16.5 0v11.25c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125V6.375m16.5 0v3.75m-16.5-3.75v3.75m16.5 0v3.75C20.25 16.153 16.556 18 12 18s-8.25-1.847-8.25-4.125v-3.75m16.5 0c0 2.278-3.694 4.125-8.25 4.125s-8.25-1.847-8.25-4.125" />
+                    </svg>
+                    <span>{{ formatFileSize(group.latestVersion.fileSize) }}</span>
+                  </div>
+                  <div class="meta-row" *ngIf="group.latestVersion.createdDate">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                    </svg>
+                    <span>{{ formatDate(group.latestVersion.createdDate) }}</span>
+                  </div>
+                </div>
+
+                <!-- Unavailable Message -->
+                <div *ngIf="!isAttachmentAvailable(group.latestVersion)" class="unavailable-message">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
+                  </svg>
+                  <span>{{ getUnavailableReason(group.latestVersion) }}</span>
+                </div>
+
+                <!-- Version History (if multiple versions) -->
+                <div *ngIf="group.versionCount > 1" class="version-history">
+                  <div class="version-toggle" (click)="group.expanded = !group.expanded">
+                    <span>View {{ group.versionCount - 1 }} older {{ group.versionCount > 2 ? 'versions' : 'version' }}</span>
+                    <svg [class.rotated]="group.expanded" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                    </svg>
+                  </div>
+                  
+                  <div *ngIf="group.expanded" class="version-list">
+                    <div *ngFor="let version of group.versions.slice(1); let i = index" class="version-item">
+                      <div class="version-number">Version {{ group.versionCount - i - 1 }}</div>
+                      <div class="version-details">
+                        <span *ngIf="version.createdDate">{{ formatDate(version.createdDate) }}</span>
+                        <span *ngIf="version.fileSize">{{ formatFileSize(version.fileSize) }}</span>
+                        <span class="version-source">{{ version.sourceType }}</span>
+                      </div>
+                      <button *ngIf="getImageUrl(version)" (click)="viewImageInFullSize($event, getImageUrl(version)!)" class="version-view-link">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </button>
+                      <span *ngIf="!getImageUrl(version)" class="version-unavailable">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                        </svg>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+               
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drawings List -->
+    <div class="drawings-section" *ngIf="showDrawings">
+      <div class="section-header">
+        <div class="header-content">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+          </svg>
+          <h2>Drawings</h2>
+          <span class="count-badge">{{ boxDrawings.length }} {{ boxDrawings.length === 1 ? 'file' : 'files' }}</span>
+        </div>
+      </div>
+      <div class="section-content">
+        <div *ngIf="loadingDrawings" class="loading-state">
+          <div class="spinner"></div>
+          <span>Loading drawings...</span>
+        </div>
+        <div *ngIf="drawingsError" class="error-state">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+          <span>{{ drawingsError }}</span>
+        </div>
+        <div *ngIf="!loadingDrawings && !drawingsError && boxDrawings.length === 0" class="empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 13.5h3.86a2.25 2.25 0 012.012 1.244l.256.512a2.25 2.25 0 002.013 1.244h3.218a2.25 2.25 0 002.013-1.244l.256-.512a2.25 2.25 0 012.013-1.244h3.859m-19.5.338V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18v-4.162c0-.224-.034-.447-.1-.661L19.24 5.338a2.25 2.25 0 00-2.15-1.588H6.911a2.25 2.25 0 00-2.15 1.588L2.35 13.177a2.25 2.25 0 00-.1.661z" />
+          </svg>
+          <span>No drawings available</span>
+        </div>
+        <div *ngIf="!loadingDrawings && !drawingsError && boxDrawings.length > 0" class="drawings-grid">
+          <div *ngFor="let group of getGroupedDrawings()" class="drawing-group">
+            <div class="drawing-card">
+              <div class="drawing-preview">
+                <div class="file-type-badge" [class.pdf]="getFileExtension(group.fileName) === 'PDF'" 
+                     [class.dwg]="getFileExtension(group.fileName) === 'DWG'"
+                     [class.image]="isImageFile(group.fileName)">
+                  {{ getFileExtension(group.fileName) }}
+                </div>
+                <div class="file-icon-large">
+                  <svg *ngIf="getFileExtension(group.fileName) === 'PDF'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                  </svg>
+                  <svg *ngIf="getFileExtension(group.fileName) === 'DWG'" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15c1.012 0 1.867.668 2.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25zM6.75 12h.008v.008H6.75V12zm0 3h.008v.008H6.75V15zm0 3h.008v.008H6.75V18z" />
+                  </svg>
+                  <svg *ngIf="isImageFile(group.fileName)" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                  </svg>
+                </div>
+                <div *ngIf="group.versions.length > 1" class="versions-badge">
+                  {{ group.versions.length }} versions
+                </div>
+              </div>
+              <div class="drawing-info">
+                <h3 class="drawing-name" [title]="group.fileName">{{ group.fileName }}</h3>
+                <div class="drawing-meta">
+                  <div class="meta-row">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    <span>{{ formatFileSize(group.latestVersion.fileSize) }}</span>
+                  </div>
+                  <div class="meta-row">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                    </svg>
+                    <span>{{ formatDate(group.latestVersion.createdDate) }}</span>
+                  </div>
+                  <div class="meta-row" *ngIf="group.latestVersion.createdByName">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                    </svg>
+                    <span>{{ group.latestVersion.createdByName }}</span>
+                  </div>
+                </div>
+                <div class="drawing-versions" *ngIf="group.versions.length > 1">
+                  <div class="versions-header" (click)="group.expanded = !group.expanded">
+                    <span>{{ group.versions.length }} Versions</span>
+                    <svg [class.rotated]="group.expanded" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                    </svg>
+                  </div>
+                  <div class="versions-list" *ngIf="group.expanded">
+                    <div *ngFor="let version of group.versions" class="version-item">
+                      <div class="version-badge">v{{ version.version }}</div>
+                      <div class="version-info">
+                        <span class="version-date">{{ formatDate(version.createdDate) }}</span>
+                        <span class="version-size">{{ formatFileSize(version.fileSize) }}</span>
+                      </div>
+                      <a *ngIf="version.drawingUrl && version.fileType === 'url'" [href]="version.drawingUrl" target="_blank" class="version-action">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+                <div class="drawing-actions">
+                  <a *ngIf="group.latestVersion.drawingUrl && group.latestVersion.fileType === 'url'" 
+                     [href]="group.latestVersion.drawingUrl" 
+                     target="_blank" 
+                     class="btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    View Latest
+                  </a>
+                  <span *ngIf="group.latestVersion.fileType === 'file'" class="btn-disabled">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+                    </svg>
+                    File Stored
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -50,13 +50,6 @@ public class Box
     public Guid? CurrentLocationId { get; set; }
     public FactoryLocation? CurrentLocation { get; set; }
 
-    // QR Code Information
-    [Required]
-    [MaxLength(200)]
-    public string QRCodeString { get; set; } = string.Empty; // PROJECT-CODE_BOX-TAG
-
-    [MaxLength(500)]
-    public string? QRCodeImageUrl { get; set; } // Azure Blob Storage URL
 
     // Progress tracking
     public decimal ProgressPercentage { get; set; } = 0; // 0-100%

@@ -46,13 +46,6 @@ public class BoxesController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    [HttpGet("qr/{qrCodeString}")]
-    public async Task<IActionResult> GetBoxByQRCode(string qrCodeString, CancellationToken cancellationToken)
-    {
-        var result = await _mediator.Send(new GetBoxByQRCodeQuery(qrCodeString), cancellationToken);
-        return result.IsSuccess ? Ok(result) : BadRequest(result);
-    }
-
     [HttpGet("{boxId}/logs")]
     public async Task<IActionResult> GetBoxLogs(
         Guid boxId,
@@ -225,29 +218,6 @@ public class BoxesController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    //[HttpGet("zones")]
-    //public IActionResult GetBoxZones()
-    //{
-    //    var zones = Enum.GetValues(typeof(Dubox.Domain.Enums.BoxZone))
-    //        .Cast<Dubox.Domain.Enums.BoxZone>()
-    //        .Select(z => new 
-    //        { 
-    //            value = (int)z,
-    //            name = z.ToString(),
-    //            displayName = GetEnumDisplayName(z)
-    //        })
-    //        .ToList();
-
-    //    return Ok(Dubox.Domain.Shared.Result.Success(zones));
-    //}
-
-    private string GetEnumDisplayName(Enum enumValue)
-    {
-        var fieldInfo = enumValue.GetType().GetField(enumValue.ToString());
-        var displayAttribute = fieldInfo?.GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.DisplayAttribute), false)
-            .FirstOrDefault() as System.ComponentModel.DataAnnotations.DisplayAttribute;
-        
-        return displayAttribute?.Name ?? enumValue.ToString();
-    }
+   
 }
 

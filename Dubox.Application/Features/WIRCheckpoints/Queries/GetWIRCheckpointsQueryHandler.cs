@@ -56,6 +56,9 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
 
             await PopulateActivityMetadata(checkpointDtos, cancellationToken);
 
+            // Calculate summary statistics for ALL checkpoints (not just current page)
+            var summary = await CalculateSummaryAsync(request, accessibleProjectIds, cancellationToken);
+
             // Calculate total pages
             var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
@@ -65,10 +68,47 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
                 Page = page,
                 PageSize = pageSize,
                 TotalCount = totalCount,
-                TotalPages = totalPages
+                TotalPages = totalPages,
+                Summary = summary
             };
 
             return Result.Success(response);
+        }
+
+        private async Task<WIRCheckpointsSummary> CalculateSummaryAsync(
+            GetWIRCheckpointsQuery request, 
+            List<Guid>? accessibleProjectIds, 
+            CancellationToken cancellationToken)
+        {
+            // Get all checkpoints matching the filter criteria (without pagination)
+            var allCheckpointsResult = _unitOfWork.Repository<WIRCheckpoint>()
+                .GetWithSpec(new GetWIRCheckpointsSummarySpecification(request, accessibleProjectIds));
+
+            // Get status counts using GroupBy
+            var statusCounts = await allCheckpointsResult.Data
+                .AsNoTracking()
+                .GroupBy(c => c.Status)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToListAsync(cancellationToken);
+
+            var summary = new WIRCheckpointsSummary
+            {
+                TotalCheckpoints = statusCounts.Sum(s => s.Count),
+                PendingReviews = statusCounts
+                    .Where(s => s.Status == Domain.Enums.WIRCheckpointStatusEnum.Pending)
+                    .Sum(s => s.Count),
+                Approved = statusCounts
+                    .Where(s => s.Status == Domain.Enums.WIRCheckpointStatusEnum.Approved)
+                    .Sum(s => s.Count),
+                Rejected = statusCounts
+                    .Where(s => s.Status == Domain.Enums.WIRCheckpointStatusEnum.Rejected)
+                    .Sum(s => s.Count),
+                ConditionalApproval = statusCounts
+                    .Where(s => s.Status == Domain.Enums.WIRCheckpointStatusEnum.ConditionalApproval)
+                    .Sum(s => s.Count)
+            };
+
+            return summary;
         }
         
         private async Task PopulateImageMetadata(List<WIRCheckpointDto> checkpoints, CancellationToken cancellationToken)

@@ -1903,6 +1903,32 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.selectedIssueDetails = null;
   }
 
+  /**
+   * Open quality issue details modal from image (fetches issue by ID)
+   */
+  openQualityIssueFromImage(issueId: string): void {
+    if (!issueId) {
+      console.error('No issue ID provided');
+      return;
+    }
+
+    // Fetch the full quality issue details
+    this.wirService.getQualityIssueById(issueId).subscribe({
+      next: (issue) => {
+        this.openIssueDetails(issue);
+      },
+      error: (err) => {
+        console.error('Failed to load quality issue details', err);
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: {
+            message: 'Failed to load quality issue details',
+            type: 'error'
+          }
+        }));
+      }
+    });
+  }
+
   getQualityIssueImageUrls(issue: QualityIssueDetails | null): string[] {
     if (!issue) return [];
     

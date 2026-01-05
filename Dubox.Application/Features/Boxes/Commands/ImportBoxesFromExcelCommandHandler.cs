@@ -347,7 +347,6 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                         Notes = boxDto.Notes?.Trim(),
                         SerialNumber = serialNumber,
                         SequentialNumber = SequentialNumber,
-                        QRCodeString = $"ProjectCode: {project.ProjectCode}\nBoxTag: {generatedBoxTag}\nSerialNumber: {serialNumber}",
                         Status = BoxStatusEnum.NotStarted,
                         ProgressPercentage = 0,
                         IsActive = true,

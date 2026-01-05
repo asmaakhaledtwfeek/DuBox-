@@ -35,6 +35,15 @@ export enum ProjectStatus {
   Closed = 'Closed'
 }
 
+// Mapping to backend enum integer values
+export const ProjectStatusToInt: Record<ProjectStatus, number> = {
+  [ProjectStatus.Active]: 1,
+  [ProjectStatus.OnHold]: 2,
+  [ProjectStatus.Completed]: 3,
+  [ProjectStatus.Archived]: 4,
+  [ProjectStatus.Closed]: 5
+};
+
 /**
  * Get available project status transitions based on current status
  * Business Rules:

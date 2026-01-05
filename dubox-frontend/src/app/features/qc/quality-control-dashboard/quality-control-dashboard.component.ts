@@ -57,12 +57,29 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     Closed: { label: 'CLOSED', class: 'status-closed' }
   };
 
-  summaryCards = [
-    { label: 'Open WIR Checkpoints', value: 0, tone: 'info' },
+  // WIR Checkpoint Summary Cards
+  wirCheckpointSummaryCards = [
+    { label: 'All WIR Checkpoints', value: 0, tone: 'info' },
     { label: 'Pending Reviews', value: 0, tone: 'warning' },
-    { label: 'Logged Issues', value: 0, tone: 'danger' },
-    { label: 'Resolved Issues', value: 0, tone: 'success' }
+    { label: 'Approved', value: 0, tone: 'success' },
+    { label: 'Conditional Approval', value: 0, tone: 'warning' },
+    { label: 'Rejected', value: 0, tone: 'danger' }
   ];
+
+  // Quality Issue Summary Cards
+  qualityIssueSummaryCards = [
+    { label: 'Open Issues', value: 0, tone: 'danger' },
+    { label: 'In Progress', value: 0, tone: 'warning' },
+    { label: 'Resolved Issues', value: 0, tone: 'success' },
+    { label: 'Closed Issues', value: 0, tone: 'info' }
+  ];
+
+  // Getter to return appropriate summary cards based on active tab
+  get summaryCards() {
+    return this.activeTab === 'checkpoints' 
+      ? this.wirCheckpointSummaryCards 
+      : this.qualityIssueSummaryCards;
+  }
 
   filterForm: FormGroup;
   qualityIssuesFilterForm: FormGroup;
@@ -645,8 +662,8 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
           }
         });
         
-        // Update summary - note: we use totalCount from backend for accurate counts
-        this.updateSummaryFromBackend(response.totalCount || this.checkpoints.length);
+        // Update summary using backend summary data
+        this.updateSummaryFromBackend(response);
         
         // Now fetch ALL quality issues separately
         this.fetchAllQualityIssues();
@@ -663,47 +680,111 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   }
   
   /**
-   * Update summary cards using backend total count
+   * Update summary cards using backend summary data
    */
-  private updateSummaryFromBackend(totalCheckpoints: number): void {
-    // For now, we'll calculate pending reviews from current page
-    // In a full implementation, you might want separate API calls for summary counts
-    const pendingReviews = this.checkpoints.filter(cp => 
-      cp.status === WIRCheckpointStatus.Pending || 
-      cp.status === WIRCheckpointStatus.ConditionalApproval
-    ).length;
-    const loggedIssues = this.checkpoints.reduce((total, cp) => total + (cp.qualityIssues?.length || 0), 0);
-    const resolvedIssues = this.checkpoints.reduce((total, cp) => {
-      const resolved = (cp.qualityIssues || []).filter(issue => (issue as any)?.status === 'Resolved').length;
-      return total + resolved;
-    }, 0);
+  private updateSummaryFromBackend(response: any): void {
+    // Use backend summary if available, otherwise fallback to calculating from current page
+    if (response.summary) {
+      console.log('✅ Using backend summary (all checkpoints):', response.summary);
+      const summary = response.summary;
+      this.wirCheckpointSummaryCards = [
+        { label: 'All WIR Checkpoints', value: summary.totalCheckpoints || 0, tone: 'info' },
+        { label: 'Pending Reviews', value: summary.pendingReviews || 0, tone: 'warning' },
+        { label: 'Approved', value: summary.approved || 0, tone: 'success' },
+        { label: 'Conditional Approval', value: summary.conditionalApproval || 0, tone: 'warning' },
+        { label: 'Rejected', value: summary.rejected || 0, tone: 'danger' }
+      ];
+    } else {
+      console.warn('⚠️ Backend summary not available, using fallback (current page only)');
 
-    this.summaryCards = [
-      { label: 'All WIR Checkpoints', value: totalCheckpoints, tone: 'info' },
-      { label: 'Pending Reviews', value: pendingReviews, tone: 'warning' },
-      { label: 'Logged Issues', value: loggedIssues, tone: 'danger' },
-      { label: 'Resolved Issues', value: resolvedIssues, tone: 'success' }
-    ];
+      // Fallback: Calculate from current page (legacy behavior)
+      const totalCheckpoints = response.totalCount || this.checkpoints.length;
+      const pendingReviews = this.checkpoints.filter(cp => 
+        cp.status === WIRCheckpointStatus.Pending
+      ).length;
+      const approved = this.checkpoints.filter(cp => 
+        cp.status === WIRCheckpointStatus.Approved
+      ).length;
+      const conditionalApproval = this.checkpoints.filter(cp => 
+        cp.status === WIRCheckpointStatus.ConditionalApproval
+      ).length;
+      const rejected = this.checkpoints.filter(cp => 
+        cp.status === WIRCheckpointStatus.Rejected
+      ).length;
+
+      this.wirCheckpointSummaryCards = [
+        { label: 'All WIR Checkpoints', value: totalCheckpoints, tone: 'info' },
+        { label: 'Pending Reviews', value: pendingReviews, tone: 'warning' },
+        { label: 'Approved', value: approved, tone: 'success' },
+        { label: 'Conditional Approval', value: conditionalApproval, tone: 'warning' },
+        { label: 'Rejected', value: rejected, tone: 'danger' }
+      ];
+    }
   }
 
   /**
-   * Update summary cards using quality issues data
+   * Update quality issue summary cards using backend summary data
+   */
+  private updateQualityIssuesSummaryFromBackend(response: any): void {
+    // Use backend summary if available, otherwise fallback to calculating from current page
+    if (response.summary) {
+      console.log('✅ Using backend summary for quality issues (all issues):', response.summary);
+      const summary = response.summary;
+      this.qualityIssueSummaryCards = [
+        { label: 'Open Issues', value: summary.openIssues || 0, tone: 'danger' },
+        { label: 'In Progress', value: summary.inProgressIssues || 0, tone: 'warning' },
+        { label: 'Resolved Issues', value: summary.resolvedIssues || 0, tone: 'success' },
+        { label: 'Closed Issues', value: summary.closedIssues || 0, tone: 'info' }
+      ];
+    } else {
+      console.warn('⚠️ Backend summary not available for quality issues, using fallback (current page only)');
+      // Fallback: Calculate from current page (legacy behavior)
+      const openIssues = this.qualityIssues.filter(issue => 
+        issue.status === 'Open'
+      ).length;
+      const inProgressIssues = this.qualityIssues.filter(issue => 
+        issue.status === 'InProgress'
+      ).length;
+      const resolvedIssues = this.qualityIssues.filter(issue => 
+        issue.status === 'Resolved'
+      ).length;
+      const closedIssues = this.qualityIssues.filter(issue => 
+        issue.status === 'Closed'
+      ).length;
+
+      this.qualityIssueSummaryCards = [
+        { label: 'Open Issues', value: openIssues, tone: 'danger' },
+        { label: 'In Progress', value: inProgressIssues, tone: 'warning' },
+        { label: 'Resolved Issues', value: resolvedIssues, tone: 'success' },
+        { label: 'Closed Issues', value: closedIssues, tone: 'info' }
+      ];
+    }
+  }
+
+  /**
+   * Update summary cards using quality issues data (legacy/fallback method)
    */
   private updateQualityIssuesSummary(): void {
-    // Count logged issues and resolved issues from the total count
-    const totalIssues = this.qualityIssuesTotalCount;
-    
-    // Count resolved issues from current page (this is an approximation)
-    // Ideally, the backend should provide separate counts for each status
-    const resolvedInCurrentPage = this.qualityIssues.filter(issue => 
-      issue.status === 'Resolved' || issue.status === 'Closed'
+    // Count issues by status from current page (approximation)
+    const openIssues = this.qualityIssues.filter(issue => 
+      issue.status === 'Open'
+    ).length;
+    const inProgressIssues = this.qualityIssues.filter(issue => 
+      issue.status === 'InProgress'
+    ).length;
+    const resolvedIssues = this.qualityIssues.filter(issue => 
+      issue.status === 'Resolved'
+    ).length;
+    const closedIssues = this.qualityIssues.filter(issue => 
+      issue.status === 'Closed'
     ).length;
 
-    this.summaryCards = [
-      { label: 'All WIR Checkpoints', value: this.checkpointsTotalCount, tone: 'info' },
-      { label: 'Pending Reviews', value: this.summaryCards[1].value, tone: 'warning' }, // Keep previous value
-      { label: 'Logged Issues', value: totalIssues, tone: 'danger' },
-      { label: 'Resolved Issues', value: resolvedInCurrentPage, tone: 'success' }
+    // Update Quality Issue Summary Cards
+    this.qualityIssueSummaryCards = [
+      { label: 'Open Issues', value: openIssues, tone: 'danger' },
+      { label: 'In Progress', value: inProgressIssues, tone: 'warning' },
+      { label: 'Resolved Issues', value: resolvedIssues, tone: 'success' },
+      { label: 'Closed Issues', value: closedIssues, tone: 'info' }
     ];
   }
 
@@ -751,22 +832,27 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   }
   private updateSummary(checkpoints: EnrichedCheckpoint[]): void {
     const total = checkpoints.length;
-    // Pending reviews should include both Pending and ConditionalApproval statuses
+    // Pending reviews - only Pending status (not ConditionalApproval)
     const pendingReviews = checkpoints.filter(cp => 
-      cp.status === WIRCheckpointStatus.Pending || 
+      cp.status === WIRCheckpointStatus.Pending
+    ).length;
+    const approved = checkpoints.filter(cp => 
+      cp.status === WIRCheckpointStatus.Approved
+    ).length;
+    const conditionalApproval = checkpoints.filter(cp => 
       cp.status === WIRCheckpointStatus.ConditionalApproval
     ).length;
-    const loggedIssues = checkpoints.reduce((total, cp) => total + (cp.qualityIssues?.length || 0), 0);
-    const resolvedIssues = checkpoints.reduce((total, cp) => {
-      const resolved = (cp.qualityIssues || []).filter(issue => (issue as any)?.status === 'Resolved').length;
-      return total + resolved;
-    }, 0);
+    const rejected = checkpoints.filter(cp => 
+      cp.status === WIRCheckpointStatus.Rejected
+    ).length;
 
-    this.summaryCards = [
+    // Update WIR Checkpoint Summary Cards
+    this.wirCheckpointSummaryCards = [
       { label: 'All WIR Checkpoints', value: total, tone: 'info' },
       { label: 'Pending Reviews', value: pendingReviews, tone: 'warning' },
-      { label: 'Logged Issues', value: loggedIssues, tone: 'danger' },
-      { label: 'Resolved Issues', value: resolvedIssues, tone: 'success' }
+      { label: 'Approved', value: approved, tone: 'success' },
+      { label: 'Conditional Approval', value: conditionalApproval, tone: 'warning' },
+      { label: 'Rejected', value: rejected, tone: 'danger' }
     ];
   }
 
@@ -821,8 +907,8 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     this.qualityIssuesPageSize = response.pageSize || 25;
     this.qualityIssuesTotalPages = response.totalPages || 0;
 
-    // Update summary cards with quality issues data when on quality issues tab
-    this.updateQualityIssuesSummary();
+    // Update summary cards using backend summary data
+    this.updateQualityIssuesSummaryFromBackend(response);
     
     // Apply client-side filters for WIR Number, Box Tag, and Project Code
     // (these are not supported by backend API)
@@ -870,14 +956,27 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
    * Update summary cards to include all quality issues (not just from checkpoints)
    */
   private updateSummaryWithAllIssues(): void {
-    const loggedIssues = this.qualityIssues.length;
+    // Count issues by status
+    const openIssues = this.qualityIssues.filter(issue => 
+      issue.status === 'Open'
+    ).length;
+    const inProgressIssues = this.qualityIssues.filter(issue => 
+      issue.status === 'InProgress'
+    ).length;
     const resolvedIssues = this.qualityIssues.filter(issue => 
-      issue.status === 'Resolved' || issue.status === 'Closed'
+      issue.status === 'Resolved'
+    ).length;
+    const closedIssues = this.qualityIssues.filter(issue => 
+      issue.status === 'Closed'
     ).length;
 
-    // Update only the issue-related cards, keep checkpoint counts from updateSummary
-    this.summaryCards[2] = { label: 'Logged Issues', value: loggedIssues, tone: 'danger' };
-    this.summaryCards[3] = { label: 'Resolved Issues', value: resolvedIssues, tone: 'success' };
+    // Update Quality Issue Summary Cards
+    this.qualityIssueSummaryCards = [
+      { label: 'Open Issues', value: openIssues, tone: 'danger' },
+      { label: 'In Progress', value: inProgressIssues, tone: 'warning' },
+      { label: 'Resolved Issues', value: resolvedIssues, tone: 'success' },
+      { label: 'Closed Issues', value: closedIssues, tone: 'info' }
+    ];
   }
 
   onQualityIssuesPageChange(page: number): void {

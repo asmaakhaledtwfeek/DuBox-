@@ -174,12 +174,20 @@ export class WIRService {
         if (data?.items) {
           // Paginated response
           console.log('getWIRCheckpoints - data:', data.items);
+          console.log('getWIRCheckpoints - summary:', data.summary);
           return {
             items: data.items.map((c: any) => this.transformWIRCheckpoint(c)),
             totalCount: data.totalCount || 0,
             page: data.page || 1,
             pageSize: data.pageSize || 25,
-            totalPages: data.totalPages || 0
+            totalPages: data.totalPages || 0,
+            summary: data.summary ? {
+              totalCheckpoints: data.summary.totalCheckpoints || 0,
+              pendingReviews: data.summary.pendingReviews || 0,
+              approved: data.summary.approved || 0,
+              rejected: data.summary.rejected || 0,
+              conditionalApproval: data.summary.conditionalApproval || 0
+            } : undefined
           };
         } else {
           // Fallback for non-paginated response (backward compatibility)
@@ -499,12 +507,21 @@ export class WIRService {
         const data = response?.data || response;
         if (data?.items) {
           // Paginated response
+          console.log('getAllQualityIssues - data:', data.items);
+          console.log('getAllQualityIssues - summary:', data.summary);
           return {
             items: data.items.map((issue: any) => this.transformQualityIssueDetails(issue)),
             totalCount: data.totalCount || 0,
             page: data.page || 1,
             pageSize: data.pageSize || 25,
-            totalPages: data.totalPages || 0
+            totalPages: data.totalPages || 0,
+            summary: data.summary ? {
+              totalIssues: data.summary.totalIssues || 0,
+              openIssues: data.summary.openIssues || 0,
+              inProgressIssues: data.summary.inProgressIssues || 0,
+              resolvedIssues: data.summary.resolvedIssues || 0,
+              closedIssues: data.summary.closedIssues || 0
+            } : undefined
           };
         } else {
           // Fallback for non-paginated response (backward compatibility)

@@ -134,6 +134,15 @@ export interface PaginatedWIRCheckpointsResponse {
   page: number;
   pageSize: number;
   totalPages: number;
+  summary?: WIRCheckpointsSummary;
+}
+
+export interface WIRCheckpointsSummary {
+  totalCheckpoints: number;
+  pendingReviews: number;
+  approved: number;
+  rejected: number;
+  conditionalApproval: number;
 }
 
 export interface WIRCheckpointChecklistItem {
@@ -316,6 +325,15 @@ export interface PaginatedQualityIssuesResponse {
   page: number;
   pageSize: number;
   totalPages: number;
+  summary?: QualityIssuesSummary;
+}
+
+export interface QualityIssuesSummary {
+  totalIssues: number;
+  openIssues: number;
+  inProgressIssues: number;
+  resolvedIssues: number;
+  closedIssues: number;
 }
 
 export interface AddQualityIssueRequest {

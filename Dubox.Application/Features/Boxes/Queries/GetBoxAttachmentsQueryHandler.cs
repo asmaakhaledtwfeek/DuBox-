@@ -100,7 +100,11 @@ public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQu
                 Image = img,
                 IssueId = qi.IssueId,
                 IssueDescription = qi.IssueDescription,
-                CreatedBy = qi.CreatedBy
+                IssueType = qi.IssueType,
+                IssueSeverity = qi.Severity,
+                CreatedBy = qi.CreatedBy,
+                BoxTag = qi.Box != null ? qi.Box.BoxTag : null,
+                WIRCode = qi.WIRCheckpoint != null ? qi.WIRCheckpoint.WIRCode : null
             }))
             .OrderByDescending(x => x.Image.CreatedDate)
             .ToListAsync(cancellationToken);
@@ -118,7 +122,11 @@ public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQu
             CreatedBy = x.CreatedBy, // Use QualityIssue.CreatedBy
             ReferenceId = x.IssueId,
             ReferenceType = "QualityIssue",
-            ReferenceName = x.IssueDescription
+            ReferenceName = x.IssueDescription,
+            IssueType = x.IssueType?.ToString(),
+            IssueSeverity = x.IssueSeverity?.ToString(),
+            BoxTag = x.BoxTag,
+            WIRCode = x.WIRCode
         }).ToList();
 
         result.TotalCount = result.WIRCheckpointImages.Count +

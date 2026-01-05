@@ -121,16 +121,6 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
 
         var boxTypeChange = ApplyBoxUpdates(box, request);
 
-        // Update QR code string if serial number exists, otherwise keep old format for backward compatibility
-        if (!string.IsNullOrEmpty(box.SerialNumber))
-        {
-            box.QRCodeString = $"ProjectCode: {project.ProjectCode}\nBoxTag: {box.BoxTag}\nSerialNumber: {box.SerialNumber}";
-        }
-        else
-        {
-            // For existing boxes without serial number, update to new format when box tag changes
-            box.QRCodeString = $"{project.ProjectCode}_{box.BoxTag}";
-        }
 
         var activitiesChanged = false;
         if (boxTypeChange)
@@ -178,7 +168,6 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
         BoxDto response = box.Adapt<BoxDto>() with
         {
             ProjectCode = project.ProjectCode,
-            QRCodeImage = _qrCodeService.GenerateQRCodeBase64(box.QRCodeString),
             FactoryId = box.FactoryId,
             FactoryCode = box.Factory?.FactoryCode,
             FactoryName = box.Factory?.FactoryName

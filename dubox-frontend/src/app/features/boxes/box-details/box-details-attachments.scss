@@ -237,6 +237,98 @@
   stroke-width: 2.5;
 }
 
+/* Box Code Badge - positioned below version badge */
+.box-code-badge {
+  position: absolute;
+  top: 56px;
+  left: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: 32px;
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  color: #ffffff;
+  border-radius: 16px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  box-shadow: 
+    0 4px 12px rgba(59, 130, 246, 0.4),
+    0 2px 6px rgba(15, 23, 42, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  z-index: 10;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  text-decoration: none;
+
+  svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 
+      0 6px 20px rgba(59, 130, 246, 0.5),
+      0 3px 10px rgba(15, 23, 42, 0.25);
+      background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  }
+
+  &:active {
+    transform: scale(0.98) translateY(0);
+  }
+}
+
+/* Issue Type Badge - positioned below box code badge */
+.issue-type-badge {
+  position: absolute;
+  top: 96px;
+  left: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 14px;
+  height: 32px;
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: #ffffff;
+  border-radius: 16px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  box-shadow: 
+    0 4px 12px rgba(239, 68, 68, 0.4),
+    0 2px 6px rgba(15, 23, 42, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  z-index: 10;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  text-decoration: none;
+
+  svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 
+      0 6px 20px rgba(239, 68, 68, 0.5),
+      0 3px 10px rgba(15, 23, 42, 0.25);
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  }
+
+  &:active {
+    transform: scale(0.98) translateY(0);
+  }
+}
+
 /* =========================================================
    Image Info
 ========================================================= */
@@ -343,6 +435,31 @@
       content: '📅';
       font-size: 12px;
       opacity: 0.7;
+    }
+  }
+
+  .image-wir-code {
+    font-size: 11px;
+    font-weight: 600;
+    color: #1b9aaa;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: linear-gradient(135deg, rgba(27, 154, 170, 0.08) 0%, rgba(27, 154, 170, 0.04) 100%);
+    padding: 6px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(27, 154, 170, 0.15);
+    width: fit-content;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    &:hover {
+      background: linear-gradient(135deg, rgba(27, 154, 170, 0.12) 0%, rgba(27, 154, 170, 0.06) 100%);
+      border-color: rgba(27, 154, 170, 0.25);
+      box-shadow: 0 2px 6px rgba(27, 154, 170, 0.1);
+    }
+
+    svg {
+      flex-shrink: 0;
     }
   }
 
@@ -1587,6 +1704,23 @@
     padding: 0 10px;
   }
 
+  .box-code-badge {
+    top: 48px;
+    left: 12px;
+    height: 28px;
+    font-size: 0.75rem;
+    padding: 0 10px;
+    background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  }
+
+  .issue-type-badge {
+    top: 80px;
+    left: 12px;
+    height: 28px;
+    font-size: 0.75rem;
+    padding: 0 10px;
+  }
+
   .file-group-header {
     padding: 14px 16px;
     flex-wrap: wrap;
@@ -1721,6 +1855,34 @@
 
   .activity-badge {
     top: 44px;
+    left: 12px;
+    height: 26px;
+    font-size: 0.7rem;
+    padding: 0 8px;
+    gap: 4px;
+
+    svg {
+      width: 12px;
+      height: 12px;
+    }
+  }
+
+  .box-code-badge {
+    top: 44px;
+    left: 12px;
+    height: 26px;
+    font-size: 0.7rem;
+    padding: 0 8px;
+    gap: 4px;
+    background: linear-gradient(135deg, rgba(27, 154, 170, 0.1) 0%, rgba(27, 154, 170, 0.05) 100%);
+    svg {
+      width: 12px;
+      height: 12px;
+    }
+  }
+
+  .issue-type-badge {
+    top: 74px;
     left: 12px;
     height: 26px;
     font-size: 0.7rem;

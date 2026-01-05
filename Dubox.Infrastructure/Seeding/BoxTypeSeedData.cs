@@ -8,7 +8,7 @@ namespace Dubox.Infrastructure.Seeding
         public static void SeedBoxTypes(ModelBuilder modelBuilder)
         {
             // Categories
-            var categories = new List<ProjectTypeCategory>
+            var categories = new List<ProjectTypeCategory>();
             {
                 new ProjectTypeCategory { CategoryId = 1, CategoryName = "Residential", Abbreviation = "RES" },
                 new ProjectTypeCategory { CategoryId = 2, CategoryName = "Commercial", Abbreviation = "COM" },

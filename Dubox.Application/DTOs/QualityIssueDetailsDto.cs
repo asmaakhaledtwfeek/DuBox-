@@ -37,7 +37,22 @@ namespace Dubox.Application.DTOs
         public string? InspectorName { get; set; }
     }
 
-    public record PaginatedQualityIssuesResponseDto : PaginatedResponse<QualityIssueDetailsDto>;
+    public record PaginatedQualityIssuesResponseDto : PaginatedResponse<QualityIssueDetailsDto>
+    {
+        public QualityIssuesSummary? Summary { get; init; }
+    }
+
+    /// <summary>
+    /// Summary statistics for all quality issues (not just current page)
+    /// </summary>
+    public class QualityIssuesSummary
+    {
+        public int TotalIssues { get; set; }
+        public int OpenIssues { get; set; }
+        public int InProgressIssues { get; set; }
+        public int ResolvedIssues { get; set; }
+        public int ClosedIssues { get; set; }
+    }
 
     /// <summary>
     /// Quality issue image info - ImageData is only populated in detail views.

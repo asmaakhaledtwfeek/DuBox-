@@ -32,6 +32,7 @@ public interface IDbContext
     DbSet<WIRRecord> WIRRecords { get; }
     DbSet<WIRCheckpoint> WIRCheckpoints { get; }
     DbSet<WIRChecklistItem> WIRChecklistItems { get; }
+    DbSet<WIRCheckpointImage> WIRCheckpointImages { get; }
     DbSet<PredefinedChecklistItem> PredefinedChecklistItems { get; }
     
     // Production tracking

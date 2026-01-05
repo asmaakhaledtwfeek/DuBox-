@@ -341,6 +341,10 @@ export interface BoxAttachmentDto {
   referenceName?: string;
   boxActivityId?: string;
   activityName?: string;
+  issueType?: string;
+  issueSeverity?: string;
+  boxTag?: string;
+  wirCode?: string;
 }
 
 export interface BoxLog {
@@ -427,5 +431,53 @@ export interface BoxSubType {
   boxSubTypeName: string;
   abbreviation?: string;
   boxTypeId: number;
+}
+
+export interface BoxSummary {
+  activityStatus: ActivityStatusSummary;
+  wirCheckpoint: WIRCheckpointSummary;
+  qualityIssue: QualityIssueSummary;
+  attachment: AttachmentSummary;
+  drawing: DrawingSummary;
+}
+
+export interface ActivityStatusSummary {
+  total: number;
+  notStarted: number;
+  inProgress: number;
+  completed: number;
+  onHold: number;
+  delayed: number;
+  averageProgress: number;
+}
+
+export interface WIRCheckpointSummary {
+  total: number;
+  pending: number;
+  approved: number;
+  rejected: number;
+  conditionalApproval: number;
+  underReview: number;
+}
+
+export interface QualityIssueSummary {
+  total: number;
+  open: number;
+  inProgress: number;
+  resolved: number;
+  closed: number;
+  critical: number;
+  major: number;
+  minor: number;
+}
+
+export interface AttachmentSummary {
+  total: number;
+  recent: number;
+}
+
+export interface DrawingSummary {
+  total: number;
+  recent: number;
 }
 

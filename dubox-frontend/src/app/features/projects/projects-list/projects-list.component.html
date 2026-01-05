@@ -78,13 +78,14 @@
         >
           Archived
         </button>
-        <!-- <button 
+        <button 
           class="filter-btn" 
           [class.active]="selectedStatus === ProjectStatus.Closed"
           (click)="filterByStatus(ProjectStatus.Closed)"
+          title="Projects that are permanently closed"
         >
           Closed
-        </button> -->
+        </button>
       </div>
     </div>
 

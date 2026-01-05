@@ -7,7 +7,7 @@ import { forkJoin, Subscription } from 'rxjs';
 import { ProjectService } from '../../../core/services/project.service';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
-import { Project, ProjectStatus } from '../../../core/models/project.model';
+import { Project, ProjectStatus, ProjectStatusToInt } from '../../../core/models/project.model';
 import { BoxStatus } from '../../../core/models/box.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
@@ -26,7 +26,7 @@ export class ProjectsListComponent implements OnInit, OnDestroy {
   error = '';
   
   searchControl = new FormControl('');
-  selectedStatus: ProjectStatus | 'All' = 'All';
+  selectedStatus: ProjectStatus | 'All' = ProjectStatus.Active; // Default to Active projects
   
   ProjectStatus = ProjectStatus;
   canCreateProject = false;
@@ -74,7 +74,15 @@ export class ProjectsListComponent implements OnInit, OnDestroy {
     this.error = '';
     console.log('📡 Loading projects from API...');
 
-    this.projectService.getProjects().subscribe({
+    // Prepare query parameters for backend filtering
+    const params: any = {};
+    
+    // Add status filter if not 'All' (convert to backend enum integer value)
+    if (this.selectedStatus !== 'All') {
+      params.StatusFilter = ProjectStatusToInt[this.selectedStatus];
+    }
+
+    this.projectService.getProjects(params).subscribe({
       next: (projects) => {
         console.log('📦 Loaded projects:', projects);
         console.log('📊 Total projects count:', projects.length);
@@ -234,7 +242,7 @@ export class ProjectsListComponent implements OnInit, OnDestroy {
   applyFilters(): void {
     let filtered = [...this.projects];
 
-    // Apply search filter
+    // Apply search filter (status filter is now handled by backend)
     const searchTerm = this.searchControl.value?.toLowerCase() || '';
     if (searchTerm) {
       filtered = filtered.filter(project =>
@@ -244,17 +252,13 @@ export class ProjectsListComponent implements OnInit, OnDestroy {
       );
     }
 
-    // Apply status filter
-    if (this.selectedStatus !== 'All') {
-      filtered = filtered.filter(project => project.status === this.selectedStatus);
-    }
-
     this.filteredProjects = filtered;
   }
 
   filterByStatus(status: ProjectStatus | 'All'): void {
     this.selectedStatus = status;
-    this.applyFilters();
+    // Reload projects from backend with new status filter
+    this.loadProjects();
   }
 
   viewProject(projectId: string): void {

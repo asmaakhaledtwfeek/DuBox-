@@ -45,7 +45,22 @@ namespace Dubox.Application.DTOs
         public List<WIRCheckpointImageDto> Images { get; set; } = new();
     }
 
-    public record PaginatedWIRCheckpointsResponseDto : PaginatedResponse<WIRCheckpointDto>;
+    public record PaginatedWIRCheckpointsResponseDto : PaginatedResponse<WIRCheckpointDto>
+    {
+        public WIRCheckpointsSummary? Summary { get; init; }
+    }
+
+    /// <summary>
+    /// Summary statistics for all WIR checkpoints (not just current page)
+    /// </summary>
+    public class WIRCheckpointsSummary
+    {
+        public int TotalCheckpoints { get; set; }
+        public int PendingReviews { get; set; }
+        public int Approved { get; set; }
+        public int Rejected { get; set; }
+        public int ConditionalApproval { get; set; }
+    }
 
     /// <summary>
     /// Lightweight image info without base64 data - used in listings.

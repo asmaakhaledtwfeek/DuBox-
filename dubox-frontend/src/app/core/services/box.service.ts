@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, throwError, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { ApiService, PaginatedResponse } from './api.service';
-import { Box, BoxActivity, BoxDrawing, BoxDrawingDto, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview, BoxTypeStatsByProject, BoxDrawingsResponse, BoxDrawingImage, BoxAllAttachmentsResponse, BoxType, BoxSubType } from '../models/box.model';
+import { Box, BoxActivity, BoxDrawing, BoxDrawingDto, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview, BoxTypeStatsByProject, BoxDrawingsResponse, BoxDrawingImage, BoxAllAttachmentsResponse, BoxType, BoxSubType, BoxSummary } from '../models/box.model';
 
 @Injectable({
   providedIn: 'root'
@@ -600,6 +600,22 @@ export class BoxService {
       catchError(err => {
         console.error('❌ Error fetching box attachments:', err);
         throw err;
+      })
+    );
+  }
+
+  /**
+   * Get box summary (activities, WIR checkpoints, quality issues, attachments, drawings)
+   */
+  getBoxSummary(boxId: string): Observable<BoxSummary> {
+    return this.apiService.get<any>(`${this.endpoint}/${boxId}/summary`).pipe(
+      map(response => {
+        const data = response?.data || response;
+        return data as BoxSummary;
+      }),
+      catchError(err => {
+        console.error('❌ Error fetching box summary:', err);
+        return throwError(() => err);
       })
     );
   }

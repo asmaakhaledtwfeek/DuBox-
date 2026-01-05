@@ -28,5 +28,11 @@ public class BoxAttachmentDto
     // Activity information (for Progress Update images)
     public Guid? BoxActivityId { get; set; }
     public string? ActivityName { get; set; }
+    
+    // Quality Issue specific information
+    public string? IssueType { get; set; }
+    public string? IssueSeverity { get; set; }
+    public string? BoxTag { get; set; }
+    public string? WIRCode { get; set; }
 }
 

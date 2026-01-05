@@ -57,16 +57,56 @@ namespace Dubox.Application.Features.QualityIssues.Queries
 
             var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
+            // Calculate summary statistics for ALL quality issues (not just current page)
+            var summary = await CalculateSummaryAsync(request, accessibleProjectIds, cancellationToken);
+
             var response = new PaginatedQualityIssuesResponseDto
             {
                 Items = dtos,
                 Page = page,
                 PageSize = pageSize,
                 TotalCount = totalCount,
-                TotalPages = totalPages
+                TotalPages = totalPages,
+                Summary = summary
             };
 
             return Result.Success(response);
+        }
+
+        private async Task<QualityIssuesSummary> CalculateSummaryAsync(
+            GetQualityIssuesQuery request, 
+            List<Guid>? accessibleProjectIds, 
+            CancellationToken cancellationToken)
+        {
+            // Get all quality issues matching the filter criteria (without pagination)
+            var allIssuesResult = _unitOfWork.Repository<QualityIssue>()
+                .GetWithSpec(new GetQualityIssuesSummarySpecification(request, accessibleProjectIds));
+
+            // Get status counts using GroupBy
+            var statusCounts = await allIssuesResult.Data
+                .AsNoTracking()
+                .GroupBy(i => i.Status)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToListAsync(cancellationToken);
+
+            var summary = new QualityIssuesSummary
+            {
+                TotalIssues = statusCounts.Sum(s => s.Count),
+                OpenIssues = statusCounts
+                    .Where(s => s.Status == Domain.Enums.QualityIssueStatusEnum.Open)
+                    .Sum(s => s.Count),
+                InProgressIssues = statusCounts
+                    .Where(s => s.Status == Domain.Enums.QualityIssueStatusEnum.InProgress)
+                    .Sum(s => s.Count),
+                ResolvedIssues = statusCounts
+                    .Where(s => s.Status == Domain.Enums.QualityIssueStatusEnum.Resolved)
+                    .Sum(s => s.Count),
+                ClosedIssues = statusCounts
+                    .Where(s => s.Status == Domain.Enums.QualityIssueStatusEnum.Closed)
+                    .Sum(s => s.Count)
+            };
+
+            return summary;
         }
         
         private async Task PopulateImageMetadata(List<QualityIssueDetailsDto> issues, CancellationToken cancellationToken)

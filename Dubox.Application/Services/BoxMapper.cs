@@ -98,8 +98,6 @@ namespace Dubox.Application.Services
                     BuildingNumber = box.BuildingNumber,
                     BoxFunction = box.BoxFunction,
                     Zone = zoneString,
-                    QRCodeString = box.QRCodeString ?? string.Empty,
-                    QRCodeImage = box.QRCodeImageUrl,
                     ProgressPercentage = box.ProgressPercentage,
                     Status = statusString,
                     Length = box.Length,

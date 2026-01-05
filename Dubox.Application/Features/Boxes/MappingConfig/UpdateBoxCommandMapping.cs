@@ -24,8 +24,7 @@ namespace Dubox.Application.Features.Boxes.MappingConfig
 
              .Ignore(dest => dest.BoxId)
              .Ignore(dest => dest.ProjectId)
-             .Ignore(dest => dest.QRCodeString)
-             .Ignore(dest => dest.QRCodeImageUrl)
+            
              .Ignore(dest => dest.CreatedDate);
 
         }

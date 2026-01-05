@@ -1,14 +1,11 @@
 using Dubox.Application.Features.Boxes.Queries;
+using Dubox.Application.Features.BoxDrawings.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Dubox.Api.Controllers;
 
-/// <summary>
-/// Public controller for box information accessed via QR code scan
-/// No authentication required
-/// </summary>
 [ApiController]
 [Route("api/public/boxes")]
 [AllowAnonymous]
@@ -21,13 +18,6 @@ public class PublicBoxesController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
-    /// Get public box details by ID (no authentication required)
-    /// Used when scanning QR codes
-    /// </summary>
-    /// <param name="boxId">The box ID</param>
-    /// <param name="cancellationToken">Cancellation token</param>
-    /// <returns>Public box details</returns>
     [HttpGet("{boxId}")]
     public async Task<IActionResult> GetPublicBoxById(Guid boxId, CancellationToken cancellationToken)
     {
@@ -41,6 +31,27 @@ public class PublicBoxesController : ControllerBase
         }
 
         return Ok(result);
+    }
+
+    [HttpGet("{boxId}/summary")]
+    public async Task<IActionResult> GetPublicBoxSummary(Guid boxId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetBoxSummaryQuery(boxId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("{boxId}/attachments")]
+    public async Task<IActionResult> GetPublicBoxAttachments(Guid boxId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetBoxAttachmentsQuery(boxId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("{boxId}/drawings")]
+    public async Task<IActionResult> GetPublicBoxDrawings(Guid boxId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetBoxDrawingsQuery(boxId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 }
 

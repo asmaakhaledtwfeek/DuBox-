@@ -109,8 +109,6 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
         var yearOfProject = project.CreatedDate.Year.ToString().Substring(2, 2);
         box.SerialNumber = _serialNumberService.GenerateSerialNumber("X",lastSeq,yearOfProject);
         
-        // Generate QR code string with structured format
-        box.QRCodeString = $"ProjectCode: {project.ProjectCode}\nBoxTag: {request.BoxTag}\nSerialNumber: {box.SerialNumber}";
         box.CreatedBy = currentUserId;
         
         // Automatically assign factory based on project location
@@ -181,24 +179,11 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
             $"Project progress recalculated due to new box '{box.BoxTag}' creation.",
             cancellationToken);
 
-        // Generate QR code image (handle null QRCodeString)
-        string? qrCodeImage = null;
-        if (!string.IsNullOrEmpty(box.QRCodeString))
-        {
-            try
-            {
-                qrCodeImage = _qrCodeService.GenerateQRCodeBase64(box.QRCodeString);
-            }
-            catch (Exception ex)
-            {
-                // Log but don't fail the entire operation
-                Console.WriteLine($"Warning: Failed to generate QR code: {ex.Message}");
-            }
-        }
+        
 
         var boxDto = box.Adapt<BoxDto>() with
         { 
-            QRCodeImage = qrCodeImage,
+            
             FactoryId = box.FactoryId,
             FactoryCode = box.Factory?.FactoryCode,
             FactoryName = box.Factory?.FactoryName

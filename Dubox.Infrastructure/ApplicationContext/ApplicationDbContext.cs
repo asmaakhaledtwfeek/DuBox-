@@ -440,9 +440,6 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasIndex(b => new { b.ProjectId, b.BoxTag })
             .IsUnique();
 
-        modelBuilder.Entity<Box>()
-            .HasIndex(b => b.QRCodeString)
-            .IsUnique();
 
         modelBuilder.Entity<Box>()
             .HasIndex(b => new { b.Status, b.ProjectId });

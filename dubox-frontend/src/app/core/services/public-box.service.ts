@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
+import { BoxSummary } from '../models/box.model';
 
 /**
  * Public box data model (read-only view)
@@ -105,6 +106,121 @@ export class PublicBoxService {
       row: data.row,
       position: data.position
     };
+  }
+
+  /**
+   * Get public box summary (no authentication required)
+   * @param boxId The box ID
+   * @returns Observable of box summary data
+   */
+  getPublicBoxSummary(boxId: string): Observable<BoxSummary> {
+    return this.http.get<any>(`${this.publicApiUrl}/boxes/${boxId}/summary`).pipe(
+      map(response => {
+        const data = response?.data || response;
+        return data as BoxSummary;
+      }),
+      catchError(error => {
+        console.error('Error fetching public box summary:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Get public box attachments (no authentication required)
+   * @param boxId The box ID
+   * @returns Observable of box attachments with data URLs
+   */
+  getPublicBoxAttachments(boxId: string): Observable<any> {
+    return this.http.get<any>(`${this.publicApiUrl}/boxes/${boxId}/attachments`).pipe(
+      map(response => {
+        const data = response?.data || response;
+        
+        // Convert ImageData to data URLs for public viewing
+        if (data) {
+          if (data.wirCheckpointImages) {
+            data.wirCheckpointImages = data.wirCheckpointImages.map((img: any) => 
+              this.transformAttachmentWithDataUrl(img)
+            );
+          }
+          if (data.progressUpdateImages) {
+            data.progressUpdateImages = data.progressUpdateImages.map((img: any) => 
+              this.transformAttachmentWithDataUrl(img)
+            );
+          }
+          if (data.qualityIssueImages) {
+            data.qualityIssueImages = data.qualityIssueImages.map((img: any) => 
+              this.transformAttachmentWithDataUrl(img)
+            );
+          }
+        }
+        
+        console.log('📎 Transformed public attachments:', data);
+        return data;
+      }),
+      catchError(error => {
+        console.error('Error fetching public box attachments:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Transform attachment with ImageData to include imageUrl as data URL
+   * This allows images to be displayed without authentication
+   */
+  private transformAttachmentWithDataUrl(attachment: any): any {
+    if (!attachment) return attachment;
+
+    // If imageData exists, convert it to a data URL
+    if (attachment.imageData && attachment.imageData.trim() !== '') {
+      const mimeType = this.getMimeTypeFromExtension(attachment.originalName || attachment.fileName);
+      attachment.imageUrl = `data:${mimeType};base64,${attachment.imageData}`;
+      console.log('✅ Created data URL for:', attachment.originalName, '(length:', attachment.imageUrl.length, ')');
+    } else {
+      console.warn('⚠️ No imageData found for:', attachment.originalName);
+    }
+
+    return attachment;
+  }
+
+  /**
+   * Get MIME type from file extension
+   */
+  private getMimeTypeFromExtension(fileName: string): string {
+    if (!fileName) return 'image/jpeg';
+    
+    const ext = fileName.split('.').pop()?.toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+      'svg': 'image/svg+xml',
+      'bmp': 'image/bmp',
+      'ico': 'image/x-icon'
+    };
+    
+    return mimeTypes[ext || ''] || 'image/jpeg';
+  }
+
+  /**
+   * Get public box drawings (no authentication required)
+   * @param boxId The box ID
+   * @returns Observable of box drawings
+   */
+  getPublicBoxDrawings(boxId: string): Observable<any[]> {
+    return this.http.get<any>(`${this.publicApiUrl}/boxes/${boxId}/drawings`).pipe(
+      map(response => {
+        const data = response?.data || response;
+        return Array.isArray(data) ? data : [];
+      }),
+      catchError(error => {
+        console.error('Error fetching public box drawings:', error);
+        return throwError(() => error);
+      })
+    );
   }
 
   /**

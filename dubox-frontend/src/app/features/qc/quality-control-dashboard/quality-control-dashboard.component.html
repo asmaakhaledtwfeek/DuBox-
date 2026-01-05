@@ -29,7 +29,7 @@
         [class.active]="activeTab === 'checkpoints'"
         (click)="setTab('checkpoints')"
       >
-        MBI Checkpoints
+        WIR (Checkpoints)
       </button>
       <button 
         class="tab" 
@@ -53,7 +53,7 @@
       <!-- Filters -->
       <form [formGroup]="filterForm" (ngSubmit)="applyFilters()" class="filter-row">
         <div class="field">
-          <label>MBI Number</label>
+          <label>WIR Number</label>
           <input type="text" formControlName="wirNumber" placeholder="e.g. MBI-12" />
         </div>
         <div class="field">
@@ -100,7 +100,7 @@
         <table class="designer-table" *ngIf="!checkpointsLoading && !checkpointsError && checkpoints.length > 0">
           <thead>
             <tr>
-              <th>MBI Number</th>
+              <th>WIR Number</th>
               <th>Box</th>
               <th>Project</th>
               <th>Status</th>
@@ -242,7 +242,7 @@
       <!-- Filters -->
       <form [formGroup]="qualityIssuesFilterForm" class="filter-row">
         <div class="field">
-          <label>MBI Number</label>
+          <label>WIR Number</label>
           <input type="text" formControlName="wirNumber" placeholder="e.g. MBI-12" />
         </div>
         <div class="field">
@@ -315,7 +315,7 @@
               <th>Severity</th>
               <th>Project</th>
               <th>Box</th>
-              <th>MBI</th>
+              <th>WIR</th>
               <th>Assigned To</th>
               <th>Actions</th>
             </tr>

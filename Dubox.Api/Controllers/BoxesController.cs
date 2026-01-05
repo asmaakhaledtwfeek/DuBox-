@@ -185,6 +185,17 @@ public class BoxesController : ControllerBase
         var result = await _mediator.Send(new GenerateBoxQRCodeByIdQuery(boxId), cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+
+    /// <summary>
+    /// Generate QR code with public URL for a box
+    /// Returns both the QR code image and the public URL
+    /// </summary>
+    [HttpGet("{boxId}/qrcode-with-url")]
+    public async Task<IActionResult> GetBoxQRCodeWithUrl(Guid boxId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetBoxQRCodeWithUrlQuery(boxId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
     [HttpPut("define-box-material{boxId}")]
     public async Task<IActionResult> DefineBoxMaterialRequired(Guid boxId, [FromBody] DefineBoxMaterialRequirementCommand command, CancellationToken cancellationToken)
     {

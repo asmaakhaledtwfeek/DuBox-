@@ -23,12 +23,10 @@ namespace Dubox.Application.Features.Boxes.Queries
             if (box == null)
                 return Result.Failure<string>("Box not found");
 
-            if (string.IsNullOrEmpty(box.QRCodeString))
-                return Result.Failure<string>("QR Code string is missing for this box.");
-
             try
             {
-                var qrCodeBase64 = _qrCodeService.GenerateQRCodeBase64(box.QRCodeString);
+                // Generate QR code with public URL for box view
+                var qrCodeBase64 = _qrCodeService.GeneratePublicBoxViewQRCode(request.BoxId);
 
                 return Result.Success<string>(qrCodeBase64);
             }

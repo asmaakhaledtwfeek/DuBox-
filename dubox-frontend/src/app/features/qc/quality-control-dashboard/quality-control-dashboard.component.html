@@ -705,7 +705,7 @@
     <div class="modal-header">
       <div class="header-content">
         <div class="header-title-section">
-          <h3 class="modal-title">Assign to Team</h3>
+          <h3 class="modal-title">Assign to Crew</h3>
           <div class="header-badges">
             <span class="issue-type-badge-small">
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -732,20 +732,39 @@
     <div class="modal-content">
       <div class="modal-body">
         <div class="form-group">
-          <label class="modal-label">Assign to Team</label>
+          <label class="modal-label">Assign to Crew <span class="required">*</span></label>
           <select 
             class="modal-input" 
             [(ngModel)]="selectedTeamId"
+            (change)="onTeamSelectionChange($any($event.target).value)"
             [disabled]="assignLoading || loadingTeams"
           >
-            <option [value]="null">Unassign (No Team)</option>
+            <option [value]="null">Select a Crew</option>
             <option *ngFor="let team of availableTeams" [value]="team.teamId">
               {{ team.teamName }} ({{ team.teamCode }})
             </option>
           </select>
           <div class="loading-text" *ngIf="loadingTeams">Loading teams...</div>
           <small class="helper-text" *ngIf="!loadingTeams && availableTeams.length === 0">
-            No teams available. Please contact your administrator.
+            No Crew available. Please contact your administrator.
+          </small>
+        </div>
+
+        <div class="form-group" *ngIf="selectedTeamId">
+          <label class="modal-label">Assign to Crew Member <span class="optional">(Optional)</span></label>
+          <select 
+            class="modal-input" 
+            [(ngModel)]="selectedMemberId"
+            [disabled]="assignLoading || loadingMembers"
+          >
+            <option [value]="null">Select a Member (Optional)</option>
+            <option *ngFor="let member of availableMembers" [value]="member.teamMemberId">
+              {{ member.employeeName || member.fullName || member.email }}
+            </option>
+          </select>
+          <div class="loading-text" *ngIf="loadingMembers">Loading members...</div>
+          <small class="helper-text" *ngIf="!loadingMembers && availableMembers.length === 0 && selectedTeamId">
+            No members available for this Crew.
           </small>
         </div>
 

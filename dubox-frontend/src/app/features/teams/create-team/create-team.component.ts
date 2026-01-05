@@ -78,14 +78,14 @@ export class CreateTeamComponent implements OnInit {
     this.teamService.createTeam(teamData).subscribe({
       next: (team) => {
         this.loading = false;
-        this.successMessage = 'Team created successfully!';
+        this.successMessage = 'Crew created successfully!';
         setTimeout(() => {
           this.router.navigate(['/teams']);
         }, 1500);
       },
       error: (err) => {
         this.loading = false;
-        this.error = err.error?.message || err.message || 'Failed to create team. Please try again.';
+        this.error = err.error?.message || err.message || 'Failed to create crew. Please try again.';
         console.error('Error creating team:', err);
       }
     });

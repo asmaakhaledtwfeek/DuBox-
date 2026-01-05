@@ -7,16 +7,18 @@ public class TeamMembersMapping : IRegister
     public void Register(TypeAdapterConfig config)
     {
 
-
         config.NewConfig<TeamMember, TeamMemberDto>()
+            .Map(dest => dest.TeamMemberId, src => src.TeamMemberId)
             .Map(dest => dest.UserId, src => src.UserId)
-            .Map(dest => dest.Email, src => src.User.Email)
-            .Map(dest => dest.FullName, src => src.User.FullName)
+            .Map(dest => dest.TeamId, src => src.TeamId)
+            .Map(dest => dest.TeamCode, src => src.Team != null ? src.Team.TeamCode : string.Empty)
+            .Map(dest => dest.TeamName, src => src.Team != null ? src.Team.TeamName : string.Empty)
+            .Map(dest => dest.Email, src => src.User == null ? string.Empty : (src.User.Email ?? string.Empty))
+            .Map(dest => dest.FullName, src => src.User == null ? (src.EmployeeName ?? string.Empty) : (src.User.FullName ?? src.EmployeeName ?? string.Empty))
             .Map(dest => dest.EmployeeCode, src => src.EmployeeCode)
             .Map(dest => dest.EmployeeName, src => src.EmployeeName)
-            .Map(dest => dest.MobileNumber, src => src.MobileNumber)
-            .Map(dest => dest.TeamName, src => src.Team.TeamName)
-            .Map(dest => dest.TeamCode, src => src.Team.TeamCode);
+            .Map(dest => dest.MobileNumber, src => src.MobileNumber);
+          
 
         config.NewConfig<(Team team, List<TeamMember> members), TeamMembersDto>()
             .Map(dest => dest.TeamId, src => src.team.TeamId)

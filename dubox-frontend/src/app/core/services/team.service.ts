@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiService } from './api.service';
-import { Team, CreateTeam, UpdateTeam, TeamMember, TeamMembersDto, AssignTeamMembers, CompleteTeamMemberProfile, Department, PaginatedTeamsResponse, TeamGroup, PaginatedTeamGroupsResponse, CreateTeamGroup, UpdateTeamGroup, TeamGroupMembers } from '../models/team.model';
+import { Team, CreateTeam, UpdateTeam, TeamMember, TeamMembersDto, AssignTeamMembers, CompleteTeamMemberProfile, Department, PaginatedTeamsResponse, TeamGroup, PaginatedTeamGroupsResponse, CreateTeamGroup, UpdateTeamGroup, TeamGroupMembers, AddTeamMember } from '../models/team.model';
 
 @Injectable({
   providedIn: 'root'
@@ -128,6 +128,30 @@ export class TeamService {
    */
   completeMemberProfile(profile: CompleteTeamMemberProfile): Observable<any> {
     return this.apiService.post<any>(`${this.endpoint}/complate-member-profile`, profile);
+  }
+
+  /**
+   * Add a new team member
+   */
+  addTeamMember(teamId: string, member: AddTeamMember): Observable<TeamMember> {
+    return this.apiService.post<any>(`${this.endpoint}/${teamId}/members`, member).pipe(
+      map(response => {
+        const data = response?.data || response?.Data || response;
+        return {
+          teamMemberId: data.teamMemberId || data.id,
+          userId: data.userId,
+          teamId: data.teamId,
+          teamCode: data.teamCode || '',
+          teamName: data.teamName || '',
+          email: data.email || '',
+          fullName: data.fullName,
+          employeeCode: data.employeeCode || '',
+          employeeName: data.employeeName || '',
+          mobileNumber: data.mobileNumber,
+          isActive: data.isActive !== undefined ? data.isActive : true
+        };
+      })
+    );
   }
 
   /**

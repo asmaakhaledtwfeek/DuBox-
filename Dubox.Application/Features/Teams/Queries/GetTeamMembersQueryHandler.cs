@@ -2,8 +2,8 @@
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
-using Mapster;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.Teams.Queries
 {
@@ -22,10 +22,37 @@ namespace Dubox.Application.Features.Teams.Queries
             if (team == null)
                 return Result.Failure<TeamMembersDto>("This Team not found.");
 
-            var teamMembers = _unitOfWork.Repository<TeamMember>()
-                      .GetWithSpec(new TeamMembersByUserIdsSpecification(request.TeamId))
-                      .Data.ToList();
-            var dto = (team, teamMembers).Adapt<TeamMembersDto>();
+            var teamMembersQuery = _unitOfWork.Repository<TeamMember>()
+                      .GetWithSpec(new TeamMembersByUserIdsSpecification(request.TeamId));
+            
+            var teamMembers = await teamMembersQuery.Data
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+            
+            // Manual mapping
+            var memberDtos = teamMembers.Select(tm => new TeamMemberDto
+            {
+                TeamMemberId = tm.TeamMemberId,
+                UserId = tm.UserId,
+                TeamId = tm.TeamId,
+                TeamCode = team.TeamCode,
+                TeamName = team.TeamName,
+                Email = tm.User?.Email ?? string.Empty,
+                FullName = tm.User?.FullName ?? tm.EmployeeName ?? string.Empty,
+                EmployeeCode = tm.EmployeeCode,
+                EmployeeName = tm.EmployeeName,
+                MobileNumber = tm.MobileNumber
+            }).ToList();
+
+            var dto = new TeamMembersDto
+            {
+                TeamId = team.TeamId,
+                TeamCode = team.TeamCode,
+                TeamName = team.TeamName,
+                TeamSize = teamMembers.Count(m => m.IsActive),
+                Members = memberDtos
+            };
+            
             return Result.Success(dto);
         }
     }

@@ -22,10 +22,10 @@ namespace Dubox.Infrastructure.Services
         {
             // Get BoxType name from ProjectBoxTypes (since BoxTypeId references project configuration)
             string? boxType = null;
-            if (box.BoxTypeId.HasValue)
+            if (box.ProjectBoxTypeId.HasValue)
             {
                 var projectBoxType = await _dbContext.ProjectBoxTypes
-                    .Where(pbt => pbt.Id == box.BoxTypeId.Value && pbt.ProjectId == box.ProjectId)
+                    .Where(pbt => pbt.Id == box.ProjectBoxTypeId.Value && pbt.ProjectId == box.ProjectId)
                     .FirstOrDefaultAsync(cancellationToken);
                 boxType = projectBoxType?.TypeName?.Trim();
             }

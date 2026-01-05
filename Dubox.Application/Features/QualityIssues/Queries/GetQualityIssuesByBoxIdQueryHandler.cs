@@ -40,6 +40,7 @@ namespace Dubox.Application.Features.QualityIssues.Queries
             var dtos = issues.Select(issue =>
             {
                 var dto = issue.Adapt<QualityIssueDetailsDto>();
+                dto.AssignedToUserName = issue.AssignedToMember?.EmployeeName;
                 return dto;
             }).ToList();
 

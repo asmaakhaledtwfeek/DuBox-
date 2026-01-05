@@ -11,9 +11,9 @@ namespace Dubox.Application.Features.Boxes.MappingConfig
             config.NewConfig<Box, BoxDto>()
            .Map(dest => dest.ActivitiesCount, src => src.BoxActivities != null ? src.BoxActivities.Count : 0)
            // BoxType and BoxSubType names will be populated separately from ProjectBoxType/ProjectBoxSubType tables
-           .Map(dest => dest.BoxType, src => src.BoxType!=null? src.BoxType.BoxTypeName:string.Empty) // Will be populated in query handlers
-           .Map(dest => dest.BoxTypeId, src => src.BoxTypeId)
-           .Map(dest => dest.BoxSubTypeId, src => src.BoxSubTypeId)
+           .Map(dest => dest.BoxType, src => src.BoxType!=null? src.BoxType.TypeName:string.Empty) // Will be populated in query handlers
+           .Map(dest => dest.BoxTypeId, src => src.ProjectBoxTypeId)
+           .Map(dest => dest.BoxSubTypeId, src => src.ProjectBoxSubTypeId)
            .Map(dest => dest.BoxSubTypeName, src => (string?)null) // Will be populated in query handlers
            .Map(dest => dest.Status, src => src.Status.ToString())
            .Map(dest => dest.Zone, src => src.Zone != null ? src.Zone.ToString() : null)

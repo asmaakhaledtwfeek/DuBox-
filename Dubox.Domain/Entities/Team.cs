@@ -44,7 +44,6 @@ namespace Dubox.Domain.Entities
 
         // Navigation properties
         public virtual ICollection<TeamMember> Members { get; set; } = new List<TeamMember>();
-        public virtual ICollection<TeamGroup> TeamGroups { get; set; } = new List<TeamGroup>();
         public virtual ICollection<BoxActivity> AssignedActivities { get; set; } = new List<BoxActivity>();
         public virtual ICollection<ProgressUpdate> ProgressUpdates { get; set; } = new List<ProgressUpdate>();
         public virtual ICollection<DailyProductionLog> ProductionLogs { get; set; } = new List<DailyProductionLog>();

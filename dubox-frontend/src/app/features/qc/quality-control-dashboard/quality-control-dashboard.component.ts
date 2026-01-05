@@ -12,7 +12,7 @@ import { ApiService } from '../../../core/services/api.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { TeamService } from '../../../core/services/team.service';
-import { Team } from '../../../core/models/team.model';
+import { Team, TeamMember } from '../../../core/models/team.model';
 import { BoxService } from '../../../core/services/box.service';
 import { BoxStatus } from '../../../core/models/box.model';
 import { ProjectService } from '../../../core/services/project.service';
@@ -146,10 +146,13 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   isAssignModalOpen = false;
   selectedIssueForAssign: AggregatedQualityIssue | null = null;
   availableTeams: Team[] = [];
+  availableMembers: TeamMember[] = [];
   loadingTeams = false;
+  loadingMembers = false;
   assignLoading = false;
   assignError = '';
   selectedTeamId: string | null = null;
+  selectedMemberId: string | null = null;
 
   // Cache for box statuses to avoid multiple API calls
   private boxStatusCache: Map<string, BoxStatus | null> = new Map();
@@ -1121,6 +1124,8 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
 
     this.selectedIssueForAssign = issue;
     this.selectedTeamId = null; // Reset selection
+    this.selectedMemberId = null; // Reset member selection
+    this.availableMembers = []; // Clear members
     this.assignError = '';
     this.isAssignModalOpen = true;
     this.loadAvailableTeams();
@@ -1130,6 +1135,8 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     this.isAssignModalOpen = false;
     this.selectedIssueForAssign = null;
     this.selectedTeamId = null;
+    this.selectedMemberId = null;
+    this.availableMembers = [];
     this.assignError = '';
   }
 
@@ -1149,6 +1156,38 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+  onTeamSelectionChange(teamId: string): void {
+    this.selectedTeamId = teamId;
+    this.selectedMemberId = null; // Reset member selection when team changes
+    
+    if (teamId) {
+      this.loadTeamMembers(teamId);
+    } else {
+      this.availableMembers = [];
+    }
+  }
+
+  loadTeamMembers(teamId: string): void {
+    if (!teamId) {
+      this.availableMembers = [];
+      return;
+    }
+
+    this.loadingMembers = true;
+    this.teamService.getTeamMembers(teamId).subscribe({
+      next: (response) => {
+        this.availableMembers = response.members || [];
+        this.loadingMembers = false;
+        console.log('✅ Team members loaded:', this.availableMembers);
+      },
+      error: (err) => {
+        console.error('❌ Error loading team members:', err);
+        this.availableMembers = [];
+        this.loadingMembers = false;
+      }
+    });
+  }
+
   assignIssueToTeam(): void {
     if (!this.selectedIssueForAssign || !this.selectedIssueForAssign.issueId) {
       this.assignError = 'Invalid issue selected';
@@ -1159,8 +1198,9 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     this.assignError = '';
 
     const teamId = this.selectedTeamId && this.selectedTeamId.trim() !== '' ? this.selectedTeamId : null;
+    const memberId = this.selectedMemberId && this.selectedMemberId.trim() !== '' ? this.selectedMemberId : null;
 
-    this.wirService.assignQualityIssueToTeam(this.selectedIssueForAssign.issueId, teamId).subscribe({
+    this.wirService.assignQualityIssueToTeam(this.selectedIssueForAssign.issueId, teamId, memberId).subscribe({
       next: (updatedIssue) => {
         this.assignLoading = false;
         

@@ -101,7 +101,7 @@ export class AssignGroupLeaderComponent implements OnInit {
 
   onAssignLeader(): void {
     if (!this.selectedMemberId || !this.groupId) {
-      this.assignLeaderError = 'Please select a team member';
+      this.assignLeaderError = 'Please select a crew member';
       return;
     }
 

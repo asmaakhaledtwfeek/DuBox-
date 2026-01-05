@@ -2,8 +2,8 @@
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
-using Mapster;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.Teams.Commands
 {
@@ -32,11 +32,13 @@ namespace Dubox.Application.Features.Teams.Commands
             if (users == null || users.Count == 0)
                 return Result.Failure<TeamMembersDto>("No valid users found.");
 
-            var existingMembers = _unitOfWork.Repository<TeamMember>()
-                    .GetWithSpec(new TeamMembersByUserIdsSpecification(request.TeamId))
-                    .Data.ToList();
+            var existingMembersQuery = _unitOfWork.Repository<TeamMember>()
+                    .GetWithSpec(new TeamMembersByUserIdsSpecification(request.TeamId));
+            var existingMembers = await existingMembersQuery.Data
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
             var membersToRemove = existingMembers
-                     .Where(tm => !request.UserIds.Contains(tm.UserId))
+                     .Where(tm => !request.UserIds.Contains(tm.TeamMemberId))
                      .ToList();
 
             if (membersToRemove.Any())
@@ -112,10 +114,35 @@ namespace Dubox.Application.Features.Teams.Commands
 
             await _unitOfWork.CompleteAsync(cancellationToken);
 
-            var teamMembers = _unitOfWork.Repository<TeamMember>()
-                  .GetWithSpec(new TeamMembersByUserIdsSpecification(request.TeamId))
-                       .Data.ToList();
-            var dto = (team, teamMembers).Adapt<TeamMembersDto>();
+            var teamMembersQuery = _unitOfWork.Repository<TeamMember>()
+                  .GetWithSpec(new TeamMembersByUserIdsSpecification(request.TeamId));
+            var teamMembers = await teamMembersQuery.Data
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
+            
+            // Manual mapping
+            var memberDtos = teamMembers.Select(tm => new TeamMemberDto
+            {
+                TeamMemberId = tm.TeamMemberId,
+                UserId = tm.UserId,
+                TeamId = tm.TeamId,
+                TeamCode = team.TeamCode,
+                TeamName = team.TeamName,
+                Email = tm.User?.Email ?? string.Empty,
+                FullName = tm.User?.FullName ?? tm.EmployeeName ?? string.Empty,
+                EmployeeCode = tm.EmployeeCode,
+                EmployeeName = tm.EmployeeName,
+                MobileNumber = tm.MobileNumber
+            }).ToList();
+
+            var dto = new TeamMembersDto
+            {
+                TeamId = team.TeamId,
+                TeamCode = team.TeamCode,
+                TeamName = team.TeamName,
+                TeamSize = teamMembers.Count(m => m.IsActive),
+                Members = memberDtos
+            };
 
             return Result.Success(dto);
         }

@@ -337,6 +337,19 @@
             letter-spacing: 0.5px;
           }
 
+          .assigned-member {
+            display: inline-flex;
+            align-items: center;
+            color: #059669;
+            font-size: 14px;
+            font-weight: 600;
+            margin-left: 4px;
+            
+            svg {
+              flex-shrink: 0;
+            }
+          }
+
           .wir-status-badge {
             display: inline-block;
             margin-left: 8px;

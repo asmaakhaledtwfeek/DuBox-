@@ -119,9 +119,9 @@ public class BoxesSummaryReportSpecification : Specification<Box>
                 break;
             case "boxtype":
                 if (isAscending)
-                    AddOrderBy(b => b.BoxTypeId ?? 0);
+                    AddOrderBy(b => b.ProjectBoxTypeId ?? 0);
                 else
-                    AddOrderByDescending(b => b.BoxTypeId ?? 0);
+                    AddOrderByDescending(b => b.ProjectBoxTypeId ?? 0);
                 break;
             case "floor":
                 if (isAscending)

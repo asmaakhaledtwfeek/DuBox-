@@ -6,7 +6,7 @@
     <!-- Loading State -->
     <div *ngIf="loading" class="loading-state">
       <div class="spinner"></div>
-      <p>Loading team information...</p>
+      <p>Loading crew information...</p>
     </div>
 
     <!-- Error State -->
@@ -16,7 +16,7 @@
         <path d="M12 8v4M12 16h.01"/>
       </svg>
       <p>{{ error }}</p>
-      <button class="btn btn-secondary" (click)="onCancel()">Back to Team</button>
+      <button class="btn btn-secondary" (click)="onCancel()">Back to Crew</button>
     </div>
 
     <!-- Form Content -->
@@ -29,10 +29,10 @@
               <line x1="19" y1="12" x2="5" y2="12"/>
               <polyline points="12 19 5 12 12 5"/>
             </svg>
-            Back to Team
+            Back to Crew
           </button>
           <div class="title-section">
-            <h1 class="page-title">Add Members to Team</h1>
+            <h1 class="page-title">Add Members to Crew</h1>
           </div>
           <p class="page-subtitle">{{ team.teamName }} ({{ team.teamCode }}) • {{ team.departmentName }}</p>
         </div>

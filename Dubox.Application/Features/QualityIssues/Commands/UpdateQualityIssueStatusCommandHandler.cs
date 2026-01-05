@@ -144,6 +144,7 @@ namespace Dubox.Application.Features.QualityIssues.Commands
             await _unitOfWork.CompleteAsync(cancellationToken);
 
             var dto = issue.Adapt<QualityIssueDetailsDto>();
+            dto.AssignedToUserName = issue.AssignedToMember?.EmployeeName;
             // Manually map images to ensure they're included
             dto.Images = issue.Images
                 .OrderBy(img => img.Sequence)

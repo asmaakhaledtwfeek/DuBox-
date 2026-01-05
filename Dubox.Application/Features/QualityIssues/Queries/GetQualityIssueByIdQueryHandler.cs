@@ -35,7 +35,7 @@ namespace Dubox.Application.Features.QualityIssues.Queries
             }
 
             var dto = issue.Adapt<QualityIssueDetailsDto>();
-            dto.AssignedToUserName = issue.AssignedToUser?.FullName;
+            dto.AssignedToUserName = issue.AssignedToMember?.EmployeeName;
             dto.Images = issue.Images
                 .OrderBy(img => img.Sequence)
                 .Select(img => new QualityIssueImageDto

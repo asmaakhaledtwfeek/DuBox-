@@ -9,7 +9,7 @@ import { PermissionService } from '../../../core/services/permission.service';
 import { UserService } from '../../../core/services/user.service';
 import { TeamService } from '../../../core/services/team.service';
 import { ProjectService } from '../../../core/services/project.service';
-import { Team } from '../../../core/models/team.model';
+import { Team, TeamMember } from '../../../core/models/team.model';
 import { Box, BoxStatus, BoxLog, getBoxStatusNumber, getAvailableBoxStatuses, canPerformBoxActions, canPerformActivityActions } from '../../../core/models/box.model';
 import { WIRService } from '../../../core/services/wir.service';
 import { ProgressUpdate, ProgressUpdatesSearchParams } from '../../../core/models/progress-update.model';
@@ -140,6 +140,9 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   assignLoading = false;
   assignError = '';
   selectedTeamId: string | null = null;
+  selectedMemberId: string | null = null;
+  loadingMembers = false;
+  availableMembers: TeamMember[] = [];
   selectedIssueDetails: QualityIssueDetails | null = null;
   
   // Multiple images state
@@ -2048,7 +2051,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   }
 
   openAssignModal(issue: QualityIssueDetails): void {
-    // Close other modals firstop
+    // Close other modals first
 
     if (this.isDetailsModalOpen) {
       this.closeIssueDetails();
@@ -2072,6 +2075,8 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
     this.selectedIssueForAssign = issue;
     this.selectedTeamId = null; // Reset selection
+    this.selectedMemberId = null; // Reset member selection
+    this.availableMembers = []; // Clear members
     this.assignError = '';
     this.isAssignModalOpen = true;
     this.loadAvailableTeams();
@@ -2081,7 +2086,41 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.isAssignModalOpen = false;
     this.selectedIssueForAssign = null;
     this.selectedTeamId = null;
+    this.selectedMemberId = null;
+    this.availableMembers = [];
     this.assignError = '';
+  }
+
+  onTeamSelectionChange(teamId: string): void {
+    this.selectedTeamId = teamId;
+    this.selectedMemberId = null; // Reset member selection when team changes
+    
+    if (teamId) {
+      this.loadTeamMembers(teamId);
+    } else {
+      this.availableMembers = [];
+    }
+  }
+
+  loadTeamMembers(teamId: string): void {
+    if (!teamId) {
+      this.availableMembers = [];
+      return;
+    }
+
+    this.loadingMembers = true;
+    this.teamService.getTeamMembers(teamId).subscribe({
+      next: (response) => {
+        this.availableMembers = response.members || [];
+        this.loadingMembers = false;
+        console.log('✅ Team members loaded:', this.availableMembers);
+      },
+      error: (err) => {
+        console.error('❌ Error loading team members:', err);
+        this.availableMembers = [];
+        this.loadingMembers = false;
+      }
+    });
   }
 
   assignIssueToTeam(): void {
@@ -2094,8 +2133,9 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.assignError = '';
 
     const teamId = this.selectedTeamId && this.selectedTeamId.trim() !== '' ? this.selectedTeamId : null;
+    const memberId = this.selectedMemberId && this.selectedMemberId.trim() !== '' ? this.selectedMemberId : null;
 
-    this.wirService.assignQualityIssueToTeam(this.selectedIssueForAssign.issueId, teamId).subscribe({
+    this.wirService.assignQualityIssueToTeam(this.selectedIssueForAssign.issueId, teamId, memberId).subscribe({
       next: (updatedIssue) => {
         this.assignLoading = false;
         

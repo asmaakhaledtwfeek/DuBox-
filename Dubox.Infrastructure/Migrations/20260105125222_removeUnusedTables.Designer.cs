@@ -4,6 +4,7 @@ using Dubox.Infrastructure.ApplicationContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Dubox.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260105125222_removeUnusedTables")]
+    partial class removeUnusedTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -783,6 +786,9 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime?>("ActualStartDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid?>("AssignedGroupId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid?>("AssignedMemberId")
                         .HasColumnType("uniqueidentifier");
 
@@ -844,6 +850,8 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasKey("BoxActivityId");
 
                     b.HasIndex("ActivityMasterId");
+
+                    b.HasIndex("AssignedGroupId");
 
                     b.HasIndex("AssignedMemberId");
 
@@ -10693,10 +10701,10 @@ namespace Dubox.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("AssignedToMemberId")
+                    b.Property<Guid?>("AssignedTo")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("AssignedToTeamId")
+                    b.Property<Guid?>("AssignedToUserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("BoxId")
@@ -10744,9 +10752,9 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasKey("IssueId");
 
-                    b.HasIndex("AssignedToMemberId");
+                    b.HasIndex("AssignedTo");
 
-                    b.HasIndex("AssignedToTeamId");
+                    b.HasIndex("AssignedToUserId");
 
                     b.HasIndex("BoxId");
 
@@ -12883,6 +12891,7 @@ namespace Dubox.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("EmployeeCode")
+                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -12904,7 +12913,7 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<Guid>("TeamId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid?>("UserId")
+                    b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("TeamMemberId");
@@ -13640,6 +13649,10 @@ namespace Dubox.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Dubox.Domain.Entities.TeamGroup", "AssignedGroup")
+                        .WithMany()
+                        .HasForeignKey("AssignedGroupId");
+
                     b.HasOne("Dubox.Domain.Entities.TeamMember", "AssignedMember")
                         .WithMany()
                         .HasForeignKey("AssignedMemberId")
@@ -13660,6 +13673,8 @@ namespace Dubox.Infrastructure.Migrations
                         .HasForeignKey("TeamMemberId");
 
                     b.Navigation("ActivityMaster");
+
+                    b.Navigation("AssignedGroup");
 
                     b.Navigation("AssignedMember");
 
@@ -14017,13 +14032,13 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.QualityIssue", b =>
                 {
-                    b.HasOne("Dubox.Domain.Entities.TeamMember", "AssignedToMember")
-                        .WithMany()
-                        .HasForeignKey("AssignedToMemberId");
-
                     b.HasOne("Dubox.Domain.Entities.Team", "AssignedToTeam")
                         .WithMany()
-                        .HasForeignKey("AssignedToTeamId");
+                        .HasForeignKey("AssignedTo");
+
+                    b.HasOne("Dubox.Domain.Entities.User", "AssignedToUser")
+                        .WithMany()
+                        .HasForeignKey("AssignedToUserId");
 
                     b.HasOne("Dubox.Domain.Entities.Box", "Box")
                         .WithMany()
@@ -14035,9 +14050,9 @@ namespace Dubox.Infrastructure.Migrations
                         .WithMany("QualityIssues")
                         .HasForeignKey("WIRId");
 
-                    b.Navigation("AssignedToMember");
-
                     b.Navigation("AssignedToTeam");
+
+                    b.Navigation("AssignedToUser");
 
                     b.Navigation("Box");
 
@@ -14123,9 +14138,9 @@ namespace Dubox.Infrastructure.Migrations
                         .HasForeignKey("GroupLeaderId");
 
                     b.HasOne("Dubox.Domain.Entities.Team", "Team")
-                        .WithMany()
+                        .WithMany("TeamGroups")
                         .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("GroupLeader");
@@ -14148,7 +14163,9 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasOne("Dubox.Domain.Entities.User", "User")
                         .WithMany()
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.Navigation("Team");
 
@@ -14412,6 +14429,8 @@ namespace Dubox.Infrastructure.Migrations
                     b.Navigation("ProductionLogs");
 
                     b.Navigation("ProgressUpdates");
+
+                    b.Navigation("TeamGroups");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.TeamGroup", b =>

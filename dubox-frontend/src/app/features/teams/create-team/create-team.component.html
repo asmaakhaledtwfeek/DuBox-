@@ -10,12 +10,12 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
           </svg>
-          Teams
+          Crews
         </a>
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="breadcrumb-separator">
           <polyline points="9 18 15 12 9 6"/>
         </svg>
-        <span class="breadcrumb-current">Create New Team</span>
+        <span class="breadcrumb-current">Create New Crew</span>
       </nav>
 
       <!-- Page Header -->
@@ -30,8 +30,8 @@
             </svg>
           </div>
           <div>
-            <h1 class="page-title">Create New Team</h1>
-            <p class="page-description">Add a new team to manage your construction workforce</p>
+            <h1 class="page-title">Create New Crew</h1>
+            <p class="page-description">Add a new crew to manage your construction workforce</p>
           </div>
         </div>
       </div>
@@ -68,16 +68,16 @@
         <form [formGroup]="teamForm" (ngSubmit)="onSubmit()">
           <!-- Form Section Header -->
           <div class="form-section-header">
-            <h2 class="section-title">Team Information</h2>
-            <p class="section-description">Enter the basic details for the new team</p>
+            <h2 class="section-title">Crew Information</h2>
+            <p class="section-description">Enter the basic details for the new crew</p>
           </div>
 
           <div class="form-grid">
-            <!-- Team Code -->
+            <!-- Crew Code -->
             <div class="form-group">
               <label for="teamCode" class="form-label">
-                <span class="label-text">Team Code <span class="required">*</span></span>
-                <span class="label-hint">Unique identifier for the team</span>
+                <span class="label-text">Crew Code <span class="required">*</span></span>
+                <span class="label-hint">Unique identifier for the crew</span>
               </label>
               <div class="input-wrapper">
                 <span class="input-icon">
@@ -103,17 +103,17 @@
                     <line x1="12" y1="8" x2="12" y2="12"/>
                     <line x1="12" y1="16" x2="12.01" y2="16"/>
                   </svg>
-                  Team code is required
+                  Crew code is required
                 </span>
                 <span class="char-count">{{ teamForm.get('teamCode')?.value?.length || 0 }}/50</span>
               </div>
             </div>
 
-            <!-- Team Name -->
+            <!-- Crew Name -->
             <div class="form-group">
               <label for="teamName" class="form-label">
-                <span class="label-text">Team Name <span class="required">*</span></span>
-                <span class="label-hint">Full name of the team</span>
+                <span class="label-text">Crew Name <span class="required">*</span></span>
+                <span class="label-hint">Full name of the crew</span>
               </label>
               <div class="input-wrapper">
                 <span class="input-icon">
@@ -130,7 +130,7 @@
                   formControlName="teamName"
                   class="form-control"
                   [class.invalid]="teamForm.get('teamName')?.invalid && teamForm.get('teamName')?.touched"
-                  placeholder="e.g., Assembly Team A"
+                  placeholder="e.g., Assembly Crew A"
                   maxlength="200"
                 />
               </div>
@@ -141,7 +141,7 @@
                     <line x1="12" y1="8" x2="12" y2="12"/>
                     <line x1="12" y1="16" x2="12.01" y2="16"/>
                   </svg>
-                  Team name is required
+                  Crew name is required
                 </span>
                 <span class="char-count">{{ teamForm.get('teamName')?.value?.length || 0 }}/200</span>
               </div>
@@ -245,8 +245,8 @@
                 <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
                 <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
               </svg>
-              <span *ngIf="loading">Creating Team...</span>
-              <span *ngIf="!loading">Create Team</span>
+              <span *ngIf="loading">Creating Crew...</span>
+              <span *ngIf="!loading">Create Crew</span>
             </button>
           </div>
         </form>

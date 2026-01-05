@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { TeamService } from '../../../core/services/team.service';
-import { Team, TeamMembersDto, TeamMember, CompleteTeamMemberProfile, CreateTeamGroup, TeamGroup, PaginatedTeamGroupsResponse } from '../../../core/models/team.model';
+import { Team, TeamMembersDto, TeamMember, CompleteTeamMemberProfile, CreateTeamGroup, TeamGroup, PaginatedTeamGroupsResponse, AddTeamMember } from '../../../core/models/team.model';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
@@ -51,6 +51,14 @@ export class TeamDetailsComponent implements OnInit {
   groupError = '';
   groupSuccessMessage = '';
   
+  // Add Team Member Modal
+  showAddMemberModal = false;
+  addMemberForm!: FormGroup;
+  addingMember = false;
+  addMemberError = '';
+  addMemberSuccess = '';
+  showTemporaryPassword = false;
+  
   // Permission flags
   canManageMembers = false;
   canEditTeam = false;
@@ -83,6 +91,34 @@ export class TeamDetailsComponent implements OnInit {
       groupTag: ['', [Validators.required, Validators.maxLength(50)]],
       groupType: ['', [Validators.required, Validators.maxLength(100)]]
     });
+
+    this.addMemberForm = this.fb.group({
+      department: [{value: '', disabled: true}],
+      trade: [{value: '', disabled: true}],
+      firstName: ['', [Validators.required, Validators.maxLength(100)]],
+      lastName: ['', [Validators.required, Validators.maxLength(100)]],
+      employeeCode: ['', [Validators.required, Validators.maxLength(50)]],
+      isCreateAccount: [false],
+      email: ['', [Validators.maxLength(100)]],
+      temporaryPassword: ['', [Validators.maxLength(100)]]
+    });
+
+    // Set up conditional validation for email and password
+    this.addMemberForm.get('isCreateAccount')?.valueChanges.subscribe(isCreateAccount => {
+      const emailControl = this.addMemberForm.get('email');
+      const passwordControl = this.addMemberForm.get('temporaryPassword');
+      
+      if (isCreateAccount) {
+        emailControl?.setValidators([Validators.required, Validators.email, Validators.maxLength(100)]);
+        passwordControl?.setValidators([Validators.required, Validators.minLength(6), Validators.maxLength(100)]);
+      } else {
+        emailControl?.setValidators([Validators.maxLength(100)]);
+        passwordControl?.setValidators([Validators.maxLength(100)]);
+      }
+      
+      emailControl?.updateValueAndValidity();
+      passwordControl?.updateValueAndValidity();
+    });
     
     if (this.teamId) {
       this.loadTeamDetails();
@@ -98,7 +134,7 @@ export class TeamDetailsComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        this.error = err.error?.message || err.message || 'Failed to load team details';
+        this.error = err.error?.message || err.message || 'Failed to load crew details';
         this.loading = false;
         console.error('Error loading team:', err);
       }
@@ -180,6 +216,76 @@ export class TeamDetailsComponent implements OnInit {
     this.router.navigate(['/teams', this.teamId, 'add-members']);
   }
 
+  openAddMemberModal(): void {
+    if (!this.canManageMembers) {
+      return;
+    }
+    this.showAddMemberModal = true;
+    this.addMemberError = '';
+    this.addMemberSuccess = '';
+    this.addMemberForm.reset({ isCreateAccount: false });
+    
+    // Set read-only fields with team information
+    if (this.team) {
+      this.addMemberForm.patchValue({
+        department: this.team.departmentName || 'N/A',
+        trade: this.team.trade || 'N/A'
+      });
+    }
+  }
+
+  closeAddMemberModal(): void {
+    this.showAddMemberModal = false;
+    this.addMemberForm.reset({ isCreateAccount: false });
+    this.addMemberError = '';
+    this.addMemberSuccess = '';
+    this.showTemporaryPassword = false;
+  }
+
+  toggleTemporaryPasswordVisibility(): void {
+    this.showTemporaryPassword = !this.showTemporaryPassword;
+  }
+
+  onAddMemberSubmit(): void {
+    if (this.addMemberForm.invalid) {
+      this.markFormGroupTouched(this.addMemberForm);
+      return;
+    }
+
+    this.addingMember = true;
+    this.addMemberError = '';
+    this.addMemberSuccess = '';
+
+    const formValue = this.addMemberForm.value;
+    const memberData: AddTeamMember = {
+      teamId: this.teamId,
+      firstName: formValue.firstName.trim(),
+      lastName: formValue.lastName.trim(),
+      employeeCode: formValue.employeeCode.trim(),
+      isCreateAccount: formValue.isCreateAccount || false,
+      email: formValue.isCreateAccount ? formValue.email?.trim() : undefined,
+      temporaryPassword: formValue.isCreateAccount ? formValue.temporaryPassword : undefined
+    };
+
+    this.teamService.addTeamMember(this.teamId, memberData).subscribe({
+      next: (member) => {
+        this.addingMember = false;
+        this.addMemberSuccess = `Crew member ${member.employeeName} added successfully!`;
+        // Reload team members and details to show the new member
+        this.loadTeamMembers();
+        this.loadTeamDetails();
+        setTimeout(() => {
+          this.closeAddMemberModal();
+        }, 1500);
+      },
+      error: (err) => {
+        this.addingMember = false;
+        this.addMemberError = err.error?.message || err.error?.detail || err.message || 'Failed to add crew member. Please try again.';
+        console.error('Error adding team member:', err);
+      }
+    });
+  }
+
   setActiveTab(tab: 'overview' | 'members'): void {
     this.activeTab = tab;
   }
@@ -254,13 +360,13 @@ export class TeamDetailsComponent implements OnInit {
   }
 
   needsProfileCompletion(member: TeamMember): boolean {
-    return !member.employeeCode || !member.employeeName || !member.mobileNumber;
+    return !member.employeeCode || !member.employeeName;
   }
 
   openRemoveMemberModal(member: TeamMember): void {
     // Permission check: Can manage team members
     if (!this.canManageMembers) {
-      this.removeMemberError = 'You do not have permission to remove team members.';
+      this.removeMemberError = 'You do not have permission to remove crew members.';
       return;
     }
     
@@ -282,7 +388,7 @@ export class TeamDetailsComponent implements OnInit {
 
     // Permission check: Can manage team members
     if (!this.canManageMembers) {
-      this.removeMemberError = 'You do not have permission to remove team members.';
+      this.removeMemberError = 'You do not have permission to remove crew members.';
       return;
     }
 
@@ -299,7 +405,7 @@ export class TeamDetailsComponent implements OnInit {
       },
       error: (err) => {
         this.removingMember = false;
-        this.removeMemberError = err.error?.message || err.message || 'Failed to remove team member. Please try again.';
+        this.removeMemberError = err.error?.message || err.message || 'Failed to remove crew member. Please try again.';
         console.error('Error removing team member:', err);
       }
     });
@@ -340,7 +446,7 @@ export class TeamDetailsComponent implements OnInit {
     this.teamService.createTeamGroup(teamGroupData).subscribe({
       next: (teamGroup) => {
         this.loadingGroup = false;
-        this.groupSuccessMessage = `Team group created successfully!`;
+        this.groupSuccessMessage = `Crew group created successfully!`;
         setTimeout(() => {
           this.closeCreateGroupModal();
           // Reload team groups to show the new one
@@ -349,7 +455,7 @@ export class TeamDetailsComponent implements OnInit {
       },
       error: (err) => {
         this.loadingGroup = false;
-        this.groupError = err.error?.message || err.error?.detail || err.message || 'Failed to create team group. Please try again.';
+        this.groupError = err.error?.message || err.error?.detail || err.message || 'Failed to create crew group. Please try again.';
         console.error('Error creating team group:', err);
       }
     });

@@ -241,7 +241,8 @@ namespace Dubox.Api.Controllers
 
             var command = new AssignQualityIssueToTeamCommand(
                 IssueId: issueId,
-                TeamId: request.TeamId
+                TeamId: request.TeamId,
+                TeamMemberId:request.TeamMemberId
             );
 
             var result = await _mediator.Send(command, cancellationToken);
@@ -249,18 +250,13 @@ namespace Dubox.Api.Controllers
         }
     }
 
-    /// <summary>
-    /// Request model for assigning quality issue to team
-    /// </summary>
     public class AssignQualityIssueToTeamRequest
     {
         public Guid IssueId { get; set; }
         public Guid? TeamId { get; set; }
+        public Guid? TeamMemberId{ get; set; }
     }
 
-    /// <summary>
-    /// JSON request model for creating quality issue
-    /// </summary>
     public class CreateQualityIssueJsonRequest
     {
         public Guid BoxId { get; set; }

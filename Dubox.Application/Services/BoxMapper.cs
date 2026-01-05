@@ -27,8 +27,8 @@ namespace Dubox.Application.Services
                 var client = box.Project?.ClientName ?? string.Empty;
 
                 // Get BoxType and BoxSubType names from project configuration
-                var boxTypeId = box.BoxTypeId;
-                var boxSubTypeId = box.BoxSubTypeId;
+                var boxTypeId = box.ProjectBoxTypeId;
+                var boxSubTypeId = box.ProjectBoxSubTypeId;
                 string boxType = string.Empty;
                 string? boxSubTypeName = null;
 

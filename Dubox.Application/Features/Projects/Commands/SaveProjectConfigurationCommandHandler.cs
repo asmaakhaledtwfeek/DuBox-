@@ -85,10 +85,10 @@ public class SaveProjectConfigurationCommandHandler
 
         foreach (var boxType in boxTypesToDelete)
         {
-            var isUsed = projectBoxes.Any(box => box.BoxTypeId == boxType.Id);
+            var isUsed = projectBoxes.Any(box => box.ProjectBoxTypeId == boxType.Id);
             if (isUsed)
             {
-                cannotDeleteItems.Add($"Box Type '{boxType.TypeName}' (used by {projectBoxes.Count(b => b.BoxType.BoxTypeName == boxType.TypeName)} box(es))");
+                cannotDeleteItems.Add($"Box Type '{boxType.TypeName}' (used by {projectBoxes.Count(b => b.BoxType.TypeName == boxType.TypeName)} box(es))");
             }
             else
             {
@@ -109,12 +109,12 @@ public class SaveProjectConfigurationCommandHandler
                 foreach (var subType in subTypesToDelete)
                 {
                     var isUsed = projectBoxes.Any(box => 
-                        box.BoxTypeId == existingType.Id && 
-                        box.BoxSubTypeId == subType.Id);
+                        box.ProjectBoxTypeId == existingType.Id && 
+                        box.ProjectBoxSubTypeId == subType.Id);
                     
                     if (isUsed)
                     {
-                        cannotDeleteItems.Add($"Box SubType '{existingType.TypeName} - {subType.SubTypeName}' (used by {projectBoxes.Count(b => b.BoxTypeId == existingType.Id && b.BoxSubTypeId == subType.Id)} box(es))");
+                        cannotDeleteItems.Add($"Box SubType '{existingType.TypeName} - {subType.SubTypeName}' (used by {projectBoxes.Count(b => b.ProjectBoxTypeId == existingType.Id && b.ProjectBoxSubTypeId == subType.Id)} box(es))");
                     }
                     else
                     {

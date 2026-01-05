@@ -86,12 +86,12 @@ public class GetBoxesSummaryReportQueryHandler : IRequestHandler<GetBoxesSummary
             // Fetch box type and subtype names for all boxes
             // Group by project to ensure we query the correct project-specific types
             var boxTypeLookup = boxes
-                .Where(b => b.BoxTypeId.HasValue)
-                .Select(b => new { b.ProjectId, BoxTypeId = b.BoxTypeId!.Value })
+                .Where(b => b.ProjectBoxTypeId.HasValue)
+                .Select(b => new { b.ProjectId, BoxTypeId = b.ProjectBoxTypeId!.Value })
                 .Distinct()
                 .ToList();
             
-            var boxSubTypeIds = boxes.Where(b => b.BoxSubTypeId.HasValue).Select(b => b.BoxSubTypeId!.Value).Distinct().ToList();
+            var boxSubTypeIds = boxes.Where(b => b.ProjectBoxSubTypeId.HasValue).Select(b => b.ProjectBoxSubTypeId!.Value).Distinct().ToList();
             
             // Fetch all box types in a single query
             var boxTypeNames = new Dictionary<(Guid ProjectId, int BoxTypeId), string>();
@@ -128,13 +128,13 @@ public class GetBoxesSummaryReportQueryHandler : IRequestHandler<GetBoxesSummary
                 // Get box type and subtype names
                 string? boxTypeName = null;
                 string? boxSubTypeName = null;
-                if (box.BoxTypeId.HasValue && boxTypeNames.ContainsKey((box.ProjectId, box.BoxTypeId.Value)))
+                if (box.ProjectBoxTypeId.HasValue && boxTypeNames.ContainsKey((box.ProjectId, box.ProjectBoxTypeId.Value)))
                 {
-                    boxTypeName = boxTypeNames[(box.ProjectId, box.BoxTypeId.Value)];
+                    boxTypeName = boxTypeNames[(box.ProjectId, box.ProjectBoxTypeId.Value)];
                 }
-                if (box.BoxSubTypeId.HasValue && boxSubTypeNames.ContainsKey(box.BoxSubTypeId.Value))
+                if (box.ProjectBoxSubTypeId.HasValue && boxSubTypeNames.ContainsKey(box.ProjectBoxSubTypeId.Value))
                 {
-                    boxSubTypeName = boxSubTypeNames[box.BoxSubTypeId.Value];
+                    boxSubTypeName = boxSubTypeNames[box.ProjectBoxSubTypeId.Value];
                 }
 
                 // Get factory name and position

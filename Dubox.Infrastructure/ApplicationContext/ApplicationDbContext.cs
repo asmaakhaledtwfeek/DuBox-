@@ -64,9 +64,6 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<NavigationMenuItem> NavigationMenuItems { get; set; } = null!;
     public DbSet<ChecklistSection> ChecklistSections { get; set; } = null!;
     public DbSet<Checklist> Checklists { get; set; } = null!;
-    public DbSet<ProjectTypeCategory> ProjectTypeCategories { get; set; } = null!;
-    public DbSet<BoxType> BoxTypes { get; set; } = null!;
-    public DbSet<BoxSubType> BoxSubTypes { get; set; } = null!;
     public DbSet<BoxDrawing> BoxDrawings { get; set; } = null!;
     
     // Project Configuration
@@ -89,7 +86,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         PermissionSeedData.SeedPermissions(modelBuilder);
         NavigationMenuSeedData.SeedNavigationMenuItems(modelBuilder);
         ChecklistSeedData.SeedChecklists(modelBuilder);
-        BoxTypeSeedData.SeedBoxTypes(modelBuilder);
+     //   BoxTypeSeedData.SeedBoxTypes(modelBuilder);
         base.OnModelCreating(modelBuilder);
     }
 
@@ -292,10 +289,10 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         // BoxTypeId and BoxSubTypeId now reference ProjectBoxTypes/ProjectBoxSubTypes tables
         // The navigation properties BoxType and BoxSubType are kept for backward compatibility but are not used
         modelBuilder.Entity<Box>()
-            .Property(b => b.BoxTypeId)
+            .Property(b => b.ProjectBoxTypeId)
             .IsRequired(false);
         modelBuilder.Entity<Box>()
-            .Property(b => b.BoxSubTypeId)
+            .Property(b => b.ProjectBoxSubTypeId)
             .IsRequired(false);
         
         // Ignore navigation properties to prevent foreign key creation
@@ -335,11 +332,6 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(tm => tm.TeamId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        modelBuilder.Entity<TeamGroup>()
-            .HasOne(tg => tg.Team)
-            .WithMany(t => t.TeamGroups)
-            .HasForeignKey(tg => tg.TeamId)
-            .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<TeamMember>()
             .HasOne(tm => tm.TeamGroup)

@@ -1362,6 +1362,9 @@
       cursor: not-allowed;
       transform: none !important;
     }
+    &:hover {
+     color: black;
+    }
   }
 }
 

@@ -50,7 +50,7 @@ export class AddTeamMembersComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        this.error = err.error?.message || err.message || 'Failed to load team';
+        this.error = err.error?.message || err.message || 'Failed to load crew';
         this.loading = false;
         console.error('Error loading team:', err);
       }
@@ -138,7 +138,7 @@ export class AddTeamMembersComponent implements OnInit {
 
   onSubmit(): void {
     if (this.selectedUserIds.length === 0) {
-      this.error = 'Please select at least one user to add to the team';
+      this.error = 'Please select at least one user to add to the crew';
       return;
     }
 
@@ -154,14 +154,14 @@ export class AddTeamMembersComponent implements OnInit {
     this.teamService.assignTeamMembers(assignData).subscribe({
       next: () => {
         this.saving = false;
-        this.successMessage = `Successfully added ${this.selectedUserIds.length} member(s) to the team!`;
+        this.successMessage = `Successfully added ${this.selectedUserIds.length} member(s) to the crew!`;
         setTimeout(() => {
           this.router.navigate(['/teams', this.teamId]);
         }, 1500);
       },
       error: (err) => {
         this.saving = false;
-        this.error = err.error?.message || err.message || 'Failed to add members to team. Please try again.';
+        this.error = err.error?.message || err.message || 'Failed to add members to crew. Please try again.';
         console.error('Error adding members:', err);
       }
     });

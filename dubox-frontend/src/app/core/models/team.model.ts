@@ -132,4 +132,13 @@ export interface TeamGroupMembers {
   members: TeamMember[];
 }
 
+export interface AddTeamMember {
+  teamId: string;
+  firstName: string;
+  lastName: string;
+  employeeCode: string;
+  isCreateAccount: boolean;
+  email?: string;
+  temporaryPassword?: string;
+}
 

@@ -30,9 +30,8 @@ namespace Dubox.Application.Features.Activities.Commands
             // Check if user can modify data (Viewer role cannot)
             var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
             if (!canModify)
-            {
+            
                 return Result.Failure<AssignBoxActivityTeamDto>("Access denied. Viewer role has read-only access and cannot assign activities.");
-            }
 
             var activity = _unitOfWork.Repository<BoxActivity>().GetEntityWithSpec(new GetBoxActivityByIdSpecification(request.BoxActivityId));
 
@@ -42,103 +41,75 @@ namespace Dubox.Application.Features.Activities.Commands
             // Check if user has access to the project containing this activity
             var canAccessProject = await _visibilityService.CanAccessProjectAsync(activity.Box.ProjectId, cancellationToken);
             if (!canAccessProject)
-            {
                 return Result.Failure<AssignBoxActivityTeamDto>("Access denied. You do not have permission to modify activities in this project.");
-            }
+            
 
             // Check if project is archived
             var isArchived = await _visibilityService.IsProjectArchivedAsync(activity.Box.ProjectId, cancellationToken);
             if (isArchived)
-            {
+            
                 return Result.Failure<AssignBoxActivityTeamDto>("Cannot assign activities in an archived project. Archived projects are read-only.");
-            }
+            
 
             // Check if project is on hold
             var isOnHold = await _visibilityService.IsProjectOnHoldAsync(activity.Box.ProjectId, cancellationToken);
             if (isOnHold)
-            {
+            
                 return Result.Failure<AssignBoxActivityTeamDto>("Cannot assign activities in a project on hold. Projects on hold only allow project status changes.");
-            }
+            
 
             // Check if project is closed
             var isClosed = await _visibilityService.IsProjectClosedAsync(activity.Box.ProjectId, cancellationToken);
             if (isClosed)
-            {
                 return Result.Failure<AssignBoxActivityTeamDto>("Cannot assign activities in a closed project. Closed projects only allow project status changes.");
-            }
+            
 
             // Check if box is Dispatched - cannot perform any actions on activities
             if (activity.Box.Status == BoxStatusEnum.Dispatched)
-            {
+            
                 return Result.Failure<AssignBoxActivityTeamDto>("Cannot assign activity to team. The box is dispatched and no actions are allowed on boxes or activities.");
-            }
 
             // Check if box is OnHold - cannot perform actions on activities
             if (activity.Box.Status == BoxStatusEnum.OnHold)
-            {
+            
                 return Result.Failure<AssignBoxActivityTeamDto>("Cannot assign activity to team. The box is on hold and no actions are allowed on activities. Only box status changes are allowed.");
-            }
+            
 
             // Check activity status - cannot perform actions if activity is Completed or OnHold
             if (activity.Status == BoxStatusEnum.Completed)
-            {
                 return Result.Failure<AssignBoxActivityTeamDto>("Cannot assign activity to team. Activities in 'Completed' status cannot be modified.");
-            }
             if (activity.Status == BoxStatusEnum.OnHold)
-            {
                 return Result.Failure<AssignBoxActivityTeamDto>("Cannot assign activity to team. Activities in 'OnHold' status cannot be modified. Please change the activity status first.");
-            }
 
             var team = await _unitOfWork.Repository<Team>().GetByIdAsync(request.TeamId);
 
             if (team == null)
                 return Result.Failure<AssignBoxActivityTeamDto>("Team not found.");
 
+            TeamMember? teamMember=null;
+            if(request.AssignedMemberId.HasValue)
+                teamMember=await _unitOfWork.Repository<TeamMember>().GetByIdAsync(request.AssignedMemberId);
+            if (teamMember == null)
+                return Result.Failure<AssignBoxActivityTeamDto>("Team Member not found.");
+            if (teamMember !=null && (teamMember.TeamId!=team.TeamId || !teamMember.IsActive) )
+                return Result.Failure<AssignBoxActivityTeamDto>("Selected member is not a member in selected team.");
             // Check if user has access to this team
             var canAccessTeam = await _visibilityService.CanAccessTeamAsync(request.TeamId, cancellationToken);
             if (!canAccessTeam)
-            {
                 return Result.Failure<AssignBoxActivityTeamDto>("Access denied. You do not have permission to assign this team.");
-            }
-
-            TeamGroup? teamGroup = null;
-            string groupTag = "";
             
-            if (request.TeamGroupId.HasValue && request.TeamGroupId.Value != Guid.Empty)
-            {
-                teamGroup = await _unitOfWork.Repository<TeamGroup>().GetByIdAsync(request.TeamGroupId.Value);
-
-                if (teamGroup == null)
-                    return Result.Failure<AssignBoxActivityTeamDto>("Team Group not found.");
-
-                if (teamGroup.TeamId != request.TeamId)
-                    return Result.Failure<AssignBoxActivityTeamDto>("The selected team group does not belong to the specified team.");
-
-                if (!teamGroup.IsActive)
-                    return Result.Failure<AssignBoxActivityTeamDto>("The selected team group is not active.");
-
-                groupTag = teamGroup.GroupTag;
-            }
-
             var oldTeamId = activity.TeamId;
-            var oldAssignedGroupId = activity.AssignedGroupId;
+            var oldMemberId = activity.AssignedMemberId;
 
             activity.TeamId = request.TeamId;
-            activity.AssignedGroupId = request.TeamGroupId;
+            activity.AssignedMemberId = request.AssignedMemberId;
             
             // Set assigned member - use member from request if provided, otherwise use group leader if available
             if (request.AssignedMemberId.HasValue && request.AssignedMemberId.Value != Guid.Empty)
-            {
                 activity.AssignedMemberId = request.AssignedMemberId;
-            }
-            else if (teamGroup != null && teamGroup.GroupLeaderId.HasValue)
-            {
-                activity.AssignedMemberId = teamGroup.GroupLeaderId;
-            }
+           
             else
-            {
                 activity.AssignedMemberId = null;
-            }
             
             var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
             activity.ModifiedBy = currentUserId;
@@ -151,11 +122,11 @@ namespace Dubox.Application.Features.Activities.Commands
                 TableName = nameof(BoxActivity),
                 RecordId = activity.BoxActivityId,
                 Action = "Assignment",
-                OldValues = $"TeamId: {oldTeamId}, GroupId: {oldAssignedGroupId}",
-                NewValues = $"TeamId: {request.TeamId}, GroupId: {request.TeamGroupId}",
+                OldValues = $"TeamId: {oldTeamId}, MemberId: {oldMemberId}",
+                NewValues = $"TeamId: {request.TeamId}, MemberId: {request.AssignedMemberId}",
                 ChangedBy = currentUserId,
                 ChangedDate = DateTime.UtcNow,
-                Description = $"Activity assigned to Team '{team.TeamName}'" + (teamGroup != null ? $" and Group '{groupTag}'" : "") + $". Old team ID was {oldTeamId}.",
+                Description = $"Activity assigned to Team '{team.TeamName}'" + (teamMember != null ? $" and team member '{teamMember.EmployeeName}'" : "") + $". Old team ID was {oldTeamId}.",
             };
             await _unitOfWork.Repository<AuditLog>().AddAsync(log, cancellationToken);
             await _unitOfWork.CompleteAsync(cancellationToken);
@@ -168,8 +139,6 @@ namespace Dubox.Application.Features.Activities.Commands
                 TeamId = team.TeamId,
                 TeamCode = team.TeamCode,
                 TeamName = team.TeamName,
-                AssignedGroupId = teamGroup?.TeamGroupId,
-                AssignedGroupTag = groupTag
             };
 
             return Result.Success(responseDto);

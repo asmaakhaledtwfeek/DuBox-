@@ -128,7 +128,7 @@ export class EditTeamComponent implements OnInit {
         this.loading = false;
       },
       error: (err) => {
-        this.error = err.error?.message || err.message || 'Failed to load team';
+        this.error = err.error?.message || err.message || 'Failed to load crew';
         this.loading = false;
         console.error('Error loading team:', err);
       }
@@ -164,14 +164,14 @@ export class EditTeamComponent implements OnInit {
     this.teamService.updateTeam(this.teamId, teamData).subscribe({
       next: (team) => {
         this.saving = false;
-        this.successMessage = 'Team updated successfully!';
+        this.successMessage = 'Crew updated successfully!';
         setTimeout(() => {
           this.router.navigate(['/teams', this.teamId]);
         }, 1500);
       },
       error: (err) => {
         this.saving = false;
-        this.error = err.error?.message || err.message || 'Failed to update team. Please try again.';
+        this.error = err.error?.message || err.message || 'Failed to update crew. Please try again.';
         console.error('Error updating team:', err);
       }
     });

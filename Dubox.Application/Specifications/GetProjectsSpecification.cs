@@ -10,12 +10,7 @@ namespace Dubox.Application.Specifications
         public GetProjectsSpecification(GetAllProjectsQuery query, List<Guid>? accessibleProjectIds)
         {
             AddCriteria(p => p.IsActive);
-            // Include Category navigation property to get CategoryId and CategoryName
-            AddInclude(nameof(Project.Category));
-
-            // Apply visibility filtering
-            // If accessibleProjectIds is null, user can access all projects (SystemAdmin)
-            // If list is provided, filter to only those projects
+          
             if (accessibleProjectIds != null)
             {
                 AddCriteria(p => accessibleProjectIds.Contains(p.ProjectId));

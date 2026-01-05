@@ -27,8 +27,8 @@ public class Box
     // Project configuration box type and subtype IDs
     // NOTE: These IDs now reference ProjectBoxTypes/ProjectBoxSubTypes (project-specific config)
     // The navigation properties below are for backward compatibility but may be null
-    public int? BoxTypeId { get; set; }
-    public int? BoxSubTypeId { get; set; }
+    public int? ProjectBoxTypeId { get; set; }
+    public int? ProjectBoxSubTypeId { get; set; }
 
     [Required]
     [MaxLength(50)]
@@ -95,8 +95,8 @@ public class Box
     public string? Position { get; set; } = string.Empty;
     public DateTime? DeletedDated { get; set; }
     // Navigation properties
-    public virtual BoxType? BoxType { get; set; }
-    public virtual BoxSubType? BoxSubType { get; set; }
+    public virtual ProjectBoxType? BoxType { get; set; }
+    public virtual ProjectBoxSubType? BoxSubType { get; set; }
     public ICollection<BoxAsset> BoxAssets { get; set; } = new List<BoxAsset>();
     public ICollection<BoxActivity> BoxActivities { get; set; } = new List<BoxActivity>();
     public ICollection<ProgressUpdate> ProgressUpdates { get; set; } = new List<ProgressUpdate>();

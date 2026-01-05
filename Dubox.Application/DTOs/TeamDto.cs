@@ -59,14 +59,14 @@ public record TeamMembersDto
 public record TeamMemberDto
 {
     public Guid TeamMemberId { get; set; }
-    public Guid UserId { get; init; }
+    public Guid? UserId { get; init; }
     public Guid TeamId { get; init; }
     public string TeamCode { get; init; } = string.Empty;
     public string TeamName { get; init; } = string.Empty;
-    public string Email { get; init; } = string.Empty;
+    public string? Email { get; init; } 
     public string? FullName { get; init; }
-    public string EmployeeCode { get; set; } = string.Empty;
-    public string EmployeeName { get; set; } = string.Empty;
+    public string? EmployeeCode { get; set; } 
+    public string? EmployeeName { get; set; } 
     public string? MobileNumber { get; set; }
 }
 

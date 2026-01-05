@@ -1306,7 +1306,7 @@ export class ActivityDetailsComponent implements OnInit {
   closeAssignTeamModal(): void {
     this.isAssignTeamModalOpen = false;
     this.assignTeamForm.reset();
-    this.availableGroups = [];
+    this.availableMembers = [];
     this.assignTeamSuccess = false; // Reset success state
   }
 
@@ -1316,17 +1316,16 @@ export class ActivityDetailsComponent implements OnInit {
     this.isAssigningTeam = true;
     const formValue = this.assignTeamForm.value;
 
-    console.log('🔄 Assigning team:', {
+    console.log('🔄 Assigning team and member:', {
       activityId: this.activityId,
       teamId: formValue.teamId,
-      memberId: formValue.memberId
+      assignedMemberId: formValue.memberId
     });
 
-    // Call API to assign team
+    // Call API to assign activity to team and optionally to team member
     this.boxService.assignActivityToTeam(
       this.activityId,
       formValue.teamId,
-      null, // teamGroupId - no longer used
       formValue.memberId || null
     ).subscribe({
       next: (response) => {

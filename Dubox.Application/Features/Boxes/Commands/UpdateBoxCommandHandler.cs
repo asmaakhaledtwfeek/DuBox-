@@ -199,18 +199,18 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
             RecordChange("BoxName", box.BoxName, request.BoxName);
             box.BoxName = request.BoxName;
         }
-        if ( request.BoxTypeId.HasValue && box.BoxTypeId != request.BoxTypeId)
+        if ( request.BoxTypeId.HasValue && box.ProjectBoxTypeId != request.BoxTypeId)
         {
-            if (box.BoxTypeId != request.BoxTypeId)
+            if (box.ProjectBoxTypeId != request.BoxTypeId)
                 boxTypeChanged = true;
 
-            RecordChange("BoxTypeId", box.BoxTypeId, request.BoxTypeId);
-            box.BoxTypeId = request.BoxTypeId.Value;
+            RecordChange("BoxTypeId", box.ProjectBoxTypeId, request.BoxTypeId);
+            box.ProjectBoxTypeId = request.BoxTypeId.Value;
         }
-        if (request.BoxSubTypeId.HasValue && box.BoxSubTypeId != request.BoxSubTypeId.Value)
+        if (request.BoxSubTypeId.HasValue && box.ProjectBoxSubTypeId != request.BoxSubTypeId.Value)
         {
-            RecordChange("BoxSubTypeId", box.BoxSubTypeId?.ToString() ?? "N/A", request.BoxSubTypeId.Value.ToString());
-            box.BoxSubTypeId = request.BoxSubTypeId.Value;
+            RecordChange("BoxSubTypeId", box.ProjectBoxSubTypeId?.ToString() ?? "N/A", request.BoxSubTypeId.Value.ToString());
+            box.ProjectBoxSubTypeId = request.BoxSubTypeId.Value;
         }
 
         if (!string.IsNullOrEmpty(request.Floor) && box.Floor != request.Floor)

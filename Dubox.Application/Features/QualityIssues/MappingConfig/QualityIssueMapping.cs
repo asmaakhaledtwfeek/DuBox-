@@ -36,8 +36,9 @@ namespace Dubox.Application.Features.QualityIssues.MappingConfig
                 .Map(dest => dest.WIRName, src => src.WIRCheckpoint != null ? src.WIRCheckpoint.WIRName : null)
                 .Map(dest => dest.WIRStatus, src => src.WIRCheckpoint != null ? (WIRCheckpointStatusEnum?)src.WIRCheckpoint.Status : null)
                 .Map(dest => dest.WIRRequestedDate, src => src.WIRCheckpoint != null ? src.WIRCheckpoint.RequestedDate : null)
-                .Map(dest => dest.AssignedTo, src => src.AssignedTo != null ? src.AssignedTo : null)
+                .Map(dest => dest.AssignedTo, src => src.AssignedToTeamId != null ? src.AssignedToTeamId : null)
                 .Map(dest => dest.AssignedTeamName, src => src.AssignedToTeam != null ? src.AssignedToTeam.TeamName : null)
+                .Map(dest => dest.AssignedToUserId, src => src.AssignedToMemberId)
                 ;
         }
     }

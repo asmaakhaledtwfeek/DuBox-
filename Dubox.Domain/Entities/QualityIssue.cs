@@ -33,10 +33,12 @@ namespace Dubox.Domain.Entities
 
         [MaxLength(200)]
         public string? ReportedBy { get; set; }
+
         [ForeignKey(nameof(AssignedToTeam))]
-        public Guid? AssignedTo { get; set; }
-        [ForeignKey(nameof(AssignedToUser))]
-        public Guid? AssignedToUserId { get; set; }
+        public Guid? AssignedToTeamId { get; set; }
+
+        [ForeignKey(nameof(AssignedToMember))]
+        public Guid? AssignedToMemberId { get; set; }
         
         public DateTime? DueDate { get; set; }
 
@@ -53,7 +55,7 @@ namespace Dubox.Domain.Entities
         // Navigation properties
         public virtual Box Box { get; set; } = null!;
         public virtual Team? AssignedToTeam { get; set; }
-        public virtual User? AssignedToUser { get; set; }
+        public virtual TeamMember? AssignedToMember { get; set; }
         public virtual WIRCheckpoint? WIRCheckpoint { get; set; }
 
         public List<QualityIssueImage> Images { get; set; } = new();

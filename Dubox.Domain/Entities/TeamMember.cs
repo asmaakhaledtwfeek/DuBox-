@@ -12,19 +12,19 @@ namespace Dubox.Domain.Entities
         [Required]
         [ForeignKey(nameof(Team))]
         public Guid TeamId { get; set; }
-        [Required]
+        
         [ForeignKey(nameof(User))]
-        public Guid UserId { get; set; }
+        public Guid? UserId { get; set; }
 
         [ForeignKey(nameof(TeamGroup))]
         public Guid? TeamGroupId { get; set; }
 
-        [Required]
+        
         [MaxLength(50)]
-        public string EmployeeCode { get; set; } = string.Empty;
+        public string? EmployeeCode { get; set; } = null;
         [Required]
         [MaxLength(200)]
-        public string EmployeeName { get; set; } = string.Empty;
+        public string? EmployeeName { get; set; } =null;
 
         [MaxLength(20)]
         public string? MobileNumber { get; set; }

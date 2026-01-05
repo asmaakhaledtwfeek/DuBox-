@@ -67,9 +67,19 @@ public class TeamsController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>
-    /// Get all team groups with pagination and search
-    /// </summary>
+    [HttpPost("{teamId}/members")]
+    [ProducesResponseType(typeof(Result<TeamMemberDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> AddTeamMember(
+        Guid teamId,
+        [FromBody] AddTeamMemberCommand command,
+        CancellationToken cancellationToken)
+    {
+        var addMemberCommand = command with { TeamId = teamId };
+        var result = await _mediator.Send(addMemberCommand, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
     [HttpGet("team-groups")]
     [ProducesResponseType(typeof(PaginatedTeamGroupsResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

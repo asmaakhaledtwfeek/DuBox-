@@ -24,7 +24,6 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(Team.TeamLeader));
             AddInclude("TeamLeader.User"); // Include User for TeamLeader navigation
             AddInclude(nameof(Team.Members));
-            AddInclude(nameof(Team.TeamGroups));
             // Enable split query to avoid Cartesian explosion with Members collection
             EnableSplitQuery();
         }
@@ -35,7 +34,6 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(Team.TeamLeader));
             AddInclude("TeamLeader.User"); // Include User for TeamLeader navigation (needed for search by leader name)
             AddInclude(nameof(Team.Members));
-            AddInclude(nameof(Team.TeamGroups));
             // Enable split query to avoid Cartesian explosion with Members collection
             EnableSplitQuery();
 

@@ -615,12 +615,13 @@ export class WIRService {
   }
 
   /**
-   * Assign a quality issue to a team
+   * Assign a quality issue to a team and optionally to a team member
    */
-  assignQualityIssueToTeam(issueId: string, teamId: string | null): Observable<QualityIssueDetails> {
+  assignQualityIssueToTeam(issueId: string, teamId: string | null, teamMemberId?: string | null): Observable<QualityIssueDetails> {
     const request = {
       issueId: issueId,
-      teamId: teamId || null
+      teamId: teamId || null,
+      teamMemberId: teamMemberId || null
     };
     
     return this.apiService.put<QualityIssueDetails>(`qualityissues/${issueId}/assign`, request).pipe(
@@ -847,6 +848,8 @@ export class WIRService {
       reportedBy: issue.reportedBy || issue.ReportedBy,
       assignedTo: issue.assignedTo || issue.AssignedTo,
       assignedTeamName: issue.assignedTeamName || issue.AssignedTeamName,
+      assignedToUserId: issue.assignedToUserId || issue.AssignedToUserId,
+      assignedToUserName: issue.assignedToUserName || issue.AssignedToUserName,
       dueDate: issue.dueDate ? new Date(issue.dueDate) : undefined,
       photoPath: issue.photoPath || issue.PhotoPath,
       issueDate: issue.issueDate ? new Date(issue.issueDate) : undefined,

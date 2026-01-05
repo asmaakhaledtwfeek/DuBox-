@@ -79,10 +79,13 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                 return Result.Failure<QualityIssueDetailsDto>("Cannot assign quality issue. The box is on hold and no actions are allowed on quality issues. Only viewing is permitted.");
             }
 
+            Team? team = null;
+            TeamMember? teamMember = null;
+            
             // If TeamId is provided, validate the team exists and user has access
             if (request.TeamId.HasValue && request.TeamId.Value != Guid.Empty)
             {
-                var team = await _unitOfWork.Repository<Team>().GetByIdAsync(request.TeamId.Value, cancellationToken);
+                team = await _unitOfWork.Repository<Team>().GetByIdAsync(request.TeamId.Value, cancellationToken);
                 if (team == null)
                     return Result.Failure<QualityIssueDetailsDto>("Team not found.");
 
@@ -92,38 +95,53 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                 {
                     return Result.Failure<QualityIssueDetailsDto>("Access denied. You do not have permission to assign this team.");
                 }
+                
+                // If TeamMemberId is provided, validate the member exists and belongs to the team
+                if (request.TeamMemberId.HasValue && request.TeamMemberId.Value != Guid.Empty)
+                {
+                    teamMember = await _unitOfWork.Repository<TeamMember>().GetByIdAsync(request.TeamMemberId.Value, cancellationToken);
+                    if (teamMember == null)
+                        return Result.Failure<QualityIssueDetailsDto>("Team member not found.");
+                    
+                    if (teamMember.TeamId != team.TeamId || !teamMember.IsActive)
+                        return Result.Failure<QualityIssueDetailsDto>("Selected member is not an active member of the selected team.");
+                }
             }
 
-            // Capture old value for audit log
-            var oldTeamId = issue.AssignedTo?.ToString() ?? "None";
+            // Capture old values for audit log
+            var oldTeamId = issue.AssignedToTeamId?.ToString() ?? "None";
             var oldTeamName = issue.AssignedToTeam?.TeamName ?? "None";
+            var oldMemberId = issue.AssignedToMemberId?.ToString() ?? "None";
+            var oldMemberName = issue.AssignedToMember != null 
+                ? $"{issue.AssignedToMember.EmployeeName}".Trim() 
+                : "None";
 
             var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId)
                 ? parsedUserId
                 : Guid.Empty;
 
             // Update assignment
-            issue.AssignedTo = request.TeamId;
+            issue.AssignedToTeamId = request.TeamId;
+            issue.AssignedToMemberId = request.TeamMemberId;
             issue.UpdatedBy = currentUserId;
 
             _unitOfWork.Repository<QualityIssue>().Update(issue);
 
             // Create audit log
-            var teamName = request.TeamId.HasValue && request.TeamId.Value != Guid.Empty
-                ? (await _unitOfWork.Repository<Team>().GetByIdAsync(request.TeamId.Value, cancellationToken))?.TeamName ?? "Unknown"
-                : "None";
+            var teamName = team?.TeamName ?? "None";
+            var memberName = teamMember != null ? teamMember.EmployeeName ?? "Unknown" : "None";
 
             var auditLog = new AuditLog
             {
                 TableName = nameof(QualityIssue),
                 RecordId = issue.IssueId,
                 Action = "UPDATE",
-                OldValues = $"TeamId: {oldTeamId}, TeamName: {oldTeamName}",
-                NewValues = $"TeamId: {request.TeamId?.ToString() ?? "None"}, TeamName: {teamName}",
+                OldValues = $"TeamId: {oldTeamId}, TeamName: {oldTeamName}, MemberId: {oldMemberId}, MemberName: {oldMemberName}",
+                NewValues = $"TeamId: {request.TeamId?.ToString() ?? "None"}, TeamName: {teamName}, MemberId: {request.TeamMemberId?.ToString() ?? "None"}, MemberName: {memberName}",
                 ChangedBy = currentUserId,
                 ChangedDate = DateTime.UtcNow,
                 Description = request.TeamId.HasValue && request.TeamId.Value != Guid.Empty
-                    ? $"Quality issue assigned to Team '{teamName}'. Previous team was '{oldTeamName}'."
+                    ? $"Quality issue assigned to Team '{teamName}'" + (teamMember != null ? $" and team member '{memberName}'" : "") + $". Previous team was '{oldTeamName}'."
                     : $"Quality issue unassigned from Team '{oldTeamName}'."
             };
 
@@ -136,6 +154,7 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                 return Result.Failure<QualityIssueDetailsDto>("Quality issue not found after update.");
 
             var dto = issue.Adapt<QualityIssueDetailsDto>();
+            dto.AssignedToUserName = issue.AssignedToMember?.EmployeeName;
             return Result.Success(dto);
         }
     }

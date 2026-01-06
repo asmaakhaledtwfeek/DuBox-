@@ -351,21 +351,18 @@
 </div>
 
 <!-- Remove Member Confirmation Modal -->
-<div *ngIf="showRemoveConfirmModal" class="modal-overlay" (click)="closeRemoveMemberModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h2>Remove Crew Member</h2>
-      <button class="modal-close" (click)="closeRemoveMemberModal()">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="18" y1="6" x2="6" y2="18"/>
-          <line x1="6" y1="6" x2="18" y2="18"/>
-        </svg>
-      </button>
-    </div>
+<div *ngIf="showRemoveConfirmModal" class="modal-overlay remove-modal-overlay" (click)="closeRemoveMemberModal()">
+  <div class="modal-content remove-member-modal" (click)="$event.stopPropagation()">
+    <button class="modal-close-icon" (click)="closeRemoveMemberModal()" [disabled]="removingMember">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
 
-    <div class="modal-body">
+    <div class="modal-body remove-modal-body">
       <!-- Error Message -->
-      <div *ngIf="removeMemberError" class="error-message">
+      <div *ngIf="removeMemberError" class="error-message remove-error">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/>
           <line x1="12" y1="8" x2="12" y2="12"/>
@@ -374,26 +371,54 @@
         <span>{{ removeMemberError }}</span>
       </div>
 
-      <div class="confirm-message">
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="warning-icon">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="8" x2="12" y2="12"/>
-          <line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-        <p class="confirm-text">
-          Are you sure you want to remove <strong>{{ memberToRemove?.employeeName || memberToRemove?.fullName || memberToRemove?.email }}</strong> from this team?
+      <!-- Warning Icon Container -->
+      <div class="remove-icon-container">
+        <div class="remove-icon-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <line x1="17" y1="11" x2="23" y2="11"></line>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Confirmation Message -->
+      <div class="remove-confirm-content">
+        <h2 class="remove-title">Remove Crew Member?</h2>
+        <p class="remove-description">
+          Are you sure you want to remove 
+          <span class="member-name-highlight">{{ memberToRemove?.employeeName || memberToRemove?.fullName || memberToRemove?.email }}</span> 
+          from this team?
         </p>
-        <p class="confirm-subtext">
-          This action cannot be undone. The member will be removed from the team immediately.
-        </p>
+        <div class="remove-warning-box">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <div class="warning-text">
+            <strong>Warning:</strong> This action cannot be undone. The member will be removed from the team immediately.
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="modal-footer">
-      <button type="button" class="btn btn-secondary" (click)="closeRemoveMemberModal()" [disabled]="removingMember">
+    <div class="modal-footer remove-modal-footer">
+      <button type="button" class="btn btn-cancel" (click)="closeRemoveMemberModal()" [disabled]="removingMember">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
         Cancel
       </button>
-      <button type="button" class="btn btn-danger" (click)="confirmRemoveMember()" [disabled]="removingMember">
+      <button type="button" class="btn btn-remove-danger" (click)="confirmRemoveMember()" [disabled]="removingMember">
+        <svg *ngIf="!removingMember" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"></polyline>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          <line x1="10" y1="11" x2="10" y2="17"></line>
+          <line x1="14" y1="11" x2="14" y2="17"></line>
+        </svg>
+        <span class="btn-spinner" *ngIf="removingMember"></span>
         <span *ngIf="removingMember">Removing...</span>
         <span *ngIf="!removingMember">Remove Member</span>
       </button>

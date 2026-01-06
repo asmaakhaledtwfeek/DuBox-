@@ -54,7 +54,7 @@ public class AddTeamMemberCommandHandler : IRequestHandler<AddTeamMemberCommand,
             .IsExistAsync(tm => tm.TeamId == request.TeamId && tm.EmployeeCode == request.EmployeeCode, cancellationToken);
 
         if (employeeCodeExists)
-            return Result.Failure<TeamMemberDto>("A team member with this employee code already exists in this team.");
+            return Result.Failure<TeamMemberDto>("This employee code already exists in this team.");
 
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
         Guid? userId = null;

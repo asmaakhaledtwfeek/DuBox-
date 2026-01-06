@@ -19,6 +19,7 @@ export class AddTeamMembersComponent implements OnInit {
   team: Team | null = null;
   allUsers: UserDto[] = [];
   availableUsers: UserDto[] = [];
+  filteredUsers: UserDto[] = [];
   selectedUserIds: string[] = [];
   currentTeamMembers: TeamMember[] = [];
   teamId: string = '';
@@ -26,6 +27,7 @@ export class AddTeamMembersComponent implements OnInit {
   saving = false;
   error = '';
   successMessage = '';
+  searchTerm: string = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -74,6 +76,7 @@ export class AddTeamMembersComponent implements OnInit {
   filterUsersByDepartment(): void {
     if (!this.team?.departmentId) {
       this.availableUsers = [];
+      this.filteredUsers = [];
       return;
     }
 
@@ -83,8 +86,37 @@ export class AddTeamMembersComponent implements OnInit {
       user.isActive
     );
 
+    // Initialize filtered users with all available users
+    this.filteredUsers = [...this.availableUsers];
+
+    // Apply search filter if search term exists
+    this.applySearchFilter();
+
     // Pre-select current team members
     this.preSelectCurrentMembers();
+  }
+
+  applySearchFilter(): void {
+    if (!this.searchTerm || this.searchTerm.trim() === '') {
+      this.filteredUsers = [...this.availableUsers];
+      return;
+    }
+
+    const search = this.searchTerm.toLowerCase().trim();
+    this.filteredUsers = this.availableUsers.filter(user => {
+      const fullName = (user.fullName || '').toLowerCase();
+      const email = (user.email || '').toLowerCase();
+      return fullName.includes(search) || email.includes(search);
+    });
+  }
+
+  onSearchChange(): void {
+    this.applySearchFilter();
+  }
+
+  clearSearch(): void {
+    this.searchTerm = '';
+    this.applySearchFilter();
   }
 
   loadCurrentTeamMembers(): void {
@@ -173,6 +205,15 @@ export class AddTeamMembersComponent implements OnInit {
 
   getSelectedCount(): number {
     return this.selectedUserIds.length;
+  }
+
+  getUserInitials(name: string): string {
+    if (!name) return '?';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
   }
 }
 

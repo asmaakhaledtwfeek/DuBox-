@@ -33,12 +33,12 @@ namespace Dubox.Application.Features.Teams.Commands
                 return Result.Failure<TeamMembersDto>("No valid users found.");
 
             var existingMembersQuery = _unitOfWork.Repository<TeamMember>()
-                    .GetWithSpec(new TeamMembersByUserIdsSpecification(request.TeamId));
+                    .GetWithSpec(new TeamMembersByUserIdsSpecification(request.TeamId,true));
             var existingMembers = await existingMembersQuery.Data
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
             var membersToRemove = existingMembers
-                     .Where(tm => !request.UserIds.Contains(tm.TeamMemberId))
+                     .Where(tm =>tm.UserId!=null&& !request.UserIds.Contains(tm.UserId.Value))
                      .ToList();
 
             if (membersToRemove.Any())
@@ -56,6 +56,7 @@ namespace Dubox.Application.Features.Teams.Commands
                 {
                     TeamId = team.TeamId,
                     UserId = u.UserId,
+                    EmployeeName=u.FullName,
                     IsActive = u.IsActive
                 })
                 .ToList();
@@ -115,7 +116,7 @@ namespace Dubox.Application.Features.Teams.Commands
             await _unitOfWork.CompleteAsync(cancellationToken);
 
             var teamMembersQuery = _unitOfWork.Repository<TeamMember>()
-                  .GetWithSpec(new TeamMembersByUserIdsSpecification(request.TeamId));
+                  .GetWithSpec(new TeamMembersByUserIdsSpecification(request.TeamId,false));
             var teamMembers = await teamMembersQuery.Data
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);

@@ -5,10 +5,12 @@ using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 public class TeamMembersByUserIdsSpecification : Specification<TeamMember>
 {
-    public TeamMembersByUserIdsSpecification(Guid teamId)
+    public TeamMembersByUserIdsSpecification(Guid teamId , bool usersOnly)
     {
-        AddCriteria(tm => tm.TeamId == teamId && tm.IsActive == true);
-        AddInclude(nameof(TeamMember.Team));
+        AddCriteria(tm => tm.TeamId == teamId && tm.IsActive == true  );
+        if (usersOnly)
+            AddCriteria(tm => tm.UserId != null);
+       // AddInclude(nameof(TeamMember.Team));
         AddInclude(nameof(TeamMember.User));
       
     }

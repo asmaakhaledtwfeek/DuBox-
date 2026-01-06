@@ -23,7 +23,7 @@ namespace Dubox.Application.Features.Teams.Queries
                 return Result.Failure<TeamMembersDto>("This Team not found.");
 
             var teamMembersQuery = _unitOfWork.Repository<TeamMember>()
-                      .GetWithSpec(new TeamMembersByUserIdsSpecification(request.TeamId));
+                      .GetWithSpec(new TeamMembersByUserIdsSpecification(request.TeamId,false));
             
             var teamMembers = await teamMembersQuery.Data
                 .AsNoTracking()

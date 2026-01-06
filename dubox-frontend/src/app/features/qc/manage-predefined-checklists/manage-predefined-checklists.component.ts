@@ -21,7 +21,7 @@ interface WIROption {
 export class ManagePredefinedChecklistsComponent implements OnInit {
   wirOptions: WIROption[] = [
     { code: 'WIR-1', name: 'WIR-1', description: 'Box Closure Inspection', icon: '📦' },
-    { code: 'WIR-2', name: 'WIR-2', description: 'Structural Inspection', icon: '🏗️' },
+    { code: 'WIR-2', name: 'WIR-2', description: 'MEP', icon: '🏗️' },
     { code: 'WIR-3', name: 'WIR-3', description: 'Electrical Inspection', icon: '⚡' },
     { code: 'WIR-4', name: 'WIR-4', description: 'Plumbing Inspection', icon: '🔧' },
     { code: 'WIR-5', name: 'WIR-5', description: 'HVAC Inspection', icon: '❄️' },

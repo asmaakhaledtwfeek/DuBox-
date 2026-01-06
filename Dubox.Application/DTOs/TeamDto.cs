@@ -68,6 +68,7 @@ public record TeamMemberDto
     public string? EmployeeCode { get; set; } 
     public string? EmployeeName { get; set; } 
     public string? MobileNumber { get; set; }
+    public bool IsActive { get; init; } = true;
 }
 
 public record PaginatedTeamsResponseDto : PaginatedResponse<TeamDto>;

@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { Team, CreateTeam, UpdateTeam, TeamMember, TeamMembersDto, AssignTeamMembers, CompleteTeamMemberProfile, Department, PaginatedTeamsResponse, TeamGroup, PaginatedTeamGroupsResponse, CreateTeamGroup, UpdateTeamGroup, TeamGroupMembers, AddTeamMember } from '../models/team.model';
+import { UserDto } from './user.service';
 
 @Injectable({
   providedIn: 'root'
@@ -85,6 +86,40 @@ export class TeamService {
   }
 
   /**
+   * Get inactive team members (IsActive = false)
+   */
+  getInactiveTeamMembers(teamId: string): Observable<TeamMembersDto> {
+    return this.apiService.get<TeamMembersDto>(`${this.endpoint}/team-members/${teamId}/inactive`).pipe(
+      map(data => this.transformTeamMembers(data))
+    );
+  }
+
+  /**
+   * Get all active team members across all teams
+   */
+  getAllActiveMembers(): Observable<TeamMember[]> {
+    return this.apiService.get<any>(`${this.endpoint}/all-active-members`).pipe(
+      map(response => {
+        const data = response?.data || response?.Data || response;
+        const members = Array.isArray(data) ? data : [];
+        return members.map((m: any) => this.transformTeamMember(m));
+      })
+    );
+  }
+
+  /**
+   * Reactivate an inactive team member
+   */
+  reactivateTeamMember(teamId: string, teamMemberId: string): Observable<TeamMember> {
+    return this.apiService.post<any>(`${this.endpoint}/team-members/${teamId}/reactivate/${teamMemberId}`, {}).pipe(
+      map(response => {
+        const data = response?.data || response?.Data || response;
+        return this.transformTeamMember(data);
+      })
+    );
+  }
+
+  /**
    * Get team users for assignment purposes
    */
   getTeamUsers(teamId: string): Observable<{userId: string, userName: string, userEmail: string}[]> {
@@ -92,6 +127,20 @@ export class TeamService {
       map(response => {
         const data = response?.data || response?.Data || response;
         return data || [];
+      })
+    );
+  }
+
+  /**
+   * Get available users that can be added to a team
+   * Returns users from the same department who are not already team members and are active
+   */
+  getAvailableUsersForTeam(teamId: string): Observable<UserDto[]> {
+    return this.apiService.get<any>(`${this.endpoint}/${teamId}/available-users`).pipe(
+      map(response => {
+        // apiService already extracts data, but handle both wrapped and direct array responses
+        const data = Array.isArray(response) ? response : (response?.data || response?.Data || response || []);
+        return Array.isArray(data) ? data : [];
       })
     );
   }
@@ -355,6 +404,25 @@ export class TeamService {
     console.log('✅ Transformed team:', transformed);
     console.log('✅ Transformed team departmentId:', transformed.departmentId);
     return transformed;
+  }
+
+  /**
+   * Transform backend team member to frontend model
+   */
+  private transformTeamMember(backendMember: any): TeamMember {
+    return {
+      teamMemberId: backendMember.teamMemberId || backendMember.id,
+      userId: backendMember.userId,
+      teamId: backendMember.teamId?.toString() || '',
+      teamCode: backendMember.teamCode || '',
+      teamName: backendMember.teamName || '',
+      email: backendMember.email || '',
+      fullName: backendMember.fullName,
+      employeeCode: backendMember.employeeCode || '',
+      employeeName: backendMember.employeeName || '',
+      mobileNumber: backendMember.mobileNumber,
+      isActive: backendMember.isActive !== undefined ? backendMember.isActive : true
+    };
   }
 
   /**

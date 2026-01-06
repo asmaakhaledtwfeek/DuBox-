@@ -2044,3 +2044,278 @@
   }
 }
 
+// ============================================
+// RESPONSIVE DESIGN
+// ============================================
+
+// Tablet (768px - 1024px)
+@media (max-width: 1024px) and (min-width: 769px) {
+  .page-content {
+    padding: 32px;
+  }
+
+  .kpi-grid, .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+// Mobile (max-width: 768px)
+@media (max-width: 768px) {
+  .page-container {
+    margin-left: 0;
+    margin-top: var(--header-height, 64px);
+  }
+
+  .page-content {
+    padding: 16px;
+  }
+
+  // Dashboard Header
+  .dashboard-header, .project-header {
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 32px;
+
+    .header-left, .project-info {
+      text-align: center;
+      align-items: center;
+    }
+
+    .project-title-section, .title-section {
+      align-items: center;
+      flex-direction: column;
+
+      h1 {
+        font-size: 24px;
+        text-align: center;
+      }
+    }
+
+    .header-right, .header-actions {
+      width: 100%;
+      justify-content: center;
+      flex-wrap: wrap;
+
+      .btn {
+        flex: 1;
+        min-width: 140px;
+        padding: 14px 20px;
+        font-size: 16px;
+      }
+    }
+  }
+
+  // Stats/KPI Grid - Stack Vertically
+  .kpi-grid, .stats-grid, .summary-cards {
+    grid-template-columns: 1fr;
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+
+  .kpi-card, .stat-card {
+    padding: 16px;
+
+    .kpi-icon, .stat-icon {
+      width: 48px;
+      height: 48px;
+
+      svg {
+        width: 20px;
+        height: 20px;
+      }
+    }
+
+    .kpi-value, .stat-value {
+      font-size: 24px;
+    }
+
+    .kpi-label, .stat-label {
+      font-size: 14px;
+    }
+  }
+
+  // Filters
+  .filters-section, .filter-container {
+    flex-direction: column;
+    gap: 16px;
+
+    .search-box, .filter-control {
+      width: 100%;
+      min-width: 100%;
+
+      input, select {
+        font-size: 16px;
+        padding: 12px 14px;
+        width: 100%;
+      }
+    }
+
+    .btn {
+      width: 100%;
+    }
+  }
+
+  // Tables - Mobile Card Layout
+  .table-container table {
+    display: none;
+  }
+
+  .mobile-list {
+    display: flex !important;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .mobile-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+    &:active {
+      transform: scale(0.98);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #f3f4f6;
+    }
+
+    .card-details {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 16px;
+
+      .detail-item {
+        display: flex;
+        font-size: 14px;
+
+        .detail-label {
+          font-weight: 600;
+          min-width: 100px;
+        }
+
+        .detail-value {
+          flex: 1;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+      }
+    }
+
+    .card-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+      padding-top: 12px;
+      border-top: 1px solid #f3f4f6;
+
+      .btn-icon {
+        min-width: 44px;
+        min-height: 44px;
+        padding: 10px;
+      }
+    }
+  }
+
+  // Charts
+  .chart-container {
+    height: 300px !important;
+  }
+
+  // Tabs
+  .tabs-nav, .tab-navigation {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
+
+    .tab-button {
+      flex-shrink: 0;
+      font-size: 14px;
+      padding: 10px 16px;
+    }
+  }
+
+  // Modal
+  .modal-content {
+    max-width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
+
+    .modal-header {
+      padding: 16px;
+
+      h2, h3 {
+        font-size: 18px;
+      }
+    }
+
+    .modal-body {
+      padding: 16px;
+      max-height: calc(100vh - 80px);
+    }
+
+    .modal-footer {
+      padding: 16px;
+      flex-direction: column;
+
+      .btn {
+        width: 100%;
+      }
+    }
+  }
+
+  // Empty State
+  .empty-state {
+    padding: 48px 16px;
+
+    svg {
+      width: 48px;
+      height: 48px;
+    }
+
+    h3 {
+      font-size: 18px;
+    }
+
+    p {
+      font-size: 14px;
+    }
+
+    .btn {
+      width: 100%;
+      max-width: 280px;
+    }
+  }
+}
+
+// Small Mobile (max-width: 480px)
+@media (max-width: 480px) {
+  .page-content {
+    padding: 12px;
+  }
+
+  .dashboard-header h1, .project-header h1 {
+    font-size: 20px !important;
+  }
+
+  .kpi-card, .stat-card {
+    .kpi-value, .stat-value {
+      font-size: 20px;
+    }
+  }
+
+  .mobile-card {
+    padding: 12px;
+  }
+}
+

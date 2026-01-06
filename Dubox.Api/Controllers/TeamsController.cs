@@ -203,9 +203,49 @@ public class TeamsController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
+    [HttpGet("team-members/{teamId}/inactive")]
+    [ProducesResponseType(typeof(TeamMembersDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetInactiveTeamMembers(Guid teamId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetInactiveTeamMembersQuery(teamId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
     /// <summary>
-    /// Get users in a team for assignment purposes (quality issues, tasks, etc.)
+    /// Get all active team members across all teams
     /// </summary>
+    [HttpGet("all-active-members")]
+    [ProducesResponseType(typeof(List<TeamMemberDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetAllActiveMembers(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetAllActiveMembersQuery(), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpPost("team-members/{teamId}/reactivate/{teamMemberId}")]
+    [ProducesResponseType(typeof(TeamMemberDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> ReactivateTeamMember(Guid teamId, Guid teamMemberId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new ReactivateTeamMemberCommand(teamId, teamMemberId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+   
+    [HttpGet("{teamId}/available-users")]
+    [ProducesResponseType(typeof(List<UserDto>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetAvailableUsersForTeam(Guid teamId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetAvailableUsersForTeamQuery(teamId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
     [HttpGet("{teamId}/users")]
     public async Task<IActionResult> GetTeamUsers(Guid teamId, CancellationToken cancellationToken)
     {

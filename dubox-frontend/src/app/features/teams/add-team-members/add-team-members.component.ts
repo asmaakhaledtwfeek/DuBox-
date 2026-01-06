@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { TeamService } from '../../../core/services/team.service';
-import { UserService, UserDto } from '../../../core/services/user.service';
+import { UserDto } from '../../../core/services/user.service';
 import { Team, AssignTeamMembers, TeamMember } from '../../../core/models/team.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
@@ -17,7 +17,6 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
 })
 export class AddTeamMembersComponent implements OnInit {
   team: Team | null = null;
-  allUsers: UserDto[] = [];
   availableUsers: UserDto[] = [];
   filteredUsers: UserDto[] = [];
   selectedUserIds: string[] = [];
@@ -33,14 +32,12 @@ export class AddTeamMembersComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private teamService: TeamService,
-    private userService: UserService,
     private fb: FormBuilder
   ) {}
 
   ngOnInit(): void {
     this.teamId = this.route.snapshot.params['id'];
     this.loadTeam();
-    this.loadUsers();
     this.loadCurrentTeamMembers();
   }
 
@@ -48,7 +45,7 @@ export class AddTeamMembersComponent implements OnInit {
     this.teamService.getTeamById(this.teamId).subscribe({
       next: (team) => {
         this.team = team;
-        this.filterUsersByDepartment();
+        this.loadAvailableUsers();
         this.loading = false;
       },
       error: (err) => {
@@ -59,41 +56,26 @@ export class AddTeamMembersComponent implements OnInit {
     });
   }
 
-  loadUsers(): void {
-    // Fetch a large page size to get all users for team member selection
-    this.userService.getUsers(1, 1000).subscribe({
-      next: (response) => {
-        this.allUsers = response.items.filter((u: UserDto) => u.isActive);
-        this.filterUsersByDepartment();
+  loadAvailableUsers(): void {
+    // Use the new endpoint that returns available users for the team
+    // This endpoint already filters: same department, not already team members, and active users
+    this.teamService.getAvailableUsersForTeam(this.teamId).subscribe({
+      next: (users) => {
+        this.availableUsers = users;
+        // Initialize filtered users with all available users
+        this.filteredUsers = [...this.availableUsers];
+        // Apply search filter if search term exists
+        this.applySearchFilter();
+        // Pre-select current team members
+        this.preSelectCurrentMembers();
       },
       error: (err) => {
-        console.error('Error loading users:', err);
-        this.error = 'Failed to load users';
+        console.error('Error loading available users:', err);
+        this.error = err.error?.message || err.message || 'Failed to load available users';
+        this.availableUsers = [];
+        this.filteredUsers = [];
       }
     });
-  }
-
-  filterUsersByDepartment(): void {
-    if (!this.team?.departmentId) {
-      this.availableUsers = [];
-      this.filteredUsers = [];
-      return;
-    }
-
-    // Filter users by team's department
-    this.availableUsers = this.allUsers.filter(user => 
-      user.departmentId === this.team?.departmentId && 
-      user.isActive
-    );
-
-    // Initialize filtered users with all available users
-    this.filteredUsers = [...this.availableUsers];
-
-    // Apply search filter if search term exists
-    this.applySearchFilter();
-
-    // Pre-select current team members
-    this.preSelectCurrentMembers();
   }
 
   applySearchFilter(): void {
@@ -123,8 +105,10 @@ export class AddTeamMembersComponent implements OnInit {
     this.teamService.getTeamMembers(this.teamId).subscribe({
       next: (teamMembers) => {
         this.currentTeamMembers = teamMembers.members || [];
-        // Pre-select current members after loading
-        this.preSelectCurrentMembers();
+        // Pre-select current members after loading (only if available users are already loaded)
+        if (this.availableUsers.length > 0) {
+          this.preSelectCurrentMembers();
+        }
       },
       error: (err) => {
         console.error('Error loading team members:', err);

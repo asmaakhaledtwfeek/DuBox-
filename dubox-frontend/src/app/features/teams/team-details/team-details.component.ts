@@ -59,6 +59,7 @@ export class TeamDetailsComponent implements OnInit {
   addMemberSuccess = '';
   showTemporaryPassword = false;
   
+  
   // Permission flags
   canManageMembers = false;
   canEditTeam = false;
@@ -466,6 +467,11 @@ export class TeamDetailsComponent implements OnInit {
       const control = formGroup.get(key);
       control?.markAsTouched();
     });
+  }
+
+  // Reactivate Members Navigation
+  openReactivateMembersModal(): void {
+    this.router.navigate(['/teams', this.teamId, 'reactivate-members']);
   }
 
   // Expose Math to template

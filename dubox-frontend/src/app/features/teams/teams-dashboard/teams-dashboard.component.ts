@@ -7,7 +7,7 @@ import { Subscription } from 'rxjs';
 import { TeamService } from '../../../core/services/team.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { ReportsService } from '../../../core/services/reports.service';
-import { Team, PaginatedTeamsResponse, CreateTeamGroup } from '../../../core/models/team.model';
+import { Team, PaginatedTeamsResponse, CreateTeamGroup, TeamMember } from '../../../core/models/team.model';
 import { TeamActivitiesResponse, TeamActivityDetail } from '../../../core/models/teams-performance-report.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
@@ -31,6 +31,7 @@ export class TeamsDashboardComponent implements OnInit, OnDestroy {
   selectedDepartment: string = 'All';
   selectedTrade: string = 'All';
   showActiveOnly = true;
+  selectedCardFilter: 'all' | 'active' | 'inactive' | 'members' | null = null;
   
   departments: string[] = [];
   trades: string[] = [];
@@ -52,6 +53,14 @@ export class TeamsDashboardComponent implements OnInit, OnDestroy {
   selectedTeam: Team | null = null;
   teamActivities: TeamActivitiesResponse | null = null;
   loadingActivities = false;
+
+  // View State: 'crews' or 'members'
+  currentView: 'crews' | 'members' = 'crews';
+  
+  // All Members Data
+  allActiveMembers: TeamMember[] = [];
+  loadingAllMembers = false;
+  allMembersError = '';
 
   private subscriptions: Subscription[] = [];
 
@@ -143,8 +152,12 @@ export class TeamsDashboardComponent implements OnInit, OnDestroy {
       params.trade = this.selectedTrade;
     }
 
-    // Apply active filter
-    if (this.showActiveOnly) {
+    // Apply active filter based on card selection or toggle
+    if (this.selectedCardFilter === 'active') {
+      params.isActive = true;
+    } else if (this.selectedCardFilter === 'inactive') {
+      params.isActive = false;
+    } else if (this.showActiveOnly && this.selectedCardFilter === null) {
       params.isActive = true;
     }
 
@@ -209,9 +222,60 @@ export class TeamsDashboardComponent implements OnInit, OnDestroy {
   }
 
   onActiveToggle(): void {
+    this.selectedCardFilter = null; // Clear card filter when using toggle
     this.currentPage = 1;
     this.loadTeamsPaginated();
   }
+
+  onCardClick(filterType: 'all' | 'active' | 'inactive' | 'members'): void {
+    if (filterType === 'members') {
+      // For "Total Members" card, switch to members view
+      this.currentView = 'members';
+      this.selectedCardFilter = 'members';
+      this.loadAllActiveMembers();
+      return;
+    }
+
+    // Switch back to crews view
+    this.currentView = 'crews';
+
+    // Reset other filters
+    this.searchControl.setValue('', { emitEvent: false });
+    this.selectedDepartment = 'All';
+    this.selectedTrade = 'All';
+    this.currentPage = 1;
+
+    if (filterType === 'all') {
+      // Show all crews (both active and inactive)
+      this.selectedCardFilter = 'all';
+      this.showActiveOnly = false;
+    } else {
+      // Show active or inactive crews
+      this.selectedCardFilter = filterType;
+      this.showActiveOnly = filterType === 'active';
+    }
+
+    this.loadTeamsPaginated();
+  }
+
+  loadAllActiveMembers(): void {
+    this.loadingAllMembers = true;
+    this.allMembersError = '';
+    this.allActiveMembers = [];
+
+    this.teamService.getAllActiveMembers().subscribe({
+      next: (members) => {
+        this.allActiveMembers = members;
+        this.loadingAllMembers = false;
+      },
+      error: (err) => {
+        console.error('Error loading all active members:', err);
+        this.allMembersError = err.error?.message || err.message || 'Failed to load all active members';
+        this.loadingAllMembers = false;
+      }
+    });
+  }
+
 
   onPageChange(page: number): void {
     if (page >= 1 && page <= this.totalPages) {
@@ -352,6 +416,15 @@ export class TeamsDashboardComponent implements OnInit, OnDestroy {
     } catch {
       return 'N/A';
     }
+  }
+
+  getUserInitials(name: string): string {
+    if (!name) return '?';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
   }
 }
 

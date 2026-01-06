@@ -253,6 +253,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/teams/add-team-members/add-team-members.component').then(m => m.AddTeamMembersComponent)
   },
   {
+    path: 'teams/:id/reactivate-members',
+    canActivate: [authGuard, permissionGuard],
+    data: { 
+      permission: { module: 'teams', action: 'manage-members' }
+    },
+    loadComponent: () => import('./features/teams/reactivate-members/reactivate-members.component').then(m => m.ReactivateMembersComponent)
+  },
+  {
     path: 'teams/:id/edit',
     canActivate: [authGuard, permissionGuard],
     data: { 

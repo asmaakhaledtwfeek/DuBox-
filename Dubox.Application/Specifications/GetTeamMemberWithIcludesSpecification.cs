@@ -12,5 +12,6 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(TeamMember.Team));
 
         }
+        
     }
 }

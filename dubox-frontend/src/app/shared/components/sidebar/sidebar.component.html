@@ -1,4 +1,7 @@
-<aside class="sidebar" [class.collapsed]="isCollapsed">
+<!-- Mobile Overlay -->
+<div class="sidebar-overlay" *ngIf="isMobileOpen" (click)="closeMobileSidebar()"></div>
+
+<aside class="sidebar" [class.collapsed]="isCollapsed" [class.mobile-open]="isMobileOpen">
   <div class="sidebar-content">
     <!-- Toggle Button -->
     <button class="sidebar-toggle" (click)="toggleSidebar()" title="Toggle Sidebar">
@@ -12,7 +15,7 @@
     <!-- Menu Items -->
     <nav class="sidebar-nav">
       <a 
-        *ngFor="let item of menuItems"
+        *ngFor="let item of menuItems; trackBy: trackByRoute"
         [routerLink]="item.route"
         routerLinkActive="active"
         [routerLinkActiveOptions]="{exact: false}"
@@ -23,11 +26,14 @@
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [innerHTML]="getIconSvg(item.icon)">
         </svg>
-        <span class="nav-label" *ngIf="!isCollapsed">
+        <span class="nav-label" *ngIf="!isCollapsed || isMobileOpen">
           {{ item.label }}
           <span class="coming-soon-badge" *ngIf="item.label === 'Materials'">Coming Soon</span>
         </span>
       </a>
+      <div *ngIf="menuItems.length === 0" class="no-menu-items">
+        <p>Loading menu...</p>
+      </div>
     </nav>
   </div>
 </aside>

@@ -55,6 +55,7 @@ public class GetPublicBoxByIdQueryHandler : IRequestHandler<GetPublicBoxByIdQuer
             var publicBoxDto = new PublicBoxDto
             {
                 BoxId = box.BoxId,
+                ProjectId = box.ProjectId,
                 ProjectCode = box.Project?.ProjectCode ?? string.Empty,
                 ProjectName = box.Project?.ProjectName ?? string.Empty,
                 ClientName = box.Project?.ClientName ?? string.Empty,

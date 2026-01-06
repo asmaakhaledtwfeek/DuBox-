@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { PublicBoxService, PublicBox } from '../../../core/services/public-box.service';
 import { BoxSummary } from '../../../core/models/box.model';
@@ -25,18 +25,23 @@ export class PublicBoxViewComponent implements OnInit, OnDestroy {
   boxAttachments: any = null;
   loadingAttachments = false;
   attachmentsError = '';
+  attachmentsLoaded = false; // Track if attachments have been loaded
   
   boxDrawings: any[] = [];
   loadingDrawings = false;
   drawingsError = '';
+  drawingsLoaded = false; // Track if drawings have been loaded
   
   showAttachments = false;
   showDrawings = false;
 
   private destroy$ = new Subject<void>();
 
+  projectId: string | null = null;
+
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private publicBoxService: PublicBoxService
   ) {}
 
@@ -64,10 +69,11 @@ export class PublicBoxViewComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (box) => {
           this.box = box;
+          this.projectId = box.projectId ? String(box.projectId) : null;
+          console.log('Box loaded - ProjectId:', this.projectId, 'BoxId:', this.boxId);
           this.loading = false;
           this.loadBoxSummary();
-          this.loadBoxAttachments();
-          this.loadBoxDrawings();
+          // Attachments and drawings will be loaded on demand when user clicks on their cards
         },
         error: (err) => {
           console.error('Error loading box:', err);
@@ -146,8 +152,15 @@ export class PublicBoxViewComponent implements OnInit, OnDestroy {
 
   loadBoxAttachments(): void {
     if (!this.boxId) return;
+    
+    // If already loaded, don't load again
+    if (this.attachmentsLoaded) {
+      return;
+    }
+    
     this.loadingAttachments = true;
     this.attachmentsError = '';
+    this.attachmentsLoaded = true; // Mark as loading to prevent duplicate requests
     
     this.publicBoxService.getPublicBoxAttachments(this.boxId)
       .pipe(takeUntil(this.destroy$))
@@ -161,14 +174,22 @@ export class PublicBoxViewComponent implements OnInit, OnDestroy {
           console.error('❌ Error loading box attachments:', err);
           this.attachmentsError = 'Failed to load attachments.';
           this.loadingAttachments = false;
+          this.attachmentsLoaded = false; // Reset on error so user can retry
         }
       });
   }
 
   loadBoxDrawings(): void {
     if (!this.boxId) return;
+    
+    // If already loaded, don't load again
+    if (this.drawingsLoaded) {
+      return;
+    }
+    
     this.loadingDrawings = true;
     this.drawingsError = '';
+    this.drawingsLoaded = true; // Mark as loading to prevent duplicate requests
     
     this.publicBoxService.getPublicBoxDrawings(this.boxId)
       .pipe(takeUntil(this.destroy$))
@@ -182,6 +203,7 @@ export class PublicBoxViewComponent implements OnInit, OnDestroy {
           console.error('❌ Error loading box drawings:', err);
           this.drawingsError = 'Failed to load drawings.';
           this.loadingDrawings = false;
+          this.drawingsLoaded = false; // Reset on error so user can retry
         }
       });
   }
@@ -422,6 +444,46 @@ export class PublicBoxViewComponent implements OnInit, OnDestroy {
     
     console.warn('⚠️ No valid image URL or data found for attachment:', attachment.originalName);
     return null;
+  }
+
+  /**
+   * Toggle attachments section and load attachments if not already loaded
+   */
+  toggleAttachments(): void {
+    this.showAttachments = !this.showAttachments;
+    if (this.showAttachments && !this.attachmentsLoaded) {
+      this.loadBoxAttachments();
+    }
+  }
+
+  /**
+   * Toggle drawings section and load drawings if not already loaded
+   */
+  toggleDrawings(): void {
+    this.showDrawings = !this.showDrawings;
+    if (this.showDrawings && !this.drawingsLoaded) {
+      this.loadBoxDrawings();
+    }
+  }
+
+  /**
+   * Navigate to the box details page in the application
+   */
+  navigateToBoxDetails(): void {
+    if (!this.box || !this.boxId) {
+      console.error('Box data not available');
+      return;
+    }
+
+    // If we have projectId, navigate directly to box details
+    if (this.projectId) {
+      console.log('Navigating to box details:', `/projects/${this.projectId}/boxes/${this.boxId}`);
+      this.router.navigate(['/projects', this.projectId, 'boxes', this.boxId]);
+    } else {
+      // If projectId is not available, show error message
+      console.error('ProjectId not available. Cannot navigate to box details.');
+      alert('Unable to navigate to box details. Project information is missing.');
+    }
   }
 }
 

@@ -20,6 +20,8 @@
   flex-direction: column;
   height: 100%;
   padding: var(--spacing-md);
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .sidebar-toggle {
@@ -47,6 +49,16 @@
   display: flex;
   flex-direction: column;
   gap: var(--spacing-xs);
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.no-menu-items {
+  padding: var(--spacing-md);
+  text-align: center;
+  color: var(--gray-500);
+  font-size: var(--font-size-sm);
 }
 
 .nav-item {
@@ -113,14 +125,79 @@
   }
 }
 
+// Mobile Overlay
+.sidebar-overlay {
+  position: fixed;
+  top: var(--header-height);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 998;
+  display: none;
+  
+  @media (max-width: 768px) {
+    display: block;
+  }
+}
+
 @media (max-width: 768px) {
   .sidebar {
     transform: translateX(-100%);
+    transition: transform 0.3s ease-in-out;
+    width: var(--sidebar-width, 250px) !important; // Force full width on mobile
+    z-index: 999;
+    background: var(--white, #ffffff);
+    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+    visibility: visible;
+    opacity: 1;
     
-    &.collapsed {
+    &.mobile-open {
       transform: translateX(0);
-      width: var(--sidebar-collapsed-width);
+      visibility: visible;
+      opacity: 1;
     }
+    
+    // On mobile, always show full sidebar (ignore collapsed state)
+    &.collapsed {
+      width: var(--sidebar-width, 250px) !important;
+      
+      &.mobile-open {
+        transform: translateX(0);
+        visibility: visible;
+        opacity: 1;
+      }
+      
+      // Show labels on mobile even when collapsed
+      .nav-label {
+        display: flex !important;
+      }
+      
+      .nav-item {
+        justify-content: flex-start !important;
+      }
+    }
+  }
+  
+  // Ensure sidebar content is visible on mobile
+  .sidebar-content {
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: flex !important;
+    height: 100% !important;
+  }
+  
+  // Ensure nav items are visible
+  .sidebar-nav {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+  
+  .nav-item {
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: flex !important;
   }
 }
 

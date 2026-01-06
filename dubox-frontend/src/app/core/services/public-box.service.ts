@@ -10,6 +10,7 @@ import { BoxSummary } from '../models/box.model';
  */
 export interface PublicBox {
   boxId: string;
+  projectId?: string;
   projectCode: string;
   projectName: string;
   clientName: string;
@@ -77,6 +78,7 @@ export class PublicBoxService {
   private transformPublicBox(data: any): PublicBox {
     return {
       boxId: data.boxId,
+      projectId: data.projectId ? String(data.projectId) : undefined,
       projectCode: data.projectCode || '',
       projectName: data.projectName || '',
       clientName: data.clientName || '',

@@ -125,12 +125,12 @@
             <input 
               type="text" 
               [formControl]="searchControl"
-              placeholder="Search by code, name, department, trade, or leader..."
+              [placeholder]="searchPlaceholder"
               class="search-input"
             />
           </div>
 
-          <div class="filter-controls">
+          <div class="filter-controls" *ngIf="currentView === 'crews'">
             <select 
               class="filter-select"
               [(ngModel)]="selectedDepartment"
@@ -424,12 +424,14 @@
           </div>
 
           <div *ngIf="!loadingAllMembers && !allMembersError">
-            <div class="members-summary" *ngIf="allActiveMembers.length > 0">
-              <p class="summary-text">Total Active Members: <strong>{{ allActiveMembers.length }}</strong></p>
+            <div class="members-summary" *ngIf="filteredMembers.length > 0">
+              <p class="summary-text">
+                Showing <strong>{{ filteredMembers.length }}</strong> of <strong>{{ allActiveMembers.length }}</strong> Active Members
+              </p>
             </div>
 
-            <div class="members-grid" *ngIf="allActiveMembers.length > 0">
-              <div class="member-card" *ngFor="let member of allActiveMembers">
+            <div class="members-grid" *ngIf="filteredMembers.length > 0">
+              <div class="member-card" *ngFor="let member of filteredMembers">
                 <div class="member-header">
                   <div class="member-avatar">
                     <span class="avatar-initials">{{ getUserInitials(member.employeeName || member.fullName || member.email) }}</span>
@@ -466,14 +468,15 @@
               </div>
             </div>
 
-            <div class="empty-state" *ngIf="allActiveMembers.length === 0">
+            <div class="empty-state" *ngIf="filteredMembers.length === 0">
               <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                 <circle cx="9" cy="7" r="4"/>
                 <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
                 <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
               </svg>
-              <p>No active members found.</p>
+              <h3>No Members Found</h3>
+              <p>{{ allActiveMembers.length === 0 ? 'No active members available.' : 'No members match your search criteria.' }}</p>
             </div>
           </div>
         </div>

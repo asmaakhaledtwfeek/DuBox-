@@ -59,6 +59,7 @@ export class TeamsDashboardComponent implements OnInit, OnDestroy {
   
   // All Members Data
   allActiveMembers: TeamMember[] = [];
+  filteredMembers: TeamMember[] = [];
   loadingAllMembers = false;
   allMembersError = '';
 
@@ -107,8 +108,12 @@ export class TeamsDashboardComponent implements OnInit, OnDestroy {
         distinctUntilChanged()
       )
       .subscribe(searchTerm => {
-        this.currentPage = 1;
-        this.loadTeamsPaginated();
+        if (this.currentView === 'members') {
+          this.filterMembers(searchTerm || '');
+        } else {
+          this.currentPage = 1;
+          this.loadTeamsPaginated();
+        }
       });
   }
 
@@ -232,6 +237,8 @@ export class TeamsDashboardComponent implements OnInit, OnDestroy {
       // For "Total Members" card, switch to members view
       this.currentView = 'members';
       this.selectedCardFilter = 'members';
+      // Clear search for members view
+      this.searchControl.setValue('', { emitEvent: false });
       this.loadAllActiveMembers();
       return;
     }
@@ -258,14 +265,23 @@ export class TeamsDashboardComponent implements OnInit, OnDestroy {
     this.loadTeamsPaginated();
   }
 
+  get searchPlaceholder(): string {
+    if (this.currentView === 'members') {
+      return 'Search by member name, employee code, or email...';
+    }
+    return 'Search by code, name, department, trade, or leader...';
+  }
+
   loadAllActiveMembers(): void {
     this.loadingAllMembers = true;
     this.allMembersError = '';
     this.allActiveMembers = [];
+    this.filteredMembers = [];
 
     this.teamService.getAllActiveMembers().subscribe({
       next: (members) => {
         this.allActiveMembers = members;
+        this.filteredMembers = [...members];
         this.loadingAllMembers = false;
       },
       error: (err) => {
@@ -273,6 +289,36 @@ export class TeamsDashboardComponent implements OnInit, OnDestroy {
         this.allMembersError = err.error?.message || err.message || 'Failed to load all active members';
         this.loadingAllMembers = false;
       }
+    });
+  }
+
+  filterMembers(searchTerm: string): void {
+    if (!searchTerm || searchTerm.trim() === '') {
+      this.filteredMembers = [...this.allActiveMembers];
+      return;
+    }
+
+    const term = searchTerm.toLowerCase().trim();
+    this.filteredMembers = this.allActiveMembers.filter(member => {
+      // Search by employee name
+      const employeeName = (member.employeeName || '').toLowerCase();
+      // Search by employee code
+      const employeeCode = (member.employeeCode || '').toLowerCase();
+      // Search by user full name
+      const fullName = (member.fullName || '').toLowerCase();
+      // Search by email
+      const email = (member.email || '').toLowerCase();
+      // Search by team name
+      const teamName = (member.teamName || '').toLowerCase();
+      // Search by team code
+      const teamCode = (member.teamCode || '').toLowerCase();
+
+      return employeeName.includes(term) || 
+             employeeCode.includes(term) || 
+             fullName.includes(term) ||
+             email.includes(term) ||
+             teamName.includes(term) ||
+             teamCode.includes(term);
     });
   }
 

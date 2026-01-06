@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { User, UserRole, getUserPrimaryRole } from '../../../core/models/user.model';
+import { SidebarService } from '../../../core/services/sidebar.service';
 
 @Component({
   selector: 'app-header',
@@ -16,11 +17,28 @@ export class HeaderComponent implements OnInit {
   primaryRole: UserRole | null = null;
   unreadNotifications = 0;
   showUserMenu = false;
+  isMobile = false;
 
   constructor(
     private authService: AuthService,
-    private router: Router
-  ) {}
+    private router: Router,
+    private sidebarService: SidebarService
+  ) {
+    this.checkMobile();
+  }
+
+  @HostListener('window:resize', ['$event'])
+  onResize(): void {
+    this.checkMobile();
+  }
+
+  checkMobile(): void {
+    this.isMobile = window.innerWidth <= 768;
+  }
+
+  toggleMobileSidebar(): void {
+    this.sidebarService.toggleSidebar();
+  }
 
   ngOnInit(): void {
     this.authService.authState$.subscribe(state => {

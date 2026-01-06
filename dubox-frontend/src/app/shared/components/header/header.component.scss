@@ -19,6 +19,36 @@
   max-width: 100%;
 }
 
+.mobile-menu-button {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-md);
+  color: var(--gray-600);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+  margin-right: var(--spacing-md);
+
+  &:hover {
+    background: linear-gradient(135deg, rgba(27, 154, 170, 0.1) 0%, rgba(25, 118, 210, 0.1) 100%);
+    color: var(--amana-teal);
+  }
+
+  svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  @media (max-width: 768px) {
+    display: flex;
+  }
+}
+
 .header-logo {
   display: flex;
   align-items: center;

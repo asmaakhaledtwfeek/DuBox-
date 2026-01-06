@@ -1,9 +1,10 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { PermissionService, NavigationMenuItemDto } from '../../../core/services/permission.service';
+import { SidebarService } from '../../../core/services/sidebar.service';
 
 interface MenuItem {
   label: string;
@@ -24,6 +25,7 @@ interface MenuItem {
 })
 export class SidebarComponent implements OnInit, OnDestroy {
   isCollapsed = false;
+  isMobileOpen = false; // Track mobile sidebar state
   activeRoute = '';
   menuItems: MenuItem[] = [];
   private allMenuItemsFromDb: NavigationMenuItemDto[] = [];
@@ -34,15 +36,27 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   constructor(
     private router: Router,
-    private permissionService: PermissionService
+    private permissionService: PermissionService,
+    private sidebarService: SidebarService
   ) {
     this.subscriptions.push(
       this.router.events
         .pipe(filter(event => event instanceof NavigationEnd))
         .subscribe((event: any) => {
           this.activeRoute = event.url;
+          // Close mobile sidebar on navigation
+          if (this.isMobileOpen) {
+            this.closeMobileSidebar();
+          }
           // Don't rebuild menu on navigation - just update active route
         })
+    );
+
+    // Subscribe to sidebar toggle from header
+    this.subscriptions.push(
+      this.sidebarService.toggleSidebar$.subscribe(() => {
+        this.toggleSidebar();
+      })
     );
   }
 
@@ -229,12 +243,34 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   toggleSidebar(): void {
-    this.isCollapsed = !this.isCollapsed;
+    // Check if we're on mobile (window width <= 768px)
+    if (window.innerWidth <= 768) {
+      this.isMobileOpen = !this.isMobileOpen;
+      console.log('Mobile sidebar toggled. isMobileOpen:', this.isMobileOpen);
+    } else {
+      this.isCollapsed = !this.isCollapsed;
+    }
+  }
+
+  closeMobileSidebar(): void {
+    this.isMobileOpen = false;
+  }
+
+  @HostListener('window:resize', ['$event'])
+  onResize(): void {
+    // If screen becomes larger than mobile, close mobile sidebar
+    if (window.innerWidth > 768 && this.isMobileOpen) {
+      this.isMobileOpen = false;
+    }
   }
 
   onMenuItemClick(item: MenuItem): void {
     console.log(`🖱️ Menu item clicked: "${item.label}" -> route: "${item.route}"`);
     console.log(`📍 Current route: ${this.router.url}`);
+    // Close mobile sidebar when menu item is clicked
+    if (this.isMobileOpen) {
+      this.closeMobileSidebar();
+    }
     // routerLink will handle navigation, this is just for debugging
   }
 
@@ -250,6 +286,10 @@ export class SidebarComponent implements OnInit, OnDestroy {
     }
 
     return false;
+  }
+
+  trackByRoute(index: number, item: MenuItem): string {
+    return item.route;
   }
 
   getIconSvg(icon: string): string {

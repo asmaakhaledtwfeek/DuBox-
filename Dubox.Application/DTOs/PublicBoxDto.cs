@@ -7,6 +7,7 @@ namespace Dubox.Application.DTOs;
 public record PublicBoxDto
 {
     public Guid BoxId { get; init; }
+    public Guid? ProjectId { get; init; }
     public string ProjectCode { get; init; } = string.Empty;
     public string ProjectName { get; init; } = string.Empty;
     public string ClientName { get; init; } = string.Empty;

@@ -34,14 +34,12 @@ public class AddTeamMemberCommandHandler : IRequestHandler<AddTeamMemberCommand,
 
     public async Task<Result<TeamMemberDto>> Handle(AddTeamMemberCommand request, CancellationToken cancellationToken)
     {
-        // Authorization: Only SystemAdmin and ProjectManager can add team members
         var canCreate = await _visibilityService.CanCreateProjectOrTeamAsync(cancellationToken);
         if (!canCreate)
         {
             return Result.Failure<TeamMemberDto>("Access denied. Only System Administrators and Project Managers can add team members.");
         }
 
-        // Verify team exists and is active
         var team = await _unitOfWork.Repository<Team>().GetByIdAsync(request.TeamId, cancellationToken);
         if (team == null)
             return Result.Failure<TeamMemberDto>("Team not found.");
@@ -49,7 +47,6 @@ public class AddTeamMemberCommandHandler : IRequestHandler<AddTeamMemberCommand,
         if (!team.IsActive)
             return Result.Failure<TeamMemberDto>("Cannot add members to an inactive team.");
 
-        // Check if employee code already exists in this team
         var employeeCodeExists = await _unitOfWork.Repository<TeamMember>()
             .IsExistAsync(tm => tm.TeamId == request.TeamId && tm.EmployeeCode == request.EmployeeCode, cancellationToken);
 
@@ -62,15 +59,12 @@ public class AddTeamMemberCommandHandler : IRequestHandler<AddTeamMemberCommand,
         // Create user account if requested
         if (request.IsCreateAccount)
         {
-            // Check if user with this email already exists
             var existingUser =  _unitOfWork.Repository<User>()
                 .FindAsync(u => u.Email == request.Email!, cancellationToken).Result.FirstOrDefault();
 
             if (existingUser != null)
-                userId = existingUser.UserId;
+                    return Result.Failure<TeamMemberDto>("Cannot add this User, this email elready exist for another user .");
             
-            else
-            {
                 var newUser = new User
                 {
                     Email = request.Email!,
@@ -98,7 +92,7 @@ public class AddTeamMemberCommandHandler : IRequestHandler<AddTeamMemberCommand,
                     Description = $"New User account '{newUser.Email}' created for team member."
                 };
                 await _unitOfWork.Repository<AuditLog>().AddAsync(userAuditLog, cancellationToken);
-            }
+            
         }
 
         // Create team member

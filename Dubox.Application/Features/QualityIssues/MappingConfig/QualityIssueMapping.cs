@@ -10,20 +10,7 @@ namespace Dubox.Application.Features.QualityIssues.MappingConfig
         public void Register(TypeAdapterConfig config)
         {
             config.NewConfig<QualityIssue, QualityIssueDetailsDto>()
-                //.Map(dest => dest.IssueId, src => src.IssueId)
-                //.Map(dest => dest.IssueDate, src => src.IssueDate)
-                //.Map(dest => dest.IssueType, src => src.IssueType)
-                //.Map(dest => dest.Severity, src => src.Severity)
-                //.Map(dest => dest.IssueDescription, src => src.IssueDescription)
-                //.Map(dest => dest.ReportedBy, src => src.ReportedBy)
-                //.Map(dest => dest.AssignedTo, src => src.AssignedTo)
-                //.Map(dest => dest.DueDate, src => src.DueDate)
-                //.Map(dest => dest.Status, src => src.Status)
-                //.Map(dest => dest.ResolutionDate, src => src.ResolutionDate)
-                //.Map(dest => dest.ResolutionDescription, src => src.ResolutionDescription)
-                //.Map(dest => dest.PhotoPath, src => src.PhotoPath)
-                //.Map(dest => dest.IsOverdue, src => src.IsOverdue)
-                //.Map(dest => dest.OverdueDays, src => src.OverdueDays)
+              
 
                 .Map(dest => dest.BoxId, src => src.Box.BoxId)
                 .Map(dest => dest.BoxName, src => src.Box.BoxName)
@@ -39,6 +26,8 @@ namespace Dubox.Application.Features.QualityIssues.MappingConfig
                 .Map(dest => dest.AssignedTo, src => src.AssignedToTeamId != null ? src.AssignedToTeamId : null)
                 .Map(dest => dest.AssignedTeamName, src => src.AssignedToTeam != null ? src.AssignedToTeam.TeamName : null)
                 .Map(dest => dest.AssignedToUserId, src => src.AssignedToMemberId)
+                .Map(dest => dest.AssignedToUserName, src => src.AssignedToMember != null ? src.AssignedToMember.EmployeeName : null)
+
                 ;
         }
     }

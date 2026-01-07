@@ -31,23 +31,16 @@ namespace Dubox.Application.Features.QualityIssues.Commands
 
         public async Task<Result<QualityIssueDetailsDto>> Handle(UpdateQualityIssueStatusCommand request, CancellationToken cancellationToken)
         {
-            // Check if user can modify data (Viewer role cannot)
-            var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
-            if (!canModify)
-            {
-                return Result.Failure<QualityIssueDetailsDto>("Access denied. Viewer role has read-only access and cannot modify quality issues.");
-            }
-
             var issue = _unitOfWork.Repository<QualityIssue>().GetEntityWithSpec(new GetQualityIssueByIdSpecification(request.IssueId));
 
             if (issue == null)
                 return Result.Failure<QualityIssueDetailsDto>("Quality issue not found.");
 
-            // Verify user has access to the project this quality issue belongs to
-            var canAccessProject = await _visibilityService.CanAccessProjectAsync(issue.Box.ProjectId, cancellationToken);
-            if (!canAccessProject)
+            // Check if user can edit the project this quality issue belongs to
+            var canEditProject = await _visibilityService.CanEditProjectAsync(issue.Box.ProjectId, cancellationToken);
+            if (!canEditProject)
             {
-                return Result.Failure<QualityIssueDetailsDto>("Access denied. You do not have permission to modify this quality issue.");
+                return Result.Failure<QualityIssueDetailsDto>("Access denied. You can only edit quality issues in projects you created or projects created by Project Managers/System Admins who created teams you are a member of.");
             }
 
             // Check if project is archived

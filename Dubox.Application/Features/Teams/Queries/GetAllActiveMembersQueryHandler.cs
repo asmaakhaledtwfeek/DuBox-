@@ -31,8 +31,6 @@ public class GetAllActiveMembersQueryHandler : IRequestHandler<GetAllActiveMembe
         var query = _unitOfWork.Repository<TeamMember>()
             .GetWithSpec(new GetAllTeamMembersSpecification()).Data;
         
-        // Filter by accessible team IDs if user has restricted access
-        // null means user can access all teams (SystemAdmin/Viewer)
         if (accessibleTeamIds != null)
         {
             query = query.Where(tm => accessibleTeamIds.Contains(tm.TeamId));

@@ -5,30 +5,21 @@ using Dubox.Domain.Specification;
 
 namespace Dubox.Application.Specifications
 {
-    /// <summary>
-    /// Specification for getting quality issues summary without pagination
-    /// Used to calculate status counts for all issues
-    /// </summary>
+    
     public class GetQualityIssuesSummarySpecification : Specification<QualityIssue>
     {
         public GetQualityIssuesSummarySpecification(GetQualityIssuesQuery query, List<Guid>? accessibleProjectIds = null)
         {
-            // Don't include heavy navigation properties for summary - just need counts
             AddInclude(nameof(QualityIssue.Box));
             AddInclude($"{nameof(QualityIssue.Box)}.{nameof(Box.Project)}");
 
-            // DO NOT apply pagination for summary
-
-            // Filter out quality issues for inactive boxes or projects
             AddCriteria(q => q.Box.IsActive);
             AddCriteria(q => q.Box.Project.IsActive);
             
-            // Filter out quality issues for projects that are on hold, closed, or archived
             AddCriteria(q => q.Box.Project.Status != Domain.Enums.ProjectStatusEnum.OnHold);
             AddCriteria(q => q.Box.Project.Status != Domain.Enums.ProjectStatusEnum.Closed);
             AddCriteria(q => q.Box.Project.Status != Domain.Enums.ProjectStatusEnum.Archived);
 
-            // Apply visibility filtering based on accessible projects
             if (accessibleProjectIds != null)
             {
                 AddCriteria(q => accessibleProjectIds.Contains(q.Box.ProjectId));

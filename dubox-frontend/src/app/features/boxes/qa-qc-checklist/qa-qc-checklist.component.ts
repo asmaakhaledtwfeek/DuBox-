@@ -46,6 +46,7 @@ type QualityIssueFormValue = {
   issueDescription: string;
   assignedTo?: string; // Team ID
   assignedToUserId?: string; // User ID within team
+  assignedToUserName?: string; // User name for display
   assignedTeam?: string; // Team name for display
   dueDate?: string;
   photoPath?: string;
@@ -2265,7 +2266,9 @@ console.log(expectedWirCode);
       photoPath: [issue?.photoPath || '', [Validators.maxLength(500)]],
       reportedBy: [issue?.reportedBy || null],
       issueDate: [issue?.issueDate || null],
-      imageDataUrls: [issue?.imageDataUrls || []]
+      imageDataUrls: [issue?.imageDataUrls || []],
+      assignedToUserId: [issue?.assignedToUserId || ''],
+      assignedToUserName: [issue?.assignedToUserName || '']
     });
     
     const index = this.qualityIssuesArray.length;
@@ -2285,18 +2288,12 @@ console.log(expectedWirCode);
       return;
     }
 
-    // Debug logging
-    console.log('[QA/QC] Viewing quality issue details:', issue);
-    console.log('[QA/QC] Issue images property:', (issue as any)?.images);
-
-    // Get images from the issue
     let images: string[] = [];
     
     // Get images from existing issue (if it has images property - QualityIssueDetails or QualityIssueItem with images)
     if (issue) {
       const issueDetails = issue as QualityIssueDetails & { images?: QualityIssueImage[] };
       
-      // First, check for images array (QualityIssueImage[])
       if (issueDetails.images && Array.isArray(issueDetails.images) && issueDetails.images.length > 0) {
         console.log('[QA/QC] Found images array with', issueDetails.images.length, 'images');
         images = issueDetails.images

@@ -32,24 +32,17 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
 
         public async Task<Result<WIRCheckpointDto>> Handle(AddQualityIssueCommand request, CancellationToken cancellationToken)
         {
-            // Check if user can modify data (Viewer role cannot)
-            var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
-            if (!canModify)
-            {
-                return Result.Failure<WIRCheckpointDto>("Access denied. Viewer role has read-only access and cannot add quality issues.");
-            }
-
             var wir = _unitOfWork.Repository<WIRCheckpoint>()
                 .GetEntityWithSpec(new GetWIRCheckpointByIdSpecification(request.WIRId));
 
             if (wir is null)
                 return Result.Failure<WIRCheckpointDto>("WIRCheckpoint not found.");
 
-            // Verify user has access to the project this WIR checkpoint belongs to
-            var canAccessProject = await _visibilityService.CanAccessProjectAsync(wir.Box.ProjectId, cancellationToken);
-            if (!canAccessProject)
+            // Check if user can edit the project this WIR checkpoint belongs to
+            var canEditProject = await _visibilityService.CanEditProjectAsync(wir.Box.ProjectId, cancellationToken);
+            if (!canEditProject)
             {
-                return Result.Failure<WIRCheckpointDto>("Access denied. You do not have permission to add quality issues to this WIR checkpoint.");
+                return Result.Failure<WIRCheckpointDto>("Access denied. You can only add quality issues to WIR checkpoints in projects you created or projects created by Project Managers/System Admins who created teams you are a member of.");
             }
 
             // Check if box is dispatched - no actions allowed on dispatched boxes

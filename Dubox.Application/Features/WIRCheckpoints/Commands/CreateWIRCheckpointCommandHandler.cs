@@ -31,13 +31,6 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
 
         public async Task<Result<CreateWIRCheckpointDto>> Handle(CreateWIRCheckpointCommand request, CancellationToken cancellationToken)
         {
-            // Check if user can modify data (Viewer role cannot)
-            var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
-            if (!canModify)
-            {
-                return Result.Failure<CreateWIRCheckpointDto>("Access denied. Viewer role has read-only access and cannot create WIR checkpoints.");
-            }
-
             var boxActicity = await _unitOfWork.Repository<BoxActivity>().GetByIdAsync(request.BoxActivityId);
             if (boxActicity == null)
                 return Result.Failure<CreateWIRCheckpointDto>("Box Activity not fount");
@@ -47,11 +40,11 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             if (box == null)
                 return Result.Failure<CreateWIRCheckpointDto>("Box not found");
 
-            // Verify user has access to the project
-            var canAccessProject = await _visibilityService.CanAccessProjectAsync(box.ProjectId, cancellationToken);
-            if (!canAccessProject)
+            // Check if user can edit the project
+            var canEditProject = await _visibilityService.CanEditProjectAsync(box.ProjectId, cancellationToken);
+            if (!canEditProject)
             {
-                return Result.Failure<CreateWIRCheckpointDto>("Access denied. You do not have permission to create WIR checkpoints for this project.");
+                return Result.Failure<CreateWIRCheckpointDto>("Access denied. You can only create WIR checkpoints in projects you created or projects created by Project Managers/System Admins who created teams you are a member of.");
             }
 
             // Check if project is archived

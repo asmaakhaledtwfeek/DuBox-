@@ -5,6 +5,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { QualityIssueDetailsModalComponent } from '../../../shared/components/quality-issue-details-modal/quality-issue-details-modal.component';
+import { AssignToCrewModalComponent, AssignableIssue } from '../../../shared/components/assign-to-crew-modal/assign-to-crew-modal.component';
 import { WIRService } from '../../../core/services/wir.service';
 import { QualityIssueItem, QualityIssueDetails, QualityIssueStatus, UpdateQualityIssueStatusRequest, WIRCheckpoint, WIRCheckpointStatus } from '../../../core/models/wir.model';
 import { FormsModule } from '@angular/forms';
@@ -42,7 +43,7 @@ type AggregatedQualityIssue = QualityIssueItem & {
 @Component({
   selector: 'app-quality-control-dashboard',
   standalone: true,
-  imports: [HeaderComponent, CommonModule, RouterModule, SidebarComponent, ReactiveFormsModule, FormsModule, QualityIssueDetailsModalComponent],
+  imports: [HeaderComponent, CommonModule, RouterModule, SidebarComponent, ReactiveFormsModule, FormsModule, QualityIssueDetailsModalComponent, AssignToCrewModalComponent],
   templateUrl: './quality-control-dashboard.component.html',
   styleUrl: './quality-control-dashboard.component.scss'
 })
@@ -145,14 +146,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   // Assign modal state
   isAssignModalOpen = false;
   selectedIssueForAssign: AggregatedQualityIssue | null = null;
-  availableTeams: Team[] = [];
-  availableMembers: TeamMember[] = [];
-  loadingTeams = false;
-  loadingMembers = false;
   assignLoading = false;
-  assignError = '';
-  selectedTeamId: string | null = null;
-  selectedMemberId: string | null = null;
 
   // Cache for box statuses to avoid multiple API calls
   private boxStatusCache: Map<string, BoxStatus | null> = new Map();
@@ -668,8 +662,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
         // Update summary using backend summary data
         this.updateSummaryFromBackend(response);
         
-        // Now fetch ALL quality issues separately
-        this.fetchAllQualityIssues();
+       
         this.checkpointsLoading = false;
       },
       error: (err) => {
@@ -816,8 +809,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     if (filters.issueType && filters.issueType.trim()) {
       params.issueType = filters.issueType;
     }
-    // Note: WIR Number, Box Tag, and Project Code filters are client-side only
-    // as they're not part of the backend API filter options
+
 
     this.wirService.getAllQualityIssues(params).subscribe({
       next: (response) => {
@@ -889,7 +881,9 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
           projectName: issue.projectName || undefined,
           projectId: issue.projectId || undefined,
           checkpointStatus: issue.wirStatus as WIRCheckpointStatus | undefined,
-          issueStatus: issue.status
+          issueStatus: issue.status,
+          assignedToUserId: issue.assignedToUserId || undefined,
+          assignedToUserName: issue.assignedToUserName || undefined,
         };
         console.log('📋 Mapped issue projectName:', mapped.projectName);
         
@@ -1123,84 +1117,22 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     }
 
     this.selectedIssueForAssign = issue;
-    this.selectedTeamId = null; // Reset selection
-    this.selectedMemberId = null; // Reset member selection
-    this.availableMembers = []; // Clear members
-    this.assignError = '';
     this.isAssignModalOpen = true;
-    this.loadAvailableTeams();
   }
 
   closeAssignModal(): void {
     this.isAssignModalOpen = false;
     this.selectedIssueForAssign = null;
-    this.selectedTeamId = null;
-    this.selectedMemberId = null;
-    this.availableMembers = [];
-    this.assignError = '';
   }
 
-  loadAvailableTeams(): void {
-    this.loadingTeams = true;
-    this.teamService.getTeams().subscribe({
-      next: (teams) => {
-        this.availableTeams = teams.filter(team => team.isActive);
-        this.loadingTeams = false;
-      },
-      error: (err) => {
-        console.error('Error loading teams:', err);
-        this.loadingTeams = false;
-        this.availableTeams = [];
-        this.assignError = 'Failed to load teams. Please try again.';
-      }
-    });
-  }
-
-  onTeamSelectionChange(teamId: string): void {
-    this.selectedTeamId = teamId;
-    this.selectedMemberId = null; // Reset member selection when team changes
-    
-    if (teamId) {
-      this.loadTeamMembers(teamId);
-    } else {
-      this.availableMembers = [];
-    }
-  }
-
-  loadTeamMembers(teamId: string): void {
-    if (!teamId) {
-      this.availableMembers = [];
-      return;
-    }
-
-    this.loadingMembers = true;
-    this.teamService.getTeamMembers(teamId).subscribe({
-      next: (response) => {
-        this.availableMembers = response.members || [];
-        this.loadingMembers = false;
-        console.log('✅ Team members loaded:', this.availableMembers);
-      },
-      error: (err) => {
-        console.error('❌ Error loading team members:', err);
-        this.availableMembers = [];
-        this.loadingMembers = false;
-      }
-    });
-  }
-
-  assignIssueToTeam(): void {
+  onAssignToCrew(event: { teamId: string | null; memberId: string | null }): void {
     if (!this.selectedIssueForAssign || !this.selectedIssueForAssign.issueId) {
-      this.assignError = 'Invalid issue selected';
       return;
     }
 
     this.assignLoading = true;
-    this.assignError = '';
 
-    const teamId = this.selectedTeamId && this.selectedTeamId.trim() !== '' ? this.selectedTeamId : null;
-    const memberId = this.selectedMemberId && this.selectedMemberId.trim() !== '' ? this.selectedMemberId : null;
-
-    this.wirService.assignQualityIssueToTeam(this.selectedIssueForAssign.issueId, teamId, memberId).subscribe({
+    this.wirService.assignQualityIssueToTeam(this.selectedIssueForAssign.issueId, event.teamId, event.memberId).subscribe({
       next: (updatedIssue) => {
         this.assignLoading = false;
         
@@ -1223,15 +1155,20 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
         // Show success message
         document.dispatchEvent(new CustomEvent('app-toast', {
           detail: {
-            message: teamId ? `Issue assigned to team successfully.` : `Issue unassigned successfully.`,
+            message: event.teamId ? `Issue assigned to team successfully.` : `Issue unassigned successfully.`,
             type: 'success'
           }
         }));
       },
       error: (err) => {
         this.assignLoading = false;
-        this.assignError = err.error?.message || err.message || 'Failed to assign issue to team';
         console.error('Error assigning issue to team:', err);
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: {
+            message: err.error?.message || err.message || 'Failed to assign issue to team',
+            type: 'error'
+          }
+        }));
       }
     });
   }

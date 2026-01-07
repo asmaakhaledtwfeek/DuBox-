@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -20,6 +21,7 @@ import { calculateAndFormatDuration, calculateDurationValues } from '../../../co
 import { ProjectService } from '../../../core/services/project.service';
 import { WIRService } from '../../../core/services/wir.service';
 import { WIRRecord } from '../../../core/models/wir.model';
+import { PermissionService } from '../../../core/services/permission.service';
 
 @Component({
   selector: 'app-activity-details',
@@ -28,7 +30,7 @@ import { WIRRecord } from '../../../core/models/wir.model';
   templateUrl: './activity-details.component.html',
   styleUrls: ['./activity-details.component.scss']
 })
-export class ActivityDetailsComponent implements OnInit {
+export class ActivityDetailsComponent implements OnInit, OnDestroy {
   activity: BoxActivity | null = null;
   activityDetail: BoxActivityDetail | null = null;
   allActivities: BoxActivityDetail[] = []; // All activities for the box (for WIR position feature)
@@ -86,6 +88,10 @@ export class ActivityDetailsComponent implements OnInit {
   isIssuingMaterial = false;
   loadingMembers = false;
   isSettingSchedule = false;
+  
+  // Track if we're initializing the form (to prevent clearing member during preselection)
+  private isInitializingAssignTeamForm = false;
+  private teamIdSubscription?: Subscription;
 
   // Error messages
   scheduleError = '';
@@ -125,7 +131,8 @@ export class ActivityDetailsComponent implements OnInit {
     private teamService: TeamService,
     private auditLogService: AuditLogService,
     private projectService: ProjectService,
-    private wirService: WIRService
+    private wirService: WIRService,
+    private permissionService: PermissionService
   ) {}
 
   returnTo: string | null = null; // Store return context
@@ -190,6 +197,16 @@ export class ActivityDetailsComponent implements OnInit {
   }
 
   private updatePermissions(): void {
+    // Check user permissions first - QC Inspector should only have view access
+    const hasViewPermission = this.permissionService.hasPermission('activities', 'view');
+    const hasEditPermission = this.permissionService.hasPermission('activities', 'edit');
+    const hasAssignTeamPermission = this.permissionService.hasPermission('activities', 'assign-team');
+    const hasUpdateProgressPermission = this.permissionService.hasPermission('activities', 'update-progress');
+    
+    // If user doesn't have view permission, they shouldn't see this page at all
+    // But if they're here, at least allow viewing (read-only)
+    const canView = hasViewPermission;
+    
     // Check if activity actions are allowed based on box status
     const canPerformActivityActionsBasedOnBoxStatus = this.boxStatus 
       ? canPerformActivityActions(this.boxStatus)
@@ -206,29 +223,34 @@ export class ActivityDetailsComponent implements OnInit {
     if (this.activity && this.activityDetail) {
       const progress = this.activity.weightPercentage || this.activityDetail.progressPercentage || 0;
       this.availableStatuses = getAvailableActivityStatuses(this.activity.status as ActivityStatus, progress);
-      this.canChangeStatus = this.availableStatuses.length > 0;
     } else {
       this.availableStatuses = [];
-      this.canChangeStatus = false;
     }
     
     // Disable all actions if:
+    // - User doesn't have required permissions (QC Inspector only has view)
     // - Project is archived, on hold, or closed
     // - Box status doesn't allow activity actions
     // - Activity status doesn't allow actions (OnHold only, Completed is allowed for position updates)
-    const baseCanPerformActions = !this.isProjectArchived && !this.isProjectOnHold && !this.isProjectClosed && canPerformActivityActionsBasedOnBoxStatus && canPerformActionsByActivityStatus;
+    const baseCanPerformActions = canView && !this.isProjectArchived && !this.isProjectOnHold && !this.isProjectClosed && canPerformActivityActionsBasedOnBoxStatus && canPerformActionsByActivityStatus;
     
-    this.canAssignTeam = baseCanPerformActions && !isCompleted; // Don't allow team assignment for completed/delayed
-    this.canIssueMaterial = baseCanPerformActions && !isCompleted; // Don't allow material issuance for completed/delayed
-    this.canSetSchedule = baseCanPerformActions && !isCompleted; // Don't allow schedule changes for completed/delayed
+    // Check permissions for each action
+    // Update Status requires edit permission and available statuses
+    this.canChangeStatus = this.availableStatuses.length > 0 && hasEditPermission && baseCanPerformActions;
+    // Assign Team requires assign-team permission
+    this.canAssignTeam = baseCanPerformActions && hasAssignTeamPermission && !isCompleted; // Don't allow team assignment for completed/delayed
+    // Issue Material requires edit permission
+    this.canIssueMaterial = baseCanPerformActions && hasEditPermission && !isCompleted; // Don't allow material issuance for completed/delayed
+    // Set Schedule requires edit permission (no separate set-schedule permission exists)
+    this.canSetSchedule = baseCanPerformActions && hasEditPermission && !isCompleted; // Don't allow schedule changes for completed/delayed
     
     // Check if Update Progress button should be shown
     // Hide it if activity is completed/delayed AND next WIR has position
     const shouldHideUpdateProgress = this.shouldHideUpdateProgressButton();
-    this.canUpdateProgress = baseCanPerformActions && !shouldHideUpdateProgress;
+    this.canUpdateProgress = baseCanPerformActions && hasUpdateProgressPermission && !shouldHideUpdateProgress;
     
-    // Disable forms if project is on hold, closed, or archived, or if box/activity status doesn't allow activity actions
-    if (this.isProjectArchived || this.isProjectOnHold || this.isProjectClosed || !canPerformActivityActionsBasedOnBoxStatus || !canPerformActionsByActivityStatus) {
+    // Disable forms if user doesn't have edit permissions, or if project is on hold, closed, or archived, or if box/activity status doesn't allow activity actions
+    if (!hasEditPermission || this.isProjectArchived || this.isProjectOnHold || this.isProjectClosed || !canPerformActivityActionsBasedOnBoxStatus || !canPerformActionsByActivityStatus) {
       this.statusForm?.disable();
       this.assignTeamForm?.disable();
       this.issueMaterialForm?.disable();
@@ -236,6 +258,10 @@ export class ActivityDetailsComponent implements OnInit {
     }
     
     console.log('✅ Activity permissions updated:', {
+      hasViewPermission,
+      hasEditPermission,
+      hasAssignTeamPermission,
+      hasUpdateProgressPermission,
       canAssignTeam: this.canAssignTeam,
       canIssueMaterial: this.canIssueMaterial,
       canSetSchedule: this.canSetSchedule,
@@ -1259,40 +1285,77 @@ export class ActivityDetailsComponent implements OnInit {
     }
     
     this.assignTeamSuccess = false; // Reset success state
+    this.isInitializingAssignTeamForm = true; // Mark that we're initializing
     
-    // Pre-select team if it exists
+    // Unsubscribe from previous valueChanges to avoid conflicts
+    const teamIdControl = this.assignTeamForm.get('teamId');
+    if (teamIdControl) {
+      // Clear any existing subscriptions by resetting the control
+      teamIdControl.setValue(teamIdControl.value, { emitEvent: false });
+    }
+    
+    // Pre-select team and member if they exist
     if (this.activityDetail?.teamId) {
       const teamId = this.activityDetail.teamId.toString();
       const assignedMemberId = this.activityDetail.assignedMemberId?.toString() || '';
       
-      // Set the teamId and load members
-      this.assignTeamForm.patchValue({
-        teamId: teamId,
-        memberId: '' // Will be set after members load
-      }, { emitEvent: false });
+      // Check if the team exists in available teams
+      const teamExists = this.availableTeams.some(t => t.teamId === teamId);
       
-      // Load members and pre-select the assigned member
-      this.loadTeamMembers(teamId, (members) => {
-        // Pre-select member if it exists and is in the loaded members
-        if (assignedMemberId && members.some(m => m.teamMemberId === assignedMemberId)) {
-          this.assignTeamForm.patchValue({
-            memberId: assignedMemberId
-          }, { emitEvent: false });
-        }
-      });
+      if (teamExists) {
+        // Set the teamId first (without emitting events)
+        this.assignTeamForm.patchValue({
+          teamId: teamId,
+          memberId: '' // Will be set after members load
+        }, { emitEvent: false });
+        
+        // Load members and pre-select the assigned member
+        this.loadTeamMembers(teamId, (members) => {
+          // Pre-select member if it exists and is in the loaded members
+          if (assignedMemberId && members.length > 0) {
+            const memberExists = members.some(m => m.teamMemberId === assignedMemberId);
+            if (memberExists) {
+              this.assignTeamForm.patchValue({
+                memberId: assignedMemberId
+              }, { emitEvent: false });
+            }
+          }
+          // Mark initialization as complete
+          this.isInitializingAssignTeamForm = false;
+        });
+      } else {
+        // Team not in available teams, but still set it (might be inactive team)
+        console.warn('Team not found in available teams:', teamId);
+        this.assignTeamForm.patchValue({
+          teamId: teamId,
+          memberId: assignedMemberId || ''
+        }, { emitEvent: false });
+        this.isInitializingAssignTeamForm = false;
+      }
     } else {
+      // No team assigned, reset form
       this.availableMembers = [];
       this.assignTeamForm.patchValue({
         teamId: '',
         memberId: ''
       }, { emitEvent: false });
+      this.isInitializingAssignTeamForm = false;
     }
 
-    // Listen to team selection changes to load members
-    this.assignTeamForm.get('teamId')?.valueChanges.subscribe(teamId => {
+    // Set up listener for team selection changes (unsubscribe from previous first)
+    if (this.teamIdSubscription) {
+      this.teamIdSubscription.unsubscribe();
+    }
+    
+    this.teamIdSubscription = this.assignTeamForm.get('teamId')?.valueChanges.subscribe(teamId => {
+      // Don't clear member if we're still initializing
+      if (this.isInitializingAssignTeamForm) {
+        return;
+      }
+      
       if (teamId) {
         this.loadTeamMembers(teamId);
-        // Clear member selection when team changes
+        // Clear member selection when team changes (only if not initializing)
         this.assignTeamForm.patchValue({ memberId: '' }, { emitEvent: false });
       } else {
         this.availableMembers = [];
@@ -1308,6 +1371,20 @@ export class ActivityDetailsComponent implements OnInit {
     this.assignTeamForm.reset();
     this.availableMembers = [];
     this.assignTeamSuccess = false; // Reset success state
+    this.isInitializingAssignTeamForm = false; // Reset initialization flag
+    
+    // Unsubscribe from team selection changes
+    if (this.teamIdSubscription) {
+      this.teamIdSubscription.unsubscribe();
+      this.teamIdSubscription = undefined;
+    }
+  }
+  
+  ngOnDestroy(): void {
+    // Clean up subscriptions
+    if (this.teamIdSubscription) {
+      this.teamIdSubscription.unsubscribe();
+    }
   }
 
   onAssignTeam(): void {

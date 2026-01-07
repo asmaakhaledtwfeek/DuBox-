@@ -22,6 +22,7 @@ import { ActivityTableComponent } from '../../activities/activity-table/activity
 import { BoxLogDetailsModalComponent } from '../box-log-details-modal/box-log-details-modal.component';
 import { UploadDrawingModalComponent } from '../upload-drawing-modal/upload-drawing-modal.component';
 import { QualityIssueDetailsModalComponent } from '../../../shared/components/quality-issue-details-modal/quality-issue-details-modal.component';
+import { AssignToCrewModalComponent, AssignableIssue } from '../../../shared/components/assign-to-crew-modal/assign-to-crew-modal.component';
 import { LocationService, FactoryLocation, BoxLocationHistory } from '../../../core/services/location.service';
 import { ApiService } from '../../../core/services/api.service';
 import { WirExportService, ProjectInfo } from '../../../core/services/wir-export.service';
@@ -55,7 +56,7 @@ type BoxDrawing = {
 @Component({
   selector: 'app-box-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent, HeaderComponent, BoxLogDetailsModalComponent, UploadDrawingModalComponent, QualityIssueDetailsModalComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent, HeaderComponent, BoxLogDetailsModalComponent, UploadDrawingModalComponent, QualityIssueDetailsModalComponent, AssignToCrewModalComponent],
   providers: [LocationService],
   animations: [
     trigger('slideDown', [
@@ -138,11 +139,6 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   isAssignModalOpen = false;
   selectedIssueForAssign: QualityIssueDetails | null = null;
   assignLoading = false;
-  assignError = '';
-  selectedTeamId: string | null = null;
-  selectedMemberId: string | null = null;
-  loadingMembers = false;
-  availableMembers: TeamMember[] = [];
   selectedIssueDetails: QualityIssueDetails | null = null;
   
   // Multiple images state
@@ -1045,6 +1041,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         // Filter out incomplete/invalid quality issues
         // A valid quality issue should have at least an issueId and issueDate
         const validIssues = (issues || []).filter(issue => {
+          console.log('🔍 VERSION DEBUG - Quality issue:', issue);
           // Must have a valid issueId
           if (!issue.issueId) {
             console.warn('⚠️ Quality issue missing issueId:', issue);
@@ -1224,7 +1221,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     });
   }
 
-  loadAvailableTeams(): void {
+  loadAvailableTeams(onComplete?: () => void): void {
     this.loadingTeams = true;
     this.teamService.getTeams().subscribe({
       next: (teams) => {
@@ -1232,9 +1229,15 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         // The backend already filters based on user permissions
         this.availableTeams = teams.filter(team => team.isActive);
         this.loadingTeams = false;
+        if (onComplete) {
+          onComplete();
+        }
       },
       error: (err) => {
         console.error('❌ Error loading teams:', err);
+        if (onComplete) {
+          onComplete();
+        }
         this.availableTeams = [];
         this.loadingTeams = false;
       }
@@ -2052,7 +2055,6 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   openAssignModal(issue: QualityIssueDetails): void {
     // Close other modals first
-
     if (this.isDetailsModalOpen) {
       this.closeIssueDetails();
     }
@@ -2074,68 +2076,22 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     }
 
     this.selectedIssueForAssign = issue;
-    this.selectedTeamId = null; // Reset selection
-    this.selectedMemberId = null; // Reset member selection
-    this.availableMembers = []; // Clear members
-    this.assignError = '';
     this.isAssignModalOpen = true;
-    this.loadAvailableTeams();
   }
 
   closeAssignModal(): void {
     this.isAssignModalOpen = false;
     this.selectedIssueForAssign = null;
-    this.selectedTeamId = null;
-    this.selectedMemberId = null;
-    this.availableMembers = [];
-    this.assignError = '';
   }
 
-  onTeamSelectionChange(teamId: string): void {
-    this.selectedTeamId = teamId;
-    this.selectedMemberId = null; // Reset member selection when team changes
-    
-    if (teamId) {
-      this.loadTeamMembers(teamId);
-    } else {
-      this.availableMembers = [];
-    }
-  }
-
-  loadTeamMembers(teamId: string): void {
-    if (!teamId) {
-      this.availableMembers = [];
-      return;
-    }
-
-    this.loadingMembers = true;
-    this.teamService.getTeamMembers(teamId).subscribe({
-      next: (response) => {
-        this.availableMembers = response.members || [];
-        this.loadingMembers = false;
-        console.log('✅ Team members loaded:', this.availableMembers);
-      },
-      error: (err) => {
-        console.error('❌ Error loading team members:', err);
-        this.availableMembers = [];
-        this.loadingMembers = false;
-      }
-    });
-  }
-
-  assignIssueToTeam(): void {
+  onAssignToCrew(event: { teamId: string | null; memberId: string | null }): void {
     if (!this.selectedIssueForAssign || !this.selectedIssueForAssign.issueId) {
-      this.assignError = 'Invalid issue selected';
       return;
     }
 
     this.assignLoading = true;
-    this.assignError = '';
 
-    const teamId = this.selectedTeamId && this.selectedTeamId.trim() !== '' ? this.selectedTeamId : null;
-    const memberId = this.selectedMemberId && this.selectedMemberId.trim() !== '' ? this.selectedMemberId : null;
-
-    this.wirService.assignQualityIssueToTeam(this.selectedIssueForAssign.issueId, teamId, memberId).subscribe({
+    this.wirService.assignQualityIssueToTeam(this.selectedIssueForAssign.issueId, event.teamId, event.memberId).subscribe({
       next: (updatedIssue) => {
         this.assignLoading = false;
         
@@ -2158,15 +2114,20 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         // Show success message
         document.dispatchEvent(new CustomEvent('app-toast', {
           detail: {
-            message: teamId ? `Issue assigned to team successfully.` : `Issue unassigned successfully.`,
+            message: event.teamId ? `Issue assigned to team successfully.` : `Issue unassigned successfully.`,
             type: 'success'
           }
         }));
       },
       error: (err) => {
         this.assignLoading = false;
-        this.assignError = err.error?.message || err.message || 'Failed to assign issue to team';
         console.error('Error assigning issue to team:', err);
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: {
+            message: err.error?.message || err.message || 'Failed to assign issue to team',
+            type: 'error'
+          }
+        }));
       }
     });
   }

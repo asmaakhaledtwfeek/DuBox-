@@ -17,9 +17,6 @@ public class NavigationController : ControllerBase
         _mediator = mediator;
     }
 
-    /// <summary>
-    /// Get all navigation menu items from database
-    /// </summary>
     [HttpGet("menu")]
     public async Task<IActionResult> GetMenuItems(CancellationToken cancellationToken)
     {

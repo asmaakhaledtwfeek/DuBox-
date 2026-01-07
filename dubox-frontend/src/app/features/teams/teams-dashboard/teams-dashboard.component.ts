@@ -60,6 +60,7 @@ export class TeamsDashboardComponent implements OnInit, OnDestroy {
   // All Members Data
   allActiveMembers: TeamMember[] = [];
   filteredMembers: TeamMember[] = [];
+  groupedMembers: { teamId: string; teamCode: string; teamName: string; members: TeamMember[] }[] = [];
   loadingAllMembers = false;
   allMembersError = '';
 
@@ -277,11 +278,13 @@ export class TeamsDashboardComponent implements OnInit, OnDestroy {
     this.allMembersError = '';
     this.allActiveMembers = [];
     this.filteredMembers = [];
+    this.groupedMembers = [];
 
     this.teamService.getAllActiveMembers().subscribe({
       next: (members) => {
         this.allActiveMembers = members;
         this.filteredMembers = [...members];
+        this.groupMembersByTeam();
         this.loadingAllMembers = false;
       },
       error: (err) => {
@@ -292,9 +295,35 @@ export class TeamsDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+  groupMembersByTeam(): void {
+    // Group members by teamId
+    const teamMap = new Map<string, { teamId: string; teamCode: string; teamName: string; members: TeamMember[] }>();
+    
+    this.filteredMembers.forEach(member => {
+      if (!member.teamId) return;
+      
+      if (!teamMap.has(member.teamId)) {
+        teamMap.set(member.teamId, {
+          teamId: member.teamId,
+          teamCode: member.teamCode || '',
+          teamName: member.teamName || '',
+          members: []
+        });
+      }
+      
+      teamMap.get(member.teamId)!.members.push(member);
+    });
+    
+    // Convert map to array and sort by team name
+    this.groupedMembers = Array.from(teamMap.values()).sort((a, b) => 
+      a.teamName.localeCompare(b.teamName)
+    );
+  }
+
   filterMembers(searchTerm: string): void {
     if (!searchTerm || searchTerm.trim() === '') {
       this.filteredMembers = [...this.allActiveMembers];
+      this.groupMembersByTeam();
       return;
     }
 
@@ -320,6 +349,15 @@ export class TeamsDashboardComponent implements OnInit, OnDestroy {
              teamName.includes(term) ||
              teamCode.includes(term);
     });
+    
+    // Regroup after filtering
+    this.groupMembersByTeam();
+  }
+
+  onMemberCardClick(member: TeamMember): void {
+    if (member.teamId) {
+      this.viewDetails(member.teamId);
+    }
   }
 
 

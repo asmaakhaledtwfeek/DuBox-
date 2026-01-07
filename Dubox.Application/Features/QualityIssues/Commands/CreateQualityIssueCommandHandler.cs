@@ -30,13 +30,6 @@ namespace Dubox.Application.Features.QualityIssues.Commands
 
         public async Task<Result<QualityIssueDetailsDto>> Handle(CreateQualityIssueCommand request, CancellationToken cancellationToken)
         {
-            // Check if user can modify data (Viewer role cannot)
-            var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
-            if (!canModify)
-            {
-                return Result.Failure<QualityIssueDetailsDto>("Access denied. Viewer role has read-only access and cannot create quality issues.");
-            }
-
             // Verify the box exists
             var box = await _unitOfWork.Repository<Box>().GetByIdAsync(request.BoxId);
             if (box is null)
@@ -44,11 +37,11 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                 return Result.Failure<QualityIssueDetailsDto>("Box not found.");
             }
 
-            // Verify user has access to the project this box belongs to
-            var canAccessProject = await _visibilityService.CanAccessProjectAsync(box.ProjectId, cancellationToken);
-            if (!canAccessProject)
+            // Check if user can edit the project this box belongs to
+            var canEditProject = await _visibilityService.CanEditProjectAsync(box.ProjectId, cancellationToken);
+            if (!canEditProject)
             {
-                return Result.Failure<QualityIssueDetailsDto>("Access denied. You do not have permission to create quality issues for this box.");
+                return Result.Failure<QualityIssueDetailsDto>("Access denied. You can only create quality issues in projects you created or projects created by Project Managers/System Admins who created teams you are a member of.");
             }
 
             // Check if project is archived

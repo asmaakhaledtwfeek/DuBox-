@@ -27,21 +27,15 @@ namespace Dubox.Application.Features.Activities.Commands
 
         public async Task<Result<AssignBoxActivityTeamDto>> Handle(AssignActivityToTeamCommand request, CancellationToken cancellationToken)
         {
-            // Check if user can modify data (Viewer role cannot)
-            var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
-            if (!canModify)
-            
-                return Result.Failure<AssignBoxActivityTeamDto>("Access denied. Viewer role has read-only access and cannot assign activities.");
-
             var activity = _unitOfWork.Repository<BoxActivity>().GetEntityWithSpec(new GetBoxActivityByIdSpecification(request.BoxActivityId));
 
             if (activity == null)
                 return Result.Failure<AssignBoxActivityTeamDto>("Box Activity not found.");
 
-            // Check if user has access to the project containing this activity
-            var canAccessProject = await _visibilityService.CanAccessProjectAsync(activity.Box.ProjectId, cancellationToken);
-            if (!canAccessProject)
-                return Result.Failure<AssignBoxActivityTeamDto>("Access denied. You do not have permission to modify activities in this project.");
+            // Check if user can edit the project containing this activity
+            var canEditProject = await _visibilityService.CanEditProjectAsync(activity.Box.ProjectId, cancellationToken);
+            if (!canEditProject)
+                return Result.Failure<AssignBoxActivityTeamDto>("Access denied. You can only edit activities in projects you created or projects created by Project Managers/System Admins who created teams you are a member of.");
             
 
             // Check if project is archived

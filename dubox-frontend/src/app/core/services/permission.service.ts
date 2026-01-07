@@ -397,9 +397,17 @@ export class PermissionService {
 
   /**
    * Initialize permissions - call after login
+   * Clears old permissions first to ensure we load fresh permissions for the current user
+   * Returns an Observable that completes when permissions are loaded
    */
-  initializePermissions(): void {
-    this.loadCurrentUserPermissions().subscribe();
+  initializePermissions(): Observable<string[]> {
+    // Clear old permissions first to avoid using stale data
+    this.userPermissionsCache.next([]);
+    this.permissionsLoaded = false;
+    this.permissionsLoading = false;
+    
+    // Now load fresh permissions for the current user and return the observable
+    return this.loadCurrentUserPermissions();
   }
 
   /**

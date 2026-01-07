@@ -24,10 +24,7 @@ public class Project
 
     [Required]
     public ProjectLocationEnum Location { get; set; }
-    [Required]
-    public int CategoryId { get; set; }
 
-    [ForeignKey(nameof(CategoryId))]
     public DateTime? PlannedStartDate { get; set; }
     public DateTime? ActualStartDate { get; set; }
     public int? Duration { get; set; }

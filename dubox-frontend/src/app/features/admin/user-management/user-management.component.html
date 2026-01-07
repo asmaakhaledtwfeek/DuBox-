@@ -323,7 +323,7 @@
               <th>Roles</th>
               <th>Members</th>
               <th>Status</th>
-              <th class="col-actions">Actions</th>
+              <th class="col-actions" *ngIf="canEditGroup || canDeleteGroup" >Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -438,7 +438,7 @@
               <th>Status</th>
               <th>Created</th>
               <th>Assigned</th>
-              <th class="col-actions">Actions</th>
+              <th class="col-actions"  *ngIf="canEditRole || canDeleteRole" >Actions</th>
             </tr>
           </thead>
           <tbody>

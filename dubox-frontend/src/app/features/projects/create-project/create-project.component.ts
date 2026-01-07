@@ -35,7 +35,6 @@ export class CreateProjectComponent implements OnInit {
   projectId: string | null = null;
   originalProject: Project | null = null;
   canEditPlannedStartDate = true;
-  categories: ProjectTypeCategory[] = [];
   loadingCategories = false;
   minStartDate: string = '';
   maxStartDate: string = '';
@@ -72,7 +71,6 @@ export class CreateProjectComponent implements OnInit {
   ngOnInit(): void {
     this.setDateLimits();
     this.initForm();
-    this.loadCategories();
     this.detectModeAndLoadProject();
   }
 
@@ -96,7 +94,6 @@ export class CreateProjectComponent implements OnInit {
       projectCode: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(50)]],
       clientName: ['', Validators.maxLength(200)],
       location: [null, Validators.required],
-      projectCategoryId: [null, Validators.required],
       duration: [null, [Validators.required, Validators.min(1)]],
       plannedStartDate: ['', Validators.required],
       description: ['', Validators.maxLength(500)],
@@ -104,19 +101,7 @@ export class CreateProjectComponent implements OnInit {
     });
   }
 
-  private loadCategories(): void {
-    this.loadingCategories = true;
-    this.boxService.getAllProjectTypeCategories().subscribe({
-      next: (categories) => {
-        this.categories = categories;
-        this.loadingCategories = false;
-      },
-      error: (err: any) => {
-        console.error('Error loading categories:', err);
-        this.loadingCategories = false;
-      }
-    });
-  }
+ 
 
   private detectModeAndLoadProject(): void {
     const modeQuery = this.route.snapshot.queryParamMap.get('mode');
@@ -204,7 +189,6 @@ export class CreateProjectComponent implements OnInit {
       projectCode: project.code || '',
       clientName: project.clientName || '',
       location: locationValue,
-      projectCategoryId: project.categoryId || null,
       duration: duration,
       plannedStartDate: this.formatDateForInput(plannedStart),
       description: project.description || '',
@@ -252,7 +236,6 @@ export class CreateProjectComponent implements OnInit {
         projectName: formValue.projectName,
         clientName: formValue.clientName || undefined,
         location: formValue.location || 1,
-        projectCategoryId: formValue.projectCategoryId,
         duration: formValue.duration,
         plannedStartDate: formValue.plannedStartDate ? new Date(formValue.plannedStartDate).toISOString() : undefined,
         description: formValue.description || undefined,
@@ -275,9 +258,7 @@ export class CreateProjectComponent implements OnInit {
         if (compare(formValue.location, this.originalProject.location)) {
           projectData.location = formValue.location || 1;
         }
-        if (compare(formValue.projectCategoryId, this.originalProject.categoryId)) {
-          projectData.categoryId = formValue.projectCategoryId;
-        }
+       
         if (compare(formValue.description, this.originalProject.description)) {
           projectData.description = formValue.description || undefined;
         }
@@ -415,7 +396,6 @@ export class CreateProjectComponent implements OnInit {
       projectCode: 'Project code',
       clientName: 'Client name',
       location: 'Location',
-      projectCategoryId: 'Project category',
       duration: 'Duration',
       plannedStartDate: 'Planned start date',
       description: 'Description',

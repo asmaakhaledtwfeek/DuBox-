@@ -11,7 +11,6 @@ public record CreateProjectCommand(
     string ProjectName,
     string? ClientName,
     ProjectLocationEnum Location,
-    int ProjectCategoryId,
     int Duration,
     DateTime PlannedStartDate,
     string? Description,

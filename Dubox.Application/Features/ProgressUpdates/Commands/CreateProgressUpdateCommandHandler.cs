@@ -170,8 +170,8 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         {
             return Result.Failure<ProgressUpdateDto>(imagesProcessResult.Item2);
         }
-       
-        
+        await _unitOfWork.CompleteAsync(cancellationToken);
+
         var dto = progressUpdate.Adapt<ProgressUpdateDto>() with
         {
             BoxTag = boxActivity.Box.BoxTag,

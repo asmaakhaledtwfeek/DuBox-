@@ -11,7 +11,6 @@ public record UpdateProjectCommand(
     string? ProjectName,
     string? ClientName,
     ProjectLocationEnum? Location,
-    int? CategoryId,
     string? Description,
     string? BimLink,
     bool? IsActive,

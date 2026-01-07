@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { TeamService } from '../../../core/services/team.service';
@@ -11,7 +11,8 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
   standalone: true,
   imports: [CommonModule, RouterModule, HeaderComponent, SidebarComponent],
   templateUrl: './reactivate-members.component.html',
-  styleUrls: ['./reactivate-members.component.scss']
+  styleUrls: ['./reactivate-members.component.scss'],
+  encapsulation: ViewEncapsulation.None
 })
 export class ReactivateMembersComponent implements OnInit {
   team: Team | null = null;

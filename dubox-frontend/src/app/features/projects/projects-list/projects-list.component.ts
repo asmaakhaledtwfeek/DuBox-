@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, map, skip } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, map, filter } from 'rxjs/operators';
 import { forkJoin, Subscription } from 'rxjs';
 import { ProjectService } from '../../../core/services/project.service';
 import { BoxService } from '../../../core/services/box.service';
@@ -43,15 +43,18 @@ export class ProjectsListComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     console.log('🚀 Projects List Component Initialized');
     
-    // Check permissions immediately
+    // Check permissions immediately (they should be loaded by auth guard)
     this.checkPermissions();
     
-    // Subscribe to permission changes to update UI when permissions are loaded
+    // Subscribe to permission changes to update UI if permissions are reloaded
+    // Filter to only react when permissions are actually loaded (not just when array changes)
     this.subscriptions.push(
       this.permissionService.permissions$
-        .pipe(skip(1)) // Skip initial empty value
-        .subscribe(() => {
-          console.log('🔄 Permissions updated, re-checking create project permission');
+        .pipe(
+          filter(() => this.permissionService.arePermissionsLoaded())
+        )
+        .subscribe((permissions) => {
+          console.log('🔄 Permissions updated, re-checking create project permission', permissions);
           this.checkPermissions();
         })
     );

@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { PermissionService } from '../../../core/services/permission.service';
+import { switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-login',
@@ -21,6 +23,7 @@ export class LoginComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
+    private permissionService: PermissionService,
     private router: Router,
     private route: ActivatedRoute
   ) {
@@ -64,8 +67,15 @@ export class LoginComponent implements OnInit {
 
     const { email, password } = this.loginForm.value;
 
-    this.authService.login({ email, password }).subscribe({
-      next: () => {
+    this.authService.login({ email, password }).pipe(
+      // Wait for permissions to load before navigating
+      switchMap(() => {
+        console.log('✅ Login successful, loading permissions...');
+        return this.permissionService.initializePermissions();
+      })
+    ).subscribe({
+      next: (permissions) => {
+        console.log('✅ Permissions loaded, navigating to:', this.returnUrl);
         this.router.navigate([this.returnUrl]);
       },
       error: (error) => {

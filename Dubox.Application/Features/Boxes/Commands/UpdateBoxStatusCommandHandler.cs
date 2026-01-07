@@ -31,17 +31,17 @@ namespace Dubox.Application.Features.Boxes.Commands
 
         public async Task<Result<BoxDto>> Handle(UpdateBoxStatusCommand request, CancellationToken cancellationToken)
         {
+            // Check if user can modify data (Viewer role cannot)
+            var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
+            if (!canModify)
+            {
+                return Result.Failure<BoxDto>("Access denied. Viewer role has read-only access and cannot update box status.");
+            }
+
             var box = await _unitOfWork.Repository<Box>().GetByIdAsync(request.BoxId, cancellationToken);
 
             if (box == null)
                 return Result.Failure<BoxDto>("Box not found.");
-
-            // Check if user can edit the project this box belongs to
-            var canEditProject = await _visibilityService.CanEditProjectAsync(box.ProjectId, cancellationToken);
-            if (!canEditProject)
-            {
-                return Result.Failure<BoxDto>("Access denied. You can only edit boxes in projects you created or projects created by Project Managers/System Admins who created teams you are a member of.");
-            }
 
             // Check if project is archived
             var isArchived = await _visibilityService.IsProjectArchivedAsync(box.ProjectId, cancellationToken);

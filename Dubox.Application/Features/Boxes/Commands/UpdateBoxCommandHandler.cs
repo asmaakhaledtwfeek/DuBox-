@@ -37,18 +37,24 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
 
     public async Task<Result<BoxDto>> Handle(UpdateBoxCommand request, CancellationToken cancellationToken)
     {
+        // Check if user can modify data (Viewer role cannot)
+        var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
+        if (!canModify)
+        {
+            return Result.Failure<BoxDto>("Access denied. Viewer role has read-only access and cannot update boxes.");
+        }
+
         var box = await _unitOfWork.Repository<Box>()
             .GetByIdAsync(request.BoxId, cancellationToken);
 
         if (box == null)
             return Result.Failure<BoxDto>("Box not found");
 
-        // Check if user can edit the project this box belongs to
-        // This checks: user created the project, or project was created by PM/SA who created a team user is in
-        var canEditProject = await _visibilityService.CanEditProjectAsync(box.ProjectId, cancellationToken);
-        if (!canEditProject)
+        // Verify user has access to the project this box belongs to
+        var canAccessProject = await _visibilityService.CanAccessProjectAsync(box.ProjectId, cancellationToken);
+        if (!canAccessProject)
         {
-            return Result.Failure<BoxDto>("Access denied. You can only edit boxes in projects you created or projects created by Project Managers/System Admins who created teams you are a member of.");
+            return Result.Failure<BoxDto>("Access denied. You do not have permission to update this box.");
         }
 
         // Check if project is archived

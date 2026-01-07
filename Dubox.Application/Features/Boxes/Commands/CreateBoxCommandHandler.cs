@@ -47,17 +47,24 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
 
     public async Task<Result<BoxDto>> Handle(CreateBoxCommand request, CancellationToken cancellationToken)
     {
+        // Check if user can modify data (Viewer role cannot)
+        var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
+        if (!canModify)
+        {
+            return Result.Failure<BoxDto>("Access denied. Viewer role has read-only access and cannot create boxes.");
+        }
+
         var project = await _unitOfWork.Repository<Project>()
             .GetByIdAsync(request.ProjectId, cancellationToken);
 
         if (project == null)
             return Result.Failure<BoxDto>("Project not found");
 
-        // Check if user can edit the project
-        var canEditProject = await _visibilityService.CanEditProjectAsync(request.ProjectId, cancellationToken);
-        if (!canEditProject)
+        // Verify user has access to the project
+        var canAccessProject = await _visibilityService.CanAccessProjectAsync(request.ProjectId, cancellationToken);
+        if (!canAccessProject)
         {
-            return Result.Failure<BoxDto>("Access denied. You can only create boxes in projects you created or projects created by Project Managers/System Admins who created teams you are a member of.");
+            return Result.Failure<BoxDto>("Access denied. You do not have permission to create boxes for this project.");
         }
 
         // Check if project is archived

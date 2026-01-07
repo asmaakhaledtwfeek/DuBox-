@@ -32,17 +32,24 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
 
         public async Task<Result<WIRCheckpointDto>> Handle(ReviewWIRCheckPointCommand request, CancellationToken cancellationToken)
         {
+            // Check if user can modify data (Viewer role cannot)
+            var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
+            if (!canModify)
+            {
+                return Result.Failure<WIRCheckpointDto>("Access denied. Viewer role has read-only access and cannot review WIR checkpoints.");
+            }
+
             var wir = _unitOfWork.Repository<WIRCheckpoint>().
                 GetEntityWithSpec(new GetWIRCheckpointByIdSpecification(request.WIRId));
 
             if (wir is null)
                 return Result.Failure<WIRCheckpointDto>("WIRCheckpoint not found.");
 
-            // Check if user can edit the project this WIR checkpoint belongs to
-            var canEditProject = await _visibilityService.CanEditProjectAsync(wir.Box.ProjectId, cancellationToken);
-            if (!canEditProject)
+            // Verify user has access to the project this WIR checkpoint belongs to
+            var canAccessProject = await _visibilityService.CanAccessProjectAsync(wir.Box.ProjectId, cancellationToken);
+            if (!canAccessProject)
             {
-                return Result.Failure<WIRCheckpointDto>("Access denied. You can only review WIR checkpoints in projects you created or projects created by Project Managers/System Admins who created teams you are a member of.");
+                return Result.Failure<WIRCheckpointDto>("Access denied. You do not have permission to review this WIR checkpoint.");
             }
 
             // Check if project is archived

@@ -46,41 +46,19 @@ namespace Dubox.Application.Features.QualityIssues.Commands
             // Verify user has access to the project this quality issue belongs to
             var canAccessProject = await _visibilityService.CanAccessProjectAsync(issue.Box.ProjectId, cancellationToken);
             if (!canAccessProject)
-            {
                 return Result.Failure<QualityIssueDetailsDto>("Access denied. You do not have permission to modify this quality issue.");
-            }
 
-            // Check if project is archived
-            var isArchived = await _visibilityService.IsProjectArchivedAsync(issue.Box.ProjectId, cancellationToken);
-            if (isArchived)
-            {
-                return Result.Failure<QualityIssueDetailsDto>("Cannot update quality issues in an archived project. Archived projects are read-only.");
-            }
+            var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(issue.Box.ProjectId, "update quality issue", cancellationToken);
 
-            // Check if project is on hold
-            var isOnHold = await _visibilityService.IsProjectOnHoldAsync(issue.Box.ProjectId, cancellationToken);
-            if (isOnHold)
-            {
-                return Result.Failure<QualityIssueDetailsDto>("Cannot update quality issues in a project on hold. Projects on hold only allow project status changes.");
-            }
-
-            // Check if project is closed
-            var isClosed = await _visibilityService.IsProjectClosedAsync(issue.Box.ProjectId, cancellationToken);
-            if (isClosed)
-            {
-                return Result.Failure<QualityIssueDetailsDto>("Cannot update quality issues in a closed project. Closed projects only allow project status changes.");
-            }
-
+            if (!projectStatusValidation.IsSuccess)
+                return Result.Failure<QualityIssueDetailsDto>(projectStatusValidation.Error!);
+           
             // Check if box is dispatched or on hold - no actions allowed
             if (issue.Box.Status == BoxStatusEnum.Dispatched)
-            {
                 return Result.Failure<QualityIssueDetailsDto>("Cannot update quality issue. The box is dispatched and no actions are allowed on quality issues. Only viewing is permitted.");
-            }
             
             if (issue.Box.Status == BoxStatusEnum.OnHold)
-            {
                 return Result.Failure<QualityIssueDetailsDto>("Cannot update quality issue. The box is on hold and no actions are allowed on quality issues. Only viewing is permitted.");
-            }
 
             // Capture old values for audit log
             var oldStatus = issue.Status.ToString();

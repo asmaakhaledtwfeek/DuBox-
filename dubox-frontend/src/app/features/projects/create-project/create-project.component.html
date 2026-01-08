@@ -120,6 +120,7 @@
                     <rect x="7" y="7" width="10" height="10" rx="1"/>
                   </svg>
                   Project Code <span class="required">*</span>
+                  <span class="readonly-badge" *ngIf="isEdit">(Read-only)</span>
                 </label>
                 <input
                   id="projectCode"
@@ -128,7 +129,12 @@
                   class="form-control"
                   placeholder="e.g., DUB-2024-001"
                   [class.invalid]="isFieldInvalid('projectCode')"
+                  [disabled]="isEdit"
+                  [hidden]="isEdit"
                 />
+                <div *ngIf="isEdit" class="form-control readonly-field">
+                  {{ projectForm.get('projectCode')?.value }}
+                </div>
                 <div class="error-text" *ngIf="isFieldInvalid('projectCode')">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
@@ -137,6 +143,7 @@
                   </svg>
                   {{ getFieldError('projectCode') }}
                 </div>
+                <small class="field-hint" *ngIf="isEdit">Project code cannot be changed after creation.</small>
               </div>
 
               <!-- Client Name -->
@@ -174,9 +181,11 @@
                     <circle cx="12" cy="10" r="3"/>
                   </svg>
                   Location <span class="required">*</span>
+                  <span class="readonly-badge" *ngIf="isEdit">(Read-only)</span>
                 </label>
                 <select
                   id="location"
+                  *ngIf="!isEdit"
                   formControlName="location"
                   class="form-control"
                   [class.invalid]="isFieldInvalid('location')"
@@ -184,6 +193,11 @@
                   <option [ngValue]="null">Select Location</option>
                   <option *ngFor="let loc of locations" [ngValue]="loc.value">{{ loc.label }}</option>
                 </select>
+                <div *ngIf="isEdit" class="form-control readonly-field">
+                  {{ getLocationLabel(projectForm.get('location')?.value) }}
+                </div>
+                
+                <input type="hidden" formControlName="location" />
                 <div class="error-text" *ngIf="isFieldInvalid('location')">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="12" cy="12" r="10"/>
@@ -192,6 +206,7 @@
                   </svg>
                   {{ getFieldError('location') }}
                 </div>
+                <small class="field-hint" *ngIf="isEdit">Location cannot be changed after creation.</small>
               </div>
 
              

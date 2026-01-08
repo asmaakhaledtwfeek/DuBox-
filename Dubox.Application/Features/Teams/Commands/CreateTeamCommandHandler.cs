@@ -2,6 +2,7 @@ using Dubox.Application.DTOs;
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
 using Dubox.Domain.Interfaces;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
@@ -32,25 +33,24 @@ public class CreateTeamCommandHandler : IRequestHandler<CreateTeamCommand, Resul
 
     public async Task<Result<TeamDto>> Handle(CreateTeamCommand request, CancellationToken cancellationToken)
     {
-        // Authorization: Only SystemAdmin and ProjectManager can create teams
-        var canCreate = await _visibilityService.CanCreateProjectOrTeamAsync(cancellationToken);
+        var module = PermissionModuleEnum.Teams;
+        var action = PermissionActionEnum.Create;
+        var canCreate = await _visibilityService.CanPerformAsync(module,action, cancellationToken);
         if (!canCreate)
-        {
-            return Result.Failure<TeamDto>("Access denied. Only System Administrators and Project Managers can create teams.");
-        }
+            return Result.Failure<TeamDto>("Access denied. Only System Administrators and Project Managers can create Crew.");
 
         var teamExists = await _unitOfWork.Repository<Team>()
             .IsExistAsync(t => t.TeamCode == request.TeamCode, cancellationToken);
 
         if (teamExists)
-            return Result.Failure<TeamDto>("Team with this code already exists");
+            return Result.Failure<TeamDto>("Crew with this code already exists");
 
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
 
         var team = request.Adapt<Team>();
         team.IsActive = true;
         team.CreatedDate = DateTime.UtcNow;
-        team.CreatedBy = currentUserId; // Track who created this team
+        team.CreatedBy = currentUserId; 
 
         await _unitOfWork.Repository<Team>().AddAsync(team, cancellationToken);
         
@@ -64,14 +64,13 @@ public class CreateTeamCommandHandler : IRequestHandler<CreateTeamCommand, Resul
             NewValues = $"Code: {team.TeamCode}, Name: {team.TeamName}, DepartmentId: {team.DepartmentId}, Trade: {team.Trade ?? "N/A"}",
             ChangedBy = currentUserId,
             ChangedDate = DateTime.UtcNow,
-            Description = $"New Team '{team.TeamCode} - {team.TeamName}' created successfully."
+            Description = $"New Create '{team.TeamCode} - {team.TeamName}' created successfully."
         };
         await _unitOfWork.Repository<AuditLog>().AddAsync(auditLog, cancellationToken);
         
         await _unitOfWork.CompleteAsync(cancellationToken);
-        var createdTeam = _unitOfWork.Repository<Team>()
-              .GetWithSpec(new GetTeamWithIncludesSpecification(team.TeamId)).Data.First();
-        var response = _mapper.Map<TeamDto>(createdTeam);
+        
+        var response = _mapper.Map<TeamDto>(team);
         return Result.Success(response);
     }
 }

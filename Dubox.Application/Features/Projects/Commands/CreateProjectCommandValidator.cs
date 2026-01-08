@@ -11,10 +11,8 @@ namespace Dubox.Application.Features.Projects.Commands
             .NotEmpty()
             .WithMessage("Project code is required")
             .MaximumLength(50)
-            .WithMessage("Project code cannot exceed 50 characters")
-            //.Matches(@"^[a-zA-Z0-9-_]+$")
-            //.WithMessage("Project code can only contain letters, numbers, hyphens and underscores")
-            ;
+            .WithMessage("Project code cannot exceed 50 characters");
+
             RuleFor(x => x.ProjectName)
             .NotEmpty()
             .WithMessage("Project name is required")

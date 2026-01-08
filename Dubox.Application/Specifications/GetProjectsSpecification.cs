@@ -10,11 +10,8 @@ namespace Dubox.Application.Specifications
         public GetProjectsSpecification(GetAllProjectsQuery query, List<Guid>? accessibleProjectIds)
         {
             AddCriteria(p => p.IsActive);
-          
             if (accessibleProjectIds != null)
-            {
                 AddCriteria(p => accessibleProjectIds.Contains(p.ProjectId));
-            }
 
             if (!string.IsNullOrEmpty(query.SearchTerm))
             {

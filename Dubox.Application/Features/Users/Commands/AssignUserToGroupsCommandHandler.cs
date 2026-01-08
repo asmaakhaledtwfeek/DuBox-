@@ -29,6 +29,11 @@ public class AssignUserToGroupsCommandHandler : IRequestHandler<AssignUserToGrou
         {
             return Result.Failure("One or more Group were not found in the groups.");
         }
+
+        var userIsViewer = _unitOfWork.Repository<UserRole>().FindAsync(ur => ur.UserId == user.UserId && ur.Role.RoleName.ToLower() == "viewer").Result.FirstOrDefault();
+        if(userIsViewer != null)
+            return Result.Failure("Users with the Viewer role cannot be assigned to a group.");
+
         var existingUserGroups = _unitOfWork.Repository<UserGroup>()
             .Get()
             .Where(ug => ug.UserId == request.UserId)

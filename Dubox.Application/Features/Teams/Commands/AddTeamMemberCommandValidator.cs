@@ -22,18 +22,20 @@ public class AddTeamMemberCommandValidator : AbstractValidator<AddTeamMemberComm
             .NotEmpty().WithMessage("Employee Code is required.")
             .MaximumLength(50).WithMessage("Employee Code must not exceed 50 characters.");
 
-        // Email is required only if IsCreateAccount is true
+        // Email and TemporaryPassword is required only if IsCreateAccount is true
         RuleFor(x => x.Email)
             .NotEmpty().WithMessage("Email is required when creating an account.")
             .EmailAddress().WithMessage("A valid email address is required.")
             .MaximumLength(100).WithMessage("Email must not exceed 100 characters.")
             .When(x => x.IsCreateAccount);
 
-        // TemporaryPassword is required only if IsCreateAccount is true
         RuleFor(x => x.TemporaryPassword)
             .NotEmpty().WithMessage("Temporary Password is required when creating an account.")
-            .MinimumLength(6).WithMessage("Temporary Password must be at least 6 characters long.")
-            .MaximumLength(100).WithMessage("Temporary Password must not exceed 100 characters.")
+             .MinimumLength(8).WithMessage("Password must be at least 8 characters long.")
+            .MaximumLength(50).WithMessage("Password must not exceed 15 characters.")
+            .Matches(@"[A-Z]+").WithMessage("Password must contain at least one uppercase letter.")
+            .Matches(@"[a-z]+").WithMessage("Password must contain at least one lowercase letter.")
+            .Matches(@"[0-9]+").WithMessage("Password must contain at least one number.")
             .When(x => x.IsCreateAccount);
     }
 }

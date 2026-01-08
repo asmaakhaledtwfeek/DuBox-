@@ -4,9 +4,8 @@ using MediatR;
 
 namespace Dubox.Application.Features.Teams.Commands;
 
-public record CreateTeamGroupCommand(
+public record AssignTeamLeaderCommand(
     Guid TeamId,
-    string GroupTag,
-    string GroupType
-) : IRequest<Result<TeamGroupDto>>;
+    Guid TeamMemberId
+) : IRequest<Result<TeamDto>>;
 

@@ -8,6 +8,7 @@ using Dubox.Domain.Shared;
 using Mapster;
 using MapsterMapper;
 using MediatR;
+using System.Diagnostics;
 
 namespace Dubox.Application.Features.Boxes.Commands;
 
@@ -63,31 +64,13 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
         // Verify user has access to the project
         var canAccessProject = await _visibilityService.CanAccessProjectAsync(request.ProjectId, cancellationToken);
         if (!canAccessProject)
-        {
             return Result.Failure<BoxDto>("Access denied. You do not have permission to create boxes for this project.");
-        }
+        
+        var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(request.ProjectId, "create boxes", cancellationToken);
 
-        // Check if project is archived
-        var isArchived = await _visibilityService.IsProjectArchivedAsync(request.ProjectId, cancellationToken);
-        if (isArchived)
-        {
-            return Result.Failure<BoxDto>("Cannot create boxes for an archived project. Archived projects are read-only.");
-        }
-
-        // Check if project is on hold
-        var isOnHold = await _visibilityService.IsProjectOnHoldAsync(request.ProjectId, cancellationToken);
-        if (isOnHold)
-        {
-            return Result.Failure<BoxDto>("Cannot create boxes for a project on hold. Projects on hold only allow status changes.");
-        }
-
-        // Check if project is closed
-        var isClosed = await _visibilityService.IsProjectClosedAsync(request.ProjectId, cancellationToken);
-        if (isClosed)
-        {
-            return Result.Failure<BoxDto>("Cannot create boxes for a closed project. Closed projects only allow project status changes.");
-        }
-
+        if (!projectStatusValidation.IsSuccess)
+            return Result.Failure<BoxDto>(projectStatusValidation.Error!);
+        
         var boxExists = await _unitOfWork.Repository<Box>()
             .IsExistAsync(b => b.ProjectId == request.ProjectId && b.BoxTag == request.BoxTag, cancellationToken);
 

@@ -16,12 +16,6 @@ namespace Dubox.Application.Features.Projects.Commands
             RuleFor(x => x.ProjectId)
                 .NotEmpty().WithMessage("Project ID is required for updating the project.");
 
-            RuleFor(x => x.ProjectCode)
-                .MaximumLength(50).WithMessage("Project code cannot exceed 50 characters")
-                .Must(code => code?.ToLower() != "string")
-                .WithMessage("Project Code cannot be the default value 'string'.")
-                .When(x => !string.IsNullOrEmpty(x.ProjectCode));
-
             RuleFor(x => x.ProjectName)
                 .MaximumLength(200).WithMessage("Project name cannot exceed 200 characters")
                 .MinimumLength(3).WithMessage("Project name must be at least 3 characters")
@@ -33,10 +27,6 @@ namespace Dubox.Application.Features.Projects.Commands
                 .MaximumLength(200).WithMessage("Client name cannot exceed 200 characters")
                 .Must(n => n?.ToLower() != "string").WithMessage("Client Name cannot be the default value 'string'.")
                 .When(x => !string.IsNullOrEmpty(x.ClientName));
-
-            RuleFor(x => x.Location)
-                .Must(location => Enum.IsDefined(typeof(ProjectLocationEnum), location))
-                .WithMessage("Invalid value value.").When(x=>x.Location.HasValue);
 
             RuleFor(x => x.Description)
                 .MaximumLength(500).WithMessage("Description cannot exceed 500 characters")

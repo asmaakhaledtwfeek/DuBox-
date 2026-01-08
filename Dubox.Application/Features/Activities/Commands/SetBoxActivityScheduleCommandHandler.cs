@@ -32,49 +32,20 @@ namespace Dubox.Application.Features.Activities.Commands
 
             if (activity == null)
                 return Result.Failure<BoxActivityDto>("Box Activity not found.");
+            var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(activity.Box.ProjectId, "set activity schedule", cancellationToken);
 
-            // Check if project is archived
-            var isArchived = await _visibilityService.IsProjectArchivedAsync(activity.Box.ProjectId, cancellationToken);
-            if (isArchived)
-            {
-                return Result.Failure<BoxActivityDto>("Cannot set activity schedule in an archived project. Archived projects are read-only.");
-            }
+            if (!projectStatusValidation.IsSuccess)
+                return Result.Failure<BoxActivityDto>(projectStatusValidation.Error!);
 
-            // Check if project is on hold
-            var isOnHold = await _visibilityService.IsProjectOnHoldAsync(activity.Box.ProjectId, cancellationToken);
-            if (isOnHold)
-            {
-                return Result.Failure<BoxActivityDto>("Cannot set activity schedule in a project on hold. Projects on hold only allow project status changes.");
-            }
+            var boxStatusValidation = await _visibilityService.GetBoxStatusChecksAsync(activity.Box.BoxId, "set activity schedule", cancellationToken);
 
-            // Check if project is closed
-            var isClosed = await _visibilityService.IsProjectClosedAsync(activity.Box.ProjectId, cancellationToken);
-            if (isClosed)
-            {
-                return Result.Failure<BoxActivityDto>("Cannot set activity schedule in a closed project. Closed projects only allow project status changes.");
-            }
+            if (!boxStatusValidation.IsSuccess)
+                return Result.Failure<BoxActivityDto>(boxStatusValidation.Error!);
 
-            // Check if box is Dispatched - cannot perform any actions on activities
-            if (activity.Box.Status == BoxStatusEnum.Dispatched)
-            {
-                return Result.Failure<BoxActivityDto>("Cannot set activity schedule. The box is dispatched and no actions are allowed on boxes or activities.");
-            }
+            var activityStatusValidation = await _visibilityService.GetActivityStatusChecksAsync(activity.BoxActivityId, "set activity schedule", cancellationToken);
 
-            // Check if box is OnHold - cannot perform actions on activities
-            if (activity.Box.Status == BoxStatusEnum.OnHold)
-            {
-                return Result.Failure<BoxActivityDto>("Cannot set activity schedule. The box is on hold and no actions are allowed on activities. Only box status changes are allowed.");
-            }
-
-            // Check activity status - cannot perform actions if activity is Completed or OnHold
-            if (activity.Status == BoxStatusEnum.Completed)
-            {
-                return Result.Failure<BoxActivityDto>("Cannot set activity schedule. Activities in 'Completed' status cannot be modified.");
-            }
-            if (activity.Status == BoxStatusEnum.OnHold)
-            {
-                return Result.Failure<BoxActivityDto>("Cannot set activity schedule. Activities in 'OnHold' status cannot be modified. Please change the activity status first.");
-            }
+            if (!boxStatusValidation.IsSuccess)
+                return Result.Failure<BoxActivityDto>(activityStatusValidation.Error!);
 
             var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
             const string dateFormat = "yyyy-MM-dd HH:mm:ss";

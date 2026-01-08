@@ -26,13 +26,10 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
 
     public async Task<Result<ProjectDto>> Handle(UpdateProjectCommand request, CancellationToken cancellationToken)
     {
-        // Check if user can modify data (Viewer role cannot)
         var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
         if (!canModify)
-        {
             return Result.Failure<ProjectDto>("Access denied. Viewer role has read-only access and cannot update projects.");
-        }
-
+         
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
 
         var project = await _unitOfWork.Repository<Project>()
@@ -44,40 +41,12 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
         // Verify user has access to the project
         var canAccessProject = await _visibilityService.CanAccessProjectAsync(request.ProjectId, cancellationToken);
         if (!canAccessProject)
-        {
             return Result.Failure<ProjectDto>("Access denied. You do not have permission to update this project.");
-        }
+        var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(request.ProjectId, "edit project", cancellationToken);
 
-        // Check if project is archived - cannot edit archived projects
-        var isArchived = await _visibilityService.IsProjectArchivedAsync(request.ProjectId, cancellationToken);
-        if (isArchived)
-        {
-            return Result.Failure<ProjectDto>("Cannot edit project. Archived projects are read-only and cannot be modified.");
-        }
-
-        // Check if project is on hold - cannot edit projects on hold
-        var isOnHold = await _visibilityService.IsProjectOnHoldAsync(request.ProjectId, cancellationToken);
-        if (isOnHold)
-        {
-            return Result.Failure<ProjectDto>("Cannot edit project. Projects on hold cannot be modified. Only project status changes are allowed.");
-        }
-
-        // Check if project is closed - cannot edit closed projects
-        var isClosed = await _visibilityService.IsProjectClosedAsync(request.ProjectId, cancellationToken);
-        if (isClosed)
-        {
-            return Result.Failure<ProjectDto>("Cannot edit project. Closed projects cannot be modified. Only project status changes are allowed.");
-        }
-
-        if (!string.IsNullOrEmpty(request.ProjectCode) && project.ProjectCode != request.ProjectCode)
-        {
-            var codeExists = await _unitOfWork.Repository<Project>()
-                .IsExistAsync(p => p.ProjectCode == request.ProjectCode && p.ProjectId != request.ProjectId, cancellationToken);
-
-            if (codeExists)
-                return Result.Failure<ProjectDto>("Project with this code already exists.");
-        }
-
+        if (!projectStatusValidation.IsSuccess)
+            return Result.Failure<ProjectDto>(projectStatusValidation.Error!);
+       
         var oldProjectState = new
         {
             project.ProjectCode,
@@ -125,14 +94,10 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
 
     private void ApplyProjectUpdates(Project project, UpdateProjectCommand request)
     {
-        if (!string.IsNullOrEmpty(request.ProjectCode))
-            project.ProjectCode = request.ProjectCode;
         if (!string.IsNullOrEmpty(request.ProjectName))
             project.ProjectName = request.ProjectName;
         if (!string.IsNullOrEmpty(request.ClientName))
             project.ClientName = request.ClientName;
-        if (request.Location.HasValue)
-            project.Location = request.Location.Value;
         if (request.PlannedStartDate.HasValue)
             project.PlannedStartDate = request.PlannedStartDate;
         if (request.Duration.HasValue)

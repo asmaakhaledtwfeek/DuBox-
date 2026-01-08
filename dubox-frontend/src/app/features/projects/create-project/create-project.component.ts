@@ -194,6 +194,12 @@ export class CreateProjectComponent implements OnInit {
       description: project.description || '',
       bimLink: project.bimLink || ''
     });
+
+    // Disable projectCode and location fields in edit mode (they cannot be updated)
+    if (this.isEdit) {
+      this.projectForm.get('projectCode')?.disable();
+      this.projectForm.get('location')?.disable();
+    }
   }
 
   private getDurationValue(project: Project): number | null {
@@ -246,18 +252,20 @@ export class CreateProjectComponent implements OnInit {
       const compare = (newVal: any, oldVal: any) => newVal !== oldVal && !(newVal === undefined && oldVal === undefined);
 
       if (this.originalProject) {
-        if (compare(formValue.projectCode, this.originalProject.code)) {
-          projectData.projectCode = formValue.projectCode;
-        }
+        // Note: projectCode and location cannot be updated - they are read-only in edit mode
+        // if (compare(formValue.projectCode, this.originalProject.code)) {
+        //   projectData.projectCode = formValue.projectCode;
+        // }
         if (compare(formValue.projectName, this.originalProject.name)) {
           projectData.projectName = formValue.projectName;
         }
         if (compare(formValue.clientName, this.originalProject.clientName)) {
           projectData.clientName = formValue.clientName || undefined;
         }
-        if (compare(formValue.location, this.originalProject.location)) {
-          projectData.location = formValue.location || 1;
-        }
+        // Note: location cannot be updated - it is read-only in edit mode
+        // if (compare(formValue.location, this.originalProject.location)) {
+        //   projectData.location = formValue.location || 1;
+        // }
        
         if (compare(formValue.description, this.originalProject.description)) {
           projectData.description = formValue.description || undefined;
@@ -763,5 +771,9 @@ export class CreateProjectComponent implements OnInit {
   removeBoxFunction(index: number): void {
     this.boxFunctions.splice(index, 1);
   }
+  getLocationLabel(value: number | string): string {
+    return this.locations.find(l => l.value === value)?.label ?? '';
+  }
+  
 }
 

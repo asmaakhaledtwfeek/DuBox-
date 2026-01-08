@@ -31,7 +31,7 @@ public static class Bootstrap
         services.AddScoped<ISerialNumberService, SerialNumberService>();
         services.AddScoped<IImageProcessingService, ImageProcessingService>();
         services.AddScoped<IImageEntityConfigFactory, ImageEntityConfigFactory>();
-
+        services.AddScoped<IPermissionService, PermissionService>();
 
 
         return services;

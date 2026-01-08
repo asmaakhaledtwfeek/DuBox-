@@ -5,6 +5,7 @@ using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
+using System.Diagnostics;
 
 namespace Dubox.Application.Features.Projects.Commands;
 
@@ -30,31 +31,12 @@ public class UpdateCompressionStartDateCommandHandler : IRequestHandler<UpdateCo
         var project = await projectRepository.GetByIdAsync(request.ProjectId, cancellationToken);
 
         if (project is null)
-        {
             return Result.Failure<ProjectDto>("Project not found.");
-        }
+        var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(request.ProjectId, "set compression start date", cancellationToken);
 
-        // Check if project is archived - cannot set compression start date for archived projects
-        var isArchived = await _visibilityService.IsProjectArchivedAsync(request.ProjectId, cancellationToken);
-        if (isArchived)
-        {
-            return Result.Failure<ProjectDto>("Cannot set compression start date. Archived projects are read-only and cannot be modified.");
-        }
-
-        // Check if project is on hold - cannot set compression start date for projects on hold
-        var isOnHold = await _visibilityService.IsProjectOnHoldAsync(request.ProjectId, cancellationToken);
-        if (isOnHold)
-        {
-            return Result.Failure<ProjectDto>("Cannot set compression start date. Projects on hold cannot be modified. Only project status changes are allowed.");
-        }
-
-        // Check if project is closed - cannot set compression start date for closed projects
-        var isClosed = await _visibilityService.IsProjectClosedAsync(request.ProjectId, cancellationToken);
-        if (isClosed)
-        {
-            return Result.Failure<ProjectDto>("Cannot set compression start date. Closed projects cannot be modified. Only project status changes are allowed.");
-        }
-
+        if (!projectStatusValidation.IsSuccess)
+            return Result.Failure<ProjectDto>(projectStatusValidation.Error!);
+       
         var oldCompressionStartDate = project.CompressionStartDate;
         project.CompressionStartDate = request.CompressionStartDate;
         project.ModifiedDate = DateTime.UtcNow;

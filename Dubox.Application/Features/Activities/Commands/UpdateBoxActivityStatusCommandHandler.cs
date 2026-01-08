@@ -19,7 +19,7 @@ public class UpdateBoxActivityStatusCommandHandler : IRequestHandler<UpdateBoxAc
     private readonly IUnitOfWork _unitOfWork;
     private readonly ICurrentUserService _currentUserService;
     private readonly IProjectTeamVisibilityService _visibilityService;
-    
+
     public UpdateBoxActivityStatusCommandHandler(IUnitOfWork unitOfWork, ICurrentUserService currentUserService, IProjectTeamVisibilityService visibilityService)
     {
         _unitOfWork = unitOfWork;
@@ -29,44 +29,32 @@ public class UpdateBoxActivityStatusCommandHandler : IRequestHandler<UpdateBoxAc
 
     public async Task<Result<BoxActivityDto>> Handle(UpdateBoxActivityStatusCommand request, CancellationToken cancellationToken)
     {
+        var module = PermissionModuleEnum.Activities;
+        var action = PermissionActionEnum.UpdateStatus;
+        var canModify = await _visibilityService.CanPerformAsync(module, action, cancellationToken);
+        if (!canModify)
+            return Result.Failure<BoxActivityDto>("Access denied. You do not have permission to update activities.");
+
         var activity = _unitOfWork.Repository<BoxActivity>()
              .GetEntityWithSpec(new GetBoxActivityByIdSpecification(request.BoxActivityId));
 
         if (activity == null)
             return Result.Failure<BoxActivityDto>("Box Activity not found.");
 
-        // Check if project is archived
-        var isArchived = await _visibilityService.IsProjectArchivedAsync(activity.Box.ProjectId, cancellationToken);
-        if (isArchived)
-        {
-            return Result.Failure<BoxActivityDto>("Cannot update activity status in an archived project. Archived projects are read-only.");
-        }
+       
+        var canAccessProject = await _visibilityService.CanAccessProjectAsync(activity.Box.ProjectId, cancellationToken);
+        if (!canAccessProject)
+            return Result.Failure<BoxActivityDto>("Access denied. You do not have permission to modify activities in this project.");
 
-        // Check if project is on hold
-        var isOnHold = await _visibilityService.IsProjectOnHoldAsync(activity.Box.ProjectId, cancellationToken);
-        if (isOnHold)
-        {
-            return Result.Failure<BoxActivityDto>("Cannot update activity status in a project on hold. Projects on hold only allow project status changes.");
-        }
+        var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(activity.Box.ProjectId, "update activity status", cancellationToken);
 
-        // Check if project is closed
-        var isClosed = await _visibilityService.IsProjectClosedAsync(activity.Box.ProjectId, cancellationToken);
-        if (isClosed)
-        {
-            return Result.Failure<BoxActivityDto>("Cannot update activity status in a closed project. Closed projects only allow project status changes.");
-        }
+        if (!projectStatusValidation.IsSuccess)
+            return Result.Failure<BoxActivityDto>(projectStatusValidation.Error!);
 
-        // Check if box is Dispatched - cannot perform any actions on activities
-        if (activity.Box.Status == BoxStatusEnum.Dispatched)
-        {
-            return Result.Failure<BoxActivityDto>("Cannot update activity status. The box is dispatched and no actions are allowed on boxes or activities.");
-        }
+        var boxStatusValidation = await _visibilityService.GetBoxStatusChecksAsync(activity.Box.BoxId, "update activity status", cancellationToken);
 
-        // Check if box is OnHold - cannot perform actions on activities
-        if (activity.Box.Status == BoxStatusEnum.OnHold)
-        {
-            return Result.Failure<BoxActivityDto>("Cannot update activity status. The box is on hold and no actions are allowed on activities. Only box status changes are allowed.");
-        }
+        if (!boxStatusValidation.IsSuccess)
+            return Result.Failure<BoxActivityDto>(boxStatusValidation.Error!);
 
         var oldStatus = activity.Status;
         var newStatus = request.Status;
@@ -76,9 +64,7 @@ public class UpdateBoxActivityStatusCommandHandler : IRequestHandler<UpdateBoxAc
         // Validate activity status transitions based on business rules
         var statusValidationResult = ValidateActivityStatusTransition(oldStatus, newStatus, activity.ProgressPercentage);
         if (!statusValidationResult.IsValid)
-        {
             return Result.Failure<BoxActivityDto>(statusValidationResult.ErrorMessage);
-        }
 
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
         const string dateFormat = "yyyy-MM-dd HH:mm:ss";
@@ -89,18 +75,6 @@ public class UpdateBoxActivityStatusCommandHandler : IRequestHandler<UpdateBoxAc
         activity.WorkDescription = request.WorkDescription;
         activity.IssuesEncountered = request.IssuesEncountered;
 
-        if (newStatus != oldStatus)
-        {
-            if (newStatus == BoxStatusEnum.InProgress && !activity.ActualStartDate.HasValue)
-            {
-                activity.ActualStartDate = DateTime.UtcNow;
-                await UpdateParentBoxAndProjectStatusIfNecessary(activity, cancellationToken);
-            }
-            else if (newStatus != BoxStatusEnum.InProgress && activity.ActualEndDate.HasValue)
-            {
-                activity.ActualEndDate = null;
-            }
-        }
 
         activity.Status = newStatus;
         activity.ModifiedDate = DateTime.UtcNow;
@@ -130,113 +104,35 @@ public class UpdateBoxActivityStatusCommandHandler : IRequestHandler<UpdateBoxAc
 
     private (bool IsValid, string ErrorMessage) ValidateActivityStatusTransition(BoxStatusEnum oldStatus, BoxStatusEnum newStatus, decimal progressPercentage)
     {
-        // Rule 1: If activity status is "NotStarted" or "InProgress", user can only change status to "OnHold"
         if (oldStatus == BoxStatusEnum.NotStarted || oldStatus == BoxStatusEnum.InProgress)
         {
             if (newStatus != BoxStatusEnum.OnHold)
-            {
                 return (false, $"Cannot change activity status from {oldStatus} to {newStatus}. Activities in '{oldStatus}' status can only be changed to 'OnHold'.");
-            }
             return (true, string.Empty);
         }
 
-        // Rule 2: If activity status is "Completed", user cannot change status
         if (oldStatus == BoxStatusEnum.Completed)
-        {
             return (false, "Cannot change activity status. Activities in 'Completed' status cannot be modified.");
-        }
 
-        // Rule 3: If status is "OnHold", user can:
-        //   - Change to "NotStarted" if activity progress = 0
-        //   - Change to "InProgress" if activity progress < 100
         if (oldStatus == BoxStatusEnum.OnHold)
         {
             if (newStatus == BoxStatusEnum.NotStarted)
             {
                 if (progressPercentage != 0)
-                {
                     return (false, "Cannot change activity status from 'OnHold' to 'NotStarted'. This transition is only allowed when activity progress is 0%.");
-                }
                 return (true, string.Empty);
             }
             else if (newStatus == BoxStatusEnum.InProgress)
             {
                 if (progressPercentage >= 100)
-                {
                     return (false, "Cannot change activity status from 'OnHold' to 'InProgress'. This transition is only allowed when activity progress is less than 100%.");
-                }
                 return (true, string.Empty);
             }
             else
-            {
                 return (false, $"Cannot change activity status from 'OnHold' to '{newStatus}'. Activities on hold can only be changed to 'NotStarted' (if progress = 0%) or 'InProgress' (if progress < 100%).");
-            }
-        }
 
-        // Allow other transitions (if any) - this covers edge cases
+        }
         return (true, string.Empty);
     }
 
-    private async Task UpdateParentBoxAndProjectStatusIfNecessary(BoxActivity activity, CancellationToken cancellationToken)
-    {
-        var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
-        const string dateFormat = "yyyy-MM-dd HH:mm:ss";
-
-        var box = await _unitOfWork.Repository<Box>().GetByIdAsync(activity.BoxId, cancellationToken);
-
-        if (box != null && box.Status == BoxStatusEnum.NotStarted)
-        {
-            var boxOldStatus = box.Status.ToString();
-            var boxOldActualStartDateString = box.ActualStartDate?.ToString(dateFormat) ?? "N/A";
-
-            box.Status = BoxStatusEnum.InProgress;
-            box.ActualStartDate = DateTime.UtcNow;
-            _unitOfWork.Repository<Box>().Update(box);
-
-            var boxNewActualStartDateString = box.ActualStartDate?.ToString(dateFormat) ?? "N/A";
-
-            var boxLog = new AuditLog
-            {
-                TableName = nameof(Box),
-                RecordId = box.BoxId,
-                Action = "StatusAutoChange",
-                OldValues = $"Status: {boxOldStatus}, Start: {boxOldActualStartDateString}",
-                NewValues = $"Status: {BoxStatusEnum.InProgress.ToString()}, Start: {boxNewActualStartDateString}",
-                ChangedBy = currentUserId,
-                ChangedDate = DateTime.UtcNow,
-                Description = $"Box status automatically moved to InProgress due to activity {activity.BoxActivityId} start."
-            };
-            await _unitOfWork.Repository<AuditLog>().AddAsync(boxLog, cancellationToken);
-
-            var project = await _unitOfWork.Repository<Project>().GetByIdAsync(box.ProjectId, cancellationToken);
-
-            if (project != null)
-            {
-
-                var projectOldActualStartDateString = project.ActualStartDate?.ToString(dateFormat) ?? "N/A";
-                if (!project.ActualStartDate.HasValue)
-                {
-                    project.ActualStartDate = DateTime.UtcNow;
-
-                    _unitOfWork.Repository<Project>().Update(project);
-
-                    var projectNewActualStartDateString = project.ActualStartDate?.ToString(dateFormat) ?? "N/A";
-
-                    var projectLog = new AuditLog
-                    {
-                        TableName = nameof(Project),
-                        RecordId = project.ProjectId,
-                        Action = "ActualStartSet",
-                        OldValues = $"Start: {projectOldActualStartDateString}",
-                        NewValues = $"Start: {projectNewActualStartDateString}",
-                        ChangedBy = currentUserId,
-                        ChangedDate = DateTime.UtcNow,
-                        Description = $"Project start date automatically initialized due to Box {box.BoxId} start."
-                    };
-                    await _unitOfWork.Repository<AuditLog>().AddAsync(projectLog, cancellationToken);
-                }
-            }
-        }
-    }
 }
-

@@ -35,7 +35,6 @@ public class GetProgressUpdateByIdQueryHandler : IRequestHandler<GetProgressUpda
             BoxTag = update.Box.BoxTag,
             ActivityName = update.BoxActivity.ActivityMaster.ActivityName,
             UpdatedByName = update.UpdatedByUser.FullName ?? update.UpdatedByUser.Email,
-            Photo = update.Photo, // Keep for backward compatibility
             Images = new List<ProgressUpdateImageDto>() // Will be populated below
         };
 

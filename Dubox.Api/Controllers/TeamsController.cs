@@ -8,7 +8,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Dubox.Api.Controllers;
 
-public record AssignGroupLeaderRequest(Guid TeamMemberId);
 public record AddMembersToGroupRequest(List<Guid> TeamMemberIds);
 
 [ApiController]
@@ -113,9 +112,6 @@ public class TeamsController : ControllerBase
         return result.IsSuccess ? Ok(result) : NotFound(result);
     }
 
-    /// <summary>
-    /// Get all members of a team group
-    /// </summary>
     [HttpGet("team-groups/{id}/members")]
     [ProducesResponseType(typeof(TeamGroupMembersDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -125,54 +121,17 @@ public class TeamsController : ControllerBase
         return result.IsSuccess ? Ok(result) : NotFound(result);
     }
 
-    [HttpPost("team-groups")]
-    public async Task<IActionResult> CreateTeamGroup([FromBody] CreateTeamGroupCommand command, CancellationToken cancellationToken)
-    {
-        var result = await _mediator.Send(command, cancellationToken);
-        return result.IsSuccess ? Ok(result) : BadRequest(result);
-    }
 
-    [HttpPut("team-groups/{id}")]
+    [HttpPost("team/{teamId}/assign-leader")]
     [ProducesResponseType(typeof(TeamGroupDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> UpdateTeamGroup(
-        Guid id,
-        [FromBody] UpdateTeamGroupCommand command,
+    public async Task<IActionResult> AssignTeamLeader(
+        Guid teamId,
+        [FromBody] AssignTeamLeaderCommand request,
         CancellationToken cancellationToken)
     {
-        var updateCommand = command with { TeamGroupId = id };
-        var result = await _mediator.Send(updateCommand, cancellationToken);
-        return result.IsSuccess ? Ok(result) : BadRequest(result);
-    }
-
-    [HttpPost("team-groups/{groupId}/assign-leader")]
-    [ProducesResponseType(typeof(TeamGroupDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> AssignGroupLeader(
-        Guid groupId,
-        [FromBody] AssignGroupLeaderRequest request,
-        CancellationToken cancellationToken)
-    {
-        var command = new AssignGroupLeaderCommand(groupId, request.TeamMemberId);
-        var result = await _mediator.Send(command, cancellationToken);
-        return result.IsSuccess ? Ok(result) : BadRequest(result);
-    }
-
-    /// <summary>
-    /// Add members to a team group (System Admins, Project Managers, and Group Leaders only)
-    /// </summary>
-    [HttpPost("team-groups/{groupId}/add-members")]
-    [ProducesResponseType(typeof(TeamGroupDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> AddMembersToGroup(
-        Guid groupId,
-        [FromBody] AddMembersToGroupRequest request,
-        CancellationToken cancellationToken)
-    {
-        var command = new AddMembersToGroupCommand(groupId, request.TeamMemberIds);
+        var command = new AssignTeamLeaderCommand(teamId, request.TeamMemberId);
         var result = await _mediator.Send(command, cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }

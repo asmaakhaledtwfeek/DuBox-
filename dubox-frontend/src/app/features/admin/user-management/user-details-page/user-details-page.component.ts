@@ -40,6 +40,8 @@ export class UserDetailsPageComponent implements OnInit, OnDestroy {
   groupsModalOpen = false;
   roleSelection: string[] = [];
   groupSelection: string[] = [];
+  groupError: string | null = null;
+  roleError: string | null = null;
   private pendingRoleNames: string[] = [];
 
   private subs: Subscription[] = [];
@@ -104,6 +106,14 @@ export class UserDetailsPageComponent implements OnInit, OnDestroy {
     return this.permissionService.hasPermission('users', 'assign-groups');
   }
 
+  get userHasViewerRole(): boolean {
+    if (!this.user) return false;
+    const userRoles = this.user.allRoles || this.user.directRoles || [];
+    return userRoles.some((role: string) => 
+      typeof role === 'string' && role.toLowerCase() === 'viewer'
+    );
+  }
+
   openRolesModal(): void {
     this.ensureRolesLoaded(() => {
       const ids = this.user ? this.extractDirectRoleIds(this.user) : (this.userForm.get('roles')?.value || []);
@@ -114,6 +124,7 @@ export class UserDetailsPageComponent implements OnInit, OnDestroy {
 
   closeRolesModal(): void {
     this.rolesModalOpen = false;
+    this.roleError = null;
   }
 
   openGroupsModal(): void {
@@ -126,16 +137,76 @@ export class UserDetailsPageComponent implements OnInit, OnDestroy {
 
   closeGroupsModal(): void {
     this.groupsModalOpen = false;
+    this.groupError = null;
   }
 
   onRoleToggle(roleId: string, checked: boolean): void {
+    const role = this.roles.find(r => r.roleId === roleId);
+    if (!role) return;
+
+    // Clear any previous errors
+    this.roleError = null;
+
+    const isViewerRole = role.roleName.toLowerCase() === 'viewer';
+    const hasViewerSelected = this.roleSelection.some(id => {
+      const r = this.roles.find(role => role.roleId === id);
+      return r && r.roleName.toLowerCase() === 'viewer';
+    });
+    const hasOtherRolesSelected = this.roleSelection.some(id => {
+      const r = this.roles.find(role => role.roleId === id);
+      return r && r.roleName.toLowerCase() !== 'viewer';
+    });
+
     if (checked) {
+      // If trying to select Viewer role and there are already other roles selected
+      if (isViewerRole && hasOtherRolesSelected) {
+        this.roleError = 'You cannot assign Viewer role when other roles are selected. Please deselect other roles first.';
+        this.notify(this.roleError, 'error');
+        return;
+      }
+      
+      // If Viewer is already selected and trying to select another role
+      if (hasViewerSelected && !isViewerRole) {
+        this.roleError = 'You cannot assign another role when Viewer role is selected. Please deselect Viewer role first.';
+        this.notify(this.roleError, 'error');
+        return;
+      }
+
       if (!this.roleSelection.includes(roleId)) {
         this.roleSelection = [...this.roleSelection, roleId];
       }
     } else {
       this.roleSelection = this.roleSelection.filter(id => id !== roleId);
+      // Clear error when deselecting
+      this.roleError = null;
     }
+  }
+
+  isRoleDisabled(roleId: string): boolean {
+    const role = this.roles.find(r => r.roleId === roleId);
+    if (!role) return false;
+
+    const isViewerRole = role.roleName.toLowerCase() === 'viewer';
+    const hasViewerSelected = this.roleSelection.some(id => {
+      const r = this.roles.find(role => role.roleId === id);
+      return r && r.roleName.toLowerCase() === 'viewer';
+    });
+    const hasOtherRolesSelected = this.roleSelection.some(id => {
+      const r = this.roles.find(role => role.roleId === id);
+      return r && r.roleName.toLowerCase() !== 'viewer';
+    });
+
+    // Disable Viewer if other roles are selected
+    if (isViewerRole && hasOtherRolesSelected) {
+      return true;
+    }
+
+    // Disable other roles if Viewer is selected
+    if (!isViewerRole && hasViewerSelected) {
+      return true;
+    }
+
+    return false;
   }
 
   onGroupToggle(groupId: string, checked: boolean): void {
@@ -153,11 +224,30 @@ export class UserDetailsPageComponent implements OnInit, OnDestroy {
       this.closeRolesModal();
       return;
     }
+
+    // Clear any previous errors
+    this.roleError = null;
+
+    // Validate: Check if viewer role is selected with other roles
+    const selectedRoles = this.roleSelection
+      .map(id => this.roles.find(r => r.roleId === id))
+      .filter((r): r is NonNullable<typeof r> => !!r);
+    
+    const hasViewerRole = selectedRoles.some(r => r.roleName.toLowerCase() === 'viewer');
+    const hasOtherRoles = selectedRoles.some(r => r.roleName.toLowerCase() !== 'viewer');
+    
+    if (hasViewerRole && hasOtherRoles) {
+      this.roleError = 'Viewer role cannot be assigned with other roles. Please select either Viewer role only, or other roles without Viewer.';
+      this.notify(this.roleError, 'error');
+      return;
+    }
+
     this.saving = true;
     this.userService.assignRolesToUser(this.user.userId, this.roleSelection).pipe(
       finalize(() => (this.saving = false))
     ).subscribe({
       next: () => {
+        this.roleError = null;
         this.userForm.get('roles')?.setValue([...this.roleSelection], { emitEvent: false });
         this.notify('Roles updated successfully.');
         this.reloadUser();
@@ -172,17 +262,37 @@ export class UserDetailsPageComponent implements OnInit, OnDestroy {
       this.closeGroupsModal();
       return;
     }
+
+    // Clear any previous errors
+    this.groupError = null;
+
+    // Validate: Check if user has Viewer role - they cannot be assigned to groups
+    const userRoles = this.user.allRoles || this.user.directRoles || [];
+    const hasViewerRole = userRoles.some((role: string) => 
+      typeof role === 'string' && role.toLowerCase() === 'viewer'
+    );
+
+    if (hasViewerRole && this.groupSelection.length > 0) {
+      this.groupError = 'Users with the Viewer role cannot be assigned to groups.';
+      this.notify(this.groupError, 'error');
+      return;
+    }
+
     this.saving = true;
     this.userService.assignUserToGroups(this.user.userId, this.groupSelection).pipe(
       finalize(() => (this.saving = false))
     ).subscribe({
       next: () => {
+        this.groupError = null;
         this.userForm.get('groups')?.setValue([...this.groupSelection], { emitEvent: false });
         this.notify('Groups updated successfully.');
         this.reloadUser();
         this.closeGroupsModal();
       },
-      error: err => this.handleError(err)
+      error: err => {
+        this.groupError = this.extractErrorMessage(err);
+        this.handleError(err);
+      }
     });
   }
 
@@ -401,11 +511,32 @@ export class UserDetailsPageComponent implements OnInit, OnDestroy {
     }));
   }
 
+  private extractErrorMessage(error: any): string {
+    // Try to extract a meaningful error message from various response formats
+    if (error?.error?.message) {
+      return error.error.message;
+    }
+    if (error?.error?.errors && typeof error.error.errors === 'object') {
+      // Handle validation errors object
+      const firstError = Object.values(error.error.errors)[0];
+      if (Array.isArray(firstError) && firstError.length > 0) {
+        return firstError[0] as string;
+      }
+      if (typeof firstError === 'string') {
+        return firstError;
+      }
+    }
+    if (error?.message) {
+      return error.message;
+    }
+    if (typeof error?.error === 'string') {
+      return error.error;
+    }
+    return 'Something went wrong while processing your request.';
+  }
+
   private handleError(error: any): void {
-    const message =
-      error?.error?.message ||
-      error?.message ||
-      'Something went wrong while processing your request.';
+    const message = this.extractErrorMessage(error);
     this.notify(message, 'error');
   }
 }

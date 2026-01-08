@@ -48,42 +48,20 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             // Verify user has access to the project this WIR checkpoint belongs to
             var canAccessProject = await _visibilityService.CanAccessProjectAsync(wir.Box.ProjectId, cancellationToken);
             if (!canAccessProject)
-            {
                 return Result.Failure<WIRCheckpointDto>("Access denied. You do not have permission to review this WIR checkpoint.");
-            }
 
-            // Check if project is archived
-            var isArchived = await _visibilityService.IsProjectArchivedAsync(wir.Box.ProjectId, cancellationToken);
-            if (isArchived)
-            {
-                return Result.Failure<WIRCheckpointDto>("Cannot review WIR checkpoint. The project is archived and no actions are allowed on checkpoints. Only viewing is permitted.");
-            }
+            var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(wir.Box.ProjectId, "review WIR checkpoint", cancellationToken);
 
-            // Check if project is on hold
-            var isOnHold = await _visibilityService.IsProjectOnHoldAsync(wir.Box.ProjectId, cancellationToken);
-            if (isOnHold)
-            {
-                return Result.Failure<WIRCheckpointDto>("Cannot review WIR checkpoint. The project is on hold and no actions are allowed on checkpoints. Only viewing is permitted.");
-            }
-
-            // Check if project is closed
-            var isClosed = await _visibilityService.IsProjectClosedAsync(wir.Box.ProjectId, cancellationToken);
-            if (isClosed)
-            {
-                return Result.Failure<WIRCheckpointDto>("Cannot review WIR checkpoint. The project is closed and no actions are allowed on checkpoints. Only viewing is permitted.");
-            }
-
+            if (!projectStatusValidation.IsSuccess)
+                return Result.Failure<WIRCheckpointDto>(projectStatusValidation.Error!);
+           
             // Check if box is dispatched or on hold - no actions allowed
             if (wir.Box.Status == BoxStatusEnum.Dispatched)
-            {
                 return Result.Failure<WIRCheckpointDto>("Cannot review WIR checkpoint. The box is dispatched and no actions are allowed on checkpoints. Only viewing is permitted.");
-            }
             
             if (wir.Box.Status == BoxStatusEnum.OnHold)
-            {
                 return Result.Failure<WIRCheckpointDto>("Cannot review WIR checkpoint. The box is on hold and no actions are allowed on checkpoints. Only viewing is permitted.");
-            }
-
+            
             var invalidIds = request.Items
                 .Select(i => i.ChecklistItemId)
                 .Except(wir.ChecklistItems.Select(c => c.ChecklistItemId))

@@ -22,19 +22,15 @@ public class GetProjectByIdQueryHandler : IRequestHandler<GetProjectByIdQuery, R
 
     public async Task<Result<ProjectDto>> Handle(GetProjectByIdQuery request, CancellationToken cancellationToken)
     {
-        // Fetch project with Category navigation property included using specification
         var specification = new GetProjectByIdSpecification(request.ProjectId);
         var project = _unitOfWork.Repository<Project>().GetEntityWithSpec(specification);
 
         if (project == null)
             return Result.Failure<ProjectDto>("Project not found");
 
-        // Check if user has access to this project
         var canAccess = await _visibilityService.CanAccessProjectAsync(request.ProjectId, cancellationToken);
         if (!canAccess)
-        {
             return Result.Failure<ProjectDto>("Access denied. You do not have permission to view this project.");
-        }
 
         return Result.Success(project.Adapt<ProjectDto>());
     }

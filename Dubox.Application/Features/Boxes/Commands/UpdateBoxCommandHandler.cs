@@ -50,34 +50,15 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
         if (box == null)
             return Result.Failure<BoxDto>("Box not found");
 
-        // Verify user has access to the project this box belongs to
         var canAccessProject = await _visibilityService.CanAccessProjectAsync(box.ProjectId, cancellationToken);
         if (!canAccessProject)
-        {
             return Result.Failure<BoxDto>("Access denied. You do not have permission to update this box.");
-        }
 
-        // Check if project is archived
-        var isArchived = await _visibilityService.IsProjectArchivedAsync(box.ProjectId, cancellationToken);
-        if (isArchived)
-        {
-            return Result.Failure<BoxDto>("Cannot update boxes in an archived project. Archived projects are read-only.");
-        }
+        var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(box.ProjectId, "update boxes", cancellationToken);
 
-        // Check if project is on hold
-        var isOnHold = await _visibilityService.IsProjectOnHoldAsync(box.ProjectId, cancellationToken);
-        if (isOnHold)
-        {
-            return Result.Failure<BoxDto>("Cannot update boxes in a project on hold. Projects on hold only allow status changes.");
-        }
-
-        // Check if project is closed
-        var isClosed = await _visibilityService.IsProjectClosedAsync(box.ProjectId, cancellationToken);
-        if (isClosed)
-        {
-            return Result.Failure<BoxDto>("Cannot update boxes in a closed project. Closed projects only allow project status changes.");
-        }
-
+        if (!projectStatusValidation.IsSuccess)
+            return Result.Failure<BoxDto>(projectStatusValidation.Error!);
+       
         // Check if box is Dispatched - cannot perform any actions
         if (box.Status == BoxStatusEnum.Dispatched)
         {

@@ -22,18 +22,21 @@ public class AssignRolesToUserCommandHandler : IRequestHandler<AssignRolesToUser
         if (user == null)
             return Result.Failure("User not found");
 
-        var existingRolesCount = _unitOfWork.Repository<Role>()
-       .Get().Count(r => request.RoleIds.Contains(r.RoleId));
+        var existingRoles = _unitOfWork.Repository<Role>()
+       .Get().Where(r => request.RoleIds.Contains(r.RoleId)).ToList();
 
-        if (existingRolesCount != request.RoleIds.Count)
+        if (existingRoles.Count != request.RoleIds.Count)
         {
             return Result.Failure("One or more roles were not found in the roles.");
         }
+        var isViewer = existingRoles.Find(r => r.RoleName.ToLower() == "viewer");
+        if(isViewer!=null && request.RoleIds.Count>1)
+            return Result.Failure("You cannot assign another role when the Viewer role is selected.");
+
         var existingUserRoles = _unitOfWork.Repository<UserRole>()
             .Get()
             .Where(ur => ur.UserId == request.UserId)
             .ToList();
-
 
         _unitOfWork.Repository<UserRole>().DeleteRange(existingUserRoles);
 

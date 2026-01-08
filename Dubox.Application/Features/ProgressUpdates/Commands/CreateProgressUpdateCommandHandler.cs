@@ -313,24 +313,11 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
     }
     private async Task<Result> ValidateProgressUpdateAsync(CreateProgressUpdateCommand request, BoxActivity boxActivity, CancellationToken cancellationToken)
     {
-        // Check if project is archived (read-only)
-        var isArchived = await _visibilityService
-            .IsProjectArchivedAsync(boxActivity.Box.ProjectId, cancellationToken);
+        var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(boxActivity.Box.ProjectId, "create progress updates", cancellationToken);
 
-        if (isArchived)
-            return Result.Failure("Cannot create progress updates in an archived project. Archived projects are read-only.");
-
-        // Check if project is on hold
-        var isOnHold = await _visibilityService.IsProjectOnHoldAsync(boxActivity.Box.ProjectId, cancellationToken);
-
-        if (isOnHold)
-            return Result.Failure( "Cannot create progress updates in a project on hold. Projects on hold only allow project status changes.");
-
-        // Check if project is closed
-        var isClosed = await _visibilityService.IsProjectClosedAsync(boxActivity.Box.ProjectId, cancellationToken);
-        if (isClosed)
-            return Result.Failure("Cannot create progress updates in a closed project. Closed projects only allow project status changes.");
-
+        if (!projectStatusValidation.IsSuccess)
+            return Result.Failure(projectStatusValidation.Error!);
+        
         // Check if box is Dispatched
         if (boxActivity.Box.Status == BoxStatusEnum.Dispatched)
             return Result.Failure( "Cannot create progress update. The box is dispatched and no actions are allowed on boxes or activities.");

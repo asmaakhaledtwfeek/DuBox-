@@ -100,10 +100,16 @@ export class UserManagementComponent implements OnInit, OnDestroy {
   userModalOpen = false;
   groupModalOpen = false;
   roleModalOpen = false;
+  groupRolesModalOpen = false;
   modalMode: ModalMode = 'create';
   savingUser = false;
   savingGroup = false;
   savingRole = false;
+  savingGroupRoles = false;
+  selectedGroupForRoles: GroupDto | null = null;
+  groupRoleSelection: string[] = [];
+  groupRoleSearchTerm = '';
+  filteredGroupRoles: RoleDto[] = [];
   showTempPassword = false;
   alertMessage = '';
   alertType: 'success' | 'error' = 'success';
@@ -321,6 +327,105 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       });
     }
     passwordControl?.updateValueAndValidity({ emitEvent: false });
+  }
+
+  openGroupRolesModal(group: GroupDto): void {
+    // Permission check: Can edit groups
+    if (!this.canEditGroup) {
+      this.showAlert('You do not have permission to assign roles to groups.', 'error');
+      return;
+    }
+    
+    this.selectedGroupForRoles = group;
+    // Initialize role selection with current group roles, excluding Viewer role
+    this.groupRoleSelection = (group.roles || [])
+      .filter(r => r.roleName.toLowerCase() !== 'viewer')
+      .map(r => r.roleId)
+      .filter((id): id is string => !!id);
+    this.groupRoleSearchTerm = '';
+    this.filterGroupRoles();
+    this.groupRolesModalOpen = true;
+  }
+
+  filterGroupRoles(): void {
+    // Filter out Viewer role - it cannot be assigned to groups
+    const availableRoles = this.roles.filter(role => 
+      role.roleName.toLowerCase() !== 'viewer'
+    );
+
+    if (!this.groupRoleSearchTerm || this.groupRoleSearchTerm.trim() === '') {
+      this.filteredGroupRoles = [...availableRoles];
+    } else {
+      const searchTerm = this.groupRoleSearchTerm.toLowerCase().trim();
+      this.filteredGroupRoles = availableRoles.filter(role => 
+        role.roleName.toLowerCase().includes(searchTerm) ||
+        (role.description && role.description.toLowerCase().includes(searchTerm))
+      );
+    }
+  }
+
+  clearGroupRoleSearch(): void {
+    this.groupRoleSearchTerm = '';
+    this.filterGroupRoles();
+  }
+
+  closeGroupRolesModal(): void {
+    this.groupRolesModalOpen = false;
+    this.selectedGroupForRoles = null;
+    this.groupRoleSelection = [];
+    this.groupRoleSearchTerm = '';
+    this.filteredGroupRoles = [];
+  }
+
+  onGroupRoleToggle(roleId: string, checked: boolean): void {
+    const role = this.roles.find(r => r.roleId === roleId);
+    if (!role) return;
+
+    // Prevent assigning Viewer role to groups
+    const isViewerRole = role.roleName.toLowerCase() === 'viewer';
+    if (isViewerRole && checked) {
+      this.notify('Viewer role cannot be assigned to groups.', 'error');
+      return;
+    }
+
+    if (checked) {
+      if (!this.groupRoleSelection.includes(roleId)) {
+        this.groupRoleSelection = [...this.groupRoleSelection, roleId];
+      }
+    } else {
+      this.groupRoleSelection = this.groupRoleSelection.filter(id => id !== roleId);
+    }
+  }
+
+  applyGroupRoleSelection(): void {
+    if (!this.selectedGroupForRoles) {
+      this.closeGroupRolesModal();
+      return;
+    }
+
+    // Validate: Ensure Viewer role is not in selection
+    const selectedRoles = this.groupRoleSelection
+      .map(id => this.roles.find(r => r.roleId === id))
+      .filter((r: RoleDto | undefined): r is RoleDto => !!r);
+    
+    const hasViewerRole = selectedRoles.some((r: RoleDto) => r.roleName.toLowerCase() === 'viewer');
+    
+    if (hasViewerRole) {
+      this.notify('Viewer role cannot be assigned to groups.', 'error');
+      return;
+    }
+
+    this.savingGroupRoles = true;
+    this.groupService.assignRolesToGroup(this.selectedGroupForRoles.groupId, this.groupRoleSelection).pipe(
+      finalize(() => (this.savingGroupRoles = false))
+    ).subscribe({
+      next: () => {
+        this.notify('Roles assigned to group successfully.');
+        this.loadGroups();
+        this.closeGroupRolesModal();
+      },
+      error: (err: any) => this.handleError(err)
+    });
   }
 
   openGroupModal(mode: ModalMode, group?: GroupDto): void {
@@ -667,6 +772,8 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       })
     ).subscribe((roles: RoleDto[]) => {
       this.roles = roles;
+      // Initialize filteredGroupRoles excluding Viewer role
+      this.filteredGroupRoles = roles.filter(role => role.roleName.toLowerCase() !== 'viewer');
       this.applyRoleFilters();
     });
   }
@@ -767,6 +874,20 @@ export class UserManagementComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Validate: Check if viewer role is selected with other roles
+    if (roles && roles.length > 1) {
+      const selectedRoles = roles
+        .map((id: string) => this.roles.find(r => r.roleId === id))
+        .filter((r: RoleDto | undefined): r is RoleDto => !!r);
+      
+      const hasViewerRole = selectedRoles.some((r: RoleDto) => r.roleName.toLowerCase() === 'viewer');
+      
+      if (hasViewerRole) {
+        this.notify('You cannot assign another role when the Viewer role is selected.', 'error');
+        return;
+      }
+    }
+
     const payload: CreateUserRequest = {
       email,
       password,
@@ -797,6 +918,21 @@ export class UserManagementComponent implements OnInit, OnDestroy {
 
   private updateUser(): void {
     const { userId, fullName, email, departmentId, roles, groups, isActive } = this.userForm.value;
+    
+    // Validate: Check if viewer role is selected with other roles
+    if (roles && roles.length > 1) {
+      const selectedRoles = roles
+        .map((id: string) => this.roles.find(r => r.roleId === id))
+        .filter((r: RoleDto | undefined): r is RoleDto => !!r);
+      
+      const hasViewerRole = selectedRoles.some((r: RoleDto) => r.roleName.toLowerCase() === 'viewer');
+      
+      if (hasViewerRole) {
+        this.notify('You cannot assign another role when the Viewer role is selected.', 'error');
+        return;
+      }
+    }
+
     const payload: UpdateUserRequest = {
       userId,
       email,

@@ -4,7 +4,9 @@ using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
+using Mapster;
 using MediatR;
+using System.Diagnostics;
 
 namespace Dubox.Application.Features.QualityIssues.Commands
 {
@@ -30,104 +32,47 @@ namespace Dubox.Application.Features.QualityIssues.Commands
 
         public async Task<Result<QualityIssueDetailsDto>> Handle(CreateQualityIssueCommand request, CancellationToken cancellationToken)
         {
-            // Check if user can modify data (Viewer role cannot)
-            var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
-            if (!canModify)
-            {
+            var module = PermissionModuleEnum.QualityIssues;
+            var action = PermissionActionEnum.Create;
+            var canCreate = await _visibilityService.CanPerformAsync(module , action, cancellationToken);
+            if (!canCreate)
                 return Result.Failure<QualityIssueDetailsDto>("Access denied. Viewer role has read-only access and cannot create quality issues.");
-            }
 
-            // Verify the box exists
             var box = await _unitOfWork.Repository<Box>().GetByIdAsync(request.BoxId);
             if (box is null)
-            {
                 return Result.Failure<QualityIssueDetailsDto>("Box not found.");
-            }
 
             // Verify user has access to the project this box belongs to
             var canAccessProject = await _visibilityService.CanAccessProjectAsync(box.ProjectId, cancellationToken);
             if (!canAccessProject)
-            {
                 return Result.Failure<QualityIssueDetailsDto>("Access denied. You do not have permission to create quality issues for this box.");
-            }
 
-            // Check if project is archived
-            var isArchived = await _visibilityService.IsProjectArchivedAsync(box.ProjectId, cancellationToken);
-            if (isArchived)
-            {
-                return Result.Failure<QualityIssueDetailsDto>("Cannot create quality issues in an archived project. Archived projects are read-only.");
-            }
+            var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(box.ProjectId, "create quality issues", cancellationToken);
 
-            // Check if project is on hold
-            var isOnHold = await _visibilityService.IsProjectOnHoldAsync(box.ProjectId, cancellationToken);
-            if (isOnHold)
-            {
-                return Result.Failure<QualityIssueDetailsDto>("Cannot create quality issues in a project on hold. Projects on hold only allow project status changes.");
-            }
+            if (!projectStatusValidation.IsSuccess)
+                return Result.Failure<QualityIssueDetailsDto>(projectStatusValidation.Error!);
 
-            // Check if project is closed
-            var isClosed = await _visibilityService.IsProjectClosedAsync(box.ProjectId, cancellationToken);
-            if (isClosed)
-            {
-                return Result.Failure<QualityIssueDetailsDto>("Cannot create quality issues in a closed project. Closed projects only allow project status changes.");
-            }
+            var boxStatusValidation = await _visibilityService.GetBoxStatusChecksAsync(box.BoxId, "create quality issues", cancellationToken);
 
-            // Check if box is dispatched or on hold - no actions allowed
-            if (box.Status == BoxStatusEnum.Dispatched)
-            {
-                return Result.Failure<QualityIssueDetailsDto>("Cannot create quality issues. The box is dispatched and no actions are allowed. Only viewing is permitted.");
-            }
+            if (!boxStatusValidation.IsSuccess)
+                return Result.Failure<QualityIssueDetailsDto>(projectStatusValidation.Error!);
             
-            if (box.Status == BoxStatusEnum.OnHold)
-            {
-                return Result.Failure<QualityIssueDetailsDto>("Cannot create quality issues. The box is on hold and no actions are allowed. Only viewing is permitted.");
-            }
-
             var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId)
                 ? parsedUserId
                 : Guid.Empty;
+            var user = await _unitOfWork.Repository<User>().GetByIdAsync(currentUserId);
 
-            var reportedBy = string.Empty;
-            if (currentUserId != Guid.Empty)
-            {
-                var user = await _unitOfWork.Repository<User>().GetByIdAsync(currentUserId);
-                if (user != null)
-                {
-                    reportedBy = user.FullName;
-                }
-            }
-
-            var newIssue = new QualityIssue
-            {
-                BoxId = request.BoxId,
-                WIRId = null, // No WIR checkpoint - standalone quality issue
-                IssueType = request.IssueType,
-                Severity = request.Severity,
-                IssueDescription = request.IssueDescription,
-                AssignedToTeamId = request.AssignedTo,
-                AssignedToMemberId = request.AssignedToUserId,
-                DueDate = request.DueDate,
-                Status = QualityIssueStatusEnum.Open,
-                IssueDate = DateTime.UtcNow,
-                ReportedBy = reportedBy,
-                CreatedBy = currentUserId,
-            };
+            var newIssue = request.Adapt<QualityIssue>();
+          
+            newIssue.CreatedDate = DateTime.UtcNow;
+            newIssue.CreatedBy = currentUserId;
+            newIssue.WIRId = null; 
+            newIssue.Status = QualityIssueStatusEnum.Open;
+            newIssue.ReportedBy = user?.FullName?? string.Empty;
 
             await _unitOfWork.Repository<QualityIssue>().AddAsync(newIssue, cancellationToken);
-
-            try
-            {
-                await _unitOfWork.CompleteAsync(cancellationToken); // Save to ensure IssueId is available
-            }
-            catch (Microsoft.EntityFrameworkCore.DbUpdateException dbEx)
-            {
-                return Result.Failure<QualityIssueDetailsDto>($"Database error while saving quality issue: {dbEx.Message}. Inner exception: {dbEx.InnerException?.Message}");
-            }
-            catch (Exception ex)
-            {
-                return Result.Failure<QualityIssueDetailsDto>($"Error saving quality issue: {ex.Message}. Inner exception: {ex.InnerException?.Message}");
-            }
-
+            await _unitOfWork.CompleteAsync(cancellationToken);
+           
             (bool, string) imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<QualityIssueImage>(
                 newIssue.IssueId, 
                 request.Files, 
@@ -135,23 +80,8 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                 cancellationToken,
                 fileNames: request.FileNames);
             if (!imagesProcessResult.Item1)
-            {
                 return Result.Failure<QualityIssueDetailsDto>(imagesProcessResult.Item2);
-            }
-
-            try
-            {
-                await _unitOfWork.CompleteAsync(cancellationToken);
-            }
-            catch (Microsoft.EntityFrameworkCore.DbUpdateException dbEx)
-            {
-                return Result.Failure<QualityIssueDetailsDto>($"Database error while saving images: {dbEx.Message}. Inner exception: {dbEx.InnerException?.Message}. " +
-                    $"Make sure the QualityIssueImages table exists and the IssueId is valid.");
-            }
-            catch (Exception ex)
-            {
-                return Result.Failure<QualityIssueDetailsDto>($"Error saving images: {ex.Message}. Inner exception: {ex.InnerException?.Message}");
-            }
+            await _unitOfWork.CompleteAsync(cancellationToken);
 
             // Create audit log for quality issue creation
             var auditLog = new AuditLog
@@ -170,132 +100,7 @@ namespace Dubox.Application.Features.QualityIssues.Commands
 
             return Result.Success(new QualityIssueDetailsDto());
         }
-        private async Task<(bool, string)> ImagesProcessing(Guid issueId, List<byte[]>? files, List<string>? imageUrls, CancellationToken cancellationToken)
-        {
-            var imagesToAdd = new List<QualityIssueImage>();
-            int sequence = 0;
-
-            if (files != null && files.Count > 0)
-            {
-                try
-                {
-                    foreach (var fileBytes in files.Where(f => f != null && f.Length > 0))
-                    {
-                        var base64 = Convert.ToBase64String(fileBytes);
-                        var imageData = $"data:image/jpeg;base64,{base64}";
-
-                        var image = new QualityIssueImage
-                        {
-                            IssueId = issueId,
-                            ImageData = imageData,
-                            ImageType = "file",
-                            FileSize = fileBytes.Length,
-                            Sequence = sequence++,
-                            CreatedDate = DateTime.UtcNow
-                        };
-
-                        imagesToAdd.Add(image);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    return (false, $"Error processing uploaded files: {ex.Message}");
-                }
-            }
-
-            if (imageUrls != null && imageUrls.Count > 0)
-            {
-                foreach (var url in imageUrls.Where(url => !string.IsNullOrWhiteSpace(url)))
-                {
-                    try
-                    {
-                        string imageData;
-                        long fileSize;
-                        byte[]? imageBytes = null;
-                        string imageType = "url";
-                        var trimmedUrl = url.Trim();
-
-                        if (trimmedUrl.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase))
-                        {
-                            imageData = trimmedUrl;
-                            imageType = "file";
-                            var base64Index = trimmedUrl.IndexOf(',');
-                            if (base64Index >= 0 && base64Index < trimmedUrl.Length - 1)
-                            {
-                                var base64Part = trimmedUrl.Substring(base64Index + 1);
-                                imageBytes = Convert.FromBase64String(base64Part);
-                                fileSize = imageBytes.Length;
-                            }
-                            else
-                            {
-                                fileSize = 0;
-                            }
-
-                            var image = new QualityIssueImage
-                            {
-                                IssueId = issueId,
-                                ImageData = imageData,
-                                ImageType = imageType,
-                                FileSize = fileSize,
-                                Sequence = sequence++,
-                                CreatedDate = DateTime.UtcNow
-                            };
-
-                            imagesToAdd.Add(image);
-                        }
-                        else
-                        {
-                            imageBytes = await _imageProcessingService.DownloadImageFromUrlAsync(trimmedUrl, cancellationToken);
-
-                            if (imageBytes == null || imageBytes.Length == 0)
-                            {
-                                return (false, $"Failed to download image from URL: {trimmedUrl}");
-                            }
-
-                            var base64 = Convert.ToBase64String(imageBytes);
-                            imageData = $"data:image/jpeg;base64,{base64}";
-                            fileSize = imageBytes.Length;
-
-                            string? originalName = trimmedUrl.Length > 500 ? trimmedUrl.Substring(0, 500) : trimmedUrl;
-
-                            var image = new QualityIssueImage
-                            {
-                                IssueId = issueId,
-                                ImageData = imageData,
-                                ImageType = "url",
-                                OriginalName = originalName,
-                                FileSize = fileSize,
-                                Sequence = sequence++,
-                                CreatedDate = DateTime.UtcNow
-                            };
-
-                            imagesToAdd.Add(image);
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        return (false, $"Error processing image from URL '{url}': {ex.Message}");
-                    }
-                }
-            }
-
-            if (imagesToAdd.Count > 0)
-            {
-                try
-                {
-                    foreach (var image in imagesToAdd)
-                    {
-                        await _unitOfWork.Repository<QualityIssueImage>().AddAsync(image, cancellationToken);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    return (false, $"Error adding images to database: {ex.Message}. Inner exception: {ex.InnerException?.Message}");
-                }
-            }
-            return (true, string.Empty);
-
-        }
+       
     }
 
 }

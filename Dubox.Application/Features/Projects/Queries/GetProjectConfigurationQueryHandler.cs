@@ -1,4 +1,5 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
@@ -20,30 +21,21 @@ public class GetProjectConfigurationQueryHandler
         _context = context;
     }
 
-    public async Task<Result<ProjectConfigurationDto>> Handle(
-        GetProjectConfigurationQuery request, 
-        CancellationToken cancellationToken)
+    public async Task<Result<ProjectConfigurationDto>> Handle(GetProjectConfigurationQuery request,  CancellationToken cancellationToken)
     {
-        // Verify project exists
-        var project = await _unitOfWork.Repository<Project>()
-            .GetByIdAsync(request.ProjectId, cancellationToken);
+        var project = await _unitOfWork.Repository<Project>().GetByIdAsync(request.ProjectId, cancellationToken);
 
         if (project == null)
             return Result.Failure<ProjectConfigurationDto>("Project not found");
 
-        // Get all configurations
         var buildings = await _unitOfWork.Repository<ProjectBuilding>()
             .FindAsync(b => b.ProjectId == request.ProjectId, cancellationToken);
 
         var levels = await _unitOfWork.Repository<ProjectLevel>()
             .FindAsync(l => l.ProjectId == request.ProjectId, cancellationToken);
 
-        // Use DbContext directly to include SubTypes
-        var boxTypes = await _context.ProjectBoxTypes
-            .Where(t => t.ProjectId == request.ProjectId)
-            .Include(t => t.SubTypes)
-            .OrderBy(t => t.DisplayOrder)
-            .ToListAsync(cancellationToken);
+        var boxTypes=_unitOfWork.Repository<ProjectBoxType>()
+            .GetWithSpec(new GetProjectBoxTypesSpecification(project.ProjectId)).Data.ToList();
 
         var zones = await _unitOfWork.Repository<ProjectZone>()
             .FindAsync(z => z.ProjectId == request.ProjectId, cancellationToken);

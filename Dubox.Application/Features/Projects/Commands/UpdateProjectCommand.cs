@@ -7,10 +7,8 @@ namespace Dubox.Application.Features.Projects.Commands;
 
 public record UpdateProjectCommand(
     Guid ProjectId,
-    string? ProjectCode,
     string? ProjectName,
     string? ClientName,
-    ProjectLocationEnum? Location,
     string? Description,
     string? BimLink,
     bool? IsActive,

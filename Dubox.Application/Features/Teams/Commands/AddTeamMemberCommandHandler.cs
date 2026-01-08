@@ -2,6 +2,7 @@ using Dubox.Application.DTOs;
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
 using Dubox.Domain.Interfaces;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
@@ -34,71 +35,83 @@ public class AddTeamMemberCommandHandler : IRequestHandler<AddTeamMemberCommand,
 
     public async Task<Result<TeamMemberDto>> Handle(AddTeamMemberCommand request, CancellationToken cancellationToken)
     {
-        var canCreate = await _visibilityService.CanCreateProjectOrTeamAsync(cancellationToken);
-        if (!canCreate)
-        {
-            return Result.Failure<TeamMemberDto>("Access denied. Only System Administrators and Project Managers can add team members.");
-        }
+        var module = PermissionModuleEnum.Teams;
+        var action = PermissionActionEnum.ManageMembers;
+        var canAddMember = await _visibilityService.CanPerformAsync(module,action,cancellationToken);
+        if (!canAddMember)
+            return Result.Failure<TeamMemberDto>("Access denied. Only System Administrators and Project Managers can add Crew members.");
 
         var team = await _unitOfWork.Repository<Team>().GetByIdAsync(request.TeamId, cancellationToken);
         if (team == null)
-            return Result.Failure<TeamMemberDto>("Team not found.");
+            return Result.Failure<TeamMemberDto>("Crew not found.");
 
         if (!team.IsActive)
-            return Result.Failure<TeamMemberDto>("Cannot add members to an inactive team.");
+            return Result.Failure<TeamMemberDto>("Cannot add members to an inactive Crew.");
 
         var employeeCodeExists = await _unitOfWork.Repository<TeamMember>()
             .IsExistAsync(tm => tm.TeamId == request.TeamId && tm.EmployeeCode == request.EmployeeCode, cancellationToken);
 
         if (employeeCodeExists)
-            return Result.Failure<TeamMemberDto>("This employee code already exists in this team.");
+            return Result.Failure<TeamMemberDto>("This employee code already exists in this Crew.");
 
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
         Guid? userId = null;
 
-        // Create user account if requested
-        if (request.IsCreateAccount)
+        if(request.IsCreateAccount)
         {
-            var existingUser =  _unitOfWork.Repository<User>()
-                .FindAsync(u => u.Email == request.Email!, cancellationToken).Result.FirstOrDefault();
-
-            if (existingUser != null)
-                    return Result.Failure<TeamMemberDto>("Cannot add this User, this email elready exist for another user .");
-            
-                var newUser = new User
-                {
-                    Email = request.Email!,
-                    PasswordHash = _passwordHasher.HashPassword(request.TemporaryPassword!),
-                    FullName = $"{request.FirstName} {request.LastName}",
-                    DepartmentId = team.DepartmentId,
-                    IsActive = true,
-                    CreatedDate = DateTime.UtcNow
-                };
-
-                await _unitOfWork.Repository<User>().AddAsync(newUser, cancellationToken);
-                await _unitOfWork.CompleteAsync(cancellationToken);
-                userId = newUser.UserId;
-
-                // Create audit log for user creation
-                var userAuditLog = new AuditLog
-                {
-                    TableName = nameof(User),
-                    RecordId = newUser.UserId,
-                    Action = "Creation",
-                    OldValues = "N/A (New Entity)",
-                    NewValues = $"Email: {newUser.Email}, FullName: {newUser.FullName}, DepartmentId: {newUser.DepartmentId}",
-                    ChangedBy = currentUserId,
-                    ChangedDate = DateTime.UtcNow,
-                    Description = $"New User account '{newUser.Email}' created for team member."
-                };
-                await _unitOfWork.Repository<AuditLog>().AddAsync(userAuditLog, cancellationToken);
-            
+           await CreateUserWithAuditAsync(request,team.DepartmentId,currentUserId,cancellationToken);
         }
-
         // Create team member
+        var response = await CreateTeamMemberWithAuditAsync(request, team, userId, currentUserId, cancellationToken);
+        var successMessage = request.IsCreateAccount
+            ? $"Crew member added successfully with user account created."
+            : $"Crew member added successfully without user account.";
+
+        return Result.Success(response, successMessage);
+    }
+
+    private async Task<Result<Guid>> CreateUserWithAuditAsync(AddTeamMemberCommand request,Guid departmentId,Guid currentUserId, CancellationToken cancellationToken)
+    {
+        var existingUser = (await _unitOfWork.Repository<User>()
+            .FindAsync(u => u.Email == request.Email!, cancellationToken))
+            .FirstOrDefault();
+
+        if (existingUser != null)
+            return Result.Failure<Guid>("Cannot add this User, this email already exists for another user.");
+
+        var newUser = new User
+        {
+            Email = request.Email!,
+            PasswordHash = _passwordHasher.HashPassword(request.TemporaryPassword!),
+            FullName = $"{request.FirstName} {request.LastName}",
+            DepartmentId = departmentId,
+            IsActive = true,
+            CreatedDate = DateTime.UtcNow
+        };
+
+        await _unitOfWork.Repository<User>().AddAsync(newUser, cancellationToken);
+        await _unitOfWork.CompleteAsync(cancellationToken);
+
+        var userAuditLog = new AuditLog
+        {
+            TableName = nameof(User),
+            RecordId = newUser.UserId,
+            Action = "Creation",
+            OldValues = "N/A (New Entity)",
+            NewValues = $"Email: {newUser.Email}, FullName: {newUser.FullName}, DepartmentId: {newUser.DepartmentId}",
+            ChangedBy = currentUserId,
+            ChangedDate = DateTime.UtcNow,
+            Description = $"New User account '{newUser.Email}' created for Crew member."
+        };
+        await _unitOfWork.Repository<AuditLog>().AddAsync(userAuditLog, cancellationToken);
+        return Result.Success(newUser.UserId);
+    }
+   
+    private async Task<TeamMemberDto> CreateTeamMemberWithAuditAsync(AddTeamMemberCommand request,Team team, Guid? userId, Guid currentUserId, CancellationToken cancellationToken)
+    {
         var teamMember = new TeamMember
         {
-            TeamId = request.TeamId,
+            TeamId = team.TeamId,
             UserId = userId,
             EmployeeCode = request.EmployeeCode,
             EmployeeName = $"{request.FirstName} {request.LastName}",
@@ -107,46 +120,35 @@ public class AddTeamMemberCommandHandler : IRequestHandler<AddTeamMemberCommand,
 
         await _unitOfWork.Repository<TeamMember>().AddAsync(teamMember, cancellationToken);
 
-        // Create audit log for team member
         var teamMemberAuditLog = new AuditLog
         {
             TableName = nameof(TeamMember),
             RecordId = teamMember.TeamMemberId,
             Action = "Creation",
             OldValues = "N/A (New Entity)",
-            NewValues = $"TeamId: {teamMember.TeamId}, EmployeeName: {teamMember.EmployeeName}, EmployeeCode: {teamMember.EmployeeCode}, UserId: {teamMember.UserId?.ToString() ?? "N/A"}",
+            NewValues = $"CrewId: {teamMember.TeamId}, EmployeeName: {teamMember.EmployeeName}, EmployeeCode: {teamMember.EmployeeCode}, UserId: {teamMember.UserId?.ToString() ?? "N/A"}",
             ChangedBy = currentUserId,
             ChangedDate = DateTime.UtcNow,
-            Description = $"New Team Member '{teamMember.EmployeeName}' (Code: {teamMember.EmployeeCode}) added to team '{team.TeamName}'."
+            Description = $"New Crew Member '{teamMember.EmployeeName}' (Code: {teamMember.EmployeeCode}) added to Crew '{team.TeamName}'."
         };
         await _unitOfWork.Repository<AuditLog>().AddAsync(teamMemberAuditLog, cancellationToken);
-
         await _unitOfWork.CompleteAsync(cancellationToken);
-
-        // Retrieve the created team member with navigation properties
-        var createdTeamMember =  _unitOfWork.Repository<TeamMember>()
-            .FindAsync(tm => tm.TeamMemberId == teamMember.TeamMemberId, cancellationToken).Result.FirstOrDefault();
-
-        // Map to DTO
+        
         var response = new TeamMemberDto
         {
-            TeamMemberId = createdTeamMember!.TeamMemberId,
-            UserId = createdTeamMember.UserId ?? Guid.Empty,
-            TeamId = createdTeamMember.TeamId,
+            TeamMemberId = teamMember!.TeamMemberId,
+            UserId = teamMember.UserId ?? Guid.Empty,
+            TeamId = teamMember.TeamId,
             TeamCode = team.TeamCode,
             TeamName = team.TeamName,
             Email = request.IsCreateAccount ? request.Email! : string.Empty,
-            FullName = createdTeamMember.EmployeeName,
-            EmployeeCode = createdTeamMember.EmployeeCode ?? string.Empty,
-            EmployeeName = createdTeamMember.EmployeeName,
-            MobileNumber = createdTeamMember.MobileNumber
+            FullName = teamMember.EmployeeName,
+            EmployeeCode = teamMember.EmployeeCode ?? string.Empty,
+            EmployeeName = teamMember.EmployeeName,
+            MobileNumber = teamMember.MobileNumber
         };
-
-        var successMessage = request.IsCreateAccount
-            ? $"Team member added successfully with user account created."
-            : $"Team member added successfully without user account.";
-
-        return Result.Success(response, successMessage);
+        return response;
     }
+
 }
 

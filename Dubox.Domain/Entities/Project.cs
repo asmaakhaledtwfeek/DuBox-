@@ -46,7 +46,7 @@ public class Project
     public bool IsActive { get; set; } = true;
     public DateTime CreatedDate { get; set; }
     public DateTime? ModifiedDate { get; set; }
-    public string? CreatedBy { get; set; }
+    public Guid? CreatedBy { get; set; }
     public string? ModifiedBy { get; set; }
     public DateTime? DeletedDated { get; set; }
     public DateTime? ArchivedDated { get; set; }

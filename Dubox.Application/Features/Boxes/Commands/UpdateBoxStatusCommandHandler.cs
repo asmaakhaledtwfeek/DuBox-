@@ -42,28 +42,11 @@ namespace Dubox.Application.Features.Boxes.Commands
 
             if (box == null)
                 return Result.Failure<BoxDto>("Box not found.");
+            var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(box.ProjectId, "update boxes", cancellationToken);
 
-            // Check if project is archived
-            var isArchived = await _visibilityService.IsProjectArchivedAsync(box.ProjectId, cancellationToken);
-            if (isArchived)
-            {
-                return Result.Failure<BoxDto>("Cannot update box status in an archived project. Archived projects are read-only.");
-            }
-
-            // Check if project is on hold
-            var isOnHold = await _visibilityService.IsProjectOnHoldAsync(box.ProjectId, cancellationToken);
-            if (isOnHold)
-            {
-                return Result.Failure<BoxDto>("Cannot update box status in a project on hold. Projects on hold only allow project status changes.");
-            }
-
-            // Check if project is closed
-            var isClosed = await _visibilityService.IsProjectClosedAsync(box.ProjectId, cancellationToken);
-            if (isClosed)
-            {
-                return Result.Failure<BoxDto>("Cannot update box status in a closed project. Closed projects only allow project status changes.");
-            }
-
+            if (!projectStatusValidation.IsSuccess)
+                return Result.Failure<BoxDto>(projectStatusValidation.Error!);
+           
             // Check if box is Dispatched - cannot change status
             if (box.Status == BoxStatusEnum.Dispatched)
             {

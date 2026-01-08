@@ -36,49 +36,20 @@ public class IssueMaterialToActivityCommandHandler : IRequestHandler<IssueMateri
         var box = await _unitOfWork.Repository<Box>().GetByIdAsync(activity.BoxId, cancellationToken);
         if (box == null)
             return Result.Failure<MaterialTransactionDto>("Box not found.");
+        var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(activity.Box.ProjectId, "issue materials to activity", cancellationToken);
 
-        // Check if project is archived
-        var isArchived = await _visibilityService.IsProjectArchivedAsync(box.ProjectId, cancellationToken);
-        if (isArchived)
-        {
-            return Result.Failure<MaterialTransactionDto>("Cannot issue materials in an archived project. Archived projects are read-only.");
-        }
+        if (!projectStatusValidation.IsSuccess)
+            return Result.Failure<MaterialTransactionDto>(projectStatusValidation.Error!);
 
-        // Check if project is on hold
-        var isOnHold = await _visibilityService.IsProjectOnHoldAsync(box.ProjectId, cancellationToken);
-        if (isOnHold)
-        {
-            return Result.Failure<MaterialTransactionDto>("Cannot issue materials in a project on hold. Projects on hold only allow project status changes.");
-        }
+        var boxStatusValidation = await _visibilityService.GetBoxStatusChecksAsync(activity.Box.BoxId, "issue materials to activity", cancellationToken);
 
-        // Check if project is closed
-        var isClosed = await _visibilityService.IsProjectClosedAsync(box.ProjectId, cancellationToken);
-        if (isClosed)
-        {
-            return Result.Failure<MaterialTransactionDto>("Cannot issue materials in a closed project. Closed projects only allow project status changes.");
-        }
+        if (!boxStatusValidation.IsSuccess)
+            return Result.Failure<MaterialTransactionDto>(boxStatusValidation.Error!);
 
-        // Check if box is Dispatched - cannot perform any actions on activities
-        if (box.Status == BoxStatusEnum.Dispatched)
-        {
-            return Result.Failure<MaterialTransactionDto>("Cannot issue materials to activity. The box is dispatched and no actions are allowed on boxes or activities.");
-        }
+        var activityStatusValidation = await _visibilityService.GetActivityStatusChecksAsync(activity.Box.BoxId, "issue materials to activity", cancellationToken);
 
-        // Check if box is OnHold - cannot perform actions on activities
-        if (box.Status == BoxStatusEnum.OnHold)
-        {
-            return Result.Failure<MaterialTransactionDto>("Cannot issue materials to activity. The box is on hold and no actions are allowed on activities. Only box status changes are allowed.");
-        }
-
-        // Check activity status - cannot perform actions if activity is Completed or OnHold
-        if (activity.Status == BoxStatusEnum.Completed)
-        {
-            return Result.Failure<MaterialTransactionDto>("Cannot issue materials to activity. Activities in 'Completed' status cannot be modified.");
-        }
-        if (activity.Status == BoxStatusEnum.OnHold)
-        {
-            return Result.Failure<MaterialTransactionDto>("Cannot issue materials to activity. Activities in 'OnHold' status cannot be modified. Please change the activity status first.");
-        }
+        if (!boxStatusValidation.IsSuccess)
+            return Result.Failure<MaterialTransactionDto>(activityStatusValidation.Error!);
 
         var oldCurrentStock = material.CurrentStock ?? 0;
         var oldAllocatedStock = material.AllocatedStock ?? 0;
@@ -105,19 +76,11 @@ public class IssueMaterialToActivityCommandHandler : IRequestHandler<IssueMateri
 
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
 
-        var transaction = new MaterialTransaction
-        {
-            MaterialId = request.MaterialId,
-            BoxActivityId = request.BoxActivityId,
-            BoxId = activity.BoxId,
-            TransactionType = MaterialTransactionTypeEnum.Issue,
-            Quantity = request.Quantity,
-            Reference = request.Reference,
-            PerformedById = currentUserId,
-            TransactionDate = DateTime.UtcNow
-        };
+        var transaction= request.Adapt<MaterialTransaction>();
+        transaction.TransactionType = MaterialTransactionTypeEnum.Issue;
+        transaction.TransactionDate= DateTime.UtcNow;
         await _unitOfWork.Repository<MaterialTransaction>().AddAsync(transaction, cancellationToken);
-
+        
         material.CurrentStock = oldCurrentStock - request.Quantity;
         material.AllocatedStock = oldAllocatedStock - request.Quantity;
         _unitOfWork.Repository<Material>().Update(material);

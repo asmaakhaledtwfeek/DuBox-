@@ -1,3 +1,4 @@
+using Dubox.Application.DTOs;
 using Dubox.Application.Services;
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
@@ -6,6 +7,7 @@ using Dubox.Domain.Enums;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using MediatR;
+using System.Diagnostics;
 
 namespace Dubox.Application.Features.Boxes.Commands;
 
@@ -36,27 +38,11 @@ public class DeleteBoxCommandHandler : IRequestHandler<DeleteBoxCommand, Result<
             if (box == null)
                 return Result.Failure<bool>("Box not found");
 
-            // Check if project is archived
-            var isArchived = await _visibilityService.IsProjectArchivedAsync(box.ProjectId, cancellationToken);
-            if (isArchived)
-            {
-                return Result.Failure<bool>("Cannot delete boxes from an archived project. Archived projects are read-only.");
-            }
+            var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(box.ProjectId, "delete boxes", cancellationToken);
 
-            // Check if project is on hold
-            var isOnHold = await _visibilityService.IsProjectOnHoldAsync(box.ProjectId, cancellationToken);
-            if (isOnHold)
-            {
-                return Result.Failure<bool>("Cannot delete boxes from a project on hold. Projects on hold only allow status changes.");
-            }
-
-            // Check if project is closed
-            var isClosed = await _visibilityService.IsProjectClosedAsync(box.ProjectId, cancellationToken);
-            if (isClosed)
-            {
-                return Result.Failure<bool>("Cannot delete boxes from a closed project. Closed projects only allow project status changes.");
-            }
-
+            if (!projectStatusValidation.IsSuccess)
+                return Result.Failure<bool>(projectStatusValidation.Error!);
+           
             // Check if box is Dispatched - cannot delete
             if (box.Status == BoxStatusEnum.Dispatched)
             {

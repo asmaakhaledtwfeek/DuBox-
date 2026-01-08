@@ -27,60 +27,36 @@ namespace Dubox.Application.Features.Activities.Commands
 
         public async Task<Result<AssignBoxActivityTeamDto>> Handle(AssignActivityToTeamCommand request, CancellationToken cancellationToken)
         {
-            // Check if user can modify data (Viewer role cannot)
-            var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
+            var module= PermissionModuleEnum.Activities;
+            var action= PermissionActionEnum.Edit;
+            var canModify = await _visibilityService.CanPerformAsync( module , action , cancellationToken);
             if (!canModify)
-            
-                return Result.Failure<AssignBoxActivityTeamDto>("Access denied. Viewer role has read-only access and cannot assign activities.");
+                return Result.Failure<AssignBoxActivityTeamDto>("Access denied. You do not have permission to assign activities.");
 
             var activity = _unitOfWork.Repository<BoxActivity>().GetEntityWithSpec(new GetBoxActivityByIdSpecification(request.BoxActivityId));
 
             if (activity == null)
                 return Result.Failure<AssignBoxActivityTeamDto>("Box Activity not found.");
 
-            // Check if user has access to the project containing this activity
             var canAccessProject = await _visibilityService.CanAccessProjectAsync(activity.Box.ProjectId, cancellationToken);
             if (!canAccessProject)
                 return Result.Failure<AssignBoxActivityTeamDto>("Access denied. You do not have permission to modify activities in this project.");
-            
 
-            // Check if project is archived
-            var isArchived = await _visibilityService.IsProjectArchivedAsync(activity.Box.ProjectId, cancellationToken);
-            if (isArchived)
-            
-                return Result.Failure<AssignBoxActivityTeamDto>("Cannot assign activities in an archived project. Archived projects are read-only.");
-            
+            var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync( activity.Box.ProjectId, "assign activities to crew", cancellationToken);
 
-            // Check if project is on hold
-            var isOnHold = await _visibilityService.IsProjectOnHoldAsync(activity.Box.ProjectId, cancellationToken);
-            if (isOnHold)
-            
-                return Result.Failure<AssignBoxActivityTeamDto>("Cannot assign activities in a project on hold. Projects on hold only allow project status changes.");
-            
+           if(!projectStatusValidation.IsSuccess)
+                return Result.Failure<AssignBoxActivityTeamDto>(projectStatusValidation.Error!);
 
-            // Check if project is closed
-            var isClosed = await _visibilityService.IsProjectClosedAsync(activity.Box.ProjectId, cancellationToken);
-            if (isClosed)
-                return Result.Failure<AssignBoxActivityTeamDto>("Cannot assign activities in a closed project. Closed projects only allow project status changes.");
-            
+            var boxStatusValidation = await _visibilityService.GetBoxStatusChecksAsync(activity.Box.BoxId, "assign activities to crew", cancellationToken);
 
-            // Check if box is Dispatched - cannot perform any actions on activities
-            if (activity.Box.Status == BoxStatusEnum.Dispatched)
-            
-                return Result.Failure<AssignBoxActivityTeamDto>("Cannot assign activity to team. The box is dispatched and no actions are allowed on boxes or activities.");
+            if (!boxStatusValidation.IsSuccess)
+                return Result.Failure<AssignBoxActivityTeamDto>(boxStatusValidation.Error!);
 
-            // Check if box is OnHold - cannot perform actions on activities
-            if (activity.Box.Status == BoxStatusEnum.OnHold)
-            
-                return Result.Failure<AssignBoxActivityTeamDto>("Cannot assign activity to team. The box is on hold and no actions are allowed on activities. Only box status changes are allowed.");
-            
+            var activityStatusValidation = await _visibilityService.GetActivityStatusChecksAsync(activity.BoxActivityId, "assign activities to crew", cancellationToken);
 
-            // Check activity status - cannot perform actions if activity is Completed or OnHold
-            if (activity.Status == BoxStatusEnum.Completed)
-                return Result.Failure<AssignBoxActivityTeamDto>("Cannot assign activity to team. Activities in 'Completed' status cannot be modified.");
-            if (activity.Status == BoxStatusEnum.OnHold)
-                return Result.Failure<AssignBoxActivityTeamDto>("Cannot assign activity to team. Activities in 'OnHold' status cannot be modified. Please change the activity status first.");
-
+            if (!activityStatusValidation.IsSuccess)
+                return Result.Failure<AssignBoxActivityTeamDto>(activityStatusValidation.Error!);
+           
             var team = await _unitOfWork.Repository<Team>().GetByIdAsync(request.TeamId);
 
             if (team == null)

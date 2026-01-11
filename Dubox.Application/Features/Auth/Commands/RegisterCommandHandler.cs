@@ -26,13 +26,12 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<Us
 
         if (userExists)
             return Result.Failure<UserDto>("User with this email already exists");
+
         var departmentExists = await _unitOfWork.Repository<Department>()
         .IsExistAsync(d => d.DepartmentId == request.DepartmentId, cancellationToken);
 
         if (!departmentExists)
-        {
             return Result.Failure<UserDto>($"Department does not exist.");
-        }
 
         var user = new User
         {

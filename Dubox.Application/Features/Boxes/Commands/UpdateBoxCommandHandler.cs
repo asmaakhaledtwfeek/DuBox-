@@ -7,6 +7,7 @@ using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
+using System.Diagnostics;
 
 namespace Dubox.Application.Features.Boxes.Commands;
 
@@ -36,13 +37,12 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
     }
 
     public async Task<Result<BoxDto>> Handle(UpdateBoxCommand request, CancellationToken cancellationToken)
-    {
-        // Check if user can modify data (Viewer role cannot)
-        var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
+    {      
+        var module= PermissionModuleEnum.Boxes;
+        var action = PermissionActionEnum.Edit;   
+        var canModify = await _visibilityService.CanPerformAsync(module, action,cancellationToken);
         if (!canModify)
-        {
-            return Result.Failure<BoxDto>("Access denied. Viewer role has read-only access and cannot update boxes.");
-        }
+            return Result.Failure<BoxDto>("Access denied. You do not have permission to update boxes.");
 
         var box = await _unitOfWork.Repository<Box>()
             .GetByIdAsync(request.BoxId, cancellationToken);
@@ -58,19 +58,11 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
 
         if (!projectStatusValidation.IsSuccess)
             return Result.Failure<BoxDto>(projectStatusValidation.Error!);
-       
-        // Check if box is Dispatched - cannot perform any actions
-        if (box.Status == BoxStatusEnum.Dispatched)
-        {
-            return Result.Failure<BoxDto>("Cannot update a dispatched box. Dispatched boxes are read-only and no actions are allowed.");
-        }
+        var boxStatusValidation = await _visibilityService.GetBoxStatusChecksAsync(box.BoxId, "update a dispatched box", cancellationToken);
 
-        // Check if box is OnHold - cannot perform box actions (only status changes allowed)
-        if (box.Status == BoxStatusEnum.OnHold)
-        {
-            return Result.Failure<BoxDto>("Cannot update a box that is on hold. Only status changes are allowed for boxes on hold.");
-        }
-
+        if (!boxStatusValidation.IsSuccess)
+            return Result.Failure<BoxDto>(boxStatusValidation.Error!);
+        
         if (!string.IsNullOrEmpty(request.BoxTag) && box.BoxTag != request.BoxTag)
         {
             var tagExists = await _unitOfWork.Repository<Box>()
@@ -144,7 +136,7 @@ public class UpdateBoxCommandHandler : IRequestHandler<UpdateBoxCommand, Result<
         await _unitOfWork.CompleteAsync(cancellationToken);
 
         // Reload box with includes to get Factory info
-        box = _unitOfWork.Repository<Box>().GetEntityWithSpec(new GetBoxByIdWithIncludesSpecification(box.BoxId));
+        box = _unitOfWork.Repository<Box>().GetEntityWithSpec(new GetBoxWithIncludesSpecification(box.BoxId));
         
         BoxDto response = box.Adapt<BoxDto>() with
         {

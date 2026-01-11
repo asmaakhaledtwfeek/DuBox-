@@ -61,15 +61,15 @@ $breakpoint-small-mobile: 480px;
   .dashboard-header, .page-header {
     @include mobile {
       flex-direction: column;
-      gap: var(--spacing-md, 16px);
-      margin-bottom: var(--spacing-xl, 32px);
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-xl);
 
       .header-info {
         text-align: center;
       }
 
       .dashboard-title, .page-title {
-        font-size: var(--font-size-2xl, 24px);
+        font-size: var(--font-size-2xl);
       }
 
       .header-actions {
@@ -79,15 +79,15 @@ $breakpoint-small-mobile: 480px;
         .btn {
           width: 100%;
           max-width: 280px;
-          padding: 14px 24px;
-          font-size: var(--font-size-base, 16px);
+          padding: calc(var(--spacing-sm) * 1.2) calc(var(--spacing-md) * 1.5);
+          font-size: var(--font-size-base);
         }
       }
     }
 
     @include small-mobile {
       .dashboard-title, .page-title {
-        font-size: var(--font-size-xl, 20px) !important;
+        font-size: var(--font-size-xl) !important;
       }
     }
   }
@@ -108,33 +108,13 @@ $breakpoint-small-mobile: 480px;
 
   .kpi-card, .stat-card, .summary-card {
     @include mobile {
-      padding: var(--spacing-md, 16px);
-      min-height: 80px;
+      padding: var(--spacing-md);
+      min-height: 70px;
 
       .kpi-icon, .card-icon {
-        width: 48px;
-        height: 48px;
-        padding: 12px;
-
-        svg {
-          width: 20px;
-          height: 20px;
-        }
-      }
-
-      .kpi-value, .card-value {
-        font-size: var(--font-size-2xl, 24px);
-      }
-
-      .kpi-label, .card-label {
-        font-size: var(--font-size-sm, 14px);
-      }
-    }
-
-    @include small-mobile {
-      .kpi-icon, .card-icon {
-        width: 40px;
-        height: 40px;
+        width: 42px;
+        height: 42px;
+        padding: var(--spacing-sm);
 
         svg {
           width: 18px;
@@ -143,11 +123,35 @@ $breakpoint-small-mobile: 480px;
       }
 
       .kpi-value, .card-value {
-        font-size: var(--font-size-xl, 20px);
+        font-size: var(--font-size-2xl);
       }
 
       .kpi-label, .card-label {
-        font-size: 13px;
+        font-size: var(--font-size-sm);
+      }
+    }
+
+    @include small-mobile {
+      padding: var(--spacing-sm);
+      min-height: 60px;
+
+      .kpi-icon, .card-icon {
+        width: 36px;
+        height: 36px;
+        padding: calc(var(--spacing-xs) * 1.5);
+
+        svg {
+          width: 16px;
+          height: 16px;
+        }
+      }
+
+      .kpi-value, .card-value {
+        font-size: var(--font-size-xl);
+      }
+
+      .kpi-label, .card-label {
+        font-size: var(--font-size-xs);
       }
     }
   }
@@ -165,26 +169,26 @@ $breakpoint-small-mobile: 480px;
           min-width: 100%;
 
           input {
-            font-size: 16px; // Prevents zoom on iOS
-            padding: 12px 12px 12px 42px;
+            font-size: var(--font-size-base); // Prevents zoom on iOS (min 14.4px)
+            padding: calc(var(--spacing-sm) * 1.2) calc(var(--spacing-sm) * 1.2) calc(var(--spacing-sm) * 1.2) calc(var(--spacing-md) * 2.5);
           }
         }
 
         select, input[type="text"], input[type="date"], input[type="number"] {
           width: 100%;
-          font-size: 16px; // Prevents zoom on iOS
-          padding: 12px 14px;
+          font-size: var(--font-size-base); // Prevents zoom on iOS (min 14.4px)
+          padding: calc(var(--spacing-sm) * 1.2) var(--spacing-sm);
         }
 
         .checkbox-label {
           width: 100%;
-          padding: 12px;
+          padding: var(--spacing-sm);
           background: var(--gray-50, #f9fafb);
-          border-radius: var(--radius-md, 8px);
+          border-radius: var(--radius-md);
           justify-content: center;
 
           span {
-            font-size: 15px;
+            font-size: var(--font-size-sm);
           }
         }
 
@@ -250,26 +254,26 @@ $breakpoint-small-mobile: 480px;
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: var(--spacing-sm, 12px);
-        padding-bottom: var(--spacing-sm, 12px);
+        margin-bottom: var(--spacing-sm);
+        padding-bottom: var(--spacing-sm);
         border-bottom: 1px solid var(--gray-100, #f3f4f6);
       }
 
       .card-details {
         display: flex;
         flex-direction: column;
-        gap: var(--spacing-xs, 8px);
-        margin-bottom: var(--spacing-md, 16px);
+        gap: var(--spacing-xs);
+        margin-bottom: var(--spacing-md);
 
         .detail-item {
           display: flex;
           align-items: center;
-          font-size: var(--font-size-sm, 14px);
+          font-size: var(--font-size-sm);
           color: var(--gray-600, #4b5563);
 
           .detail-label {
             font-weight: 600;
-            min-width: 100px;
+            min-width: 90px;
             color: var(--gray-700, #374151);
           }
 
@@ -284,22 +288,22 @@ $breakpoint-small-mobile: 480px;
 
       .card-actions {
         display: flex;
-        gap: var(--spacing-xs, 8px);
+        gap: var(--spacing-xs);
         justify-content: flex-end;
-        padding-top: var(--spacing-sm, 12px);
+        padding-top: var(--spacing-sm);
         border-top: 1px solid var(--gray-100, #f3f4f6);
 
         .btn-icon {
-          padding: 10px;
-          min-width: 44px;
-          min-height: 44px;
+          padding: calc(var(--spacing-xs) * 2);
+          min-width: 40px;
+          min-height: 40px;
           display: flex;
           align-items: center;
           justify-content: center;
 
           svg {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
           }
         }
       }
@@ -315,13 +319,13 @@ $breakpoint-small-mobile: 480px;
   .pagination-footer, .pagination-section {
     @include mobile {
       flex-direction: column;
-      gap: var(--spacing-md, 16px);
-      padding: var(--spacing-md, 16px);
+      gap: var(--spacing-md);
+      padding: var(--spacing-md);
 
       .pagination-info {
         order: 1;
         text-align: center;
-        font-size: var(--font-size-sm, 14px);
+        font-size: var(--font-size-sm);
       }
 
       .pagination-controls-wrapper {
@@ -334,28 +338,28 @@ $breakpoint-small-mobile: 480px;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
         justify-content: flex-start;
-        padding-bottom: var(--spacing-xs, 8px);
+        padding-bottom: var(--spacing-xs);
 
         .btn-pagination {
           flex-shrink: 0;
-          min-width: 40px;
-          height: 40px;
-          padding: 8px;
+          min-width: 36px;
+          height: 36px;
+          padding: calc(var(--spacing-xs) * 1.5);
 
           svg {
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
           }
         }
 
         .page-numbers {
           display: flex;
-          gap: var(--spacing-xs, 6px);
+          gap: calc(var(--spacing-xs) * 0.75);
 
           .btn-page {
-            min-width: 40px;
-            height: 40px;
-            font-size: 14px;
+            min-width: 36px;
+            height: 36px;
+            font-size: var(--font-size-sm);
             flex-shrink: 0;
           }
         }
@@ -366,17 +370,17 @@ $breakpoint-small-mobile: 480px;
         width: 100%;
         justify-content: center;
         flex-wrap: wrap;
-        gap: var(--spacing-sm, 8px);
+        gap: var(--spacing-sm);
 
         label {
-          font-size: var(--font-size-sm, 14px);
+          font-size: var(--font-size-sm);
         }
 
         select {
           flex: 1;
           max-width: 120px;
-          font-size: 16px; // Prevents zoom on iOS
-          padding: 10px 32px 10px 12px;
+          font-size: var(--font-size-base); // Prevents zoom on iOS
+          padding: calc(var(--spacing-xs) * 2) calc(var(--spacing-md) * 2) calc(var(--spacing-xs) * 2) var(--spacing-sm);
         }
       }
     }
@@ -384,14 +388,14 @@ $breakpoint-small-mobile: 480px;
     @include small-mobile {
       .pagination-controls {
         .page-numbers .btn-page {
-          min-width: 36px;
-          height: 36px;
-          font-size: 13px;
+          min-width: 32px;
+          height: 32px;
+          font-size: var(--font-size-xs);
         }
 
         .btn-pagination {
-          min-width: 36px;
-          height: 36px;
+          min-width: 32px;
+          height: 32px;
         }
       }
     }
@@ -413,25 +417,26 @@ $breakpoint-small-mobile: 480px;
       margin: 0;
 
       .modal-header {
-        padding: var(--spacing-md, 16px);
+        padding: var(--spacing-md);
 
         h2, h3 {
-          font-size: var(--font-size-lg, 18px);
+          font-size: var(--font-size-lg);
         }
       }
 
       .modal-body {
-        padding: var(--spacing-md, 16px);
-        max-height: calc(100vh - 80px);
+        padding: var(--spacing-md);
+        max-height: calc(100vh - 70px);
         overflow-y: auto;
       }
 
       .modal-footer {
-        padding: var(--spacing-md, 16px);
+        padding: var(--spacing-md);
         flex-direction: column;
 
         .btn {
           width: 100%;
+          font-size: var(--font-size-sm);
         }
       }
     }
@@ -441,26 +446,27 @@ $breakpoint-small-mobile: 480px;
 @mixin responsive-empty-state {
   .empty-state {
     @include mobile {
-      padding: var(--spacing-2xl, 48px) var(--spacing-md, 16px);
+      padding: var(--spacing-2xl) var(--spacing-md);
 
       svg {
-        width: 48px;
-        height: 48px;
+        width: 40px;
+        height: 40px;
       }
 
       h3 {
-        font-size: var(--font-size-lg, 18px);
-        margin-bottom: var(--spacing-xs, 8px);
+        font-size: var(--font-size-lg);
+        margin-bottom: var(--spacing-xs);
       }
 
       p {
-        font-size: var(--font-size-sm, 14px);
-        margin-bottom: var(--spacing-md, 16px);
+        font-size: var(--font-size-sm);
+        margin-bottom: var(--spacing-md);
       }
 
       .btn {
         width: 100%;
         max-width: 280px;
+        font-size: var(--font-size-sm);
       }
     }
   }
@@ -469,16 +475,16 @@ $breakpoint-small-mobile: 480px;
 @mixin responsive-loading-state {
   .loading-container, .loading-state {
     @include mobile {
-      padding: var(--spacing-xl, 48px) var(--spacing-md, 16px);
-      min-height: 200px;
+      padding: var(--spacing-xl) var(--spacing-md);
+      min-height: 180px;
 
       .spinner {
-        width: 40px;
-        height: 40px;
+        width: 32px;
+        height: 32px;
       }
 
       p {
-        font-size: var(--font-size-sm, 14px);
+        font-size: var(--font-size-sm);
       }
     }
   }

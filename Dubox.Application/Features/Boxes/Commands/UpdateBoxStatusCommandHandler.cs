@@ -31,27 +31,24 @@ namespace Dubox.Application.Features.Boxes.Commands
 
         public async Task<Result<BoxDto>> Handle(UpdateBoxStatusCommand request, CancellationToken cancellationToken)
         {
-            // Check if user can modify data (Viewer role cannot)
-            var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
+            var module=PermissionModuleEnum.Boxes;
+            var action=PermissionActionEnum.UpdateStatus;
+            var canModify = await _visibilityService.CanPerformAsync(module,action,cancellationToken);
             if (!canModify)
-            {
-                return Result.Failure<BoxDto>("Access denied. Viewer role has read-only access and cannot update box status.");
-            }
+                return Result.Failure<BoxDto>("Access denied. You do not have permission to update box status.");
 
             var box = await _unitOfWork.Repository<Box>().GetByIdAsync(request.BoxId, cancellationToken);
 
             if (box == null)
                 return Result.Failure<BoxDto>("Box not found.");
-            var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(box.ProjectId, "update boxes", cancellationToken);
+            var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(box.ProjectId, "change status", cancellationToken);
 
             if (!projectStatusValidation.IsSuccess)
                 return Result.Failure<BoxDto>(projectStatusValidation.Error!);
            
             // Check if box is Dispatched - cannot change status
             if (box.Status == BoxStatusEnum.Dispatched)
-            {
                 return Result.Failure<BoxDto>("Cannot change status of a dispatched box. Dispatched boxes are read-only.");
-            }
 
             var oldStatus = box.Status;
             var newStatus = (BoxStatusEnum)request.Status;

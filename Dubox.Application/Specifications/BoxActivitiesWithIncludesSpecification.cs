@@ -13,5 +13,16 @@ namespace Dubox.Application.Specifications
             AddInclude($"{nameof(BoxActivity.Box)}.{nameof(BoxActivity.Box.Project)}");
 
         }
+        public BoxActivitiesWithIncludesSpecification(BoxActivity currentActivity)
+        {
+            AddCriteria(x =>
+                         x.BoxId == currentActivity.BoxId &&
+                         x.Sequence > currentActivity.Sequence &&
+                         x.ActivityMaster.IsWIRCheckpoint);
+
+            AddInclude(nameof(BoxActivity.ActivityMaster));
+            AddOrderBy(x => x.Sequence);
+
+        }
     }
 }

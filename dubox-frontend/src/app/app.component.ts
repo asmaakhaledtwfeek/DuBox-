@@ -24,26 +24,22 @@ export class AppComponent implements OnInit, OnDestroy {
     // Permissions are automatically loaded from localStorage in PermissionService constructor
     // This ensures they're available immediately before any component initializes
     
-    // Refresh permissions from backend if user is authenticated
-    // This ensures we have the latest permissions
-    if (this.authService.isAuthenticated()) {
+    // Refresh permissions from backend if user is authenticated (page refresh case)
+    // Note: Skip if permissions are already loading to avoid duplicate API calls
+    if (this.authService.isAuthenticated() && !this.permissionService.arePermissionsLoaded()) {
       this.permissionService.initializePermissions().subscribe({
         next: () => console.log('✅ Permissions loaded on app init'),
         error: (err) => console.error('❌ Failed to load permissions on app init:', err)
       });
     }
 
-    // Subscribe to auth state changes to load/clear permissions
+    // Subscribe to auth state changes to clear permissions on logout
+    // Note: We DON'T load permissions here because login.component.ts handles that
     this.authSubscription = this.authService.authState$.subscribe(state => {
-      if (state.isAuthenticated && state.user) {
-        // Always refresh permissions from backend after login
-        // Note: Login component will wait for this, but we also initialize here for other auth state changes
-        this.permissionService.initializePermissions().subscribe({
-          next: () => console.log('✅ Permissions loaded after auth state change'),
-          error: (err) => console.error('❌ Failed to load permissions after auth state change:', err)
-        });
-      } else if (!state.isAuthenticated) {
+      if (!state.isAuthenticated) {
+        // Clear permissions on logout
         this.permissionService.clearPermissions();
+        console.log('🧹 Permissions cleared after logout');
       }
     });
   }

@@ -1,9 +1,10 @@
 using Dubox.Application.Abstractions;
 using Dubox.Application.DTOs;
-using Dubox.Domain.Entities;
-using Dubox.Domain.Shared;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
+using Dubox.Domain.Entities;
 using Dubox.Domain.Services;
+using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -15,30 +16,26 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
     private readonly IDbContext _context;
     private readonly IPasswordHasher _passwordHasher;
     private readonly IJwtProvider _jwtProvider;
+    private readonly IUnitOfWork _unitOfWork;
+    private readonly IUserRolePermissionService _userRolePermissionService;
 
     public LoginCommandHandler(
         IDbContext context, 
         IPasswordHasher passwordHasher,
-        IJwtProvider jwtProvider)
+        IJwtProvider jwtProvider, 
+        IUnitOfWork unitOfWork,
+        IUserRolePermissionService userRolePermissionService)
     {
         _context = context;
         _passwordHasher = passwordHasher;
         _jwtProvider = jwtProvider;
+        _unitOfWork = unitOfWork;
+        _userRolePermissionService = userRolePermissionService;
     }
 
     public async Task<Result<LoginResponseDto>> Handle(LoginCommand request, CancellationToken cancellationToken)
     {
-        // Load user with all relationships for roles and groups
-        var user = await _context.Users
-            .Include(u => u.EmployeeOfDepartment)
-            .Include(u => u.UserRoles)
-                .ThenInclude(ur => ur.Role)
-            .Include(u => u.UserGroups)
-                .ThenInclude(ug => ug.Group)
-                    .ThenInclude(g => g.GroupRoles)
-                        .ThenInclude(gr => gr.Role)
-            .FirstOrDefaultAsync(u => u.Email == request.Email, cancellationToken);
-
+        var user = _unitOfWork.Repository<User>().GetEntityWithSpec(new GetUserWithRolesSpecification(request.Email));
         if (user == null)
             return Result.Failure<LoginResponseDto>("Invalid email or password");
 
@@ -50,17 +47,13 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
             return Result.Failure<LoginResponseDto>("Invalid email or password");
 
         user.LastLoginDate = DateTime.UtcNow;
-        await _context.SaveChangesAsync(cancellationToken);
+         _unitOfWork.Repository<User>().Update(user);
+        await _unitOfWork.CompleteAsync();
 
         var token = _jwtProvider.GenerateToken(user);
 
-        // Extract direct roles
-        var directRoles = user.UserRoles
-            .Where(ur => ur.Role != null)
-            .Select(ur => ur.Role!.RoleName)
-            .ToList();
+        var directRoles = _userRolePermissionService.GetDirectUserRoles(user);
 
-        // Extract groups with their roles
         var groups = user.UserGroups
             .Where(ug => ug.Group != null)
             .Select(ug => new GroupWithRolesDto
@@ -81,24 +74,11 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
             })
             .ToList();
 
-        // Combine all roles (direct + from groups) - distinct by role name
-        var allRoles = directRoles
-            .Concat(groups.SelectMany(g => g.Roles.Select(r => r.RoleName)))
-            .Distinct()
-            .ToList();
+        var allRoles = _userRolePermissionService.GetAllUserRoles(user);
 
-        // Create user DTO with roles and groups
-        var userDto = new UserDto
+        var userDto = user.Adapt<UserDto>() with
         {
-            UserId = user.UserId,
-            Email = user.Email,
-            FullName = user.FullName,
-            DepartmentId = user.DepartmentId,
-            Department = user.EmployeeOfDepartment?.DepartmentName,
-            IsActive = user.IsActive,
-            LastLoginDate = user.LastLoginDate,
-            CreatedDate = user.CreatedDate,
-            DirectRoles = directRoles,
+            DirectRoles= directRoles,
             Groups = groups,
             AllRoles = allRoles
         };

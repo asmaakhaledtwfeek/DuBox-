@@ -1,3 +1,5 @@
+using Dubox.Domain.Entities;
+
 namespace Dubox.Application.DTOs;
 
 public record TeamDto
@@ -106,6 +108,7 @@ public record TeamGroupMembersDto
     public bool IsActive { get; init; }
     public List<TeamMemberDto> Members { get; init; } = new();
 }
+public record AssignmentValidationResult(Team? Team, TeamMember? Member);
 
 
 

@@ -53,9 +53,8 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                 return Result.Failure<QualityIssueDetailsDto>(projectStatusValidation.Error!);
 
             var boxStatusValidation = await _visibilityService.GetBoxStatusChecksAsync(box.BoxId, "create quality issues", cancellationToken);
-
             if (!boxStatusValidation.IsSuccess)
-                return Result.Failure<QualityIssueDetailsDto>(projectStatusValidation.Error!);
+                return Result.Failure<QualityIssueDetailsDto>(boxStatusValidation.Error!);
             
             var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId)
                 ? parsedUserId

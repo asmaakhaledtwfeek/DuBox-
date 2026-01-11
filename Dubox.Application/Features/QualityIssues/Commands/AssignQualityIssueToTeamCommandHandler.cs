@@ -7,6 +7,7 @@ using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
+using System.Diagnostics;
 
 namespace Dubox.Application.Features.QualityIssues.Commands
 {
@@ -15,79 +16,51 @@ namespace Dubox.Application.Features.QualityIssues.Commands
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserService _currentUserService;
         private readonly IProjectTeamVisibilityService _visibilityService;
+        private readonly ITeamAssignmentService _teamAssignmentService;
 
         public AssignQualityIssueToTeamCommandHandler(
             IUnitOfWork unitOfWork,
             ICurrentUserService currentUserService,
-            IProjectTeamVisibilityService visibilityService)
+            IProjectTeamVisibilityService visibilityService,
+            ITeamAssignmentService teamAssignmentService)
         {
             _unitOfWork = unitOfWork;
             _currentUserService = currentUserService;
             _visibilityService = visibilityService;
+            _teamAssignmentService = teamAssignmentService;
         }
 
         public async Task<Result<QualityIssueDetailsDto>> Handle(AssignQualityIssueToTeamCommand request, CancellationToken cancellationToken)
         {
-            // Check if user can modify data (Viewer role cannot)
-            var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
+            var module= PermissionModuleEnum.QualityIssues;
+            var action = PermissionActionEnum.AssignTeam;
+            var canModify = await _visibilityService.CanPerformAsync(module, action,cancellationToken);
             if (!canModify)
-            {
-                return Result.Failure<QualityIssueDetailsDto>("Access denied. Viewer role has read-only access and cannot assign quality issues.");
-            }
+                return Result.Failure<QualityIssueDetailsDto>("Access denied. You do not have permission to assign quality issues.");
 
             var issue = _unitOfWork.Repository<QualityIssue>().GetEntityWithSpec(new GetQualityIssueByIdSpecification(request.IssueId));
 
             if (issue == null)
                 return Result.Failure<QualityIssueDetailsDto>("Quality issue not found.");
 
-            // Verify user has access to the project this quality issue belongs to
             var canAccessProject = await _visibilityService.CanAccessProjectAsync(issue.Box.ProjectId, cancellationToken);
             if (!canAccessProject)
                 return Result.Failure<QualityIssueDetailsDto>("Access denied. You do not have permission to modify this quality issue.");
+          
             var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(issue.Box.ProjectId, "assign quality issues", cancellationToken);
-
             if (!projectStatusValidation.IsSuccess)
                 return Result.Failure<QualityIssueDetailsDto>(projectStatusValidation.Error!);
-            
-            if (issue.Box.Status == BoxStatusEnum.Dispatched)
-            {
-                return Result.Failure<QualityIssueDetailsDto>("Cannot assign quality issue. The box is dispatched and no actions are allowed on quality issues. Only viewing is permitted.");
-            }
-            
-            if (issue.Box.Status == BoxStatusEnum.OnHold)
-            {
-                return Result.Failure<QualityIssueDetailsDto>("Cannot assign quality issue. The box is on hold and no actions are allowed on quality issues. Only viewing is permitted.");
-            }
 
-            Team? team = null;
-            TeamMember? teamMember = null;
-            
-            // If TeamId is provided, validate the team exists and user has access
-            if (request.TeamId.HasValue && request.TeamId.Value != Guid.Empty)
-            {
-                team = await _unitOfWork.Repository<Team>().GetByIdAsync(request.TeamId.Value, cancellationToken);
-                if (team == null)
-                    return Result.Failure<QualityIssueDetailsDto>("Team not found.");
+            var boxStatusValidation = await _visibilityService.GetBoxStatusChecksAsync(issue.Box.BoxId, "assign quality issues", cancellationToken);
+            if (!boxStatusValidation.IsSuccess)
+                return Result.Failure<QualityIssueDetailsDto>(boxStatusValidation.Error!);
+           
+            var teamValidationResult = await _teamAssignmentService.ValidateAssignmentAsync(request.TeamId, request.TeamMemberId, cancellationToken);
+            if (!teamValidationResult.IsSuccess)
+                return Result.Failure<QualityIssueDetailsDto>(teamValidationResult.Error);
 
-                // Check if user has access to this team
-                var canAccessTeam = await _visibilityService.CanAccessTeamAsync(request.TeamId.Value, cancellationToken);
-                if (!canAccessTeam)
-                {
-                    return Result.Failure<QualityIssueDetailsDto>("Access denied. You do not have permission to assign this team.");
-                }
-                
-                // If TeamMemberId is provided, validate the member exists and belongs to the team
-                if (request.TeamMemberId.HasValue && request.TeamMemberId.Value != Guid.Empty)
-                {
-                    teamMember = await _unitOfWork.Repository<TeamMember>().GetByIdAsync(request.TeamMemberId.Value, cancellationToken);
-                    if (teamMember == null)
-                        return Result.Failure<QualityIssueDetailsDto>("Team member not found.");
-                    
-                    if (teamMember.TeamId != team.TeamId || !teamMember.IsActive)
-                        return Result.Failure<QualityIssueDetailsDto>("Selected member is not an active member of the selected team.");
-                }
-            }
-
+            var team = teamValidationResult.Data.Team;
+            var teamMember = teamValidationResult.Data.Member;
             // Capture old values for audit log
             var oldTeamId = issue.AssignedToTeamId?.ToString() ?? "None";
             var oldTeamName = issue.AssignedToTeam?.TeamName ?? "None";

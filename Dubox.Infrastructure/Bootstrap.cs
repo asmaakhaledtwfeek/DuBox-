@@ -1,4 +1,4 @@
-﻿using Dubox.Application.Abstractions;
+using Dubox.Application.Abstractions;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Services;
 using Dubox.Domain.Services.ImageEntityConfig;
@@ -32,6 +32,8 @@ public static class Bootstrap
         services.AddScoped<IImageProcessingService, ImageProcessingService>();
         services.AddScoped<IImageEntityConfigFactory, ImageEntityConfigFactory>();
         services.AddScoped<IPermissionService, PermissionService>();
+        services.AddScoped<ITeamAssignmentService, TeamAssignmentService>();
+        services.AddScoped<IUserRolePermissionService, UserRolePermissionService>();
 
 
         return services;

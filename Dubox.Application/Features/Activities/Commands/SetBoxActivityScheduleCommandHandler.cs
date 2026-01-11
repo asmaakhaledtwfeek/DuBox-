@@ -44,7 +44,7 @@ namespace Dubox.Application.Features.Activities.Commands
 
             var activityStatusValidation = await _visibilityService.GetActivityStatusChecksAsync(activity.BoxActivityId, "set activity schedule", cancellationToken);
 
-            if (!boxStatusValidation.IsSuccess)
+            if (!activityStatusValidation.IsSuccess)
                 return Result.Failure<BoxActivityDto>(activityStatusValidation.Error!);
 
             var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());

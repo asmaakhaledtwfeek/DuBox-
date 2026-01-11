@@ -32,12 +32,11 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
 
         public async Task<Result<WIRCheckpointDto>> Handle(AddQualityIssueCommand request, CancellationToken cancellationToken)
         {
-            // Check if user can modify data (Viewer role cannot)
-            var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
-            if (!canModify)
-            {
+            var module = PermissionModuleEnum.QualityIssues;
+            var action = PermissionActionEnum.Create;
+            var canCreate = await _visibilityService.CanPerformAsync(module, action, cancellationToken);
+            if (!canCreate)
                 return Result.Failure<WIRCheckpointDto>("Access denied. Viewer role has read-only access and cannot add quality issues.");
-            }
 
             var wir = _unitOfWork.Repository<WIRCheckpoint>()
                 .GetEntityWithSpec(new GetWIRCheckpointByIdSpecification(request.WIRId));
@@ -45,19 +44,17 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             if (wir is null)
                 return Result.Failure<WIRCheckpointDto>("WIRCheckpoint not found.");
 
-            // Verify user has access to the project this WIR checkpoint belongs to
             var canAccessProject = await _visibilityService.CanAccessProjectAsync(wir.Box.ProjectId, cancellationToken);
             if (!canAccessProject)
-            {
                 return Result.Failure<WIRCheckpointDto>("Access denied. You do not have permission to add quality issues to this WIR checkpoint.");
-            }
+           
+            var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(wir.Box.ProjectId, "add quality issues", cancellationToken);
+            if (!projectStatusValidation.IsSuccess)
+                return Result.Failure<WIRCheckpointDto>(projectStatusValidation.Error!);
 
-            // Check if box is dispatched - no actions allowed on dispatched boxes
-            if (wir.Box.Status == BoxStatusEnum.Dispatched)
-            {
-                return Result.Failure<WIRCheckpointDto>("Cannot add quality issue. The box is dispatched and no actions are allowed on checkpoints. Only viewing is permitted.");
-            }
-
+            var boxStatusValidation = await _visibilityService.GetBoxStatusChecksAsync(wir.Box.BoxId, "add quality issues", cancellationToken);
+            if (!boxStatusValidation.IsSuccess)
+                return Result.Failure<WIRCheckpointDto>(boxStatusValidation.Error!);
             var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId)
                 ? parsedUserId
                 : Guid.Empty;

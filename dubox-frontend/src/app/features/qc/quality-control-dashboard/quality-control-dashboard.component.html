@@ -97,6 +97,7 @@
           <button class="btn btn-primary" (click)="fetchCheckpoints()">Retry</button>
         </div>
 
+        <!-- Desktop Table Layout -->
         <table class="designer-table" *ngIf="!checkpointsLoading && !checkpointsError && checkpoints.length > 0">
           <thead>
             <tr>
@@ -160,6 +161,67 @@
             </tr>
           </tbody>
         </table>
+
+        <!-- Mobile Card Layout -->
+        <div class="mobile-checkpoints-list" *ngIf="!checkpointsLoading && !checkpointsError && checkpoints.length > 0">
+          <div *ngFor="let checkpoint of checkpoints" class="mobile-checkpoint-card">
+            <div class="checkpoint-card-header">
+              <div class="checkpoint-wir-number">
+                <div class="wir-code">{{ checkpoint.wirNumber }}</div>
+              </div>
+              <span class="status-pill" [ngClass]="getCheckpointStatusClass(checkpoint.status)">
+                {{ getStatusLabel(checkpoint.status) }}
+              </span>
+            </div>
+
+            <div class="checkpoint-card-details">
+              <div class="detail-item" *ngIf="checkpoint.box?.boxTag">
+                <span class="detail-label">Box:</span>
+                <span class="detail-value">{{ checkpoint.box?.boxTag }}</span>
+              </div>
+              <div class="detail-item" *ngIf="checkpoint.box?.boxName">
+                <span class="detail-label">Box Name:</span>
+                <span class="detail-value">{{ checkpoint.box?.boxName }}</span>
+              </div>
+              <div class="detail-item" *ngIf="checkpoint.projectName">
+                <span class="detail-label">Project:</span>
+                <span class="detail-value">{{ checkpoint.projectName }}</span>
+              </div>
+              <div class="detail-item">
+                <span class="detail-label">Requested Date:</span>
+                <span class="detail-value">{{ formatDate(checkpoint.requestedDate) }}</span>
+              </div>
+            </div>
+
+            <div class="checkpoint-card-actions" *ngIf="canManageWIRCheckpoints">
+              <button 
+                class="btn-icon btn-add-checklist"
+                *ngIf="canNavigateToAddChecklist(checkpoint)"
+                (click)="onAddChecklist(checkpoint)"
+                title="Add Checklist Items"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </button>
+              <button 
+                class="btn-icon btn-review"
+                *ngIf="canNavigateToReview(checkpoint)"
+                (click)="onReviewCheckpoint(checkpoint)"
+                title="Review Checkpoint"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                  <polyline points="10 9 9 9 8 9"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
 
         <div class="table-state" *ngIf="!checkpointsLoading && !checkpointsError && checkpoints.length === 0">
           <p>No checkpoints found.</p>
@@ -306,6 +368,7 @@
           </button>
         </div>
 
+        <!-- Desktop Table Layout -->
         <table class="designer-table" *ngIf="!qualityIssuesLoading && !qualityIssuesError && qualityIssues.length > 0">
           <thead>
             <tr>
@@ -390,6 +453,84 @@
             </tr>
           </tbody>
         </table>
+
+        <!-- Mobile Card Layout for Quality Issues -->
+        <div class="mobile-quality-issues-list" *ngIf="!qualityIssuesLoading && !qualityIssuesError && qualityIssues.length > 0">
+          <div *ngFor="let issue of qualityIssues" class="mobile-quality-issue-card">
+            <div class="issue-card-header">
+              <div class="issue-info">
+                <div class="issue-type-badge">{{ issue.issueType || 'Issue' }}</div>
+                <div class="severity-badge" [ngClass]="'severity-' + (issue.severity || 'minor').toLowerCase()">
+                  {{ issue.severity || '—' }}
+                </div>
+              </div>
+              <span class="status-pill" [ngClass]="getQualityIssueStatusClass(issue.issueStatus || issue.status)">
+                {{ getQualityIssueStatusLabel(issue.issueStatus || issue.status) }}
+              </span>
+            </div>
+
+            <div class="issue-card-details">
+              <div class="detail-item" *ngIf="issue.issueDate">
+                <span class="detail-label">Issue Date:</span>
+                <span class="detail-value">{{ formatIssueDate(issue.issueDate) }}</span>
+              </div>
+              <div class="detail-item" *ngIf="issue.projectName">
+                <span class="detail-label">Project:</span>
+                <span class="detail-value">{{ issue.projectName }}</span>
+              </div>
+              <div class="detail-item" *ngIf="issue.boxTag">
+                <span class="detail-label">Box:</span>
+                <span class="detail-value">{{ issue.boxTag }} - {{ issue.boxName || '—' }}</span>
+              </div>
+              <div class="detail-item" *ngIf="issue.wirNumber">
+                <span class="detail-label">WIR:</span>
+                <span class="detail-value">{{ issue.wirNumber }}</span>
+              </div>
+              <div class="detail-item" *ngIf="issue.assignedTeamName">
+                <span class="detail-label">Assigned To:</span>
+                <span class="detail-value">{{ issue.assignedTeamName }}</span>
+              </div>
+            </div>
+
+            <div class="issue-card-actions">
+              <button 
+                class="btn-icon btn-view"
+                (click)="openIssueDetails(issue)"
+                title="View Details"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+              <button 
+                class="btn-icon btn-assign"
+                (click)="openAssignModal(issue); $event.stopPropagation()"
+                title="Assign to Team"
+                *ngIf="canUpdateQualityIssueStatus && canPerformQualityIssueActions(issue)"
+                type="button"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              </button>
+              <button 
+                class="btn-icon btn-update-status"
+                (click)="openStatusModal(issue)"
+                title="Update Status"
+                *ngIf="canUpdateQualityIssueStatus && canPerformQualityIssueActions(issue)"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
 
         <div class="table-state" *ngIf="!qualityIssuesLoading && !qualityIssuesError && qualityIssues.length === 0">
           <p>No quality issues found.</p>

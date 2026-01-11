@@ -1,6 +1,7 @@
 using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
@@ -26,9 +27,11 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
 
     public async Task<Result<ProjectDto>> Handle(UpdateProjectCommand request, CancellationToken cancellationToken)
     {
-        var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
+        var module= PermissionModuleEnum.Projects;
+        var action = PermissionActionEnum.Edit;
+        var canModify = await _visibilityService.CanPerformAsync(module, action,cancellationToken);
         if (!canModify)
-            return Result.Failure<ProjectDto>("Access denied. Viewer role has read-only access and cannot update projects.");
+            return Result.Failure<ProjectDto>("Access denied. You do not have permission to update projects.");
          
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
 

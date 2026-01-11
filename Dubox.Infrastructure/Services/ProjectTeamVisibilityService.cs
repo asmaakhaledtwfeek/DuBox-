@@ -252,27 +252,15 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
 
         if (activity == null)
             return Result.Failure<bool>("Box Activity not found");
-        if (activity.Status == BoxStatusEnum.Completed)
+        if (activity.Status == BoxStatusEnum.Completed || activity.Status == BoxStatusEnum.Delayed)
             return Result.Failure<bool>(
-                 $"Cannot {actionName}. Activities in 'Completed' status cannot be modified.");
+                 $"Cannot {actionName}. Activities in 'Completed' or 'Delayed' status cannot be modified.");
         if (activity.Status == BoxStatusEnum.OnHold)
             return Result.Failure<bool>(
                  $"Cannot {actionName}. Activities in 'OnHold' status cannot be modified. Please change the activity status first.");
 
         return Result.Success(true);
     }
-    public async Task<bool> CanModifyDataAsync(CancellationToken cancellationToken = default)
-    {
-        if (!_currentUserService.IsAuthenticated || string.IsNullOrEmpty(_currentUserService.UserId))
-            return false;
-
-        if (!Guid.TryParse(_currentUserService.UserId, out var userId))
-            return false;
-
-        var isViewer = await _userRoleService.UserHasRoleAsync(userId, ViewerRole, cancellationToken);
-
-        return !isViewer;
-    }
-
+   
 }
 

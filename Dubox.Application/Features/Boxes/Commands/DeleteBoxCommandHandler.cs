@@ -34,7 +34,7 @@ public class DeleteBoxCommandHandler : IRequestHandler<DeleteBoxCommand, Result<
 
         try
         {
-            var box = _unitOfWork.Repository<Box>().GetEntityWithSpec(new GetBoxByIdWithIncludesSpecification(request.BoxId));
+            var box = _unitOfWork.Repository<Box>().GetEntityWithSpec(new GetBoxWithIncludesSpecification(request.BoxId));
             if (box == null)
                 return Result.Failure<bool>("Box not found");
 
@@ -45,9 +45,8 @@ public class DeleteBoxCommandHandler : IRequestHandler<DeleteBoxCommand, Result<
            
             // Check if box is Dispatched - cannot delete
             if (box.Status == BoxStatusEnum.Dispatched)
-            {
                 return Result.Failure<bool>("Cannot delete a dispatched box. Dispatched boxes are read-only and no actions are allowed.");
-            }
+            
 
             var projectId = box.ProjectId;
             var boxTag = box.BoxTag;

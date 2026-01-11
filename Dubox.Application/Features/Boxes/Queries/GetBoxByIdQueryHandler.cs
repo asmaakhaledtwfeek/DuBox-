@@ -31,7 +31,7 @@ public class GetBoxByIdQueryHandler : IRequestHandler<GetBoxByIdQuery, Result<Bo
     {
         try
         {
-            var box = _unitOfWork.Repository<Box>().GetEntityWithSpec(new GetBoxByIdWithIncludesSpecification(request.BoxId));
+            var box = _unitOfWork.Repository<Box>().GetEntityWithSpec(new GetBoxWithIncludesSpecification(request.BoxId));
 
             if (box == null)
                 return Result.Failure<BoxDto>("Box not found");

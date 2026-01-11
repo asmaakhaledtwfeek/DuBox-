@@ -14,15 +14,18 @@ namespace Dubox.Application.Features.Activities.Commands
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserService _currentUserService;
         private readonly IProjectTeamVisibilityService _visibilityService;
+        private readonly ITeamAssignmentService _teamAssignmentService;
 
         public AssignActivityToTeamCommandHandler(
             IUnitOfWork unitOfWork, 
             ICurrentUserService currentUserService,
-            IProjectTeamVisibilityService visibilityService)
+            IProjectTeamVisibilityService visibilityService,
+            ITeamAssignmentService teamAssignmentService)
         {
             _unitOfWork = unitOfWork;
             _currentUserService = currentUserService;
             _visibilityService = visibilityService;
+            _teamAssignmentService = teamAssignmentService;
         }
 
         public async Task<Result<AssignBoxActivityTeamDto>> Handle(AssignActivityToTeamCommand request, CancellationToken cancellationToken)
@@ -48,32 +51,19 @@ namespace Dubox.Application.Features.Activities.Commands
                 return Result.Failure<AssignBoxActivityTeamDto>(projectStatusValidation.Error!);
 
             var boxStatusValidation = await _visibilityService.GetBoxStatusChecksAsync(activity.Box.BoxId, "assign activities to crew", cancellationToken);
-
             if (!boxStatusValidation.IsSuccess)
                 return Result.Failure<AssignBoxActivityTeamDto>(boxStatusValidation.Error!);
 
             var activityStatusValidation = await _visibilityService.GetActivityStatusChecksAsync(activity.BoxActivityId, "assign activities to crew", cancellationToken);
-
             if (!activityStatusValidation.IsSuccess)
                 return Result.Failure<AssignBoxActivityTeamDto>(activityStatusValidation.Error!);
-           
-            var team = await _unitOfWork.Repository<Team>().GetByIdAsync(request.TeamId);
 
-            if (team == null)
-                return Result.Failure<AssignBoxActivityTeamDto>("Team not found.");
+            var teamValidationResult = await _teamAssignmentService.ValidateAssignmentAsync(request.TeamId, request.AssignedMemberId,cancellationToken);
+            if (!teamValidationResult.IsSuccess)
+                return Result.Failure<AssignBoxActivityTeamDto>(teamValidationResult.Error);
 
-            TeamMember? teamMember=null;
-            if(request.AssignedMemberId.HasValue)
-                teamMember=await _unitOfWork.Repository<TeamMember>().GetByIdAsync(request.AssignedMemberId);
-            if (teamMember == null)
-                return Result.Failure<AssignBoxActivityTeamDto>("Team Member not found.");
-            if (teamMember !=null && (teamMember.TeamId!=team.TeamId || !teamMember.IsActive) )
-                return Result.Failure<AssignBoxActivityTeamDto>("Selected member is not a member in selected team.");
-            // Check if user has access to this team
-            var canAccessTeam = await _visibilityService.CanAccessTeamAsync(request.TeamId, cancellationToken);
-            if (!canAccessTeam)
-                return Result.Failure<AssignBoxActivityTeamDto>("Access denied. You do not have permission to assign this team.");
-            
+            var team = teamValidationResult.Data.Team;
+            var teamMember = teamValidationResult.Data.Member;
             var oldTeamId = activity.TeamId;
             var oldMemberId = activity.AssignedMemberId;
 

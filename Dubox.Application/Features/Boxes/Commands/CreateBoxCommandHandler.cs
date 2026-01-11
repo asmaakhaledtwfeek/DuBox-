@@ -3,6 +3,7 @@ using Dubox.Application.Services;
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
@@ -48,12 +49,11 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
 
     public async Task<Result<BoxDto>> Handle(CreateBoxCommand request, CancellationToken cancellationToken)
     {
-        // Check if user can modify data (Viewer role cannot)
-        var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
-        if (!canModify)
-        {
-            return Result.Failure<BoxDto>("Access denied. Viewer role has read-only access and cannot create boxes.");
-        }
+        var module= PermissionModuleEnum.Boxes;
+        var action = PermissionActionEnum.Create;
+        var canCreate = await _visibilityService.CanPerformAsync(module, action, cancellationToken);
+        if (!canCreate)
+            return Result.Failure<BoxDto>("Access denied. You do not have permission to create boxes.");
 
         var project = await _unitOfWork.Repository<Project>()
             .GetByIdAsync(request.ProjectId, cancellationToken);
@@ -122,7 +122,7 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
         //    return Result.Failure<BoxDto>("Project not found");
         await _unitOfWork.Repository<Box>().AddAsync(box, cancellationToken);
         await _unitOfWork.CompleteAsync();
-         box = _unitOfWork.Repository<Box>().GetEntityWithSpec(new GetBoxByIdWithIncludesSpecification(box.BoxId));
+         box = _unitOfWork.Repository<Box>().GetEntityWithSpec(new GetBoxWithIncludesSpecification(box.BoxId));
         await _boxActivityService.CopyActivitiesToBox(box, cancellationToken);
         var oldTotalBoxes = project.TotalBoxes;
 

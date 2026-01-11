@@ -597,15 +597,153 @@ a:hover {
   background: linear-gradient(135deg, var(--amana-orange) 0%, var(--amana-red-1) 50%, var(--amana-purple) 100%);
 }
 
-/* Responsive Design */
+/* Responsive Design - Mobile Scaling */
 @media (max-width: 768px) {
   :root {
     --sidebar-width: 0;
-    --spacing-md: 0.75rem;
+    
+    /* Scale down font sizes by ~10-15% */
+    --font-size-xs: 0.7rem;      /* 11.2px */
+    --font-size-sm: 0.8rem;      /* 12.8px */
+    --font-size-base: 0.9rem;    /* 14.4px */
+    --font-size-lg: 1rem;        /* 16px */
+    --font-size-xl: 1.1rem;      /* 17.6px */
+    --font-size-2xl: 1.3rem;     /* 20.8px */
+    --font-size-3xl: 1.6rem;     /* 25.6px */
+    --font-size-4xl: 2rem;       /* 32px */
+    
+    /* Scale down spacing by ~15-20% */
+    --spacing-xs: 0.2rem;        /* 3.2px */
+    --spacing-sm: 0.4rem;        /* 6.4px */
+    --spacing-md: 0.8rem;        /* 12.8px */
+    --spacing-lg: 1.2rem;        /* 19.2px */
+    --spacing-xl: 1.6rem;        /* 25.6px */
+    --spacing-2xl: 2.4rem;       /* 38.4px */
+    --spacing-3xl: 3.2rem;        /* 51.2px */
+    
+    /* Scale down border radius slightly */
+    --radius-sm: 0.2rem;         /* 3.2px */
+    --radius-md: 0.4rem;         /* 6.4px */
+    --radius-lg: 0.6rem;         /* 9.6px */
+    --radius-xl: 0.8rem;         /* 12.8px */
+    --radius-2xl: 1.2rem;        /* 19.2px */
+    
+    /* Scale down header height */
+    --header-height: 56px;
   }
 
+  /* Base font size scaling */
+  body {
+    font-size: var(--font-size-base);
+  }
+
+  /* Scale down typography */
+  h1 { font-size: var(--font-size-3xl); }
+  h2 { font-size: var(--font-size-2xl); }
+  h3 { font-size: var(--font-size-xl); }
+  h4 { font-size: var(--font-size-lg); }
+  h5 { font-size: var(--font-size-base); }
+  h6 { font-size: var(--font-size-sm); }
+
+  /* Scale down container padding */
   .container {
     padding: 0 var(--spacing-sm);
+  }
+
+  /* Scale down card padding */
+  .card {
+    padding: var(--spacing-md);
+  }
+
+  .card-gradient-border,
+  .card-gradient-top {
+    padding: var(--spacing-md);
+  }
+
+  /* Scale down button padding and font */
+  .btn {
+    padding: calc(var(--spacing-xs) * 0.9) calc(var(--spacing-md) * 0.9);
+    font-size: var(--font-size-sm);
+    gap: var(--spacing-xs);
+  }
+
+  /* Scale down badge */
+  .badge {
+    padding: calc(var(--spacing-xs) * 0.8) calc(var(--spacing-sm) * 0.9);
+    font-size: var(--font-size-xs);
+  }
+
+  /* Scale down form elements */
+  .form-group {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .form-label {
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .form-control {
+    padding: calc(var(--spacing-xs) * 0.9) var(--spacing-sm);
+    font-size: var(--font-size-base);
+  }
+
+  /* Scale down table */
+  .table th,
+  .table td {
+    padding: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+  }
+
+  /* Scale down spinner */
+  .spinner,
+  .spinner-gradient {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* Small Mobile - Additional scaling for very small screens */
+@media (max-width: 480px) {
+  :root {
+    /* Further scale down for very small screens */
+    --font-size-xs: 0.65rem;     /* 10.4px */
+    --font-size-sm: 0.75rem;     /* 12px */
+    --font-size-base: 0.85rem;   /* 13.6px */
+    --font-size-lg: 0.95rem;     /* 15.2px */
+    --font-size-xl: 1rem;        /* 16px */
+    --font-size-2xl: 1.2rem;     /* 19.2px */
+    --font-size-3xl: 1.4rem;     /* 22.4px */
+    --font-size-4xl: 1.8rem;     /* 28.8px */
+    
+    /* Further reduce spacing */
+    --spacing-xs: 0.15rem;       /* 2.4px */
+    --spacing-sm: 0.35rem;       /* 5.6px */
+    --spacing-md: 0.7rem;        /* 11.2px */
+    --spacing-lg: 1rem;          /* 16px */
+    --spacing-xl: 1.4rem;        /* 22.4px */
+    --spacing-2xl: 2rem;         /* 32px */
+    --spacing-3xl: 2.8rem;       /* 44.8px */
+  }
+
+  body {
+    font-size: var(--font-size-base);
+  }
+
+  h1 { font-size: var(--font-size-2xl); }
+  h2 { font-size: var(--font-size-xl); }
+  h3 { font-size: var(--font-size-lg); }
+  h4 { font-size: var(--font-size-base); }
+  h5 { font-size: var(--font-size-sm); }
+  h6 { font-size: var(--font-size-xs); }
+
+  .card {
+    padding: var(--spacing-sm);
+  }
+
+  .btn {
+    padding: calc(var(--spacing-xs) * 0.8) calc(var(--spacing-sm) * 0.9);
+    font-size: var(--font-size-xs);
   }
 }
 

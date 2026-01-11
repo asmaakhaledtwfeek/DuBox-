@@ -21,7 +21,7 @@ public class GetPublicBoxByIdQueryHandler : IRequestHandler<GetPublicBoxByIdQuer
         try
         {
             var box = _unitOfWork.Repository<Box>()
-                .GetEntityWithSpec(new GetBoxByIdWithIncludesSpecification(request.BoxId));
+                .GetEntityWithSpec(new GetBoxWithIncludesSpecification(request.BoxId));
 
             if (box == null)
                 return Result.Failure<PublicBoxDto>("Box not found");

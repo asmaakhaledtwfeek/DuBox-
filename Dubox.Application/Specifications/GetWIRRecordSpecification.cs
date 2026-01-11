@@ -3,9 +3,9 @@ using Dubox.Domain.Specification;
 
 namespace Dubox.Application.Specifications
 {
-    public class GetWIRRecordByBoxIdSpecification : Specification<WIRRecord>
+    public class GetWIRRecordSpecification : Specification<WIRRecord>
     {
-        public GetWIRRecordByBoxIdSpecification(Guid boxId)
+        public GetWIRRecordSpecification(Guid boxId)
         {
 
             AddInclude(nameof(WIRRecord.BoxActivity));
@@ -14,6 +14,16 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(WIRRecord.RequestedByUser));
             AddInclude(nameof(WIRRecord.InspectedByUser));
             AddOrderByDescending(w => w.RequestedDate);
+        }
+
+        public GetWIRRecordSpecification(Guid boxId ,bool position)
+        {
+            AddCriteria(w=> w.BoxActivity.BoxId == boxId );
+            AddCriteria(w => !string.IsNullOrWhiteSpace(w.Bay) || !string.IsNullOrWhiteSpace(w.Row) || !string.IsNullOrWhiteSpace(w.Position));
+            AddInclude(nameof(WIRRecord.BoxActivity));
+            AddOrderByDescending(w => w.CreatedDate);
+
+
         }
     }
 }

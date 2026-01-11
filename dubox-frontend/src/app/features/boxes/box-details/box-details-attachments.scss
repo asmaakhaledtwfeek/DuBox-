@@ -141,14 +141,639 @@
 }
 
 @media (max-width: 768px) {
+  // Attachments summary header
+  .attachments-summary {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 16px;
+    margin-bottom: 24px;
+    border-radius: 12px;
+
+    .summary-left {
+      width: 100%;
+      justify-content: space-between;
+      gap: 12px;
+
+      h3 {
+        font-size: 18px;
+        line-height: 1.3;
+        flex: 1;
+        min-width: 0;
+      }
+
+      .total-count {
+        font-size: 12px;
+        padding: 6px 12px;
+        border-radius: 10px;
+        flex-shrink: 0;
+      }
+    }
+
+    .summary-right {
+      width: 100%;
+      gap: 8px;
+    }
+  }
+
+  // Expand/Collapse buttons
+  .expand-collapse-buttons {
+    width: 100%;
+    gap: 8px;
+
+    .btn-expand-collapse {
+      flex: 1;
+      justify-content: center;
+      padding: 8px 12px;
+      font-size: 12px;
+      border-radius: 8px;
+
+      svg {
+        width: 14px;
+        height: 14px;
+      }
+    }
+  }
+
+  // Images gallery
   .images-gallery {
     grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+  }
+
+  // Image card container
+  .image-card {
+    gap: 12px;
+  }
+
+  // Image wrapper
+  .image-wrapper {
+    border-radius: 12px;
+    min-height: 160px;
+    border-width: 2px;
+  }
+
+  // Image info card - mobile responsive
+  .image-info {
+    padding: 12px;
+    gap: 8px;
+    border-radius: 10px;
+    border-width: 1.5px;
+    box-shadow: 
+      0 1px 3px rgba(0, 0, 0, 0.05),
+      0 1px 2px rgba(0, 0, 0, 0.03);
+
+    p {
+      margin: 0;
+      line-height: 1.4;
+    }
+
+    .image-name {
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.4;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .image-date {
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+
+      &::before {
+        font-size: 11px;
+      }
+    }
+
+    .image-size {
+      font-size: 11px;
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    .image-activity {
+      margin-top: 2px;
+
+      .activity-link {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 10px;
+        font-size: 11px;
+        gap: 5px;
+        border-radius: 7px;
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        svg {
+          width: 12px;
+          height: 12px;
+          flex-shrink: 0;
+        }
+
+        &:hover {
+          transform: translateX(0);
+        }
+      }
+    }
+
+    .image-ref {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 7px;
+      max-width: fit-content;
+    }
+  }
+
+  // Version badge - mobile
+  .version-badge {
+    top: 8px;
+    right: 8px;
+    height: 24px;
+    padding: 0 8px;
+    font-size: 0.65rem;
+    border-radius: 10px;
+  }
+
+  // Latest badge - mobile
+  .latest-badge {
+    top: 8px;
+    left: 8px;
+    height: 24px;
+    padding: 0 8px;
+    font-size: 0.65rem;
+    border-radius: 10px;
+
+    &::before {
+      font-size: 0.65rem;
+      margin-right: 3px;
+    }
+  }
+
+  // Activity badge - mobile (positioned below Latest badge with more spacing)
+  .activity-badge {
+    top: 38px;
+    left: 8px;
+    height: 22px;
+    padding: 0 7px;
+    font-size: 0.6rem;
+    border-radius: 10px;
+    gap: 3px;
+    max-width: calc(100% - 16px);
+
+    svg {
+      width: 10px;
+      height: 10px;
+    }
+  }
+
+  // Box code badge - mobile (positioned below Latest badge with more spacing)
+  .box-code-badge {
+    top: 38px;
+    left: 8px;
+    height: 22px;
+    padding: 0 7px;
+    font-size: 0.6rem;
+    border-radius: 10px;
+    gap: 3px;
+    max-width: calc(100% - 16px);
+
+    svg {
+      width: 10px;
+      height: 10px;
+    }
+  }
+
+  // Image overlay
+  .image-overlay {
+    border-radius: 12px;
+
+    .overlay-actions {
+      gap: 8px;
+
+      .overlay-btn {
+        width: 36px;
+        height: 36px;
+
+        svg {
+          width: 18px;
+          height: 18px;
+        }
+      }
+    }
+  }
+
+  // Section header - mobile
+  .section-header {
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    border-radius: 10px;
+
+    .section-title {
+      font-size: 14px;
+      gap: 8px;
+      line-height: 1.3;
+
+      .chevron-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+      }
+
+      svg {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+      }
+    }
+
+    .section-count {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 10px;
+      white-space: nowrap;
+      line-height: 1.3;
+    }
+  }
+
+  // Attachment section
+  .attachment-section {
+    margin-bottom: 20px;
+  }
+
+  // File group container
+  .file-group {
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  // File group header - mobile responsive
+  .file-group-header {
+    padding: 10px 12px;
+    margin: -8px -8px 14px -8px;
+    border-radius: 10px;
+    flex-wrap: wrap;
+    gap: 10px;
+    min-height: auto;
+    overflow: visible;
+
+    .file-group-header-left {
+      gap: 8px;
+      flex: 1 1 auto;
+      min-width: 0;
+      max-width: 100%;
+      align-items: flex-start;
+
+      .chevron-icon {
+        width: 16px;
+        height: 16px;
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+
+      .file-group-name {
+        font-size: 13px;
+        line-height: 1.3;
+        flex: 1;
+        min-width: 0;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+        max-width: 100%;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+
+        &::before {
+          font-size: 13px;
+          margin-right: 4px;
+          vertical-align: middle;
+        }
+      }
+    }
+
+    .file-group-header-right {
+      flex: 1 1 100%;
+      justify-content: flex-start;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+
+      .version-count,
+      .version-count-badge {
+        font-size: 11px;
+        padding: 6px 12px;
+        border-radius: 10px;
+        line-height: 1.3;
+        white-space: nowrap;
+        overflow: visible;
+        text-overflow: clip;
+        flex-shrink: 0;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+          transform: scale(1.02);
+        }
+      }
+
+      .version-history-btn {
+        padding: 6px 10px;
+        font-size: 11px;
+        gap: 4px;
+        border-radius: 8px;
+        height: auto;
+        min-height: 30px;
+        line-height: 1.3;
+        flex: 1 1 auto;
+        justify-content: center;
+        white-space: nowrap;
+
+        svg {
+          width: 13px;
+          height: 13px;
+          flex-shrink: 0;
+        }
+      }
+    }
+
+    &.expanded {
+      margin-bottom: 14px;
+    }
   }
 }
 
 @media (max-width: 480px) {
+  // Attachments summary header - extra compact
+  .attachments-summary {
+    padding: 12px;
+    margin-bottom: 20px;
+    gap: 12px;
+    border-radius: 10px;
+
+    .summary-left {
+      gap: 10px;
+
+      h3 {
+        font-size: 16px;
+      }
+
+      .total-count {
+        font-size: 11px;
+        padding: 5px 10px;
+        border-radius: 8px;
+      }
+    }
+
+    .summary-right {
+      gap: 6px;
+    }
+  }
+
+  // Expand/Collapse buttons - extra compact
+  .expand-collapse-buttons {
+    gap: 6px;
+
+    .btn-expand-collapse {
+      padding: 7px 10px;
+      font-size: 11px;
+      border-radius: 6px;
+
+      svg {
+        width: 13px;
+        height: 13px;
+      }
+    }
+  }
+
+  // Images gallery
   .images-gallery {
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 14px;
+  }
+
+  // Even more compact for very small screens
+  .image-card {
+    gap: 10px;
+  }
+
+  .image-wrapper {
+    border-radius: 10px;
+    min-height: 140px;
+    border-width: 2px;
+  }
+
+  .image-info {
+    padding: 8px 10px;
+    gap: 6px;
+    border-radius: 8px;
+
+    .image-name {
+      font-size: 12px;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+    }
+
+    .image-date {
+      font-size: 9px;
+      
+      &::before {
+        font-size: 9px;
+      }
+    }
+
+    .image-size {
+      font-size: 9px;
+    }
+
+    .image-activity {
+      .activity-link {
+        padding: 4px 6px;
+        font-size: 10px;
+        gap: 3px;
+
+        svg {
+          width: 10px;
+          height: 10px;
+        }
+      }
+    }
+
+    .image-ref {
+      font-size: 10px;
+      padding: 2px 6px;
+    }
+  }
+
+  // Section header - extra small
+  .section-header {
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    border-radius: 8px;
+
+    .section-title {
+      font-size: 13px;
+      gap: 6px;
+      line-height: 1.3;
+
+      .chevron-icon {
+        width: 15px;
+        height: 15px;
+      }
+
+      svg {
+        width: 15px;
+        height: 15px;
+      }
+    }
+
+    .section-count {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 8px;
+      line-height: 1.3;
+    }
+  }
+
+  // Attachment section
+  .attachment-section {
+    margin-bottom: 16px;
+  }
+
+  // File group - extra small screens
+  .file-group {
+    padding: 12px;
+    border-radius: 10px;
+    overflow: visible;
+  }
+
+  .file-group-header {
+    padding: 8px 10px;
+    gap: 8px;
+    margin: -6px -6px 10px -6px;
+    border-radius: 8px;
+    overflow: visible;
+
+    .file-group-header-left {
+      gap: 6px;
+      align-items: flex-start;
+
+      .chevron-icon {
+        width: 14px;
+        height: 14px;
+        margin-top: 2px;
+      }
+
+      .file-group-name {
+        font-size: 12px;
+        line-height: 1.3;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+
+        &::before {
+          font-size: 12px;
+        }
+      }
+    }
+
+    .file-group-header-right {
+      gap: 6px;
+      align-items: center;
+
+      .version-count,
+      .version-count-badge {
+        font-size: 10px;
+        padding: 5px 10px;
+        border-radius: 8px;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: visible;
+        text-overflow: clip;
+        flex-shrink: 0;
+      }
+
+      .version-history-btn {
+        padding: 5px 8px;
+        font-size: 10px;
+        gap: 3px;
+        min-height: 26px;
+        border-radius: 6px;
+        line-height: 1.2;
+        white-space: nowrap;
+
+        svg {
+          width: 11px;
+          height: 11px;
+        }
+      }
+    }
+  }
+
+  // All badges even smaller on very small screens
+  .version-badge {
+    top: 6px;
+    right: 6px;
+    height: 22px;
+    padding: 0 6px;
+    font-size: 0.6rem;
+    border-radius: 8px;
+  }
+
+  .latest-badge {
+    top: 6px;
+    left: 6px;
+    height: 22px;
+    padding: 0 6px;
+    font-size: 0.6rem;
+    border-radius: 8px;
+
+    &::before {
+      font-size: 0.6rem;
+      margin-right: 2px;
+    }
+  }
+
+  .activity-badge,
+  .box-code-badge {
+    top: 34px;
+    left: 6px;
+    height: 22px;
+    padding: 0 6px;
+    font-size: 0.6rem;
+    border-radius: 8px;
+    gap: 2px;
+
+    svg {
+      width: 10px;
+      height: 10px;
+    }
+  }
+
+  .image-overlay {
+    .overlay-actions {
+      gap: 6px;
+
+      .overlay-btn {
+        width: 32px;
+        height: 32px;
+
+        svg {
+          width: 16px;
+          height: 16px;
+        }
+      }
+    }
   }
 }
 
@@ -240,20 +865,21 @@
 /* Box Code Badge - positioned below version badge */
 .box-code-badge {
   position: absolute;
-  top: 56px;
-  left: 16px;
+  top: 40px;
+  left: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 0 14px;
-  height: 32px;
-  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+  gap: 4px;
+  padding: 0 8px;
+  max-width: calc(100% - 16px);
+  height: 26px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
   color: #ffffff;
-  border-radius: 16px;
-  font-size: 0.875rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
   font-weight: 700;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
   box-shadow: 
     0 4px 12px rgba(59, 130, 246, 0.4),
     0 2px 6px rgba(15, 23, 42, 0.2),
@@ -263,10 +889,13 @@
   border: 2px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
   text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   svg {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     flex-shrink: 0;
   }
 
@@ -275,11 +904,42 @@
     box-shadow: 
       0 6px 20px rgba(59, 130, 246, 0.5),
       0 3px 10px rgba(15, 23, 42, 0.25);
-      background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+      background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
   }
 
   &:active {
     transform: scale(0.98) translateY(0);
+  }
+
+  @media (min-width: 769px) {
+    top: 48px;
+    left: 12px;
+    height: 28px;
+    padding: 0 10px;
+    font-size: 0.75rem;
+    gap: 5px;
+    border-radius: 14px;
+
+    svg {
+      width: 13px;
+      height: 13px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    top: 56px;
+    left: 16px;
+    height: 32px;
+    padding: 0 14px;
+    font-size: 0.875rem;
+    gap: 6px;
+    letter-spacing: 0.3px;
+    border-radius: 16px;
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
   }
 }
 
@@ -767,20 +1427,21 @@
 
 .version-badge {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 8px;
+  right: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 48px;
-  height: 32px;
-  padding: 0 12px;
+  min-width: 40px;
+  max-width: calc(100% - 16px);
+  height: 26px;
+  padding: 0 8px;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: #ffffff;
-  border-radius: 16px;
-  font-size: 0.875rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
   font-weight: 800;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   box-shadow: 
     0 4px 12px rgba(16, 185, 129, 0.4),
     0 2px 6px rgba(15, 23, 42, 0.2),
@@ -789,37 +1450,70 @@
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   text-transform: uppercase;
   border: 2px solid rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   &::before {
     content: '✓';
-    margin-right: 4px;
-    font-size: 0.875rem;
+    margin-right: 3px;
+    font-size: 0.7rem;
+    flex-shrink: 0;
   }
 
   &:hover {
-    transform: scale(1.15) rotate(-5deg);
+    transform: scale(1.1) rotate(-5deg);
     box-shadow: 
       0 6px 20px rgba(16, 185, 129, 0.5),
       0 3px 10px rgba(15, 23, 42, 0.25);
     background: linear-gradient(135deg, #059669 0%, #047857 100%);
   }
+
+  @media (min-width: 769px) {
+    top: 12px;
+    right: 12px;
+    min-width: 48px;
+    height: 30px;
+    padding: 0 10px;
+    font-size: 0.8125rem;
+    border-radius: 14px;
+
+    &::before {
+      margin-right: 4px;
+      font-size: 0.8125rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    top: 16px;
+    right: 16px;
+    height: 32px;
+    padding: 0 12px;
+    font-size: 0.875rem;
+    border-radius: 16px;
+
+    &::before {
+      font-size: 0.875rem;
+    }
+  }
 }
 
 .latest-badge {
   position: absolute;
-  top: 16px;
-  left: 16px;
+  top: 8px;
+  left: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0 14px;
-  height: 32px;
+  padding: 0 8px;
+  max-width: calc(100% - 16px);
+  height: 26px;
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
   color: #ffffff;
-  border-radius: 16px;
-  font-size: 0.875rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
   font-weight: 800;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
   box-shadow: 
     0 4px 12px rgba(245, 158, 11, 0.4),
     0 2px 6px rgba(15, 23, 42, 0.2),
@@ -827,30 +1521,63 @@
   z-index: 10;
   text-transform: uppercase;
   border: 2px solid rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   &::before {
     content: '⭐';
-    margin-right: 4px;
+    margin-right: 3px;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+  }
+
+  @media (min-width: 769px) {
+    top: 12px;
+    left: 12px;
+    height: 28px;
+    padding: 0 10px;
+    font-size: 0.75rem;
+    border-radius: 14px;
+
+    &::before {
+      margin-right: 4px;
+      font-size: 0.75rem;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    top: 16px;
+    left: 16px;
+    height: 32px;
+    padding: 0 14px;
     font-size: 0.875rem;
+    border-radius: 16px;
+
+    &::before {
+      margin-right: 5px;
+      font-size: 0.875rem;
+    }
   }
 }
 
 .activity-badge {
   position: absolute;
-  top: 56px;
-  left: 16px;
+  top: 40px;
+  left: 8px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 0 14px;
-  height: 32px;
+  gap: 4px;
+  padding: 0 8px;
+  max-width: calc(100% - 16px);
+  height: 26px;
   background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
   color: #ffffff;
-  border-radius: 16px;
-  font-size: 0.875rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
   font-weight: 700;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.2px;
   box-shadow: 
     0 4px 12px rgba(20, 184, 166, 0.4),
     0 2px 6px rgba(15, 23, 42, 0.2),
@@ -860,10 +1587,13 @@
   border: 2px solid rgba(255, 255, 255, 0.2);
   cursor: pointer;
   text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   svg {
-    width: 14px;
-    height: 14px;
+    width: 12px;
+    height: 12px;
     flex-shrink: 0;
   }
 
@@ -877,6 +1607,37 @@
 
   &:active {
     transform: scale(0.98);
+  }
+
+  @media (min-width: 769px) {
+    top: 48px;
+    left: 12px;
+    height: 28px;
+    padding: 0 10px;
+    font-size: 0.75rem;
+    gap: 5px;
+    border-radius: 14px;
+
+    svg {
+      width: 13px;
+      height: 13px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    top: 56px;
+    left: 16px;
+    height: 32px;
+    padding: 0 14px;
+    font-size: 0.875rem;
+    gap: 6px;
+    letter-spacing: 0.3px;
+    border-radius: 16px;
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
   }
 }
 
@@ -892,9 +1653,13 @@
   height: 100vh;
   background: #ffffff;
   box-shadow: -4px 0 24px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  z-index: 10000;
   display: flex;
   flex-direction: column;
+  animation: slideInRight 0.3s ease-out;
+  opacity: 1;
+  visibility: visible;
+  overflow: hidden;
 }
 
 .version-sidebar-overlay {
@@ -903,9 +1668,13 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.4);
-  z-index: 999;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
   animation: fadeIn 0.3s ease-out;
+  -webkit-tap-highlight-color: transparent;
+  opacity: 1;
+  visibility: visible;
+  display: block;
 }
 
 .version-sidebar-header {
@@ -1582,6 +2351,17 @@
 /* =========================================================
    Animations
 ========================================================= */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
 @keyframes fadeIn {
   from { 
     opacity: 0;
@@ -1608,6 +2388,90 @@
    Responsive Design
 ========================================================= */
 @media (max-width: 768px) {
+  // Sidebar z-index fixes for mobile
+  .version-history-sidebar {
+    z-index: 10001 !important;
+    width: 100% !important;
+    max-width: 100vw !important;
+    right: 0 !important;
+    left: 0 !important;
+    box-shadow: -2px 0 20px rgba(0, 0, 0, 0.25) !important;
+    background: #ffffff !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    overflow: hidden !important;
+  }
+
+  .version-sidebar-overlay {
+    z-index: 10000 !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+
+  .version-sidebar-header {
+    background: #ffffff !important;
+    position: sticky;
+    top: 0;
+    z-index: 3;
+
+    .version-sidebar-close {
+      width: 40px;
+      height: 40px;
+      background: #f8fafc;
+      z-index: 4;
+      position: relative;
+
+      svg {
+        width: 22px;
+        height: 22px;
+      }
+
+      &:active {
+        background: #e2e8f0;
+        transform: scale(0.95);
+      }
+    }
+  }
+
+  .version-sidebar-controls {
+    background: #f8fafc !important;
+    z-index: 2;
+    position: relative;
+
+    .compare-versions-btn,
+    .execute-compare-btn {
+      z-index: 1;
+      position: relative;
+      min-height: 44px;
+      touch-action: manipulation;
+    }
+  }
+
+  .versions-list {
+    background: #ffffff !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    z-index: 1;
+  }
+
+  .version-item {
+    background: #ffffff !important;
+    position: relative;
+    z-index: 1;
+    touch-action: manipulation;
+
+    .version-actions {
+      .action-btn {
+        min-height: 40px;
+        min-width: 40px;
+        touch-action: manipulation;
+      }
+    }
+  }
+
   .file-drawing-card {
     flex-direction: row;
     gap: 16px;
@@ -1909,29 +2773,62 @@
   }
 
   .version-history-sidebar {
-    width: 100%;
-    max-width: 100vw;
+    width: 100% !important;
+    max-width: 100vw !important;
+    z-index: 10001 !important;
+    box-shadow: -2px 0 20px rgba(0, 0, 0, 0.25) !important;
+    right: 0 !important;
+    left: 0 !important;
+    background: #ffffff !important;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  .version-sidebar-overlay {
+    z-index: 10000 !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
 
   .version-sidebar-header {
     padding: 16px 20px;
+    position: relative;
+    z-index: 2;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
   }
 
   .version-sidebar-controls {
     padding: 12px 20px;
+    position: relative;
+    z-index: 2;
+    background: #ffffff;
   }
 
   .versions-list {
     padding: 12px 20px;
+    position: relative;
+    z-index: 1;
+    background: #ffffff;
+    flex: 1;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .version-item {
     flex-wrap: wrap;
     padding: 12px;
+    background: #ffffff !important;
+    position: relative;
+    z-index: 1;
 
     .version-badge-circle {
       width: 40px;
       height: 40px;
+      flex-shrink: 0;
 
       .version-number {
         font-size: 0.8125rem;

@@ -32,12 +32,11 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
 
         public async Task<Result<WIRCheckpointDto>> Handle(ReviewWIRCheckPointCommand request, CancellationToken cancellationToken)
         {
-            // Check if user can modify data (Viewer role cannot)
-            var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
+            var module = PermissionModuleEnum.WIR;
+            var action = PermissionActionEnum.Review;
+            var canModify = await _visibilityService.CanPerformAsync(module ,action ,cancellationToken);
             if (!canModify)
-            {
                 return Result.Failure<WIRCheckpointDto>("Access denied. Viewer role has read-only access and cannot review WIR checkpoints.");
-            }
 
             var wir = _unitOfWork.Repository<WIRCheckpoint>().
                 GetEntityWithSpec(new GetWIRCheckpointByIdSpecification(request.WIRId));
@@ -51,17 +50,13 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                 return Result.Failure<WIRCheckpointDto>("Access denied. You do not have permission to review this WIR checkpoint.");
 
             var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(wir.Box.ProjectId, "review WIR checkpoint", cancellationToken);
-
             if (!projectStatusValidation.IsSuccess)
                 return Result.Failure<WIRCheckpointDto>(projectStatusValidation.Error!);
+
+            var boxStatusValidation = await _visibilityService.GetBoxStatusChecksAsync(wir.BoxId, "review WIR checkpoint", cancellationToken);
+            if (!boxStatusValidation.IsSuccess)
+                return Result.Failure<WIRCheckpointDto>(boxStatusValidation.Error!);
            
-            // Check if box is dispatched or on hold - no actions allowed
-            if (wir.Box.Status == BoxStatusEnum.Dispatched)
-                return Result.Failure<WIRCheckpointDto>("Cannot review WIR checkpoint. The box is dispatched and no actions are allowed on checkpoints. Only viewing is permitted.");
-            
-            if (wir.Box.Status == BoxStatusEnum.OnHold)
-                return Result.Failure<WIRCheckpointDto>("Cannot review WIR checkpoint. The box is on hold and no actions are allowed on checkpoints. Only viewing is permitted.");
-            
             var invalidIds = request.Items
                 .Select(i => i.ChecklistItemId)
                 .Except(wir.ChecklistItems.Select(c => c.ChecklistItemId))
@@ -86,22 +81,16 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             {
                 var user = await _unitOfWork.Repository<User>().GetByIdAsync(currentUserId);
                 if (user != null)
-                {
                     wir.InspectorName = user.FullName;
-                }
             }
 
             if (!string.IsNullOrWhiteSpace(request.InspectorRole))
-            {
                 wir.InspectorRole = request.InspectorRole.Trim();
-            }
 
             // Prevent changing from Approved or ConditionalApproval to Rejected
             if ((wir.Status == WIRCheckpointStatusEnum.Approved || wir.Status == WIRCheckpointStatusEnum.ConditionalApproval) 
                 && request.Status == WIRCheckpointStatusEnum.Rejected)
-            {
                 return Result.Failure<WIRCheckpointDto>($"Cannot change WIR checkpoint status from '{wir.Status}' to 'Rejected'. Once a checkpoint is approved or conditionally approved, it cannot be rejected.");
-            }
 
             wir.Status = request.Status;
             if ((request.Status == WIRCheckpointStatusEnum.Approved  || request.Status == WIRCheckpointStatusEnum.ConditionalApproval) && wir.ApprovalDate == null)
@@ -115,29 +104,12 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             var existingImages = await _unitOfWork.Repository<WIRCheckpointImage>()
                 .FindAsync(img => img.WIRId == wir.WIRId, cancellationToken);
             if (existingImages.Any())
-            {
                 sequence = existingImages.Max(img => img.Sequence) + 1;
-            }
 
             (bool, string) imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<WIRCheckpointImage>(wir.WIRId, request.Files, request.ImageUrls, cancellationToken, sequence, request.FileNames);
             if (!imagesProcessResult.Item1)
-            {
                 return Result.Failure<WIRCheckpointDto>(imagesProcessResult.Item2);
-            }
-
-            try
-            {
-                await _unitOfWork.CompleteAsync(cancellationToken);
-            }
-            catch (Microsoft.EntityFrameworkCore.DbUpdateException dbEx)
-            {
-                return Result.Failure<WIRCheckpointDto>($"Database error: {dbEx.Message}. Inner exception: {dbEx.InnerException?.Message}. " +
-                    $"Make sure the WIRCheckpointImages table exists and the WIRId '{wir.WIRId}' is valid.");
-            }
-            catch (Exception ex)
-            {
-                return Result.Failure<WIRCheckpointDto>($"Error saving changes: {ex.Message}. Inner exception: {ex.InnerException?.Message}");
-            }
+            await _unitOfWork.CompleteAsync(cancellationToken);
 
             // Reload checkpoint with images to include them in DTO
             wir = _unitOfWork.Repository<WIRCheckpoint>()

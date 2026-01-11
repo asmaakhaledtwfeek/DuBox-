@@ -31,12 +31,11 @@ namespace Dubox.Application.Features.QualityIssues.Commands
 
         public async Task<Result<QualityIssueDetailsDto>> Handle(UpdateQualityIssueStatusCommand request, CancellationToken cancellationToken)
         {
-            // Check if user can modify data (Viewer role cannot)
-            var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
+           var module= PermissionModuleEnum.QualityIssues;
+            var action = PermissionActionEnum.UpdateStatus;
+            var canModify = await _visibilityService.CanPerformAsync(module, action,cancellationToken);
             if (!canModify)
-            {
-                return Result.Failure<QualityIssueDetailsDto>("Access denied. Viewer role has read-only access and cannot modify quality issues.");
-            }
+                return Result.Failure<QualityIssueDetailsDto>("Access denied. You do not have permission to modify quality issues.");
 
             var issue = _unitOfWork.Repository<QualityIssue>().GetEntityWithSpec(new GetQualityIssueByIdSpecification(request.IssueId));
 
@@ -49,17 +48,13 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                 return Result.Failure<QualityIssueDetailsDto>("Access denied. You do not have permission to modify this quality issue.");
 
             var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(issue.Box.ProjectId, "update quality issue", cancellationToken);
-
             if (!projectStatusValidation.IsSuccess)
                 return Result.Failure<QualityIssueDetailsDto>(projectStatusValidation.Error!);
-           
-            // Check if box is dispatched or on hold - no actions allowed
-            if (issue.Box.Status == BoxStatusEnum.Dispatched)
-                return Result.Failure<QualityIssueDetailsDto>("Cannot update quality issue. The box is dispatched and no actions are allowed on quality issues. Only viewing is permitted.");
-            
-            if (issue.Box.Status == BoxStatusEnum.OnHold)
-                return Result.Failure<QualityIssueDetailsDto>("Cannot update quality issue. The box is on hold and no actions are allowed on quality issues. Only viewing is permitted.");
 
+            var boxStatusValidation = await _visibilityService.GetBoxStatusChecksAsync(issue.BoxId, "update quality issues", cancellationToken);
+            if (!boxStatusValidation.IsSuccess)
+                return Result.Failure<QualityIssueDetailsDto>(boxStatusValidation.Error!);
+            
             // Capture old values for audit log
             var oldStatus = issue.Status.ToString();
             var oldResolutionDescription = issue.ResolutionDescription ?? "N/A";

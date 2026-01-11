@@ -31,12 +31,11 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
 
         public async Task<Result<CreateWIRCheckpointDto>> Handle(CreateWIRCheckpointCommand request, CancellationToken cancellationToken)
         {
-            // Check if user can modify data (Viewer role cannot)
-            var canModify = await _visibilityService.CanModifyDataAsync(cancellationToken);
-            if (!canModify)
-            {
+            var module = PermissionModuleEnum.WIR;
+            var action = PermissionActionEnum.Create;
+            var canCreate = await _visibilityService.CanPerformAsync(module , action, cancellationToken);
+            if (!canCreate)
                 return Result.Failure<CreateWIRCheckpointDto>("Access denied. Viewer role has read-only access and cannot create WIR checkpoints.");
-            }
 
             var boxActicity = await _unitOfWork.Repository<BoxActivity>().GetByIdAsync(request.BoxActivityId);
             if (boxActicity == null)
@@ -53,21 +52,13 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                 return Result.Failure<CreateWIRCheckpointDto>("Access denied. You do not have permission to create WIR checkpoints for this project.");
 
             var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(box.ProjectId, "create WIR checkpoint", cancellationToken);
-
             if (!projectStatusValidation.IsSuccess)
                 return Result.Failure<CreateWIRCheckpointDto>(projectStatusValidation.Error!);
-           
-            // Check if box is dispatched or on hold - no actions allowed
-            if (box.Status == BoxStatusEnum.Dispatched)
-            {
-                return Result.Failure<CreateWIRCheckpointDto>("Cannot create WIR checkpoint. The box is dispatched and no actions are allowed on checkpoints. Only viewing is permitted.");
-            }
-            
-            if (box.Status == BoxStatusEnum.OnHold)
-            {
-                return Result.Failure<CreateWIRCheckpointDto>("Cannot create WIR checkpoint. The box is on hold and no actions are allowed on checkpoints. Only viewing is permitted.");
-            }
 
+            var boxStatusValidation = await _visibilityService.GetBoxStatusChecksAsync(box.BoxId, "create WIR checkpoint", cancellationToken);
+            if (!boxStatusValidation.IsSuccess)
+                return Result.Failure<CreateWIRCheckpointDto>(boxStatusValidation.Error!);
+           
             var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
             var user = await _unitOfWork.Repository<User>().GetByIdAsync(currentUserId);
             var currentUserName = user != null ? user.FullName : string.Empty;

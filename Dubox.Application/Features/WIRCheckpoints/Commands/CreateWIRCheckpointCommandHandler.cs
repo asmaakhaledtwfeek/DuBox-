@@ -92,31 +92,19 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                         sequence = existingImages.Max(img => img.Sequence) + 1;
                     }
 
-                    (bool, string) imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<WIRCheckpointImage>(
+                   var imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<WIRCheckpointImage>(
                         existCheckpoint.WIRId, 
                         request.Files, 
                         request.ImageUrls, 
                         cancellationToken, 
                         sequence,
-                        fileNames: request.FileNames);
+                        fileNames: request.FileNames,
+                        existingImagesForVersioning :existingImages.ToList());
                     
-                    if (!imagesProcessResult.Item1)
-                    {
+                    if (!imagesProcessResult.IsSuccess)
                         return Result.Failure<CreateWIRCheckpointDto>(imagesProcessResult.Item2);
-                    }
-
-                    try
-                    {
-                        await _unitOfWork.CompleteAsync(cancellationToken);
-                    }
-                    catch (Microsoft.EntityFrameworkCore.DbUpdateException dbEx)
-                    {
-                        return Result.Failure<CreateWIRCheckpointDto>($"Database error saving images: {dbEx.Message}. Inner exception: {dbEx.InnerException?.Message}.");
-                    }
-                    catch (Exception ex)
-                    {
-                        return Result.Failure<CreateWIRCheckpointDto>($"Error saving images: {ex.Message}. Inner exception: {ex.InnerException?.Message}");
-                    }
+                    await _unitOfWork.CompleteAsync(cancellationToken);
+                  
                 }
                 
                 // Create audit log for update
@@ -154,38 +142,18 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             if (request.Files != null && request.Files.Any() || request.ImageUrls != null && request.ImageUrls.Any())
             {
                 int sequence = 0;
-                var existingImages = await _unitOfWork.Repository<WIRCheckpointImage>()
-                    .FindAsync(img => img.WIRId == checkpoint.WIRId, cancellationToken);
-                if (existingImages.Any())
-                {
-                    sequence = existingImages.Max(img => img.Sequence) + 1;
-                }
-
-                (bool, string) imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<WIRCheckpointImage>(
+               var imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<WIRCheckpointImage>(
                     checkpoint.WIRId, 
                     request.Files, 
                     request.ImageUrls, 
                     cancellationToken, 
                     sequence,
-                    fileNames: request.FileNames);
+                    fileNames: request.FileNames
+                    );
                 
-                if (!imagesProcessResult.Item1)
-                {
+                if (!imagesProcessResult.IsSuccess)
                     return Result.Failure<CreateWIRCheckpointDto>(imagesProcessResult.Item2);
-                }
-
-                try
-                {
-                    await _unitOfWork.CompleteAsync(cancellationToken);
-                }
-                catch (Microsoft.EntityFrameworkCore.DbUpdateException dbEx)
-                {
-                    return Result.Failure<CreateWIRCheckpointDto>($"Database error saving images: {dbEx.Message}. Inner exception: {dbEx.InnerException?.Message}.");
-                }
-                catch (Exception ex)
-                {
-                    return Result.Failure<CreateWIRCheckpointDto>($"Error saving images: {ex.Message}. Inner exception: {ex.InnerException?.Message}");
-                }
+                await _unitOfWork.CompleteAsync(cancellationToken); 
             }
             
             // Create audit log for creation

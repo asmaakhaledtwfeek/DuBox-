@@ -1,7 +1,9 @@
 ﻿using Dubox.Domain.Abstraction;
 using Dubox.Domain.Abstractions;
+using Dubox.Domain.Services;
 using Dubox.Domain.Services.ImageEntityConfig;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using System.Linq.Expressions;
 
 namespace Dubox.Infrastructure.Services
@@ -12,12 +14,16 @@ namespace Dubox.Infrastructure.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IDbContext _dbContext;
         private readonly IImageEntityConfigFactory _factory;
-        public ImageProcessingService(IHttpClientFactory httpClientFactory, IUnitOfWork unitOfWork, IDbContext dbContext, IImageEntityConfigFactory factory)
+        private readonly IBlobStorageService _blobStorageService;
+        private readonly ILogger<ImageProcessingService> _logger;
+        public ImageProcessingService(IHttpClientFactory httpClientFactory, IUnitOfWork unitOfWork, IDbContext dbContext, IImageEntityConfigFactory factory , IBlobStorageService blobStorageService, ILogger<ImageProcessingService> logger)
         {
             _httpClientFactory = httpClientFactory;
             _unitOfWork = unitOfWork;
             _dbContext = dbContext;
             _factory = factory;
+            _blobStorageService = blobStorageService;
+            _logger = logger;
         }
 
         public async Task<byte[]?> GetImageBytesAsync(IFormFile? file, string? imageUrl, CancellationToken cancellationToken)
@@ -48,34 +54,10 @@ namespace Dubox.Infrastructure.Services
             return null;
         }
 
-        public async Task<byte[]?> DownloadImageFromUrlAsync(string imageUrl, CancellationToken cancellationToken)
-        {
-            if (string.IsNullOrWhiteSpace(imageUrl))
-                return null;
-
-            try
-            {
-                using var httpClient = _httpClientFactory.CreateClient();
-                httpClient.Timeout = TimeSpan.FromSeconds(30);
-
-                var response = await httpClient.GetAsync(imageUrl, cancellationToken);
-                response.EnsureSuccessStatusCode();
-
-                var contentType = response.Content.Headers.ContentType?.MediaType;
-
-                if (contentType == null || !contentType.StartsWith("image/"))
-                    throw new Exception("The provided URL does not point to a valid image.");
-
-                return await response.Content.ReadAsByteArrayAsync(cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to download image from URL: {imageUrl}. Error: {ex.Message}", ex);
-            }
-        }
+       
         public async Task<(bool IsSuccess, string ErrorMessage)> ProcessImagesAsync<TEntity>(
-            Guid parentId, 
-            List<byte[]>? files, 
+            Guid parentId,
+            List<IFormFile>? files, 
             List<string>? imageUrls, 
             CancellationToken ct, 
             int sequence = 0, 
@@ -83,13 +65,13 @@ namespace Dubox.Infrastructure.Services
             List<TEntity>? existingImagesForVersioning = null) where TEntity : BaseImageEntity, new()
         {
             var images = new List<TEntity>();
-
-            Console.WriteLine($"🔍 VERSION DEBUG - {typeof(TEntity).Name}: ProcessImagesAsync called with:");
-            Console.WriteLine($"   - Parent ID: {parentId}");
-            Console.WriteLine($"   - Files count: {files?.Count ?? 0}");
-            Console.WriteLine($"   - FileNames count: {fileNames?.Count ?? 0}");
-            Console.WriteLine($"   - FileNames: {(fileNames != null ? string.Join(", ", fileNames) : "NULL")}");
-            Console.WriteLine($"   - Existing images provided for versioning: {existingImagesForVersioning?.Count ?? 0}");
+            var uploadedFileNames = new List<string>();
+            _logger.LogInformation($"🔍 VERSION DEBUG - {typeof(TEntity).Name}: ProcessImagesAsync called with:");
+            _logger.LogInformation($"   - Parent ID: {parentId}");
+            _logger.LogInformation($"   - Files count: {files?.Count ?? 0}");
+            _logger.LogInformation($"   - FileNames count: {fileNames?.Count ?? 0}");
+            _logger.LogInformation($"   - FileNames: {(fileNames != null ? string.Join(", ", fileNames) : "NULL")}");
+            _logger.LogInformation($"   - Existing images provided for versioning: {existingImagesForVersioning?.Count ?? 0}");
 
             // Get existing images for version checking
             IReadOnlyList<TEntity> existingImages;
@@ -98,13 +80,13 @@ namespace Dubox.Infrastructure.Services
             {
                 // Use provided existing images (for cross-entity version checking like all ProgressUpdates in a Box)
                 existingImages = existingImagesForVersioning;
-                Console.WriteLine($"🔍 VERSION DEBUG - Using {existingImages.Count} pre-loaded images for version checking");
+                _logger.LogInformation($"🔍 VERSION DEBUG - Using {existingImages.Count} pre-loaded images for version checking");
             }
             else
             {
                 // Query for existing images by parent ID (default behavior)
             var config = _factory.GetConfig<TEntity>();
-                Console.WriteLine($"🔍 VERSION DEBUG - {typeof(TEntity).Name}: Looking for existing images with {config.ForeignKeyName} = {parentId}");
+                _logger.LogInformation($"🔍 VERSION DEBUG - {typeof(TEntity).Name}: Looking for existing images with {config.ForeignKeyName} = {parentId}");
                 
             var predicate = BuildForeignKeyPredicate<TEntity>(config.ForeignKeyName, parentId);
                 existingImages = await _unitOfWork.Repository<TEntity>().FindAsync(
@@ -113,82 +95,66 @@ namespace Dubox.Infrastructure.Services
             );
             }
 
-            Console.WriteLine($"🔍 VERSION DEBUG - {typeof(TEntity).Name}: Found {existingImages.Count()} existing images for version checking");
+            _logger.LogInformation($"🔍 VERSION DEBUG - {typeof(TEntity).Name}: Found {existingImages.Count()} existing images for version checking");
             if (existingImages.Any())
             {
-                Console.WriteLine($"🔍 VERSION DEBUG - Existing images: {string.Join(", ", existingImages.Select(img => $"{img.OriginalName} (V{img.Version})"))}");
+                _logger.LogInformation($"🔍 VERSION DEBUG - Existing images: {string.Join(", ", existingImages.Select(img => $"{img.OriginalName} (V{img.Version})"))}");
             }
             else
             {
-                Console.WriteLine($"🔍 VERSION DEBUG - No existing images found. This might be the first upload.");
+                _logger.LogInformation($"🔍 VERSION DEBUG - No existing images found. This might be the first upload.");
             }
 
             // Track versions for files being uploaded in this batch to avoid conflicts
             var versionTracker = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
             if (files?.Any() == true)
             {
+                var folderName = GetFolderNameForEntity<TEntity>(parentId);
+
                 for (int i = 0; i < files.Count; i++)
                 {
-                    var fileBytes = files[i];
-                    var base64 = Convert.ToBase64String(fileBytes);
-                    var imageData = $"data:image/jpeg;base64,{base64}";
+                    var file = files[i];
 
-                    // Determine filename: use provided name or generate default
+                    // Determine filename
                     string originalName = "Attachment";
                     if (fileNames != null && i < fileNames.Count && !string.IsNullOrWhiteSpace(fileNames[i]))
                     {
                         originalName = fileNames[i];
                     }
+                    else if (!string.IsNullOrWhiteSpace(file.FileName))
+                    {
+                        originalName = file.FileName;
+                    }
                     else
                     {
-                        // Generate a default name based on timestamp
-                        originalName = $"Attachment_{DateTime.UtcNow:yyyyMMdd_HHmmss}_{i}.jpg";
+                        originalName = $"Attachment_{DateTime.UtcNow:yyyyMMdd_HHmmss}_{i}{GetFileExtension(file.ContentType)}";
                     }
 
-                    // Check for existing file with same name and determine version
-                    int version = 1;
-                    var originalNameLower = originalName.ToLower();
-                    
-                    Console.WriteLine($"🔍 VERSION DEBUG - Processing file: {originalName}");
-                    
-                    // First, check existing database records (in-memory comparison)
-                    var sameNameImages = existingImages
-                        .Where(img => img.OriginalName != null && 
-                                     img.OriginalName.ToLower() == originalNameLower)
-                        .ToList();
-                    
-                    if (sameNameImages.Any())
+                    // Calculate version
+                    int version = CalculateVersion(originalName, existingImages, versionTracker);
+                    _logger.LogInformation($"✅ Final version for '{originalName}': V{version}");
+
+                    string blobFileName;
+                    try
                     {
-                        var maxExistingVersion = sameNameImages.Max(img => img.Version);
-                        version = maxExistingVersion + 1;
-                        Console.WriteLine($"🔍 VERSION DEBUG - Found {sameNameImages.Count} existing files with name '{originalName}', max version: V{maxExistingVersion}, assigning V{version}");
+                        blobFileName = await _blobStorageService.UploadFileAsync(file, folderName);
+                        uploadedFileNames.Add(blobFileName); 
+                        _logger.LogInformation($"✅ Uploaded file to Blob: {blobFileName}");
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        Console.WriteLine($"🔍 VERSION DEBUG - No existing files with name '{originalName}', assigning V1");
+                        _logger.LogError(ex, $"❌ Failed to upload file: {originalName}");
+                        throw new Exception($"Failed to upload file '{originalName}': {ex.Message}");
                     }
-                    
-                    // Second, check if this filename was already processed in this batch
-                    if (versionTracker.ContainsKey(originalName))
-                    {
-                        var batchVersion = versionTracker[originalName];
-                        version = Math.Max(version, batchVersion + 1);
-                        Console.WriteLine($"🔍 VERSION DEBUG - File '{originalName}' already processed in this batch with V{batchVersion}, updating to V{version}");
-                    }
-                    
-                    // Update tracker with the version we're using
-                    versionTracker[originalName] = version;
-                    Console.WriteLine($"✅ VERSION DEBUG - Final version for '{originalName}': V{version}");
 
                     var entity = new TEntity
                     {
-                        ImageData = imageData,
+                        ImageFileName = blobFileName, 
+                        OriginalName = originalName,
                         ImageType = "file",
-                        FileSize = fileBytes.Length,
+                        FileSize = file.Length,
                         Sequence = sequence++,
                         CreatedDate = DateTime.UtcNow,
-                        OriginalName = originalName,
                         Version = version
                     };
 
@@ -196,51 +162,47 @@ namespace Dubox.Infrastructure.Services
                     images.Add(entity);
                 }
             }
-
             if (imageUrls?.Any() == true)
             {
+                var folderName = GetFolderNameForEntity<TEntity>(parentId);
+
                 foreach (var url in imageUrls)
                 {
                     var trimmed = url.Trim();
-                    byte[] bytes;
                     string originalName;
                     int version = 1;
+                    string blobFileName;
 
                     if (trimmed.StartsWith("data:image/"))
                     {
                         var commaIndex = trimmed.IndexOf(',');
-                        bytes = Convert.FromBase64String(trimmed.Substring(commaIndex + 1));
-                        originalName = $"Captured_Image_{DateTime.UtcNow:yyyyMMdd_HHmmss}.jpg";
-                        var originalNameLower = originalName.ToLower();
+                        var base64Data = trimmed.Substring(commaIndex + 1);
+                        var bytes = Convert.FromBase64String(base64Data);
 
-                        // Check for existing images with same name (in-memory comparison)
-                        var sameNameImages = existingImages
-                            .Where(img => img.OriginalName != null && 
-                                         img.OriginalName.ToLower() == originalNameLower)
-                            .ToList();
-                        
-                        if (sameNameImages.Any())
+                        originalName = $"Captured_Image_{DateTime.UtcNow:yyyyMMdd_HHmmss}.jpg";
+                        version = CalculateVersion(originalName, existingImages, versionTracker);
+
+                        try
                         {
-                            version = sameNameImages.Max(img => img.Version) + 1;
+                            var formFile = ConvertBase64ToFormFile(bytes, originalName, "image/jpeg");
+                            blobFileName = await _blobStorageService.UploadFileAsync(formFile, folderName);
+                            uploadedFileNames.Add(blobFileName);
+                            _logger.LogInformation($"✅ Uploaded base64 image to Blob: {blobFileName}");
                         }
-                        
-                        // Check if this filename was already processed in this batch
-                        if (versionTracker.ContainsKey(originalName))
+                        catch (Exception ex)
                         {
-                            version = Math.Max(version, versionTracker[originalName] + 1);
+                            _logger.LogError(ex, $"❌ Failed to upload base64 image");
+                            throw new Exception($"Failed to upload captured image: {ex.Message}");
                         }
-                        
-                        // Update tracker
-                        versionTracker[originalName] = version;
 
                         var entity = new TEntity
                         {
-                            ImageData = trimmed,
+                            ImageFileName = blobFileName,
+                            OriginalName = originalName,
                             ImageType = "file",
                             FileSize = bytes.Length,
                             Sequence = sequence++,
                             CreatedDate = DateTime.UtcNow,
-                            OriginalName = originalName,
                             Version = version
                         };
 
@@ -249,38 +211,39 @@ namespace Dubox.Infrastructure.Services
                     }
                     else
                     {
-                        bytes = await DownloadImageFromUrlAsync(trimmed, ct);
-
-                        var base64 = Convert.ToBase64String(bytes);
-                        originalName = trimmed.Length > 500 ? trimmed[..500] : trimmed;
-                        var originalNameLower = originalName.ToLower();
-
-                        // Check for existing images with same URL (in-memory comparison)
-                        var sameNameImages = existingImages
-                            .Where(img => img.OriginalName != null && 
-                                         img.OriginalName.ToLower() == originalNameLower)
-                            .ToList();
-                        
-                        if (sameNameImages.Any())
+                        byte[] bytes;
+                        try
                         {
-                            version = sameNameImages.Max(img => img.Version) + 1;
+                            bytes = await DownloadImageFromUrlAsync(trimmed, ct);
                         }
-                        
-                        // Check if this URL was already processed in this batch
-                        if (versionTracker.ContainsKey(originalName))
+                        catch (Exception ex)
                         {
-                            version = Math.Max(version, versionTracker[originalName] + 1);
+                            _logger.LogError(ex, $"❌ Failed to download image from URL: {trimmed}");
+                            throw new Exception($"Failed to download image from URL: {ex.Message}");
                         }
-                        
-                        // Update tracker
-                        versionTracker[originalName] = version;
+
+                        originalName = ExtractFileNameFromUrl(trimmed);
+                        version = CalculateVersion(originalName, existingImages, versionTracker);
+
+                        try
+                        {
+                            var formFile = ConvertBytesToFormFile(bytes, originalName, "image/jpeg");
+                            blobFileName = await _blobStorageService.UploadFileAsync(formFile, folderName);
+                            uploadedFileNames.Add(blobFileName);
+                            _logger.LogInformation($"✅ Uploaded URL image to Blob: {blobFileName}");
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, $"❌ Failed to upload downloaded image");
+                            throw new Exception($"Failed to upload image from URL: {ex.Message}");
+                        }
 
                         var entity = new TEntity
                         {
-                            ImageData = $"data:image/jpeg;base64,{base64}",
+                            ImageFileName = blobFileName,
+                            OriginalName = originalName,
                             ImageType = "url",
                             FileSize = bytes.Length,
-                            OriginalName = originalName,
                             Sequence = sequence++,
                             CreatedDate = DateTime.UtcNow,
                             Version = version
@@ -294,9 +257,9 @@ namespace Dubox.Infrastructure.Services
 
             if (images.Any())
             {
-                Console.WriteLine($"💾 VERSION DEBUG - Saving {images.Count} images to database");
+               _logger.LogInformation($"💾 VERSION DEBUG - Saving {images.Count} images to database");
                 await _unitOfWork.Repository<TEntity>().AddRangeAsync(images, ct);
-                Console.WriteLine($"✅ VERSION DEBUG - Successfully saved {images.Count} images");
+                _logger.LogInformation($"✅ VERSION DEBUG - Successfully saved {images.Count} images");
             }
 
             return (true, string.Empty);
@@ -309,23 +272,113 @@ namespace Dubox.Infrastructure.Services
             fkProp?.SetValue(entity, parentId);
         }
 
-        private Expression<Func<TEntity, bool>> BuildForeignKeyPredicate<TEntity>(string foreignKeyName, Guid parentId)
+        private string GetFolderNameForEntity<TEntity>(Guid parentId) where TEntity : BaseImageEntity
         {
-            // Create parameter: e
-            var parameter = Expression.Parameter(typeof(TEntity), "e");
-            
-            // Create property access: e.ForeignKeyName (e.g., e.ProgressUpdateId)
-            var property = Expression.Property(parameter, foreignKeyName);
-            
-            // Create constant: parentId
-            var constant = Expression.Constant(parentId, typeof(Guid));
-            
-            // Create equality comparison: e.ForeignKeyName == parentId
-            var equality = Expression.Equal(property, constant);
-            
-            // Create lambda expression: e => e.ForeignKeyName == parentId
-            return Expression.Lambda<Func<TEntity, bool>>(equality, parameter);
+            var entityType = typeof(TEntity).Name.Replace("Image", "").ToLower();
+            return $"{entityType}s/{parentId}"; 
         }
 
+        private IFormFile ConvertBase64ToFormFile(byte[] bytes, string fileName, string contentType)
+        {
+            var stream = new MemoryStream(bytes);
+            return new FormFile(stream, 0, bytes.Length, "file", fileName)
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = contentType
+            };
+        }
+
+        private IFormFile ConvertBytesToFormFile(byte[] bytes, string fileName, string contentType)
+        {
+            var stream = new MemoryStream(bytes);
+            return new FormFile(stream, 0, bytes.Length, "file", fileName)
+            {
+                Headers = new HeaderDictionary(),
+                ContentType = contentType
+            };
+        }
+
+        private string GetFileExtension(string contentType)
+        {
+            return contentType?.ToLower() switch
+            {
+                "image/jpeg" => ".jpg",
+                "image/png" => ".png",
+                "image/gif" => ".gif",
+                "image/webp" => ".webp",
+                _ => ".jpg"
+            };
+        }
+
+        private string ExtractFileNameFromUrl(string url)
+        {
+            try
+            {
+                var uri = new Uri(url);
+                var fileName = Path.GetFileName(uri.LocalPath);
+                if (string.IsNullOrWhiteSpace(fileName))
+                {
+                    fileName = $"Downloaded_{DateTime.UtcNow:yyyyMMdd_HHmmss}.jpg";
+                }
+                return fileName;
+            }
+            catch
+            {
+                return $"Downloaded_{DateTime.UtcNow:yyyyMMdd_HHmmss}.jpg";
+            }
+        }
+
+        private async Task<byte[]> DownloadImageFromUrlAsync(string url, CancellationToken ct)
+        {
+            using var httpClient = new HttpClient();
+            httpClient.Timeout = TimeSpan.FromSeconds(30);
+            return await httpClient.GetByteArrayAsync(url, ct);
+        }
+
+        private Expression<Func<TEntity, bool>> BuildForeignKeyPredicate<TEntity>(
+            string foreignKeyName,
+            Guid parentId) where TEntity : BaseImageEntity
+        {
+            var parameter = Expression.Parameter(typeof(TEntity), "x");
+            var property = Expression.Property(parameter, foreignKeyName);
+            var constant = Expression.Constant(parentId);
+            var equals = Expression.Equal(property, constant);
+            return Expression.Lambda<Func<TEntity, bool>>(equals, parameter);
+        }
+        private int CalculateVersion<TEntity>(
+        string originalName,
+        IReadOnlyList<TEntity> existingImages,
+        Dictionary<string, int> versionTracker) where TEntity : BaseImageEntity
+        {
+            int version = 1;
+            var originalNameLower = originalName.ToLower();
+
+            _logger.LogInformation($"🔍 Calculating version for: {originalName}");
+
+            // Check existing database records
+            var sameNameImages = existingImages
+                .Where(img => img.OriginalName != null &&
+                             img.OriginalName.ToLower() == originalNameLower)
+                .ToList();
+
+            if (sameNameImages.Any())
+            {
+                var maxExistingVersion = sameNameImages.Max(img => img.Version);
+                version = maxExistingVersion + 1;
+                _logger.LogInformation($"🔍 Found {sameNameImages.Count} existing files, max version: V{maxExistingVersion}");
+            }
+
+            // Check if already processed in this batch
+            if (versionTracker.ContainsKey(originalName))
+            {
+                var batchVersion = versionTracker[originalName];
+                version = Math.Max(version, batchVersion + 1);
+                _logger.LogInformation($"🔍 Already in batch with V{batchVersion}, updating to V{version}");
+            }
+
+            versionTracker[originalName] = version;
+            return version;
+        }
     }
-}
+     
+    }

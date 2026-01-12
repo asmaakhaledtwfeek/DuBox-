@@ -27,14 +27,14 @@ namespace Dubox.Api.Controllers
             CancellationToken cancellationToken)
         {
             CreateWIRCheckpointCommand command;
-            List<byte[]>? fileBytes = null;
+            List<IFormFile>? files = null;
             List<string>? imageUrls = null;
+            List<string>? fileNames = null;
 
             if (Request.HasFormContentType)
             {
-                // Handle multipart/form-data
                 var form = await Request.ReadFormAsync(cancellationToken);
-                
+
                 // Parse required fields
                 if (!Guid.TryParse(form["BoxActivityId"].ToString(), out var boxActivityId))
                 {
@@ -52,20 +52,13 @@ namespace Dubox.Api.Controllers
                 var attachmentPath = form["AttachmentPath"].ToString();
                 var comments = form["Comments"].ToString();
 
-                // Get files
-                var files = form.Files.Where(f => f.Name == "Files" && f.Length > 0).ToList();
-                if (files.Count > 0)
+                var formFiles = form.Files.Where(f => f.Name == "Files" && f.Length > 0).ToList();
+                if (formFiles.Count > 0)
                 {
-                    fileBytes = new List<byte[]>();
-                    foreach (var file in files)
-                    {
-                        using var ms = new MemoryStream();
-                        await file.CopyToAsync(ms, cancellationToken);
-                        fileBytes.Add(ms.ToArray());
-                    }
+                    files = formFiles;
+                    fileNames = formFiles.Select(f => f.FileName).ToList();
                 }
 
-                // Get ImageUrls
                 var imageUrlsFromForm = form["ImageUrls"];
                 if (imageUrlsFromForm.Count > 0)
                 {
@@ -73,22 +66,23 @@ namespace Dubox.Api.Controllers
                         .Where(url => !string.IsNullOrWhiteSpace(url))
                         .Select(url => url!.Trim())
                         .ToList();
+
                     if (imageUrls.Count == 0)
                     {
                         imageUrls = null;
                     }
                 }
-
                 command = new CreateWIRCheckpointCommand(
-                    BoxActivityId: boxActivityId,
-                    WIRNumber: wirNumber,
-                    WIRName: string.IsNullOrWhiteSpace(wirName) ? null : wirName,
-                    WIRDescription: string.IsNullOrWhiteSpace(wirDescription) ? null : wirDescription,
-                    AttachmentPath: string.IsNullOrWhiteSpace(attachmentPath) ? null : attachmentPath,
-                    Comments: string.IsNullOrWhiteSpace(comments) ? null : comments,
-                    Files: fileBytes,
-                    ImageUrls: imageUrls
-                );
+                          BoxActivityId: boxActivityId,
+                          WIRNumber: wirNumber,
+                          WIRName: string.IsNullOrWhiteSpace(wirName) ? null : wirName,
+                          WIRDescription: string.IsNullOrWhiteSpace(wirDescription) ? null : wirDescription,
+                          AttachmentPath: string.IsNullOrWhiteSpace(attachmentPath) ? null : attachmentPath,
+                          Comments: string.IsNullOrWhiteSpace(comments) ? null : comments,
+                          Files: files, 
+                         ImageUrls: imageUrls,
+                         FileNames: fileNames
+                     );
             }
             else
             {
@@ -176,7 +170,7 @@ namespace Dubox.Api.Controllers
             Guid? assignedToUserId = null;
             DateTime? dueDate = null;
             List<string>? imageUrls = null;
-            List<byte[]>? fileBytes = null;
+            List<IFormFile>? files = null; 
             List<string>? fileNames = null;
 
             if (Request.HasFormContentType)
@@ -202,14 +196,12 @@ namespace Dubox.Api.Controllers
                     assignedTo = assignedToTemp;
                 }
 
-                // Parse AssignedToUserId if provided
                 if (Guid.TryParse(form["AssignedToUserId"].FirstOrDefault(), out var assignedToUserTemp))
                     assignedToUserId = assignedToUserTemp;
 
                 if (DateTime.TryParse(form["DueDate"].ToString(), out var parsedDueDate))
                     dueDate = parsedDueDate;
 
-                // Get ImageUrls from form
                 var imageUrlsFromForm = form["ImageUrls"];
                 if (imageUrlsFromForm.Count > 0)
                 {
@@ -218,19 +210,12 @@ namespace Dubox.Api.Controllers
                         .Select(url => url!.Trim())
                         .ToList();
                 }
-             
-                var files = form.Files.Where(f => f.Name == "Files" && f.Length > 0).ToList();
-                if (files.Count > 0)
+
+                var formFiles = form.Files.Where(f => f.Name == "Files" && f.Length > 0).ToList();
+                if (formFiles.Count > 0)
                 {
-                    fileBytes = new List<byte[]>();
-                    fileNames = new List<string>();
-                    foreach (var file in files)
-                    {
-                        using var ms = new MemoryStream();
-                        await file.CopyToAsync(ms, cancellationToken);
-                        fileBytes.Add(ms.ToArray());
-                        fileNames.Add(file.FileName);
-                    }
+                    files = formFiles;
+                    fileNames = formFiles.Select(f => f.FileName).ToList();
                 }
             }
             else
@@ -243,10 +228,7 @@ namespace Dubox.Api.Controllers
                     jsonCommand = JsonSerializer.Deserialize<AddQualityIssueCommand>(body, new JsonSerializerOptions
                     {
                         PropertyNameCaseInsensitive = true,
-                        Converters =
-                              {
-                                new JsonStringEnumConverter()
-                              }
+                        Converters = { new JsonStringEnumConverter() }
                     });
                 }
                 catch
@@ -267,21 +249,22 @@ namespace Dubox.Api.Controllers
                 assignedToUserId = jsonCommand.AssignedToUserId;
                 dueDate = jsonCommand.DueDate;
                 imageUrls = jsonCommand.ImageUrls;
-                fileBytes = jsonCommand.Files;
+                files = jsonCommand.Files; 
                 fileNames = jsonCommand.FileNames;
             }
 
-            // Validate and clean ImageUrls
             List<string>? validImageUrls = null;
             if (imageUrls != null && imageUrls.Count > 0)
             {
-                validImageUrls = imageUrls.Where(url => !string.IsNullOrWhiteSpace(url)).ToList();
+                validImageUrls = imageUrls
+                    .Where(url => !string.IsNullOrWhiteSpace(url))
+                    .ToList();
+
                 if (validImageUrls.Count == 0)
                 {
                     validImageUrls = null;
                 }
             }
-
             var command = new AddQualityIssueCommand(
                 WIRId: wirId,
                 IssueType: issueType,
@@ -291,16 +274,13 @@ namespace Dubox.Api.Controllers
                 AssignedToUserId: assignedToUserId,
                 DueDate: dueDate,
                 ImageUrls: validImageUrls,
-                Files: fileBytes,
+                Files: files, 
                 FileNames: fileNames
             );
-
             var result = await _mediator.Send(command, cancellationToken);
 
             if (!result.IsSuccess && result.Message?.Contains("Database error", StringComparison.OrdinalIgnoreCase) == true)
-            {
                 return Conflict(result);
-            }
 
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
@@ -320,30 +300,28 @@ namespace Dubox.Api.Controllers
             [FromForm] string? ItemsJson, // JSON string for complex object
             CancellationToken cancellationToken)
         {
-            List<byte[]>? fileBytes = null;
             List<string>? fileNames = null;
             if (Files != null && Files.Count > 0)
             {
-                fileBytes = new List<byte[]>();
-                fileNames = new List<string>();
-                foreach (var file in Files.Where(f => f != null && f.Length > 0))
-                {
-                    using var ms = new MemoryStream();
-                    await file.CopyToAsync(ms, cancellationToken);
-                    fileBytes.Add(ms.ToArray());
-                    fileNames.Add(file.FileName);
-                }
+                fileNames = Files
+                    .Where(f => f != null && f.Length > 0)
+                    .Select(f => f.FileName)
+                    .ToList();
             }
 
             List<string>? validImageUrls = null;
             if (ImageUrls != null && ImageUrls.Count > 0)
             {
-                validImageUrls = ImageUrls.Where(url => !string.IsNullOrWhiteSpace(url)).ToList();
+                validImageUrls = ImageUrls
+                    .Where(url => !string.IsNullOrWhiteSpace(url))
+                    .ToList();
+
                 if (validImageUrls.Count == 0)
                 {
                     validImageUrls = null;
                 }
             }
+
 
             // Parse Items from JSON string
             List<ChecklistItemForReview>? items = null;
@@ -355,8 +333,7 @@ namespace Dubox.Api.Controllers
                     {
                         PropertyNameCaseInsensitive = true
                     };
-                
-                    options.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+                    options.Converters.Add(new JsonStringEnumConverter());
 
                     items = JsonSerializer.Deserialize<List<ChecklistItemForReview>>(ItemsJson, options);
                 }
@@ -367,30 +344,29 @@ namespace Dubox.Api.Controllers
                         message = "Invalid Items JSON format",
                         error = ex.Message,
                         details = ex.InnerException?.Message,
-                        itemsJson = ItemsJson?.Substring(0, Math.Min(500, ItemsJson.Length)) // First 500 chars for debugging
+                        itemsJson = ItemsJson?.Substring(0, Math.Min(500, ItemsJson.Length))
                     });
                 }
             }
 
             if (items == null || !items.Any())
-            {
                 return BadRequest("Items are required");
-            }
+
 
             var command = new ReviewWIRCheckPointCommand(
                 WIRId: wirId,
                 Status: Status,
                 Comment: Comment,
                 InspectorRole: InspectorRole,
-                Files: fileBytes,
+                Files: Files,
                 ImageUrls: validImageUrls,
                 Items: items,
                 FileNames: fileNames
             );
-
             var result = await _mediator.Send(command, cancellationToken);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
+
         [HttpGet("{wirCheckPointId}")]
         public async Task<IActionResult> GetWIRcheckPointById(Guid wirCheckPointId, CancellationToken cancellationToken)
         {

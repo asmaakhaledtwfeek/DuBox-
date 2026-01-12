@@ -41,25 +41,22 @@ public class ProgressUpdatesController : ControllerBase
     [FromForm] string? WirPosition,
     CancellationToken cancellationToken)
     {
-        List<byte[]>? fileBytes = null;
         List<string>? fileNames = null;
         if (Files != null && Files.Count > 0)
         {
-            fileBytes = new List<byte[]>();
-            fileNames = new List<string>();
-            foreach (var file in Files.Where(f => f != null && f.Length > 0))
-            {
-                using var ms = new MemoryStream();
-                await file.CopyToAsync(ms, cancellationToken);
-                fileBytes.Add(ms.ToArray());
-                fileNames.Add(file.FileName);
-            }
+            fileNames = Files
+                .Where(f => f != null && f.Length > 0)
+                .Select(f => f.FileName)
+                .ToList();
         }
 
         List<string>? validImageUrls = null;
         if (ImageUrls != null && ImageUrls.Count > 0)
         {
-            validImageUrls = ImageUrls.Where(url => !string.IsNullOrWhiteSpace(url)).ToList();
+            validImageUrls = ImageUrls
+                .Where(url => !string.IsNullOrWhiteSpace(url))
+                .ToList();
+
             if (validImageUrls.Count == 0)
             {
                 validImageUrls = null;
@@ -67,23 +64,23 @@ public class ProgressUpdatesController : ControllerBase
         }
 
         var command = new CreateProgressUpdateCommand(
-            BoxId,
-            BoxActivityId,
-            ProgressPercentage,
-            WorkDescription,
-            IssuesEncountered,
-            Latitude,
-            Longitude,
-            LocationDescription,
-            fileBytes,
-            validImageUrls,
-            UpdateMethod,
-            DeviceInfo,
-            WirBay,
-            WirRow,
-            WirPosition,
-            fileNames
-        );
+         BoxId,
+         BoxActivityId,
+         ProgressPercentage,
+         WorkDescription,
+         IssuesEncountered,
+         Latitude,
+         Longitude,
+         LocationDescription,
+         Files, 
+         validImageUrls,
+         UpdateMethod,
+         DeviceInfo,
+         WirBay,
+         WirRow,
+         WirPosition,
+         fileNames
+     );
 
         var result = await _mediator.Send(command, cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);

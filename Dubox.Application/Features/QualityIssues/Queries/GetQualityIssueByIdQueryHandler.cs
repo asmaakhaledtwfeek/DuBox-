@@ -13,11 +13,12 @@ namespace Dubox.Application.Features.QualityIssues.Queries
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IProjectTeamVisibilityService _visibilityService;
-
-        public GetQualityIssueByIdQueryHandler(IUnitOfWork unitOfWork, IProjectTeamVisibilityService visibilityService)
+        private readonly IBlobStorageService _blobStorageService;
+        public GetQualityIssueByIdQueryHandler(IUnitOfWork unitOfWork, IProjectTeamVisibilityService visibilityService ,IBlobStorageService blobStorageService)
         {
             _unitOfWork = unitOfWork;
             _visibilityService = visibilityService;
+            _blobStorageService = blobStorageService;
         }
 
         public async Task<Result<QualityIssueDetailsDto>> Handle(GetQualityIssueByIdQuery request, CancellationToken cancellationToken)
@@ -37,19 +38,22 @@ namespace Dubox.Application.Features.QualityIssues.Queries
             var dto = issue.Adapt<QualityIssueDetailsDto>();
             dto.AssignedToUserName = issue.AssignedToMember?.EmployeeName;
             dto.Images = issue.Images
-                .OrderBy(img => img.Sequence)
-                .Select(img => new QualityIssueImageDto
-                {
-                    QualityIssueImageId = img.QualityIssueImageId,
-                    IssueId = img.IssueId,
-                    ImageData = img.ImageData,
-                    ImageType = img.ImageType,
-                    OriginalName = img.OriginalName,
-                    FileSize = img.FileSize,
-                    Sequence = img.Sequence,
-                    Version = img.Version,
-                    CreatedDate = img.CreatedDate
-                }).ToList();
+           .OrderBy(img => img.Sequence)
+           .Select(img => new QualityIssueImageDto
+           {
+               QualityIssueImageId = img.QualityIssueImageId,
+               IssueId = img.IssueId,
+               ImageFileName = img.ImageFileName,
+               ImageUrl = !string.IsNullOrEmpty(img.ImageFileName)
+                   ? _blobStorageService.GetFileUrl(img.ImageFileName)
+                   : null,
+               ImageType = img.ImageType,
+               OriginalName = img.OriginalName,
+               FileSize = img.FileSize,
+               Sequence = img.Sequence,
+               Version = img.Version,
+               CreatedDate = img.CreatedDate
+           }).ToList();
 
             return Result.Success(dto);
         }

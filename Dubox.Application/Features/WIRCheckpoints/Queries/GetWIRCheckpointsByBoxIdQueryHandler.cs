@@ -150,7 +150,6 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
                 {
                     QualityIssueImageId = img.QualityIssueImageId,
                     IssueId = img.IssueId,
-                    ImageData = null, // Don't load base64 data!
                     ImageType = img.ImageType,
                     OriginalName = img.OriginalName,
                     FileSize = img.FileSize,

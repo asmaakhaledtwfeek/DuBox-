@@ -4,8 +4,6 @@ namespace Dubox.Domain.Abstractions
 {
     public abstract class BaseImageEntity
     {
-        [Required]
-        public string ImageData { get; set; } = string.Empty;
 
         [Required]
         [MaxLength(10)]
@@ -13,7 +11,7 @@ namespace Dubox.Domain.Abstractions
 
         [MaxLength(500)]
         public string? OriginalName { get; set; }
-
+        public string? ImageFileName { get; set; }
         public long? FileSize { get; set; }
 
         public int Sequence { get; set; } = 0;

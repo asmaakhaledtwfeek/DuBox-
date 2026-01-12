@@ -2,6 +2,7 @@
 using Dubox.Domain.Enums;
 using Dubox.Domain.Shared;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 
 namespace Dubox.Application.Features.QualityIssues.Commands
 {
@@ -9,8 +10,9 @@ namespace Dubox.Application.Features.QualityIssues.Commands
         Guid IssueId,
         QualityIssueStatusEnum Status,
         string? ResolutionDescription,
-        List<byte[]>? Files = null,
-        List<string>? ImageUrls = null
+        List<IFormFile>? Files = null,
+        List<string>? ImageUrls = null,
+        List<string>? FileNames = null
         ) : IRequest<Result<QualityIssueDetailsDto>>;
 
 }

@@ -29,7 +29,6 @@ public class GetImageQueryHandler : IRequestHandler<GetImageQuery, Result<ImageD
                     result = new ImageDataDto
                     {
                         ImageId = progressImage.ProgressUpdateImageId,
-                        ImageData = progressImage.ImageData,
                         ImageType = progressImage.ImageType,
                         OriginalName = progressImage.OriginalName,
                         FileSize = progressImage.FileSize
@@ -45,7 +44,6 @@ public class GetImageQueryHandler : IRequestHandler<GetImageQuery, Result<ImageD
                     result = new ImageDataDto
                     {
                         ImageId = qualityImage.QualityIssueImageId,
-                        ImageData = qualityImage.ImageData,
                         ImageType = qualityImage.ImageType,
                         OriginalName = qualityImage.OriginalName,
                         FileSize = qualityImage.FileSize
@@ -61,7 +59,6 @@ public class GetImageQueryHandler : IRequestHandler<GetImageQuery, Result<ImageD
                     result = new ImageDataDto
                     {
                         ImageId = wirImage.WIRCheckpointImageId,
-                        ImageData = wirImage.ImageData,
                         ImageType = wirImage.ImageType,
                         OriginalName = wirImage.OriginalName,
                         FileSize = wirImage.FileSize

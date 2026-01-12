@@ -40,9 +40,6 @@ namespace Dubox.Api.Controllers
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
-        /// <summary>
-        /// Create a quality issue directly for a box (without WIR checkpoint)
-        /// </summary>
         [HttpPost]
         [Consumes("multipart/form-data", "application/json")]
         [RequestSizeLimit(50_000_000)] 
@@ -56,8 +53,8 @@ namespace Dubox.Api.Controllers
             Guid? assignedTo = null;
             DateTime? dueDate = null;
             List<string>? imageUrls = null;
-            List<byte[]>? fileBytes = null;
-
+            List<IFormFile>? files = null;
+            List<string>? fileNames = null;
             if (Request.HasFormContentType)
             {
                 var form = await Request.ReadFormAsync(cancellationToken);
@@ -96,58 +93,16 @@ namespace Dubox.Api.Controllers
                 }
 
                 // Handle file uploads
-                var files = form.Files;
-                if (files.Count > 0)
+                var formFiles = form.Files;
+                if (formFiles.Count > 0)
                 {
-                    fileBytes = new List<byte[]>();
-                    foreach (var file in files.Where(f => f != null && f.Length > 0))
-                    {
-                        using var ms = new MemoryStream();
-                        await file.CopyToAsync(ms, cancellationToken);
-                        fileBytes.Add(ms.ToArray());
-                    }
+                    files = formFiles.Where(f => f != null && f.Length > 0).ToList();
+                    fileNames = files.Select(f => f.FileName).ToList();
                 }
             }
             else
             {
-                // Handle JSON request
-                string requestBody;
-                using (var reader = new StreamReader(Request.Body))
-                {
-                    requestBody = await reader.ReadToEndAsync();
-                }
-
-                if (string.IsNullOrWhiteSpace(requestBody))
-                    return BadRequest("Request body is required");
-
-                CreateQualityIssueJsonRequest? jsonCommand;
-                try
-                {
-                    jsonCommand = JsonSerializer.Deserialize<CreateQualityIssueJsonRequest>(requestBody, new JsonSerializerOptions
-                    {
-                        PropertyNameCaseInsensitive = true,
-                         Converters =
-                            {
-                              new JsonStringEnumConverter()
-                            } 
-                    });
-                }
-                catch
-                {
-                    return BadRequest("Invalid JSON format");
-                }
-
-                if (jsonCommand == null)
-                    return BadRequest("Request body is required");
-
-                boxId = jsonCommand.BoxId;
-                issueType = jsonCommand.IssueType;
-                severity = jsonCommand.Severity;
-                issueDescription = jsonCommand.IssueDescription;
-                assignedTo = jsonCommand.AssignedTo;
-                dueDate = jsonCommand.DueDate;
-                imageUrls = jsonCommand.ImageUrls;
-                fileBytes = jsonCommand.Files;
+                return BadRequest("Only multipart/form-data is supported for file uploads");
             }
 
             // Validate and clean ImageUrls
@@ -169,7 +124,8 @@ namespace Dubox.Api.Controllers
                 AssignedTo: assignedTo,
                 DueDate: dueDate,
                 ImageUrls: validImageUrls,
-                Files: fileBytes
+                Files: files,
+               FileNames: fileNames
             );
 
             var result = await _mediator.Send(command, cancellationToken);
@@ -194,16 +150,14 @@ namespace Dubox.Api.Controllers
             [FromForm] List<string>? ImageUrls,
             CancellationToken cancellationToken)
         {
-            List<byte[]>? fileBytes = null;
+
+            List<string>? fileNames = null;
             if (Files != null && Files.Count > 0)
             {
-                fileBytes = new List<byte[]>();
-                foreach (var file in Files.Where(f => f != null && f.Length > 0))
-                {
-                    using var ms = new MemoryStream();
-                    await file.CopyToAsync(ms, cancellationToken);
-                    fileBytes.Add(ms.ToArray());
-                }
+                fileNames = Files
+                    .Where(f => f != null && f.Length > 0)
+                    .Select(f => f.FileName)
+                    .ToList();
             }
 
             List<string>? validImageUrls = null;
@@ -219,17 +173,15 @@ namespace Dubox.Api.Controllers
                 IssueId: issueId,
                 Status: Status,
                 ResolutionDescription: ResolutionDescription,
-                Files: fileBytes,
-                ImageUrls: validImageUrls
+                Files: Files,
+                ImageUrls: validImageUrls,
+                FileNames: fileNames
             );
 
             var result = await _mediator.Send(command, cancellationToken);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
-        /// <summary>
-        /// Assign a quality issue to a team or unassign it
-        /// </summary>
         [HttpPut("{issueId}/assign")]
         public async Task<IActionResult> AssignQualityIssueToTeam(
             Guid issueId,

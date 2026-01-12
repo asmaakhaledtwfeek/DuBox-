@@ -1,6 +1,7 @@
 using Dubox.Application.DTOs;
 using Dubox.Domain.Shared;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 
 namespace Dubox.Application.Features.ProgressUpdates.Commands;
 
@@ -13,7 +14,7 @@ public record CreateProgressUpdateCommand(
     double? Latitude,
     double? Longitude,
     string? LocationDescription,
-    List<byte[]>? Files,
+    List<IFormFile>? Files,
     List<string>? ImageUrls,
     string UpdateMethod,
     string? DeviceInfo,

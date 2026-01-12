@@ -56,7 +56,6 @@ public class GetProgressUpdatesByActivityQueryHandler : IRequestHandler<GetProgr
             {
                 ProgressUpdateImageId = img.ProgressUpdateImageId,
                 ProgressUpdateId = img.ProgressUpdateId,
-                ImageData = img.ImageData,
                 ImageType = img.ImageType,
                 OriginalName = img.OriginalName,
                 FileSize = img.FileSize,

@@ -89,11 +89,13 @@ namespace Dubox.Application.Features.QualityIssues.Commands
             {
                 sequence = existingImages.Max(img => img.Sequence) + 1;
             }
-            (bool, string) imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<QualityIssueImage>(issue.IssueId, request.Files, request.ImageUrls, cancellationToken, sequence);
-            if (!imagesProcessResult.Item1)
-            {
+           var imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<QualityIssueImage>
+                (issue.IssueId, request.Files, request.ImageUrls, cancellationToken, sequence, fileNames: request.FileNames,
+                existingImagesForVersioning: existingImages.ToList());
+            if (!imagesProcessResult.IsSuccess)
                 return Result.Failure<QualityIssueDetailsDto>(imagesProcessResult.Item2);
-            }
+
+           await _unitOfWork.CompleteAsync();
             issue = _unitOfWork.Repository<QualityIssue>().GetEntityWithSpec(new GetQualityIssueByIdSpecification(request.IssueId));
             if (issue == null)
                 return Result.Failure<QualityIssueDetailsDto>("Quality issue not found after update.");
@@ -125,7 +127,6 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                 {
                     QualityIssueImageId = img.QualityIssueImageId,
                     IssueId = img.IssueId,
-                    ImageData = img.ImageData,
                     ImageType = img.ImageType,
                     OriginalName = img.OriginalName,
                     FileSize = img.FileSize,

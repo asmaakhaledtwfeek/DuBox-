@@ -2,6 +2,7 @@
 using Dubox.Domain.Enums;
 using Dubox.Domain.Shared;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 
 namespace Dubox.Application.Features.WIRCheckpoints.Commands
 {
@@ -10,7 +11,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
       WIRCheckpointStatusEnum Status,
       string? Comment,
       string? InspectorRole,
-      List<byte[]>? Files,
+      List<IFormFile>? Files,
       List<string>? ImageUrls,
       List<ChecklistItemForReview> Items,
       List<string>? FileNames = null

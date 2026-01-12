@@ -17,17 +17,18 @@ namespace Dubox.Application.Features.QualityIssues.Commands
         private readonly ICurrentUserService _currentUserService;
         private readonly IImageProcessingService _imageProcessingService;
         private readonly IProjectTeamVisibilityService _visibilityService;
-
+        private readonly IBlobStorageService _blobStorageService;
         public CreateQualityIssueCommandHandler(
             IUnitOfWork unitOfWork,
             ICurrentUserService currentUserService,
             IImageProcessingService imageProcessingService,
-            IProjectTeamVisibilityService visibilityService)
+            IProjectTeamVisibilityService visibilityService,IBlobStorageService blobStorageService)
         {
             _unitOfWork = unitOfWork;
             _currentUserService = currentUserService;
             _imageProcessingService = imageProcessingService;
             _visibilityService = visibilityService;
+            _blobStorageService = blobStorageService;
         }
 
         public async Task<Result<QualityIssueDetailsDto>> Handle(CreateQualityIssueCommand request, CancellationToken cancellationToken)
@@ -71,15 +72,20 @@ namespace Dubox.Application.Features.QualityIssues.Commands
 
             await _unitOfWork.Repository<QualityIssue>().AddAsync(newIssue, cancellationToken);
             await _unitOfWork.CompleteAsync(cancellationToken);
-           
-            (bool, string) imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<QualityIssueImage>(
-                newIssue.IssueId, 
-                request.Files, 
-                request.ImageUrls, 
-                cancellationToken,
-                fileNames: request.FileNames);
-            if (!imagesProcessResult.Item1)
-                return Result.Failure<QualityIssueDetailsDto>(imagesProcessResult.Item2);
+
+            var imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<QualityIssueImage>(
+           newIssue.IssueId,
+           request.Files,      
+           request.ImageUrls,
+           cancellationToken,
+           fileNames: request.FileNames);
+
+            if (!imagesProcessResult.IsSuccess)
+            {
+                _unitOfWork.Repository<QualityIssue>().Delete(newIssue);
+                await _unitOfWork.CompleteAsync(cancellationToken);
+                return Result.Failure<QualityIssueDetailsDto>(imagesProcessResult.ErrorMessage);
+            }
             await _unitOfWork.CompleteAsync(cancellationToken);
 
             // Create audit log for quality issue creation

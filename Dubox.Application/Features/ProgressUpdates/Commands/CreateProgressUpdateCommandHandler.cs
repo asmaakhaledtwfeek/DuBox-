@@ -150,7 +150,7 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         
         Console.WriteLine($"🔍 VERSION DEBUG - Found {existingImagesForBox.Count} existing ProgressUpdateImages across all progress updates for Box {progressUpdate.BoxId}");
         
-        (bool, string) imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<ProgressUpdateImage>(
+        var imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<ProgressUpdateImage>(
             progressUpdate.ProgressUpdateId, 
             request.Files, 
             request.ImageUrls, 
@@ -158,8 +158,8 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
             fileNames: request.FileNames,
             existingImagesForVersioning: existingImagesForBox
         );
-        if (!imagesProcessResult.Item1)       
-            return Result.Failure<ProgressUpdateDto>(imagesProcessResult.Item2);
+        if (!imagesProcessResult.IsSuccess)
+            return Result.Failure<ProgressUpdateDto>(imagesProcessResult.ErrorMessage);
 
         await _unitOfWork.CompleteAsync(cancellationToken);
 

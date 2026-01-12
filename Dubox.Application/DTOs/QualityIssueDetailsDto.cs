@@ -54,29 +54,19 @@ namespace Dubox.Application.DTOs
         public int ClosedIssues { get; set; }
     }
 
-    /// <summary>
-    /// Quality issue image info - ImageData is only populated in detail views.
-    /// Use /api/images/QualityIssue/{QualityIssueImageId} to fetch full image.
-    /// </summary>
     public class QualityIssueImageDto
     {
         public Guid QualityIssueImageId { get; set; }
         public Guid IssueId { get; set; }
-        /// <summary>
-        /// Base64 image data - only populated when fetching single image details.
-        /// For listings, this will be null and ImageUrl should be used instead.
-        /// </summary>
-        public string? ImageData { get; set; }
+        public string? ImageFileName { get; set; } 
+        public string? ImageUrl { get; set; }
         public string ImageType { get; set; } = string.Empty;
         public string? OriginalName { get; set; }
         public long? FileSize { get; set; }
         public int Sequence { get; set; }
         public int Version { get; set; } = 1; // Version number for files with same name
         public DateTime CreatedDate { get; set; }
-        /// <summary>
-        /// URL to fetch full image: /api/images/QualityIssue/{QualityIssueImageId}
-        /// </summary>
-        public string? ImageUrl { get; set; }
+     
     }
 
 }

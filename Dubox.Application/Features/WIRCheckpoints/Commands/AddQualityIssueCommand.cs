@@ -2,6 +2,7 @@ using Dubox.Application.DTOs;
 using Dubox.Domain.Enums;
 using Dubox.Domain.Shared;
 using MediatR;
+using Microsoft.AspNetCore.Http;
 
 namespace Dubox.Application.Features.WIRCheckpoints.Commands
 {
@@ -14,7 +15,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
         Guid? AssignedToUserId = null,
         DateTime? DueDate = null,
         List<string>? ImageUrls = null,
-        List<byte[]>? Files = null,
+        List<IFormFile>? Files = null,
         List<string>? FileNames = null
     ) : IRequest<Result<WIRCheckpointDto>>;
 }

@@ -42,7 +42,6 @@ public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQu
         result.WIRCheckpointImages = wirCheckpointImages.Select(x => new BoxAttachmentDto
         {
             ImageId = x.Image.WIRCheckpointImageId,
-            ImageData = x.Image.ImageData,
             ImageType = x.Image.ImageType,
             OriginalName = x.Image.OriginalName,
             FileSize = x.Image.FileSize,
@@ -77,7 +76,6 @@ public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQu
         result.ProgressUpdateImages = progressUpdateImages.Select(x => new BoxAttachmentDto
         {
             ImageId = x.Image.ProgressUpdateImageId,
-            ImageData = x.Image.ImageData,
             ImageType = x.Image.ImageType,
             OriginalName = x.Image.OriginalName,
             FileSize = x.Image.FileSize,
@@ -112,7 +110,6 @@ public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQu
         result.QualityIssueImages = qualityIssueImages.Select(x => new BoxAttachmentDto
         {
             ImageId = x.Image.QualityIssueImageId,
-            ImageData = x.Image.ImageData,
             ImageType = x.Image.ImageType,
             OriginalName = x.Image.OriginalName,
             FileSize = x.Image.FileSize,

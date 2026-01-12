@@ -88,38 +88,13 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
 
             await _unitOfWork.Repository<QualityIssue>().AddAsync(newIssue, cancellationToken);
 
-            try
-            {
-                await _unitOfWork.CompleteAsync(cancellationToken); // Save to ensure IssueId is available
-            }
-            catch (Microsoft.EntityFrameworkCore.DbUpdateException dbEx)
-            {
-                return Result.Failure<WIRCheckpointDto>($"Database error while saving quality issue: {dbEx.Message}. Inner exception: {dbEx.InnerException?.Message}");
-            }
-            catch (Exception ex)
-            {
-                return Result.Failure<WIRCheckpointDto>($"Error saving quality issue: {ex.Message}. Inner exception: {ex.InnerException?.Message}");
-            }
+           await _unitOfWork.CompleteAsync(cancellationToken); // Save to ensure IssueId is available
+           
 
-            (bool, string) imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<QualityIssueImage>(newIssue.IssueId, request.Files, request.ImageUrls, cancellationToken, fileNames: request.FileNames);
-            if (!imagesProcessResult.Item1)
-            {
+           var imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<QualityIssueImage>(newIssue.IssueId, request.Files, request.ImageUrls, cancellationToken, fileNames: request.FileNames);
+            if (!imagesProcessResult.IsSuccess)
                 return Result.Failure<WIRCheckpointDto>(imagesProcessResult.Item2);
-            }
-
-            try
-            {
-                await _unitOfWork.CompleteAsync(cancellationToken);
-            }
-            catch (Microsoft.EntityFrameworkCore.DbUpdateException dbEx)
-            {
-                return Result.Failure<WIRCheckpointDto>($"Database error while saving images: {dbEx.Message}. Inner exception: {dbEx.InnerException?.Message}. " +
-                    $"Make sure the QualityIssueImages table exists and the IssueId is valid.");
-            }
-            catch (Exception ex)
-            {
-                return Result.Failure<WIRCheckpointDto>($"Error saving images: {ex.Message}. Inner exception: {ex.InnerException?.Message}");
-            }
+            await _unitOfWork.CompleteAsync(cancellationToken);
 
             // Create audit log for quality issue creation
             var auditLog = new AuditLog

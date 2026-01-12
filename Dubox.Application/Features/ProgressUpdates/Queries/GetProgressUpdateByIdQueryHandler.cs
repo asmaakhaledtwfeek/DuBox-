@@ -2,6 +2,7 @@ using Dubox.Application.DTOs;
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
@@ -13,11 +14,13 @@ public class GetProgressUpdateByIdQueryHandler : IRequestHandler<GetProgressUpda
 {
     private readonly IDbContext _dbContext;
     private readonly IUnitOfWork _unitOfWork;
-
-    public GetProgressUpdateByIdQueryHandler(IDbContext dbContext, IUnitOfWork unitOfWork)
+    private readonly IBlobStorageService _blobStorageService;
+    private const string _containerName = "images";
+    public GetProgressUpdateByIdQueryHandler(IDbContext dbContext, IUnitOfWork unitOfWork, IBlobStorageService blobStorageService)
     {
         _dbContext = dbContext;
         _unitOfWork = unitOfWork;
+        _blobStorageService = blobStorageService;
     }
 
     public async Task<Result<ProgressUpdateDto>> Handle(GetProgressUpdateByIdQuery request, CancellationToken cancellationToken)
@@ -54,6 +57,10 @@ public class GetProgressUpdateByIdQueryHandler : IRequestHandler<GetProgressUpda
             {
                 ProgressUpdateImageId = img.ProgressUpdateImageId,
                 ProgressUpdateId = img.ProgressUpdateId,
+                ImageFileName = img.ImageFileName,
+                ImageUrl = !string.IsNullOrEmpty(img.ImageFileName)
+                   ? _blobStorageService.GetFileUrl(_containerName, img.ImageFileName)
+                   : null,
                 ImageType = img.ImageType,
                 OriginalName = img.OriginalName,
                 FileSize = img.FileSize,

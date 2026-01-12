@@ -43,38 +43,6 @@ public class GetProgressUpdatesByActivityQueryHandler : IRequestHandler<GetProgr
         return Result.Success(updateDtos);
     }
 
-    private async Task PopulateImageMetadata(List<ProgressUpdateDto> updates, CancellationToken cancellationToken)
-    {
-        if (updates.Count == 0) return;
-
-        var progressUpdateIds = updates.Select(u => u.ProgressUpdateId).ToList();
-
-        var images = await _dbContext.Set<ProgressUpdateImage>()
-            .AsNoTracking()
-            .Where(img => progressUpdateIds.Contains(img.ProgressUpdateId))
-            .Select(img => new ProgressUpdateImageDto
-            {
-                ProgressUpdateImageId = img.ProgressUpdateImageId,
-                ProgressUpdateId = img.ProgressUpdateId,
-                ImageType = img.ImageType,
-                OriginalName = img.OriginalName,
-                FileSize = img.FileSize,
-                Sequence = img.Sequence,
-                Version = img.Version,
-                CreatedDate = img.CreatedDate,
-            })
-            .ToListAsync(cancellationToken);
-
-        var imagesByUpdateId = images.GroupBy(i => i.ProgressUpdateId)
-            .ToDictionary(g => g.Key, g => g.OrderBy(i => i.Sequence).ToList());
-
-        for (int i = 0; i < updates.Count; i++)
-        {
-            if (imagesByUpdateId.TryGetValue(updates[i].ProgressUpdateId, out var updateImages))
-            {
-                updates[i] = updates[i] with { Images = updateImages };
-            }
-        }
-    }
+   
 }
 

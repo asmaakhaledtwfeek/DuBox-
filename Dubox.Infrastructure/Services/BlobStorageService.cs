@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 
@@ -12,113 +13,81 @@ namespace Dubox.Infrastructure.Services
 {
     public class BlobStorageService : IBlobStorageService
     {
-        private readonly BlobContainerClient _containerClient;
-        private readonly string _baseUrl;
+        private readonly BlobServiceClient _blobServiceClient;
+        private readonly string _accountName;
         private readonly ILogger<BlobStorageService> _logger;
-
+        private readonly ConcurrentDictionary<string, BlobContainerClient> _containerClients;
         public BlobStorageService(IConfiguration configuration, ILogger<BlobStorageService> logger)
         {
             _logger = logger;
+            _containerClients = new ConcurrentDictionary<string, BlobContainerClient>();
 
-            try
-            {
-                var connectionString = configuration["AzureBlobStorage:ConnectionString"];
-                var containerName = configuration["AzureBlobStorage:ContainerName"];
+            var connectionString = configuration["AzureBlobStorage:ConnectionString"];
+            if (string.IsNullOrEmpty(connectionString))
+                throw new ArgumentException("Connection String is not configured");
 
-                if (string.IsNullOrEmpty(connectionString))
-                    throw new ArgumentException("Connection String is not configured in settings");
+            // Extract account name
+            var parts = connectionString.Split(';');
+            _accountName = parts.FirstOrDefault(p => p.StartsWith("AccountName="))?.Split('=')[1];
 
-                if (string.IsNullOrEmpty(containerName))
-                    throw new ArgumentException("Container Name is not configured in settings");
-
-                // Extract account name from Connection String
-                var parts = connectionString.Split(';');
-                var accountName = parts.FirstOrDefault(p => p.StartsWith("AccountName="))?.Split('=')[1];
-
-                if (string.IsNullOrEmpty(accountName))
-                    throw new ArgumentException("Account Name not found in Connection String");
-
-                // Build Base URL
-                _baseUrl = $"https://{accountName}.blob.core.windows.net/{containerName}";
-
-                // Create Blob Service Client
-                var blobServiceClient = new BlobServiceClient(connectionString);
-                _containerClient = blobServiceClient.GetBlobContainerClient(containerName);
-
-                // Create Container if it doesn't exist (Public access for direct access)
-                _containerClient.CreateIfNotExists(PublicAccessType.Blob);
-
-                _logger.LogInformation("Successfully connected to Blob Storage");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error connecting to Blob Storage");
-                throw;
-            }
+            _blobServiceClient = new BlobServiceClient(connectionString);
         }
-
-        public async Task<string> UploadFileAsync(IFormFile file, string folderName = null)
+        private BlobContainerClient GetContainerClient(string containerName)
         {
-            try
+            return _containerClients.GetOrAdd(containerName, name =>
             {
-                if (file == null || file.Length == 0)
-                    throw new ArgumentException("File is empty or does not exist");
+                var client = _blobServiceClient.GetBlobContainerClient(name);
+                client.CreateIfNotExists(PublicAccessType.Blob);
+                return client;
+            });
+        }
+        public async Task<string> UploadFileAsync(string containerName, IFormFile file, string folderName = null)
+        {
+            var containerClient = GetContainerClient(containerName);
 
-                // Create unique file name
-                var fileExtension = Path.GetExtension(file.FileName);
-                var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
+            // Your existing upload logic here, but use containerClient
+            var fileExtension = Path.GetExtension(file.FileName);
+            var uniqueFileName = $"{Guid.NewGuid()}{fileExtension}";
+            var fileName = string.IsNullOrEmpty(folderName)
+                ? uniqueFileName
+                : $"{folderName.TrimEnd('/')}/{uniqueFileName}";
 
-                // Add folder if provided
-                var fileName = string.IsNullOrEmpty(folderName)
-                    ? uniqueFileName
-                    : $"{folderName.TrimEnd('/')}/{uniqueFileName}";
+            var blobClient = containerClient.GetBlobClient(fileName);
 
-                var blobClient = _containerClient.GetBlobClient(fileName);
-
-                // Set content type
-                var blobHttpHeaders = new BlobHttpHeaders
-                {
-                    ContentType = file.ContentType,
-                    CacheControl = "public, max-age=31536000" // Cache for 1 year
-                };
-
-                // Upload file
-                using (var stream = file.OpenReadStream())
-                {
-                    await blobClient.UploadAsync(stream, new BlobUploadOptions
-                    {
-                        HttpHeaders = blobHttpHeaders
-                    });
-                }
-
-                _logger.LogInformation($"File uploaded successfully: {fileName}");
-
-                // Return file name (not full URL)
-                return fileName;
-            }
-            catch (Exception ex)
+            var blobHttpHeaders = new BlobHttpHeaders
             {
-                _logger.LogError(ex, "Error uploading file");
-                throw;
+                ContentType = file.ContentType,
+                CacheControl = "public, max-age=31536000"
+            };
+
+            using (var stream = file.OpenReadStream())
+            {
+                await blobClient.UploadAsync(stream, new BlobUploadOptions
+                {
+                    HttpHeaders = blobHttpHeaders
+                });
             }
+
+            return fileName;
         }
 
-        public string GetFileUrl(string fileName)
+        public string GetFileUrl(string containerName, string fileName)
         {
             if (string.IsNullOrEmpty(fileName))
                 return null;
 
-            return $"{_baseUrl}/{fileName}";
+            return $"https://{_accountName}.blob.core.windows.net/{containerName}/{fileName}";
         }
 
-        public async Task<Stream> DownloadFileAsync(string fileName)
+        public async Task<Stream> DownloadFileAsync(string containerName, string fileName)
         {
+            var containerClient = GetContainerClient(containerName);
             try
             {
                 if (string.IsNullOrEmpty(fileName))
                     throw new ArgumentException("File name is required");
 
-                var blobClient = _containerClient.GetBlobClient(fileName);
+                var blobClient = containerClient.GetBlobClient(fileName);
 
                 if (!await blobClient.ExistsAsync())
                     throw new FileNotFoundException($"File {fileName} not found");
@@ -136,14 +105,15 @@ namespace Dubox.Infrastructure.Services
             }
         }
 
-        public async Task<bool> DeleteFileAsync(string fileName)
+        public async Task<bool> DeleteFileAsync(string containerName, string fileName)
         {
+            var containerClient = GetContainerClient(containerName);
             try
             {
                 if (string.IsNullOrEmpty(fileName))
                     return false;
 
-                var blobClient = _containerClient.GetBlobClient(fileName);
+                var blobClient = containerClient.GetBlobClient(fileName);
                 var deleted = await blobClient.DeleteIfExistsAsync();
 
                 if (deleted)
@@ -160,14 +130,16 @@ namespace Dubox.Infrastructure.Services
             }
         }
 
-        public async Task<bool> FileExistsAsync(string fileName)
+        public async Task<bool> FileExistsAsync(string containerName, string fileName)
         {
+            var containerClient = GetContainerClient(containerName);
+
             try
             {
                 if (string.IsNullOrEmpty(fileName))
                     return false;
 
-                var blobClient = _containerClient.GetBlobClient(fileName);
+                var blobClient = containerClient.GetBlobClient(fileName);
                 return await blobClient.ExistsAsync();
             }
             catch (Exception ex)
@@ -177,14 +149,16 @@ namespace Dubox.Infrastructure.Services
             }
         }
 
-        public async Task<List<string>> ListFilesAsync(string folderName = null, CancellationToken cancellationToken = default)
+        public async Task<List<string>> ListFilesAsync(string containerName, string folderName = null, CancellationToken cancellationToken = default)
         {
+            var containerClient = GetContainerClient(containerName);
+
             try
             {
                 var files = new List<string>();
                 var prefix = string.IsNullOrEmpty(folderName) ? null : folderName.TrimEnd('/') + "/";
 
-                await foreach (var blobItem in _containerClient.GetBlobsAsync(
+                await foreach (var blobItem in containerClient.GetBlobsAsync(
                     BlobTraits.None,
                     BlobStates.None,
                     prefix: prefix,
@@ -202,6 +176,11 @@ namespace Dubox.Infrastructure.Services
                 _logger.LogError(ex, "Error listing files");
                 throw;
             }
+        }
+
+        public Task<List<string>> ListFilesAsync(string containerName, string folderName = null)
+        {
+            throw new NotImplementedException();
         }
     }
 

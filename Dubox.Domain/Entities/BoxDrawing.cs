@@ -16,7 +16,7 @@ public class BoxDrawing
     [MaxLength(1000)]
     public string? DrawingUrl { get; set; }
 
-    public string? FileData { get; set; } // Base64 string for PDF or DWG files
+    public string? DrawingFileName { get; set; }
 
     [MaxLength(500)]
     public string? OriginalFileName { get; set; }

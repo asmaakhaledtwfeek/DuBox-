@@ -24,15 +24,12 @@ public record ProgressUpdateDto
     public string UpdateMethod { get; init; } = string.Empty;
 }
 
-/// <summary>
-/// Progress update image info - ImageData is only populated in detail views.
-/// Use /api/images/ProgressUpdate/{ProgressUpdateImageId} to fetch full image.
-/// </summary>
 public record ProgressUpdateImageDto
 {
     public Guid ProgressUpdateImageId { get; init; }
     public Guid ProgressUpdateId { get; init; }
-    public string? ImageData { get; init; }
+    public string? ImageFileName { get; set; }
+    public string? ImageUrl { get; set; }
     public string ImageType { get; init; } = string.Empty;
     public string? OriginalName { get; init; }
     public long? FileSize { get; init; }

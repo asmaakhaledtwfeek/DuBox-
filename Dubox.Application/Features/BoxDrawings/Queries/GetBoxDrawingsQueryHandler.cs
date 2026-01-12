@@ -1,6 +1,7 @@
-using Dubox.Application.DTOs;
+﻿using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
@@ -11,10 +12,12 @@ namespace Dubox.Application.Features.BoxDrawings.Queries;
 public class GetBoxDrawingsQueryHandler : IRequestHandler<GetBoxDrawingsQuery, Result<List<BoxDrawingDto>>>
 {
     private readonly IUnitOfWork _unitOfWork;
-
-    public GetBoxDrawingsQueryHandler(IUnitOfWork unitOfWork)
+    private readonly IBlobStorageService _blobStorageService;
+    private const string _containerName = "drawings";
+    public GetBoxDrawingsQueryHandler(IUnitOfWork unitOfWork, IBlobStorageService blobStorageService)
     {
         _unitOfWork = unitOfWork;
+        _blobStorageService = blobStorageService;
     }
 
     public async Task<Result<List<BoxDrawingDto>>> Handle(GetBoxDrawingsQuery request, CancellationToken cancellationToken)
@@ -40,7 +43,10 @@ public class GetBoxDrawingsQueryHandler : IRequestHandler<GetBoxDrawingsQuery, R
                                    BoxDrawingId = bd.BoxDrawingId,
                                    BoxId = bd.BoxId,
                                    DrawingUrl = bd.DrawingUrl,
-                                   FileData = null, // Don't return large base64 data - use download endpoint instead
+                                   DrawingFileName = bd.DrawingFileName,
+                                   DownloadUrl = !string.IsNullOrEmpty(bd.DrawingFileName)
+                                                 ? _blobStorageService.GetFileUrl(_containerName,bd.DrawingFileName)
+                                                 : bd.DrawingUrl,
                                    OriginalFileName = bd.OriginalFileName,
                                    FileExtension = bd.FileExtension,
                                    FileType = bd.FileType,

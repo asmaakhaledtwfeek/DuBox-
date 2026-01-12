@@ -14,6 +14,7 @@ namespace Dubox.Application.Features.QualityIssues.Queries
         private readonly IUnitOfWork _unitOfWork;
         private readonly IProjectTeamVisibilityService _visibilityService;
         private readonly IBlobStorageService _blobStorageService;
+        private const string _containerName = "images";
         public GetQualityIssueByIdQueryHandler(IUnitOfWork unitOfWork, IProjectTeamVisibilityService visibilityService ,IBlobStorageService blobStorageService)
         {
             _unitOfWork = unitOfWork;
@@ -45,7 +46,7 @@ namespace Dubox.Application.Features.QualityIssues.Queries
                IssueId = img.IssueId,
                ImageFileName = img.ImageFileName,
                ImageUrl = !string.IsNullOrEmpty(img.ImageFileName)
-                   ? _blobStorageService.GetFileUrl(img.ImageFileName)
+                   ? _blobStorageService.GetFileUrl(_containerName, img.ImageFileName)
                    : null,
                ImageType = img.ImageType,
                OriginalName = img.OriginalName,

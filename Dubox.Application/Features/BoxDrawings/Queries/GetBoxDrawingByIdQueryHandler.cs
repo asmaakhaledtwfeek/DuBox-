@@ -1,6 +1,7 @@
 using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
@@ -10,13 +11,15 @@ namespace Dubox.Application.Features.BoxDrawings.Queries;
 public class GetBoxDrawingByIdQueryHandler : IRequestHandler<GetBoxDrawingByIdQuery, Result<BoxDrawingDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
-
-    public GetBoxDrawingByIdQueryHandler(IUnitOfWork unitOfWork)
+    private readonly IBlobStorageService _blobStorageService;
+    private const string _containerName = "drawings";
+    public GetBoxDrawingByIdQueryHandler(IUnitOfWork unitOfWork, IBlobStorageService blobStorageService)
     {
         _unitOfWork = unitOfWork;
+      _blobStorageService = blobStorageService;
     }
 
-    public async Task<Result<BoxDrawingDto>> Handle(GetBoxDrawingByIdQuery request, CancellationToken cancellationToken)
+    public async Task<Result<BoxDrawingDto>> Handle(GetBoxDrawingByIdQuery request, CancellationToken cancellationToken )
     {
         var drawing = await _unitOfWork.Repository<BoxDrawing>()
             .GetByIdAsync(request.DrawingId, cancellationToken);
@@ -39,7 +42,10 @@ public class GetBoxDrawingByIdQueryHandler : IRequestHandler<GetBoxDrawingByIdQu
 
         var drawingDto = drawing.Adapt<BoxDrawingDto>() with 
         { 
-            CreatedByName = createdByName 
+            CreatedByName = createdByName,
+            DownloadUrl = !string.IsNullOrEmpty(drawing.DrawingFileName)
+                                                 ? _blobStorageService.GetFileUrl(_containerName,drawing.DrawingFileName)
+                                                 : drawing.DrawingUrl
         };
         return Result.Success(drawingDto);
     }

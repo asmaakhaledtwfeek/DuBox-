@@ -379,7 +379,9 @@ export class BoxService {
           boxDrawingId: dto.boxDrawingId || dto.BoxDrawingId,
           boxId: dto.boxId || dto.BoxId,
           drawingUrl: dto.drawingUrl || dto.DrawingUrl,
-          fileData: dto.fileData || dto.FileData,
+          drawingFileName: dto.drawingFileName || dto.DrawingFileName, // New field for blob storage file name
+          downloadUrl: dto.downloadUrl || dto.DownloadUrl, // New field for blob storage download URL
+          fileData: dto.fileData || dto.FileData, // Deprecated, kept for backward compatibility
           originalFileName: dto.originalFileName || dto.OriginalFileName,
           fileExtension: dto.fileExtension || dto.FileExtension,
           fileType: (dto.fileType || dto.FileType || 'file') as 'file' | 'url',

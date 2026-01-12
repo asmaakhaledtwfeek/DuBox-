@@ -16,6 +16,7 @@ namespace Dubox.Infrastructure.Services
         private readonly IImageEntityConfigFactory _factory;
         private readonly IBlobStorageService _blobStorageService;
         private readonly ILogger<ImageProcessingService> _logger;
+        private const string _containerName = "images";
         public ImageProcessingService(IHttpClientFactory httpClientFactory, IUnitOfWork unitOfWork, IDbContext dbContext, IImageEntityConfigFactory factory , IBlobStorageService blobStorageService, ILogger<ImageProcessingService> logger)
         {
             _httpClientFactory = httpClientFactory;
@@ -137,7 +138,7 @@ namespace Dubox.Infrastructure.Services
                     string blobFileName;
                     try
                     {
-                        blobFileName = await _blobStorageService.UploadFileAsync(file, folderName);
+                        blobFileName = await _blobStorageService.UploadFileAsync(_containerName,file, folderName);
                         uploadedFileNames.Add(blobFileName); 
                         _logger.LogInformation($"✅ Uploaded file to Blob: {blobFileName}");
                     }
@@ -185,7 +186,7 @@ namespace Dubox.Infrastructure.Services
                         try
                         {
                             var formFile = ConvertBase64ToFormFile(bytes, originalName, "image/jpeg");
-                            blobFileName = await _blobStorageService.UploadFileAsync(formFile, folderName);
+                            blobFileName = await _blobStorageService.UploadFileAsync(_containerName, formFile, folderName);
                             uploadedFileNames.Add(blobFileName);
                             _logger.LogInformation($"✅ Uploaded base64 image to Blob: {blobFileName}");
                         }
@@ -228,7 +229,7 @@ namespace Dubox.Infrastructure.Services
                         try
                         {
                             var formFile = ConvertBytesToFormFile(bytes, originalName, "image/jpeg");
-                            blobFileName = await _blobStorageService.UploadFileAsync(formFile, folderName);
+                            blobFileName = await _blobStorageService.UploadFileAsync(_containerName, formFile, folderName);
                             uploadedFileNames.Add(blobFileName);
                             _logger.LogInformation($"✅ Uploaded URL image to Blob: {blobFileName}");
                         }

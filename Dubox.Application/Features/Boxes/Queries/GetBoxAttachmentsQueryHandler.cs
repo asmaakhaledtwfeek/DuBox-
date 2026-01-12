@@ -1,5 +1,6 @@
 using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
+using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -9,26 +10,38 @@ namespace Dubox.Application.Features.Boxes.Queries;
 public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQuery, Result<BoxAttachmentsDto>>
 {
     private readonly IDbContext _context;
-
-    public GetBoxAttachmentsQueryHandler(IDbContext context)
+    private readonly IBlobStorageService _blobStorageService;
+    private const string _containerName = "images";
+    public GetBoxAttachmentsQueryHandler(IDbContext context, IBlobStorageService blobStorageService)
     {
         _context = context;
+        _blobStorageService = blobStorageService;
     }
 
     public async Task<Result<BoxAttachmentsDto>> Handle(GetBoxAttachmentsQuery request, CancellationToken cancellationToken)
     {
-        // Verify box exists
         var boxExists = await _context.Boxes.AnyAsync(b => b.BoxId == request.BoxId, cancellationToken);
         if (!boxExists)
-        {
             return Result.Failure<BoxAttachmentsDto>("Box not found");
-        }
 
-        var result = new BoxAttachmentsDto();
+        var result = new BoxAttachmentsDto
+        {
+            WIRCheckpointImages = await GetWIRCheckpointImagesAsync(request.BoxId, cancellationToken),
+            ProgressUpdateImages = await GetProgressUpdateImagesAsync(request.BoxId, cancellationToken),
+            QualityIssueImages = await GetQualityIssueImagesAsync(request.BoxId, cancellationToken)
+        };
 
-        // Get WIRCheckpoint Images
+        result.TotalCount = result.WIRCheckpointImages.Count +
+                           result.ProgressUpdateImages.Count +
+                           result.QualityIssueImages.Count;
+
+        return Result.Success(result);
+    }
+
+    private async Task<List<BoxAttachmentDto>> GetWIRCheckpointImagesAsync(Guid boxId, CancellationToken cancellationToken)
+    {
         var wirCheckpointImages = await _context.WIRCheckpoints
-            .Where(wir => wir.BoxId == request.BoxId)
+            .Where(wir => wir.BoxId == boxId)
             .SelectMany(wir => wir.Images.Select(img => new
             {
                 Image = img,
@@ -39,24 +52,24 @@ public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQu
             .OrderByDescending(x => x.Image.CreatedDate)
             .ToListAsync(cancellationToken);
 
-        result.WIRCheckpointImages = wirCheckpointImages.Select(x => new BoxAttachmentDto
+        return wirCheckpointImages.Select(x =>
         {
-            ImageId = x.Image.WIRCheckpointImageId,
-            ImageType = x.Image.ImageType,
-            OriginalName = x.Image.OriginalName,
-            FileSize = x.Image.FileSize,
-            Sequence = x.Image.Sequence,
-            Version = x.Image.Version,
-            CreatedDate = x.Image.CreatedDate,
-            CreatedBy = x.CreatedBy, // Use WIRCheckpoint.CreatedBy
-            ReferenceId = x.WIRId,
-            ReferenceType = "WIRCheckpoint",
-            ReferenceName = x.WIRCode
+            var dto = MapCommonImageData(
+                x.Image,
+                x.CreatedBy,
+                x.WIRId,
+                "WIRCheckpoint",
+                x.WIRCode
+            );
+            dto.ImageId = x.Image.WIRCheckpointImageId;
+            return dto;
         }).ToList();
+    }
 
-        // Get ProgressUpdate Images with Activity information
+    private async Task<List<BoxAttachmentDto>> GetProgressUpdateImagesAsync(Guid boxId, CancellationToken cancellationToken)
+    {
         var progressUpdateImages = await _context.ProgressUpdates
-            .Where(pu => pu.BoxId == request.BoxId)
+            .Where(pu => pu.BoxId == boxId)
             .Include(pu => pu.BoxActivity)
             .ThenInclude(ba => ba.ActivityMaster)
             .SelectMany(pu => pu.Images.Select(img => new
@@ -66,33 +79,35 @@ public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQu
                 UpdateTitle = "Progress Update",
                 UpdatedBy = pu.UpdatedBy,
                 BoxActivityId = pu.BoxActivityId,
-                ActivityName = pu.BoxActivity != null && pu.BoxActivity.ActivityMaster != null 
-                    ? pu.BoxActivity.ActivityMaster.ActivityName 
+                ActivityName = pu.BoxActivity != null && pu.BoxActivity.ActivityMaster != null
+                    ? pu.BoxActivity.ActivityMaster.ActivityName
                     : "Unknown Activity"
             }))
             .OrderByDescending(x => x.Image.CreatedDate)
             .ToListAsync(cancellationToken);
 
-        result.ProgressUpdateImages = progressUpdateImages.Select(x => new BoxAttachmentDto
+        return progressUpdateImages.Select(x =>
         {
-            ImageId = x.Image.ProgressUpdateImageId,
-            ImageType = x.Image.ImageType,
-            OriginalName = x.Image.OriginalName,
-            FileSize = x.Image.FileSize,
-            Sequence = x.Image.Sequence,
-            Version = x.Image.Version,
-            CreatedDate = x.Image.CreatedDate,
-            CreatedBy = x.UpdatedBy, // Use ProgressUpdate.UpdatedBy as the creator
-            ReferenceId = x.ProgressUpdateId,
-            ReferenceType = "ProgressUpdate",
-            ReferenceName = x.UpdateTitle,
-            BoxActivityId = x.BoxActivityId,
-            ActivityName = x.ActivityName
-        }).ToList();
+            var dto = MapCommonImageData(
+                x.Image,
+                x.UpdatedBy,
+                x.ProgressUpdateId,
+                "ProgressUpdate",
+                x.UpdateTitle
+            );
 
-        // Get QualityIssue Images
+            dto.ImageId = x.Image.ProgressUpdateImageId;
+            dto.BoxActivityId = x.BoxActivityId;
+            dto.ActivityName = x.ActivityName;
+
+            return dto;
+        }).ToList();
+    }
+
+    private async Task<List<BoxAttachmentDto>> GetQualityIssueImagesAsync(Guid boxId, CancellationToken cancellationToken)
+    {
         var qualityIssueImages = await _context.QualityIssues
-            .Where(qi => qi.WIRCheckpoint!.BoxId == request.BoxId)
+            .Where(qi => qi.WIRCheckpoint!.BoxId == boxId)
             .SelectMany(qi => qi.Images.Select(img => new
             {
                 Image = img,
@@ -107,29 +122,50 @@ public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQu
             .OrderByDescending(x => x.Image.CreatedDate)
             .ToListAsync(cancellationToken);
 
-        result.QualityIssueImages = qualityIssueImages.Select(x => new BoxAttachmentDto
+        return qualityIssueImages.Select(x =>
         {
-            ImageId = x.Image.QualityIssueImageId,
-            ImageType = x.Image.ImageType,
-            OriginalName = x.Image.OriginalName,
-            FileSize = x.Image.FileSize,
-            Sequence = x.Image.Sequence,
-            Version = x.Image.Version,
-            CreatedDate = x.Image.CreatedDate,
-            CreatedBy = x.CreatedBy, // Use QualityIssue.CreatedBy
-            ReferenceId = x.IssueId,
-            ReferenceType = "QualityIssue",
-            ReferenceName = x.IssueDescription,
-            IssueType = x.IssueType?.ToString(),
-            IssueSeverity = x.IssueSeverity?.ToString(),
-            BoxTag = x.BoxTag,
-            WIRCode = x.WIRCode
+            var dto = MapCommonImageData(
+                x.Image,
+                x.CreatedBy,
+                x.IssueId,
+                "QualityIssue",
+                x.IssueDescription
+            );
+
+            dto.ImageId = x.Image.QualityIssueImageId;
+            dto.IssueType = x.IssueType?.ToString();
+            dto.IssueSeverity = x.IssueSeverity?.ToString();
+            dto.BoxTag = x.BoxTag;
+            dto.WIRCode = x.WIRCode;
+
+            return dto;
         }).ToList();
 
-        result.TotalCount = result.WIRCheckpointImages.Count +
-                           result.ProgressUpdateImages.Count +
-                           result.QualityIssueImages.Count;
-
-        return Result.Success(result);
     }
+
+    private string? GetImageUrl(string? imageFileName)
+    {
+        return !string.IsNullOrEmpty(imageFileName)
+            ? _blobStorageService.GetFileUrl(_containerName,imageFileName)
+            : null;
+    }
+    private BoxAttachmentDto MapCommonImageData(dynamic image,Guid? createdBy,Guid referenceId, string referenceType,string? referenceName)
+    {
+        return new BoxAttachmentDto
+        {
+            ImageFileName = image.ImageFileName,
+            ImageUrl = GetImageUrl(image.ImageFileName),
+            ImageType = image.ImageType,
+            OriginalName = image.OriginalName,
+            FileSize = image.FileSize,
+            Sequence = image.Sequence,
+            Version = image.Version,
+            CreatedDate = image.CreatedDate,
+            CreatedBy = createdBy,
+            ReferenceId = referenceId,
+            ReferenceType = referenceType,
+            ReferenceName = referenceName
+        };
+    }
+
 }

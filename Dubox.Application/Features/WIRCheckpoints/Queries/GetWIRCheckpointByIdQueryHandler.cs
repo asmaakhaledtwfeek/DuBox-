@@ -31,16 +31,12 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
             if (checkpoint == null)
                 return Result.Failure<WIRCheckpointDto>("WIR checkpoint not found");
 
-            // Verify user has access to the project this WIR checkpoint belongs to
             var canAccessProject = await _visibilityService.CanAccessProjectAsync(checkpoint.Box.ProjectId, cancellationToken);
             if (!canAccessProject)
-            {
                 return Result.Failure<WIRCheckpointDto>("Access denied. You do not have permission to view this WIR checkpoint.");
-            }
 
             var dto = checkpoint.Adapt<WIRCheckpointDto>();
 
-            // Enrich checklist items with section and checklist information
             if (dto.ChecklistItems != null && checkpoint.ChecklistItems != null)
             {
                 foreach (var dtoItem in dto.ChecklistItems)

@@ -3064,6 +3064,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
           version?: number; // Version number for files with same name
           createdDate?: Date; // Creation date
           drawingUrl?: string; // URL for drawing
+          downloadUrl?: string; // Blob storage download URL
         };
 
         const processedDrawings = drawings.map((drawing, index) => {
@@ -3075,8 +3076,17 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
           let fileName = drawing.originalFileName;
           let fileExtension = drawing.fileExtension;
           
-          // Check if URL points to a PDF/DWG file (not an image)
-          if (fileType === 'url' && drawing.drawingUrl) {
+          // Priority 1: Use downloadUrl from blob storage if available
+          if (drawing.downloadUrl) {
+            fileType = 'file';
+            fileName = drawing.originalFileName || drawing.drawingFileName || 'Drawing';
+            fileExtension = drawing.fileExtension;
+            imageUrl = drawing.downloadUrl;
+            displayUrl = drawing.downloadUrl;
+            console.log('✅ Using blob storage download URL:', displayUrl);
+          }
+          // Priority 2: Check if URL points to a PDF/DWG file (not an image)
+          else if (fileType === 'url' && drawing.drawingUrl) {
             // Check if backend provided fileExtension (for URLs pointing to files)
             const isFileExtension = drawing.fileExtension?.toLowerCase() === '.pdf' || 
                                    drawing.fileExtension?.toLowerCase() === '.dwg';
@@ -3098,9 +3108,10 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
             imageUrl = drawing.drawingUrl;
             displayUrl = drawing.drawingUrl;
           } else if (fileType === 'file') {
-            // File type drawing - use API endpoint for download
+            // Legacy: For file-type drawings without downloadUrl, use boxDrawingId to construct download URL
             displayUrl = this.boxService.getBoxDrawingDownloadUrl(drawing.boxDrawingId);
             imageUrl = displayUrl; // For PDF/DWG, this will be used for download
+            console.log('⚠️ Using legacy download URL (should use blob storage):', displayUrl);
           }
           
           return {
@@ -3121,7 +3132,8 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
             createdByName: drawing.createdByName, // Include user name from backend
             version: drawing.version, // Include version number from backend
             createdDate: drawing.createdDate,
-            drawingUrl: drawing.drawingUrl
+            drawingUrl: drawing.drawingUrl,
+            downloadUrl: drawing.downloadUrl // Store the blob storage download URL
           } as ResolvedDrawing;
         });
 
@@ -3235,22 +3247,36 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   /**
    * Format image data to ensure it has proper data URL format
+   * Now handles both ImageUrl (blob storage) and ImageData (base64) for backward compatibility
    */
-  formatImageData(imageData: string, imageType?: string): string {
+  formatImageData(imageData: string, imageType?: string, imageUrl?: string): string {
+    // Priority 1: Use imageUrl from blob storage if available
+    if (imageUrl) {
+      // If it's a relative URL, convert to absolute URL
+      if (imageUrl.startsWith('/')) {
+        const baseUrl = environment.apiUrl || window.location.origin;
+        return `${baseUrl}${imageUrl}`;
+      }
+      // If it's already an absolute URL, return as is
+      if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+        return imageUrl;
+      }
+    }
+
+    // Priority 2: Fall back to imageData for backward compatibility
     if (!imageData) {
       return '';
     }
 
     // Check if imageData is already a valid data URL or regular URL
     if (imageData.startsWith('data:') || imageData.startsWith('http://') || imageData.startsWith('https://')) {
-     console.log(imageData);
       return imageData;
     }
 
     // It's a base64 string without the data URL prefix
     // Determine MIME type from imageType field or default to PNG
     let mimeType = 'image/png'; // Default
-    
+
     if (imageType) {
       const type = imageType.toLowerCase();
       if (type.includes('jpg') || type.includes('jpeg')) {
@@ -3265,19 +3291,19 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         mimeType = 'image/bmp';
       }
     }
-    
+
     return `data:${mimeType};base64,${imageData}`;
   }
 
-  openImagePreview(imageData: string, imageType?: string): void {
-    if (!imageData) {
-      console.warn('⚠️ No image data provided');
+  openImagePreview(imageData: string, imageType?: string, imageUrl?: string): void {
+    if (!imageData && !imageUrl) {
+      console.warn('⚠️ No image data or URL provided');
       return;
     }
 
-    console.log('🖼️ Opening image preview. Type:', imageType, 'Data:', imageData.substring(0, 50) + '...');
-    
-    const formattedUrl = this.formatImageData(imageData, imageType);
+    console.log('🖼️ Opening image preview. Type:', imageType, 'URL:', imageUrl, 'Data:', imageData?.substring(0, 50) + '...');
+
+    const formattedUrl = this.formatImageData(imageData, imageType, imageUrl);
     if (formattedUrl.startsWith('data:image/')) {
       const newWindow = window.open();
       if (newWindow) {
@@ -3287,7 +3313,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       window.open(formattedUrl, '_blank', 'noopener,noreferrer');
     }
     console.log('✅ Opening formatted image URL', formattedUrl);
-   
+
   }
 
   toggleWirImages(): void {
@@ -3540,14 +3566,15 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   /**
    * Download attachment image
+   * Now handles both ImageUrl (blob storage) and ImageData (base64)
    */
-  downloadAttachmentImage(imageData: string, imageType?: string, originalName?: string): void {
-    if (!imageData) {
-      console.error('No image data provided');
+  downloadAttachmentImage(imageData: string, imageType?: string, originalName?: string, imageUrl?: string): void {
+    if (!imageData && !imageUrl) {
+      console.error('No image data or URL provided');
       return;
     }
 
-    const formattedUrl = this.formatImageData(imageData, imageType);
+    const formattedUrl = this.formatImageData(imageData, imageType, imageUrl);
     const fileName = originalName || `attachment-image-${Date.now()}.jpg`;
 
     // For data URLs, convert to blob and download

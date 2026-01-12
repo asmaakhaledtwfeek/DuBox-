@@ -11,7 +11,8 @@ public class BoxAttachmentsDto
 public class BoxAttachmentDto
 {
     public Guid ImageId { get; set; }
-    public string ImageData { get; set; } = string.Empty;
+    public string? ImageFileName { get; set; }
+    public string? ImageUrl { get; set; }
     public string ImageType { get; set; } = string.Empty;
     public string? OriginalName { get; set; }
     public long? FileSize { get; set; }

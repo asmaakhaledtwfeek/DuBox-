@@ -287,8 +287,10 @@ export interface BoxDrawing {
 export interface BoxDrawingDto {
   boxDrawingId: string;
   boxId: string;
-  drawingUrl?: string;
-  fileData?: string;
+  drawingUrl?: string; // URL to the drawing (for URL type) or blob storage path
+  drawingFileName?: string; // File name in blob storage
+  downloadUrl?: string; // Full download URL from blob storage
+  fileData?: string; // Deprecated: base64 data (for backward compatibility)
   originalFileName?: string;
   fileExtension?: string;
   fileType?: string; // "url" or "file"
@@ -328,8 +330,10 @@ export interface BoxAllAttachmentsResponse {
 
 export interface BoxAttachmentDto {
   imageId: string;
-  imageData: string;
+  imageData?: string; // Now optional for backward compatibility
+  imageUrl?: string; // New field for blob storage URL
   imageType: string;
+  imageFileName?: string; // File name in blob storage
   originalName?: string;
   fileSize?: number;
   sequence: number;

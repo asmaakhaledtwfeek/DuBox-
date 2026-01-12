@@ -64,43 +64,6 @@ public class GetProgressUpdatesByBoxQueryHandler : IRequestHandler<GetProgressUp
         return Result.Success(response);
     }
 
-    //private async Task PopulateImageMetadata(List<ProgressUpdateDto> updates, CancellationToken cancellationToken)
-    //{
-    //    if (updates.Count == 0) return;
-
-    //    var progressUpdateIds = updates.Select(u => u.ProgressUpdateId).ToList();
-
-    //    // Load image metadata (without ImageData) in a separate lightweight query
-    //    // Use /file endpoint so browser can load images directly as <img src>
-    //    var images = await _dbContext.Set<ProgressUpdateImage>()
-    //        .AsNoTracking()
-    //        .Where(img => progressUpdateIds.Contains(img.ProgressUpdateId))
-    //        .Select(img => new ProgressUpdateImageDto
-    //        {
-    //            ProgressUpdateImageId = img.ProgressUpdateImageId,
-    //            ProgressUpdateId = img.ProgressUpdateId,
-    //            // Include base64 so frontend can render even if file URL fails
-    //            ImageData = img.ImageData,
-    //            ImageType = img.ImageType,
-    //            OriginalName = img.OriginalName,
-    //            FileSize = img.FileSize,
-    //            Sequence = img.Sequence,
-    //            CreatedDate = img.CreatedDate,
-    //            ImageUrl = $"/api/images/ProgressUpdate/{img.ProgressUpdateImageId}/file"
-    //        })
-    //        .ToListAsync(cancellationToken);
-
-    //    var imagesByUpdateId = images.GroupBy(i => i.ProgressUpdateId)
-    //        .ToDictionary(g => g.Key, g => g.OrderBy(i => i.Sequence).ToList());
-
-    //    // Updates are records, so we need to replace them
-    //    for (int i = 0; i < updates.Count; i++)
-    //    {
-    //        if (imagesByUpdateId.TryGetValue(updates[i].ProgressUpdateId, out var updateImages))
-    //        {
-    //            updates[i] = updates[i] with { Images = updateImages };
-    //        }
-    //    }
-    //}
+   
 }
 

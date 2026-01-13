@@ -365,6 +365,30 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
     this.router.navigate(['/projects', this.projectId, 'boxes']);
   }
 
+  viewBoxesByStatus(status: BoxStatus): void {
+    console.log('🔍 Navigate to boxes with status:', status, 'for project:', this.projectId);
+    if (!this.projectId) {
+      console.error('❌ Cannot navigate: projectId is undefined');
+      alert('Error: Project ID is missing. Cannot view boxes.');
+      return;
+    }
+    this.router.navigate(['/projects', this.projectId, 'boxes'], {
+      queryParams: { status: status }
+    });
+  }
+
+  viewCompletedBoxes(): void {
+    this.viewBoxesByStatus(BoxStatus.Completed);
+  }
+
+  viewInProgressBoxes(): void {
+    this.viewBoxesByStatus(BoxStatus.InProgress);
+  }
+
+  viewDispatchedBoxes(): void {
+    this.viewBoxesByStatus(BoxStatus.Dispatched);
+  }
+
   openImportExcel(): void {
     this.excelSectionRef?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
     setTimeout(() => {

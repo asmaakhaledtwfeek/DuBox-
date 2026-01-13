@@ -56,6 +56,12 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     this.projectId = this.route.snapshot.params['id'];
     const boxType = this.route.snapshot.queryParams['boxType'];
     const boxSubType = this.route.snapshot.queryParams['boxSubType'];
+    const status = this.route.snapshot.queryParams['status'];
+    
+    // Set status filter if provided in query params
+    if (status && Object.values(BoxStatus).includes(status as BoxStatus)) {
+      this.selectedStatus = status as BoxStatus;
+    }
     
     // Check permissions immediately
     this.checkPermissions();
@@ -72,11 +78,17 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     
     this.loadProjectDetails();
     
-    if (boxType) {
-      this.selectedBoxType = boxType;
-      this.selectedBoxSubType = boxSubType || null;
-      this.showBoxTypes = false;
-      this.loadBoxes();
+    if (boxType || status) {
+      // If status is provided without boxType, load all boxes
+      if (status && !boxType) {
+        this.showBoxTypes = false;
+        this.loadBoxes();
+      } else if (boxType) {
+        this.selectedBoxType = boxType;
+        this.selectedBoxSubType = boxSubType || null;
+        this.showBoxTypes = false;
+        this.loadBoxes();
+      }
     } else {
       this.loadBoxTypes();
     }

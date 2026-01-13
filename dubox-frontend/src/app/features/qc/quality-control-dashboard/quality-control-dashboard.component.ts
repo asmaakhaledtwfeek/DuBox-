@@ -222,6 +222,79 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Filter WIR checkpoints by status when clicking on KPI cards
+   */
+  filterCheckpointsByStatus(status: WIRCheckpointStatus | 'All'): void {
+    if (status === 'All') {
+      // Clear status filter
+      this.filterForm.patchValue({ status: '' });
+    } else {
+      // Set status filter
+      this.filterForm.patchValue({ status: status });
+    }
+    // Apply filters and fetch checkpoints
+    this.applyFilters();
+  }
+
+  /**
+   * Filter quality issues by status when clicking on KPI cards
+   */
+  filterQualityIssuesByStatus(status: QualityIssueStatus | 'All'): void {
+    if (status === 'All') {
+      // Clear status filter
+      this.qualityIssuesFilterForm.patchValue({ status: '' });
+    } else {
+      // Set status filter
+      this.qualityIssuesFilterForm.patchValue({ status: status });
+    }
+    // Fetch quality issues with the new filter
+    this.qualityIssuesCurrentPage = 1;
+    this.fetchAllQualityIssues();
+  }
+
+  /**
+   * Handle KPI card click based on card label
+   */
+  onKpiCardClick(cardLabel: string): void {
+    if (this.activeTab === 'checkpoints') {
+      // Map card labels to checkpoint statuses
+      switch (cardLabel) {
+        case 'All WIR Checkpoints':
+          this.filterCheckpointsByStatus('All');
+          break;
+        case 'Pending Reviews':
+          this.filterCheckpointsByStatus(WIRCheckpointStatus.Pending);
+          break;
+        case 'Approved':
+          this.filterCheckpointsByStatus(WIRCheckpointStatus.Approved);
+          break;
+        case 'Conditional Approval':
+          this.filterCheckpointsByStatus(WIRCheckpointStatus.ConditionalApproval);
+          break;
+        case 'Rejected':
+          this.filterCheckpointsByStatus(WIRCheckpointStatus.Rejected);
+          break;
+      }
+    } else if (this.activeTab === 'quality-issues') {
+      // Map card labels to quality issue statuses
+      switch (cardLabel) {
+        case 'Open Issues':
+          this.filterQualityIssuesByStatus('Open');
+          break;
+        case 'In Progress':
+          this.filterQualityIssuesByStatus('InProgress');
+          break;
+        case 'Resolved Issues':
+          this.filterQualityIssuesByStatus('Resolved');
+          break;
+        case 'Closed Issues':
+          this.filterQualityIssuesByStatus('Closed');
+          break;
+      }
+    }
+  }
+
   applyFilters(): void {
     this.checkpointsCurrentPage = 1;
     this.fetchCheckpoints();

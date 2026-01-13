@@ -158,11 +158,71 @@
   display: flex;
   align-items: center;
   gap: var(--spacing-md, 16px);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid transparent;
+  position: relative;
+  overflow: visible;
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  }
+
+  // Clickable card styling
+  &.clickable-card {
+    cursor: pointer;
+    user-select: none;
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      opacity: 0;
+      transform: scale(0);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    &:hover {
+      border-color: rgba(27, 154, 170, 0.3);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    }
+
+    // Active state styling
+    &.active {
+      border: 3px solid var(--amana-teal);
+      box-shadow: 0 8px 24px rgba(27, 154, 170, 0.25), 
+                  0 0 0 4px rgba(27, 154, 170, 0.15);
+      transform: translateY(-2px) scale(1.02);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(27, 154, 170, 0.03) 100%);
+
+      &::after {
+        opacity: 1;
+        transform: scale(1);
+        background: var(--amana-teal);
+        content: '✓';
+        color: white;
+        font-size: 12px;
+        font-weight: 700;
+        box-shadow: 0 2px 8px rgba(27, 154, 170, 0.4);
+      }
+
+      &:hover {
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 12px 32px rgba(27, 154, 170, 0.3),
+                    0 0 0 4px rgba(27, 154, 170, 0.2);
+      }
+
+      .card-icon {
+        box-shadow: 0 4px 12px rgba(27, 154, 170, 0.3);
+      }
+    }
   }
 
   .card-icon {
@@ -1347,6 +1407,17 @@
         font-size: var(--font-size-xs, 12px);
       }
     }
+
+    // Active state adjustments for tablet
+    &.clickable-card.active {
+      border-width: 2px;
+      
+      &::after {
+        width: 18px;
+        height: 18px;
+        font-size: 11px;
+      }
+    }
   }
 
   // Capacity progress
@@ -1676,6 +1747,19 @@
     .card-content {
       .card-value {
         font-size: var(--font-size-lg, 18px);
+      }
+    }
+
+    // Active state adjustments for mobile
+    &.clickable-card.active {
+      border-width: 2px;
+      
+      &::after {
+        width: 16px;
+        height: 16px;
+        font-size: 10px;
+        top: 6px;
+        right: 6px;
       }
     }
   }

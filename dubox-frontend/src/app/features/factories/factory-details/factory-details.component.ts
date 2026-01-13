@@ -31,6 +31,9 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
   BoxStatus = BoxStatus;
   ProjectLocation = ProjectLocation; // Expose to template
   
+  // Track active status card for visual indication
+  activeStatusCard: BoxStatus | 'All' | null = null;
+  
   private subscriptions: Subscription[] = [];
 
   constructor(
@@ -69,10 +72,9 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
   }
 
   loadBoxes(): void {
-    this.boxService.getBoxesByFactory(this.factoryId).subscribe({
+    // Request all boxes including dispatched ones for filtering
+    this.boxService.getBoxesByFactory(this.factoryId, true).subscribe({
       next: (boxes) => {
-        // Backend already filters boxes (InProgress/Completed from active projects)
-        // Just use the boxes directly
         this.boxes = boxes;
         this.applyFilters();
         this.loading = false;
@@ -99,11 +101,18 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
   }
 
   applyFilters(): void {
-    // Filter out dispatched boxes from display (but keep them for counting)
-    // Note: Backend already filters boxes (InProgress/Completed from active projects)
-    let filtered = this.boxes.filter(box => box.status !== BoxStatus.Dispatched);
     const searchTerm = this.searchControl.value?.toLowerCase() || '';
+    let filtered = this.boxes;
     
+    // Apply status filter first
+    if (this.selectedStatus !== 'All') {
+      filtered = filtered.filter(box => box.status === this.selectedStatus);
+    } else {
+      // When "All" is selected, exclude dispatched boxes from display by default
+      filtered = filtered.filter(box => box.status !== BoxStatus.Dispatched);
+    }
+    
+    // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(box => {
         return box.code?.toLowerCase().includes(searchTerm) ||
@@ -113,15 +122,22 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
       });
     }
     
-    if (this.selectedStatus !== 'All') {
-      filtered = filtered.filter(box => box.status === this.selectedStatus);
-    }
-    
     this.filteredBoxes = filtered;
   }
 
   onStatusChange(status: BoxStatus | 'All'): void {
     this.selectedStatus = status;
+    // Clear active status card when "All" is selected
+    this.activeStatusCard = status === 'All' ? null : status;
+    this.applyFilters();
+  }
+
+  /**
+   * Handle status card click - filter boxes by status
+   */
+  onStatusCardClick(status: BoxStatus): void {
+    this.selectedStatus = status;
+    this.activeStatusCard = status;
     this.applyFilters();
   }
 

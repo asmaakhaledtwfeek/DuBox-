@@ -175,9 +175,15 @@ export class BoxService {
 
   /**
    * Get boxes by factory ID
+   * @param factoryId Factory ID
+   * @param includeDispatched Whether to include dispatched boxes (default: false)
    */
-  getBoxesByFactory(factoryId: string): Observable<Box[]> {
-    return this.apiService.get<any[]>(`${this.endpoint}/factory/${factoryId}`).pipe(
+  getBoxesByFactory(factoryId: string, includeDispatched: boolean = false): Observable<Box[]> {
+    const params: any = {};
+    if (includeDispatched) {
+      params.includeDispatched = 'true';
+    }
+    return this.apiService.get<any[]>(`${this.endpoint}/factory/${factoryId}`, params).pipe(
       map(boxes => boxes.map(b => this.transformBox(b)))
     );
   }

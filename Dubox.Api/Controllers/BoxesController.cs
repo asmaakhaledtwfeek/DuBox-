@@ -33,9 +33,12 @@ public class BoxesController : ControllerBase
     }
 
     [HttpGet("factory/{factoryId}")]
-    public async Task<IActionResult> GetBoxesByFactory(Guid factoryId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetBoxesByFactory(
+        Guid factoryId, 
+        [FromQuery] bool includeDispatched = false,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetBoxesByFactoryQuery(factoryId), cancellationToken);
+        var result = await _mediator.Send(new GetBoxesByFactoryQuery(factoryId, includeDispatched), cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 

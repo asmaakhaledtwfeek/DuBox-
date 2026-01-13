@@ -46,6 +46,7 @@
         class="summary-card clickable-card" 
         *ngFor="let card of summaryCards" 
         [class]="'tone-' + card.tone"
+        [class.active]="activeKpiCard === card.label"
         (click)="onKpiCardClick(card.label)"
         role="button"
         tabindex="0"

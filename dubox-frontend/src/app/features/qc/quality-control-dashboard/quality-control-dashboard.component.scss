@@ -286,6 +286,23 @@
       transition: all 0.3s ease;
     }
 
+    &::after {
+      content: '';
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--card-accent, var(--gray-300));
+      opacity: 0;
+      transform: scale(0);
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     &:hover {
       transform: translateY(-4px);
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
@@ -293,6 +310,44 @@
 
       &::before {
         height: 6px;
+      }
+    }
+
+    // Active state styling
+    &.active {
+      border: 3px solid var(--card-accent, var(--gray-300));
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1), 
+                  0 0 0 4px rgba(var(--card-accent-rgb, 128, 128, 128), 0.15);
+      transform: translateY(-2px) scale(1.02);
+      background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(var(--card-accent-rgb, 128, 128, 128), 0.03) 100%);
+
+      &::before {
+        height: 8px;
+        box-shadow: 0 2px 8px rgba(var(--card-accent-rgb, 128, 128, 128), 0.4);
+      }
+
+      &::after {
+        opacity: 1;
+        transform: scale(1);
+        background: var(--card-accent, var(--gray-300));
+        box-shadow: 0 2px 8px rgba(var(--card-accent-rgb, 128, 128, 128), 0.4);
+      }
+
+      // Add checkmark icon for active state
+      &::after {
+        content: '✓';
+        color: white;
+        font-size: 14px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      &:hover {
+        transform: translateY(-4px) scale(1.02);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18), 0 6px 16px rgba(0, 0, 0, 0.12),
+                    0 0 0 4px rgba(var(--card-accent-rgb, 128, 128, 128), 0.2);
       }
     }
 
@@ -320,6 +375,7 @@
       --card-color: #2563eb;
       --card-color-dark: #1d4ed8;
       --card-accent: #3b82f6;
+      --card-accent-rgb: 59, 130, 246;
 
       &::before {
         background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%);
@@ -330,6 +386,7 @@
       --card-color: #f97316;
       --card-color-dark: #ea580c;
       --card-accent: #fb923c;
+      --card-accent-rgb: 251, 146, 60;
 
       &::before {
         background: linear-gradient(90deg, #fb923c 0%, #f97316 100%);
@@ -340,6 +397,7 @@
       --card-color: #dc2626;
       --card-color-dark: #b91c1c;
       --card-accent: #ef4444;
+      --card-accent-rgb: 239, 68, 68;
 
       &::before {
         background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
@@ -350,6 +408,7 @@
       --card-color: #16a34a;
       --card-color-dark: #15803d;
       --card-accent: #22c55e;
+      --card-accent-rgb: 34, 197, 94;
 
       &::before {
         background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%);
@@ -2734,6 +2793,18 @@
       strong {
         font-size: 28px;
       }
+
+      &::after {
+        top: 12px;
+        right: 12px;
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+      }
+
+      &.active {
+        border-width: 2px;
+      }
     }
   }
 
@@ -2817,6 +2888,12 @@
 
       strong {
         font-size: 24px;
+      }
+
+      &::after {
+        width: 18px;
+        height: 18px;
+        font-size: 11px;
       }
     }
   }

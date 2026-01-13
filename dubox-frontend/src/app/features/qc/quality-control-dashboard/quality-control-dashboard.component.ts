@@ -75,6 +75,25 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     { label: 'Closed Issues', value: 0, tone: 'info' }
   ];
 
+  // Store original summary counts (these remain unchanged when filtering)
+  private originalWirCheckpointSummary = [
+    { label: 'All WIR Checkpoints', value: 0, tone: 'info' },
+    { label: 'Pending Reviews', value: 0, tone: 'warning' },
+    { label: 'Approved', value: 0, tone: 'success' },
+    { label: 'Conditional Approval', value: 0, tone: 'warning' },
+    { label: 'Rejected', value: 0, tone: 'danger' }
+  ];
+
+  private originalQualityIssueSummary = [
+    { label: 'Open Issues', value: 0, tone: 'danger' },
+    { label: 'In Progress', value: 0, tone: 'warning' },
+    { label: 'Resolved Issues', value: 0, tone: 'success' },
+    { label: 'Closed Issues', value: 0, tone: 'info' }
+  ];
+
+  // Track active KPI card for visual indication
+  activeKpiCard: string | null = null;
+
   // Getter to return appropriate summary cards based on active tab
   get summaryCards() {
     return this.activeTab === 'checkpoints' 
@@ -216,6 +235,9 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   setTab(tab: QcTab): void {
     this.activeTab = tab;
     
+    // Clear active KPI card when switching tabs
+    this.activeKpiCard = null;
+    
     // Fetch quality issues when switching to that tab
     if (tab === 'quality-issues') {
       this.fetchAllQualityIssues();
@@ -257,6 +279,9 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
    * Handle KPI card click based on card label
    */
   onKpiCardClick(cardLabel: string): void {
+    // Update active card for visual indication
+    this.activeKpiCard = cardLabel;
+
     if (this.activeTab === 'checkpoints') {
       // Map card labels to checkpoint statuses
       switch (cardLabel) {
@@ -304,6 +329,10 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     this.isResettingCheckpointFilters = true;
     this.filterForm.reset();
     this.checkpointsCurrentPage = 1;
+    
+    // Clear active KPI card when resetting filters
+    this.activeKpiCard = null;
+    
     this.fetchCheckpoints();
     // Reset flag after a short delay to allow form reset to complete
     setTimeout(() => {
@@ -750,19 +779,41 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   
   /**
    * Update summary cards using backend summary data
+   * Only updates on initial load or when filters are cleared to preserve total counts
    */
   private updateSummaryFromBackend(response: any): void {
+    // Check if any filters are active
+    const hasActiveFilters = this.filterForm.value.status || 
+                             this.filterForm.value.wirNumber || 
+                             this.filterForm.value.boxTag || 
+                             this.filterForm.value.projectCode ||
+                             this.filterForm.value.from ||
+                             this.filterForm.value.to;
+    
+    // Only update summary if no filters are active (initial load or after reset)
+    // This ensures counts remain unchanged when filtering
+    if (hasActiveFilters) {
+      console.log('⚠️ Filters active - preserving original summary counts');
+      // Keep existing original counts, don't update
+      return;
+    }
+
     // Use backend summary if available, otherwise fallback to calculating from current page
     if (response.summary) {
       console.log('✅ Using backend summary (all checkpoints):', response.summary);
       const summary = response.summary;
-      this.wirCheckpointSummaryCards = [
+      
+      // Store original summary (total counts - never changes)
+      this.originalWirCheckpointSummary = [
         { label: 'All WIR Checkpoints', value: summary.totalCheckpoints || 0, tone: 'info' },
         { label: 'Pending Reviews', value: summary.pendingReviews || 0, tone: 'warning' },
         { label: 'Approved', value: summary.approved || 0, tone: 'success' },
         { label: 'Conditional Approval', value: summary.conditionalApproval || 0, tone: 'warning' },
         { label: 'Rejected', value: summary.rejected || 0, tone: 'danger' }
       ];
+      
+      // Display cards always show original counts
+      this.wirCheckpointSummaryCards = [...this.originalWirCheckpointSummary];
     } else {
       console.warn('⚠️ Backend summary not available, using fallback (current page only)');
 
@@ -781,30 +832,54 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
         cp.status === WIRCheckpointStatus.Rejected
       ).length;
 
-      this.wirCheckpointSummaryCards = [
+      this.originalWirCheckpointSummary = [
         { label: 'All WIR Checkpoints', value: totalCheckpoints, tone: 'info' },
         { label: 'Pending Reviews', value: pendingReviews, tone: 'warning' },
         { label: 'Approved', value: approved, tone: 'success' },
         { label: 'Conditional Approval', value: conditionalApproval, tone: 'warning' },
         { label: 'Rejected', value: rejected, tone: 'danger' }
       ];
+      
+      this.wirCheckpointSummaryCards = [...this.originalWirCheckpointSummary];
     }
   }
 
   /**
    * Update quality issue summary cards using backend summary data
+   * Only updates on initial load or when filters are cleared to preserve total counts
    */
   private updateQualityIssuesSummaryFromBackend(response: any): void {
+    // Check if any filters are active
+    const hasActiveFilters = this.qualityIssuesFilterForm.value.status || 
+                             this.qualityIssuesFilterForm.value.wirNumber || 
+                             this.qualityIssuesFilterForm.value.boxTag || 
+                             this.qualityIssuesFilterForm.value.projectCode ||
+                             this.qualityIssuesFilterForm.value.issueType ||
+                             this.qualityIssuesFilterForm.value.severity;
+    
+    // Only update summary if no filters are active (initial load or after reset)
+    // This ensures counts remain unchanged when filtering
+    if (hasActiveFilters) {
+      console.log('⚠️ Filters active - preserving original summary counts');
+      // Keep existing original counts, don't update
+      return;
+    }
+
     // Use backend summary if available, otherwise fallback to calculating from current page
     if (response.summary) {
       console.log('✅ Using backend summary for quality issues (all issues):', response.summary);
       const summary = response.summary;
-      this.qualityIssueSummaryCards = [
+      
+      // Store original summary (total counts - never changes)
+      this.originalQualityIssueSummary = [
         { label: 'Open Issues', value: summary.openIssues || 0, tone: 'danger' },
         { label: 'In Progress', value: summary.inProgressIssues || 0, tone: 'warning' },
         { label: 'Resolved Issues', value: summary.resolvedIssues || 0, tone: 'success' },
         { label: 'Closed Issues', value: summary.closedIssues || 0, tone: 'info' }
       ];
+      
+      // Display cards always show original counts
+      this.qualityIssueSummaryCards = [...this.originalQualityIssueSummary];
     } else {
       console.warn('⚠️ Backend summary not available for quality issues, using fallback (current page only)');
       // Fallback: Calculate from current page (legacy behavior)
@@ -821,12 +896,14 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
         issue.status === 'Closed'
       ).length;
 
-      this.qualityIssueSummaryCards = [
+      this.originalQualityIssueSummary = [
         { label: 'Open Issues', value: openIssues, tone: 'danger' },
         { label: 'In Progress', value: inProgressIssues, tone: 'warning' },
         { label: 'Resolved Issues', value: resolvedIssues, tone: 'success' },
         { label: 'Closed Issues', value: closedIssues, tone: 'info' }
       ];
+      
+      this.qualityIssueSummaryCards = [...this.originalQualityIssueSummary];
     }
   }
 
@@ -1092,6 +1169,10 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     this.isResettingFilters = true;
     this.qualityIssuesFilterForm.reset();
     this.qualityIssuesCurrentPage = 1;
+    
+    // Clear active KPI card when resetting filters
+    this.activeKpiCard = null;
+    
     this.fetchAllQualityIssues();
     // Reset flag after a short delay to allow form reset to complete
     setTimeout(() => {

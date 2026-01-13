@@ -4,5 +4,5 @@ using MediatR;
 
 namespace Dubox.Application.Features.Boxes.Queries;
 
-public record GetBoxesByFactoryQuery(Guid FactoryId) : IRequest<Result<List<BoxDto>>>;
+public record GetBoxesByFactoryQuery(Guid FactoryId, bool IncludeDispatched = false) : IRequest<Result<List<BoxDto>>>;
 

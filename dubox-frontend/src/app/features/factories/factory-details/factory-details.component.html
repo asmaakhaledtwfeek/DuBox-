@@ -97,7 +97,14 @@
 
       <!-- Box Status Summary Cards -->
       <div class="factory-info-cards status-cards">
-        <div class="info-card status-card">
+        <div 
+          class="info-card status-card clickable-card" 
+          [class.active]="activeStatusCard === BoxStatus.InProgress"
+          (click)="onStatusCardClick(BoxStatus.InProgress)"
+          role="button"
+          tabindex="0"
+          [attr.aria-label]="'Filter by In Progress boxes'"
+        >
           <div class="card-icon in-progress">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"/>
@@ -110,7 +117,14 @@
           </div>
         </div>
 
-        <div class="info-card status-card">
+        <div 
+          class="info-card status-card clickable-card" 
+          [class.active]="activeStatusCard === BoxStatus.Completed"
+          (click)="onStatusCardClick(BoxStatus.Completed)"
+          role="button"
+          tabindex="0"
+          [attr.aria-label]="'Filter by Completed boxes'"
+        >
           <div class="card-icon completed">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
@@ -123,7 +137,14 @@
           </div>
         </div>
 
-        <div class="info-card status-card">
+        <div 
+          class="info-card status-card clickable-card" 
+          [class.active]="activeStatusCard === BoxStatus.Dispatched"
+          (click)="onStatusCardClick(BoxStatus.Dispatched)"
+          role="button"
+          tabindex="0"
+          [attr.aria-label]="'Filter by Dispatched boxes'"
+        >
           <div class="card-icon dispatched">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
@@ -220,6 +241,13 @@
               (click)="onStatusChange(BoxStatus.Completed)"
             >
               Completed
+            </button>
+            <button 
+              class="filter-btn" 
+              [class.active]="selectedStatus === BoxStatus.Dispatched"
+              (click)="onStatusChange(BoxStatus.Dispatched)"
+            >
+              Dispatched
             </button>
           </div>
         </div>

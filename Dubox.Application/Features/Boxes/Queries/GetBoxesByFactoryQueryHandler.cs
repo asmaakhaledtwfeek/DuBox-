@@ -36,9 +36,9 @@ public class GetBoxesByFactoryQueryHandler : IRequestHandler<GetBoxesByFactoryQu
                 return Result.Failure<List<BoxDto>>("Factory not found");
             }
 
-            // Get boxes for this factory (InProgress, Completed, and Dispatched)
+            // Get boxes for this factory (InProgress, Completed, and optionally Dispatched)
             var boxes =  _unitOfWork.Repository<Box>()
-                .GetWithSpec(new GetBoxesByFactoryIdSpecification(request.FactoryId)).Data.ToList();
+                .GetWithSpec(new GetBoxesByFactoryIdSpecification(request.FactoryId, request.IncludeDispatched)).Data.ToList();
 
             var boxDtos = new List<BoxDto>();
 

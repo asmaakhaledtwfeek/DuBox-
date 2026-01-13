@@ -42,7 +42,15 @@
 
     <!-- Summary Cards -->
     <div class="qc-summary-grid">
-      <div class="summary-card" *ngFor="let card of summaryCards" [class]="'tone-' + card.tone">
+      <div 
+        class="summary-card clickable-card" 
+        *ngFor="let card of summaryCards" 
+        [class]="'tone-' + card.tone"
+        (click)="onKpiCardClick(card.label)"
+        role="button"
+        tabindex="0"
+        [attr.aria-label]="'Filter by ' + card.label"
+      >
         <p>{{ card.label }}</p>
         <strong>{{ card.value }}</strong>
       </div>

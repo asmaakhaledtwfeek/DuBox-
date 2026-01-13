@@ -13,6 +13,7 @@ interface MenuItem {
   aliases?: string[];
   permissionModule: string;
   permissionAction: string;
+  comingSoon?: boolean;
   children?: MenuItem[];
 }
 
@@ -159,13 +160,15 @@ export class SidebarComponent implements OnInit, OnDestroy {
             aliases: item.aliases,
             permissionModule: item.permissionModule,
             permissionAction: item.permissionAction,
+            comingSoon: item.comingSoon,
             children: item.children?.map(child => ({
               label: child.label,
               icon: child.icon,
               route: child.route?.startsWith('/') ? child.route : `/${child.route}`,
               aliases: child.aliases,
               permissionModule: child.permissionModule,
-              permissionAction: child.permissionAction
+              permissionAction: child.permissionAction,
+              comingSoon: child.comingSoon
             }))
           };
         });
@@ -231,14 +234,16 @@ export class SidebarComponent implements OnInit, OnDestroy {
   private getFallbackMenuItems(): MenuItem[] {
     return [
       { label: 'Projects', icon: 'projects', route: '/projects', permissionModule: 'projects', permissionAction: 'view' },
-      { label: 'Materials', icon: 'materials', route: '/materials', permissionModule: 'materials', permissionAction: 'view' },
-      //{ label: 'Locations', icon: 'location', route: '/locations', permissionModule: 'locations', permissionAction: 'view' },
-      { label: 'Factories', icon: 'factory', route: '/factories', permissionModule: 'factories', permissionAction: 'view' },
-      { label: 'Teams', icon: 'teams', route: '/teams', permissionModule: 'teams', permissionAction: 'view' },
       { label: 'Quality Control', icon: 'qc', route: '/qc', aliases: ['/quality'], permissionModule: 'wir', permissionAction: 'view' },
+      { label: 'Teams', icon: 'teams', route: '/teams', permissionModule: 'teams', permissionAction: 'view' },
+      { label: 'Materials', icon: 'materials', route: '/materials', permissionModule: 'materials', permissionAction: 'view', comingSoon: true },
+      { label: 'Cost', icon: 'cost', route: '/cost', permissionModule: 'cost', permissionAction: 'view', comingSoon: true },
+      { label: 'Schedule', icon: 'schedule', route: '/schedule', permissionModule: 'schedule', permissionAction: 'view', comingSoon: true },
       { label: 'Reports', icon: 'reports', route: '/reports', permissionModule: 'reports', permissionAction: 'view' },
-      { label: 'Notifications', icon: 'notifications', route: '/notifications', permissionModule: 'notifications', permissionAction: 'view' },
-      { label: 'Admin', icon: 'admin', route: '/admin', permissionModule: 'users', permissionAction: 'view' }
+      { label: 'Factories', icon: 'factory', route: '/factories', permissionModule: 'factories', permissionAction: 'view' },
+      { label: 'BIM', icon: 'bim', route: '/bim', permissionModule: 'bim', permissionAction: 'view', comingSoon: true },
+      { label: 'Admin', icon: 'admin', route: '/admin', permissionModule: 'users', permissionAction: 'view' },
+      { label: 'Help', icon: 'help', route: '/help', permissionModule: 'help', permissionAction: 'view', comingSoon: true }
     ];
   }
 
@@ -304,9 +309,13 @@ export class SidebarComponent implements OnInit, OnDestroy {
       procurement: '<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>',
       hse: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
       costing: '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+      cost: '<circle cx="12" cy="12" r="10"/><line x1="12" y1="1" x2="12" y2="5"/><path d="M16 8H9.5a2.5 2.5 0 0 0 0 5h5a2.5 2.5 0 0 1 0 5H8"/><line x1="12" y1="19" x2="12" y2="23"/>',
+      schedule: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+      bim: '<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>',
       reports: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>',
       notifications: '<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>',
-      admin: '<path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>'
+      admin: '<path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+      help: '<circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>'
     };
     return icons[icon] || icons['dashboard'];
   }

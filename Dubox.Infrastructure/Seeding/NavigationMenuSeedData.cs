@@ -15,6 +15,10 @@ public static class NavigationMenuSeedData
     private static readonly Guid ReportsMenuId = new("20000000-0000-0000-0001-000000000006");
     private static readonly Guid NotificationsMenuId = new("20000000-0000-0000-0001-000000000007");
     private static readonly Guid AdminMenuId = new("20000000-0000-0000-0001-000000000008");
+    private static readonly Guid CostMenuId = new("20000000-0000-0000-0001-000000000010");
+    private static readonly Guid ScheduleMenuId = new("20000000-0000-0000-0001-000000000011");
+    private static readonly Guid BIMMenuId = new("20000000-0000-0000-0001-000000000012");
+    private static readonly Guid HelpMenuId = new("20000000-0000-0000-0001-000000000013");
 
     // Static seed date to prevent EF Core model changes warning
     private static readonly DateTime SeedDate = new(2024, 1, 1, 0, 0, 0, DateTimeKind.Utc);
@@ -36,66 +40,7 @@ public static class NavigationMenuSeedData
                 DisplayOrder = 10,
                 IsActive = true,
                 IsVisible = true,
-                CreatedDate = SeedDate,
-                CreatedBy = "System"
-            },
-            new()
-            {
-                MenuItemId = MaterialsMenuId,
-                Label = "Materials",
-                Icon = "materials",
-                Route = "/materials",
-                Aliases = null,
-                PermissionModule = "materials",
-                PermissionAction = "view",
-                DisplayOrder = 20,
-                IsActive = true,
-                IsVisible = true,
-                CreatedDate = SeedDate,
-                CreatedBy = "System"
-            },
-            new()
-            {
-                MenuItemId = LocationsMenuId,
-                Label = "Locations",
-                Icon = "location",
-                Route = "/locations",
-                Aliases = null,
-                PermissionModule = "locations",
-                PermissionAction = "view",
-                DisplayOrder = 30,
-                IsActive = true,
-                IsVisible = true,
-                CreatedDate = SeedDate,
-                CreatedBy = "System"
-            },
-            new()
-            {
-                MenuItemId = FactoriesMenuId,
-                Label = "Factories",
-                Icon = "factory",
-                Route = "/factories",
-                Aliases = null,
-                PermissionModule = "factories",
-                PermissionAction = "view",
-                DisplayOrder = 35,
-                IsActive = true,
-                IsVisible = true,
-                CreatedDate = SeedDate,
-                CreatedBy = "System"
-            },
-            new()
-            {
-                MenuItemId = TeamsMenuId,
-                Label = "Teams",
-                Icon = "teams",
-                Route = "/teams",
-                Aliases = null,
-                PermissionModule = "teams",
-                PermissionAction = "view",
-                DisplayOrder = 40,
-                IsActive = true,
-                IsVisible = true,
+                ComingSoon = false,
                 CreatedDate = SeedDate,
                 CreatedBy = "System"
             },
@@ -108,9 +53,74 @@ public static class NavigationMenuSeedData
                 Aliases = "/quality",
                 PermissionModule = "wir",
                 PermissionAction = "view",
+                DisplayOrder = 20,
+                IsActive = true,
+                IsVisible = true,
+                ComingSoon = false,
+                CreatedDate = SeedDate,
+                CreatedBy = "System"
+            },
+            new()
+            {
+                MenuItemId = TeamsMenuId,
+                Label = "Teams",
+                Icon = "teams",
+                Route = "/teams",
+                Aliases = null,
+                PermissionModule = "teams",
+                PermissionAction = "view",
+                DisplayOrder = 30,
+                IsActive = true,
+                IsVisible = true,
+                ComingSoon = false,
+                CreatedDate = SeedDate,
+                CreatedBy = "System"
+            },
+            new()
+            {
+                MenuItemId = MaterialsMenuId,
+                Label = "Materials",
+                Icon = "materials",
+                Route = "/materials",
+                Aliases = null,
+                PermissionModule = "materials",
+                PermissionAction = "view",
+                DisplayOrder = 40,
+                IsActive = true,
+                IsVisible = true,
+                ComingSoon = true,
+                CreatedDate = SeedDate,
+                CreatedBy = "System"
+            },
+            new()
+            {
+                MenuItemId = CostMenuId,
+                Label = "Cost",
+                Icon = "cost",
+                Route = "/cost",
+                Aliases = null,
+                PermissionModule = "cost",
+                PermissionAction = "view",
                 DisplayOrder = 50,
                 IsActive = true,
                 IsVisible = true,
+                ComingSoon = true,
+                CreatedDate = SeedDate,
+                CreatedBy = "System"
+            },
+            new()
+            {
+                MenuItemId = ScheduleMenuId,
+                Label = "Schedule",
+                Icon = "schedule",
+                Route = "/schedule",
+                Aliases = null,
+                PermissionModule = "schedule",
+                PermissionAction = "view",
+                DisplayOrder = 60,
+                IsActive = true,
+                IsVisible = true,
+                ComingSoon = true,
                 CreatedDate = SeedDate,
                 CreatedBy = "System"
             },
@@ -123,24 +133,42 @@ public static class NavigationMenuSeedData
                 Aliases = null,
                 PermissionModule = "reports",
                 PermissionAction = "view",
-                DisplayOrder = 60,
+                DisplayOrder = 70,
                 IsActive = true,
                 IsVisible = true,
+                ComingSoon = false,
                 CreatedDate = SeedDate,
                 CreatedBy = "System"
             },
             new()
             {
-                MenuItemId = NotificationsMenuId,
-                Label = "Notifications",
-                Icon = "notifications",
-                Route = "/notifications",
+                MenuItemId = FactoriesMenuId,
+                Label = "Factories",
+                Icon = "factory",
+                Route = "/factories",
                 Aliases = null,
-                PermissionModule = "notifications",
+                PermissionModule = "factories",
                 PermissionAction = "view",
-                DisplayOrder = 70,
+                DisplayOrder = 80,
                 IsActive = true,
                 IsVisible = true,
+                ComingSoon = false,
+                CreatedDate = SeedDate,
+                CreatedBy = "System"
+            },
+            new()
+            {
+                MenuItemId = BIMMenuId,
+                Label = "BIM",
+                Icon = "bim",
+                Route = "/bim",
+                Aliases = null,
+                PermissionModule = "bim",
+                PermissionAction = "view",
+                DisplayOrder = 90,
+                IsActive = true,
+                IsVisible = true,
+                ComingSoon = true,
                 CreatedDate = SeedDate,
                 CreatedBy = "System"
             },
@@ -152,10 +180,27 @@ public static class NavigationMenuSeedData
                 Route = "/admin",
                 Aliases = "/admin/users",
                 PermissionModule = "users",
-                PermissionAction = "view", // Changed from "manage" to "view" so Project Managers can see admin panel
+                PermissionAction = "view",
                 DisplayOrder = 100,
                 IsActive = true,
                 IsVisible = true,
+                ComingSoon = false,
+                CreatedDate = SeedDate,
+                CreatedBy = "System"
+            },
+            new()
+            {
+                MenuItemId = HelpMenuId,
+                Label = "Help",
+                Icon = "help",
+                Route = "/help",
+                Aliases = null,
+                PermissionModule = "help",
+                PermissionAction = "view",
+                DisplayOrder = 110,
+                IsActive = true,
+                IsVisible = true,
+                ComingSoon = true,
                 CreatedDate = SeedDate,
                 CreatedBy = "System"
             }

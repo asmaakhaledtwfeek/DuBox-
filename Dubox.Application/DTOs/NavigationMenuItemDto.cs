@@ -10,6 +10,7 @@ public record NavigationMenuItemDto(
     string PermissionAction,
     int DisplayOrder,
     bool IsActive,
+    bool ComingSoon,
     List<NavigationMenuItemDto>? Children
 );
 

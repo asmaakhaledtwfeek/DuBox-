@@ -28,7 +28,7 @@
         </svg>
         <span class="nav-label" *ngIf="!isCollapsed || isMobileOpen">
           {{ item.label }}
-          <span class="coming-soon-badge" *ngIf="item.label === 'Materials'">Coming Soon</span>
+          <span class="coming-soon-badge" *ngIf="item.comingSoon">Coming Soon</span>
         </span>
       </a>
       <div *ngIf="menuItems.length === 0" class="no-menu-items">

@@ -52,6 +52,7 @@ export interface NavigationMenuItemDto {
   permissionAction: string;
   displayOrder: number;
   isActive: boolean;
+  comingSoon?: boolean;
   children?: NavigationMenuItemDto[];
 }
 

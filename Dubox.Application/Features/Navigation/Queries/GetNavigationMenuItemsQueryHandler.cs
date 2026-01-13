@@ -102,6 +102,7 @@ public class GetNavigationMenuItemsQueryHandler : IRequestHandler<GetNavigationM
             m.PermissionAction,
             m.DisplayOrder,
             m.IsActive,
+            m.ComingSoon,
             m.Children.Any() ? m.Children
                 .Where(c => HasPermission(c.PermissionModule, c.PermissionAction, userPermissions))
                 .OrderBy(c => c.DisplayOrder)
@@ -115,6 +116,7 @@ public class GetNavigationMenuItemsQueryHandler : IRequestHandler<GetNavigationM
                     c.PermissionAction,
                     c.DisplayOrder,
                     c.IsActive,
+                    c.ComingSoon,
                     null
                 )).ToList() : null
         )).ToList();

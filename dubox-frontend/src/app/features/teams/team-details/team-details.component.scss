@@ -55,6 +55,66 @@
   }
 }
 
+// Inactive Team Warning
+.inactive-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+  border: 2px solid rgba(251, 191, 36, 0.3);
+  border-radius: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.1);
+
+  svg {
+    flex-shrink: 0;
+    color: var(--warning-color, #f59e0b);
+    width: 24px;
+    height: 24px;
+    margin-top: 2px;
+  }
+
+  .warning-content {
+    flex: 1;
+
+    strong {
+      display: block;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--warning-dark, #d97706);
+      margin-bottom: 6px;
+    }
+
+    p {
+      font-size: 14px;
+      color: var(--gray-700, #374151);
+      line-height: 1.5;
+      margin: 0;
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    gap: 12px;
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .warning-content {
+      strong {
+        font-size: 15px;
+      }
+
+      p {
+        font-size: 13px;
+      }
+    }
+  }
+}
+
 // Page Header
 .page-header {
   background:white;
@@ -264,8 +324,14 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
   &:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
+    pointer-events: none;
+    background: var(--gray-200, #e5e7eb) !important;
+    color: var(--gray-500, #6b7280) !important;
+    border-color: var(--gray-300, #d1d5db) !important;
+    transform: none !important;
+    box-shadow: none !important;
   }
 
   &.btn-primary {
@@ -509,14 +575,22 @@
     z-index: 10;
     padding: 0;
 
-    &:hover {
+    &:hover:not(:disabled) {
       background: rgba(239, 68, 68, 0.1);
       color: var(--error-color, #ef4444);
       transform: scale(1.1);
     }
 
-    &:active {
+    &:active:not(:disabled) {
       transform: scale(0.95);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      pointer-events: none;
+      background: var(--gray-100, #f3f4f6);
+      color: var(--gray-400, #9ca3af);
     }
 
     svg {
@@ -618,9 +692,19 @@
       transition: all 0.2s;
       box-shadow: 0 4px 12px rgba(27, 154, 170, 0.25);
 
-      &:hover {
+      &:hover:not(:disabled) {
         box-shadow: 0 6px 16px rgba(27, 154, 170, 0.35);
         transform: translateY(-2px);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+        background: var(--gray-300, #d1d5db) !important;
+        color: var(--gray-500, #6b7280) !important;
+        box-shadow: none !important;
+        transform: none !important;
       }
 
       svg {

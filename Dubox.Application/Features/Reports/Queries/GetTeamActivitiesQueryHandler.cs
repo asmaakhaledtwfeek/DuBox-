@@ -34,10 +34,10 @@ public class GetTeamActivitiesQueryHandler : IRequestHandler<GetTeamActivitiesQu
             // Get accessible project IDs for filtering
             var accessibleProjectIds = await _visibilityService.GetAccessibleProjectIdsAsync(cancellationToken);
 
-            // Get team
+            // Get team (allow viewing activities for inactive teams)
             var team = await _dbContext.Teams
                 .AsNoTracking()
-                .Where(t => t.TeamId == request.TeamId && t.IsActive)
+                .Where(t => t.TeamId == request.TeamId)
                 .FirstOrDefaultAsync(cancellationToken);
 
             if (team == null)

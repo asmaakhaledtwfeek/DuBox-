@@ -214,6 +214,10 @@ export class TeamDetailsComponent implements OnInit {
   }
 
   addMembers(): void {
+    // Check if team is active
+    if (!this.team?.isActive) {
+      return;
+    }
     this.router.navigate(['/teams', this.teamId, 'add-members']);
   }
 
@@ -221,6 +225,12 @@ export class TeamDetailsComponent implements OnInit {
     if (!this.canManageMembers) {
       return;
     }
+    
+    // Check if team is active
+    if (!this.team?.isActive) {
+      return;
+    }
+    
     this.showAddMemberModal = true;
     this.addMemberError = '';
     this.addMemberSuccess = '';
@@ -305,6 +315,11 @@ export class TeamDetailsComponent implements OnInit {
   }
 
   openCompleteProfileModal(member: TeamMember): void {
+    // Check if team is active
+    if (!this.team?.isActive) {
+      return;
+    }
+    
     this.selectedMember = member;
     this.completeProfileForm.patchValue({
       employeeCode: member.employeeCode || '',
@@ -368,6 +383,11 @@ export class TeamDetailsComponent implements OnInit {
     // Permission check: Can manage team members
     if (!this.canManageMembers) {
       this.removeMemberError = 'You do not have permission to remove crew members.';
+      return;
+    }
+    
+    // Check if team is active
+    if (!this.team?.isActive) {
       return;
     }
     
@@ -471,6 +491,10 @@ export class TeamDetailsComponent implements OnInit {
 
   // Reactivate Members Navigation
   openReactivateMembersModal(): void {
+    // Check if team is active
+    if (!this.team?.isActive) {
+      return;
+    }
     this.router.navigate(['/teams', this.teamId, 'reactivate-members']);
   }
 

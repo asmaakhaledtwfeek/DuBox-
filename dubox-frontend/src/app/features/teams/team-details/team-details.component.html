@@ -52,7 +52,13 @@
           </div>
         </div>
         <div class="header-right" *ngIf="canManageMembers || canEditTeam">
-          <button *ngIf="canManageMembers" class="btn btn-secondary" (click)="openAddMemberModal()">
+          <button 
+            *ngIf="canManageMembers" 
+            class="btn btn-secondary" 
+            (click)="openAddMemberModal()"
+            [disabled]="!team.isActive"
+            [title]="!team.isActive ? 'Cannot add members to an inactive team' : 'Add a new member to this team'"
+          >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
               <circle cx="8.5" cy="7" r="4"/>
@@ -61,7 +67,13 @@
             </svg>
             Add New Member
           </button>
-          <button *ngIf="canManageMembers" class="btn btn-secondary" (click)="addMembers()">
+          <button 
+            *ngIf="canManageMembers" 
+            class="btn btn-secondary" 
+            (click)="addMembers()"
+            [disabled]="!team.isActive"
+            [title]="!team.isActive ? 'Cannot add members to an inactive team' : 'Add existing users to this team'"
+          >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
               <circle cx="9" cy="7" r="4"/>
@@ -70,7 +82,13 @@
             </svg>
             Add Members
           </button>
-          <button *ngIf="canManageMembers" class="btn btn-secondary" (click)="openReactivateMembersModal()">
+          <button 
+            *ngIf="canManageMembers" 
+            class="btn btn-secondary" 
+            (click)="openReactivateMembersModal()"
+            [disabled]="!team.isActive"
+            [title]="!team.isActive ? 'Cannot reactivate members in an inactive team' : 'Reactivate inactive members'"
+          >
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M1 4v6h6"/>
               <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
@@ -84,6 +102,19 @@
             </svg>
             Edit Crew
           </button>
+        </div>
+      </div>
+
+      <!-- Inactive Team Warning -->
+      <div *ngIf="!team.isActive" class="inactive-warning">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <div class="warning-content">
+          <strong>This team is inactive</strong>
+          <p>Most actions are disabled for inactive teams. You can only edit team information to reactivate or update details.</p>
         </div>
       </div>
 
@@ -137,7 +168,8 @@
                   *ngIf="canManageMembers"
                   class="btn-remove-icon"
                   (click)="openRemoveMemberModal(member)"
-                  title="Remove Member"
+                  [disabled]="!team.isActive"
+                  [title]="!team.isActive ? 'Cannot remove members from an inactive team' : 'Remove Member'"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="18" y1="6" x2="6" y2="18"/>
@@ -175,7 +207,8 @@
                   <button 
                     class="btn-complete-profile"
                     (click)="openCompleteProfileModal(member)"
-                    [title]="needsProfileCompletion(member) ? 'Complete Profile' : 'Update Profile'"
+                    [disabled]="!team.isActive"
+                    [title]="!team.isActive ? 'Cannot update member profiles in an inactive team' : (needsProfileCompletion(member) ? 'Complete Profile' : 'Update Profile')"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>

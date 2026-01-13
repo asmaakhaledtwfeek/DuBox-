@@ -66,20 +66,7 @@
           </div>
         </div>
 
-        <div class="info-card">
-          <div class="card-icon occupancy">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-              <circle cx="9" cy="7" r="4"/>
-              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-          </div>
-          <div class="card-content">
-            <div class="card-value">{{ getCurrentOccupancy() }}</div>
-            <div class="card-label">Current Occupancy</div>
-          </div>
-        </div>
+      
 
         <div class="info-card">
           <div class="card-icon available">
@@ -91,6 +78,27 @@
           <div class="card-content">
             <div class="card-value">{{ getAvailableCapacity() }}</div>
             <div class="card-label">Available Capacity</div>
+          </div>
+        </div>
+        <div 
+          class="info-card clickable-card" 
+          [class.active]="activeStatusCard === 'CurrentOccupancy'"
+          (click)="onOccupancyCardClick()"
+          role="button"
+          tabindex="0"
+          [attr.aria-label]="'View boxes in current occupancy (In Progress and Completed)'"
+        >
+          <div class="card-icon occupancy">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+          </div>
+          <div class="card-content">
+            <div class="card-value">{{ getCurrentOccupancy() }}</div>
+            <div class="card-label">Current Occupancy</div>
           </div>
         </div>
       </div>

@@ -27,12 +27,12 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
   error = '';
   
   searchControl = new FormControl('');
-  selectedStatus: BoxStatus | 'All' = 'All';
+  selectedStatus: BoxStatus | 'All' | 'CurrentOccupancy' = 'All';
   BoxStatus = BoxStatus;
   ProjectLocation = ProjectLocation; // Expose to template
   
   // Track active status card for visual indication
-  activeStatusCard: BoxStatus | 'All' | null = null;
+  activeStatusCard: BoxStatus | 'All' | 'CurrentOccupancy' | null = null;
   
   private subscriptions: Subscription[] = [];
 
@@ -105,7 +105,12 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
     let filtered = this.boxes;
     
     // Apply status filter first
-    if (this.selectedStatus !== 'All') {
+    if (this.selectedStatus === 'CurrentOccupancy') {
+      // Show both InProgress and Completed boxes for current occupancy
+      filtered = filtered.filter(box => 
+        box.status === BoxStatus.InProgress || box.status === BoxStatus.Completed
+      );
+    } else if (this.selectedStatus !== 'All') {
       filtered = filtered.filter(box => box.status === this.selectedStatus);
     } else {
       // When "All" is selected, exclude dispatched boxes from display by default
@@ -138,6 +143,15 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
   onStatusCardClick(status: BoxStatus): void {
     this.selectedStatus = status;
     this.activeStatusCard = status;
+    this.applyFilters();
+  }
+
+  /**
+   * Handle occupancy card click - show both InProgress and Completed boxes
+   */
+  onOccupancyCardClick(): void {
+    this.selectedStatus = 'CurrentOccupancy';
+    this.activeStatusCard = 'CurrentOccupancy';
     this.applyFilters();
   }
 

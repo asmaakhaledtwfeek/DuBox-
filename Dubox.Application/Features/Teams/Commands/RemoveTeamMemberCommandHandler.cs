@@ -26,6 +26,9 @@ namespace Dubox.Application.Features.Teams.Commands
             if (team == null)
                 return Result.Failure<bool>("Team not found.");
 
+            if (!team.IsActive)
+                return Result.Failure<bool>("Cannot remove members from an inactive team.");
+
             var teamMember = await _unitOfWork.Repository<TeamMember>()
                 .GetByIdAsync(request.TeamMemberId, cancellationToken);
 

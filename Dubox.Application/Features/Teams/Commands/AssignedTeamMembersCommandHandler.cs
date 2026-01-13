@@ -1,4 +1,4 @@
-﻿using Dubox.Application.DTOs;
+using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
@@ -23,6 +23,10 @@ namespace Dubox.Application.Features.Teams.Commands
             .GetByIdAsync(request.TeamId, cancellationToken);
             if (team == null)
                 return Result.Failure<TeamMembersDto>("This Team not found.");
+            
+            if (!team.IsActive)
+                return Result.Failure<TeamMembersDto>("Cannot assign members to an inactive team.");
+            
             if (request.UserIds == null || !request.UserIds.Any())
                 return Result.Failure<TeamMembersDto>("No users provided to assign.");
 

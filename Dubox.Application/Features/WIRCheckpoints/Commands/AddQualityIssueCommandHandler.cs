@@ -1,0 +1,124 @@
+using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
+using Dubox.Domain.Abstraction;
+using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
+using Dubox.Domain.Services;
+using Dubox.Domain.Shared;
+using Mapster;
+using MediatR;
+
+namespace Dubox.Application.Features.WIRCheckpoints.Commands
+{
+    public class AddQualityIssueCommandHandler
+        : IRequestHandler<AddQualityIssueCommand, Result<WIRCheckpointDto>>
+    {
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly ICurrentUserService _currentUserService;
+        private readonly IImageProcessingService _imageProcessingService;
+        private readonly IProjectTeamVisibilityService _visibilityService;
+
+        public AddQualityIssueCommandHandler(
+            IUnitOfWork unitOfWork,
+            ICurrentUserService currentUserService,
+            IImageProcessingService imageProcessingService,
+            IProjectTeamVisibilityService visibilityService)
+        {
+            _unitOfWork = unitOfWork;
+            _currentUserService = currentUserService;
+            _imageProcessingService = imageProcessingService;
+            _visibilityService = visibilityService;
+        }
+
+        public async Task<Result<WIRCheckpointDto>> Handle(AddQualityIssueCommand request, CancellationToken cancellationToken)
+        {
+            var module = PermissionModuleEnum.QualityIssues;
+            var action = PermissionActionEnum.Create;
+            var canCreate = await _visibilityService.CanPerformAsync(module, action, cancellationToken);
+            if (!canCreate)
+                return Result.Failure<WIRCheckpointDto>("Access denied. Viewer role has read-only access and cannot add quality issues.");
+
+            var wir = _unitOfWork.Repository<WIRCheckpoint>()
+                .GetEntityWithSpec(new GetWIRCheckpointByIdSpecification(request.WIRId));
+
+            if (wir is null)
+                return Result.Failure<WIRCheckpointDto>("WIRCheckpoint not found.");
+
+            var canAccessProject = await _visibilityService.CanAccessProjectAsync(wir.Box.ProjectId, cancellationToken);
+            if (!canAccessProject)
+                return Result.Failure<WIRCheckpointDto>("Access denied. You do not have permission to add quality issues to this WIR checkpoint.");
+           
+            var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(wir.Box.ProjectId, "add quality issues", cancellationToken);
+            if (!projectStatusValidation.IsSuccess)
+                return Result.Failure<WIRCheckpointDto>(projectStatusValidation.Error!);
+
+            var boxStatusValidation = await _visibilityService.GetBoxStatusChecksAsync(wir.Box.BoxId, "add quality issues", cancellationToken);
+            if (!boxStatusValidation.IsSuccess)
+                return Result.Failure<WIRCheckpointDto>(boxStatusValidation.Error!);
+            var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId)
+                ? parsedUserId
+                : Guid.Empty;
+
+            var reportedBy = string.Empty;
+            if (currentUserId != Guid.Empty)
+            {
+                var user = await _unitOfWork.Repository<User>().GetByIdAsync(currentUserId);
+                if (user != null)
+                {
+                    reportedBy = user.FullName;
+                }
+            }
+
+            // Create a single quality issue
+            var newIssue = new QualityIssue
+            {
+                WIRId = wir.WIRId,
+                BoxId = wir.BoxId,
+                IssueType = request.IssueType,
+                Severity = request.Severity,
+                IssueDescription = request.IssueDescription,
+                AssignedToTeamId = request.AssignedTo,
+                AssignedToMemberId = request.AssignedToUserId,
+                DueDate = request.DueDate,
+                Status = QualityIssueStatusEnum.Open,
+                IssueDate = DateTime.UtcNow,
+                ReportedBy = reportedBy,
+                CreatedBy = currentUserId,
+            };
+
+            await _unitOfWork.Repository<QualityIssue>().AddAsync(newIssue, cancellationToken);
+
+           await _unitOfWork.CompleteAsync(cancellationToken); // Save to ensure IssueId is available
+           
+
+           var imagesProcessResult = await _imageProcessingService.ProcessImagesAsync<QualityIssueImage>(newIssue.IssueId, request.Files, request.ImageUrls, cancellationToken, fileNames: request.FileNames);
+            if (!imagesProcessResult.IsSuccess)
+                return Result.Failure<WIRCheckpointDto>(imagesProcessResult.Item2);
+            await _unitOfWork.CompleteAsync(cancellationToken);
+
+            // Create audit log for quality issue creation
+            var auditLog = new AuditLog
+            {
+                TableName = nameof(QualityIssue),
+                RecordId = newIssue.IssueId,
+                Action = "INSERT",
+                OldValues = null,
+                NewValues = $"WIRId: {wir.WIRCode}, IssueType: {newIssue.IssueType}, Severity: {newIssue.Severity}, Status: {newIssue.Status}, IssueDescription: {newIssue.IssueDescription ?? "N/A"}",
+                ChangedBy = currentUserId,
+                ChangedDate = DateTime.UtcNow,
+                Description = $"Quality Issue added to WIR Checkpoint {wir.WIRCode}. Type: {newIssue.IssueType}, Severity: {newIssue.Severity}."
+            };
+            await _unitOfWork.Repository<AuditLog>().AddAsync(auditLog, cancellationToken);
+            await _unitOfWork.CompleteAsync(cancellationToken);
+
+            // Reload checkpoint with images to include them in DTO
+            wir = _unitOfWork.Repository<WIRCheckpoint>()
+                .GetEntityWithSpec(new GetWIRCheckpointByIdSpecification(request.WIRId));
+
+            var dto = wir.Adapt<WIRCheckpointDto>();
+
+            return Result.Success(dto);
+        }
+    }
+}
+

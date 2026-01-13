@@ -1,59 +1,58 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Dubox.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Dubox.Domain.Entities
+namespace Dubox.Domain.Entities;
+
+[Table("ProgressUpdates")]
+public class ProgressUpdate
 {
-    [Table("ProgressUpdates")]
-    [Index(nameof(BoxId))]
-    [Index(nameof(UpdateDate))]
-    public class ProgressUpdate
-    {
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public Guid ProgressUpdateId { get; set; }
 
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int UpdateId { get; set; }
+    public Guid BoxId { get; set; }
+    public Box Box { get; set; } = null!;
 
-        [Required]
-        [ForeignKey(nameof(Box))]
-        public Guid BoxId { get; set; }
+    public Guid BoxActivityId { get; set; }
+    public BoxActivity BoxActivity { get; set; } = null!;
 
-        [ForeignKey(nameof(BoxActivity))]
-        public int? BoxActivityId { get; set; }
+    public DateTime UpdateDate { get; set; }
 
-        public DateTime UpdateDate { get; set; } = DateTime.UtcNow;
+    public Guid UpdatedBy { get; set; }
+    public User UpdatedByUser { get; set; } = null!;
 
-        [MaxLength(200)]
-        public string? UpdatedBy { get; set; }
+    public decimal ProgressPercentage { get; set; } // Progress at time of update
+    public decimal BoxProgressSnapshot { get; set; } = 0;
 
-        [ForeignKey(nameof(Team))]
-        public int? TeamId { get; set; }
+    [Required]
+    public BoxStatusEnum Status { get; set; } = BoxStatusEnum.NotStarted;
 
-        [Column(TypeName = "decimal(5,2)")]
-        public decimal? ProgressPercentage { get; set; }
+    [MaxLength(1000)]
+    public string? WorkDescription { get; set; }
 
-        [MaxLength(50)]
-        public string? Status { get; set; }
+    [MaxLength(1000)]
+    public string? IssuesEncountered { get; set; }
 
-        public string? WorkDescription { get; set; }
+    // Location tracking
+    public double? Latitude { get; set; }
+    public double? Longitude { get; set; }
 
-        public string? IssuesEncountered { get; set; }
+    [MaxLength(200)]
+    public string? LocationDescription { get; set; }
 
-        [MaxLength(500)]
-        public string? PhotoPath { get; set; }
+    [Obsolete("Use Images navigation property instead. This field is kept for backward compatibility.")]
+    public string? Photo { get; set; }
 
-        [Column(TypeName = "decimal(10,8)")]
-        public decimal? Latitude { get; set; }
+    // Navigation property for images
+    public List<ProgressUpdateImage> Images { get; set; } = new();
 
-        [Column(TypeName = "decimal(11,8)")]
-        public decimal? Longitude { get; set; }
+    // Update method
+    [MaxLength(50)]
+    public string UpdateMethod { get; set; } = "Mobile"; // Mobile, Web
 
-        [MaxLength(200)]
-        public string? DeviceInfo { get; set; }
+    [MaxLength(100)]
+    public string? DeviceInfo { get; set; }
 
-        // Navigation properties
-        public virtual Box Box { get; set; } = null!;
-        public virtual BoxActivity? BoxActivity { get; set; }
-        public virtual Team? Team { get; set; }
-    }
+    public DateTime CreatedDate { get; set; }
 }

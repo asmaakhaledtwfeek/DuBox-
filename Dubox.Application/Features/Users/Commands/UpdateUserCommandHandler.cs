@@ -1,4 +1,5 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
@@ -24,16 +25,48 @@ public class UpdateUserCommandHandler : IRequestHandler<UpdateUserCommand, Resul
         if (user == null)
             return Result.Failure<UserDto>("User not found");
 
-        var emailExists = await _unitOfWork.Repository<User>()
-            .IsExistAsync(u => u.Email == request.Email && u.UserId != request.UserId, cancellationToken);
+        if (request.Email != null)
+        {
+            var emailExists = await _unitOfWork.Repository<User>()
+                .IsExistAsync(u => u.Email == request.Email && u.UserId != request.UserId, cancellationToken);
+            if (emailExists)
+                return Result.Failure<UserDto>("Email already in use by another user");
+            user.Email = request.Email;
+        }
+        if (request.FullName != null)
+            user.FullName = request.FullName;
 
-        if (emailExists)
-            return Result.Failure<UserDto>("Email already in use by another user");
+        if (request.DepartmentId.HasValue)
+        {
+            var departmentExists = await _unitOfWork.Repository<Department>()
+                .IsExistAsync(d => d.DepartmentId == request.DepartmentId.Value, cancellationToken);
 
-        user.Email = request.Email!;
-        user.FullName = request.FullName;
-        user.DepartmentId = request.DepartmentId!.Value;
-        user.IsActive = request.IsActive!.Value;
+            if (!departmentExists)
+                return Result.Failure<UserDto>($"Department does not exist.");
+            if (user.DepartmentId != request.DepartmentId)
+            {
+                var teamMember = await _unitOfWork.Repository<TeamMember>().FindAsync(x => x.UserId == user.UserId, cancellationToken);
+                var teamMemberExist = teamMember.FirstOrDefault();
+                if (teamMemberExist != null)
+                {
+                    teamMemberExist.IsActive = false;
+                    _unitOfWork.Repository<TeamMember>().Update(teamMemberExist);
+
+                    var assignedNotComplatedActivities = _unitOfWork.Repository<BoxActivity>()
+                .GetWithSpec(new GetNotComplatedActivitiesByAssignedMemberIdSpecification(teamMemberExist.TeamMemberId)).Data.ToList();
+                    if (assignedNotComplatedActivities.Any())
+                    {
+                        foreach (var activity in assignedNotComplatedActivities)
+                            activity.AssignedMemberId = null;
+
+                        _unitOfWork.Repository<BoxActivity>().UpdateRange(assignedNotComplatedActivities);
+                    }
+                }
+            }
+            user.DepartmentId = request.DepartmentId.Value;
+        }
+        if (request.IsActive.HasValue)
+            user.IsActive = request.IsActive.Value;
 
         _unitOfWork.Repository<User>().Update(user);
         await _unitOfWork.CompleteAsync(cancellationToken);

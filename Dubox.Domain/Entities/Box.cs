@@ -1,108 +1,108 @@
-﻿using Dubox.Domain.Interfaces;
-using Microsoft.EntityFrameworkCore;
+﻿using Dubox.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Dubox.Domain.Entities
+namespace Dubox.Domain.Entities;
+
+[Table("Boxes")]
+public class Box
 {
-    [Table("Boxes")]
-    [Index(nameof(QRCode), IsUnique = true)]
-    [Index(nameof(BoxTag), IsUnique = true)]
-    public class Box : IAuditableEntity
-    {
+    [Key]
+    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+    public Guid BoxId { get; set; }
 
-        [Key]
-        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public Guid BoxId { get; set; }
+    public Guid ProjectId { get; set; }
+    public Project Project { get; set; } = null!;
 
-        [Required]
-        [ForeignKey(nameof(Project))]
-        public Guid ProjectId { get; set; }
+    [Required]
+    [MaxLength(100)]
+    public string BoxTag { get; set; } = string.Empty; // e.g., B2-FF-L3-2
 
-        [Required]
-        [MaxLength(50)]
-        public string BoxTag { get; set; } = string.Empty; // e.g., "B1-GF-BED-01"
+    [MaxLength(50)]
+    public string? SerialNumber { get; set; } // e.g., SN-2025-000123 (nullable for backward compatibility with existing boxes)
 
-        [MaxLength(200)]
-        public string? BoxName { get; set; }
+    [MaxLength(200)]
+    public string? BoxName { get; set; }
 
-        [Required]
-        [MaxLength(50)]
-        public string BoxType { get; set; } = string.Empty; // Bedroom, Living, Kitchen, Bathroom, Stair, Balcony
+    // Project configuration box type and subtype IDs
+    // NOTE: These IDs now reference ProjectBoxTypes/ProjectBoxSubTypes (project-specific config)
+    // The navigation properties below are for backward compatibility but may be null
+    public int? ProjectBoxTypeId { get; set; }
+    public int? ProjectBoxSubTypeId { get; set; }
 
-        [Required]
-        [MaxLength(50)]
-        public string Floor { get; set; } = string.Empty;// GF, FF, SF, etc.
+    [Required]
+    [MaxLength(50)]
+    public string Floor { get; set; }
 
-        [MaxLength(50)]
-        public string? Building { get; set; }
+    [MaxLength(100)]
+    public string? BuildingNumber { get; set; }
 
-        [MaxLength(50)]
-        public string? Zone { get; set; }
+    [MaxLength(100)]
+    public string? BoxFunction { get; set; }
 
-        [Required]
-        [MaxLength(500)]
-        public string QRCode { get; set; } = string.Empty;
+    [MaxLength(100)]
+    public string? Zone { get; set; }
+    [ForeignKey(nameof(Factory))]
+    public Guid? FactoryId { get; set; }
 
-        public byte[]? QRCodeImage { get; set; }
+    public Factory? Factory { get; set; }
+    // Current Location
+    public Guid? CurrentLocationId { get; set; }
+    public FactoryLocation? CurrentLocation { get; set; }
 
-        [MaxLength(100)]
-        public string? RFIDTag { get; set; }
 
-        [MaxLength(50)]
-        public string CurrentStatus { get; set; } = "Not Started"; // Not Started, In Progress, Completed, On Hold, Delayed
+    // Progress tracking
+    public decimal ProgressPercentage { get; set; } = 0; // 0-100%
 
-        [MaxLength(200)]
-        public string? CurrentLocation { get; set; }
+    [Required]
+    public BoxStatusEnum Status { get; set; } = BoxStatusEnum.NotStarted; // Not Started, In Progress, Completed, On Hold, Delayed
 
-        [Column(TypeName = "decimal(5,2)")]
-        public decimal ProgressPercentage { get; set; } = 0;
+    // Dimensions and specifications
+    public decimal? Length { get; set; }
+    public decimal? Width { get; set; }
+    public decimal? Height { get; set; }
 
-        public DateTime? PlannedStartDate { get; set; }
+    [MaxLength(50)]
+    public UnitOfMeasureEnum? UnitOfMeasure { get; set; } = UnitOfMeasureEnum.m;
 
-        public DateTime? ActualStartDate { get; set; }
+    // BIM reference
+    [MaxLength(100)]
+    public string? RevitElementId { get; set; }
 
-        public DateTime? PlannedEndDate { get; set; }
+    // Tracking
+    public int? Duration { get; set; }
+    public DateTime? PlannedStartDate { get; set; }
+    public DateTime? ActualStartDate { get; set; }
+    public DateTime? PlannedEndDate { get; set; }
+    public DateTime? ActualEndDate { get; set; }
 
-        public DateTime? ActualEndDate { get; set; }
+    [MaxLength(500)]
+    public string? Notes { get; set; }
 
-        public bool IsActive { get; set; } = true;
+    public bool IsActive { get; set; } = true;
+    public DateTime CreatedDate { get; set; }
+    public DateTime? ModifiedDate { get; set; }
+    public Guid? CreatedBy { get; set; }
+    public Guid? ModifiedBy { get; set; }
+    public int SequentialNumber { get; set; } = 1; // For generating serial numbers
+    [MaxLength(50)]
+    public string? Bay { get; set; } = string.Empty;
 
-        // Audit fields
-        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+    [MaxLength(50)]
+    public string? Row { get; set; } = string.Empty;
 
-        [MaxLength(100)]
-        public string? CreatedBy { get; set; }
+    [MaxLength(50)]
+    public string? Position { get; set; } = string.Empty;
+    public DateTime? DeletedDated { get; set; }
+    // Navigation properties
+    public virtual ProjectBoxType? BoxType { get; set; }
+    public virtual ProjectBoxSubType? BoxSubType { get; set; }
+    public ICollection<BoxAsset> BoxAssets { get; set; } = new List<BoxAsset>();
+    public ICollection<BoxActivity> BoxActivities { get; set; } = new List<BoxActivity>();
+    public ICollection<ProgressUpdate> ProgressUpdates { get; set; } = new List<ProgressUpdate>();
+    public ICollection<MaterialTransaction> MaterialTransactions { get; set; } = new List<MaterialTransaction>();
+    public virtual ICollection<BoxLocationHistory> BoxLocationHistory { get; set; } = new List<BoxLocationHistory>();
+    public ICollection<BoxDrawing> BoxDrawings { get; set; } = new List<BoxDrawing>();
 
-        public DateTime? ModifiedDate { get; set; }
 
-        [MaxLength(100)]
-        public string? ModifiedBy { get; set; }
-
-        // Navigation properties
-        public virtual Project Project { get; set; } = null!;
-        public virtual ICollection<BoxAsset> Assets { get; set; } = new List<BoxAsset>();
-        public virtual ICollection<BoxActivity> Activities { get; set; } = new List<BoxActivity>();
-        public virtual ICollection<ProgressUpdate> ProgressUpdates { get; set; } = new List<ProgressUpdate>();
-        public virtual ICollection<WIRCheckpoint> WIRCheckpoints { get; set; } = new List<WIRCheckpoint>();
-        public virtual ICollection<BoxMaterial> BoxMaterials { get; set; } = new List<BoxMaterial>();
-        public virtual ICollection<QualityIssue> QualityIssues { get; set; } = new List<QualityIssue>();
-        public virtual ICollection<BoxLocationHistory> LocationHistory { get; set; } = new List<BoxLocationHistory>();
-
-        // Calculated properties
-        [NotMapped]
-        public int TotalActivities => Activities?.Count ?? 0;
-
-        [NotMapped]
-        public int CompletedActivities => Activities?.Count(a => a.Status == "Completed") ?? 0;
-
-        [NotMapped]
-        public bool IsDelayed => PlannedEndDate.HasValue &&
-                                 !ActualEndDate.HasValue &&
-                                 PlannedEndDate < DateTime.Today;
-
-        [NotMapped]
-        public int DelayDays => IsDelayed ?
-            (DateTime.Today - PlannedEndDate!.Value).Days : 0;
-    }
 }

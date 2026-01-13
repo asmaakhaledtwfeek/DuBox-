@@ -1,6 +1,8 @@
-﻿using Dubox.Application.Abstractions;
+using Dubox.Application.Abstractions;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Services;
+using Dubox.Domain.Services.ImageEntityConfig;
+using Dubox.Domain.Services.ImageEntityConfig.ImageEntityConfigFactory;
 using Dubox.Infrastructure.ApplicationContext;
 using Dubox.Infrastructure.Authentication;
 using Dubox.Infrastructure.Repositories;
@@ -22,6 +24,17 @@ public static class Bootstrap
         services.AddScoped<IUserRoleService, UserRoleService>();
         services.AddScoped(typeof(IDateTime), typeof(DateTimeService));
         services.AddScoped(typeof(ICurrentUserService), typeof(CurrentUserService));
+        services.AddScoped<IProjectTeamVisibilityService, ProjectTeamVisibilityService>();
+        services.AddScoped<IExcelService, ExcelService>();
+        services.AddScoped<IQRCodeService, QRCodeService>();
+        services.AddScoped<IBoxActivityService, BoxActivityService>();
+        services.AddScoped<ISerialNumberService, SerialNumberService>();
+        services.AddScoped<IImageProcessingService, ImageProcessingService>();
+        services.AddScoped<IImageEntityConfigFactory, ImageEntityConfigFactory>();
+        services.AddScoped<IPermissionService, PermissionService>();
+        services.AddScoped<ITeamAssignmentService, TeamAssignmentService>();
+        services.AddScoped<IUserRolePermissionService, UserRolePermissionService>();
+        services.AddScoped<IBlobStorageService, BlobStorageService>();
 
         return services;
     }

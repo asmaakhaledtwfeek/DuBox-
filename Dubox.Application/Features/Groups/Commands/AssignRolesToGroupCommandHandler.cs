@@ -22,14 +22,17 @@ public class AssignRolesToGroupCommandHandler : IRequestHandler<AssignRolesToGro
         if (group == null)
             return Result.Failure("Group not found.");
 
-        var existingRolesCount = _unitOfWork.Repository<Role>()
+        var existingRoles = _unitOfWork.Repository<Role>()
         .Get().Where(r => request.RoleIds.Contains(r.RoleId))
-                 .Count(r => request.RoleIds.Contains(r.RoleId));
+                .ToList();
 
-        if (existingRolesCount != request.RoleIds.Count)
-        {
+        if (existingRoles.Count != request.RoleIds.Count)
             return Result.Failure("One or more roles were not found in the roles.");
-        }
+
+        var isViewerExist = existingRoles.Find(r => r.RoleName.ToLower() == "viewer");
+        if(isViewerExist!= null )
+            return Result.Failure("You cannot assign Viewer role to any group.");
+
         var existingGroupRoles = _unitOfWork.Repository<GroupRole>()
             .Get()
             .Where(gr => gr.GroupId == request.GroupId)

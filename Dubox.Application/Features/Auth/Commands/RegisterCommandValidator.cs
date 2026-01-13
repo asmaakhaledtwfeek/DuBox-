@@ -21,8 +21,12 @@ namespace Dubox.Application.Features.Auth.Commands
             .Matches(@"[A-Z]+").WithMessage("Password must contain at least one uppercase letter.")
             .Matches(@"[a-z]+").WithMessage("Password must contain at least one lowercase letter.")
             .Matches(@"[0-9]+").WithMessage("Password must contain at least one number.");
+
             RuleFor(x => x.FullName)
-           .NotEmpty().WithMessage("Full Name address is required.");
+           .NotEmpty().WithMessage("Full Name address is required.")
+            .Must(n => n?.ToLower() != "string").WithMessage("Full Name cannot be the default value 'string'.");
+            RuleFor(x => x.DepartmentId)
+        .NotNull().WithMessage("Department ID is required.");
         }
 
     }

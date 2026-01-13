@@ -1,0 +1,221 @@
+/* =========================================================
+   TABLET/iPAD RESPONSIVE UTILITIES
+   Reusable mixins and breakpoints for tablet optimization
+========================================================= */
+
+// Breakpoints
+$tablet-landscape-max: 1024px;
+$tablet-portrait-max: 768px;
+$ipad-pro-min: 769px;
+$ipad-pro-max: 1024px;
+
+// Tablet Landscape Mixin (1024px and below)
+@mixin tablet-landscape {
+  @media (max-width: $tablet-landscape-max) {
+    @content;
+  }
+}
+
+// Tablet Portrait Mixin (768px and below)
+@mixin tablet-portrait {
+  @media (max-width: $tablet-portrait-max) {
+    @content;
+  }
+}
+
+// iPad Pro Specific (between 769px and 1024px)
+@mixin ipad-pro {
+  @media (min-width: $ipad-pro-min) and (max-width: $ipad-pro-max) {
+    @content;
+  }
+}
+
+// Mobile (smaller than 768px)
+@mixin mobile {
+  @media (max-width: 767px) {
+    @content;
+  }
+}
+
+// Common Tablet Spacing Adjustments
+@mixin tablet-spacing {
+  @include tablet-landscape {
+    padding: var(--spacing-xl, 32px) var(--spacing-lg, 24px);
+  }
+
+  @include tablet-portrait {
+    padding: var(--spacing-lg, 24px) var(--spacing-md, 16px);
+  }
+
+  @include mobile {
+    padding: var(--spacing-md, 16px) var(--spacing-sm, 12px);
+  }
+}
+
+// Responsive Grid Layouts
+@mixin responsive-grid($desktop: 4, $tablet-landscape: 3, $tablet-portrait: 2, $mobile: 1) {
+  display: grid;
+  gap: var(--spacing-lg, 24px);
+  grid-template-columns: repeat($desktop, 1fr);
+
+  @include tablet-landscape {
+    grid-template-columns: repeat($tablet-landscape, 1fr);
+    gap: var(--spacing-md, 16px);
+  }
+
+  @include tablet-portrait {
+    grid-template-columns: repeat($tablet-portrait, 1fr);
+    gap: var(--spacing-sm, 12px);
+  }
+
+  @include mobile {
+    grid-template-columns: repeat($mobile, 1fr);
+  }
+}
+
+// Responsive Typography
+@mixin responsive-heading($desktop-size, $tablet-size, $mobile-size) {
+  font-size: $desktop-size;
+
+  @include tablet-landscape {
+    font-size: $tablet-size;
+  }
+
+  @include tablet-portrait {
+    font-size: $mobile-size;
+  }
+}
+
+// Responsive Card
+@mixin tablet-card {
+  @include tablet-landscape {
+    padding: var(--spacing-md, 16px);
+  }
+
+  @include tablet-portrait {
+    padding: var(--spacing-md, 14px);
+  }
+
+  @include mobile {
+    padding: var(--spacing-sm, 12px);
+  }
+}
+
+// Responsive Button
+@mixin tablet-button {
+  @include tablet-landscape {
+    padding: 10px 20px;
+    font-size: 0.875rem;
+  }
+
+  @include tablet-portrait {
+    padding: 8px 16px;
+    font-size: 0.8125rem;
+  }
+}
+
+// Responsive Table/List
+@mixin tablet-table {
+  @include tablet-portrait {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+
+    table {
+      min-width: 600px;
+    }
+  }
+}
+
+// Stack Flex Items on Tablet
+@mixin stack-on-tablet {
+  @include tablet-portrait {
+    flex-direction: column;
+    align-items: stretch;
+
+    > * {
+      width: 100%;
+    }
+  }
+}
+
+// Responsive Section Header
+@mixin tablet-section-header {
+  @include tablet-landscape {
+    flex-wrap: wrap;
+    gap: var(--spacing-sm, 12px);
+
+    h2, h3 {
+      font-size: 1.25rem;
+    }
+  }
+
+  @include tablet-portrait {
+    h2, h3 {
+      font-size: 1.125rem;
+    }
+  }
+}
+
+// Hide on Tablet
+@mixin hide-on-tablet {
+  @include tablet-portrait {
+    display: none !important;
+  }
+}
+
+// Show only on Tablet
+@mixin show-only-tablet {
+  display: none;
+
+  @include tablet-landscape {
+    display: block;
+  }
+
+  @include mobile {
+    display: none;
+  }
+}
+
+// Touch-friendly sizing
+@mixin touch-target {
+  min-width: 44px;
+  min-height: 44px;
+  padding: 12px;
+}
+
+// Responsive Modal
+@mixin tablet-modal {
+  @include tablet-landscape {
+    max-width: 90%;
+    margin: var(--spacing-lg, 24px);
+  }
+
+  @include tablet-portrait {
+    max-width: 95%;
+    margin: var(--spacing-md, 16px);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+
+// Responsive Form
+@mixin tablet-form {
+  @include tablet-landscape {
+    .form-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--spacing-md, 16px);
+    }
+  }
+
+  @include tablet-portrait {
+    .form-grid {
+      grid-template-columns: 1fr;
+      gap: var(--spacing-sm, 12px);
+    }
+
+    input, select, textarea {
+      font-size: 16px; // Prevents zoom on iOS
+    }
+  }
+}
+

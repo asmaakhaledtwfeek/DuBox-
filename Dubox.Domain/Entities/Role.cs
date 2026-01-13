@@ -23,5 +23,6 @@ public class Role
 
     public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
     public ICollection<GroupRole> GroupRoles { get; set; } = new List<GroupRole>();
+    public ICollection<RolePermission> RolePermissions { get; set; } = new List<RolePermission>();
 }
 

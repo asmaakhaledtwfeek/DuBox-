@@ -1,4 +1,5 @@
 ﻿using Dubox.Application.Abstractions;
+using Dubox.Application.DTOs;
 using Dubox.Domain.Entities;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -17,7 +18,7 @@ internal sealed class JwtProvider : IJwtProvider
     {
         _options = options.Value;
     }
-    public string GenerateToken(User user)
+    public JwtTokenResult GenerateToken(User user)
     {
         var claims = new Claim[]
         {
@@ -35,13 +36,17 @@ internal sealed class JwtProvider : IJwtProvider
             _options.Audience,
             claims,
             null,
-            DateTime.UtcNow.AddHours(1),
+            DateTime.UtcNow.AddHours(_options.ExpirationHours),
             signingCredentials);
 
         string tokenValue = new JwtSecurityTokenHandler()
             .WriteToken(token);
 
-        return tokenValue;
+        return new JwtTokenResult
+        {
+            Token = tokenValue,
+            ExpiresInSeconds = _options.ExpirationHours * 3600
+        };
     }
 }
 

@@ -1,0 +1,505 @@
+// ============================================
+// RESPONSIVE DESIGN UTILITIES
+// Shared responsive patterns for all pages
+// ============================================
+
+// Breakpoints
+$breakpoint-mobile: 768px;
+$breakpoint-tablet: 1024px;
+$breakpoint-small-mobile: 480px;
+
+// Mixins
+@mixin mobile {
+  @media (max-width: $breakpoint-mobile) {
+    @content;
+  }
+}
+
+@mixin tablet {
+  @media (max-width: $breakpoint-tablet) and (min-width: calc($breakpoint-mobile + 1px)) {
+    @content;
+  }
+}
+
+@mixin small-mobile {
+  @media (max-width: $breakpoint-small-mobile) {
+    @content;
+  }
+}
+
+@mixin desktop {
+  @media (min-width: calc($breakpoint-tablet + 1px)) {
+    @content;
+  }
+}
+
+// Common Responsive Patterns
+@mixin responsive-page-container {
+  .page-container {
+    @include mobile {
+      margin-left: 0;
+      margin-top: var(--header-height, 64px);
+    }
+  }
+
+  .page-content {
+    @include mobile {
+      padding: var(--spacing-md, 16px);
+    }
+
+    @include small-mobile {
+      padding: var(--spacing-sm, 12px);
+    }
+
+    @include tablet {
+      padding: var(--spacing-xl, 32px);
+    }
+  }
+}
+
+@mixin responsive-dashboard-header {
+  .dashboard-header, .page-header {
+    @include mobile {
+      flex-direction: column;
+      gap: var(--spacing-md);
+      margin-bottom: var(--spacing-xl);
+
+      .header-info {
+        text-align: center;
+      }
+
+      .dashboard-title, .page-title {
+        font-size: var(--font-size-2xl);
+      }
+
+      .header-actions {
+        width: 100%;
+        justify-content: center;
+
+        .btn {
+          width: 100%;
+          max-width: 280px;
+          padding: calc(var(--spacing-sm) * 1.2) calc(var(--spacing-md) * 1.5);
+          font-size: var(--font-size-base);
+        }
+      }
+    }
+
+    @include small-mobile {
+      .dashboard-title, .page-title {
+        font-size: var(--font-size-xl) !important;
+      }
+    }
+  }
+}
+
+@mixin responsive-kpi-grid {
+  .kpi-grid, .stats-grid, .summary-cards {
+    @include mobile {
+      grid-template-columns: 1fr;
+      gap: var(--spacing-md, 16px);
+      margin-bottom: var(--spacing-xl, 32px);
+    }
+
+    @include tablet {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  .kpi-card, .stat-card, .summary-card {
+    @include mobile {
+      padding: var(--spacing-md);
+      min-height: 70px;
+
+      .kpi-icon, .card-icon {
+        width: 42px;
+        height: 42px;
+        padding: var(--spacing-sm);
+
+        svg {
+          width: 18px;
+          height: 18px;
+        }
+      }
+
+      .kpi-value, .card-value {
+        font-size: var(--font-size-2xl);
+      }
+
+      .kpi-label, .card-label {
+        font-size: var(--font-size-sm);
+      }
+    }
+
+    @include small-mobile {
+      padding: var(--spacing-sm);
+      min-height: 60px;
+
+      .kpi-icon, .card-icon {
+        width: 36px;
+        height: 36px;
+        padding: calc(var(--spacing-xs) * 1.5);
+
+        svg {
+          width: 16px;
+          height: 16px;
+        }
+      }
+
+      .kpi-value, .card-value {
+        font-size: var(--font-size-xl);
+      }
+
+      .kpi-label, .card-label {
+        font-size: var(--font-size-xs);
+      }
+    }
+  }
+}
+
+@mixin responsive-filters {
+  .filters-card, .filter-section {
+    .filters-content, .filter-controls {
+      @include mobile {
+        flex-direction: column;
+        gap: var(--spacing-md, 16px);
+        
+        .search-box {
+          width: 100%;
+          min-width: 100%;
+
+          input {
+            font-size: var(--font-size-base); // Prevents zoom on iOS (min 14.4px)
+            padding: calc(var(--spacing-sm) * 1.2) calc(var(--spacing-sm) * 1.2) calc(var(--spacing-sm) * 1.2) calc(var(--spacing-md) * 2.5);
+          }
+        }
+
+        select, input[type="text"], input[type="date"], input[type="number"] {
+          width: 100%;
+          font-size: var(--font-size-base); // Prevents zoom on iOS (min 14.4px)
+          padding: calc(var(--spacing-sm) * 1.2) var(--spacing-sm);
+        }
+
+        .checkbox-label {
+          width: 100%;
+          padding: var(--spacing-sm);
+          background: var(--gray-50, #f9fafb);
+          border-radius: var(--radius-md);
+          justify-content: center;
+
+          span {
+            font-size: var(--font-size-sm);
+          }
+        }
+
+        .btn {
+          width: 100%;
+        }
+      }
+    }
+  }
+}
+
+@mixin responsive-data-table {
+  .table-container, .data-table-container {
+    @include mobile {
+      padding: 0;
+      overflow-x: visible;
+    }
+  }
+
+  // Hide table on mobile
+  .data-table, table:not(.mobile-friendly) {
+    @include mobile {
+      display: none;
+    }
+
+    @include tablet {
+      font-size: 13px;
+      
+      thead th,
+      tbody td {
+        padding: 14px 10px;
+      }
+    }
+  }
+
+  // Show mobile card layout
+  .mobile-list, .mobile-cards {
+    display: none;
+
+    @include mobile {
+      display: flex !important;
+      flex-direction: column;
+      gap: var(--spacing-md, 16px);
+      padding: var(--spacing-md, 16px);
+    }
+  }
+
+  .mobile-card, .item-card-mobile {
+    @include mobile {
+      background: white;
+      border: 1px solid var(--gray-200, #e5e7eb);
+      border-radius: var(--radius-lg, 12px);
+      padding: var(--spacing-md, 16px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      transition: all 0.2s ease;
+
+      &:active {
+        transform: scale(0.98);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      }
+
+      .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: var(--spacing-sm);
+        padding-bottom: var(--spacing-sm);
+        border-bottom: 1px solid var(--gray-100, #f3f4f6);
+      }
+
+      .card-details {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-xs);
+        margin-bottom: var(--spacing-md);
+
+        .detail-item {
+          display: flex;
+          align-items: center;
+          font-size: var(--font-size-sm);
+          color: var(--gray-600, #4b5563);
+
+          .detail-label {
+            font-weight: 600;
+            min-width: 90px;
+            color: var(--gray-700, #374151);
+          }
+
+          .detail-value {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+          }
+        }
+      }
+
+      .card-actions {
+        display: flex;
+        gap: var(--spacing-xs);
+        justify-content: flex-end;
+        padding-top: var(--spacing-sm);
+        border-top: 1px solid var(--gray-100, #f3f4f6);
+
+        .btn-icon {
+          padding: calc(var(--spacing-xs) * 2);
+          min-width: 40px;
+          min-height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+
+          svg {
+            width: 18px;
+            height: 18px;
+          }
+        }
+      }
+    }
+
+    @include small-mobile {
+      padding: var(--spacing-sm, 12px);
+    }
+  }
+}
+
+@mixin responsive-pagination {
+  .pagination-footer, .pagination-section {
+    @include mobile {
+      flex-direction: column;
+      gap: var(--spacing-md);
+      padding: var(--spacing-md);
+
+      .pagination-info {
+        order: 1;
+        text-align: center;
+        font-size: var(--font-size-sm);
+      }
+
+      .pagination-controls-wrapper {
+        order: 2;
+        width: 100%;
+      }
+
+      .pagination-controls {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        justify-content: flex-start;
+        padding-bottom: var(--spacing-xs);
+
+        .btn-pagination {
+          flex-shrink: 0;
+          min-width: 36px;
+          height: 36px;
+          padding: calc(var(--spacing-xs) * 1.5);
+
+          svg {
+            width: 14px;
+            height: 14px;
+          }
+        }
+
+        .page-numbers {
+          display: flex;
+          gap: calc(var(--spacing-xs) * 0.75);
+
+          .btn-page {
+            min-width: 36px;
+            height: 36px;
+            font-size: var(--font-size-sm);
+            flex-shrink: 0;
+          }
+        }
+      }
+
+      .page-size-selector {
+        order: 3;
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: var(--spacing-sm);
+
+        label {
+          font-size: var(--font-size-sm);
+        }
+
+        select {
+          flex: 1;
+          max-width: 120px;
+          font-size: var(--font-size-base); // Prevents zoom on iOS
+          padding: calc(var(--spacing-xs) * 2) calc(var(--spacing-md) * 2) calc(var(--spacing-xs) * 2) var(--spacing-sm);
+        }
+      }
+    }
+
+    @include small-mobile {
+      .pagination-controls {
+        .page-numbers .btn-page {
+          min-width: 32px;
+          height: 32px;
+          font-size: var(--font-size-xs);
+        }
+
+        .btn-pagination {
+          min-width: 32px;
+          height: 32px;
+        }
+      }
+    }
+  }
+}
+
+@mixin responsive-modal {
+  .modal-overlay {
+    @include mobile {
+      padding: 0;
+    }
+  }
+
+  .modal-content {
+    @include mobile {
+      max-width: 100%;
+      max-height: 100vh;
+      border-radius: 0;
+      margin: 0;
+
+      .modal-header {
+        padding: var(--spacing-md);
+
+        h2, h3 {
+          font-size: var(--font-size-lg);
+        }
+      }
+
+      .modal-body {
+        padding: var(--spacing-md);
+        max-height: calc(100vh - 70px);
+        overflow-y: auto;
+      }
+
+      .modal-footer {
+        padding: var(--spacing-md);
+        flex-direction: column;
+
+        .btn {
+          width: 100%;
+          font-size: var(--font-size-sm);
+        }
+      }
+    }
+  }
+}
+
+@mixin responsive-empty-state {
+  .empty-state {
+    @include mobile {
+      padding: var(--spacing-2xl) var(--spacing-md);
+
+      svg {
+        width: 40px;
+        height: 40px;
+      }
+
+      h3 {
+        font-size: var(--font-size-lg);
+        margin-bottom: var(--spacing-xs);
+      }
+
+      p {
+        font-size: var(--font-size-sm);
+        margin-bottom: var(--spacing-md);
+      }
+
+      .btn {
+        width: 100%;
+        max-width: 280px;
+        font-size: var(--font-size-sm);
+      }
+    }
+  }
+}
+
+@mixin responsive-loading-state {
+  .loading-container, .loading-state {
+    @include mobile {
+      padding: var(--spacing-xl) var(--spacing-md);
+      min-height: 180px;
+
+      .spinner {
+        width: 32px;
+        height: 32px;
+      }
+
+      p {
+        font-size: var(--font-size-sm);
+      }
+    }
+  }
+}
+
+// Complete responsive page layout
+@mixin responsive-page-complete {
+  @include responsive-page-container;
+  @include responsive-dashboard-header;
+  @include responsive-kpi-grid;
+  @include responsive-filters;
+  @include responsive-data-table;
+  @include responsive-pagination;
+  @include responsive-modal;
+  @include responsive-empty-state;
+  @include responsive-loading-state;
+}
+

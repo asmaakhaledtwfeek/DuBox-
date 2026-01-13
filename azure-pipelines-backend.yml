@@ -1,0 +1,163 @@
+# Azure Pipeline for DuBox Backend (.NET Core Web API)
+# This pipeline builds and deploys the .NET Web API to Azure App Service
+
+trigger:
+  branches:
+    include:
+      - main
+      - master
+      - develop
+  paths:
+    include:
+      - Dubox.Api/**
+      - Dubox.Application/**
+      - Dubox.Domain/**
+      - Dubox.Infrastructure/**
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+- group: DuBox-Variables  # Link to variable group for Azure resources and secrets
+- name: buildConfiguration
+  value: 'Release'
+- name: dotnetSdkVersion
+  value: '10.0.x'
+- name: workingDirectory
+  value: '$(System.DefaultWorkingDirectory)'
+- name: apiProjectPath
+  value: 'Dubox.Api/Dubox.Api.csproj'
+
+stages:
+- stage: Build
+  displayName: 'Build Backend'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build .NET API'
+    steps:
+    
+    - task: UseDotNet@2
+      displayName: 'Install .NET SDK'
+      inputs:
+        version: $(dotnetSdkVersion)
+        includePreviewVersions: true
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore NuGet Packages'
+      inputs:
+        command: 'restore'
+        projects: '**/*.csproj'
+        feedsToUse: 'select'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Build Solution'
+      inputs:
+        command: 'build'
+        projects: '$(apiProjectPath)'
+        arguments: '--configuration $(buildConfiguration) --no-restore'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Run Tests'
+      inputs:
+        command: 'test'
+        projects: '**/*Tests.csproj'
+        arguments: '--configuration $(buildConfiguration) --no-build --collect:"XPlat Code Coverage"'
+      continueOnError: true
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish API'
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        projects: '$(apiProjectPath)'
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/api --no-restore'
+        zipAfterPublish: true
+        modifyOutputPath: false
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifacts'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/api'
+        ArtifactName: 'api-drop'
+        publishLocation: 'Container'
+
+- stage: Deploy
+  displayName: 'Deploy to Azure'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - deployment: DeployAPI
+    displayName: 'Deploy API to App Service'
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@1
+            displayName: 'Download Artifacts'
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'api-drop'
+              downloadPath: '$(System.ArtifactsDirectory)'
+          
+          - task: AzureRmWebAppDeployment@4
+            displayName: 'Deploy to Azure App Service'
+            inputs:
+              ConnectionType: 'AzureRM'
+              azureSubscription: '$(AZURE_SUBSCRIPTION_NAME)'
+              appType: 'webApp'
+              WebAppName: '$(BACKEND_APP_SERVICE_NAME)'
+              packageForLinux: '$(System.ArtifactsDirectory)/api-drop/**/*.zip'
+              enableCustomDeployment: true
+              DeploymentType: 'webDeploy'
+              RemoveAdditionalFilesFlag: true
+          
+          - task: AzureAppServiceSettings@1
+            displayName: 'Configure App Settings'
+            inputs:
+              azureSubscription: '$(AZURE_SUBSCRIPTION_NAME)'
+              appName: '$(BACKEND_APP_SERVICE_NAME)'
+              resourceGroupName: '$(AZURE_RESOURCE_GROUP)'
+              appSettings: |
+                [
+                  {
+                    "name": "ASPNETCORE_ENVIRONMENT",
+                    "value": "Production",
+                    "slotSetting": false
+                  },
+                  {
+                    "name": "ConnectionStrings__Database",
+                    "value": "$(SQL_CONNECTION_STRING)",
+                    "slotSetting": false
+                  },
+                  {
+                    "name": "Jwt__SecretKey",
+                    "value": "$(JWT_SECRET_KEY)",
+                    "slotSetting": false
+                  },
+                  {
+                    "name": "Jwt__Issuer",
+                    "value": "$(JWT_ISSUER)",
+                    "slotSetting": false
+                  },
+                  {
+                    "name": "Jwt__Audience",
+                    "value": "$(JWT_AUDIENCE)",
+                    "slotSetting": false
+                  },
+                  {
+                    "name": "PublicAppSettings__PublicAppUrl",
+                    "value": "$(FRONTEND_URL)",
+                    "slotSetting": false
+                  },
+                  {
+                    "name": "AllowedHosts",
+                    "value": "*",
+                    "slotSetting": false
+                  }
+                ]
+
+
+
+

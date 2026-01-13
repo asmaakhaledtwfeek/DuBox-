@@ -11,26 +11,31 @@ namespace Dubox.Domain.Entities
 
         [Required]
         [ForeignKey(nameof(Team))]
-        public int TeamId { get; set; }
+        public Guid TeamId { get; set; }
+        
+        [ForeignKey(nameof(User))]
+        public Guid? UserId { get; set; }
 
+        [ForeignKey(nameof(TeamGroup))]
+        public Guid? TeamGroupId { get; set; }
+
+        
         [MaxLength(50)]
-        public string? EmployeeCode { get; set; }
-
+        public string? EmployeeCode { get; set; } = null;
+        [Required]
         [MaxLength(200)]
-        public string? EmployeeName { get; set; }
-
-        [MaxLength(100)]
-        public string? Role { get; set; }
+        public string? EmployeeName { get; set; } =null;
 
         [MaxLength(20)]
         public string? MobileNumber { get; set; }
-
-        [MaxLength(200)]
-        public string? Email { get; set; }
 
         public bool IsActive { get; set; } = true;
 
         // Navigation properties
         public virtual Team Team { get; set; } = null!;
+        public virtual User User { get; set; } = null!;
+        public virtual TeamGroup? TeamGroup { get; set; }
+        public virtual ICollection<BoxActivity> BoxActivities { get; set; } = new List<BoxActivity>();
+
     }
 }

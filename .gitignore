@@ -416,3 +416,35 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+Dubox.Infrastructure/Migrations/20251105154049_InitialMigration.Designer.cs
+
+# ============================================
+# Azure Deployment - DO NOT COMMIT SECRETS!
+# ============================================
+# Deployment secrets and sensitive configuration
+SECRETS_TEMPLATE.txt
+*secrets*.txt
+*.secret
+*.secrets
+.azure-credentials
+.azure-secrets
+
+# Environment files with real values
+.env.production
+.env.staging
+.env.local
+*.env.backup
+
+# Azure publish profiles
+*.azurePubxml
+*.PublishSettings
+
+# SSL Certificates
+*.pfx
+*.p12
+*.cer
+*.key
+
+# Local Azure configuration
+azure-local.yml
+local-secrets.yml

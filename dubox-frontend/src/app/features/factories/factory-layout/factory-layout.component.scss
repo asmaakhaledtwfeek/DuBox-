@@ -1,0 +1,1154 @@
+// Standard Page Layout (matching Box Details and Factory Details pages)
+.page-container {
+  margin-left: var(--sidebar-width, 250px);
+  margin-top: var(--header-height, 64px);
+  min-height: calc(100vh - var(--header-height, 64px));
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+  transition: margin-left 0.3s ease;
+  overflow-x: hidden;
+  width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 1024px) {
+    margin-left: 0;
+  }
+
+  @media (max-width: 768px) {
+    margin-left: 0;
+  }
+}
+
+.page-content {
+  padding: var(--spacing-2xl, 48px);
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 1024px) {
+    padding: var(--spacing-xl, 32px);
+    max-width: 100%;
+  }
+
+  @media (max-width: 768px) {
+    padding: var(--spacing-lg, 24px);
+  }
+}
+
+.loading-container, .error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 16px;
+  text-align: center;
+
+  .loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid #e2e8f0;
+    border-top-color: var(--amana-teal);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  svg {
+    color: #ef4444;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0;
+  }
+
+  p {
+    font-size: 1rem;
+    color: #64748b;
+    margin: 0;
+  }
+
+  .btn-primary {
+    margin-top: 16px;
+    padding: 10px 20px;
+    background: var(--amana-teal);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #16858f;
+      transform: translateY(-1px);
+    }
+  }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.factory-layout-container {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+  padding: 24px 32px;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 20px 24px;
+  }
+
+  @media (max-width: 768px) {
+    padding: 16px;
+    margin-bottom: 20px;
+    gap: 16px;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 12px;
+      width: 100%;
+    }
+
+    .btn-back {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      background: #f8f9fa;
+      border: 1.5px solid #e9ecef;
+      border-radius: 12px;
+      color: #495057;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+
+      @media (max-width: 768px) {
+        padding: 10px 16px;
+        font-size: 13px;
+        width: fit-content;
+      }
+
+      &:hover {
+        background: #e9ecef;
+        color: #212529;
+        transform: translateX(-3px);
+        border-color: #dee2e6;
+      }
+
+      &:active {
+        transform: translateX(-1px);
+      }
+
+      svg {
+        width: 20px;
+        height: 20px;
+
+        @media (max-width: 768px) {
+          width: 18px;
+          height: 18px;
+        }
+      }
+    }
+
+    .header-info {
+      flex: 1;
+
+      h1 {
+        font-size: 2.25rem;
+        font-weight: 700;
+        color: #212529;
+        margin: 0 0 12px;
+        line-height: 1.2;
+        letter-spacing: -0.5px;
+
+        @media (max-width: 1024px) {
+          font-size: 1.75rem;
+        }
+
+        @media (max-width: 768px) {
+          font-size: 1.5rem;
+          margin-bottom: 8px;
+        }
+      }
+
+      .factory-name {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 1.125rem;
+        color: #6c757d;
+        font-weight: 500;
+
+        @media (max-width: 768px) {
+          font-size: 1rem;
+          gap: 8px;
+        }
+
+        svg {
+          color: var(--amana-teal);
+          flex-shrink: 0;
+
+          @media (max-width: 768px) {
+            width: 18px;
+            height: 18px;
+          }
+        }
+      }
+    }
+  }
+
+  .header-right {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+
+    @media (max-width: 1024px) {
+      width: 100%;
+      justify-content: flex-start;
+    }
+
+    @media (max-width: 768px) {
+      gap: 12px;
+    }
+
+    .factory-badge {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      padding: 14px 20px;
+      background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      min-width: 140px;
+      transition: all 0.2s ease;
+
+      &:hover {
+        border-color: var(--amana-teal);
+        box-shadow: 0 2px 8px rgba(27, 154, 170, 0.15);
+      }
+
+      .badge-label {
+        font-size: 0.6875rem;
+        font-weight: 700;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+      }
+
+      .badge-value {
+        font-size: 0.9375rem;
+        font-weight: 700;
+        color: #212529;
+      }
+    }
+  }
+}
+
+// Layout wrapper for sidebar + grid
+.warehouse-layout-wrapper {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+
+  @media (max-width: 1400px) {
+    gap: 16px;
+  }
+
+  @media (max-width: 1200px) {
+    flex-direction: column;
+    gap: 20px;
+  }
+}
+
+// Business Flow Indicators Sidebar
+.business-flow-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  position: sticky;
+  top: 100px;
+
+  .sidebar-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #e2e8f0;
+  }
+
+  .flow-indicators {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .flow-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+
+    .flow-color {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+      border: 2px solid rgba(255, 255, 255, 0.5);
+
+      // WIR Stage Colors - AMANA Palette
+      &.wir-stage-1 {
+        background: linear-gradient(145deg, #4ea8de 0%, #1b9aaa 100%);
+      }
+      &.wir-stage-2 {
+        background: linear-gradient(145deg, #52b788 0%, #2d6a4f 100%);
+      }
+      &.wir-stage-3 {
+        background: linear-gradient(145deg, #bef264 0%, #9bc53d 100%);
+      }
+      &.wir-stage-4 {
+        background: linear-gradient(145deg, #fde047 0%, #ffc107 100%);
+      }
+      &.wir-stage-5 {
+        background: linear-gradient(145deg, #fb923c 0%, #ff6b35 100%);
+      }
+      &.wir-stage-6 {
+        background: linear-gradient(145deg, #a78bfa 0%, #5e60ce 100%);
+      }
+      &.wir-completed {
+        background: linear-gradient(145deg, #34d399 0%, #10b981 100%);
+      }
+      &.empty-location {
+        background: repeating-linear-gradient(
+          45deg,
+          #e2e8f0,
+          #e2e8f0 3px,
+          #f1f5f9 3px,
+          #f1f5f9 6px
+        );
+        border: 1px dashed #94a3b8;
+      }
+    }
+
+    span {
+      font-size: 13px;
+      font-weight: 500;
+      color: #475569;
+      line-height: 1.3;
+    }
+  }
+
+  @media (max-width: 1400px) {
+    width: 200px;
+    padding: 16px;
+
+    .flow-item {
+      gap: 10px;
+      
+      span {
+        font-size: 12px;
+      }
+
+      .flow-color {
+        width: 20px;
+        height: 20px;
+      }
+    }
+  }
+
+  @media (max-width: 1200px) {
+    width: 100%;
+    position: static;
+    max-width: 100%;
+
+    .flow-indicators {
+      flex-direction: row;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: flex-start;
+    }
+
+    .flow-item {
+      flex: 0 0 auto;
+      padding: 8px 12px;
+      background: #f8fafc;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 12px;
+
+    .sidebar-title {
+      font-size: 11px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+    }
+
+    .flow-indicators {
+      gap: 8px;
+    }
+
+    .flow-item {
+      padding: 6px 10px;
+
+      span {
+        font-size: 11px;
+      }
+
+      .flow-color {
+        width: 18px;
+        height: 18px;
+      }
+    }
+  }
+}
+
+// Warehouse Grid Container - Scrollable wrapper
+// Grid content area - contains scrollable grid and fixed legend
+.grid-content-area {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.warehouse-grid {
+  flex: 1;
+  min-width: 0;
+  animation: slideDown 0.4s ease-out;
+  overflow: hidden; // No scrolling - grid will fit to screen
+  position: relative;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.matrix-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Matrix Table Layout - Flexible to fit screen */
+.warehouse-matrix {
+  display: flex;
+  flex-direction: column;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 3px solid #cbd5e1;
+  position: relative;
+  overflow: hidden;
+  width: 100%; // Fill available width - no scrolling
+}
+
+.matrix-header {
+  display: flex;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: linear-gradient(135deg, #1b9aaa 0%, #178995 100%);
+  border-bottom: 3px solid #0f5761;
+}
+
+.matrix-row {
+  display: flex;
+  border-bottom: 2px solid #e2e8f0;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:nth-child(even) {
+    background: linear-gradient(90deg, #fafbfc 0%, #f8f9fa 100%);
+  }
+}
+
+// Responsive cell size variables - scales to fit screen
+$row-header-width: clamp(40px, 4vw, 60px);
+$cell-width: clamp(80px, calc((100vw - 350px) / 10), 130px); // Scales based on available width
+$cell-height: clamp(70px, calc((100vh - 400px) / 12), 100px); // Scales based on available height
+$header-height: clamp(40px, 5vw, 60px);
+
+.matrix-corner-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: $row-header-width;
+  min-width: 35px;
+  height: $header-height;
+  min-height: 35px;
+  background: linear-gradient(135deg, #0e6b77 0%, #0a4f58 100%);
+  border-right: 2px solid rgba(255, 255, 255, 0.2);
+  flex-shrink: 1; // Allow shrinking
+
+  svg {
+    color: rgba(255, 255, 255, 0.7);
+    width: clamp(12px, 1.2vw, 16px);
+    height: clamp(12px, 1.2vw, 16px);
+  }
+}
+
+.matrix-column-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1; // Take equal space
+  min-width: 60px;
+  height: $header-height;
+  min-height: 35px;
+  padding: clamp(4px, 0.5vw, 8px);
+  border-right: 2px solid rgba(255, 255, 255, 0.15);
+  gap: 2px;
+  flex-shrink: 1; // Allow shrinking
+
+  &:last-child {
+    border-right: none;
+  }
+
+  .aisle-indicator {
+    svg {
+      width: clamp(12px, 1.2vw, 16px);
+      height: clamp(12px, 1.2vw, 16px);
+      color: white;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+    }
+  }
+
+  .column-label {
+    font-size: clamp(8px, 1vw, 12px);
+    font-weight: 800;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    white-space: nowrap;
+  }
+}
+
+.matrix-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: $row-header-width;
+  min-width: 35px;
+  height: $cell-height;
+  min-height: 55px;
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+  border-right: 2px solid #cbd5e1;
+  flex-shrink: 1; // Allow shrinking
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.3));
+  }
+
+  .row-number {
+    font-size: clamp(14px, 1.5vw, 20px);
+    font-weight: 900;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    font-family: 'QA', sans-serif;
+  }
+}
+
+.matrix-cell {
+  position: relative;
+  // Flexible dimensions - shrinks to fit screen
+  flex: 1; // Take equal space
+  min-width: 60px;
+  height: $cell-height;
+  min-height: 55px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(4px, 0.5vw, 10px);
+  border-right: 2px solid #e2e8f0;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+  flex-shrink: 1; // Allow shrinking
+  overflow: hidden; // Prevent badges from overflowing
+
+  &:last-child {
+    border-right: none;
+  }
+
+  // Cell coordinates - top left corner (compact)
+  .cell-coordinates {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    font-size: clamp(5px, 0.5vw, 7px);
+    font-weight: 700;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 1px 2px;
+    border-radius: 2px;
+    border: 1px solid #e2e8f0;
+    letter-spacing: 0;
+    z-index: 2;
+    white-space: nowrap;
+  }
+
+  // Progress badge - top right corner (always show full value)
+  .progress-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: clamp(7px, 0.7vw, 9px);
+    font-weight: 800;
+    color: #1e293b;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 2px 4px;
+    border-radius: 3px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+    letter-spacing: 0;
+    z-index: 5;
+    text-align: center;
+    backdrop-filter: blur(4px);
+    white-space: nowrap;
+  }
+
+  // Collision badge - bottom right corner
+  .collision-badge {
+    position: absolute;
+    bottom: 2px;
+    right: 2px;
+    font-size: clamp(6px, 0.6vw, 8px);
+    font-weight: 800;
+    color: #fff;
+    background: #ef4444;
+    padding: 1px 3px;
+    border-radius: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    letter-spacing: 0;
+    z-index: 4;
+    min-width: 14px;
+    text-align: center;
+    cursor: help;
+    white-space: nowrap;
+  }
+
+  &.empty {
+    background: 
+      repeating-linear-gradient(
+        45deg,
+        rgba(226, 232, 240, 0.2),
+        rgba(226, 232, 240, 0.2) 6px,
+        rgba(241, 245, 249, 0.2) 6px,
+        rgba(241, 245, 249, 0.2) 12px
+      ),
+      linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
+    
+    .empty-cell-content {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      svg {
+        width: clamp(18px, 2vw, 24px);
+        height: clamp(18px, 2vw, 24px);
+      }
+    }
+  }
+
+  &.has-box {
+    cursor: pointer;
+    
+    &:hover {
+      transform: scale(1.03);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      z-index: 10;
+    }
+  }
+
+  &.in-progress {
+    background: 
+      linear-gradient(145deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+    box-shadow: 
+      inset 0 2px 4px rgba(255, 255, 255, 0.4),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+      0 2px 8px rgba(251, 191, 36, 0.3);
+    border-right-color: #d97706;
+
+    .cell-content {
+      .box-icon-small svg { color: #78350f; }
+      .position-badge { background: #78350f; color: #fef3c7; }
+    }
+    .cell-coordinates { background: rgba(254, 243, 199, 0.95); color: #78350f; border-color: #d97706; }
+  }
+
+  &.completed {
+    background: linear-gradient(145deg, #34d399 0%, #10b981 50%, #059669 100%);
+    box-shadow: 
+      inset 0 2px 4px rgba(255, 255, 255, 0.4),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+      0 2px 8px rgba(52, 211, 153, 0.3);
+    border-right-color: #059669;
+
+    .cell-content {
+      .box-icon-small svg { color: #064e3b; }
+      .position-badge { background: #064e3b; color: #d1fae5; }
+    }
+    .cell-coordinates { background: rgba(209, 250, 229, 0.95); color: #064e3b; border-color: #059669; }
+  }
+
+  // WIR Stage Colors - Using AMANA Palette
+  // WIR-1: Assembly Clearance - Teal (amana-teal)
+  &.wir-stage-1 {
+    background: linear-gradient(145deg, #4ea8de 0%, #1b9aaa 50%, #0d7a8a 100%);
+    box-shadow: 
+      inset 0 2px 4px rgba(255, 255, 255, 0.4),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+      0 2px 8px rgba(27, 154, 170, 0.3);
+    border-right-color: #0d7a8a;
+
+    .cell-content {
+      .box-icon-small svg { color: #fff; }
+      .position-badge { background: rgba(255, 255, 255, 0.9); color: #0d7a8a; }
+    }
+    .cell-coordinates { background: rgba(255, 255, 255, 0.95); color: #0d7a8a; border-color: #1b9aaa; }
+  }
+
+  // WIR-2: Mechanical Clearance - Green (amana-green)
+  &.wir-stage-2 {
+    background: linear-gradient(145deg, #52b788 0%, #2d6a4f 50%, #1b4332 100%);
+    box-shadow: 
+      inset 0 2px 4px rgba(255, 255, 255, 0.4),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+      0 2px 8px rgba(45, 106, 79, 0.3);
+    border-right-color: #1b4332;
+
+    .cell-content {
+      .box-icon-small svg { color: #fff; }
+      .position-badge { background: rgba(255, 255, 255, 0.9); color: #1b4332; }
+    }
+    .cell-coordinates { background: rgba(255, 255, 255, 0.95); color: #1b4332; border-color: #2d6a4f; }
+  }
+
+  // WIR-3: Electrical Clearance - Yellow-Green (amana-yellow-green)
+  &.wir-stage-3 {
+    background: linear-gradient(145deg, #bef264 0%, #9bc53d 50%, #7a9e2e 100%);
+    box-shadow: 
+      inset 0 2px 4px rgba(255, 255, 255, 0.4),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+      0 2px 8px rgba(155, 197, 61, 0.3);
+    border-right-color: #7a9e2e;
+
+    .cell-content {
+      .box-icon-small svg { color: #3d5a0f; }
+      .position-badge { background: #3d5a0f; color: #ecfccb; }
+    }
+    .cell-coordinates { background: rgba(236, 252, 203, 0.95); color: #3d5a0f; border-color: #9bc53d; }
+  }
+
+  // WIR-4: 3rd Fix Installation - Yellow (amana-yellow)
+  &.wir-stage-4 {
+    background: linear-gradient(145deg, #fde047 0%, #ffc107 50%, #e6ac00 100%);
+    box-shadow: 
+      inset 0 2px 4px rgba(255, 255, 255, 0.4),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+      0 2px 8px rgba(255, 193, 7, 0.3);
+    border-right-color: #e6ac00;
+
+    .cell-content {
+      .box-icon-small svg { color: #713f12; }
+      .position-badge { background: #713f12; color: #fef9c3; }
+    }
+    .cell-coordinates { background: rgba(254, 249, 195, 0.95); color: #713f12; border-color: #ffc107; }
+  }
+
+  // WIR-5: 3rd Fix Installation - Orange (amana-orange)
+  &.wir-stage-5 {
+    background: linear-gradient(145deg, #fb923c 0%, #ff6b35 50%, #d45d1e 100%);
+    box-shadow: 
+      inset 0 2px 4px rgba(255, 255, 255, 0.4),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+      0 2px 8px rgba(255, 107, 53, 0.3);
+    border-right-color: #d45d1e;
+
+    .cell-content {
+      .box-icon-small svg { color: #fff; }
+      .position-badge { background: rgba(255, 255, 255, 0.9); color: #9a3412; }
+    }
+    .cell-coordinates { background: rgba(255, 255, 255, 0.95); color: #9a3412; border-color: #ff6b35; }
+  }
+
+  // WIR-6: Readiness for Dispatch - Purple (amana-purple)
+  &.wir-stage-6 {
+    background: linear-gradient(145deg, #a78bfa 0%, #5e60ce 50%, #5a189a 100%);
+    box-shadow: 
+      inset 0 2px 4px rgba(255, 255, 255, 0.4),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+      0 2px 8px rgba(94, 96, 206, 0.3);
+    border-right-color: #5a189a;
+
+    .cell-content {
+      .box-icon-small svg { color: #fff; }
+      .position-badge { background: rgba(255, 255, 255, 0.9); color: #5a189a; }
+    }
+    .cell-coordinates { background: rgba(255, 255, 255, 0.95); color: #5a189a; border-color: #5e60ce; }
+  }
+
+  // Completed WIR Stage - Green (same as completed status)
+  &.wir-completed {
+    background: linear-gradient(145deg, #34d399 0%, #10b981 50%, #059669 100%);
+    box-shadow: 
+      inset 0 2px 4px rgba(255, 255, 255, 0.4),
+      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
+      0 2px 8px rgba(52, 211, 153, 0.3);
+    border-right-color: #059669;
+
+    .cell-content {
+      .box-icon-small svg { color: #064e3b; }
+      .position-badge { background: #064e3b; color: #d1fae5; }
+    }
+
+    .cell-coordinates {
+      background: rgba(209, 250, 229, 0.95);
+      color: #064e3b;
+      border-color: #059669;
+    }
+  }
+
+  .cell-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    padding: 12px 2px 14px; // Top padding for badges, bottom for box code
+
+    .box-icon-small {
+      flex-shrink: 0;
+      svg {
+        width: clamp(14px, 1.8vw, 22px);
+        height: clamp(14px, 1.8vw, 22px);
+        color: #6b7280;
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
+      }
+    }
+
+    .box-code-small {
+      position: absolute;
+      bottom: 2px;
+      left: 2px;
+      right: 2px;
+      font-size: clamp(5px, 0.55vw, 7px);
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: 0;
+      line-height: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: calc(100% - 4px);
+      padding: 1px 2px;
+      background: rgba(0, 0, 0, 0.7);
+      color: white;
+      border-radius: 2px;
+      white-space: nowrap;
+      z-index: 1;
+    }
+
+    .position-badge {
+      font-size: clamp(5px, 0.55vw, 8px);
+      font-weight: 700;
+      padding: 1px 3px;
+      border-radius: 2px;
+      background: #1f2937;
+      color: white;
+      letter-spacing: 0;
+      white-space: nowrap;
+      max-width: 90%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+}
+
+.matrix-info {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 40px;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0; // Prevent shrinking - stay fixed outside scroll
+
+  .info-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+
+    svg {
+      color: var(--amana-teal);
+      flex-shrink: 0;
+    }
+
+    &.warning {
+      svg {
+        color: #f59e0b;
+      }
+      
+      .warning-text {
+        color: #d97706;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+  }
+}
+
+.grid-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-xxl, 80px) var(--spacing-xl, 24px);
+  background: white;
+  border-radius: var(--border-radius-xl, 16px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+
+  svg {
+    color: #cbd5e1;
+    margin-bottom: var(--spacing-md, 16px);
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 var(--spacing-sm, 8px);
+  }
+
+  p {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+}
+
+.grid-legend {
+  background: white;
+  padding: 16px 20px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  flex-shrink: 0; // Prevent legend from shrinking
+
+  .legend-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+
+    svg {
+      color: var(--amana-teal);
+      flex-shrink: 0;
+    }
+  }
+
+  .legend-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 16px;
+    align-items: center;
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 20px;
+      color: #64748b;
+      padding: 4px 10px;
+      background: #f8fafc;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      cursor: default;
+
+      &.compact {
+        gap: 4px;
+        padding: 4px 8px;
+      }
+
+      .legend-box {
+        width: 30px;
+        height: 30px;
+        border-radius: 4px;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        flex-shrink: 0;
+
+        &.in-progress-box {
+          background: linear-gradient(145deg, #fbbf24 0%, #f59e0b 100%);
+        }
+
+        &.completed-box {
+          background: linear-gradient(145deg, #34d399 0%, #10b981 100%);
+        }
+
+        &.empty-box {
+          background: repeating-linear-gradient(
+            45deg,
+            rgba(226, 232, 240, 0.5),
+            rgba(226, 232, 240, 0.5) 3px,
+            rgba(241, 245, 249, 0.5) 3px,
+            rgba(241, 245, 249, 0.5) 6px
+          );
+        }
+
+        // WIR Stage Legend Boxes - Using AMANA Palette
+        &.wir-stage-1 {
+          background: linear-gradient(145deg, #4ea8de 0%, #1b9aaa 100%);
+        }
+
+        &.wir-stage-2 {
+          background: linear-gradient(145deg, #52b788 0%, #2d6a4f 100%);
+        }
+
+        &.wir-stage-3 {
+          background: linear-gradient(145deg, #bef264 0%, #9bc53d 100%);
+        }
+
+        &.wir-stage-4 {
+          background: linear-gradient(145deg, #fde047 0%, #ffc107 100%);
+        }
+
+        &.wir-stage-5 {
+          background: linear-gradient(145deg, #fb923c 0%, #ff6b35 100%);
+        }
+
+        &.wir-stage-6 {
+          background: linear-gradient(145deg, #a78bfa 0%, #5e60ce 100%);
+        }
+
+        &.wir-completed {
+          background: linear-gradient(145deg, #34d399 0%, #10b981 100%);
+        }
+      }
+
+      .legend-label {
+        color: #475569;
+        font-weight: 500;
+        white-space: nowrap;
+      }
+
+      .legend-percentage {
+        font-weight: 700;
+        color: #1e293b;
+        font-size: 11px;
+      }
+
+      &.compact .legend-percentage {
+        margin-left: 0;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    padding: 12px 10px;
+
+    .legend-items {
+      gap: 6px 10px;
+    }
+
+    .legend-item {
+      font-size: 11px;
+      padding: 3px 8px;
+
+      .legend-box {
+        width: 16px;
+        height: 16px;
+      }
+
+      .legend-percentage {
+        font-size: 10px;
+      }
+    }
+  }
+}
+
+// Matrix uses fixed dimensions with clamp() for responsive sizing
+// No breakpoint overrides needed - scrolling handles overflow
+

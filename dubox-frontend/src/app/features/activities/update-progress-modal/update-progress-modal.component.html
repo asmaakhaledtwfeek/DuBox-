@@ -1,0 +1,437 @@
+<div class="modal-overlay" *ngIf="isOpen" (click)="close()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Update Activity Progress: <span class="activity-name-in-title">{{ activity?.activityName }}</span></h2>
+      <button class="close-btn" (click)="close()" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- WIR Checkpoint Badge (moved to top after removing activity info card) -->
+      <div *ngIf="isWIRCheckpoint" class="wir-badge-standalone">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 11l3 3L22 4"/>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+        <span>WIR Checkpoint - {{ wirCode }}</span>
+      </div>
+
+      <!-- Alert Messages -->
+      <div class="alert alert-danger" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+      <div class="alert alert-success" *ngIf="successMessage">
+        {{ successMessage }}
+      </div>
+
+      <!-- WIR Warning for Checkpoint Activities -->
+      <div *ngIf="isWIRCheckpoint && progressForm.get('progressPercentage')?.value === 100" class="alert alert-info">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <div>
+          <strong>QC Inspection Required</strong>
+          <p>Completing this activity will automatically create {{ wirCode }} for QC Engineer inspection.</p>
+        </div>
+      </div>
+
+      <!-- Completed Activity Notice -->
+      <div *ngIf="activity?.status === ActivityProgressStatus.Completed || activity?.status === ActivityProgressStatus.Delayed" class="alert alert-info">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        <div>
+          <strong>Activity Completed</strong>
+          <p>This activity is completed. You can only update the position (Bay/Row) if this is a WIR checkpoint.</p>
+        </div>
+      </div>
+
+      <!-- Progress Form -->
+      <form [formGroup]="progressForm" (ngSubmit)="onSubmit()">
+        <!-- Progress Percentage -->
+        <div class="form-group">
+          <label for="progressPercentage">Progress Percentage <span *ngIf="activity?.status !== 'Completed' && activity?.status !== 'Delayed'">*</span></label>
+          <div class="progress-input-group">
+            <button type="button" class="btn-adjust" (click)="incrementProgress(-10)" [disabled]="activity?.status === ActivityProgressStatus.Completed || activity?.status === ActivityProgressStatus.Delayed">-10%</button>
+            <button type="button" class="btn-adjust" (click)="incrementProgress(-5)" [disabled]="activity?.status === ActivityProgressStatus.Completed || activity?.status === ActivityProgressStatus.Delayed">-5%</button>
+            <input 
+              type="number" 
+              id="progressPercentage" 
+              formControlName="progressPercentage"
+              min="0"
+              max="100"
+              class="form-control"
+              [readonly]="activity?.status === ActivityProgressStatus.Completed || activity?.status === ActivityProgressStatus.Delayed"
+            />
+            <span class="percentage-label">%</span>
+            <button type="button" class="btn-adjust" (click)="incrementProgress(5)" [disabled]="activity?.status === ActivityProgressStatus.Completed || activity?.status === ActivityProgressStatus.Delayed">+5%</button>
+            <button type="button" class="btn-adjust" (click)="incrementProgress(10)" [disabled]="activity?.status === ActivityProgressStatus.Completed || activity?.status === ActivityProgressStatus.Delayed">+10%</button>
+          </div>
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" [style.width.%]="progressForm.get('progressPercentage')?.value"></div>
+          </div>
+        </div>
+
+        <!-- Status Info (Read-only) -->
+        <div class="form-group">
+          <label>
+            Status
+            <span class="status-note">(automatically determined by progress percentage)</span>
+          </label>
+          <div class="status-info">
+            <span *ngIf="progressForm.get('progressPercentage')?.value === 0" class="status-badge status-not-started">Not Started</span>
+            <span *ngIf="progressForm.get('progressPercentage')?.value > 0 && progressForm.get('progressPercentage')?.value < 100" class="status-badge status-in-progress">In Progress</span>
+            <span *ngIf="progressForm.get('progressPercentage')?.value === 100" class="status-badge status-completed">Completed</span>
+          </div>
+        </div>
+
+        <!-- Photo Upload Section -->
+        <div class="form-group">
+          <label>Progress Photos <span class="image-count-badge" *ngIf="selectedImages.length > 0">{{ selectedImages.length }}</span></label>
+          <p class="photo-upload-hint">Add multiple images from upload, camera, or URL</p>
+          
+          <!-- Selected Images Preview List -->
+          <div class="selected-images-list" *ngIf="selectedImages.length > 0">
+            <div class="image-preview-item" *ngFor="let image of selectedImages; let i = index">
+              <div class="image-preview-wrapper">
+                <img [src]="image.preview || image.url" [alt]="image.name || 'Image preview'" />
+                <button 
+                  type="button" 
+                  class="remove-image-btn" 
+                  (click)="removeImage(i)" 
+                  [disabled]="isUploadingPhoto"
+                  title="Remove image"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+                <div class="image-type-badge" [class.type-file]="image.type === 'file'" [class.type-url]="image.type === 'url'">
+                  {{ image.type === 'file' ? 'File' : 'URL' }}
+                </div>
+              </div>
+              <div class="image-info" *ngIf="image.name || image.url">
+                <p class="image-name" *ngIf="image.name">{{ image.name }}</p>
+                <p class="image-url" *ngIf="image.url">{{ image.url }}</p>
+                <p class="image-size" *ngIf="image.file">{{ (image.file.size / 1024).toFixed(1) }} KB</p>
+              </div>
+            </div>
+            <button 
+              type="button" 
+              class="btn-clear-all" 
+              (click)="clearAllImages()" 
+              [disabled]="isUploadingPhoto"
+              *ngIf="selectedImages.length > 1"
+            >
+              Clear All
+            </button>
+          </div>
+          
+          <!-- Tabs for different input methods -->
+          <div class="photo-input-tabs" *ngIf="!showCamera">
+            <button 
+              type="button"
+              class="tab-button"
+              [class.active]="photoInputMethod === 'url'"
+              (click)="photoInputMethod = 'url'; showCamera = false"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+              </svg>
+              URL
+            </button>
+            <button 
+              type="button"
+              class="tab-button"
+              [class.active]="photoInputMethod === 'upload'"
+              (click)="openFileInput(); photoInputMethod = 'upload'"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              Upload
+            </button>
+            <button 
+              type="button"
+              class="tab-button"
+              [class.active]="photoInputMethod === 'camera'"
+              (click)="openCamera()"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
+              Camera
+            </button>
+          </div>
+
+          <!-- URL Input -->
+          <div *ngIf="photoInputMethod === 'url' && !showCamera" class="photo-input-content">
+            <div class="url-input-group">
+              <input
+                type="text"
+                class="form-control"
+                placeholder="Enter photo URL (e.g., https://example.com/photo.jpg)"
+                [(ngModel)]="currentPhotoUrl"
+                [ngModelOptions]="{standalone: true}"
+                [disabled]="isUploadingPhoto"
+                (keydown.enter)="addImageUrl(currentPhotoUrl); $event.preventDefault()"
+              />
+              <button 
+                type="button" 
+                class="btn-add-url" 
+                (click)="addImageUrl(currentPhotoUrl)"
+                [disabled]="isUploadingPhoto || !currentPhotoUrl?.trim()"
+              >
+                Add URL
+              </button>
+            </div>
+          </div>
+
+          <!-- File Upload Input (hidden, supports multiple) -->
+          <input
+            id="progress-photo-file-input"
+            type="file"
+            accept="image/*"
+            multiple
+            style="display: none"
+            (change)="onFileSelected($event)"
+            [disabled]="isUploadingPhoto"
+          />
+
+          <!-- Camera Preview -->
+          <div *ngIf="showCamera" id="camera-preview-container" class="camera-preview-container">
+            <video 
+              id="progress-camera-preview" 
+              autoplay 
+              playsinline 
+              muted
+              style="display: block; visibility: visible; opacity: 1;"
+            ></video>
+            <div class="camera-controls">
+              <button type="button" class="btn btn-secondary btn-sm" (click)="stopCamera()">
+                Cancel
+              </button>
+              <button type="button" class="btn btn-primary btn-sm" (click)="capturePhoto()" [disabled]="isSubmitting">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                Capture
+              </button>
+            </div>
+          </div>
+
+          <!-- Upload Progress -->
+          <div *ngIf="isUploadingPhoto" class="upload-progress">
+            <div class="spinner-small"></div>
+            <span>Uploading photos...</span>
+          </div>
+
+          <!-- Errors -->
+          <p class="form-text text-danger" *ngIf="photoUploadError">{{ photoUploadError }}</p>
+        </div>
+
+        <!-- Work Description -->
+        <div class="form-group">
+          <label for="workDescription">Work Description</label>
+          <textarea 
+            id="workDescription" 
+            formControlName="workDescription"
+            class="form-control"
+            rows="3"
+            placeholder="Describe the work completed..."
+          ></textarea>
+        </div>
+
+        <!-- Issues Encountered -->
+        <div class="form-group">
+          <label for="issuesEncountered">Issues Encountered</label>
+          <textarea 
+            id="issuesEncountered" 
+            formControlName="issuesEncountered"
+            class="form-control"
+            rows="3"
+            placeholder="Describe any issues or challenges..."
+          ></textarea>
+        </div>
+
+        <!-- WIR Position Section (always shown with fields) -->
+        <div class="form-group wir-position-section">
+          <div class="wir-position-header">
+            <label>WIR Position</label>
+            <span class="wir-position-note">
+              <span *ngIf="nearestWIR" title="All activities up to {{ nearestWIR.wirCode }} share this position">
+                Shared position for {{ nearestWIR.wirCode }}
+              </span>
+              <span *ngIf="!nearestWIR && hasWIRActivityBelow">
+                Set position for next WIR checkpoint
+              </span>
+              <span *ngIf="!nearestWIR && !hasWIRActivityBelow">
+                No WIR checkpoint found
+              </span>
+              <span *ngIf="progressForm.get('wirBay')?.disabled || progressForm.get('wirRow')?.disabled" class="locked-indicator" title="Position locked - cannot edit">
+                🔒 Locked
+              </span>
+              <span *ngIf="!progressForm.get('wirBay')?.disabled && !progressForm.get('wirRow')?.disabled" class="editable-indicator" title="Position editable - you can set values">
+                ✏️ Editable
+              </span>
+            </span>
+          </div>
+          
+          <!-- Locked Reason Message (shown when fields are locked due to WIR status) -->
+          <div *ngIf="positionLockedReason" class="alert alert-warning position-locked-alert">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <span>{{ positionLockedReason }}</span>
+          </div>
+          
+          <!-- Position Fields (always shown) -->
+          <div class="wir-position-fields">
+            <div class="form-group-inline">
+              <label for="wirBay">Bay</label>
+              <input 
+                type="text" 
+                id="wirBay" 
+                formControlName="wirBay"
+                class="form-control"
+                placeholder="Enter bay (e.g., A, B, 1)"
+                maxlength="10"
+                [title]="progressForm.get('wirBay')?.disabled ? 'This field cannot be edited once set' : 'Enter bay identifier'"
+              />
+            </div>
+            <div class="form-group-inline">
+              <label for="wirRow">Row</label>
+              <input 
+                type="number" 
+                id="wirRow" 
+                formControlName="wirRow"
+                class="form-control"
+                placeholder="Enter row"
+                [title]="progressForm.get('wirRow')?.disabled ? 'This field cannot be edited once set' : 'Enter row number'"
+              />
+            </div>
+            <div class="form-group-inline">
+              <label for="wirPosition">Position</label>
+              <input 
+                type="text" 
+                id="wirPosition" 
+                formControlName="wirPosition"
+                class="form-control"
+                placeholder="Auto-calculated"
+                title="Position = Bay × Row (calculated automatically)"
+                readonly
+              />
+            </div>
+          </div>
+
+          <!-- Simplified Factory Layout Grid (shown only when WIR Position is editable) -->
+          <div *ngIf="showFactoryLayout && !isLoadingFactoryLayout" class="factory-layout-mini">
+            <div class="layout-header">
+              <div class="header-content">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="7"/>
+                  <rect x="14" y="3" width="7" height="7"/>
+                  <rect x="14" y="14" width="7" height="7"/>
+                  <rect x="3" y="14" width="7" height="7"/>
+                </svg>
+                <span class="layout-title">Factory Layout</span>
+              </div>
+              <span class="layout-info">{{ getFactoryGridLayout().totalBoxes }} boxes positioned</span>
+            </div>
+
+            <div class="mini-grid-container">
+              <!-- Column Headers -->
+              <div class="mini-grid-header">
+                <div class="mini-corner-cell"></div>
+                <div class="mini-col-header" *ngFor="let column of getFactoryGridLayout().columns">
+                  <span>{{ column }}</span>
+                </div>
+              </div>
+
+              <!-- Grid Rows -->
+              <div class="mini-grid-row" *ngFor="let rowCells of getFactoryGridLayout().matrix">
+                <!-- Row Header -->
+                <div class="mini-row-header">
+                  <span>{{ rowCells[0]?.row }}</span>
+                </div>
+
+                <!-- Row Cells -->
+                <div class="mini-grid-cell"
+                     *ngFor="let cell of rowCells"
+                     [class.occupied]="cell.box"
+                     [class.available]="!cell.box"
+                     [class.current-box]="cell.isCurrentBox"
+                     [class.in-progress]="cell.box?.status === 'InProgress'"
+                     [class.completed]="cell.box?.status === 'Completed'"
+                     [title]="getGridCellTooltip(cell)">
+                  <!-- Occupied cell -->
+                  <div *ngIf="cell.box" class="cell-content">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                      <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                      <line x1="12" y1="22.08" x2="12" y2="12"/>
+                    </svg>
+                  </div>
+
+                  <!-- Available cell -->
+                  <div *ngIf="!cell.box" class="cell-empty"></div>
+
+                  <!-- Position Label -->
+                  <span class="cell-coord">{{ cell.column }}{{ cell.row }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Legend -->
+            <div class="layout-legend">
+              <div class="legend-item">
+                <span class="legend-dot occupied"></span>
+                <span>Occupied</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot available"></span>
+                <span>Available</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot current"></span>
+                <span>Current Box</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loading State for Factory Layout -->
+          <div *ngIf="isLoadingFactoryLayout" class="factory-layout-loading">
+            <div class="loading-spinner"></div>
+            <span>Loading factory layout...</span>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="close()" [disabled]="isSubmitting">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary" [disabled]="progressForm.invalid || isSubmitting || progressForm.get('progressPercentage')?.value === 0 || isUpdateButtonDisabled">
+            <span *ngIf="!isSubmitting">Update Progress</span>
+            <span *ngIf="isSubmitting">Updating...</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+

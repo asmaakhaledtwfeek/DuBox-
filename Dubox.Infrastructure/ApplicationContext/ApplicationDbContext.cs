@@ -1,5 +1,6 @@
 ﻿using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
+using Dubox.Domain.Enums;
 using Dubox.Domain.Interfaces;
 using Dubox.Infrastructure.Seeding;
 using Microsoft.EntityFrameworkCore;
@@ -27,15 +28,22 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<BoxActivity> BoxActivities { get; set; } = null!;
     public DbSet<ActivityDependency> ActivityDependencies { get; set; } = null!;
     public DbSet<ProgressUpdate> ProgressUpdates { get; set; } = null!;
+    public DbSet<ProgressUpdateImage> ProgressUpdateImages { get; set; } = null!;
+    public DbSet<WIRRecord> WIRRecords { get; set; } = null!;
     public DbSet<DailyProductionLog> DailyProductionLogs { get; set; } = null!;
     public DbSet<WIRCheckpoint> WIRCheckpoints { get; set; } = null!;
     public DbSet<WIRChecklistItem> WIRChecklistItems { get; set; } = null!;
+    public DbSet<WIRCheckpointImage> WIRCheckpointImages { get; set; } = null!;
+    public DbSet<PredefinedChecklistItem> PredefinedChecklistItems { get; set; } = null!;
     public DbSet<QualityIssue> QualityIssues { get; set; } = null!;
+    public DbSet<QualityIssueImage> QualityIssueImages { get; set; } = null!;
     public DbSet<Team> Teams { get; set; } = null!;
     public DbSet<TeamMember> TeamMembers { get; set; } = null!;
+    public DbSet<TeamGroup> TeamGroups { get; set; } = null!;
     public DbSet<Material> Materials { get; set; } = null!;
     public DbSet<BoxMaterial> BoxMaterials { get; set; } = null!;
     public DbSet<MaterialTransaction> MaterialTransactions { get; set; } = null!;
+    public DbSet<Factory> Factories { get; set; } = null!;
     public DbSet<FactoryLocation> FactoryLocations { get; set; } = null!;
     public DbSet<BoxLocationHistory> BoxLocationHistory { get; set; } = null!;
     public DbSet<CostCategory> CostCategories { get; set; } = null!;
@@ -49,7 +57,23 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<UserRole> UserRoles { get; set; } = null!;
     public DbSet<UserGroup> UserGroups { get; set; } = null!;
     public DbSet<GroupRole> GroupRoles { get; set; } = null!;
-    public DbSet<Department> Departments { get; set; }
+    public DbSet<Department> Departments { get; set; } = null!;
+    public DbSet<ActivityMaterial> ActivityMaterials { get; set; } = null!;
+    public DbSet<Permission> Permissions { get; set; } = null!;
+    public DbSet<RolePermission> RolePermissions { get; set; } = null!;
+    public DbSet<NavigationMenuItem> NavigationMenuItems { get; set; } = null!;
+    public DbSet<ChecklistSection> ChecklistSections { get; set; } = null!;
+    public DbSet<Checklist> Checklists { get; set; } = null!;
+    public DbSet<BoxDrawing> BoxDrawings { get; set; } = null!;
+    
+    // Project Configuration
+    public DbSet<ProjectBuilding> ProjectBuildings { get; set; } = null!;
+    public DbSet<ProjectLevel> ProjectLevels { get; set; } = null!;
+    public DbSet<ProjectBoxType> ProjectBoxTypes { get; set; } = null!;
+    public DbSet<ProjectBoxSubType> ProjectBoxSubTypes { get; set; } = null!;
+    public DbSet<ProjectZone> ProjectZones { get; set; } = null!;
+    public DbSet<ProjectBoxFunction> ProjectBoxFunctions { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ConfigureRelationships(modelBuilder);
@@ -58,12 +82,16 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         ActivityMasterSeedData.SeedActivityMaster(modelBuilder);
         RoleAndUserSeedData.SeedRolesGroupsAndUsers(modelBuilder);
         DepartmentSeesData.SeedDepartmnts(modelBuilder);
+        PredefinedChecklistItemSeedData.SeedPredefinedChecklistItems(modelBuilder); // WIR-2 and WIR-3
+        PermissionSeedData.SeedPermissions(modelBuilder);
+        NavigationMenuSeedData.SeedNavigationMenuItems(modelBuilder);
+        ChecklistSeedData.SeedChecklists(modelBuilder);
+     //   BoxTypeSeedData.SeedBoxTypes(modelBuilder);
         base.OnModelCreating(modelBuilder);
     }
 
     private void ConfigureRelationships(ModelBuilder modelBuilder)
     {
-        // Activity Dependencies - Configure self-referencing relationship
         modelBuilder.Entity<ActivityDependency>()
             .HasOne(d => d.BoxActivity)
             .WithMany(a => a.Dependencies)
@@ -76,14 +104,14 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(d => d.PredecessorActivityId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Cost Categories - Self-referencing for parent-child
+        // 2. Cost Category (Self-Referencing)
         modelBuilder.Entity<CostCategory>()
             .HasOne(c => c.ParentCategory)
             .WithMany(c => c.SubCategories)
             .HasForeignKey(c => c.ParentCategoryId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Box Location History - Multiple FKs to FactoryLocation
+        // 3. Box Location History
         modelBuilder.Entity<BoxLocationHistory>()
             .HasOne(h => h.Location)
             .WithMany(l => l.BoxLocationHistory)
@@ -96,6 +124,13 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(h => h.MovedFromLocationId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        modelBuilder.Entity<BoxLocationHistory>()
+            .HasOne(h => h.MovedByUser)
+            .WithMany()
+            .HasForeignKey(h => h.MovedBy)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // 4. User and Role Management (Cascade for join tables)
         modelBuilder.Entity<UserRole>()
             .HasOne(ur => ur.User)
             .WithMany(u => u.UserRoles)
@@ -132,6 +167,27 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(gr => gr.RoleId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // RolePermission relationships
+        modelBuilder.Entity<RolePermission>()
+            .HasOne(rp => rp.Role)
+            .WithMany(r => r.RolePermissions)
+            .HasForeignKey(rp => rp.RoleId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<RolePermission>()
+            .HasOne(rp => rp.Permission)
+            .WithMany(p => p.RolePermissions)
+            .HasForeignKey(rp => rp.PermissionId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<RolePermission>()
+            .HasOne(rp => rp.GrantedByUser)
+            .WithMany()
+            .HasForeignKey(rp => rp.GrantedByUserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // 5. Department and User
         modelBuilder.Entity<User>()
         .HasOne(u => u.EmployeeOfDepartment)
         .WithMany(d => d.Employees)
@@ -139,22 +195,286 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         .IsRequired()
         .OnDelete(DeleteBehavior.Restrict);
 
-
         modelBuilder.Entity<Department>()
             .HasOne(d => d.Manager)
             .WithOne(u => u.ManagedDepartment)
             .HasForeignKey<Department>(d => d.ManagerId)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // 6. WIRRecord relationships
+        modelBuilder.Entity<WIRRecord>()
+            .HasOne(w => w.BoxActivity)
+            .WithMany(ba => ba.WIRRecords)
+            .HasForeignKey(w => w.BoxActivityId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<WIRRecord>()
+            .HasOne(w => w.RequestedByUser)
+            .WithMany()
+            .HasForeignKey(w => w.RequestedBy)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<WIRRecord>()
+            .HasOne(w => w.InspectedByUser)
+            .WithMany()
+            .HasForeignKey(w => w.InspectedBy)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // 7. ProgressUpdate relationships
+        modelBuilder.Entity<ProgressUpdate>()
+            .HasOne(p => p.Box)
+            .WithMany(b => b.ProgressUpdates)
+            .HasForeignKey(p => p.BoxId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<ProgressUpdate>()
+            .HasOne(p => p.BoxActivity)
+            .WithMany(ba => ba.ProgressUpdates)
+            .HasForeignKey(p => p.BoxActivityId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ProgressUpdate>()
+            .HasOne(p => p.UpdatedByUser)
+            .WithMany()
+            .HasForeignKey(p => p.UpdatedBy)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // ProgressUpdateImage relationships
+        modelBuilder.Entity<ProgressUpdateImage>()
+            .HasOne(img => img.ProgressUpdate)
+            .WithMany(pu => pu.Images)
+            .HasForeignKey(img => img.ProgressUpdateId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // QualityIssueImage relationships
+        modelBuilder.Entity<QualityIssueImage>()
+            .HasOne(img => img.QualityIssue)
+            .WithMany(qi => qi.Images)
+            .HasForeignKey(img => img.IssueId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // WIRCheckpointImage relationships
+        modelBuilder.Entity<WIRCheckpointImage>()
+            .HasOne(img => img.WIRCheckpoint)
+            .WithMany(wir => wir.Images)
+            .HasForeignKey(img => img.WIRId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<BoxActivity>()
+            .HasOne(ba => ba.Box)
+            .WithMany(b => b.BoxActivities)
+            .HasForeignKey(ba => ba.BoxId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<BoxActivity>()
+            .HasOne(ba => ba.ActivityMaster)
+            .WithMany(am => am.BoxActivities)
+            .HasForeignKey(ba => ba.ActivityMasterId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<BoxActivity>()
+            .HasOne(ba => ba.AssignedMember)
+            .WithMany()
+            .HasForeignKey(ba => ba.AssignedMemberId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Box>()
+            .HasOne(b => b.Project)
+            .WithMany(p => p.Boxes)
+            .HasForeignKey(b => b.ProjectId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Box Type and SubType - No foreign key relationships
+        // BoxTypeId and BoxSubTypeId now reference ProjectBoxTypes/ProjectBoxSubTypes tables
+        // The navigation properties BoxType and BoxSubType are kept for backward compatibility but are not used
+        modelBuilder.Entity<Box>()
+            .Property(b => b.ProjectBoxTypeId)
+            .IsRequired(false);
+        modelBuilder.Entity<Box>()
+            .Property(b => b.ProjectBoxSubTypeId)
+            .IsRequired(false);
+        
+        // Ignore navigation properties to prevent foreign key creation
+        // BoxTypeId references ProjectBoxTypes.Id, not BoxTypes.BoxTypeId
+        // BoxSubTypeId references ProjectBoxSubTypes.Id, not BoxSubTypes.BoxSubTypeId
+        modelBuilder.Entity<Box>()
+            .Ignore(b => b.BoxType);
+            
+        modelBuilder.Entity<Box>()
+            .Ignore(b => b.BoxSubType);
+
+        // 10. BoxAsset relationships
+        modelBuilder.Entity<BoxAsset>()
+            .HasOne(ba => ba.Box)
+            .WithMany(b => b.BoxAssets)
+            .HasForeignKey(ba => ba.BoxId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // 11. Team and Material Management
+        modelBuilder.Entity<Team>()
+            .HasOne(t => t.TeamLeader)
+            .WithMany()
+            .HasForeignKey(t => t.TeamLeaderMemberId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Team>()
+            .HasOne(t => t.Department)
+            .WithMany()
+            .HasForeignKey(t => t.DepartmentId)
+            .IsRequired()
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<TeamMember>()
+            .HasOne(tm => tm.Team)
+            .WithMany(t => t.Members)
+            .HasForeignKey(tm => tm.TeamId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+
+        modelBuilder.Entity<TeamMember>()
+            .HasOne(tm => tm.TeamGroup)
+            .WithMany(tg => tg.Members)
+            .HasForeignKey(tm => tm.TeamGroupId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<MaterialTransaction>()
+            .HasOne(t => t.Material)
+            .WithMany(m => m.Transactions)
+            .HasForeignKey(t => t.MaterialId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<MaterialTransaction>()
+            .HasOne(t => t.BoxActivity)
+            .WithMany()
+            .HasForeignKey(t => t.BoxActivityId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<MaterialTransaction>()
+            .HasOne(t => t.PerformedBy)
+            .WithMany()
+            .HasForeignKey(t => t.PerformedById)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<ActivityMaterial>()
+            .HasOne(am => am.Material)
+            .WithMany(m => m.ActivityMaterials)
+            .HasForeignKey(am => am.MaterialId);
+
+        modelBuilder.Entity<ActivityMaterial>()
+            .HasOne(am => am.BoxActivity)
+            .WithMany(ba => ba.RequiredMaterials)
+            .HasForeignKey(am => am.BoxActivityId);
+
+        modelBuilder.Entity<Box>()
+            .HasOne(b => b.CurrentLocation)
+            .WithMany()
+            .HasForeignKey(b => b.CurrentLocationId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<BoxLocationHistory>()
+            .HasOne(h => h.Box)
+            .WithMany(b => b.BoxLocationHistory)
+            .HasForeignKey(h => h.BoxId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<BoxLocationHistory>()
+            .HasOne(h => h.Location)
+            .WithMany(l => l.BoxLocationHistory)
+            .HasForeignKey(h => h.LocationId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<BoxLocationHistory>()
+            .HasOne(h => h.MovedFromLocation)
+            .WithMany()
+            .HasForeignKey(h => h.MovedFromLocationId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // ChecklistSection relationships
+        modelBuilder.Entity<ChecklistSection>()
+            .HasOne(cs => cs.Checklist)
+            .WithMany(c => c.Sections)
+            .HasForeignKey(cs => cs.ChecklistId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<PredefinedChecklistItem>()
+            .HasOne(p => p.ChecklistSection)
+            .WithMany(cs => cs.Items)
+            .HasForeignKey(p => p.ChecklistSectionId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // BoxDrawing relationships
+        modelBuilder.Entity<BoxDrawing>()
+            .HasOne(bd => bd.Box)
+            .WithMany(b => b.BoxDrawings)
+            .HasForeignKey(bd => bd.BoxId)
+            .OnDelete(DeleteBehavior.Cascade);
+
     }
 
     private void ConfigureIndexes(ModelBuilder modelBuilder)
     {
+        // Project indexes
+        modelBuilder.Entity<Project>()
+                .HasIndex(p => p.ProjectCode)
+                .IsUnique();
+
+        // Box indexes
+        modelBuilder.Entity<Box>()
+            .HasIndex(b => new { b.ProjectId, b.BoxTag })
+            .IsUnique();
+
+
+        modelBuilder.Entity<Box>()
+            .HasIndex(b => new { b.Status, b.ProjectId });
+
+        // BoxActivity indexes
         modelBuilder.Entity<BoxActivity>()
-                .HasIndex(ba => new { ba.BoxId, ba.Status });
+            .HasIndex(ba => new { ba.BoxId, ba.Status });
 
         modelBuilder.Entity<ProgressUpdate>()
             .HasIndex(pu => new { pu.BoxId, pu.UpdateDate });
+        modelBuilder.Entity<BoxActivity>()
+            .HasIndex(ba => new { ba.BoxId, ba.Sequence })
+            .IsUnique();
+
+        // ActivityMaster indexes
+        modelBuilder.Entity<ActivityMaster>()
+            .HasIndex(am => am.ActivityCode)
+            .IsUnique();
+
+        modelBuilder.Entity<ActivityMaster>()
+            .HasIndex(am => new { am.StageNumber, am.SequenceInStage });
+
+        // WIRRecord indexes
+        modelBuilder.Entity<WIRRecord>()
+            .HasIndex(w => new { w.BoxActivityId, w.WIRCode });
+
+        modelBuilder.Entity<WIRRecord>()
+            .HasIndex(w => new { w.Status, w.RequestedDate });
+
+        modelBuilder.Entity<ProgressUpdate>()
+            .HasIndex(pu => new { pu.BoxId, pu.UpdateDate });
+
+        // ProgressUpdateImage indexes
+        modelBuilder.Entity<ProgressUpdateImage>()
+            .HasIndex(img => new { img.ProgressUpdateId, img.Sequence });
+
+        // QualityIssueImage indexes
+        modelBuilder.Entity<QualityIssueImage>()
+            .HasIndex(img => new { img.IssueId, img.Sequence });
+
+        // WIRCheckpointImage indexes
+        modelBuilder.Entity<WIRCheckpointImage>()
+            .HasIndex(img => new { img.WIRId, img.Sequence });
 
         modelBuilder.Entity<DailyProductionLog>()
             .HasIndex(dpl => new { dpl.LogDate, dpl.TeamId });
@@ -182,17 +502,41 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         modelBuilder.Entity<GroupRole>()
             .HasIndex(gr => new { gr.GroupId, gr.RoleId })
             .IsUnique();
+
+        // Permission indexes
+        modelBuilder.Entity<Permission>()
+            .HasIndex(p => p.PermissionKey)
+            .IsUnique();
+
+        modelBuilder.Entity<Permission>()
+            .HasIndex(p => new { p.Module, p.Action });
+
+        modelBuilder.Entity<RolePermission>()
+            .HasIndex(rp => new { rp.RoleId, rp.PermissionId })
+            .IsUnique();
+
+        // CheckpointSection indexes
+        modelBuilder.Entity<ChecklistSection>()
+            .HasIndex(cs => cs.Order);
+
+        // TeamGroup indexes
+        modelBuilder.Entity<TeamGroup>()
+            .HasIndex(tg => tg.TeamId);
+
+        modelBuilder.Entity<TeamGroup>()
+            .HasIndex(tg => new { tg.TeamId, tg.GroupTag })
+            .IsUnique();
     }
 
     private void ConfigureDefaultValues(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Project>()
                 .Property(p => p.Status)
-                .HasDefaultValue("Active");
+                .HasDefaultValue(ProjectStatusEnum.Active);
 
         modelBuilder.Entity<Box>()
-            .Property(b => b.CurrentStatus)
-            .HasDefaultValue("Not Started");
+            .Property(b => b.Status)
+            .HasDefaultValue(BoxStatusEnum.NotStarted);
 
         modelBuilder.Entity<Box>()
             .Property(b => b.ProgressPercentage)
@@ -200,7 +544,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
 
         modelBuilder.Entity<BoxActivity>()
             .Property(ba => ba.Status)
-            .HasDefaultValue("Not Started");
+            .HasDefaultValue(BoxStatusEnum.NotStarted);
 
         modelBuilder.Entity<BoxActivity>()
             .Property(ba => ba.ProgressPercentage)
@@ -241,6 +585,8 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
 
     private async Task CreateAuditLog(CancellationToken cancellationToken)
     {
+        var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
+
         var auditEntries = ChangeTracker.Entries()
                 .Where(e => e.State == EntityState.Added ||
                            e.State == EntityState.Modified ||
@@ -249,7 +595,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
                 {
                     TableName = e.Entity.GetType().Name,
                     Action = e.State.ToString(),
-                    ChangedBy = _currentUserService.Username,
+                    ChangedBy = currentUserId,
                     ChangedDate = _dateTime.Now
                 })
                 .ToList();
@@ -261,3 +607,5 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         }
     }
 }
+
+

@@ -1,0 +1,148 @@
+<div class="create-wir-checkpoint-page">
+  <app-header></app-header>
+  <div class="page-container">
+    <app-sidebar></app-sidebar>
+    
+    <main class="main-content">
+      <div class="page-header">
+        <h1 class="page-title">Create WIR Checkpoint</h1>
+        <p class="page-subtitle" *ngIf="wirRecord">
+          {{ wirRecord.wirCode }} - 
+          <span *ngIf="wirRecord.activityNames && wirRecord.activityNames.length > 0">
+            {{ wirRecord.activityCount }} {{ wirRecord.activityCount === 1 ? 'Activity' : 'Activities' }}
+          </span>
+          <span *ngIf="!wirRecord.activityNames || wirRecord.activityNames.length === 0">
+            {{ wirRecord.activityName }}
+          </span>
+        </p>
+      </div>
+
+      <!-- Loading State -->
+      <div class="loading-container" *ngIf="loading">
+        <div class="spinner"></div>
+        <p>Loading WIR record...</p>
+      </div>
+
+      <!-- Error State -->
+      <div class="error-container" *ngIf="error && !loading">
+        <p class="error-message">{{ error }}</p>
+        <button class="btn btn-primary" (click)="loadWIRRecord()">Retry</button>
+      </div>
+
+      <!-- Create Checkpoint Form -->
+      <div class="form-container" *ngIf="wirRecord && !loading && !error">
+        <form [formGroup]="checkpointForm" (ngSubmit)="onSubmit()">
+          <!-- Error Message -->
+          <div *ngIf="error" class="alert alert-error">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 8v4M12 16h.01"/>
+            </svg>
+            {{ error }}
+          </div>
+
+          <!-- Read-only Information -->
+          <div class="info-section" *ngIf="wirRecord">
+            <h3 class="info-section-title">Checkpoint Information</h3>
+            <div class="info-grid-readonly">
+              <div class="info-item">
+                <span class="label">Box Tag</span>
+                <span class="value">{{ wirRecord.boxTag }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">WIR Number</span>
+                <span class="value">{{ wirRecord.wirCode }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Activity Name</span>
+                <span class="value" *ngIf="wirRecord.activityNames && wirRecord.activityNames.length > 0">
+                  {{ wirRecord.activityNames.join(', ') }} ({{ wirRecord.activityCount }} {{ wirRecord.activityCount === 1 ? 'activity' : 'activities' }})
+                </span>
+                <span class="value" *ngIf="!wirRecord.activityNames || wirRecord.activityNames.length === 0">
+                  {{ wirRecord.activityName }}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hidden Input for BoxActivityId -->
+          <input type="hidden" formControlName="boxActivityId">
+
+          <!-- User Input Fields -->
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label for="wirName">WIR Name</label>
+              <input 
+                id="wirName" 
+                type="text" 
+                formControlName="wirName" 
+                class="form-control"
+                [class.invalid]="checkpointForm.get('wirName')?.invalid && checkpointForm.get('wirName')?.touched"
+                placeholder="e.g., Release from Assembly - WIR-1"
+              >
+              <div *ngIf="checkpointForm.get('wirName')?.invalid && checkpointForm.get('wirName')?.touched" class="error-text">
+                WIR Name max 200 characters.
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="wirDescription">WIR Description</label>
+              <textarea 
+                id="wirDescription" 
+                formControlName="wirDescription" 
+                class="form-control"
+                [class.invalid]="checkpointForm.get('wirDescription')?.invalid && checkpointForm.get('wirDescription')?.touched"
+                rows="3"
+                placeholder="Description of the WIR checkpoint"
+              ></textarea>
+              <div *ngIf="checkpointForm.get('wirDescription')?.invalid && checkpointForm.get('wirDescription')?.touched" class="error-text">
+                WIR Description max 500 characters.
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="attachmentPath">Attachment Path</label>
+              <input 
+                id="attachmentPath" 
+                type="text" 
+                formControlName="attachmentPath" 
+                class="form-control"
+                [class.invalid]="checkpointForm.get('attachmentPath')?.invalid && checkpointForm.get('attachmentPath')?.touched"
+                placeholder="e.g., /attachments/wir-1-drawing.pdf"
+              >
+              <div *ngIf="checkpointForm.get('attachmentPath')?.invalid && checkpointForm.get('attachmentPath')?.touched" class="error-text">
+                Attachment Path max 500 characters.
+              </div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="comments">Comments</label>
+              <textarea 
+                id="comments" 
+                formControlName="comments" 
+                class="form-control"
+                [class.invalid]="checkpointForm.get('comments')?.invalid && checkpointForm.get('comments')?.touched"
+                rows="3"
+                placeholder="Additional comments"
+              ></textarea>
+              <div *ngIf="checkpointForm.get('comments')?.invalid && checkpointForm.get('comments')?.touched" class="error-text">
+                Comments max 1000 characters.
+              </div>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" (click)="goBack()" [disabled]="submitting">
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="submitting || checkpointForm.invalid">
+              <span *ngIf="submitting">Creating...</span>
+              <span *ngIf="!submitting">Create Checkpoint</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+</div>
+

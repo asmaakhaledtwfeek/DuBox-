@@ -1,0 +1,617 @@
+.wir-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gray-600);
+}
+.process-flow-table-container {
+  background: white;
+  border-radius: 8px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.table-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 20px 0;
+  text-align: center;
+  padding: 12px;
+  background: var(--primary-gradient);
+  color: var(--white);
+  border-radius: 8px 8px 0 0;
+  margin: -24px -24px 20px -24px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  border: 2px solid #333;
+  border-radius: 4px;
+}
+
+.process-flow-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  background: white;
+
+  thead {
+    background: #444;
+    color: white;
+    
+    tr {
+      th {
+        padding: 12px 10px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 14px;
+        border: 1px solid #333;
+        white-space: nowrap;
+      }
+    }
+  }
+
+  tbody {
+    tr {
+      border: 1px solid #ddd;
+      transition: background-color 0.2s ease;
+
+      &:hover:not(.wir-row) {
+        background-color: rgba(0, 0, 0, 0.02);
+      }
+
+      // WIR Checkpoint rows - Yellow/Orange background (reduced saturation)
+      &.wir-checkpoint {
+        background: #fff9e6 !important; // Lighter, less saturated yellow
+        border-left: 4px solid var(--primary-color);
+
+        td {
+          border-color: #ffe082;
+          padding: 8px 8px; // Reduced vertical padding to match normal rows
+        }
+
+        &:hover {
+          background: #fff4cc !important;
+        }
+      }
+
+      // Alternate row colors
+      &:nth-child(even):not(.wir-checkpoint) {
+        background-color: #f9f9f9;
+      }
+
+      td {
+        padding: 10px 8px;
+        border: 1px solid #ddd;
+        vertical-align: middle;
+
+        &.text-center {
+          text-align: center;
+        }
+
+        &.team-cell {
+          font-weight: 600;
+          color: #555;
+        }
+
+        &.activity-name {
+          font-weight: 500;
+          color: #333;
+          min-width: 180px;
+
+          strong {
+            color: #000;
+            font-weight: 700;
+          }
+        }
+
+        &.assigned-to {
+          color: #555;
+          font-weight: 500;
+          min-width: 150px;
+        }
+
+        &.actions-cell {
+          padding: 8px;
+          white-space: nowrap;
+        }
+        
+        &.wir-actions-cell {
+          padding: 6px 8px;
+        }
+      }
+    }
+  }
+}
+
+.btn-update-progress {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  margin-right: 6px;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  &:disabled {
+    background: #ccc;
+    color: #666;
+    cursor: not-allowed;
+    opacity: 0.6;
+    
+    &:hover {
+      background: #ccc;
+      transform: none;
+      box-shadow: none;
+    }
+  }
+}
+
+.btn-view-details {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    background: linear-gradient(135deg, var(--amana-green-dark) 0%, var(--amana-teal) 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(232, 119, 34, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// WIR Actions Group - Compact badge-style buttons
+.wir-actions-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.btn-wir-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+
+  svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  span {
+    line-height: 1;
+  }
+
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.btn-wir-qa-qc {
+  background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+  color: white;
+
+  &:hover {
+    background: linear-gradient(135deg, #388e3c 0%, #4caf50 100%);
+    box-shadow: 0 2px 6px rgba(76, 175, 80, 0.35);
+  }
+}
+
+.btn-wir-add-checkpoint {
+  background: linear-gradient(135deg, #ff9800 0%, #ffb74d 100%);
+  color: white;
+
+  &:hover {
+    background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%);
+    box-shadow: 0 2px 6px rgba(255, 152, 0, 0.35);
+  }
+}
+
+// Legacy button styles (kept for backward compatibility if needed elsewhere)
+.btn-qa-qc {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 7px 14px;
+  background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: 6px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+
+  svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  &:hover {
+    background: linear-gradient(135deg, #388e3c 0%, #4caf50 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.btn-add-checkpoint {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 7px 14px;
+  background: linear-gradient(135deg, #ff9800 0%, #ffb74d 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  font-weight: 700;
+  margin-left: 6px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(255, 152, 0, 0.3);
+
+  svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  &:hover {
+    background: linear-gradient(135deg, #f57c00 0%, #ff9800 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.4);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.loading-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+  font-size: 16px;
+
+  p {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+
+    &::before {
+      content: '';
+      width: 20px;
+      height: 20px;
+      border: 3px solid #e0e0e0;
+      border-top-color: #007bff;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+  font-size: 16px;
+}
+
+.progress-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  background: #e3f2fd;
+  color: #1976d2;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+// WIR-specific cell styling
+.wir-activity-info {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stage-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  background: linear-gradient(90deg, var(--amana-orange) 0%, var(--amana-red-1) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: block;
+}
+
+.wir-status-position-cell {
+  padding: 8px;
+  vertical-align: middle;
+}
+
+.wir-location-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  color: #64748b;
+  justify-content: center;
+}
+
+.wir-no-location {
+  color: #999;
+  font-style: italic;
+}
+
+.wir-location-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: rgba(27, 154, 170, 0.08);
+  border-radius: 6px;
+  border: 1px solid rgba(27, 154, 170, 0.15);
+
+  strong {
+    font-weight: 600;
+    color: #1b9aaa;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+}
+
+.wir-activity-cell,
+.wir-team-cell,
+.wir-code-cell {
+  background: transparent !important;
+}
+
+.wir-code-cell strong {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--amana-green) 0%, var(--amana-teal) 100%);
+  color: var(--white);
+  font-size: 13px;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(27, 154, 170, 0.25);
+}
+
+.wir-progress-label {
+  font-size: 13px;
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--amana-teal) 0%, var(--amana-blue) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.wir-status-card {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 14px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border: 1px solid transparent;
+}
+
+.wir-status-pending {
+  color: var(--amana-orange-dark);
+  background: linear-gradient(135deg, rgba(255, 165, 0, 0.2) 0%, rgba(255, 193, 7, 0.2) 100%);
+  border-color: var(--amana-yellow-dark);
+  box-shadow: 0 2px 6px rgba(255, 193, 7, 0.15);
+}
+
+.wir-status-under-review {
+  color: #0891b2; // Cyan-600
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.2) 0%, rgba(8, 145, 178, 0.15) 100%);
+  border-color: #06b6d4; // Cyan-500
+  box-shadow: 0 2px 6px rgba(6, 182, 212, 0.2);
+  animation: pulse-under-review 2s ease-in-out infinite;
+}
+
+@keyframes pulse-under-review {
+  0%, 100% {
+    box-shadow: 0 2px 6px rgba(6, 182, 212, 0.2);
+  }
+  50% {
+    box-shadow: 0 2px 8px rgba(6, 182, 212, 0.35);
+  }
+}
+
+.wir-status-approved {
+  color: var(--amana-green-dark);
+  background: linear-gradient(135deg, rgba(45, 106, 79, 0.2) 0%, rgba(82, 183, 136, 0.2) 100%);
+  border-color: var(--amana-green);
+  box-shadow: 0 2px 6px rgba(45, 106, 79, 0.15);
+}
+
+.wir-status-rejected {
+  color: var(--amana-red-dark);
+  background: linear-gradient(135deg, rgba(193, 18, 31, 0.2) 0%, rgba(220, 53, 69, 0.2) 100%);
+  border-color: var(--amana-red-2);
+  box-shadow: 0 2px 6px rgba(220, 53, 69, 0.15);
+}
+
+.wir-status-conditional {
+  color: var(--amana-orange-dark);
+  background: linear-gradient(135deg, rgba(255, 165, 0, 0.2) 0%, rgba(255, 193, 7, 0.2) 100%);
+  border-color: var(--amana-yellow-dark);
+  box-shadow: 0 2px 6px rgba(255, 193, 7, 0.15);
+}
+
+.placeholder-note,
+.wir-placeholder-note {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  background: linear-gradient(90deg, var(--amana-orange) 0%, var(--amana-yellow-1) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+// Status badges
+.status-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.status-not-started {
+  color: #757575;
+  background-color: #f5f5f5;
+  border: 1px solid #e0e0e0;
+}
+
+.status-in-progress {
+  color: #1976d2;
+  background-color: #e3f2fd;
+  border: 1px solid #90caf9;
+  font-weight: 600;
+}
+
+.status-completed {
+  color: #388e3c;
+  background-color: #e8f5e9;
+  border: 1px solid #a5d6a7;
+  font-weight: 600;
+}
+
+.status-approved {
+  color: #388e3c;
+  background-color: #e8f5e9;
+  border: 1px solid #a5d6a7;
+  font-weight: 700;
+}
+
+.status-on-hold {
+  color: #d32f2f;
+  background-color: #ffebee;
+  border: 1px solid #ef9a9a;
+  font-weight: 600;
+}
+
+.status-default {
+  color: #757575;
+  background-color: #f5f5f5;
+  border: 1px solid #e0e0e0;
+}
+
+// Responsive
+@media (max-width: 1024px) {
+  .process-flow-table {
+    font-size: 12px;
+
+    thead th {
+      padding: 10px 6px;
+      font-size: 12px;
+    }
+
+    tbody td {
+      padding: 8px 6px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .process-flow-table {
+    min-width: 900px;
+  }
+
+  .wir-status-card {
+    width: 100%;
+  }
+}
+

@@ -1,8 +1,9 @@
-﻿using Dubox.Domain.Entities;
+﻿using Dubox.Application.DTOs;
+using Dubox.Domain.Entities;
 
 namespace Dubox.Application.Abstractions;
 
 public interface IJwtProvider
 {
-    string GenerateToken(User user);
+    JwtTokenResult GenerateToken(User user);
 }

@@ -10,7 +10,7 @@ namespace Dubox.Domain.Entities
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int MaterialId { get; set; }
+        public Guid MaterialId { get; set; }
 
         [Required]
         [MaxLength(50)]
@@ -33,6 +33,9 @@ namespace Dubox.Domain.Entities
         public decimal? CurrentStock { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
+        public decimal? AllocatedStock { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
         public decimal? MinimumStock { get; set; }
 
         [Column(TypeName = "decimal(18,2)")]
@@ -44,6 +47,7 @@ namespace Dubox.Domain.Entities
         public bool IsActive { get; set; } = true;
 
         // Navigation properties
+        public virtual ICollection<ActivityMaterial> ActivityMaterials { get; set; } = new List<ActivityMaterial>();
         public virtual ICollection<BoxMaterial> BoxMaterials { get; set; } = new List<BoxMaterial>();
         public virtual ICollection<MaterialTransaction> Transactions { get; set; } = new List<MaterialTransaction>();
 

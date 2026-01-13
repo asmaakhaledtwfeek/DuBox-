@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Dubox.Domain.Enums;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Dubox.Domain.Entities
@@ -9,26 +10,32 @@ namespace Dubox.Domain.Entities
 
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int ChecklistItemId { get; set; }
+        public Guid ChecklistItemId { get; set; }
 
         [Required]
         [ForeignKey(nameof(WIRCheckpoint))]
-        public int WIRId { get; set; }
-
+        public Guid WIRId { get; set; }
+        [Required]
         [MaxLength(500)]
-        public string? CheckpointDescription { get; set; }
+        public string CheckpointDescription { get; set; } = string.Empty;
 
         [MaxLength(200)]
         public string? ReferenceDocument { get; set; }
 
         [MaxLength(20)]
-        public string? Status { get; set; } // Pass, Fail, N/A
+        public CheckListItemStatusEnum Status { get; set; } = CheckListItemStatusEnum.Pending;// Pass, Fail, Pending
 
         public string? Remarks { get; set; }
 
         public int Sequence { get; set; }
 
+        // Reference to the predefined item this was cloned from (optional for backward compatibility)
+        public Guid? PredefinedItemId { get; set; }
+
         // Navigation properties
         public virtual WIRCheckpoint WIRCheckpoint { get; set; } = null!;
+
+        [ForeignKey(nameof(PredefinedItemId))]
+        public virtual PredefinedChecklistItem PredefinedChecklistItem { get; set; } = null!;
     }
 }

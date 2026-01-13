@@ -5,10 +5,12 @@ using Dubox.Application.Behaviors;
 using FluentValidation;
 using MediatR;
 using Microsoft.OpenApi.Models;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient(); // Register IHttpClientFactory
 builder.Services.AddAppServicesDIConfig();
 builder.Services.AddMapsterConfig();
 Dubox.Infrastructure.Bootstrap.AddInfrastructureStrapping(builder.Services);
@@ -34,7 +36,18 @@ builder.Services.AddValidatorsFromAssembly(
 
 builder.Services.AddDbConfig(builder.Configuration);
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        // Use camelCase for JSON property names
+        options.JsonSerializerOptions.PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        // Preserve property names for reference types
+        options.JsonSerializerOptions.DictionaryKeyPolicy = System.Text.Json.JsonNamingPolicy.CamelCase;
+        // Write indented JSON for easier debugging
+        options.JsonSerializerOptions.WriteIndented = true;
+        // Serialize and deserialize enums using their string names
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 
 builder.Services.AddCors(options =>
 {
@@ -86,13 +99,12 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-app.UseExceptionHandler();
+// Auto-apply database migrations on startup
+await app.ApplyDatabaseMigrationsAsync();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseExceptionHandler();
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.UseHttpsRedirection();
 

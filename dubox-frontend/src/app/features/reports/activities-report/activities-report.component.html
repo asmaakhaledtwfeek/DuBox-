@@ -1,0 +1,309 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="activities-report-container">
+  <div class="content-wrapper">
+    <div class="report-header">
+      <div class="header-title-section">
+        <a [routerLink]="['/reports']" class="back-link" title="Back to Reports">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span>Reports</span>
+        </a>
+        <h1>Activities Report</h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn-export btn-export-excel" (click)="exportToExcel()" [disabled]="loading || !reportData || reportData.items.length === 0" title="Export to Excel">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span>Export Excel</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Summary KPIs Section -->
+    <div class="summary-section" *ngIf="summary">
+      <h2 class="section-title">Summary KPIs</h2>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon blue">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ summary.totalActivities | number }}</div>
+            <div class="kpi-label">Total Activities</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon green">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ summary.completed | number }}</div>
+            <div class="kpi-label">Completed</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon orange">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ summary.inProgress | number }}</div>
+            <div class="kpi-label">In Progress</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon gray">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ summary.pending | number }}</div>
+            <div class="kpi-label">Not Started</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon red">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ summary.delayed | number }}</div>
+            <div class="kpi-label">Delayed</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon purple">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ formatProgress(summary.averageProgress) }}</div>
+            <div class="kpi-label">Average Progress</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="filters-section">
+      <div class="filters-header" (click)="filtersCollapsed = !filtersCollapsed">
+        <h2>Filters</h2>
+        <span class="collapse-icon">{{ filtersCollapsed ? '▼' : '▲' }}</span>
+      </div>
+      
+      <div class="filters-content" [class.collapsed]="filtersCollapsed">
+        <div class="filter-row">
+          <div class="filter-group">
+            <label>Project</label>
+            <select [(ngModel)]="selectedProjectId" (change)="onFilterChange()">
+              <option value="">All Projects</option>
+              <option *ngFor="let project of projects" [value]="project.id">{{ project.name }} ({{ project.code }})</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>Team</label>
+            <select [(ngModel)]="selectedTeamId" (change)="onFilterChange()">
+              <option value="">All Teams</option>
+              <option *ngFor="let team of teams" [value]="team.teamId">{{ team.teamName }}</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>Status</label>
+            <select [(ngModel)]="selectedStatus" (change)="onFilterChange()">
+              <option [ngValue]="null">All Statuses</option>
+              <option *ngFor="let status of statusOptions" [ngValue]="status.value">{{ status.label }}</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>Search</label>
+            <input 
+              type="text" 
+              [(ngModel)]="searchTerm" 
+              (input)="onSearchChange()"
+              placeholder="Search activity name, box tag, project code..."
+            />
+          </div>
+        </div>
+
+        <div class="filter-row">
+          <div class="filter-group">
+            <label>Planned Start Date (From)</label>
+            <input type="date" [(ngModel)]="plannedStartDateFrom" (change)="onFilterChange()" />
+          </div>
+
+          <div class="filter-group">
+            <label>Planned Start Date (To)</label>
+            <input type="date" [(ngModel)]="plannedStartDateTo" (change)="onFilterChange()" />
+          </div>
+
+          <div class="filter-group">
+            <label>Planned End Date (From)</label>
+            <input type="date" [(ngModel)]="plannedEndDateFrom" (change)="onFilterChange()" />
+          </div>
+
+          <div class="filter-group">
+            <label>Planned End Date (To)</label>
+            <input type="date" [(ngModel)]="plannedEndDateTo" (change)="onFilterChange()" />
+          </div>
+        </div>
+
+        <div class="filter-actions">
+          <button class="btn-reset" (click)="onResetFilters()">Reset Filters</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div class="error-message" *ngIf="error">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span>{{ error }}</span>
+    </div>
+
+    <!-- Activities Table -->
+    <div class="table-section">
+      <div class="table-header">
+        <h2>Activities</h2>
+        <div class="table-info" *ngIf="reportData">
+          Showing {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, totalCount) }} of {{ totalCount | number }} activities
+        </div>
+      </div>
+
+      <div class="table-wrapper" *ngIf="!loading && reportData">
+        <table class="activities-table">
+          <thead>
+            <tr>
+              <th>Activity Name</th>
+              <th>Box Tag</th>
+              <th>Project</th>
+              <th>Status</th>
+              <th>Progress</th>
+              <th>Actual Start</th>
+              <th>Actual End</th>
+              <th>Actual Duration</th>
+              <th>Delay Days</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let activity of reportData.items" class="activity-row" (click)="navigateToActivityDetails(activity)">
+              <td class="activity-name">{{ activity.activityName }}</td>
+              <td class="box-tag">{{ activity.boxTag }}</td>
+              <td class="project-name">{{ activity.projectName }}</td>
+              <td>
+                <span class="status-badge" [ngClass]="getStatusClass(activity.status)">
+                  {{ getStatusLabel(activity.status) }}
+                </span>
+              </td>
+              <td class="progress-cell">
+                <div class="progress-bar-container">
+                  <div class="progress-bar" [style.width.%]="activity.progressPercentage"></div>
+                  <span class="progress-text">{{ formatProgress(activity.progressPercentage) }}</span>
+                </div>
+              </td>
+              <td class="date-cell">{{ formatDate(activity.actualStartDate) }}</td>
+              <td class="date-cell">{{ formatDate(activity.actualEndDate) }}</td>
+              <td class="duration-cell">
+                <span>{{ formatActualDuration(activity) }}</span>
+              </td>
+              <td class="delay-cell" [class.delayed]="activity.delayDays && activity.delayDays > 0">
+                <span *ngIf="activity.delayDays && activity.delayDays > 0; else noDelay">
+                  {{ activity.delayDaysFormatted || (activity.delayDays !== null && activity.delayDays !== undefined ? activity.delayDays + ' days' : 'N/A') }}
+                </span>
+                <ng-template #noDelay>N/A</ng-template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="empty-state" *ngIf="reportData.items.length === 0">
+          <p>No activities found matching the selected filters.</p>
+        </div>
+      </div>
+
+      <div class="loading-state" *ngIf="loading">
+        <div class="spinner"></div>
+        <p>Loading activities...</p>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-section" *ngIf="reportData && totalPages > 1">
+      <div class="pagination-info">
+        Page {{ currentPage }} of {{ totalPages }}
+      </div>
+      <div class="pagination-controls">
+        <button 
+          class="btn-pagination" 
+          (click)="onPageChange(1)" 
+          [disabled]="currentPage === 1"
+          title="First page">
+          ««
+        </button>
+        <button 
+          class="btn-pagination" 
+          (click)="onPageChange(currentPage - 1)" 
+          [disabled]="currentPage === 1"
+          title="Previous page">
+          ‹
+        </button>
+        
+        <div class="page-numbers">
+          <button 
+            *ngFor="let page of getPageNumbers()" 
+            class="btn-page" 
+            [class.active]="page !== '...' && page === currentPage"
+            (click)="onPageChangePage(page)"
+            [disabled]="page === '...'">
+            {{ page }}
+          </button>
+        </div>
+
+        <button 
+          class="btn-pagination" 
+          (click)="onPageChange(currentPage + 1)" 
+          [disabled]="currentPage === totalPages"
+          title="Next page">
+          ›
+        </button>
+        <button 
+          class="btn-pagination" 
+          (click)="onPageChange(totalPages)" 
+          [disabled]="currentPage === totalPages"
+          title="Last page">
+          »»
+        </button>
+      </div>
+      <div class="page-size-selector">
+        <label>Items per page:</label>
+        <select [(ngModel)]="pageSize" (change)="currentPage = 1; loadReportData()">
+          <option [value]="25">25</option>
+          <option [value]="50">50</option>
+          <option [value]="100">100</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -1,0 +1,549 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="page-content">
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="loading">
+      <div class="spinner"></div>
+      <p>Loading dashboard...</p>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-container" *ngIf="error && !loading">
+      <p class="error-message">{{ error }}</p>
+      <button class="btn btn-primary" (click)="loadProject()">Retry</button>
+    </div>
+
+    <!-- Dashboard Content -->
+    <div *ngIf="!loading && !error && project">
+      <div 
+        class="inline-alert" 
+        *ngIf="banner" 
+        [ngClass]="{
+          'error-alert': banner!.type === 'error',
+          'success-alert': banner!.type === 'success'
+        }"
+        [@fadeOut]>
+        <span>{{ banner!.message }}</span>
+        <button class="icon-button" type="button" (click)="dismissBanner()">
+          ✕
+        </button>
+      </div>
+      <!-- Project Header -->
+      <div class="dashboard-header">
+        <div class="header-left">
+          <div class="title-section">
+            <h1 class="page-title">{{ project.name }}</h1>
+            <span class="badge" [ngClass]="getProjectStatusClass(project.status)">
+              {{ project.status }}
+            </span>
+          </div>
+          <div class="project-meta">
+            <span class="meta-item">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              {{ project.location || 'No location' }}
+            </span>
+            <span class="meta-item">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                <line x1="16" y1="2" x2="16" y2="6"/>
+                <line x1="8" y1="2" x2="8" y2="6"/>
+                <line x1="3" y1="10" x2="21" y2="10"/>
+              </svg>
+              {{ getPriorityStartDateLabel() }}
+           {{
+             getPriorityStartDate()
+               ? (getPriorityStartDate() | date: 'MMM d, yyyy')
+               : 'Not Scheduled'
+           }}
+            </span>
+          </div>
+        </div>
+        <div class="header-right">
+          <button 
+            class="btn btn-secondary" 
+            (click)="editProject()" 
+            *ngIf="canEdit && !isProjectOnHold && !isProjectClosed && !isProjectArchived"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Edit
+          </button>
+          <button 
+            class="btn btn-outline" 
+            type="button" 
+            (click)="openStatusModal()" 
+            *ngIf="canChangeStatus && !isProjectArchived" 
+            [disabled]="!project || (project && !canChangeProjectStatus(project.status))"
+            [title]="project && !canChangeProjectStatus(project.status) ? 'Archived projects cannot have their status changed' : 'Change project status'"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 5v14"/>
+              <path d="M5 12h14"/>
+            </svg>
+            Change Status
+          </button>
+          <button 
+            class="btn btn-outline" 
+            type="button" 
+            (click)="openCompressionDateModal()" 
+            *ngIf="canEdit && !isProjectOnHold && !isProjectClosed && !isProjectArchived"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            Set Commencement Date
+          </button>
+          <button class="btn btn-danger" (click)="openDeleteConfirm()" *ngIf="canDelete && !isProjectArchived">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"/>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+            Delete
+          </button>
+        </div>
+      </div>
+
+      <!-- KPI Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card clickable-card" (click)="viewBoxes()">
+          <div class="kpi-icon" style="background: rgba(46, 125, 50, 0.1); color: var(--primary-color);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ dashboardData.totalBoxes }}</div>
+            <div class="kpi-label">Total Boxes</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background: rgba(16, 185, 129, 0.1); color: var(--success-color);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ dashboardData.completedBoxes }}</div>
+            <div class="kpi-label">Completed</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background: rgba(59, 130, 246, 0.1); color: var(--info-color);">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ dashboardData.inProgressBoxes }}</div>
+            <div class="kpi-label">In Progress</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon" style="background: rgba(139, 92, 246, 0.1); color: #8b5cf6;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+              <line x1="12" y1="22.08" x2="12" y2="12"/>
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ dashboardData.dispatchedBoxes }}</div>
+            <div class="kpi-label">Dispatched</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress Overview -->
+      <div class="progress-card card">
+        <h2 class="card-title">Overall Progress</h2>
+        <div class="progress-content">
+          <div class="progress-stats">
+            <div class="stat">
+              <div class="stat-label">Completion Rate</div>
+              <div class="stat-value">{{ formatProgress(project.progress) }}%</div>
+            </div>
+            <div class="progress-bar-large">
+              <div class="progress-fill" [style.width.%]="getProgressForBar(project.progress)" [style.backgroundColor]="getProgressColor(project.progress)"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Excel Import Section -->
+      <div class="excel-import card" #excelSection *ngIf="canImportBoxes && !isProjectArchived">
+        <div class="excel-header">
+          <div>
+            <h2 class="card-title">Bulk Import via Excel</h2>
+            <p class="helper-text">Download the template, fill in your boxes, then upload to add them all at once.</p>
+          </div>
+          <button class="btn btn-secondary" (click)="downloadTemplate()" [disabled]="templateDownloading">
+            <span *ngIf="!templateDownloading">Download template</span>
+            <span *ngIf="templateDownloading" class="spinner-inline">
+              <span class="spinner small"></span>
+              Preparing...
+            </span>
+          </button>
+        </div>
+
+        <div class="upload-zone"
+             [class.dragging]="isDraggingFile && !isProjectOnHold && !isProjectClosed && !isProjectArchived"
+             [class.disabled]="isProjectOnHold || isProjectClosed || isProjectArchived"
+             (dragover)="onDragOver($event)"
+             (dragleave)="onDragLeave($event)"
+             (drop)="onDrop($event)">
+          <input type="file"
+                 #fileInput
+                 accept=".xlsx,.xls"
+                 hidden
+                 [disabled]="isProjectOnHold || isProjectClosed || isProjectArchived"
+                 (change)="onFileChange($event)">
+
+          <ng-container *ngIf="!selectedFile">
+            <div class="upload-icon">
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14"/>
+                <path d="M5 12l7-7 7 7"/>
+                <path d="M5 19h14"/>
+              </svg>
+            </div>
+            <p class="upload-title" *ngIf="!isProjectOnHold && !isProjectClosed && !isProjectArchived">Drag & drop your completed Excel file here</p>
+            <p class="upload-title" *ngIf="isProjectOnHold || isProjectClosed || isProjectArchived" style="color: #999;">File upload is disabled for projects {{ isProjectArchived ? 'archived' : (isProjectClosed ? 'closed' : 'on hold') }}</p>
+            <p class="upload-subtitle" *ngIf="!isProjectOnHold && !isProjectClosed && !isProjectArchived">or</p>
+            <button 
+              class="btn btn-outline" 
+              type="button" 
+              (click)="onBrowseClick()"
+              [disabled]="isProjectOnHold || isProjectClosed || isProjectArchived"
+              *ngIf="!isProjectOnHold && !isProjectClosed && !isProjectArchived"
+            >
+              Browse files
+            </button>
+            <p class="upload-note" *ngIf="!isProjectOnHold && !isProjectClosed && !isProjectArchived">Accepted formats: .xlsx, .xls (max 10 MB)</p>
+          </ng-container>
+
+          <div class="file-pill" *ngIf="selectedFile">
+            <div>
+              <p class="file-name">{{ selectedFile.name }}</p>
+              <p class="file-meta">{{ formatFileSize(selectedFile.size) }}</p>
+            </div>
+            <button class="link-btn" type="button" (click)="removeSelectedFile()">Remove</button>
+          </div>
+        </div>
+
+        <div class="upload-actions" *ngIf="selectedFile">
+          <button class="btn btn-primary"
+                  type="button"
+                  (click)="uploadSelectedFile()"
+                  [disabled]="importingExcel">
+            <span *ngIf="!importingExcel">Upload & Import</span>
+            <span *ngIf="importingExcel" class="spinner-inline">
+              <span class="spinner small"></span>
+              Importing...
+            </span>
+          </button>
+        </div>
+
+        <div class="alert alert-error" *ngIf="importErrorMessage">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          {{ importErrorMessage }}
+        </div>
+
+        <div class="alert alert-success" *ngIf="importSuccessMessage">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          {{ importSuccessMessage }}
+        </div>
+
+        <div class="import-summary" *ngIf="importResult">
+          <div class="summary-grid">
+            <div class="summary-card tone-success">
+              <p>Successful rows</p>
+              <strong>{{ importResult.successCount }}</strong>
+            </div>
+            <div class="summary-card tone-warning">
+              <p>Failed rows</p>
+              <strong>{{ importResult.failureCount }}</strong>
+            </div>
+          </div>
+
+          <div *ngIf="importResult.errors?.length" class="result-table">
+            <div class="table-head">
+              <h3>Validation issues</h3>
+              <span>{{ importResult.errors.length }} errors</span>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let error of importResult.errors; let idx = index">
+                    <td>{{ idx + 1 }}</td>
+                    <td>{{ error }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div *ngIf="importResult.importedBoxes?.length" class="result-table">
+            <div class="table-head">
+              <h3>Imported boxes</h3>
+              <span>{{ importResult.importedBoxes.length }} records</span>
+            </div>
+            <div class="table-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Tag</th>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Floor</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let box of importResult.importedBoxes">
+                    <td>{{ box.boxTag }}</td>
+                    <td>{{ box.boxName || '—' }}</td>
+                    <td>{{ box.boxType || '—' }}</td>
+                    <td>{{ box.floor || '—' }}</td>
+                    <td>
+                      <span class="status-chip">{{ box.status || 'NotStarted' }}</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" *ngIf="showStatusModal" (click)="closeStatusModal()">
+  <div class="project-status-modal" (click)="$event.stopPropagation()" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2v20M2 12h20"/>
+          </svg>
+        </div>
+        <div>
+          <h3>Update Project Status</h3>
+          <p class="modal-subtitle">{{ project?.name }}</p>
+        </div>
+      </div>
+      <button class="icon-button" (click)="closeStatusModal()" [disabled]="statusUpdating" title="Close" aria-label="Close dialog">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <!-- Status Transition Display -->
+      <div class="status-transition" *ngIf="project && selectedStatus">
+        <div class="status-item current">
+          <div class="status-label">Current Status</div>
+          <div class="status-badge-wrapper">
+            <span class="status-badge badge-info">
+              <span class="status-dot"></span>
+              {{ project.status }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="status-arrow">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </div>
+        
+        <div class="status-item new">
+          <div class="status-label">New Status</div>
+          <div class="status-badge-wrapper">
+            <span class="status-badge badge-primary">
+              <span class="status-dot"></span>
+              {{ selectedStatus }}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Selection -->
+      <div class="status-selection-wrapper" *ngIf="statusOptions.length > 0">
+        <label class="form-label" for="statusSelect">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+          Select New Status
+        </label>
+        <div class="select-wrapper">
+          <select
+            id="statusSelect"
+            class="status-select"
+            [(ngModel)]="selectedStatus"
+            [disabled]="statusUpdating"
+          >
+            <option *ngFor="let status of statusOptions" [value]="status">
+              {{ status }}
+            </option>
+          </select>
+          <svg class="select-arrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+      </div>
+      
+      <!-- No Options Available Message -->
+      <div class="info-message" *ngIf="statusOptions.length === 0 && !statusError">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        <span>No status changes available for archived projects.</span>
+      </div>
+
+      <!-- Error Message -->
+      <div class="error-message" *ngIf="statusError">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>{{ statusError }}</span>
+      </div>
+    </div>
+    
+    <div class="modal-actions">
+      <button 
+        class="btn btn-secondary" 
+        type="button" 
+        (click)="closeStatusModal()" 
+        [disabled]="statusUpdating"
+      >
+        Cancel
+      </button>
+      <button
+        class="btn btn-primary"
+        type="button"
+        (click)="updateStatus()"
+        [disabled]="!selectedStatus || statusUpdating"
+      >
+        <svg *ngIf="!statusUpdating" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        <span class="spinner-small" *ngIf="statusUpdating"></span>
+        <span>{{ statusUpdating ? 'Updating...' : 'Update Status' }}</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Compression Start Date Modal -->
+<div class="modal-backdrop" *ngIf="showCompressionDateModal">
+  <div class="modal-container" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <div>
+        <h2>Set Commencement Date</h2>
+        <p>Select the Commencement Date for this project.</p>
+      </div>
+      <button class="icon-button" (click)="closeCompressionDateModal()" aria-label="Close dialog" [disabled]="compressionDateUpdating">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <label for="compressionDateInput">Commencement Date</label>
+      <input
+        id="compressionDateInput"
+        type="date"
+        class="form-control"
+        [value]="formatDateForInput(selectedCompressionDate)"
+        (change)="onCompressionDateChange($event)"
+        [disabled]="compressionDateUpdating"
+      />
+      <p class="error-text" *ngIf="compressionDateError">{{ compressionDateError }}</p>
+      <p class="helper-text" style="margin-top: var(--spacing-xs); color: var(--gray-500); font-size: var(--font-size-sm);">
+        Leave empty to clear the Commencement Date.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" type="button" (click)="closeCompressionDateModal()" [disabled]="compressionDateUpdating">
+        Cancel
+      </button>
+      <button
+        class="btn btn-primary"
+        type="button"
+        (click)="updateCompressionStartDate()"
+        [disabled]="compressionDateUpdating"
+      >
+        <span *ngIf="!compressionDateUpdating">Save</span>
+        <span *ngIf="compressionDateUpdating" class="spinner-inline">
+          <span class="spinner small"></span>
+          Saving...
+        </span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-backdrop" *ngIf="showDeleteConfirm" (click)="cancelDelete()">
+  <div class="confirm-modal" (click)="$event.stopPropagation()">
+    <div class="modal-icon-wrapper">
+      <div class="modal-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="3 6 5 6 21 6"/>
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          <line x1="10" y1="11" x2="10" y2="17"/>
+          <line x1="14" y1="11" x2="14" y2="17"/>
+        </svg>
+      </div>
+    </div>
+    <div class="modal-content">
+      <h3>Delete this project?</h3>
+      <p>This action cannot be undone. Are you sure you want to permanently remove this project and all its associated data?</p>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline-secondary" type="button" (click)="cancelDelete()" [disabled]="deleting">
+        Cancel
+      </button>
+      <button class="btn btn-danger-primary" type="button" (click)="deleteProject()" [disabled]="deleting">
+        <span class="spinner small" *ngIf="deleting"></span>
+        <span *ngIf="!deleting">Delete Project</span>
+        <span *ngIf="deleting">Deleting...</span>
+      </button>
+    </div>
+  </div>
+</div>

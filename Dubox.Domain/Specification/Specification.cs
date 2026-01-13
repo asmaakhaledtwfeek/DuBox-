@@ -17,7 +17,7 @@ namespace Dubox.Domain.Specification
         public bool IsTotalCountEnable { get; private set; }
         public bool IsDistinct { get; private set; }
         public bool IsGlobalFiltersIgnored { get; private set; }
-        public bool IsSplitQuery { get; private set; }
+        public bool IsSplitQuery { get;  set; }
 
         protected void AddInclude(string includeExpression)
             => Includes.Add(includeExpression);

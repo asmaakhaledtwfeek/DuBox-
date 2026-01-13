@@ -10,7 +10,7 @@ namespace Dubox.Domain.Entities
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-        public int TeamId { get; set; }
+        public Guid TeamId { get; set; }
 
         [Required]
         [MaxLength(50)]
@@ -20,20 +20,27 @@ namespace Dubox.Domain.Entities
         [MaxLength(200)]
         public string TeamName { get; set; } = string.Empty;
 
-        [MaxLength(100)]
-        public string? Department { get; set; } // Civil, MEP, QC
+        [Required]
+        [ForeignKey(nameof(Department))]
+        public Guid DepartmentId { get; set; }
+
+        public virtual Department Department { get; set; } = null!;
 
         [MaxLength(100)]
         public string? Trade { get; set; } // Assembly, Mechanical, Electrical, Finishing
 
-        [MaxLength(200)]
-        public string? TeamLeaderName { get; set; }
+        [ForeignKey(nameof(TeamLeader))]
+        public Guid? TeamLeaderMemberId { get; set; }
+        public virtual TeamMember? TeamLeader { get; set; }
 
-        public int? TeamSize { get; set; }
+        [NotMapped]
+        public int TeamSize => Members.Count(m => m.IsActive);
 
         public bool IsActive { get; set; } = true;
 
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+        
+        public Guid? CreatedBy { get; set; }
 
         // Navigation properties
         public virtual ICollection<TeamMember> Members { get; set; } = new List<TeamMember>();

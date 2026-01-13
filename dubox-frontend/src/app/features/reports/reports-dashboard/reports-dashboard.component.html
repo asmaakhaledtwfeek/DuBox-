@@ -1,0 +1,139 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="page-content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-content">
+        <div class="title-section">
+          <h1 class="page-title">Reports Dashboard</h1>
+          <p class="page-subtitle">Real-time tracking and analytics for all project activities</p>
+        </div>
+        <div class="header-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <line x1="10" y1="9" x2="8" y2="9"/>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Stats Summary -->
+    <div class="stats-section">
+      <h2 class="section-title">Quick Statistics</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon blue">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ loading ? '--' : summary.totalBoxes }}</div>
+            <div class="stat-label">Total Boxes</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon green">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ loading ? '--' : summary.averageProgress }}%</div>
+            <div class="stat-label">Average Progress</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon orange">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <polyline points="12 6 12 12 16 14"/>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ loading ? '--' : summary.pendingActivities }}</div>
+            <div class="stat-label">Pending Activities</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon purple">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+            </svg>
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ loading ? '--' : summary.activeTeams }}</div>
+            <div class="stat-label">Active Teams</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Reports Grid -->
+    <div class="reports-section" *ngIf="!activeReport">
+      <h2 class="section-title">Available Reports</h2>
+      <div class="reports-grid">
+        <div
+          *ngFor="let report of reports"
+          (click)="showReport(report.id)"
+          class="report-card clickable"
+          [attr.data-color]="report.color"
+        >
+          <div class="card-icon" [attr.data-color]="report.color">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [innerHTML]="getIconSvg(report.icon)">
+            </svg>
+          </div>
+          <div class="card-content">
+            <h3 class="card-title">{{ report.title }}</h3>
+            <p class="card-description">{{ report.description }}</p>
+          </div>
+          <div class="card-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="5" y1="12" x2="19" y2="12"/>
+              <polyline points="12 5 19 12 12 19"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Report Display -->
+    <div class="active-report-section" *ngIf="activeReport">
+      <!-- Report Header -->
+      <div class="report-header">
+        <button class="btn-back" (click)="closeReport()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+          Back to Reports
+        </button>
+        <div class="report-controls">
+          <!-- Project Filter -->
+          <select 
+            [(ngModel)]="selectedProject" 
+            (change)="onProjectChange()"
+            class="filter-select"
+            *ngIf="projects.length > 0"
+          >
+            <option value="">All Projects</option>
+            <option *ngFor="let project of projects" [value]="project.id">
+              {{ project.name }}
+            </option>
+          </select>
+          
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

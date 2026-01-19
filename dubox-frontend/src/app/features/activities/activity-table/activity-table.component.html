@@ -171,6 +171,56 @@
               </div>
             </td>
           </tr>
+
+          <!-- Checkpoint Version Row -->
+          <tr 
+            *ngIf="isCheckpointRow(row)"
+            class="checkpoint-version-row"
+            [ngClass]="{
+              'checkpoint-rejected': getCheckpointFromRow(row)?.status === 'Rejected',
+              'checkpoint-approved': getCheckpointFromRow(row)?.status === 'Approved',
+              'checkpoint-pending': getCheckpointFromRow(row)?.status === 'Pending'
+            }"
+          >
+            <td class="text-center checkpoint-version-label" colspan="3">
+              <span class="version-badge">
+                {{ getCheckpointFromRow(row)?.wirNumber }} - v{{ getCheckpointFromRow(row)?.version || 1 }}
+              </span>
+            </td>
+            <td class="text-center checkpoint-inspector">
+              <span class="inspector-name">{{ getCheckpointFromRow(row)?.inspectorName || '-' }}</span>
+            </td>
+            <td class="text-center checkpoint-status" colspan="3">
+              <span class="checkpoint-status-badge" [ngClass]="'status-' + (getCheckpointFromRow(row)?.status || 'pending').toLowerCase()">
+                {{ getCheckpointFromRow(row)?.status || 'Pending' }}
+              </span>
+            </td>
+            <td class="text-center checkpoint-dates" colspan="2">
+              <div class="checkpoint-date-info">
+                <span *ngIf="getCheckpointFromRow(row)?.inspectionDate" class="inspection-date">
+                  {{ formatDate(getCheckpointFromRow(row)?.inspectionDate) }}
+                </span>
+                <span *ngIf="!getCheckpointFromRow(row)?.inspectionDate">-</span>
+              </div>
+            </td>
+            <td class="text-center checkpoint-actions">
+              <button 
+                *ngIf="!isCheckpointReadOnly(getCheckpointFromRow(row)!, row.parentWIR!) && canManageCheckpoint"
+                class="btn-checkpoint-view"
+                (click)="navigateToCheckpointDetails(getCheckpointFromRow(row)!, row.parentWIR!)"
+                title="View Checkpoint Details"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                View
+              </button>
+              <span *ngIf="isCheckpointReadOnly(getCheckpointFromRow(row)!, row.parentWIR!)" class="readonly-label">
+                (Read-only)
+              </span>
+            </td>
+          </tr>
         </ng-container>
       </tbody>
     </table>

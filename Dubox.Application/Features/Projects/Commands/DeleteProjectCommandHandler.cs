@@ -44,8 +44,33 @@ public class DeleteProjectCommandHandler : IRequestHandler<DeleteProjectCommand,
         var hasBoxes = await _unitOfWork.Repository<Box>()
             .IsExistAsync(b => b.ProjectId == request.ProjectId, cancellationToken);
 
-        if (hasBoxes)
-            return Result.Failure<bool>("Cannot delete project with existing boxes. Delete boxes first.");
+        // Check if project has progress - if yes, archive instead of delete
+        if (project.ProgressPercentage > 0)
+        {
+            var oldStatus = project.Status;
+            project.Status = ProjectStatusEnum.Archived;
+            project.ArchivedDated = DateTime.UtcNow;
+            _unitOfWork.Repository<Project>().Update(project);
+
+            var archiveLog = new AuditLog
+            {
+                TableName = nameof(Project),
+                RecordId = projectId,
+                Action = "Archived",
+                OldValues = $"Code: {projectCode}, Name: {projectName}, Status: {oldStatus.ToString()}",
+                NewValues = $"Status: {ProjectStatusEnum.Archived}",
+                ChangedBy = currentUserId,
+                ChangedDate = DateTime.UtcNow,
+                Description = $"Project '{projectName}' with code '{projectCode}' was moved to archived due to existing progress ({project.ProgressPercentage}%)."
+            };
+            await _unitOfWork.Repository<AuditLog>().AddAsync(archiveLog, cancellationToken);
+
+            await _unitOfWork.CompleteAsync(cancellationToken);
+
+            return Result.Failure<bool>("Project has progress and cannot be deleted. The project has been moved to archived projects instead.");
+        }
+
+        // No progress - proceed with soft delete
         project.IsActive = false;
         project.DeletedDated = DateTime.UtcNow;
         _unitOfWork.Repository<Project>().Update(project);

@@ -91,12 +91,12 @@ namespace Dubox.Application.Features.QualityIssues.Commands
             var memberName = teamMember != null ? teamMember.EmployeeName ?? "Unknown" : "None";
             
             // Get CC User name if provided
-            TeamMember? ccUser = null;
+            User? ccUser = null;
             if (request.CCUserId.HasValue && request.CCUserId.Value != Guid.Empty)
             {
-                ccUser = await _unitOfWork.Repository<TeamMember>().GetByIdAsync(request.CCUserId.Value);
+                ccUser = await _unitOfWork.Repository<User>().GetByIdAsync(request.CCUserId.Value);
             }
-            var ccUserName = ccUser?.EmployeeName ?? "None";
+            var ccUserName = ccUser?.FullName ?? "None";
 
             var auditLog = new AuditLog
             {

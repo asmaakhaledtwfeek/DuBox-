@@ -470,6 +470,36 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     return this.permissionService.hasPermission('wir', 'review');
   }
 
+  /**
+   * Check if this is a regenerated version (version > 1)
+   */
+  isRegeneratedVersion(): boolean {
+    return (this.wirCheckpoint?.version || 1) > 1;
+  }
+
+  /**
+   * Check if the previous version was rejected
+   */
+  isPreviousVersionRejected(): boolean {
+    // This could be enhanced to actually check the previous version's status
+    // For now, we assume if version > 1, it was created after rejection
+    return this.isRegeneratedVersion();
+  }
+
+  /**
+   * Check if this checkpoint version is read-only
+   * (Older rejected versions should be read-only)
+   */
+  isCheckpointVersionReadOnly(): boolean {
+    if (!this.wirCheckpoint) return false;
+    
+    // A checkpoint is read-only if:
+    // 1. It has been rejected AND
+    // 2. There is a newer version (indicated by newVersionId)
+    return this.wirCheckpoint.status === WIRCheckpointStatus.Rejected && 
+           !!this.wirCheckpoint.newVersionId;
+  }
+
   ngOnInit(): void {
     this.projectId = this.route.snapshot.params['projectId'];
     this.boxId = this.route.snapshot.params['boxId'];

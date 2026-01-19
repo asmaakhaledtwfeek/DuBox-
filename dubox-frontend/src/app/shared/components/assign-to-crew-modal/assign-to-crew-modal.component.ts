@@ -2,6 +2,7 @@ import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChange
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TeamService } from '../../../core/services/team.service';
+import { UserService } from '../../../core/services/user.service';
 import { Team, TeamMember } from '../../../core/models/team.model';
 import { Subscription } from 'rxjs';
 
@@ -12,6 +13,7 @@ export interface AssignableIssue {
   assignedTo?: string | null;
   assignedToUserId?: string | null;
   assignedTeamName?: string | null;
+  ccUserId?: string | null;
 }
 
 @Component({
@@ -25,20 +27,26 @@ export class AssignToCrewModalComponent implements OnInit, OnChanges, OnDestroy 
   @Input() issue: AssignableIssue | null = null;
   @Input() isOpen: boolean = false;
   @Output() close = new EventEmitter<void>();
-  @Output() assign = new EventEmitter<{ teamId: string | null; memberId: string | null }>();
+  @Output() assign = new EventEmitter<{ teamId: string | null; memberId: string | null; ccUserId: string | null }>();
 
   availableTeams: Team[] = [];
   availableMembers: TeamMember[] = [];
+  availableCCUsers: {userId: string, userName: string, userEmail: string}[] = [];
   loadingTeams = false;
   loadingMembers = false;
+  loadingCCUsers = false;
   assignLoading = false;
   assignError = '';
   selectedTeamId: string | null = null;
   selectedMemberId: string | null = null;
+  selectedCCUserId: string | null = null;
 
   private teamIdSubscription?: Subscription;
 
-  constructor(private teamService: TeamService) {}
+  constructor(
+    private teamService: TeamService,
+    private userService: UserService
+  ) {}
 
   ngOnInit(): void {
     if (this.isOpen && this.issue) {
@@ -68,6 +76,17 @@ export class AssignToCrewModalComponent implements OnInit, OnChanges, OnDestroy 
     // Preselect team and member if issue is already assigned
     const assignedTeamId = this.issue.assignedTo || (this.issue as any).assignedToTeamId || (this.issue as any).AssignedToTeamId;
     const assignedMemberId = this.issue.assignedToUserId || (this.issue as any).assignedToMemberId || (this.issue as any).AssignedToMemberId;
+    const ccUserId = this.issue.ccUserId || (this.issue as any).ccUserId || (this.issue as any).CcUserId;
+    
+    // Load CC users
+    this.loadAllUsersForCC();
+    
+    // Preselect CC user if it exists
+    if (ccUserId) {
+      this.selectedCCUserId = ccUserId.toString();
+    } else {
+      this.selectedCCUserId = null;
+    }
     
     // Load teams first, then preselect team and member if they exist
     this.loadAvailableTeams(() => {
@@ -109,6 +128,7 @@ export class AssignToCrewModalComponent implements OnInit, OnChanges, OnDestroy 
   private resetModal(): void {
     this.selectedTeamId = null;
     this.selectedMemberId = null;
+    this.selectedCCUserId = null;
     this.availableMembers = [];
     this.assignError = '';
     this.assignLoading = false;
@@ -193,6 +213,26 @@ export class AssignToCrewModalComponent implements OnInit, OnChanges, OnDestroy 
     });
   }
 
+  loadAllUsersForCC(): void {
+    this.loadingCCUsers = true;
+    this.userService.getUsers(1, 1000).subscribe({
+      next: (response) => {
+        this.availableCCUsers = response.items.map((user: any) => ({
+          userId: user.userId,
+          userName: user.fullName || user.userName || 'Unknown',
+          userEmail: user.email || ''
+        }));
+        console.log('✅ Loaded CC Users:', this.availableCCUsers);
+        this.loadingCCUsers = false;
+      },
+      error: (err) => {
+        console.error('❌ Error loading users for CC:', err);
+        this.availableCCUsers = [];
+        this.loadingCCUsers = false;
+      }
+    });
+  }
+
   onAssign(): void {
     if (!this.issue || !this.issue.issueId) {
       this.assignError = 'Invalid issue selected';
@@ -201,8 +241,9 @@ export class AssignToCrewModalComponent implements OnInit, OnChanges, OnDestroy 
 
     const teamId = this.selectedTeamId && this.selectedTeamId.trim() !== '' ? this.selectedTeamId : null;
     const memberId = this.selectedMemberId && this.selectedMemberId.trim() !== '' ? this.selectedMemberId : null;
+    const ccUserId = this.selectedCCUserId && this.selectedCCUserId.trim() !== '' ? this.selectedCCUserId : null;
 
-    this.assign.emit({ teamId, memberId });
+    this.assign.emit({ teamId, memberId, ccUserId });
   }
 
   getIssueId(): string | undefined {

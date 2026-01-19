@@ -220,6 +220,18 @@ export class ApiService {
   }
 
   /**
+   * Download file with full response (including headers)
+   */
+  downloadWithResponse(endpoint: string): Observable<any> {
+    return this.http.get(`${this.baseUrl}/${endpoint}`, {
+      responseType: 'blob',
+      observe: 'response'
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
    * Build HTTP params from object
    */
   private buildParams(params?: any): HttpParams {

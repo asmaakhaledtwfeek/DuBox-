@@ -16,7 +16,11 @@
         <h1 class="page-title" *ngIf="!qualityIssuesOnlyView">QA/QC Activity Approval Checklist</h1>
         <h1 class="page-title" *ngIf="qualityIssuesOnlyView">All Quality Issues</h1>
         <p class="page-subtitle" *ngIf="!qualityIssuesOnlyView && wirRecord">
-          {{ wirRecord.wirCode }} - 
+          {{ wirRecord.wirCode }} 
+          <span *ngIf="(wirCheckpoint?.version || 0) > 1" class="version-badge-inline">
+            v{{ wirCheckpoint?.version }}
+          </span>
+          - 
           <span *ngIf="wirRecord && wirRecord.activityNames && wirRecord.activityNames.length > 0">
             {{ wirRecord.activityCount }} {{ wirRecord.activityCount === 1 ? 'Activity' : 'Activities' }}
           </span>
@@ -24,6 +28,19 @@
             {{ wirRecord?.activityName }}
           </span>
         </p>
+        
+        <!-- Version Notice for Regenerated Checkpoints -->
+        <div *ngIf="wirCheckpoint && isRegeneratedVersion()" class="version-notice">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>
+            This is version {{ wirCheckpoint?.version }} - created after previous version was rejected.
+            <span *ngIf="isPreviousVersionRejected()">The previous checkpoint (v{{ (wirCheckpoint?.version || 1) - 1 }}) is available for reference in read-only mode.</span>
+          </span>
+        </div>
         <p class="page-subtitle" *ngIf="qualityIssuesOnlyView">
           Box-wide quality issues across every Stage checkpoint.
         </p>

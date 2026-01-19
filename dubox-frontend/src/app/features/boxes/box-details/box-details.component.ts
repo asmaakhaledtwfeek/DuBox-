@@ -1266,6 +1266,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   closeCreateQualityIssueModal(): void {
     this.isCreateQualityIssueModalOpen = false;
+    this.createQualityIssueError = '';
     this.newQualityIssueForm = {
       issueType: 'Defect',
       severity: 'Major',
@@ -1277,7 +1278,6 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     };
     this.availableTeamUsers = [];
     this.qualityIssueImages = [];
-    this.createQualityIssueError = '';
     if (this.cameraStream) {
       this.cameraStream.getTracks().forEach(track => track.stop());
       this.cameraStream = null;
@@ -2333,14 +2333,14 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.selectedIssueForAssign = null;
   }
 
-  onAssignToCrew(event: { teamId: string | null; memberId: string | null }): void {
+  onAssignToCrew(event: { teamId: string | null; memberId: string | null; ccUserId: string | null }): void {
     if (!this.selectedIssueForAssign || !this.selectedIssueForAssign.issueId) {
       return;
     }
 
     this.assignLoading = true;
 
-    this.wirService.assignQualityIssueToTeam(this.selectedIssueForAssign.issueId, event.teamId, event.memberId).subscribe({
+    this.wirService.assignQualityIssueToTeam(this.selectedIssueForAssign.issueId, event.teamId, event.memberId, event.ccUserId).subscribe({
       next: (updatedIssue) => {
         this.assignLoading = false;
         

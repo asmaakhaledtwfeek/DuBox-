@@ -66,7 +66,8 @@ builder.Services.AddCors(options =>
             )
               .AllowAnyHeader()
                 .AllowAnyMethod()
-                .AllowCredentials(); // only if using cookies or auth headers
+                .AllowCredentials() // only if using cookies or auth headers
+                .WithExposedHeaders("Content-Disposition"); // Expose Content-Disposition header for filename extraction
         });
 });
 

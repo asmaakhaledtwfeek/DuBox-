@@ -584,9 +584,38 @@ export class BoxService {
 
   /**
    * Download Excel template for bulk box import
+   * Returns an object with blob and filename
    */
-  downloadBoxesTemplate(projectId: string): Observable<Blob> {
-    return this.apiService.download(`${this.endpoint}/template?projectId=${projectId}`);
+  downloadBoxesTemplate(projectId: string): Observable<{ blob: Blob; filename: string }> {
+    return this.apiService.downloadWithResponse(`${this.endpoint}/template?projectId=${projectId}`).pipe(
+      map((response: any) => {
+        const blob = response.body;
+        let filename = 'BoxesImportTemplate.xlsx'; // default filename
+        
+        // Try to extract filename from Content-Disposition header
+        const contentDisposition = response.headers.get('Content-Disposition');
+        if (contentDisposition) {
+          console.log('Content-Disposition header:', contentDisposition);
+          
+          // Try to match filename*=UTF-8''filename or filename="filename" or filename=filename
+          let filenameMatch = contentDisposition.match(/filename\*=(?:UTF-8'')?([^;\n]*)/i);
+          if (filenameMatch && filenameMatch[1]) {
+            filename = decodeURIComponent(filenameMatch[1]);
+          } else {
+            filenameMatch = contentDisposition.match(/filename=["']?([^;"'\n]+)["']?/i);
+            if (filenameMatch && filenameMatch[1]) {
+              filename = filenameMatch[1].replace(/['"]/g, '').trim();
+            }
+          }
+          
+          console.log('Extracted filename:', filename);
+        } else {
+          console.warn('No Content-Disposition header found in response');
+        }
+        
+        return { blob, filename };
+      })
+    );
   }
 
   /**

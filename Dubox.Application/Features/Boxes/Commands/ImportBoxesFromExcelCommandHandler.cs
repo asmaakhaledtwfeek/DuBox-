@@ -1,4 +1,4 @@
-﻿using Dubox.Application.DTOs;
+using Dubox.Application.DTOs;
 using Dubox.Application.Services;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
@@ -24,7 +24,6 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
 
     private static readonly string[] RequiredHeaders = new[]
     {
-        "Box Tag (Auto-Generated)",
         "Box Type",
         "Floor",
         "Building Number"
@@ -300,23 +299,9 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                     // Generate the Box Tag
                     var generatedBoxTag = string.Join("-", boxTagParts);
                     
-                    // Check for duplicates
-                    if (existingBoxTags.Contains(generatedBoxTag.ToLower()))
-                    {
-                        errors.Add($"Row {rowNumber}: Box with tag '{generatedBoxTag}' already exists in this project");
-                        failureCount++;
-                        continue;
-                    }
+                   
                     
-                    // Check for duplicates in the current import batch
-                    // We need to check against previously generated tags in this batch
-                    var duplicateInBatch = boxesToCreate.Any(b => b.BoxTag.Equals(generatedBoxTag, StringComparison.OrdinalIgnoreCase));
-                    if (duplicateInBatch)
-                    {
-                        errors.Add($"Row {rowNumber}: Duplicate BoxTag '{generatedBoxTag}' found in the import file (same combination of Project-Building-Floor-Type-SubType)");
-                        failureCount++;
-                        continue;
-                    }
+                   
                     string? parsedZone = null;
                     if (!string.IsNullOrWhiteSpace(boxDto.Zone))
                         parsedZone = boxDto.Zone;
@@ -474,14 +459,14 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
     {
         return new ImportBoxFromExcelDto
         {
-            BoxTag = GetStringValue(row, "Box Tag (Auto-Generated)"), // Box Tag is auto-generated, not read from Excel
-            BoxName = GetStringValue(row, "Box Name"),
-            BoxType = GetStringValue(row, "Box Type"),
-            BoxSubType = GetStringValue(row, "Box Sub Type"),
-            Floor = GetStringValue(row, "Floor"),
-            BuildingNumber = GetStringValue(row, "Building Number"),
-            BoxFunction = GetStringValue(row, "Box Function"),
-            Zone = GetStringValue(row, "Zone"),
+            BoxTag = string.Empty, // Box Tag is auto-generated in the backend, not read from Excel
+            BoxName = GetStringValue(row, "Box Name" , toUpper: true),
+            BoxType = GetStringValue(row, "Box Type", toUpper: true),
+            BoxSubType = GetStringValue(row, "Box Sub Type", toUpper: true),
+            Floor = GetStringValue(row, "Floor", toUpper: true),
+            BuildingNumber = GetStringValue(row, "Building Number", toUpper: true),
+            BoxFunction = GetStringValue(row, "Box Function", toUpper: true),
+            Zone = GetStringValue(row, "Zone", toUpper: true),
             Length = GetDecimalValue(row, "Length"),
             Width = GetDecimalValue(row, "Width"),
             Height = GetDecimalValue(row, "Height"),
@@ -489,11 +474,12 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
         };
     }
 
-    private string GetStringValue(Dictionary<string, object?> row, string key)
+    private string GetStringValue(Dictionary<string, object?> row, string key, bool toUpper = false)
     {
         if (row.TryGetValue(key, out var value) && value != null)
         {
-            return value.ToString()?.Trim() ?? string.Empty;
+            var stringValue = value.ToString()?.Trim() ?? string.Empty;
+            return toUpper ? stringValue.ToUpper() : stringValue;
         }
         return string.Empty;
     }

@@ -1,4 +1,4 @@
-﻿namespace Dubox.Application.Specifications
+namespace Dubox.Application.Specifications
 {
     using Dubox.Application.DTOs;
     using Dubox.Application.Features.WIRCheckpoints.Queries;
@@ -62,7 +62,10 @@
             if (query.To.HasValue)
                 AddCriteria(x => x.CreatedDate <= query.To.Value);
 
+            // Order by created date descending, then by version descending
+            // This ensures latest checkpoints appear first, with newest versions on top
             AddOrderByDescending(x => x.CreatedDate);
+            AddOrderByDescending(x => x.Version);
         }
     }
 

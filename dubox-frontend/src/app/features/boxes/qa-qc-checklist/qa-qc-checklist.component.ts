@@ -470,6 +470,36 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     return this.permissionService.hasPermission('wir', 'review');
   }
 
+  /**
+   * Check if this is a regenerated version (version > 1)
+   */
+  isRegeneratedVersion(): boolean {
+    return (this.wirCheckpoint?.version || 1) > 1;
+  }
+
+  /**
+   * Check if the previous version was rejected
+   */
+  isPreviousVersionRejected(): boolean {
+    // This could be enhanced to actually check the previous version's status
+    // For now, we assume if version > 1, it was created after rejection
+    return this.isRegeneratedVersion();
+  }
+
+  /**
+   * Check if this checkpoint version is read-only
+   * (Older rejected versions should be read-only)
+   */
+  isCheckpointVersionReadOnly(): boolean {
+    if (!this.wirCheckpoint) return false;
+    
+    // A checkpoint is read-only if:
+    // 1. It has been rejected AND
+    // 2. There is a newer version (indicated by newVersionId)
+    return this.wirCheckpoint.status === WIRCheckpointStatus.Rejected && 
+           !!this.wirCheckpoint.newVersionId;
+  }
+
   ngOnInit(): void {
     this.projectId = this.route.snapshot.params['projectId'];
     this.boxId = this.route.snapshot.params['boxId'];
@@ -500,6 +530,8 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     
     const stepParam = this.route.snapshot.queryParamMap.get('step');
     const viewParam = this.route.snapshot.queryParamMap.get('view');
+    const wirIdParam = this.route.snapshot.queryParamMap.get('wirId'); // Check for specific checkpoint version
+    
     if (viewParam === 'quality-list') {
       this.qualityIssuesOnlyView = true;
     }
@@ -510,7 +542,20 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     
     this.initForm();
     this.loadBox(); // Load box to get its status
-    this.loadWIRRecord();
+    
+    // If wirId is provided, load that specific checkpoint version directly
+    if (wirIdParam) {
+      this.loadSpecificCheckpoint(wirIdParam);
+      // Clear the wirId query param after loading
+      this.router.navigate([], { 
+        queryParams: { wirId: null }, 
+        queryParamsHandling: 'merge',
+        replaceUrl: true 
+      });
+    } else {
+      this.loadWIRRecord();
+    }
+    
     this.loadBoxQualityIssues();
     // Don't load predefined items here - will load when modal opens with correct WIR filter
   }
@@ -757,6 +802,58 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
 
   get qualityIssuesArray(): FormArray {
     return this.qualityIssuesForm.get('issues') as FormArray;
+  }
+
+  /**
+   * Load a specific checkpoint version by its wirId
+   * Used when navigating directly to a specific checkpoint version from the activities table
+   */
+  loadSpecificCheckpoint(wirId: string): void {
+    this.loading = true;
+    this.error = '';
+    
+    console.log('Loading specific checkpoint with wirId:', wirId);
+    
+    // Load the WIR record first (needed for context)
+    this.wirService.getWIRRecordsByActivity(this.activityId).subscribe({
+      next: (wirs) => {
+        if (wirs && wirs.length > 0) {
+          this.wirRecord = wirs[0]; // Use the first WIR record as context
+        }
+        
+        // Now load the specific checkpoint by ID
+        this.wirService.getWIRCheckpointById(wirId).subscribe({
+          next: (checkpoint) => {
+            console.log('Loaded specific checkpoint:', checkpoint);
+            this.wirCheckpoint = checkpoint;
+            this.syncReviewFormFromCheckpoint();
+            this.processCheckpointLoaded();
+          },
+          error: (err) => {
+            console.error('Error loading specific checkpoint:', err);
+            this.error = err.error?.message || err.message || 'Failed to load checkpoint';
+            this.loading = false;
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Error loading WIR record:', err);
+        // Continue to load checkpoint even if WIR record fails
+        this.wirService.getWIRCheckpointById(wirId).subscribe({
+          next: (checkpoint) => {
+            console.log('Loaded specific checkpoint (without WIR record):', checkpoint);
+            this.wirCheckpoint = checkpoint;
+            this.syncReviewFormFromCheckpoint();
+            this.processCheckpointLoaded();
+          },
+          error: (err) => {
+            console.error('Error loading specific checkpoint:', err);
+            this.error = err.error?.message || err.message || 'Failed to load checkpoint';
+            this.loading = false;
+          }
+        });
+      }
+    });
   }
 
   loadWIRRecord(): void {

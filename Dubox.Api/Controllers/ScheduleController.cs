@@ -31,6 +31,18 @@ public class ScheduleController : ControllerBase
     }
 
     /// <summary>
+    /// Get schedule activities by project ID
+    /// </summary>
+    [HttpGet("activities/project/{projectId}")]
+    public async Task<IActionResult> GetScheduleActivitiesByProject(Guid projectId, CancellationToken cancellationToken)
+    {
+        var query = new GetScheduleActivitiesByProjectQuery(projectId);
+        var result = await _mediator.Send(query, cancellationToken);
+
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>
     /// Get schedule activity details by ID
     /// </summary>
     [HttpGet("activities/{id}")]

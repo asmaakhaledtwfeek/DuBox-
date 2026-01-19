@@ -615,3 +615,170 @@
   }
 }
 
+// Checkpoint Version Rows
+.checkpoint-version-row {
+  background: #f0f4ff !important; // Light blue background for checkpoint versions
+  border-left: 4px solid #3f51b5 !important;
+  font-size: 12px;
+
+  td {
+    padding: 8px !important;
+    border-color: #d0d8f0 !important;
+  }
+
+  &:hover {
+    background: #e3ebff !important;
+  }
+
+  // Rejected checkpoint version
+  &.checkpoint-rejected {
+    background: #fff3f3 !important;
+    border-left-color: #f44336 !important;
+
+    td {
+      border-color: #ffcdd2 !important;
+    }
+
+    &:hover {
+      background: #ffe6e6 !important;
+    }
+  }
+
+  // Approved checkpoint version
+  &.checkpoint-approved {
+    background: #f1f8f4 !important;
+    border-left-color: #4caf50 !important;
+
+    td {
+      border-color: #c8e6c9 !important;
+    }
+
+    &:hover {
+      background: #e8f5e9 !important;
+    }
+  }
+
+  // Pending checkpoint version
+  &.checkpoint-pending {
+    background: #fffbf0 !important;
+    border-left-color: #ff9800 !important;
+
+    td {
+      border-color: #ffe082 !important;
+    }
+
+    &:hover {
+      background: #fff8e1 !important;
+    }
+  }
+}
+
+.checkpoint-version-label {
+  font-weight: 600;
+  color: #333;
+}
+
+.version-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: linear-gradient(135deg, #3f51b5 0%, #5c6bc0 100%);
+  color: white;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 4px rgba(63, 81, 181, 0.2);
+}
+
+.checkpoint-inspector {
+  .inspector-name {
+    font-weight: 500;
+    color: #555;
+  }
+}
+
+.checkpoint-status {
+  .checkpoint-status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    &.status-pending {
+      background: linear-gradient(135deg, #ff9800 0%, #ffb74d 100%);
+      color: white;
+    }
+
+    &.status-approved {
+      background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+      color: white;
+    }
+
+    &.status-rejected {
+      background: linear-gradient(135deg, #f44336 0%, #ef5350 100%);
+      color: white;
+    }
+
+    &.status-conditionalapproval {
+      background: linear-gradient(135deg, #2196f3 0%, #42a5f5 100%);
+      color: white;
+    }
+  }
+}
+
+.checkpoint-date-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+
+  .inspection-date {
+    font-weight: 500;
+    color: #555;
+    font-size: 11px;
+  }
+}
+
+.checkpoint-actions {
+  .btn-checkpoint-view {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    background: linear-gradient(135deg, #3f51b5 0%, #5c6bc0 100%);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 11px;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    &:hover {
+      background: linear-gradient(135deg, #303f9f 0%, #3f51b5 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(63, 81, 181, 0.3);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  .readonly-label {
+    font-size: 11px;
+    color: #999;
+    font-style: italic;
+  }
+}
+

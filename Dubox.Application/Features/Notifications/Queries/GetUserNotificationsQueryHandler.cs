@@ -33,9 +33,12 @@ namespace Dubox.Application.Features.Notifications.Queries
 
                 // Get user's notifications using specification
                 var spec = new GetUserNotificationsSpecification(currentUserId, request.UnreadOnly);
-                var (notificationsQuery, totalCount) = _unitOfWork.Repository<Notification>().GetWithSpec(spec);
+                var (notificationsQuery, _) = _unitOfWork.Repository<Notification>().GetWithSpec(spec);
 
                 var allNotifications = notificationsQuery.ToList();
+                
+                // Use the actual count from the materialized list
+                var actualTotalCount = allNotifications.Count;
                 
                 var notifications = allNotifications
                     .Skip((request.PageNumber - 1) * request.PageSize)
@@ -61,10 +64,10 @@ namespace Dubox.Application.Features.Notifications.Queries
                 var result = new NotificationResponseDto
                 {
                     Notifications = notifications,
-                    TotalCount = totalCount,
+                    TotalCount = actualTotalCount,
                     PageNumber = request.PageNumber,
                     PageSize = request.PageSize,
-                    TotalPages = (int)Math.Ceiling(totalCount / (double)request.PageSize)
+                    TotalPages = (int)Math.Ceiling(actualTotalCount / (double)request.PageSize)
                 };
 
                 return Result.Success(result);

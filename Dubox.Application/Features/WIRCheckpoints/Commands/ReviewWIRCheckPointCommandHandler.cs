@@ -1,4 +1,4 @@
-﻿using Dubox.Application.DTOs;
+using Dubox.Application.DTOs;
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
@@ -111,15 +111,90 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
 
             if (!imagesProcessResult.IsSuccess)
                 return Result.Failure<WIRCheckpointDto>(imagesProcessResult.Item2);
+            
+            // Save the rejected checkpoint first
             await _unitOfWork.CompleteAsync(cancellationToken);
+
+            // If checkpoint is rejected, create a new version automatically
+            WIRCheckpoint? newVersion = null;
+            if (request.Status == WIRCheckpointStatusEnum.Rejected)
+            {
+                newVersion = await CreateNewCheckpointVersion(wir, cancellationToken);
+                await _unitOfWork.CompleteAsync(cancellationToken);
+            }
 
             // Reload checkpoint with images to include them in DTO
             wir = _unitOfWork.Repository<WIRCheckpoint>()
                 .GetEntityWithSpec(new GetWIRCheckpointByIdSpecification(request.WIRId));
 
             var dto = wir.Adapt<WIRCheckpointDto>();
+            
+            // Include information about the newly created version in the response
+            if (newVersion != null)
+            {
+                dto.NewVersionId = newVersion.WIRId;
+                dto.NewVersionNumber = newVersion.Version;
+            }
 
             return Result.Success(dto);
+        }
+
+        private async Task<WIRCheckpoint> CreateNewCheckpointVersion(WIRCheckpoint rejectedCheckpoint, CancellationToken cancellationToken)
+        {
+            var parentWIRId = rejectedCheckpoint.ParentWIRId ?? rejectedCheckpoint.WIRId;
+            
+            var allVersions = await _unitOfWork.Repository<WIRCheckpoint>()
+                .FindAsync(c => c.WIRId == parentWIRId || c.ParentWIRId == parentWIRId, cancellationToken);
+            
+            var nextVersion = allVersions.Any() 
+                ? allVersions.Max(v => v.Version) + 1 
+                : rejectedCheckpoint.Version + 1;
+
+            // Create new checkpoint version
+            var newCheckpoint = new WIRCheckpoint
+            {
+                BoxId = rejectedCheckpoint.BoxId,
+                WIRCode = rejectedCheckpoint.WIRCode,
+                WIRName = rejectedCheckpoint.WIRName,
+                WIRDescription = rejectedCheckpoint.WIRDescription,
+                RequestedDate = DateTime.UtcNow, // New request date for the new version
+                RequestedBy = rejectedCheckpoint.RequestedBy,
+                
+                // Clear review-related fields (clean slate for new review)
+                InspectionDate = null,
+                InspectorName = null,
+                InspectorRole = null,
+                Status = WIRCheckpointStatusEnum.Pending,
+                ApprovalDate = null,
+                Comments = null,
+                
+                // Versioning fields
+                Version = nextVersion,
+                ParentWIRId = parentWIRId,
+                
+                // Set created by to current user
+                CreatedBy = rejectedCheckpoint.CreatedBy,
+                CreatedDate = DateTime.UtcNow
+            };
+
+            // Copy checklist items (but clear their review status)
+            foreach (var item in rejectedCheckpoint.ChecklistItems)
+            {
+                newCheckpoint.ChecklistItems.Add(new WIRChecklistItem
+                {
+                    CheckpointDescription = item.CheckpointDescription,
+                    ReferenceDocument = item.ReferenceDocument,
+                    Status = CheckListItemStatusEnum.Pending, // Reset to pending
+                    Remarks = null, // Clear remarks for new review
+                    Sequence = item.Sequence,
+                    PredefinedItemId = item.PredefinedItemId
+                });
+            }
+
+
+            await _unitOfWork.Repository<WIRCheckpoint>().AddAsync(newCheckpoint);
+            
+            return newCheckpoint;
         }
     }
 

@@ -84,8 +84,11 @@ namespace Dubox.Application.Features.IssueComments.Commands
                 var title = $"{actionType} on Issue {issue.IssueNumber}";
                 var message = $"{author?.FullName ?? "Someone"} {(request.IsUpdate ? "updated a comment" : "added a comment")}: \"{commentPreview}\"";
                 
-                // Direct link to the issue (frontend will handle scrolling to comment)
-                var directLink = $"/projects/{issue.BoxId}/quality-issues/{issue.IssueId}?commentId={comment.CommentId}";
+                // Get the box to retrieve the projectId
+                var box = await _unitOfWork.Repository<Box>().GetByIdAsync(issue.BoxId, cancellationToken);
+                
+                // Direct link to the box details page with quality-issues tab and issue modal
+                var directLink = $"/projects/{box?.ProjectId}/boxes/{issue.BoxId}?tab=quality-issues&issueId={issue.IssueId}&commentId={comment.CommentId}";
 
                 // Create notifications for each user
                 var notifications = new List<Notification>();

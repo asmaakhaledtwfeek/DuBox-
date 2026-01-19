@@ -1,4 +1,4 @@
-﻿using Dubox.Application.DTOs;
+using Dubox.Application.DTOs;
 using Dubox.Application.Features.QualityIssues.Queries;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Specification;
@@ -7,7 +7,7 @@ namespace Dubox.Application.Specifications
 {
     public class GetQualityIssuesSpecification : Specification<QualityIssue>
     {
-        public GetQualityIssuesSpecification(GetQualityIssuesQuery query, List<Guid>? accessibleProjectIds = null)
+        public GetQualityIssuesSpecification(GetQualityIssuesQuery query, List<Guid>? accessibleProjectIds = null, Guid? currentUserId = null)
         {
             AddInclude(nameof(QualityIssue.Box));
             AddInclude($"{nameof(QualityIssue.Box)}.{nameof(Box.Project)}");
@@ -38,10 +38,21 @@ namespace Dubox.Application.Specifications
             AddCriteria(q => q.Box.Project.Status != Domain.Enums.ProjectStatusEnum.Closed);
             AddCriteria(q => q.Box.Project.Status != Domain.Enums.ProjectStatusEnum.Archived);
 
-            // Apply visibility filtering based on accessible projects
+            // Apply visibility filtering based on accessible projects OR assigned to current user
             // null means access to all projects (SystemAdmin/Viewer)
-            if (accessibleProjectIds != null)
+            if (accessibleProjectIds != null && currentUserId.HasValue)
             {
+                // User can see quality issues that are either:
+                // 1. In accessible projects, OR
+                // 2. Assigned to them (via TeamMember)
+                AddCriteria(q => 
+                    accessibleProjectIds.Contains(q.Box.ProjectId) || 
+                    (q.AssignedToMember != null && q.AssignedToMember.UserId == currentUserId.Value)
+                );
+            }
+            else if (accessibleProjectIds != null)
+            {
+                // Fallback if no currentUserId (existing behavior)
                 AddCriteria(q => accessibleProjectIds.Contains(q.Box.ProjectId));
             }
 

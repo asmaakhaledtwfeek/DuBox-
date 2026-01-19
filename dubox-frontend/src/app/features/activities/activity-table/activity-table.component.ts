@@ -13,12 +13,14 @@ import { WIRRecord, WIRStatus, WIRCheckpoint } from '../../../core/models/wir.mo
 import { PermissionService } from '../../../core/services/permission.service';
 import { calculateAndFormatDuration, calculateDurationInDays } from '../../../core/utils/duration.util';
 
-// Combined type for activities and WIR rows
+// Combined type for activities, WIR rows, and checkpoint version rows
 export interface TableRow {
-  type: 'activity' | 'wir';
+  type: 'activity' | 'wir' | 'checkpoint';
   sequence: number;
-  data: BoxActivityDetail | WIRRecord;
+  data: BoxActivityDetail | WIRRecord | WIRCheckpoint;
   isPlaceholder?: boolean;
+  checkpointVersion?: number; // For checkpoint rows
+  parentWIR?: WIRRecord; // Reference to parent WIR for checkpoint rows
 }
 
 @Component({
@@ -42,7 +44,7 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
 
   activitiesWithDetails: BoxActivityDetail[] = [];
   wirRecords: WIRRecord[] = [];
-  wirCheckpoints: Map<string, WIRCheckpoint> = new Map(); // Map WIR code to checkpoint
+  wirCheckpoints: Map<string, WIRCheckpoint[]> = new Map(); // Map WIR code to array of checkpoint versions
   tableRows: TableRow[] = [];
   isModalOpen = false;
   selectedActivity: BoxActivityDetail | null = null;
@@ -215,13 +217,23 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
 
     this.wirService.getWIRCheckpointsByBox(this.boxId).subscribe({
       next: (checkpoints) => {
-        // Map checkpoints by WIR number/code
+        // Map checkpoints by WIR number/code, grouping multiple versions together
         this.wirCheckpoints.clear();
         checkpoints.forEach(checkpoint => {
           if (checkpoint.wirNumber) {
-            this.wirCheckpoints.set(checkpoint.wirNumber.toUpperCase(), checkpoint);
+            const wirCode = checkpoint.wirNumber.toUpperCase();
+            if (!this.wirCheckpoints.has(wirCode)) {
+              this.wirCheckpoints.set(wirCode, []);
+            }
+            this.wirCheckpoints.get(wirCode)!.push(checkpoint);
           }
         });
+        
+        // Sort each checkpoint array by version descending (newest first)
+        this.wirCheckpoints.forEach((versions) => {
+          versions.sort((a, b) => (b.version || 1) - (a.version || 1));
+        });
+        
         this.buildTableRows();
         this.isLoading = false;
       },
@@ -313,6 +325,20 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
           data: wirData,
           isPlaceholder: !wirRecord
         });
+
+        // If WIR has checkpoints, add checkpoint version rows
+        if (wirRecord && this.hasCheckpoint(wirRecord)) {
+          const checkpointVersions = this.getCheckpointVersions(wirRecord);
+          checkpointVersions.forEach((checkpoint, index) => {
+            rows.push({
+              type: 'checkpoint',
+              sequence: activity.sequence,
+              data: checkpoint,
+              checkpointVersion: checkpoint.version || 1,
+              parentWIR: wirRecord
+            });
+          });
+        }
       }
     });
 
@@ -602,6 +628,20 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
+   * Check if row is a checkpoint version row
+   */
+  isCheckpointRow(row: TableRow): boolean {
+    return row.type === 'checkpoint';
+  }
+
+  /**
+   * Get checkpoint from checkpoint row
+   */
+  getCheckpointFromRow(row: TableRow): WIRCheckpoint | null {
+    return row.type === 'checkpoint' ? (row.data as WIRCheckpoint) : null;
+  }
+
+  /**
    * Get WIR display status (prefer checkpoint status if available, otherwise WIR record status)
    */
   getWIRDisplayStatus(row: TableRow): any {
@@ -877,15 +917,45 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
    */
   hasCheckpoint(wirRecord: WIRRecord): boolean {
     if (!wirRecord?.wirCode) return false;
-    return this.wirCheckpoints.has(wirRecord.wirCode.toUpperCase());
+    const versions = this.wirCheckpoints.get(wirRecord.wirCode.toUpperCase());
+    return versions !== undefined && versions.length > 0;
   }
 
   /**
-   * Get checkpoint for a WIR record
+   * Get the latest (newest version) checkpoint for a WIR record
    */
   getCheckpoint(wirRecord: WIRRecord): WIRCheckpoint | null {
     if (!wirRecord?.wirCode) return null;
-    return this.wirCheckpoints.get(wirRecord.wirCode.toUpperCase()) || null;
+    const versions = this.wirCheckpoints.get(wirRecord.wirCode.toUpperCase());
+    // Return the first checkpoint (already sorted by version descending in loadWIRCheckpoints)
+    // versions[0] is the latest because array is sorted with newest first (descending order)
+    return versions && versions.length > 0 ? versions[0] : null;
+  }
+
+  /**
+   * Get all checkpoint versions for a WIR record
+   */
+  getCheckpointVersions(wirRecord: WIRRecord): WIRCheckpoint[] {
+    if (!wirRecord?.wirCode) return [];
+    return this.wirCheckpoints.get(wirRecord.wirCode.toUpperCase()) || [];
+  }
+
+  /**
+   * Get formatted version label for a checkpoint
+   */
+  getCheckpointVersionLabel(checkpoint: WIRCheckpoint): string {
+    const version = checkpoint.version || 1;
+    return version > 1 ? `v${version}` : '';
+  }
+
+  /**
+   * Check if a checkpoint version is read-only (rejected older versions)
+   */
+  isCheckpointReadOnly(checkpoint: WIRCheckpoint, wirRecord: WIRRecord): boolean {
+    const versions = this.getCheckpointVersions(wirRecord);
+    const isRejected = checkpoint.status === 'Rejected';
+    const isNotLatest = versions.length > 0 && checkpoint.wirId !== versions[0].wirId;
+    return isRejected && isNotLatest;
   }
 
   /**
@@ -970,6 +1040,32 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
    */
   refreshCheckpoints(): void {
     this.loadWIRCheckpoints();
+  }
+
+  /**
+   * Navigate to specific checkpoint version details
+   */
+  navigateToCheckpointDetails(checkpoint: WIRCheckpoint, wirRecord: WIRRecord): void {
+    if (!checkpoint || !wirRecord || !this.projectId || !this.boxId) {
+      console.error('Missing required data for checkpoint navigation');
+      return;
+    }
+    
+    const step = this.getCheckpointStep(checkpoint);
+    this.router.navigate([
+      '/projects',
+      this.projectId,
+      'boxes',
+      this.boxId,
+      'activities',
+      wirRecord.boxActivityId,
+      'qa-qc'
+    ], {
+      queryParams: { 
+        step: step,
+        wirId: checkpoint.wirId // Pass the specific checkpoint version ID
+      }
+    });
   }
 
   /**
@@ -1072,11 +1168,38 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
-   * Check if WIR has position values set (bay, row, or position)
+   * Check if WIR position should be locked based on checkpoint status
+   * Position locking logic:
+   * - If latest checkpoint is Approved OR ConditionalApproval → Position is NOT BLOCKED (return false)
+   * - If latest checkpoint is Pending OR Rejected → Position is BLOCKED (return true)
+   * - If no checkpoint exists → Check if position values are set
    */
   private hasWIRPositionValues(wir: WIRRecord): boolean {
     if (!wir) return false;
     
+    // Get the latest checkpoint for this WIR
+    const checkpoint = this.getCheckpoint(wir);
+    
+    // If there's a checkpoint, check its status to determine if position is locked
+    if (checkpoint) {
+      const checkpointStatus = checkpoint.status;
+      
+      // Position is NOT BLOCKED if checkpoint is Approved or ConditionalApproval
+      if (checkpointStatus === 'Approved' || checkpointStatus === 'ConditionalApproval') {
+        console.log(`Latest checkpoint is ${checkpointStatus} - position NOT BLOCKED`);
+        return false; // Unlock position (enable update progress button)
+      }
+      
+      // Position is BLOCKED if checkpoint is Pending or Rejected
+      if (checkpointStatus === 'Pending' || checkpointStatus === 'Rejected') {
+        console.log(`Latest checkpoint is ${checkpointStatus} - position BLOCKED`);
+        return true; // Lock position (disable update progress button)
+      }
+      
+      console.log(`Latest checkpoint status: ${checkpointStatus} - unknown status, checking position values`);
+    }
+    
+    // Fallback: If no checkpoint or unknown status, check if position values exist
     const bayValue = (wir.bay && wir.bay.trim() !== '' && wir.bay !== '-') ? wir.bay : '';
     const rowValue = (wir.row && wir.row.trim() !== '' && wir.row !== '-') ? wir.row : '';
     const positionValue = (wir.position && wir.position.trim() !== '' && wir.position !== '-') ? wir.position : '';

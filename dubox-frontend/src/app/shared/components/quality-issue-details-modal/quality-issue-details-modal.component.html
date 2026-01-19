@@ -357,7 +357,11 @@
           </svg>
           <h4>Comments & Discussion</h4>
         </div>
-        <app-issue-comments [issueId]="issue.issueId" [issueNumber]="issue.issueNumber || ''" [issueTitle]="issue.issueDescription || ''"></app-issue-comments>
+        <app-issue-comments 
+          [issueId]="issue.issueId" 
+          [issueNumber]="issue.issueNumber || ''" 
+          [issueTitle]="issue.issueDescription || ''"
+          [commentId]="commentId"></app-issue-comments>
       </div>
     </div>
 

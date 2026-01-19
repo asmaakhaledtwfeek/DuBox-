@@ -780,11 +780,30 @@
                 <!-- Card Header -->
                 <div class="checkpoint-header">
                   <div class="checkpoint-id-section">
-                    <div class="checkpoint-number">{{ getDisplayWirNumber(checkpoint.wirNumber) }}</div>
+                    <div class="checkpoint-number">
+                      {{ getDisplayWirNumber(checkpoint.wirNumber) }}
+                      <span class="checkpoint-version" *ngIf="getCheckpointVersionLabel(checkpoint)" 
+                            [title]="'Version ' + (checkpoint.version || 1) + ' of ' + getTotalVersionCount(checkpoint)">
+                        {{ getCheckpointVersionLabel(checkpoint) }}
+                      </span>
+                    </div>
                     <div class="checkpoint-status-badge" [ngClass]="getWIRCheckpointStatusClass(checkpoint.status)">
                       <span class="status-indicator"></span>
                       {{ getWIRCheckpointStatusLabel(checkpoint.status) }}
                     </div>
+                    <!-- View All Versions Button in Header -->
+                    <button 
+                      *ngIf="hasMultipleVersions(checkpoint)"
+                      class="btn-view-versions-header" 
+                      (click)="toggleCheckpointVersions(checkpoint)"
+                      [class.expanded]="isCheckpointVersionsExpanded(checkpoint)"
+                      [title]="isCheckpointVersionsExpanded(checkpoint) ? 'Hide older versions' : 'View all checkpoint versions'"
+                    >
+                      <svg class="chevron-icon" [class.rotated]="isCheckpointVersionsExpanded(checkpoint)" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"/>
+                      </svg>
+                      <span>{{ isCheckpointVersionsExpanded(checkpoint) ? 'Hide' : 'View All' }} ({{ getTotalVersionCount(checkpoint) }})</span>
+                    </button>
                   </div>
                 </div>
 
@@ -907,6 +926,132 @@
                     </svg>
                     <span>Download</span>
                   </button>
+                </div>
+
+                <!-- Older Versions List (expandable) -->
+                <div class="older-versions-list" *ngIf="hasMultipleVersions(checkpoint) && isCheckpointVersionsExpanded(checkpoint)" [@slideDown]>
+                  <div class="older-version-card" *ngFor="let olderVersion of getOlderVersions(checkpoint)">
+                    <!-- Older Version Header -->
+                    <div class="checkpoint-header older-version-header">
+                      <div class="checkpoint-id-section">
+                        <div class="checkpoint-number older">
+                          {{ getDisplayWirNumber(olderVersion.wirNumber) }}
+                          <span class="checkpoint-version older" 
+                                [title]="'Version ' + (olderVersion.version || 1) + ' (Historical)'">
+                            {{ getCheckpointVersionLabel(olderVersion) || 'v' + (olderVersion.version || 1) }}
+                          </span>
+                        </div>
+                        <div class="checkpoint-status-badge" [ngClass]="getWIRCheckpointStatusClass(olderVersion.status)">
+                          <span class="status-indicator"></span>
+                          {{ getWIRCheckpointStatusLabel(olderVersion.status) }}
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Older Version Body -->
+                    <div class="checkpoint-body">
+                      <h3 class="checkpoint-title">{{ getDisplayWirText(olderVersion.wirName) || 'Inspection Checkpoint' }}</h3>
+                      <p class="checkpoint-description">{{ getDisplayWirText(olderVersion.wirDescription) || 'Auto-generated quality control checkpoint' }}</p>
+
+                      <!-- Info Grid -->
+                      <div class="checkpoint-info-grid">
+                        <div class="info-item">
+                          <div class="info-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                              <line x1="16" y1="2" x2="16" y2="6"/>
+                              <line x1="8" y1="2" x2="8" y2="6"/>
+                              <line x1="3" y1="10" x2="21" y2="10"/>
+                            </svg>
+                          </div>
+                          <div class="info-content">
+                            <div class="info-label">Requested</div>
+                            <div class="info-value">{{ formatWIRDate(olderVersion.requestedDate) }}</div>
+                            <div class="info-sub">{{ olderVersion.requestedBy || 'System' }}</div>
+                          </div>
+                        </div>
+
+                        <div class="info-item">
+                          <div class="info-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                              <circle cx="12" cy="7" r="4"/>
+                            </svg>
+                          </div>
+                          <div class="info-content">
+                            <div class="info-label">Inspector</div>
+                            <div class="info-value">{{ olderVersion.inspectorName || 'QC Engineer' }}</div>
+                            <div class="info-sub">{{ olderVersion.inspectorRole || 'Pending assignment' }}</div>
+                          </div>
+                        </div>
+
+                        <div class="info-item">
+                          <div class="info-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <path d="M9 11l3 3L22 4"/>
+                              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                            </svg>
+                          </div>
+                          <div class="info-content">
+                            <div class="info-label">Checklist Items</div>
+                            <div class="info-value">{{ olderVersion.checklistItems?.length || 0 }} items</div>
+                            <div class="info-sub">to review</div>
+                          </div>
+                        </div>
+
+                        <div class="info-item">
+                          <div class="info-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <circle cx="12" cy="12" r="10"/>
+                              <polyline points="12 6 12 12 16 14"/>
+                            </svg>
+                          </div>
+                          <div class="info-content">
+                            <div class="info-label">Last Update</div>
+                            <div class="info-value">{{ formatWIRDate(olderVersion.approvalDate || olderVersion.inspectionDate || olderVersion.createdDate) }}</div>
+                            <div class="info-sub">{{ olderVersion.approvalDate ? 'Approved' : 'Awaiting approval' }}</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Older Version Actions (Read-Only: Print & Download Only) -->
+                    <div class="checkpoint-actions older-version-actions">
+                      <div class="action-buttons-group">
+                        <button
+                          class="action-btn outline"
+                          (click)="exportWIRToPDF(olderVersion)"
+                          title="Print this version"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 6 2 18 2 18 9"/>
+                            <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                            <rect x="6" y="14" width="12" height="8"/>
+                          </svg>
+                          <span>Print</span>
+                        </button>
+                        <button
+                          class="action-btn outline"
+                          (click)="downloadWIRAsPDF(olderVersion)"
+                          title="Download this version"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                            <polyline points="7 10 12 15 17 10"/>
+                            <line x1="12" y1="15" x2="12" y2="3"/>
+                          </svg>
+                          <span>Download</span>
+                        </button>
+                      </div>
+                      <div class="read-only-badge">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        <span>Historical Version (Read-Only)</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1346,6 +1491,7 @@
           [issue]="selectedIssueDetails"
           [wirCheckpoints]="wirCheckpoints"
           [isOpen]="isDetailsModalOpen"
+          [commentId]="selectedCommentId"
           (close)="closeIssueDetails()"
         ></app-quality-issue-details-modal>
         </div>
@@ -1361,6 +1507,17 @@
               <button class="icon-button" (click)="closeCreateQualityIssueModal()" [disabled]="createQualityIssueLoading">
                 &times;
               </button>
+            </div>
+
+            <!-- Error Alert at Top of Modal -->
+            <div class="modal-error-alert" *ngIf="createQualityIssueError">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span>{{ createQualityIssueError }}</span>
+              <button class="error-close" type="button" (click)="createQualityIssueError = ''">&times;</button>
             </div>
 
             <div class="modal-body">
@@ -1627,8 +1784,6 @@
                   </div>
                 </div>
               </div>
-
-              <p class="modal-error" *ngIf="createQualityIssueError">{{ createQualityIssueError }}</p>
             </div>
 
             <div class="modal-actions">

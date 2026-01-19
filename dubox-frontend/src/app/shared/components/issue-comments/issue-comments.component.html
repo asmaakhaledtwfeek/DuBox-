@@ -25,7 +25,10 @@
 
     <!-- Comment Thread -->
     <div *ngFor="let comment of comments" class="comment-thread">
-      <div class="comment" [class.status-update-comment]="comment.isStatusUpdateComment">
+      <div 
+        [id]="'comment-' + comment.commentId" 
+        class="comment" 
+        [class.status-update-comment]="comment.isStatusUpdateComment">
         <!-- Avatar -->
         <div class="comment-avatar">
           <div class="avatar-circle" [style.background-color]="'#' + (comment.authorId.substring(0, 6))">

@@ -375,3 +375,23 @@
   }
 }
 
+// Highlight animation for focused comments (from notifications)
+.comment-highlight {
+  animation: highlight-pulse 3s ease-in-out;
+  
+  @keyframes highlight-pulse {
+    0%, 100% {
+      background-color: transparent;
+      box-shadow: none;
+    }
+    15%, 35%, 55% {
+      background-color: rgba(13, 110, 253, 0.08);
+      box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.15);
+    }
+    25%, 45%, 65% {
+      background-color: rgba(13, 110, 253, 0.04);
+      box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.1);
+    }
+  }
+}
+

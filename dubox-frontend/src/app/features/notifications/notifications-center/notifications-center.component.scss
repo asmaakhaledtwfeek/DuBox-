@@ -12,60 +12,83 @@
 
 .notifications-header {
   margin-bottom: 2rem;
+  background: #ffffff;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+  border: none;
+
+  .page-title-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+  }
 
   .page-title {
     font-size: 2rem;
     font-weight: 700;
-    color: #212529;
-    margin-bottom: 1.5rem;
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
+    color: #000000;
+    margin: 0;
+    line-height: 1.2;
+  }
 
-    i {
-      color: #0d6efd;
-    }
+  .page-subtitle {
+    font-size: 0.9375rem;
+    color: #6c757d;
+    margin: 0;
+    font-weight: 400;
+    line-height: 1.5;
   }
 
   .filter-tabs {
     display: flex;
-    gap: 0.5rem;
-    border-bottom: 2px solid #e9ecef;
+    gap: 1rem;
+    border-bottom: none;
+    margin-bottom: 1.5rem;
 
     .filter-tab {
-      padding: 0.75rem 1.5rem;
-      background: none;
+      padding: 0.875rem 2rem;
+      background: #f8f9fa;
       border: none;
-      border-bottom: 3px solid transparent;
-      color: #6c757d;
+      border-radius: 12px;
+      color: #495057;
       font-weight: 600;
+      font-size: 0.9375rem;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.3s ease;
       display: flex;
       align-items: center;
       gap: 0.5rem;
+      position: relative;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 
       &:hover {
-        color: #0d6efd;
-        background: #f8f9fa;
+        background: #e9ecef;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       }
 
       &.active {
-        color: #0d6efd;
-        border-bottom-color: #0d6efd;
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+        box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
       }
 
       .unread-badge {
         background: #dc3545;
         color: white;
         padding: 0.125rem 0.5rem;
-        border-radius: 12px;
+        border-radius: 10px;
         font-size: 0.75rem;
         font-weight: 700;
+        min-width: 20px;
+        text-align: center;
       }
     }
   }
 }
+
 
 .loading-container {
   display: flex;
@@ -78,13 +101,13 @@
   text-align: center;
   padding: 4rem 2rem;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  border: 1px solid #e9ecef;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 
   i {
     font-size: 4rem;
-    color: #6c757d;
-    opacity: 0.5;
+    color: #adb5bd;
     margin-bottom: 1rem;
   }
 
@@ -97,6 +120,7 @@
 
   p {
     color: #6c757d;
+    font-size: 1rem;
     margin: 0;
   }
 }
@@ -113,28 +137,31 @@
   padding: 1.25rem;
   background: white;
   border-radius: 10px;
+  border: 1px solid #e9ecef;
   border-left: 4px solid transparent;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   position: relative;
 
   &:hover {
-    transform: translateX(4px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    border-color: #dee2e6;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
   }
 
   &.unread {
     background: #f8f9fa;
-    border-left-color: #0d6efd;
+    border-left-color: #17a2b8;
+    box-shadow: 0 2px 8px rgba(23, 162, 184, 0.15);
   }
 
   &.notification-comment {
-    border-left-color: #0dcaf0;
+    border-left-color: #17a2b8;
 
     .notification-icon {
-      background: #cff4fc;
-      color: #087990;
+      background: #d1ecf1;
+      color: #0c5460;
     }
   }
 
@@ -143,7 +170,7 @@
 
     .notification-icon {
       background: #f8d7da;
-      color: #842029;
+      color: #721c24;
     }
   }
 
@@ -152,16 +179,16 @@
 
     .notification-icon {
       background: #fff3cd;
-      color: #997404;
+      color: #856404;
     }
   }
 
   &.notification-info {
-    border-left-color: #0d6efd;
+    border-left-color: #17a2b8;
 
     .notification-icon {
-      background: #cfe2ff;
-      color: #084298;
+      background: #d1ecf1;
+      color: #0c5460;
     }
   }
 
@@ -194,20 +221,38 @@
         font-weight: 600;
         color: #212529;
         margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+
+        .issue-number-inline {
+          display: inline-flex;
+          align-items: center;
+          padding: 2px 8px;
+          background: #17a2b8;
+          color: white;
+          border-radius: 6px;
+          font-size: 0.8125rem;
+          font-weight: 600;
+          text-decoration: none;
+        }
       }
 
       .notification-time {
-        font-size: 0.875rem;
-        color: #6c757d;
+        font-size: 0.8125rem;
+        color: #adb5bd;
         white-space: nowrap;
+        font-weight: 400;
       }
     }
 
     .notification-message {
-      color: #495057;
-      font-size: 0.95rem;
+      color: #6c757d;
+      font-size: 0.875rem;
       line-height: 1.5;
       margin: 0 0 0.75rem 0;
+      font-weight: 400;
     }
 
     .notification-meta {
@@ -220,14 +265,33 @@
         align-items: center;
         gap: 0.375rem;
         padding: 0.25rem 0.75rem;
-        background: #e9ecef;
         border-radius: 12px;
-        font-size: 0.8125rem;
-        color: #495057;
+        font-size: 0.75rem;
         font-weight: 500;
+        border: 1px solid;
 
         i {
           font-size: 0.875rem;
+        }
+
+        &.meta-tag-issue {
+          background: #e7f3ff;
+          border-color: #b6d4fe;
+          color: #004085;
+
+          i {
+            color: #17a2b8;
+          }
+        }
+
+        &.meta-tag-author {
+          background: #f8f9fa;
+          border-color: #dee2e6;
+          color: #495057;
+
+          i {
+            color: #6c757d;
+          }
         }
       }
     }
@@ -237,7 +301,7 @@
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background: #0d6efd;
+    background: #17a2b8;
     position: absolute;
     top: 1.25rem;
     right: 1.25rem;
@@ -252,14 +316,15 @@
   padding: 1rem;
   background: white;
   border-radius: 10px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 
   .pagination-btn {
     padding: 0.625rem 1.25rem;
-    background: #0d6efd;
+    background: #17a2b8;
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
@@ -268,13 +333,12 @@
     gap: 0.5rem;
 
     &:hover:not(:disabled) {
-      background: #0b5ed7;
-      transform: translateY(-1px);
+      background: #138496;
     }
 
     &:disabled {
-      background: #6c757d;
-      opacity: 0.5;
+      background: #e9ecef;
+      color: #6c757d;
       cursor: not-allowed;
     }
 

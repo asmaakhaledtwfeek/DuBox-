@@ -1,4 +1,4 @@
-﻿using Dubox.Domain.Enums;
+using Dubox.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -53,6 +53,17 @@ namespace Dubox.Domain.Entities
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
         public Guid? CreatedBy { get; set; }
+        
+        // Versioning support for rejected checkpoints
+        public int Version { get; set; } = 1;
+        
+        /// <summary>
+        /// Reference to the original/parent checkpoint when this is a regenerated version.
+        /// Null for version 1 (original checkpoint).
+        /// </summary>
+        [ForeignKey(nameof(ParentCheckpoint))]
+        public Guid? ParentWIRId { get; set; }
+        
         //[ForeignKey(nameof(AssignedToUser))]
         //public Guid? AssignedTo { get; set; }
 
@@ -60,6 +71,16 @@ namespace Dubox.Domain.Entities
         // Navigation properties
         public virtual Box Box { get; set; } = null!;
        // public virtual User AssignedToUser { get; set; } = null!;
+        
+        /// <summary>
+        /// Navigation to the parent checkpoint (for versioned checkpoints)
+        /// </summary>
+        public virtual WIRCheckpoint? ParentCheckpoint { get; set; }
+        
+        /// <summary>
+        /// Child versions created from this checkpoint
+        /// </summary>
+        public virtual ICollection<WIRCheckpoint> ChildVersions { get; set; } = new List<WIRCheckpoint>();
 
         public virtual ICollection<WIRChecklistItem> ChecklistItems { get; set; } = new List<WIRChecklistItem>();
         public virtual ICollection<QualityIssue> QualityIssues { get; set; } = new List<QualityIssue>();

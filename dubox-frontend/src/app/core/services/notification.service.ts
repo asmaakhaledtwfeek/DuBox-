@@ -41,7 +41,7 @@ export class NotificationService {
    * Mark notification as read
    */
   markAsRead(id: string): Observable<void> {
-    return this.apiService.patch<void>(`${this.endpoint}/${id}/read`, {}).pipe(
+    return this.apiService.put<void>(`${this.endpoint}/${id}/read`, {}).pipe(
       tap(() => this.decrementUnreadCount())
     );
   }

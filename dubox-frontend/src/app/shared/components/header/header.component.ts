@@ -1,6 +1,6 @@
 import { Component, OnInit, HostListener, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { User, UserRole, getUserPrimaryRole } from '../../../core/models/user.model';
 import { SidebarService } from '../../../core/services/sidebar.service';
@@ -8,6 +8,7 @@ import { ToastService } from '../../../core/services/toast.service';
 import { SignalRService } from '../../../core/services/signalr.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { Subscription } from 'rxjs';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-header',
@@ -24,13 +25,14 @@ export class HeaderComponent implements OnInit, OnDestroy {
   isMobile = false;
   
   // Toast notifications
-  toasts: Array<{ message: string; type: string; id: number }> = [];
+  toasts: Array<{ message: string; type: string; id: number; notificationData?: any }> = [];
   private toastSubscription?: Subscription;
   private toastIdCounter = 0;
   
   // SignalR subscriptions
   private signalRSubscription?: Subscription;
   private notificationCountSubscription?: Subscription;
+  private routerSubscription?: Subscription;
 
   constructor(
     private authService: AuthService,
@@ -87,9 +89,23 @@ export class HeaderComponent implements OnInit, OnDestroy {
     // Subscribe to new notifications for toast display
     this.signalRService.notificationReceived$.subscribe(notification => {
       if (notification) {
-        this.showToast(notification.title || 'New Notification', 'info', 5000);
+        this.showNotificationToast(notification);
       }
     });
+    
+    // Clear notification toasts when navigating to the related page
+    this.routerSubscription = this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe((event: any) => {
+        // Check if any toast should be dismissed based on the current URL
+        this.toasts = this.toasts.filter(toast => {
+          if (toast.notificationData && toast.notificationData.directLink) {
+            // If the current URL matches the notification's direct link, remove the toast
+            return !event.url.includes(toast.notificationData.directLink);
+          }
+          return true;
+        });
+      });
     
     // Listen for custom app-toast events (for backward compatibility)
     document.addEventListener('app-toast', this.handleCustomToastEvent.bind(this));
@@ -110,6 +126,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.toastSubscription?.unsubscribe();
     this.signalRSubscription?.unsubscribe();
     this.notificationCountSubscription?.unsubscribe();
+    this.routerSubscription?.unsubscribe();
     document.removeEventListener('app-toast', this.handleCustomToastEvent.bind(this));
   }
   
@@ -131,6 +148,32 @@ export class HeaderComponent implements OnInit, OnDestroy {
     setTimeout(() => {
       this.removeToast(id);
     }, duration);
+  }
+  
+  private showNotificationToast(notification: any): void {
+    const id = this.toastIdCounter++;
+    const message = notification.title || 'New Notification';
+    
+    this.toasts.push({ 
+      message, 
+      type: 'info', 
+      id,
+      notificationData: notification 
+    });
+    
+    // Auto-dismiss after 8 seconds
+    setTimeout(() => {
+      this.removeToast(id);
+    }, 8000);
+  }
+  
+  handleToastClick(toast: any): void {
+    // If toast has notification data, navigate to it
+    if (toast.notificationData && toast.notificationData.directLink) {
+      this.router.navigateByUrl(toast.notificationData.directLink);
+    }
+    // Remove the toast
+    this.removeToast(toast.id);
   }
   
   removeToast(id: number): void {

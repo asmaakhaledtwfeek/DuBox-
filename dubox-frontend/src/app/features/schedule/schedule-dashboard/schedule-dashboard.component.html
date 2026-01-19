@@ -79,7 +79,7 @@
           </div>
         </div>
 
-        <button class="btn-primary" (click)="openCreateForm()">
+        <button class="btn-primary" (click)="openCreateForm()" [disabled]="!selectedProject">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
@@ -89,14 +89,88 @@
       </div>
     </div>
 
+    <!-- Project Selection Section -->
+    <div class="project-selection-section">
+      <div class="selection-header">
+        <div class="selection-controls">
+          <div class="form-group">
+            <label for="projectSelect">Project Name</label>
+            <select 
+              id="projectSelect" 
+              [(ngModel)]="selectedProject" 
+              (ngModelChange)="onProjectSelect($event)"
+              class="filter-select project-select">
+              <option [ngValue]="null">Select a project...</option>
+              <option *ngFor="let project of projects" [ngValue]="project">
+                {{ project.projectName }}
+              </option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="projectCodeSelect">Project Number</label>
+            <select 
+              id="projectCodeSelect" 
+              [(ngModel)]="selectedProject" 
+              (ngModelChange)="onProjectSelect($event)"
+              class="filter-select project-select">
+              <option [ngValue]="null">Select a project number...</option>
+              <option *ngFor="let project of projects" [ngValue]="project">
+                {{ project.projectCode }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Project Details -->
+      <div *ngIf="selectedProject" class="project-details-card">
+        <h3>Project Details</h3>
+        <div class="project-info-grid">
+          <div class="info-item">
+            <span class="info-label">Project:</span>
+            <span class="info-value">{{ selectedProject.projectName }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Code:</span>
+            <span class="info-value">{{ selectedProject.projectCode }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Client:</span>
+            <span class="info-value">{{ selectedProject.clientName || 'N/A' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Status:</span>
+            <span class="status-badge" [class]="selectedProject.status?.toLowerCase()">
+              {{ selectedProject.status }}
+            </span>
+          </div>
+          <div class="info-item" *ngIf="activities.length > 0">
+            <span class="info-label">Total Activities:</span>
+            <span class="info-value">{{ activities.length }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- No Project Selected State -->
+    <div *ngIf="!selectedProject" class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <path d="M3 9h18M9 21V9"/>
+      </svg>
+      <h3>Select a Project</h3>
+      <p>Choose a project from the dropdown above to view and manage its schedule activities</p>
+    </div>
+
     <!-- Loading -->
-    <div *ngIf="loading" class="loading-state">
+    <div *ngIf="selectedProject && loading" class="loading-state">
       <div class="spinner"></div>
       <p>Loading activities...</p>
     </div>
 
     <!-- Error -->
-    <div *ngIf="error && !loading" class="error-state">
+    <div *ngIf="selectedProject && error && !loading" class="error-state">
       <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <circle cx="12" cy="12" r="10"/>
         <line x1="12" y1="8" x2="12" y2="12"/>
@@ -107,7 +181,7 @@
     </div>
 
     <!-- Activities List -->
-    <div *ngIf="!loading && !error" class="activities-container">
+    <div *ngIf="selectedProject && !loading && !error" class="activities-container">
       <div *ngIf="activities.length === 0" class="empty-state">
         <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
@@ -116,7 +190,7 @@
           <line x1="3" y1="10" x2="21" y2="10"/>
         </svg>
         <h2>No Activities Yet</h2>
-        <p>Create your first schedule activity to get started</p>
+        <p>Create your first schedule activity for this project</p>
         <button class="btn-primary" (click)="openCreateForm()">Create Activity</button>
       </div>
 

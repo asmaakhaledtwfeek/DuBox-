@@ -33,6 +33,14 @@ namespace Dubox.Application.DTOs
         public string? AttachmentPath { get; set; }
 
         public DateTime CreatedDate { get; set; }
+        
+        // Versioning fields
+        public int Version { get; set; } = 1;
+        public Guid? ParentWIRId { get; set; }
+        
+        // Helper fields for version creation response
+        public Guid? NewVersionId { get; set; }
+        public int? NewVersionNumber { get; set; }
 
         // Calculated fields
         public int PendingDays { get; set; }

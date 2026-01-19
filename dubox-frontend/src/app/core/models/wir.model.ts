@@ -100,6 +100,12 @@ export interface WIRCheckpoint {
   attachmentPath?: string;
   createdDate: Date;
   
+  // Versioning fields
+  version?: number;
+  parentWIRId?: string;
+  newVersionId?: string; // ID of newly created version (after rejection)
+  newVersionNumber?: number; // Version number of newly created version
+  
   checklistItems?: WIRCheckpointChecklistItem[];
   qualityIssues?: QualityIssueItem[];
   images?: WIRCheckpointImage[];

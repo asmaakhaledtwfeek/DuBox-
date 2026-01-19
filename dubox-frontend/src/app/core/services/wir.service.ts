@@ -206,20 +206,29 @@ export class WIRService {
 
   /**
    * Get WIR checkpoint by box activity ID (searches through box checkpoints by WIRNumber)
+   * CRITICAL: Returns the LATEST version when multiple checkpoint versions exist
    */
   getWIRCheckpointByActivity(boxId: string, wirCode: string): Observable<WIRCheckpoint | null> {
     return this.getWIRCheckpointsByBox(boxId).pipe(
       map(checkpoints => {
-        // Find checkpoint that matches the WIR code/number exactly
-        // Remove the fallback to 'Pending' status as it could match wrong checkpoint
-        const matched = checkpoints.find(c => 
+        // Find ALL checkpoints that match the WIR code/number
+        const matchingCheckpoints = checkpoints.filter(c => 
           c.wirNumber === wirCode || 
           c.wirNumber?.toLowerCase() === wirCode?.toLowerCase()
         );
+        
         console.log('getWIRCheckpointByActivity - searching for WIR code:', wirCode);
-        console.log('getWIRCheckpointByActivity - available checkpoints:', checkpoints.map(c => ({ wirNumber: c.wirNumber, wirId: c.wirId })));
-        console.log('getWIRCheckpointByActivity - matched checkpoint:', matched);
-        return matched || null;
+        console.log('getWIRCheckpointByActivity - available checkpoints:', checkpoints.map(c => ({ wirNumber: c.wirNumber, wirId: c.wirId, version: c.version })));
+        console.log('getWIRCheckpointByActivity - found matching checkpoints:', matchingCheckpoints.length);
+        
+        if (matchingCheckpoints.length === 0) return null;
+        
+        // Sort by version descending and return the latest (highest version)
+        matchingCheckpoints.sort((a, b) => (b.version || 1) - (a.version || 1));
+        const latest = matchingCheckpoints[0];
+        
+        console.log('getWIRCheckpointByActivity - returning latest version:', latest.version || 1);
+        return latest;
       }),
       catchError(() => of(null))
     );
@@ -643,13 +652,14 @@ export class WIRService {
   }
 
   /**
-   * Assign a quality issue to a team and optionally to a team member
+   * Assign a quality issue to a team and optionally to a team member and CC user
    */
-  assignQualityIssueToTeam(issueId: string, teamId: string | null, teamMemberId?: string | null): Observable<QualityIssueDetails> {
+  assignQualityIssueToTeam(issueId: string, teamId: string | null, teamMemberId?: string | null, ccUserId?: string | null): Observable<QualityIssueDetails> {
     const request = {
       issueId: issueId,
       teamId: teamId || null,
-      teamMemberId: teamMemberId || null
+      teamMemberId: teamMemberId || null,
+      ccUserId: ccUserId || null
     };
     
     return this.apiService.put<QualityIssueDetails>(`qualityissues/${issueId}/assign`, request).pipe(
@@ -854,7 +864,12 @@ export class WIRService {
           sequence: img.sequence ?? img.Sequence ?? 0,
           createdDate: img.createdDate ? new Date(img.createdDate) : (img.CreatedDate ? new Date(img.CreatedDate) : new Date())
         }));
-      })()
+      })(),
+      // Versioning fields
+      version: backendCheckpoint.version ?? backendCheckpoint.Version ?? 1,
+      parentWIRId: backendCheckpoint.parentWIRId || backendCheckpoint.ParentWIRId,
+      newVersionId: backendCheckpoint.newVersionId || backendCheckpoint.NewVersionId,
+      newVersionNumber: backendCheckpoint.newVersionNumber ?? backendCheckpoint.NewVersionNumber
     };
   }
 

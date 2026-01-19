@@ -5,10 +5,10 @@
   <div class="page-content">
     <!-- Header -->
     <div class="notifications-header">
-      <h1 class="page-title">
-        <i class="bi bi-bell"></i>
-        Notifications
-      </h1>
+      <div class="page-title-wrapper">
+        <h1 class="page-title">Notifications Center</h1>
+        <p class="page-subtitle">Monitor and track all your quality issue activities and updates in real-time.</p>
+      </div>
       
       <!-- Filter Tabs -->
       <div class="filter-tabs">
@@ -62,19 +62,22 @@
         <!-- Content -->
         <div class="notification-content">
           <div class="notification-header">
-            <h4 class="notification-title">{{ notification.title }}</h4>
+            <h4 class="notification-title">
+              {{ notification.title }}
+              <span *ngIf="notification.relatedIssueNumber" class="issue-number-inline"> #{{ notification.relatedIssueNumber }}</span>
+            </h4>
             <span class="notification-time">{{ formatTime(notification.createdDate) }}</span>
           </div>
           
           <p class="notification-message">{{ notification.message }}</p>
           
           <div class="notification-meta" *ngIf="notification.relatedIssueNumber || notification.commentAuthorName">
-            <span *ngIf="notification.relatedIssueNumber" class="meta-tag">
-              <i class="bi bi-tag"></i>
-              Issue #{{ notification.relatedIssueNumber }}
+            <span *ngIf="notification.relatedIssueNumber" class="meta-tag meta-tag-issue">
+              <i class="bi bi-hash"></i>
+              {{ notification.relatedIssueNumber }}
             </span>
-            <span *ngIf="notification.commentAuthorName" class="meta-tag">
-              <i class="bi bi-person"></i>
+            <span *ngIf="notification.commentAuthorName" class="meta-tag meta-tag-author">
+              <i class="bi bi-person-circle"></i>
               {{ notification.commentAuthorName }}
             </span>
           </div>

@@ -17,6 +17,7 @@ export class IssueCommentsComponent implements OnInit, OnChanges {
   @Input() issueId: string = '';
   @Input() issueNumber: string = '';
   @Input() issueTitle: string = '';
+  @Input() commentId?: string; // Optional: Scroll to specific comment
   @Output() commentAdded = new EventEmitter<void>();
 
   comments: IssueComment[] = [];
@@ -56,6 +57,13 @@ export class IssueCommentsComponent implements OnInit, OnChanges {
       next: (response) => {
         if (response.isSuccess && response.data) {
           this.comments = response.data;
+          
+          // If commentId is provided, scroll to that comment
+          if (this.commentId) {
+            setTimeout(() => {
+              this.scrollToComment(this.commentId!);
+            }, 500);
+          }
         }
         this.loading = false;
       },
@@ -233,6 +241,23 @@ export class IssueCommentsComponent implements OnInit, OnChanges {
       return (parts[0][0] + parts[1][0]).toUpperCase();
     }
     return name.substring(0, 2).toUpperCase();
+  }
+
+  scrollToComment(commentId: string): void {
+    const element = document.getElementById(`comment-${commentId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      // Add a highlight effect
+      element.classList.add('comment-highlight');
+      setTimeout(() => {
+        element.classList.remove('comment-highlight');
+      }, 3000);
+      
+      console.log('📍 Scrolled to comment:', commentId);
+    } else {
+      console.warn('⚠️ Comment element not found:', commentId);
+    }
   }
 }
 

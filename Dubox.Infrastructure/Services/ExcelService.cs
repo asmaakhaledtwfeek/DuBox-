@@ -68,23 +68,12 @@ public class ExcelService : IExcelService
             cell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
             cell.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
             cell.Style.Border.BorderAround(ExcelBorderStyle.Thin);
-            
-            // Add comment to Box Tag column to explain it's auto-filled
-            if (headers[i].Contains("Box Tag"))
-            {
-                cell.AddComment("This column shows a PREVIEW of the Box Tag.\n\n" +
-                               "Format: Project-Building-Floor-Type-SubType\n\n" +
-                               "The actual Box Tag will be generated during import using abbreviations from your project configuration.\n\n" +
-                               "Example: 169-B01-FF-S1-B",
-                               "System");
-                cell.Comment.AutoFit = true;
-            }
         }
 
         // Add instruction row
         var instructionRow = 2;
         var instructionCell = dataSheet.Cells[instructionRow, 1];
-        instructionCell.Value = $"⚠️ INSTRUCTIONS: Row 3 contains an example – please delete it before importing. Enter your data starting from the next row. Box Tag is AUTO-GENERATED during import using the format: {projectCode}-Building-Floor-Type-SubType. REQUIRED fields: Box Type and Floor. Use values from Reference Data sheets. Make sure to delete rows 2 and 3 before importing.";
+        instructionCell.Value = $"⚠️ INSTRUCTIONS: Row 3 contains an example – please delete it before importing. Enter your data starting from the next row. Box Tag will be AUTO-GENERATED during import using the format: {projectCode}-Building-Floor-Type-SubType. REQUIRED fields: Box Type and Floor. Use values from Reference Data sheets.";
         
         // Set pattern type FIRST before color operations on the first cell
         instructionCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
@@ -108,16 +97,13 @@ public class ExcelService : IExcelService
             dataSheet.Column(i).Width = 20;
         }
         
-        // Make the last column (Box Tag) wider and add note
-        dataSheet.Column(headers.Length).Width = 35;
-        
-        // Add example data row at row 3 to show how Box Tag will look
+        // Add example data row at row 3
         var exampleRow = 3;
         
         // Column indices based on headers: BoxName=1, BoxType=2, BoxSubType=3, Floor=4, BuildingNumber=5, etc.
-        dataSheet.Cells[exampleRow, 1].Value = "Kitchen Cabinet Box"; // Box Name
-        dataSheet.Cells[exampleRow, 2].Value = "ElectricalPanel"; // Box Type (example)
-        dataSheet.Cells[exampleRow, 3].Value = "MainPanel"; // Box Sub Type (example)
+        dataSheet.Cells[exampleRow, 1].Value = "001"; // Box Name
+        dataSheet.Cells[exampleRow, 2].Value = "S1"; // Box Type (example)
+        dataSheet.Cells[exampleRow, 3].Value = "B"; // Box Sub Type (example)
         dataSheet.Cells[exampleRow, 4].Value = "GF"; // Floor (example)
         dataSheet.Cells[exampleRow, 5].Value = "B01"; // Building Number (example)
         dataSheet.Cells[exampleRow, 6].Value = "Kitchen"; // Box Function (example)
@@ -127,21 +113,8 @@ public class ExcelService : IExcelService
         dataSheet.Cells[exampleRow, 10].Value = 2800; // Height
         dataSheet.Cells[exampleRow, 11].Value = "Example box"; // Notes
         
-        // Box Tag preview (manual concatenation for the example)
-        var exampleBoxTag = $"{projectCode}-B01-GF-ElectricalPanel-MainPanel";
-        var boxTagCell = dataSheet.Cells[exampleRow, headers.Length];
-        boxTagCell.Value = exampleBoxTag;
-        
-        // Set pattern type FIRST before any color operations
-        boxTagCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
-        boxTagCell.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(255, 250, 205)); // Lemon chiffon
-        
-        // Now set font styling
-        boxTagCell.Style.Font.Bold = true;
-        boxTagCell.Style.Font.Color.SetColor(Color.FromArgb(184, 134, 11)); // Dark goldenrod
-        
         // Style the example row
-        for (int col = 1; col < headers.Length; col++)
+        for (int col = 1; col <= headers.Length; col++)
         {
             var exampleCell = dataSheet.Cells[exampleRow, col];
             
@@ -152,23 +125,6 @@ public class ExcelService : IExcelService
             // Now set font styling
             exampleCell.Style.Font.Italic = true;
             exampleCell.Style.Font.Color.SetColor(Color.FromArgb(105, 105, 105)); // Dim gray
-        }
-        
-        // Add note to Box Tag column for subsequent rows
-        for (int row = exampleRow + 1; row <= exampleRow + 5; row++)
-        {
-            var noteCell = dataSheet.Cells[row, headers.Length];
-            noteCell.Value = "(auto-generated on import)";
-            
-            // Set pattern type FIRST before any color operations
-            noteCell.Style.Fill.PatternType = ExcelFillStyle.Solid;
-            noteCell.Style.Fill.BackgroundColor.SetColor(Color.FromArgb(245, 245, 245)); // White smoke
-            
-            // Now set font styling
-            noteCell.Style.Font.Italic = true;
-            noteCell.Style.Font.Size = 9;
-            noteCell.Style.Font.Color.SetColor(Color.FromArgb(169, 169, 169)); // Dark gray
-            noteCell.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
         }
 
         // Create reference data sheets

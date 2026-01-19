@@ -4,6 +4,7 @@ using Dubox.Infrastructure.ApplicationContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Dubox.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260119183135_versionsCkeckpoints")]
+    partial class versionsCkeckpoints
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -3218,61 +3221,6 @@ namespace Dubox.Infrastructure.Migrations
                     b.ToTable("HRCostRecords");
                 });
 
-            modelBuilder.Entity("Dubox.Domain.Entities.IssueComment", b =>
-                {
-                    b.Property<Guid>("CommentId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("AuthorId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("CommentText")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("DeletedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsStatusUpdateComment")
-                        .HasColumnType("bit");
-
-                    b.Property<Guid>("IssueId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("ParentCommentId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<int?>("RelatedStatus")
-                        .HasColumnType("int");
-
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("UpdatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("CommentId");
-
-                    b.HasIndex("AuthorId");
-
-                    b.HasIndex("IssueId");
-
-                    b.HasIndex("ParentCommentId");
-
-                    b.HasIndex("UpdatedBy");
-
-                    b.HasIndex("IssueId", "CreatedDate");
-
-                    b.ToTable("IssueComments");
-                });
-
             modelBuilder.Entity("Dubox.Domain.Entities.Material", b =>
                 {
                     b.Property<Guid>("MaterialId")
@@ -3622,10 +3570,6 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("DirectLink")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
                     b.Property<DateTime?>("ExpiryDate")
                         .HasColumnType("datetime2");
 
@@ -3646,19 +3590,10 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime?>("ReadDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("RecipientUserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid?>("RelatedActivityId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("RelatedBoxId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("RelatedCommentId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid?>("RelatedIssueId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("TargetRole")
@@ -3675,15 +3610,9 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.HasKey("NotificationId");
 
-                    b.HasIndex("RecipientUserId");
-
                     b.HasIndex("RelatedActivityId");
 
                     b.HasIndex("RelatedBoxId");
-
-                    b.HasIndex("RelatedCommentId");
-
-                    b.HasIndex("RelatedIssueId");
 
                     b.ToTable("Notifications");
                 });
@@ -14643,39 +14572,6 @@ namespace Dubox.Infrastructure.Migrations
                     b.Navigation("Role");
                 });
 
-            modelBuilder.Entity("Dubox.Domain.Entities.IssueComment", b =>
-                {
-                    b.HasOne("Dubox.Domain.Entities.User", "Author")
-                        .WithMany()
-                        .HasForeignKey("AuthorId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Dubox.Domain.Entities.QualityIssue", "QualityIssue")
-                        .WithMany("Comments")
-                        .HasForeignKey("IssueId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Dubox.Domain.Entities.IssueComment", "ParentComment")
-                        .WithMany("Replies")
-                        .HasForeignKey("ParentCommentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.HasOne("Dubox.Domain.Entities.User", "UpdatedByUser")
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Author");
-
-                    b.Navigation("ParentComment");
-
-                    b.Navigation("QualityIssue");
-
-                    b.Navigation("UpdatedByUser");
-                });
-
             modelBuilder.Entity("Dubox.Domain.Entities.MaterialTransaction", b =>
                 {
                     b.HasOne("Dubox.Domain.Entities.BoxActivity", "BoxActivity")
@@ -14718,11 +14614,6 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.Notification", b =>
                 {
-                    b.HasOne("Dubox.Domain.Entities.User", "RecipientUser")
-                        .WithMany()
-                        .HasForeignKey("RecipientUserId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.HasOne("Dubox.Domain.Entities.BoxActivity", "RelatedActivity")
                         .WithMany()
                         .HasForeignKey("RelatedActivityId");
@@ -14731,25 +14622,9 @@ namespace Dubox.Infrastructure.Migrations
                         .WithMany()
                         .HasForeignKey("RelatedBoxId");
 
-                    b.HasOne("Dubox.Domain.Entities.IssueComment", "RelatedComment")
-                        .WithMany()
-                        .HasForeignKey("RelatedCommentId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("Dubox.Domain.Entities.QualityIssue", "RelatedIssue")
-                        .WithMany()
-                        .HasForeignKey("RelatedIssueId")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("RecipientUser");
-
                     b.Navigation("RelatedActivity");
 
                     b.Navigation("RelatedBox");
-
-                    b.Navigation("RelatedComment");
-
-                    b.Navigation("RelatedIssue");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.PredefinedChecklistItem", b =>
@@ -15311,11 +15186,6 @@ namespace Dubox.Infrastructure.Migrations
                     b.Navigation("UserGroups");
                 });
 
-            modelBuilder.Entity("Dubox.Domain.Entities.IssueComment", b =>
-                {
-                    b.Navigation("Replies");
-                });
-
             modelBuilder.Entity("Dubox.Domain.Entities.Material", b =>
                 {
                     b.Navigation("ActivityMaterials");
@@ -15362,8 +15232,6 @@ namespace Dubox.Infrastructure.Migrations
 
             modelBuilder.Entity("Dubox.Domain.Entities.QualityIssue", b =>
                 {
-                    b.Navigation("Comments");
-
                     b.Navigation("Images");
                 });
 

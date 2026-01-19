@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, map, catchError, skip } from 'rxjs/operators';
 import { forkJoin, of, Subscription } from 'rxjs';
 import { BoxService } from '../../../core/services/box.service';
@@ -14,7 +14,7 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
 @Component({
   selector: 'app-boxes-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, HeaderComponent, SidebarComponent],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, FormsModule, HeaderComponent, SidebarComponent],
   templateUrl: './boxes-list.component.html',
   styleUrls: ['./boxes-list.component.scss']
 })
@@ -44,6 +44,32 @@ export class BoxesListComponent implements OnInit, OnDestroy {
   boxTypeSearchControl = new FormControl('');
   selectedStatus: BoxStatus | 'All' = BoxStatus.InProgress;
   BoxStatus = BoxStatus;
+  
+  // Filters for box types page
+  selectedFilterBoxType: string = '';
+  selectedFilterSubType: string = '';
+  selectedFilterBuilding: string = '';
+  selectedFilterFloor: string = '';
+  selectedFilterZone: string = '';
+  
+  // Available filter options for box types page
+  availableBoxTypes: string[] = [];
+  availableSubTypes: string[] = [];
+  availableBuildings: string[] = [];
+  availableFloors: string[] = [];
+  availableZones: string[] = [];
+  
+  // Filters for boxes list page
+  selectedBoxSubTypeFilter: string = '';
+  selectedBoxBuildingFilter: string = '';
+  selectedBoxFloorFilter: string = '';
+  selectedBoxZoneFilter: string = '';
+  
+  // Available filter options for boxes list page
+  availableBoxSubTypes: string[] = [];
+  availableBoxBuildings: string[] = [];
+  availableBoxFloors: string[] = [];
+  availableBoxZones: string[] = [];
   
   private subscriptions: Subscription[] = [];
 
@@ -164,6 +190,7 @@ export class BoxesListComponent implements OnInit, OnDestroy {
       next: (response) => {
         this.boxTypes = response.boxTypeStats || [];
         this.filteredBoxTypes = [...this.boxTypes];
+        this.loadFilterOptions();
         this.applyBoxTypeFilters();
         this.loading = false;
       },
@@ -171,6 +198,47 @@ export class BoxesListComponent implements OnInit, OnDestroy {
         this.error = err.message || 'Failed to load box types';
         this.loading = false;
         console.error('Error loading box types:', err);
+      }
+    });
+  }
+  
+  /**
+   * Load all boxes for the project to extract unique filter values
+   */
+  private loadFilterOptions(): void {
+    this.boxService.getBoxesByProject(this.projectId).subscribe({
+      next: (boxes) => {
+        // Extract unique box types
+        this.availableBoxTypes = [...new Set(boxes.map(box => {
+          const parts = (box.code || '').split('-');
+          return parts.length >= 4 ? parts[3] : '';
+        }).filter(type => type !== ''))].sort();
+        
+        // Extract unique subtypes
+        this.availableSubTypes = [...new Set(boxes.map(box => {
+          const parts = (box.code || '').split('-');
+          return parts.length >= 5 ? parts[4] : '';
+        }).filter(subtype => subtype !== ''))].sort();
+        
+        // Extract unique buildings
+        this.availableBuildings = [...new Set(boxes.map(box => box.buildingNumber).filter((b): b is string => !!b))].sort();
+        
+        // Extract unique floors
+        this.availableFloors = [...new Set(boxes.map(box => box.floor).filter((f): f is string => !!f))].sort();
+        
+        // Extract unique zones
+        this.availableZones = [...new Set(boxes.map(box => box.zone).filter((z): z is string => !!z))].sort();
+        
+        console.log('📊 Filter options loaded:', {
+          boxTypes: this.availableBoxTypes,
+          subTypes: this.availableSubTypes,
+          buildings: this.availableBuildings,
+          floors: this.availableFloors,
+          zones: this.availableZones
+        });
+      },
+      error: (err) => {
+        console.error('Error loading filter options:', err);
       }
     });
   }
@@ -225,6 +293,9 @@ export class BoxesListComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Extract filter options from current boxes
+    this.loadBoxFilterOptions(boxes);
+
     // Load activities for all boxes in parallel
     // Use catchError to handle individual failures gracefully
     const activityObservables = boxes.map(box => 
@@ -265,6 +336,33 @@ export class BoxesListComponent implements OnInit, OnDestroy {
       }
     });
   }
+  
+  /**
+   * Load filter options from boxes list
+   */
+  private loadBoxFilterOptions(boxes: Box[]): void {
+    // Extract unique subtypes
+    this.availableBoxSubTypes = [...new Set(boxes.map(box => {
+      const parts = (box.code || '').split('-');
+      return parts.length >= 5 ? parts[4] : '';
+    }).filter(subtype => subtype !== ''))].sort();
+    
+    // Extract unique buildings
+    this.availableBoxBuildings = [...new Set(boxes.map(box => box.buildingNumber).filter((b): b is string => !!b))].sort();
+    
+    // Extract unique floors
+    this.availableBoxFloors = [...new Set(boxes.map(box => box.floor).filter((f): f is string => !!f))].sort();
+    
+    // Extract unique zones
+    this.availableBoxZones = [...new Set(boxes.map(box => box.zone).filter((z): z is string => !!z))].sort();
+    
+    console.log('📊 Box filter options loaded:', {
+      subTypes: this.availableBoxSubTypes,
+      buildings: this.availableBoxBuildings,
+      floors: this.availableBoxFloors,
+      zones: this.availableBoxZones
+    });
+  }
 
   viewBoxType(boxType: string): void {
     this.selectedBoxType = boxType;
@@ -301,6 +399,13 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     this.filteredBoxes = [];
     this.searchControl.setValue('');
     this.selectedStatus = BoxStatus.InProgress;
+    
+    // Reset box filters
+    this.selectedBoxSubTypeFilter = '';
+    this.selectedBoxBuildingFilter = '';
+    this.selectedBoxFloorFilter = '';
+    this.selectedBoxZoneFilter = '';
+    
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {},
@@ -318,12 +423,36 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     this.applyFilters();
   }
 
-  private applyFilters(): void {
+  applyFilters(): void {
     let filtered = [...this.boxes];
 
     // Apply status filter
     if (this.selectedStatus !== 'All') {
       filtered = filtered.filter(box => box.status === this.selectedStatus);
+    }
+
+    // Apply subtype filter
+    if (this.selectedBoxSubTypeFilter) {
+      filtered = filtered.filter(box => {
+        const parts = (box.code || '').split('-');
+        const boxSubType = parts.length >= 5 ? parts[4] : '';
+        return boxSubType === this.selectedBoxSubTypeFilter;
+      });
+    }
+
+    // Apply building filter
+    if (this.selectedBoxBuildingFilter) {
+      filtered = filtered.filter(box => box.buildingNumber === this.selectedBoxBuildingFilter);
+    }
+
+    // Apply floor filter
+    if (this.selectedBoxFloorFilter) {
+      filtered = filtered.filter(box => box.floor === this.selectedBoxFloorFilter);
+    }
+
+    // Apply zone filter
+    if (this.selectedBoxZoneFilter) {
+      filtered = filtered.filter(box => box.zone === this.selectedBoxZoneFilter);
     }
 
     // Apply search filter (includes box properties and activity properties)
@@ -375,17 +504,134 @@ export class BoxesListComponent implements OnInit, OnDestroy {
 
     this.filteredBoxes = filtered;
   }
+  
+  /**
+   * Clear all box filters
+   */
+  clearBoxFilters(): void {
+    this.selectedBoxSubTypeFilter = '';
+    this.selectedBoxBuildingFilter = '';
+    this.selectedBoxFloorFilter = '';
+    this.selectedBoxZoneFilter = '';
+    this.searchControl.setValue('');
+    this.selectedStatus = BoxStatus.InProgress;
+    this.applyFilters();
+  }
+  
+  /**
+   * Check if any box filters are applied
+   */
+  hasActiveBoxFilters(): boolean {
+    return !!(
+      this.selectedBoxSubTypeFilter ||
+      this.selectedBoxBuildingFilter ||
+      this.selectedBoxFloorFilter ||
+      this.selectedBoxZoneFilter ||
+      this.searchControl.value ||
+      (this.selectedStatus !== BoxStatus.InProgress && this.selectedStatus !== 'All')
+    );
+  }
 
-  private applyBoxTypeFilters(): void {
+  applyBoxTypeFilters(): void {
     const searchTerm = this.boxTypeSearchControl.value?.toLowerCase() || '';
     
-    if (!searchTerm) {
-      this.filteredBoxTypes = [...this.boxTypes];
-      return;
+    let filtered = [...this.boxTypes];
+    
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(boxType => 
+        boxType.boxType?.toLowerCase().includes(searchTerm)
+      );
     }
-
-    this.filteredBoxTypes = this.boxTypes.filter(boxType => 
-      boxType.boxType?.toLowerCase().includes(searchTerm)
+    
+    // Apply box type filter
+    if (this.selectedFilterBoxType) {
+      filtered = filtered.filter(boxType => 
+        boxType.boxType === this.selectedFilterBoxType
+      );
+    }
+    
+    // Apply subtype filter - filter box types that have the selected subtype
+    if (this.selectedFilterSubType) {
+      filtered = filtered.filter(boxType => 
+        boxType.subTypes?.some(st => 
+          st.subTypeAbbreviation === this.selectedFilterSubType || 
+          st.subTypeName === this.selectedFilterSubType
+        )
+      );
+    }
+    
+    this.filteredBoxTypes = filtered;
+    
+    // If building, floor, or zone filters are selected, we need to filter based on actual boxes
+    if (this.selectedFilterBuilding || this.selectedFilterFloor || this.selectedFilterZone) {
+      this.applyBoxLocationFilters();
+    }
+  }
+  
+  /**
+   * Apply location-based filters (building, floor, zone) to box types
+   * This requires checking actual boxes to see which types exist in the filtered locations
+   */
+  private applyBoxLocationFilters(): void {
+    this.boxService.getBoxesByProject(this.projectId).subscribe({
+      next: (boxes) => {
+        // Filter boxes by location criteria
+        let filteredBoxes = boxes;
+        
+        if (this.selectedFilterBuilding) {
+          filteredBoxes = filteredBoxes.filter(box => box.buildingNumber === this.selectedFilterBuilding);
+        }
+        
+        if (this.selectedFilterFloor) {
+          filteredBoxes = filteredBoxes.filter(box => box.floor === this.selectedFilterFloor);
+        }
+        
+        if (this.selectedFilterZone) {
+          filteredBoxes = filteredBoxes.filter(box => box.zone === this.selectedFilterZone);
+        }
+        
+        // Extract unique box types from filtered boxes
+        const boxTypesInLocation = new Set(filteredBoxes.map(box => {
+          const parts = (box.code || '').split('-');
+          return parts.length >= 4 ? parts[3] : '';
+        }).filter(type => type !== ''));
+        
+        // Filter box type stats to only include types that exist in the filtered location
+        this.filteredBoxTypes = this.filteredBoxTypes.filter(boxType => 
+          boxTypesInLocation.has(boxType.boxType)
+        );
+      },
+      error: (err) => {
+        console.error('Error applying location filters:', err);
+      }
+    });
+  }
+  
+  /**
+   * Clear all box type filters
+   */
+  clearBoxTypeFilters(): void {
+    this.selectedFilterBoxType = '';
+    this.selectedFilterSubType = '';
+    this.selectedFilterBuilding = '';
+    this.selectedFilterFloor = '';
+    this.selectedFilterZone = '';
+    this.boxTypeSearchControl.setValue('');
+    this.applyBoxTypeFilters();
+  }
+  
+  /**
+   * Check if any filters are applied
+   */
+  hasActiveFilters(): boolean {
+    return !!(
+      this.selectedFilterBoxType ||
+      this.selectedFilterSubType ||
+      this.selectedFilterBuilding ||
+      this.selectedFilterFloor ||
+      this.selectedFilterZone ||
+      this.boxTypeSearchControl.value
     );
   }
 

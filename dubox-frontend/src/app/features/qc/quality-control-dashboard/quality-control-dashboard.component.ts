@@ -1368,14 +1368,14 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     this.selectedIssueForAssign = null;
   }
 
-  onAssignToCrew(event: { teamId: string | null; memberId: string | null }): void {
+  onAssignToCrew(event: { teamId: string | null; memberId: string | null; ccUserId: string | null }): void {
     if (!this.selectedIssueForAssign || !this.selectedIssueForAssign.issueId) {
       return;
     }
 
     this.assignLoading = true;
 
-    this.wirService.assignQualityIssueToTeam(this.selectedIssueForAssign.issueId, event.teamId, event.memberId).subscribe({
+    this.wirService.assignQualityIssueToTeam(this.selectedIssueForAssign.issueId, event.teamId, event.memberId, event.ccUserId).subscribe({
       next: (updatedIssue) => {
         this.assignLoading = false;
         

@@ -1,4 +1,4 @@
-﻿using Dubox.Domain.Entities;
+using Dubox.Domain.Entities;
 using Dubox.Domain.Specification;
 
 namespace Dubox.Application.Specifications
@@ -22,8 +22,11 @@ namespace Dubox.Application.Specifications
             AddInclude($"{nameof(WIRCheckpoint.ChecklistItems)}.{nameof(WIRChecklistItem.PredefinedChecklistItem)}.{nameof(PredefinedChecklistItem.ChecklistSection)}");
             AddInclude($"{nameof(WIRCheckpoint.ChecklistItems)}.{nameof(WIRChecklistItem.PredefinedChecklistItem)}.{nameof(PredefinedChecklistItem.ChecklistSection)}.{nameof(ChecklistSection.Checklist)}");
 
+            // Order by WIRCode (stage), then by version descending
+            // This groups checkpoints by stage and shows newest version first
+            AddOrderBy(w => w.WIRCode);
+            AddOrderByDescending(w => w.Version);
             AddOrderByDescending(w => w.CreatedDate);
-
 
             EnableSplitQuery();
         }

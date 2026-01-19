@@ -25,8 +25,7 @@ public class GenerateBoxesTemplateQueryHandler : IRequestHandler<GenerateBoxesTe
         "Length",
         "Width",
         "Height",
-        "Notes",
-        "Box Tag (Auto-Generated)"
+        "Notes"
     };
 
     public GenerateBoxesTemplateQueryHandler(IExcelService excelService, IUnitOfWork unitOfWork)

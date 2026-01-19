@@ -1,5 +1,6 @@
 using Dubox.Application.Features.Boxes.Commands;
 using Dubox.Application.Features.Boxes.Queries;
+using Dubox.Application.Features.Projects.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -150,14 +151,22 @@ public class BoxesController : ControllerBase
         if (projectId == Guid.Empty)
             return BadRequest("Project ID is required");
 
+        // Get project details to construct filename
+        var projectResult = await _mediator.Send(new GetProjectByIdQuery(projectId), cancellationToken);
+        if (!projectResult.IsSuccess || projectResult.Data == null)
+            return BadRequest("Project not found");
+
         var result = await _mediator.Send(new GenerateBoxesTemplateQuery(projectId), cancellationToken);
 
         if (!result.IsSuccess)
             return BadRequest(result);
 
+        // Construct filename: ProjectCode-ProjectName-BoxesTemplates.xlsx
+        var fileName = $"{projectResult.Data.ProjectCode}-{projectResult.Data.ProjectName}-BoxesTemplates.xlsx";
+
         return File(result.Data!,
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "BoxesImportTemplate.xlsx");
+            fileName);
     }
 
 

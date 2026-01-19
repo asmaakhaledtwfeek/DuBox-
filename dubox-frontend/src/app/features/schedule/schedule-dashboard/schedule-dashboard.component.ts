@@ -30,6 +30,15 @@ interface CreateActivityRequest {
   projectId?: string;
 }
 
+interface Project {
+  projectId: string;
+  projectCode: string;
+  projectName: string;
+  clientName?: string;
+  location?: string;
+  status: string;
+}
+
 @Component({
   selector: 'app-schedule-dashboard',
   standalone: true,
@@ -46,6 +55,11 @@ export class ScheduleDashboardComponent implements OnInit {
   loadingMembers = false;
   error: string | null = null;
   
+  // Project Selection
+  projects: Project[] = [];
+  selectedProject: Project | null = null;
+  projectsLoading = false;
+  
   // View Options
   currentView: 'card' | 'list' | 'detailed' = 'card';
   showViewDropdown = false;
@@ -59,7 +73,8 @@ export class ScheduleDashboardComponent implements OnInit {
     activityCode: '',
     description: '',
     plannedStartDate: '',
-    plannedFinishDate: ''
+    plannedFinishDate: '',
+    projectId: ''
   };
 
   // Assign Team Modal
@@ -93,15 +108,46 @@ export class ScheduleDashboardComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
-    this.loadActivities();
+    this.loadProjects();
     this.loadTeams();
   }
 
+  loadProjects(): void {
+    this.projectsLoading = true;
+    
+    this.http.get<any>(`${environment.apiUrl}/projects`)
+      .subscribe({
+        next: (response) => {
+          this.projects = response.data || response || [];
+          this.projectsLoading = false;
+        },
+        error: (err) => {
+          console.error('Error loading projects:', err);
+          this.projectsLoading = false;
+        }
+      });
+  }
+
+  onProjectSelect(project: Project | null): void {
+    this.selectedProject = project;
+    if (this.selectedProject) {
+      this.loadActivities();
+    } else {
+      this.activities = [];
+    }
+  }
+
   loadActivities(): void {
+    if (!this.selectedProject) {
+      this.activities = [];
+      return;
+    }
+
     this.loading = true;
     this.error = null;
 
-    this.http.get<any>(`${environment.apiUrl}/schedule/activities`).subscribe({
+    // Load activities filtered by project
+    this.http.get<any>(`${environment.apiUrl}/schedule/activities/project/${this.selectedProject.projectId}`).subscribe({
       next: (response) => {
         this.activities = response.data || [];
         this.loading = false;
@@ -161,6 +207,10 @@ export class ScheduleDashboardComponent implements OnInit {
   }
 
   openCreateForm(): void {
+    if (!this.selectedProject) {
+      return;
+    }
+    
     this.showCreateForm = true;
     this.createActivityError = '';
     this.newActivity = {
@@ -168,7 +218,8 @@ export class ScheduleDashboardComponent implements OnInit {
       activityCode: '',
       description: '',
       plannedStartDate: '',
-      plannedFinishDate: ''
+      plannedFinishDate: '',
+      projectId: this.selectedProject.projectId
     };
   }
 

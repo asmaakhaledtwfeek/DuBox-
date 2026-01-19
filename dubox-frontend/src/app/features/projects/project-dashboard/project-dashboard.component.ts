@@ -40,7 +40,7 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
   projectId: string = '';
   loading = true;
   error = '';
-  banner: { message: string; type: 'success' | 'error' } | null = null;
+  banner: { message: string; type: 'success' | 'error' | 'warning' } | null = null;
   bannerTimeoutId: any = null;
   showDeleteConfirm = false;
   deleting = false;
@@ -444,11 +444,11 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
 
     this.templateDownloading = true;
     this.boxService.downloadBoxesTemplate(this.projectId).subscribe({
-      next: (blob) => {
-        const url = window.URL.createObjectURL(blob);
+      next: (response) => {
+        const url = window.URL.createObjectURL(response.blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = 'BoxesImportTemplate.xlsx';
+        link.download = response.filename;
         link.click();
         window.URL.revokeObjectURL(url);
         this.templateDownloading = false;
@@ -842,8 +842,18 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
         this.deleting = false;
         this.showDeleteConfirm = false;
         const message = err?.error?.message || err.message || 'Failed to delete project';
-        this.showBanner(message, 'error');
-        console.error('❌ Error deleting project:', err);
+        
+        // Check if project was archived instead of deleted
+        if (message.includes('moved to archived')) {
+          this.showBanner(message, 'warning');
+          // Reload project data to show updated archived status
+          setTimeout(() => {
+            this.loadProject();
+          }, 1500);
+        } else {
+          this.showBanner(message, 'error');
+          console.error('❌ Error deleting project:', err);
+        }
       }
     });
   }
@@ -867,7 +877,7 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
     return 'var(--error-color)';
   }
 
-  private showBanner(message: string, type: 'success' | 'error'): void {
+  private showBanner(message: string, type: 'success' | 'error' | 'warning'): void {
     this.banner = { message, type };
     if (this.bannerTimeoutId) {
       clearTimeout(this.bannerTimeoutId);

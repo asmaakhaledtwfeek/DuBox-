@@ -140,6 +140,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   selectedIssueForAssign: QualityIssueDetails | null = null;
   assignLoading = false;
   selectedIssueDetails: QualityIssueDetails | null = null;
+  selectedCommentId?: string; // For scrolling to specific comment from notifications
   
   // Multiple images state
   selectedImages: Array<{
@@ -341,6 +342,20 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     const tabParam = this.route.snapshot.queryParams['tab'];
     if (tabParam && ['overview', 'activities', 'wir', 'quality-issues', 'logs', 'drawings', 'progress-updates', 'attachments'].includes(tabParam)) {
       this.activeTab = tabParam as any;
+    }
+    
+    // Check for issueId query parameter (from notifications)
+    const issueId = this.route.snapshot.queryParams['issueId'];
+    const commentId = this.route.snapshot.queryParams['commentId'];
+    
+    if (issueId) {
+      // Set active tab to quality-issues
+      this.activeTab = 'quality-issues';
+      
+      // Load quality issues and then open the specific issue modal
+      setTimeout(() => {
+        this.loadQualityIssuesAndOpenIssue(issueId, commentId);
+      }, 500);
     }
     
     // Check permissions immediately
@@ -1240,6 +1255,61 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   refreshQualityIssues(): void {
     this.loadQualityIssues();
+  }
+
+  loadQualityIssuesAndOpenIssue(issueId: string, commentId?: string): void {
+    if (!this.boxId) {
+      return;
+    }
+
+    this.qualityIssuesLoading = true;
+    this.qualityIssuesError = '';
+
+    this.wirService.getQualityIssuesByBox(this.boxId).subscribe({
+      next: (issues) => {
+        console.log('📋 Quality issues loaded for opening specific issue:', issues);
+        
+        // Filter valid issues
+        const validIssues = (issues || []).filter((issue: any) => {
+          const isValid = issue && typeof issue === 'object' && issue.issueId;
+          if (!isValid) {
+            console.warn('⚠️ Invalid quality issue detected:', issue);
+          }
+          return isValid;
+        });
+        
+        this.qualityIssues = validIssues;
+        this.qualityIssueCount = this.qualityIssues.length;
+        this.qualityIssuesLoading = false;
+        
+        // Find and open the specific issue
+        const issueToOpen = this.qualityIssues.find(issue => issue.issueId === issueId);
+        
+        if (issueToOpen) {
+          console.log('🎯 Opening issue from notification:', issueToOpen);
+          
+          // Store commentId if provided
+          if (commentId) {
+            this.selectedCommentId = commentId;
+            console.log('💬 Comment to focus:', commentId);
+          }
+          
+          // Open the issue details modal
+          setTimeout(() => {
+            this.openIssueDetails(issueToOpen);
+          }, 300);
+        } else {
+          console.warn('⚠️ Issue not found:', issueId);
+          alert('Issue not found');
+        }
+      },
+      error: (err) => {
+        console.error('❌ Error loading quality issues:', err);
+        this.qualityIssuesError = err?.error?.message || err?.message || 'Failed to load quality issues';
+        this.qualityIssuesLoading = false;
+        alert('Failed to load issue. Please try again.');
+      }
+    });
   }
 
   // Create Quality Issue Methods
@@ -2156,6 +2226,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   closeIssueDetails(): void {
     this.isDetailsModalOpen = false;
     this.selectedIssueDetails = null;
+    this.selectedCommentId = undefined; // Clear comment ID
   }
 
   /**

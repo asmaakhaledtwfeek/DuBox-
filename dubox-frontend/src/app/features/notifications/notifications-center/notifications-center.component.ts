@@ -37,6 +37,7 @@ export class NotificationsCenterComponent implements OnInit {
   pageSize = 20;
   totalPages = 1;
   totalCount = 0;
+  unreadCount = 0;
 
   constructor(
     public notificationService: NotificationService,
@@ -46,11 +47,18 @@ export class NotificationsCenterComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadNotifications();
+    
+    // Subscribe to unread count updates
+    this.notificationService.unreadCount$.subscribe(count => {
+      this.unreadCount = count;
+    });
   }
 
   loadNotifications(): void {
     this.loading = true;
     const unreadOnly = this.filter === 'unread';
+    
+    console.log('🔍 Loading notifications with filter:', { unreadOnly, currentPage: this.currentPage, pageSize: this.pageSize });
     
     this.notificationService.getNotifications({ 
       unreadOnly, 
@@ -58,15 +66,26 @@ export class NotificationsCenterComponent implements OnInit {
       pageSize: this.pageSize 
     }).subscribe({
       next: (response: any) => {
-        if (response.data) {
-          this.notifications = response.data.notifications || [];
-          this.totalCount = response.data.totalCount || 0;
-          this.totalPages = response.data.totalPages || 1;
-        }
+        console.log('📩 Received notifications response:', response);
+        
+        // Handle both response formats: direct and wrapped in data
+        const data = response.data || response;
+        
+        this.notifications = data.notifications || [];
+        this.totalCount = data.totalCount || 0;
+        this.totalPages = data.totalPages || 1;
+        
+        console.log('✅ Parsed notifications:', {
+          count: this.notifications.length,
+          totalCount: this.totalCount,
+          totalPages: this.totalPages,
+          notifications: this.notifications
+        });
+        
         this.loading = false;
       },
       error: (error) => {
-        console.error('Error loading notifications:', error);
+        console.error('❌ Error loading notifications:', error);
         this.toastService.showError('Failed to load notifications');
         this.loading = false;
       }

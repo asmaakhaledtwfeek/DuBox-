@@ -19,6 +19,7 @@ export class QualityIssueDetailsModalComponent implements OnInit, OnChanges {
   @Input() issue: QualityIssueDetails | null = null;
   @Input() wirCheckpoints: WIRCheckpoint[] = []; // For WIR lookup
   @Input() isOpen = false;
+  @Input() commentId?: string; // Optional: Scroll to specific comment
   @Output() close = new EventEmitter<void>();
   @Output() statusUpdated = new EventEmitter<void>();
 

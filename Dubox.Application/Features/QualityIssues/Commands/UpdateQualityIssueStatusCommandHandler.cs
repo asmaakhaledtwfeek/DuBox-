@@ -1,4 +1,5 @@
 ﻿using Dubox.Application.DTOs;
+using Dubox.Application.Features.IssueComments.Commands;
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
@@ -16,17 +17,20 @@ namespace Dubox.Application.Features.QualityIssues.Commands
         private readonly ICurrentUserService _currentUserService;
         private readonly IImageProcessingService _imageProcessingService;
         private readonly IProjectTeamVisibilityService _visibilityService;
+        private readonly IMediator _mediator;
 
         public UpdateQualityIssueStatusCommandHandler(
             IUnitOfWork unitOfWork,
             ICurrentUserService currentUserService,
             IImageProcessingService imageProcessingService,
-            IProjectTeamVisibilityService visibilityService)
+            IProjectTeamVisibilityService visibilityService,
+            IMediator mediator)
         {
             _unitOfWork = unitOfWork;
             _currentUserService = currentUserService;
             _imageProcessingService = imageProcessingService;
             _visibilityService = visibilityService;
+            _mediator = mediator;
         }
 
         public async Task<Result<QualityIssueDetailsDto>> Handle(UpdateQualityIssueStatusCommand request, CancellationToken cancellationToken)
@@ -117,6 +121,31 @@ namespace Dubox.Application.Features.QualityIssues.Commands
             };
             await _unitOfWork.Repository<AuditLog>().AddAsync(auditLog, cancellationToken);
             await _unitOfWork.CompleteAsync(cancellationToken);
+
+            // Add comment if provided
+            if (!string.IsNullOrWhiteSpace(request.Comment))
+            {
+                var addCommentCommand = new AddCommentCommand(
+                    IssueId: issue.IssueId,
+                    ParentCommentId: null,
+                    CommentText: request.Comment,
+                    IsStatusUpdateComment: true,
+                    RelatedStatus: request.Status
+                );
+
+                // Fire and forget - don't fail status update if comment fails
+                _ = Task.Run(async () =>
+                {
+                    try
+                    {
+                        await _mediator.Send(addCommentCommand, CancellationToken.None);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error adding status update comment: {ex.Message}");
+                    }
+                }, CancellationToken.None);
+            }
 
             var dto = issue.Adapt<QualityIssueDetailsDto>();
             dto.AssignedToUserName = issue.AssignedToMember?.EmployeeName;

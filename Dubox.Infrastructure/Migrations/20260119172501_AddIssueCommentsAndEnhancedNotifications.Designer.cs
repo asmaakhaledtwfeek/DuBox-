@@ -4,6 +4,7 @@ using Dubox.Infrastructure.ApplicationContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Dubox.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260119172501_AddIssueCommentsAndEnhancedNotifications")]
+    partial class AddIssueCommentsAndEnhancedNotifications
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -14209,9 +14212,6 @@ namespace Dubox.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<Guid?>("ParentWIRId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<string>("Photo")
                         .HasColumnType("nvarchar(max)");
 
@@ -14224,9 +14224,6 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.Property<int>("Status")
                         .HasMaxLength(50)
-                        .HasColumnType("int");
-
-                    b.Property<int>("Version")
                         .HasColumnType("int");
 
                     b.Property<string>("WIRCode")
@@ -14245,8 +14242,6 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasKey("WIRId");
 
                     b.HasIndex("BoxId");
-
-                    b.HasIndex("ParentWIRId");
 
                     b.ToTable("WIRCheckpoints");
                 });
@@ -15184,13 +15179,7 @@ namespace Dubox.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Dubox.Domain.Entities.WIRCheckpoint", "ParentCheckpoint")
-                        .WithMany("ChildVersions")
-                        .HasForeignKey("ParentWIRId");
-
                     b.Navigation("Box");
-
-                    b.Navigation("ParentCheckpoint");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.WIRCheckpointImage", b =>
@@ -15416,8 +15405,6 @@ namespace Dubox.Infrastructure.Migrations
             modelBuilder.Entity("Dubox.Domain.Entities.WIRCheckpoint", b =>
                 {
                     b.Navigation("ChecklistItems");
-
-                    b.Navigation("ChildVersions");
 
                     b.Navigation("Images");
 

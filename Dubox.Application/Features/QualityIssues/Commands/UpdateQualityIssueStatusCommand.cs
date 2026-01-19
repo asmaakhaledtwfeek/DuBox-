@@ -12,7 +12,8 @@ namespace Dubox.Application.Features.QualityIssues.Commands
         string? ResolutionDescription,
         List<IFormFile>? Files = null,
         List<string>? ImageUrls = null,
-        List<string>? FileNames = null
+        List<string>? FileNames = null,
+        string? Comment = null  // Optional comment during status update
         ) : IRequest<Result<QualityIssueDetailsDto>>;
 
 }

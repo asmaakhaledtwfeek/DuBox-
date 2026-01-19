@@ -33,6 +33,27 @@ export class ToastService {
   info(message: string, duration?: number) {
     this.show(message, 'info', duration);
   }
+
+  // Aliases for backwards compatibility
+  showSuccess(message: string, duration?: number) {
+    this.success(message, duration);
+  }
+
+  showError(message: string, duration?: number) {
+    this.error(message, duration);
+  }
+
+  showWarning(message: string, duration?: number) {
+    this.warning(message, duration);
+  }
+
+  showInfo(message: string, duration?: number) {
+    this.info(message, duration);
+  }
+
+  showToast(message: string, type: 'success' | 'error' | 'warning' | 'info' = 'info', duration?: number) {
+    this.show(message, type, duration);
+  }
 }
 
 

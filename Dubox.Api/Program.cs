@@ -11,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient(); // Register IHttpClientFactory
+builder.Services.AddSignalR(); // Add SignalR
 builder.Services.AddAppServicesDIConfig();
 builder.Services.AddMapsterConfig();
 Dubox.Infrastructure.Bootstrap.AddInfrastructureStrapping(builder.Services);
@@ -129,6 +130,9 @@ app.UseAuthorization();
 app.MapHealthChecks("/health");
 
 app.MapControllers();
+
+// Map SignalR hub
+app.MapHub<Dubox.Infrastructure.Hubs.NotificationHub>("/hubs/notifications");
 
 app.Run();
 

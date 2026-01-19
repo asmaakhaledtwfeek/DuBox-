@@ -37,6 +37,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<PredefinedChecklistItem> PredefinedChecklistItems { get; set; } = null!;
     public DbSet<QualityIssue> QualityIssues { get; set; } = null!;
     public DbSet<QualityIssueImage> QualityIssueImages { get; set; } = null!;
+    public DbSet<IssueComment> IssueComments { get; set; } = null!;
     public DbSet<Team> Teams { get; set; } = null!;
     public DbSet<TeamMember> TeamMembers { get; set; } = null!;
     public DbSet<TeamGroup> TeamGroups { get; set; } = null!;
@@ -275,6 +276,55 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(img => img.WIRId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // IssueComment relationships (threaded comments)
+        modelBuilder.Entity<IssueComment>()
+            .HasOne(c => c.QualityIssue)
+            .WithMany(qi => qi.Comments)
+            .HasForeignKey(c => c.IssueId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<IssueComment>()
+            .HasOne(c => c.Author)
+            .WithMany()
+            .HasForeignKey(c => c.AuthorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<IssueComment>()
+            .HasOne(c => c.UpdatedByUser)
+            .WithMany()
+            .HasForeignKey(c => c.UpdatedBy)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<IssueComment>()
+            .HasOne(c => c.ParentComment)
+            .WithMany(c => c.Replies)
+            .HasForeignKey(c => c.ParentCommentId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Notification relationships for comments
+        modelBuilder.Entity<Notification>()
+            .HasOne(n => n.RelatedIssue)
+            .WithMany()
+            .HasForeignKey(n => n.RelatedIssueId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Notification>()
+            .HasOne(n => n.RelatedComment)
+            .WithMany()
+            .HasForeignKey(n => n.RelatedCommentId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<Notification>()
+            .HasOne(n => n.RecipientUser)
+            .WithMany()
+            .HasForeignKey(n => n.RecipientUserId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
         modelBuilder.Entity<BoxActivity>()
             .HasOne(ba => ba.Box)
             .WithMany(b => b.BoxActivities)
@@ -502,6 +552,19 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         // WIRCheckpointImage indexes
         modelBuilder.Entity<WIRCheckpointImage>()
             .HasIndex(img => new { img.WIRId, img.Sequence });
+
+        // IssueComment indexes
+        modelBuilder.Entity<IssueComment>()
+            .HasIndex(c => c.IssueId);
+
+        modelBuilder.Entity<IssueComment>()
+            .HasIndex(c => c.ParentCommentId);
+
+        modelBuilder.Entity<IssueComment>()
+            .HasIndex(c => new { c.IssueId, c.CreatedDate });
+
+        modelBuilder.Entity<IssueComment>()
+            .HasIndex(c => c.AuthorId);
 
         modelBuilder.Entity<DailyProductionLog>()
             .HasIndex(dpl => new { dpl.LogDate, dpl.TeamId });

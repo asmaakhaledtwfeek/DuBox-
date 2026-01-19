@@ -1,13 +1,17 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { QualityIssueDetails, QualityIssueStatus, WIRCheckpointStatus } from '../../../core/models/wir.model';
 import { WIRCheckpoint } from '../../../core/models/wir.model';
 import { environment } from '../../../../environments/environment';
+import { IssueCommentsComponent } from '../issue-comments/issue-comments.component';
+import { HttpClient } from '@angular/common/http';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-quality-issue-details-modal',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule, IssueCommentsComponent],
   templateUrl: './quality-issue-details-modal.component.html',
   styleUrls: ['./quality-issue-details-modal.component.scss']
 })
@@ -16,6 +20,22 @@ export class QualityIssueDetailsModalComponent implements OnInit, OnChanges {
   @Input() wirCheckpoints: WIRCheckpoint[] = []; // For WIR lookup
   @Input() isOpen = false;
   @Output() close = new EventEmitter<void>();
+  @Output() statusUpdated = new EventEmitter<void>();
+
+  // Update Status
+  showUpdateStatus = false;
+  selectedStatus: string = '';
+  resolutionDescription: string = '';
+  statusComment: string = '';
+  selectedFiles: File[] = [];
+  isSubmitting = false;
+
+  statuses = [
+    { value: 'Open', label: 'Open', icon: 'circle', class: 'status-open' },
+    { value: 'InProgress', label: 'In Progress', icon: 'arrow-repeat', class: 'status-inprogress' },
+    { value: 'Resolved', label: 'Resolved', icon: 'check-circle', class: 'status-resolved' },
+    { value: 'Closed', label: 'Closed', icon: 'x-circle', class: 'status-closed' }
+  ];
 
   qualityIssueStatusMeta: Record<QualityIssueStatus, { label: string; class: string }> = {
     Open: { label: 'Open', class: 'status-open' },
@@ -25,6 +45,11 @@ export class QualityIssueDetailsModalComponent implements OnInit, OnChanges {
   };
 
   imageUrls: string[] = [];
+
+  constructor(
+    private http: HttpClient,
+    private toastService: ToastService
+  ) {}
 
   ngOnInit(): void {
     this.updateImageUrls();
@@ -38,6 +63,11 @@ export class QualityIssueDetailsModalComponent implements OnInit, OnChanges {
       console.log('🎭 Modal AssignedToUserName:', this.issue.assignedToUserName);
       console.log('🎭 Modal CCUserName:', this.issue.ccUserName);
       this.updateImageUrls();
+      this.selectedStatus = this.issue.status || 'Open';
+      this.resolutionDescription = this.issue.resolutionDescription || '';
+      this.statusComment = '';
+      this.selectedFiles = [];
+      this.showUpdateStatus = false;
     }
   }
 
@@ -289,6 +319,91 @@ export class QualityIssueDetailsModalComponent implements OnInit, OnChanges {
   onImageError(event: Event): void {
     const img = event.target as HTMLImageElement;
     img.style.display = 'none';
+  }
+
+  // Update Status Methods
+  toggleUpdateStatus(): void {
+    this.showUpdateStatus = !this.showUpdateStatus;
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files) {
+      const newFiles = Array.from(input.files);
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+      const invalidFiles = newFiles.filter(file => !validTypes.includes(file.type));
+      
+      if (invalidFiles.length > 0) {
+        this.toastService.showError('Only image files (JPEG, PNG, GIF) are allowed');
+        return;
+      }
+      this.selectedFiles = [...this.selectedFiles, ...newFiles];
+    }
+  }
+
+  removeFile(index: number): void {
+    this.selectedFiles.splice(index, 1);
+  }
+
+  requiresResolution(): boolean {
+    return this.selectedStatus === 'Resolved' || this.selectedStatus === 'Closed';
+  }
+
+  isUpdateValid(): boolean {
+    if (!this.selectedStatus) return false;
+    if (this.requiresResolution() && !this.resolutionDescription.trim()) return false;
+    return true;
+  }
+
+  async updateStatus(): Promise<void> {
+    if (!this.isUpdateValid() || !this.issue) {
+      this.toastService.showWarning('Please fill in all required fields');
+      return;
+    }
+
+    this.isSubmitting = true;
+
+    try {
+      const formData = new FormData();
+      formData.append('Status', this.selectedStatus);
+      
+      if (this.resolutionDescription) {
+        formData.append('ResolutionDescription', this.resolutionDescription);
+      }
+
+      if (this.statusComment.trim()) {
+        formData.append('Comment', this.statusComment.trim());
+      }
+
+      this.selectedFiles.forEach(file => {
+        formData.append('Files', file, file.name);
+      });
+
+      const response = await this.http.put<any>(
+        `${environment.apiUrl}/qualityissues/${this.issue.issueId}/status`,
+        formData
+      ).toPromise();
+
+      if (response.isSuccess) {
+        this.toastService.showSuccess('Issue status updated successfully');
+        this.statusUpdated.emit();
+        this.showUpdateStatus = false;
+        this.statusComment = '';
+        this.selectedFiles = [];
+        // Refresh issue data
+        if (this.issue) {
+          this.issue.status = this.selectedStatus as QualityIssueStatus;
+          this.issue.resolutionDescription = this.resolutionDescription;
+        }
+      } else {
+        this.toastService.showError(response.message || 'Failed to update status');
+      }
+    } catch (error: any) {
+      console.error('Error updating status:', error);
+      this.toastService.showError(error?.error?.message || 'Failed to update status');
+    } finally {
+      this.isSubmitting = false;
+    }
   }
 }
 

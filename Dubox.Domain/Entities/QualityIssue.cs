@@ -68,6 +68,8 @@ namespace Dubox.Domain.Entities
 
         public List<QualityIssueImage> Images { get; set; } = new();
 
+        public virtual ICollection<IssueComment> Comments { get; set; } = new List<IssueComment>();
+
         // Calculated properties
         [NotMapped]
         public bool IsOverdue => DueDate.HasValue &&

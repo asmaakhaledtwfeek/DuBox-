@@ -18,7 +18,7 @@ public class GetBoxesByFactoryQueryHandler : IRequestHandler<GetBoxesByFactoryQu
     private readonly IBoxMapper _boxMapper;
     public GetBoxesByFactoryQueryHandler(
         IUnitOfWork unitOfWork,
-        IQRCodeService qrCodeService , IBoxMapper boxMapper)
+        IQRCodeService qrCodeService, IBoxMapper boxMapper)
     {
         _unitOfWork = unitOfWork;
         _qrCodeService = qrCodeService;
@@ -37,7 +37,7 @@ public class GetBoxesByFactoryQueryHandler : IRequestHandler<GetBoxesByFactoryQu
             }
 
             // Get boxes for this factory (InProgress, Completed, and optionally Dispatched)
-            var boxes =  _unitOfWork.Repository<Box>()
+            var boxes = _unitOfWork.Repository<Box>()
                 .GetWithSpec(new GetBoxesByFactoryIdSpecification(request.FactoryId, request.IncludeDispatched)).Data.ToList();
 
             var boxDtos = new List<BoxDto>();

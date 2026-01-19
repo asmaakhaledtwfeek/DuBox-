@@ -96,22 +96,24 @@
   text-overflow: ellipsis;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   flex: 1;
 
   .coming-soon-badge {
     display: inline-flex;
     align-items: center;
-    padding: 3px 8px;
+    padding: 2px 6px;
     background: linear-gradient(135deg, #f59e0b, #d97706);
     color: black;
-    font-size: 10px;
-    font-weight: 700;
+    font-size: 8px;
+    font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    border-radius: 10px;
+    letter-spacing: 0.3px;
+    border-radius: 8px;
     white-space: nowrap;
-    box-shadow: 0 2px 4px rgba(245, 158, 11, 0.3);
+    box-shadow: 0 1px 3px rgba(245, 158, 11, 0.3);
+    margin-left: auto;
   }
 }
 

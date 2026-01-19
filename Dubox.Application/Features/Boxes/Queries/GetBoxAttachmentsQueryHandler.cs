@@ -4,6 +4,7 @@ using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using System.Reflection.Metadata.Ecma335;
 
 namespace Dubox.Application.Features.Boxes.Queries;
 
@@ -107,7 +108,7 @@ public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQu
     private async Task<List<BoxAttachmentDto>> GetQualityIssueImagesAsync(Guid boxId, CancellationToken cancellationToken)
     {
         var qualityIssueImages = await _context.QualityIssues
-            .Where(qi => qi.WIRCheckpoint!.BoxId == boxId)
+            .Where(qi => qi.BoxId == boxId)
             .SelectMany(qi => qi.Images.Select(img => new
             {
                 Image = img,
@@ -151,7 +152,7 @@ public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQu
     }
     private BoxAttachmentDto MapCommonImageData(dynamic image,Guid? createdBy,Guid referenceId, string referenceType,string? referenceName)
     {
-        return new BoxAttachmentDto
+        var attachment= new BoxAttachmentDto
         {
             ImageFileName = image.ImageFileName,
             ImageUrl = GetImageUrl(image.ImageFileName),
@@ -165,7 +166,8 @@ public class GetBoxAttachmentsQueryHandler : IRequestHandler<GetBoxAttachmentsQu
             ReferenceId = referenceId,
             ReferenceType = referenceType,
             ReferenceName = referenceName
-        };
+        }; ;
+        return attachment;
     }
 
 }

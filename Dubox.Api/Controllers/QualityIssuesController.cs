@@ -33,6 +33,14 @@ namespace Dubox.Api.Controllers
             var result = await _mediator.Send(new GetQualityIssuesByBoxIdQuery(boxId), cancellationToken);
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
+
+        [HttpGet("project/{projectId}")]
+        public async Task<IActionResult> GetQualityIssuesByProject(Guid projectId, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new GetQualityIssuesByProjectIdQuery(projectId), cancellationToken);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetAllQualityIssues([FromQuery] GetQualityIssuesQuery query, CancellationToken cancellationToken)
         {
@@ -51,6 +59,8 @@ namespace Dubox.Api.Controllers
             SeverityEnum severity;
             string issueDescription;
             Guid? assignedTo = null;
+            Guid? assignedToUserId = null;
+            Guid? ccUserId = null;
             DateTime? dueDate = null;
             List<string>? imageUrls = null;
             List<IFormFile>? files = null;
@@ -77,6 +87,20 @@ namespace Dubox.Api.Controllers
                 if (!string.IsNullOrWhiteSpace(assignedToValue) && Guid.TryParse(assignedToValue, out var assignedToTemp))
                 {
                     assignedTo = assignedToTemp;
+                }
+                
+                // AssignedToUserId is optional - only parse if provided
+                var assignedToUserIdValue = form["AssignedToUserId"].FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(assignedToUserIdValue) && Guid.TryParse(assignedToUserIdValue, out var assignedToUserIdTemp))
+                {
+                    assignedToUserId = assignedToUserIdTemp;
+                }
+
+                // CCUserId is optional - only parse if provided
+                var ccUserIdValue = form["CCUserId"].FirstOrDefault();
+                if (!string.IsNullOrWhiteSpace(ccUserIdValue) && Guid.TryParse(ccUserIdValue, out var ccUserIdTemp))
+                {
+                    ccUserId = ccUserIdTemp;
                 }
 
                 if (DateTime.TryParse(form["DueDate"].ToString(), out var parsedDueDate))
@@ -122,6 +146,8 @@ namespace Dubox.Api.Controllers
                 Severity: severity,
                 IssueDescription: issueDescription,
                 AssignedTo: assignedTo,
+                AssignedToUserId: assignedToUserId,
+                CCUserId: ccUserId,
                 DueDate: dueDate,
                 ImageUrls: validImageUrls,
                 Files: files,
@@ -194,7 +220,8 @@ namespace Dubox.Api.Controllers
             var command = new AssignQualityIssueToTeamCommand(
                 IssueId: issueId,
                 TeamId: request.TeamId,
-                TeamMemberId:request.TeamMemberId
+                TeamMemberId:request.TeamMemberId,
+                CCUserId: request.CCUserId
             );
 
             var result = await _mediator.Send(command, cancellationToken);
@@ -207,6 +234,7 @@ namespace Dubox.Api.Controllers
         public Guid IssueId { get; set; }
         public Guid? TeamId { get; set; }
         public Guid? TeamMemberId{ get; set; }
+        public Guid? CCUserId { get; set; }
     }
 
     public class CreateQualityIssueJsonRequest

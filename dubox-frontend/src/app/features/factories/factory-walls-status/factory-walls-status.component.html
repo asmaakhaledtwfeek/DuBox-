@@ -1,0 +1,425 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="page-content">
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-container">
+      <div class="loading-spinner"></div>
+      <p>Loading walls status...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error && !loading" class="error-container">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="15" y1="9" x2="9" y2="15"/>
+        <line x1="9" y1="9" x2="15" y2="15"/>
+      </svg>
+      <h3>Error Loading Data</h3>
+      <p>{{ error }}</p>
+      <button class="btn-primary" (click)="loadData()">Try Again</button>
+    </div>
+
+    <!-- Main Content -->
+    <div *ngIf="!loading && !error && factory" class="walls-status-container">
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="header-left">
+          <button class="btn-back" (click)="goBack()" title="Back to Factory Layout">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Back
+          </button>
+          <div class="header-info">
+            <h1>Walls, Slab & Soffit Status</h1>
+            <div class="factory-name">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+              </svg>
+              {{ factory.factoryName }}
+            </div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="factory-badge">
+            <span class="badge-label">Code:</span>
+            <span class="badge-value">{{ factory.factoryCode }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filters Section with Inline KPI Cards -->
+      <div class="filters-section">
+        <div class="filters-with-kpis">
+          <div class="filter-group">
+            <label for="projectFilter" class="filter-label">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 3h18v18H3z"/>
+                <path d="M3 9h18M9 21V9"/>
+              </svg>
+              Project:
+            </label>
+            <select id="projectFilter" [(ngModel)]="selectedProjectId" (change)="applyFilters()" class="filter-select">
+              <option value="">All Projects</option>
+              <option *ngFor="let project of projects" [value]="project.id">{{ project.name }}</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="buildingFilter" class="filter-label">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <line x1="3" y1="9" x2="21" y2="9"/>
+                <line x1="9" y1="21" x2="9" y2="9"/>
+              </svg>
+              Building:
+            </label>
+            <select id="buildingFilter" [(ngModel)]="selectedBuildingNumber" (change)="applyFilters()" class="filter-select">
+              <option value="">All Buildings</option>
+              <option *ngFor="let building of availableBuildingNumbers" [value]="building">{{ building }}</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="floorFilter" class="filter-label">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <line x1="3" y1="9" x2="21" y2="9"/>
+                <line x1="9" y1="21" x2="9" y2="9"/>
+              </svg>
+              Level:
+            </label>
+            <select id="floorFilter" [(ngModel)]="selectedFloor" (change)="applyFilters()" class="filter-select">
+              <option value="">All Levels</option>
+              <option *ngFor="let floor of availableFloors" [value]="floor">{{ floor }}</option>
+            </select>
+          </div>
+
+          <button class="btn-clear-filters" (click)="clearFilters()" *ngIf="selectedProjectId || selectedBuildingNumber || selectedFloor">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            Clear Filters
+          </button>
+
+          <div class="inline-kpi-cards" *ngIf="filteredBoxes.length > 0">
+            <div class="inline-kpi-card total-kpi">
+              <div class="kpi-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                </svg>
+              </div>
+              <div class="kpi-content">
+                <div class="kpi-value">{{ getCompletionStats().total }}</div>
+                <div class="kpi-label">Total Boxes</div>
+              </div>
+            </div>
+
+            <div class="inline-kpi-card complete-kpi">
+              <div class="kpi-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </div>
+              <div class="kpi-content">
+                <div class="kpi-value">{{ getCompletionStats().allComplete }}</div>
+                <div class="kpi-label">Fully Complete</div>
+                <div class="kpi-percentage">{{ getCompletionPercentage(getCompletionStats().allComplete) }}%</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Statistics Cards Grid -->
+      <div class="stats-grid" *ngIf="filteredBoxes.length > 0">
+
+        <div class="stat-card wall-stat">
+          <div class="stat-content">
+            <div class="stat-label">Wall 1</div>
+            <div class="stat-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="getCompletionPercentage(getCompletionStats().wall1Complete)"></div>
+              </div>
+              <span class="progress-text">{{ getCompletionStats().wall1Complete }}/{{ getCompletionStats().total }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card wall-stat">
+          <div class="stat-content">
+            <div class="stat-label">Wall 2</div>
+            <div class="stat-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="getCompletionPercentage(getCompletionStats().wall2Complete)"></div>
+              </div>
+              <span class="progress-text">{{ getCompletionStats().wall2Complete }}/{{ getCompletionStats().total }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card wall-stat">
+          <div class="stat-content">
+            <div class="stat-label">Wall 3</div>
+            <div class="stat-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="getCompletionPercentage(getCompletionStats().wall3Complete)"></div>
+              </div>
+              <span class="progress-text">{{ getCompletionStats().wall3Complete }}/{{ getCompletionStats().total }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card wall-stat">
+          <div class="stat-content">
+            <div class="stat-label">Wall 4</div>
+            <div class="stat-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="getCompletionPercentage(getCompletionStats().wall4Complete)"></div>
+              </div>
+              <span class="progress-text">{{ getCompletionStats().wall4Complete }}/{{ getCompletionStats().total }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card slab-stat">
+          <div class="stat-content">
+            <div class="stat-label">Slab</div>
+            <div class="stat-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="getCompletionPercentage(getCompletionStats().slabComplete)"></div>
+              </div>
+              <span class="progress-text">{{ getCompletionStats().slabComplete }}/{{ getCompletionStats().total }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card soffit-stat">
+          <div class="stat-content">
+            <div class="stat-label">Soffit</div>
+            <div class="stat-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="getCompletionPercentage(getCompletionStats().soffitComplete)"></div>
+              </div>
+              <span class="progress-text">{{ getCompletionStats().soffitComplete }}/{{ getCompletionStats().total }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="stat-card pod-stat">
+          <div class="stat-content">
+            <div class="stat-label">POD Delivery</div>
+            <div class="stat-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="getCompletionPercentage(getCompletionStats().podDeliverComplete)"></div>
+              </div>
+              <span class="progress-text">{{ getCompletionStats().podDeliverComplete }}/{{ getCompletionStats().total }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Table -->
+      <div class="table-card">
+        <div class="table-header">
+          <h3>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <line x1="3" y1="9" x2="21" y2="9"/>
+              <line x1="9" y1="21" x2="9" y2="9"/>
+            </svg>
+            Detailed Status Table
+          </h3>
+          <div class="table-info">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <span>{{ filteredBoxes.length }} box(es)</span>
+          </div>
+        </div>
+
+        <div class="table-wrapper" *ngIf="filteredBoxes.length > 0">
+          <table class="walls-table">
+            <thead>
+              <tr>
+                <th class="sticky-col">Box Tag / Serial Number</th>
+                <th>Building</th>
+                <th>Floor</th>
+                <th>Wall 1</th>
+                <th>Wall 2</th>
+                <th>Wall 3</th>
+                <th>Wall 4</th>
+                <th>Slab</th>
+                <th>Soffit</th>
+                <th>POD Deliver</th>
+                <th>POD Name</th>
+                <th>POD Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let box of filteredBoxes" (click)="viewBox(box.id)" class="clickable-row">
+                <td class="sticky-col box-identifier">
+                  <div class="box-tag">{{ box.code }}</div>
+                  <div class="box-serial" *ngIf="box.serialNumber">{{ box.serialNumber }}</div>
+                </td>
+                <td class="box-info">
+                  <span *ngIf="box.buildingNumber">{{ box.buildingNumber }}</span>
+                  <span *ngIf="!box.buildingNumber" class="no-data">-</span>
+                </td>
+                <td class="box-info">
+                  <span *ngIf="box.floor">{{ box.floor }}</span>
+                  <span *ngIf="!box.floor" class="no-data">-</span>
+                </td>
+                <td [class.status-finished]="box.wall1" [class.status-not-finished]="!box.wall1">
+                  <span class="status-icon" *ngIf="box.wall1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </span>
+                  <span class="status-icon" *ngIf="!box.wall1">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </span>
+                </td>
+                <td [class.status-finished]="box.wall2" [class.status-not-finished]="!box.wall2">
+                  <span class="status-icon" *ngIf="box.wall2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </span>
+                  <span class="status-icon" *ngIf="!box.wall2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </span>
+                </td>
+                <td [class.status-finished]="box.wall3" [class.status-not-finished]="!box.wall3">
+                  <span class="status-icon" *ngIf="box.wall3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </span>
+                  <span class="status-icon" *ngIf="!box.wall3">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </span>
+                </td>
+                <td [class.status-finished]="box.wall4" [class.status-not-finished]="!box.wall4">
+                  <span class="status-icon" *ngIf="box.wall4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </span>
+                  <span class="status-icon" *ngIf="!box.wall4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </span>
+                </td>
+                <td [class.status-finished]="box.slab" [class.status-not-finished]="!box.slab">
+                  <span class="status-icon" *ngIf="box.slab">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </span>
+                  <span class="status-icon" *ngIf="!box.slab">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </span>
+                </td>
+                <td [class.status-finished]="box.soffit" [class.status-not-finished]="!box.soffit">
+                  <span class="status-icon" *ngIf="box.soffit">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </span>
+                  <span class="status-icon" *ngIf="!box.soffit">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </span>
+                </td>
+                <td [class.status-finished]="box.podDeliver" [class.status-not-finished]="!box.podDeliver">
+                  <span class="status-icon" *ngIf="box.podDeliver">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </span>
+                  <span class="status-icon" *ngIf="!box.podDeliver">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </span>
+                </td>
+                <td class="pod-info">
+                  <span *ngIf="box.podName">{{ box.podName }}</span>
+                  <span *ngIf="!box.podName" class="no-data">-</span>
+                </td>
+                <td class="pod-info">
+                  <span *ngIf="box.podType">{{ box.podType }}</span>
+                  <span *ngIf="!box.podType" class="no-data">-</span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" *ngIf="filteredBoxes.length === 0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="3" y1="9" x2="21" y2="9"/>
+            <line x1="9" y1="21" x2="9" y2="9"/>
+          </svg>
+          <h3>No Boxes Available</h3>
+          <p>There are no boxes with position data in this factory.</p>
+          <button class="btn-primary" (click)="goBack()">Back to Layout</button>
+        </div>
+
+        <!-- Legend -->
+        <div class="table-legend" *ngIf="filteredBoxes.length > 0">
+          <div class="legend-item">
+            <span class="status-icon status-finished-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </span>
+            <span>Finished</span>
+          </div>
+          <div class="legend-item">
+            <span class="status-icon status-not-finished-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </span>
+            <span>Not Finished</span>
+          </div>
+          <div class="legend-item hint">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/>
+            </svg>
+            <span>Click on any row to view box details</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -16,9 +16,13 @@ builder.Services.AddMapsterConfig();
 Dubox.Infrastructure.Bootstrap.AddInfrastructureStrapping(builder.Services);
 Dubox.Application.Bootstrap.AddApplicationStrapping(builder.Services);
 
+// Add Automatic Data Seeding on Startup
+builder.Services.AddHostedService<Dubox.Api.Services.DataSeederHostedService>();
+
 
 builder.Services.AddMediatR(cfg =>
 {
+
     cfg.RegisterServicesFromAssembly(Dubox.Application.AssemblyReference.Assembly);
     cfg.AddOpenBehavior(typeof(ValidationPipelineBehavior<,>));
 });
@@ -51,12 +55,19 @@ builder.Services.AddControllers()
 
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
-    });
+    options.AddPolicy("AllowFrontend",
+        policy =>
+        {
+            policy.WithOrigins(
+              "http://localhost:4200",
+              "http://localhost:51091",
+              "https://localhost:7158",
+              "https://dubox-frontend-gjgbcgbrb8d3fra2.uaenorth-01.azurewebsites.net"
+            )
+              .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials(); // only if using cookies or auth headers
+        });
 });
 
 builder.Services.AddEndpointsApiExplorer();
@@ -106,9 +117,9 @@ app.UseExceptionHandler();
 app.UseSwagger();
 app.UseSwaggerUI();
 
+// CORS must be before Authentication/Authorization
+app.UseCors("AllowFrontend");
 app.UseHttpsRedirection();
-
-app.UseCors("AllowAll");
 
 app.UseAuthentication();
 

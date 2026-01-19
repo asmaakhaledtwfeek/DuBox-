@@ -32,7 +32,16 @@ public class GetProjectByIdQueryHandler : IRequestHandler<GetProjectByIdQuery, R
         if (!canAccess)
             return Result.Failure<ProjectDto>("Access denied. You do not have permission to view this project.");
 
-        return Result.Success(project.Adapt<ProjectDto>());
+        var projectDto = project.Adapt<ProjectDto>();
+        if (project.ProjectManger != null)
+        {
+            projectDto = projectDto with 
+            {
+                ProjectMangerName = project.ProjectManger.FullName ?? project.ProjectManger.Email 
+            };
+        }
+
+        return Result.Success(projectDto);
     }
 }
 

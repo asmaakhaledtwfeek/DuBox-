@@ -13,6 +13,7 @@ namespace Dubox.Application.Features.QualityIssues.Commands
         string IssueDescription,
         Guid? AssignedTo = null,
         Guid? AssignedToUserId = null,
+        Guid? CCUserId = null,
         DateTime? DueDate = null,
         List<string>? ImageUrls = null,
          List<IFormFile>? Files=null,

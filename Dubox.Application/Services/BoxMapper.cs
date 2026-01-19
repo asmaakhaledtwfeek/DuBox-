@@ -121,7 +121,16 @@ namespace Dubox.Application.Services
                     FactoryName = factoryName,
                     Bay = box.Bay,
                     Row = box.Row,
-                    Position = box.Position
+                    Position = box.Position,
+                    Wall1 = box.Wall1,
+                    Wall2 = box.Wall2,
+                    Wall3 = box.Wall3,
+                    Wall4 = box.Wall4,
+                    Slab = box.Slab,
+                    Soffit = box.Soffit,
+                    PodDeliver = box.PodDeliver,
+                    PodName = box.PodName,
+                    PodType = box.PodType
                 };
             }
             catch (Exception ex)

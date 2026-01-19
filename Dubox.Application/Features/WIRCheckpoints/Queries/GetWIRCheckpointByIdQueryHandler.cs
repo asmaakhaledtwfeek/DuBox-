@@ -74,6 +74,38 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
                 }
             }
 
+            // Map quality issues navigation properties (CCUser and AssignedToMember)
+            if (dto.QualityIssues != null && checkpoint.QualityIssues != null)
+            {
+                foreach (var dtoIssue in dto.QualityIssues)
+                {
+                    // Find the corresponding entity issue
+                    var entityIssue = checkpoint.QualityIssues
+                        .FirstOrDefault(qi => qi.IssueId == dtoIssue.IssueId);
+                    
+                    if (entityIssue != null)
+                    {
+                        // Map CC User name
+                        if (entityIssue.CCUser != null)
+                        {
+                            dtoIssue.CcUserName = entityIssue.CCUser.FullName;
+                        }
+                        
+                        // Map Assigned To Member name
+                        if (entityIssue.AssignedToMember != null)
+                        {
+                            dtoIssue.AssignedUserName =!string.IsNullOrEmpty( entityIssue.AssignedToMember.EmployeeName) ? entityIssue.AssignedToMember.EmployeeName : entityIssue.AssignedToMember.User.FullName;
+                        }
+                        
+                        // Map Assigned To Team name
+                        if (entityIssue.AssignedToTeam != null)
+                        {
+                            dtoIssue.AssignedTeam = entityIssue.AssignedToTeam.TeamName;
+                        }
+                    }
+                }
+            }
+            
             return Result.Success(dto);
         }
     }

@@ -317,6 +317,10 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                         failureCount++;
                         continue;
                     }
+                    string? parsedZone = null;
+                    if (!string.IsNullOrWhiteSpace(boxDto.Zone))
+                        parsedZone = boxDto.Zone;
+
                     var lastSeq = _unitOfWork.Repository<Box>().Get()
                     .Where(b => b.ProjectId == request.ProjectId)
                     .Max(b => (int?)b.SequentialNumber) ?? 0;
@@ -324,9 +328,7 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                     var yearOfProject = project.CreatedDate.Year.ToString().Substring(2, 2);
                     var serialNumber = _serialNumberService.GenerateSerialNumber("X", lastSeq, yearOfProject);
                     // Try to parse Zone enum if provided
-                    string? parsedZone = null;
-                    if (!string.IsNullOrWhiteSpace(boxDto.Zone))
-                            parsedZone = boxDto.Zone;
+                   
                      
                     
                     var newBox = new Box

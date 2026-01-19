@@ -13,6 +13,9 @@ public record UpdateProjectCommand(
     string? BimLink,
     bool? IsActive,
     DateTime? PlannedStartDate,
-    int? Duration
+    int? Duration,
+    DateTime? ProjectedEndDate,
+    Guid? ProjectMangerId,
+    decimal? ProjectValue
 ) : IRequest<Result<ProjectDto>>;
 

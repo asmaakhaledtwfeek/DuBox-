@@ -11,12 +11,17 @@ namespace Dubox.Application.Specifications
             // Filter out checkpoints for inactive boxes or projects
             AddCriteria(c => c.Box.IsActive);
             AddCriteria(c => c.Box.Project.IsActive);
+
             AddInclude(nameof(WIRCheckpoint.ChecklistItems));
             AddInclude($"{nameof(WIRCheckpoint.ChecklistItems)}.{nameof(WIRChecklistItem.PredefinedChecklistItem)}");
             AddInclude($"{nameof(WIRCheckpoint.ChecklistItems)}.{nameof(WIRChecklistItem.PredefinedChecklistItem)}.{nameof(PredefinedChecklistItem.ChecklistSection)}");
             AddInclude($"{nameof(WIRCheckpoint.ChecklistItems)}.{nameof(WIRChecklistItem.PredefinedChecklistItem)}.{nameof(PredefinedChecklistItem.ChecklistSection)}.{nameof(ChecklistSection.Checklist)}");
             AddInclude(nameof(WIRCheckpoint.QualityIssues));
             AddInclude($"{nameof(WIRCheckpoint.QualityIssues)}.{nameof(QualityIssue.AssignedToTeam)}");
+            AddInclude($"{nameof(WIRCheckpoint.QualityIssues)}.{nameof(QualityIssue.AssignedToMember)}");
+            AddInclude($"{nameof(WIRCheckpoint.QualityIssues)}.{nameof(QualityIssue.AssignedToMember)}.{nameof(TeamMember.User)}");
+
+            AddInclude($"{nameof(WIRCheckpoint.QualityIssues)}.{nameof(QualityIssue.CCUser)}");
             AddInclude($"{nameof(WIRCheckpoint.QualityIssues)}.{nameof(QualityIssue.Images)}");
             AddInclude(nameof(WIRCheckpoint.Images));
             AddInclude(nameof(WIRCheckpoint.Box));

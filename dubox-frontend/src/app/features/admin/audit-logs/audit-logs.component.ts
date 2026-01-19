@@ -8,6 +8,7 @@ import { AuditLogService } from '../../../core/services/audit-log.service';
 import { AuditLog, AuditLogQueryParams, FieldChange } from '../../../core/models/audit-log.model';
 import { DiffUtil } from '../../../core/utils/diff.util';
 import { AuditLogDetailsModalComponent } from './audit-log-details-modal/audit-log-details-modal.component';
+import { UserService, UserDto } from '../../../core/services/user.service';
 import * as ExcelJS from 'exceljs';
 
 @Component({
@@ -22,9 +23,11 @@ export class AuditLogsComponent implements OnInit {
   filteredLogs: AuditLog[] = [];
   availableActions: string[] = [];
   availableTables: string[] = [];
+  availableUsers: UserDto[] = [];
   private actionSet = new Set<string>();
   private tableSet = new Set<string>();
   loading = false;
+  loadingUsers = false;
   error = '';
   selectedLog: AuditLog | null = null;
   isDetailsModalOpen = false;
@@ -41,6 +44,7 @@ export class AuditLogsComponent implements OnInit {
   filterSearchTerm = '';
   filterFromDate = '';
   filterToDate = '';
+  filterChangedBy = '';
 
   // Expand/collapse state
   expandedLogs = new Set<string>();
@@ -49,10 +53,14 @@ export class AuditLogsComponent implements OnInit {
   readonly Math = Math;
   private readonly numericValueRegex = /([-+]?\d*\.?\d+(?:[eE][-+]?\d+)?)(%?)/g;
 
-  constructor(private auditLogService: AuditLogService) {}
+  constructor(
+    private auditLogService: AuditLogService,
+    private userService: UserService
+  ) {}
 
   ngOnInit(): void {
     this.loadAuditLogs();
+    this.loadUsers();
   }
 
   loadAuditLogs(): void {
@@ -76,6 +84,7 @@ export class AuditLogsComponent implements OnInit {
       to.setHours(23, 59, 59, 999);
       params.toDate = to.toISOString();
     }
+    if (this.filterChangedBy) params.changedBy = this.filterChangedBy;
 
     this.auditLogService.getAuditLogs(params).subscribe({
       next: (response) => {
@@ -109,6 +118,24 @@ export class AuditLogsComponent implements OnInit {
     });
   }
 
+  loadUsers(): void {
+    this.loadingUsers = true;
+    this.userService.getUsers(1, 1000).subscribe({
+      next: (response) => {
+        this.availableUsers = response.items.sort((a, b) => {
+          const nameA = a.fullName || a.email || '';
+          const nameB = b.fullName || b.email || '';
+          return nameA.localeCompare(nameB);
+        });
+        this.loadingUsers = false;
+      },
+      error: (err) => {
+        console.error('Failed to load users:', err);
+        this.loadingUsers = false;
+      }
+    });
+  }
+
   applyFilters(): void {
     this.currentPage = 1; // Reset to first page when filters change
     this.loadAuditLogs();
@@ -120,6 +147,7 @@ export class AuditLogsComponent implements OnInit {
     this.filterSearchTerm = '';
     this.filterFromDate = '';
     this.filterToDate = '';
+    this.filterChangedBy = '';
     this.currentPage = 1;
     this.loadAuditLogs();
   }

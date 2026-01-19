@@ -6,7 +6,7 @@ import { HeaderComponent } from '../../../shared/components/header/header.compon
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { ReportsService } from '../../../core/services/reports.service';
 import { ProjectService } from '../../../core/services/project.service';
-import { Project } from '../../../core/models/project.model';
+import { Project, ProjectStatus, ProjectStatusToInt } from '../../../core/models/project.model';
 import { BoxStatus, getBoxStatusNumber } from '../../../core/models/box.model';
 import { 
   PaginatedBoxSummaryReportResponse, 
@@ -42,6 +42,7 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
   selectedBuildingNumber = '';
   selectedZone = '';
   selectedStatuses: number[] = [];
+  selectedProjectStatuses: number[] = [];
   progressMin = 0;
   progressMax = 100;
   searchTerm = '';
@@ -64,6 +65,8 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   readonly BoxStatus = BoxStatus;
+  readonly ProjectStatus = ProjectStatus;
+  readonly ProjectStatusToInt = ProjectStatusToInt;
   readonly formatProgress = formatProgress;
   readonly getBoxStatusNumber = getBoxStatusNumber;
   readonly Math = Math; // Expose Math to template
@@ -126,6 +129,7 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
       buildingNumber: this.selectedBuildingNumber || undefined,
       zone: this.selectedZone || undefined,
       status: this.selectedStatuses.length > 0 ? this.selectedStatuses : undefined,
+      projectStatus: this.selectedProjectStatuses.length > 0 ? this.selectedProjectStatuses : undefined,
       progressMin: this.progressMin > 0 ? this.progressMin : undefined,
       progressMax: this.progressMax < 100 ? this.progressMax : undefined,
       dateFrom: this.dateFrom || undefined,
@@ -185,6 +189,7 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
     this.selectedBuildingNumber = '';
     this.selectedZone = '';
     this.selectedStatuses = [];
+    this.selectedProjectStatuses = [];
     this.progressMin = 0;
     this.progressMax = 100;
     this.searchTerm = '';
@@ -227,6 +232,16 @@ export class BoxesSummaryReportComponent implements OnInit, OnDestroy {
       this.selectedStatuses.splice(index, 1);
     } else {
       this.selectedStatuses.push(statusNum);
+    }
+  }
+
+  toggleProjectStatus(status: ProjectStatus): void {
+    const statusNum = this.ProjectStatusToInt[status];
+    const index = this.selectedProjectStatuses.indexOf(statusNum);
+    if (index >= 0) {
+      this.selectedProjectStatuses.splice(index, 1);
+    } else {
+      this.selectedProjectStatuses.push(statusNum);
     }
   }
 

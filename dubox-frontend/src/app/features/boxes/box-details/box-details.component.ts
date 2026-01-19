@@ -6,7 +6,7 @@ import { FormsModule, ReactiveFormsModule, FormControl, Validators } from '@angu
 import { trigger, state, style, transition, animate } from '@angular/animations';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
-import { UserService } from '../../../core/services/user.service';
+import { UserService, UserDto } from '../../../core/services/user.service';
 import { TeamService } from '../../../core/services/team.service';
 import { ProjectService } from '../../../core/services/project.service';
 import { Team, TeamMember } from '../../../core/models/team.model';
@@ -170,6 +170,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     issueDescription: string;
     assignedTo: string; // Team ID
     assignedToUserId: string; // User ID within team
+    ccUserId: string; // CC User ID
     dueDate: string;
   } = {
     issueType: 'Defect',
@@ -177,12 +178,16 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     issueDescription: '',
     assignedTo: '',
     assignedToUserId: '',
+    ccUserId: '',
     dueDate: ''
   };
   availableTeams: Team[] = [];
   loadingTeams = false;
   availableTeamUsers: {userId: string, userName: string, userEmail: string}[] = [];
+  availableTeamMembers: TeamMember[] = [];
   loadingTeamUsers = false;
+  availableCCUsers: {userId: string, userName: string, userEmail: string}[] = [];
+  loadingCCUsers = false;
   qualityIssueImages: Array<{
     id: string;
     type: 'file' | 'url' | 'camera';
@@ -277,15 +282,38 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   boxLogsAction = '';
   boxLogsFromDate = '';
   boxLogsToDate = '';
+  boxLogsChangedBy = '';
   showBoxLogsSearch = false;
   boxLogsSearchControl = new FormControl('');
   availableBoxLogActions: string[] = [];
+  availableBoxLogUsers: UserDto[] = [];
+  loadingBoxLogUsers = false;
   private boxLogActionSet = new Set<string>();
   
   // Box Log Details Modal
   selectedBoxLog: BoxLog | null = null;
   isBoxLogDetailsModalOpen = false;
   readonly DiffUtil = DiffUtil;
+  
+  // Concrete Panel Delivery and Pod Delivery
+  concreteWalls: Array<{key: string, label: string, checked: boolean}> = [
+    {key: 'wall1', label: 'Wall 01', checked: false},
+    {key: 'wall2', label: 'Wall 02', checked: false},
+    {key: 'wall3', label: 'Wall 03', checked: false},
+    {key: 'wall4', label: 'Wall 04', checked: false},
+    {key: 'slab', label: 'Slab', checked: false},
+    {key: 'soffit', label: 'Soffit', checked: false}
+  ];
+  podDeliverChecked = false;
+  podName: string = '';
+  podType: string = '';
+  updatingDeliveryInfo = false;
+  
+  // Track original pod delivery values to detect changes
+  private originalPodDeliver = false;
+  private originalPodName = '';
+  private originalPodType = '';
+  hasPodDeliveryChanges = false;
   
   private destroy$ = new Subject<void>();
 
@@ -399,6 +427,9 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       next: (box) => {
         this.box = box;
         
+        // Initialize concrete panel and pod delivery data
+        this.initializeDeliveryInfo(box);
+        
         // Re-check permissions after box is loaded to account for box status
         this.checkPermissions();
         
@@ -428,6 +459,124 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         this.error = err.message || 'Failed to load box details';
         this.loading = false;
         console.error('Error loading box:', err);
+      }
+    });
+  }
+
+  private initializeDeliveryInfo(box: Box): void {
+    // Initialize concrete walls
+    this.concreteWalls[0].checked = box.wall1 ?? false;
+    this.concreteWalls[1].checked = box.wall2 ?? false;
+    this.concreteWalls[2].checked = box.wall3 ?? false;
+    this.concreteWalls[3].checked = box.wall4 ?? false;
+    this.concreteWalls[4].checked = box.slab ?? false;
+    this.concreteWalls[5].checked = box.soffit ?? false;
+    
+    // Initialize pod delivery
+    this.podDeliverChecked = box.podDeliver ?? false;
+    this.podName = box.podName ?? '';
+    this.podType = box.podType ?? '';
+    
+    // Store original values for change detection
+    this.originalPodDeliver = this.podDeliverChecked;
+    this.originalPodName = this.podName;
+    this.originalPodType = this.podType;
+    this.hasPodDeliveryChanges = false;
+  }
+
+  toggleWall(wallKey: string, event: Event): void {
+    const checkbox = event.target as HTMLInputElement;
+    const isChecked = checkbox.checked;
+    
+    // Update local state
+    const wall = this.concreteWalls.find(w => w.key === wallKey);
+    if (wall) {
+      wall.checked = isChecked;
+    }
+    
+    // Prepare update payload
+    const deliveryInfo: any = {};
+    deliveryInfo[wallKey] = isChecked;
+    
+    // Update backend
+    this.updateDeliveryInfo(deliveryInfo);
+  }
+
+  /**
+   * Check if pod delivery data has changed
+   */
+  private checkPodDeliveryChanges(): void {
+    this.hasPodDeliveryChanges = 
+      this.podDeliverChecked !== this.originalPodDeliver ||
+      this.podName !== this.originalPodName ||
+      this.podType !== this.originalPodType;
+  }
+
+  togglePodDeliver(event: Event): void {
+    const checkbox = event.target as HTMLInputElement;
+    this.podDeliverChecked = checkbox.checked;
+    
+    // If unchecking, clear pod info
+    if (!this.podDeliverChecked) {
+      this.podName = '';
+      this.podType = '';
+    }
+    
+    // Check for changes
+    this.checkPodDeliveryChanges();
+  }
+
+  onPodDataChange(): void {
+    // Check for changes when pod data is modified
+    this.checkPodDeliveryChanges();
+  }
+
+  /**
+   * Save pod delivery information to backend
+   */
+  savePodDeliveryInfo(): void {
+    if (!this.box || !this.hasPodDeliveryChanges) {
+      return;
+    }
+    
+    this.updateDeliveryInfo({
+      podDeliver: this.podDeliverChecked,
+      podName: this.podName || null,
+      podType: this.podType || null
+    });
+  }
+
+  updatePodInfo(): void {
+    // This method is kept for backward compatibility
+    this.savePodDeliveryInfo();
+  }
+
+  private updateDeliveryInfo(deliveryInfo: any): void {
+    if (!this.box) return;
+    
+    this.updatingDeliveryInfo = true;
+    
+    this.boxService.updateBoxDeliveryInfo(this.boxId, deliveryInfo).subscribe({
+      next: (updatedBox) => {
+        this.box = updatedBox;
+        this.initializeDeliveryInfo(updatedBox);
+        this.updatingDeliveryInfo = false;
+        console.log('✅ Delivery info updated successfully');
+        
+        // Show success message for pod delivery updates
+        if (deliveryInfo.podDeliver !== undefined || deliveryInfo.podName !== undefined || deliveryInfo.podType !== undefined) {
+          // You can add a toast notification here if you have one
+          console.log('✅ Pod delivery information saved successfully');
+        }
+      },
+      error: (err) => {
+        console.error('❌ Error updating delivery info:', err);
+        this.updatingDeliveryInfo = false;
+        // Revert changes on error
+        if (this.box) {
+          this.initializeDeliveryInfo(this.box);
+        }
+        alert('Failed to update delivery information. Please try again.');
       }
     });
   }
@@ -891,6 +1040,24 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Transform WIR number to Stage number for display purposes only
+   * E.g., "WIR-1" -> "Stage-1", "WIR-2" -> "Stage-2"
+   */
+  getDisplayWirNumber(wirNumber: string | undefined | null): string {
+    if (!wirNumber) return 'Stage';
+    return wirNumber.replace(/WIR-/gi, 'Stage-');
+  }
+
+  /**
+   * Transform WIR text to Stage text for display purposes only
+   * Replaces "WIR-X" with "Stage-X" and "WIR " with "Stage " in any text
+   */
+  getDisplayWirText(text: string | undefined | null): string {
+    if (!text) return '';
+    return text.replace(/WIR-/gi, 'Stage-').replace(/WIR /gi, 'Stage ');
+  }
+
   canNavigateToAddChecklist(checkpoint: WIRCheckpoint | null): boolean {
     // Check if checkpoint exists and has required data
     if (!checkpoint?.wirId || !checkpoint?.boxActivityId) {
@@ -1080,12 +1247,14 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.isCreateQualityIssueModalOpen = true;
     this.createQualityIssueError = '';
     this.loadAvailableTeams();
+    this.loadAllUsersForCC();
     this.newQualityIssueForm = {
       issueType: 'Defect',
       severity: 'Major',
       issueDescription: '',
       assignedTo: '',
       assignedToUserId: '',
+      ccUserId: '',
       dueDate: ''
     };
     this.availableTeamUsers = [];
@@ -1103,6 +1272,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       issueDescription: '',
       assignedTo: '',
       assignedToUserId: '',
+      ccUserId: '',
       dueDate: ''
     };
     this.availableTeamUsers = [];
@@ -1152,6 +1322,23 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
     console.log('📎 VERSION DEBUG - Quality Issue uploading files with names:', fileNames);
 
+    // Debug CC User ID
+    console.log('📋 CC User ID from form:', this.newQualityIssueForm.ccUserId);
+    console.log('📋 CC User ID type:', typeof this.newQualityIssueForm.ccUserId);
+    
+    // Handle CC User ID properly - it might be undefined, null, or empty string from the select
+    const ccUserIdValue = this.newQualityIssueForm.ccUserId;
+    let processedCCUserId: string | undefined = undefined;
+    
+    if (ccUserIdValue !== null && ccUserIdValue !== undefined && ccUserIdValue !== '') {
+      const ccUserIdString = String(ccUserIdValue).trim();
+      if (ccUserIdString !== '' && ccUserIdString !== 'undefined' && ccUserIdString !== 'null') {
+        processedCCUserId = ccUserIdString;
+      }
+    }
+    
+    console.log('📤 Processed CC User ID:', processedCCUserId);
+
     const request: CreateQualityIssueForBoxRequest = {
       boxId: this.boxId,
       issueType: this.newQualityIssueForm.issueType,
@@ -1159,6 +1346,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       issueDescription: this.newQualityIssueForm.issueDescription.trim(),
       assignedTo: this.newQualityIssueForm.assignedTo?.trim() || undefined, // Team ID as string
       assignedToUserId: this.newQualityIssueForm.assignedToUserId?.trim() || undefined, // User ID within team
+      ccUserId: processedCCUserId, // CC User ID - properly processed to avoid "undefined" string
       dueDate: this.newQualityIssueForm.dueDate || undefined,
       imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
       files: files.length > 0 ? files : undefined,
@@ -1171,9 +1359,15 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       severity: request.severity,
       descriptionLength: request.issueDescription.length,
       assignedTo: request.assignedTo,
+      assignedToUserId: request.assignedToUserId,
+      ccUserId: request.ccUserId,
       dueDate: request.dueDate,
       imageUrlsCount: imageUrls.length,
       filesCount: files.length
+    });
+    console.log('📋 Form values before sending:', {
+      assignedTo: this.newQualityIssueForm.assignedTo,
+      assignedToUserId: this.newQualityIssueForm.assignedToUserId
     });
 
     this.wirService.createQualityIssueForBox(request).subscribe({
@@ -1248,10 +1442,11 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     // Reset user selection when team changes
     this.newQualityIssueForm.assignedToUserId = '';
     this.availableTeamUsers = [];
+    this.availableTeamMembers = [];
 
     // Load users if a team is selected
     if (this.newQualityIssueForm.assignedTo) {
-      this.loadTeamUsers(this.newQualityIssueForm.assignedTo);
+      this.loadTeamMembersForAssignment(this.newQualityIssueForm.assignedTo);
     }
   }
 
@@ -1259,13 +1454,67 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.loadingTeamUsers = true;
     this.teamService.getTeamUsers(teamId).subscribe({
       next: (users) => {
-        this.availableTeamUsers = users;
+        console.log('📥 Raw team users received:', users);
+        // Filter to only include users that have a userId
+        this.availableTeamUsers = users.filter(user => user.userId && user.userId.trim() !== '');
+        console.log('✅ Filtered team users (with userId):', this.availableTeamUsers);
         this.loadingTeamUsers = false;
       },
       error: (err) => {
         console.error('❌ Error loading team users:', err);
         this.availableTeamUsers = [];
         this.loadingTeamUsers = false;
+      }
+    });
+  }
+
+  loadTeamMembersForAssignment(teamId: string): void {
+    this.loadingTeamUsers = true;
+    this.teamService.getTeamMembers(teamId).subscribe({
+      next: (response) => {
+        console.log('📥 Raw team members received:', response);
+        // Filter to only include members that have a userId (actual user account)
+        this.availableTeamMembers = (response.members || []).filter(member => member.userId && member.userId.trim() !== '');
+        
+        // Map to the format expected by the dropdown
+        this.availableTeamUsers = this.availableTeamMembers.map(member => ({
+          userId: member.teamMemberId, // Use teamMemberId for assignment
+          userName: member.employeeName || member.fullName || 'Unknown',
+          userEmail: member.email || ''
+        }));
+        
+        console.log('✅ Filtered team members (with userId):', this.availableTeamMembers);
+        console.log('✅ Mapped to dropdown format:', this.availableTeamUsers);
+        this.loadingTeamUsers = false;
+      },
+      error: (err) => {
+        console.error('❌ Error loading team members:', err);
+        this.availableTeamUsers = [];
+        this.availableTeamMembers = [];
+        this.loadingTeamUsers = false;
+      }
+    });
+  }
+
+  loadAllUsersForCC(): void {
+    this.loadingCCUsers = true;
+    this.userService.getUsers(1, 1000).subscribe({
+      next: (response) => {
+        this.availableCCUsers = response.items
+          .filter((user: any) => user.userId) // Only include users with valid IDs
+          .map((user: any) => ({
+            userId: user.userId, // UserDto has userId field, not id
+            userName: user.fullName || user.email || 'Unknown',
+            userEmail: user.email || ''
+          }));
+        console.log('✅ Loaded CC Users:', this.availableCCUsers);
+        console.log('✅ Total CC Users loaded:', this.availableCCUsers.length);
+        this.loadingCCUsers = false;
+      },
+      error: (err) => {
+        console.error('❌ Error loading users for CC:', err);
+        this.availableCCUsers = [];
+        this.loadingCCUsers = false;
       }
     });
   }
@@ -1636,7 +1885,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         formatDateForExcel(log.performedAt),
         actionLabel || log.action || '',
         log.description || '',
-        log.performedBy || 'System',
+        log.performedByName || 'System',
         changesText
       ]);
 
@@ -1713,7 +1962,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     // Define column headers
     const headers = [
       'No.',
-      'WIR Number',
+      'Stage Number',
       'Box Tag',
       'Box Name',
       'Status',
@@ -1852,17 +2101,17 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   getQualityIssueWir(issue: QualityIssueDetails): string {
     if (issue.wirNumber) {
-      return issue.wirNumber;
+      return this.getDisplayWirNumber(issue.wirNumber);
     }
 
     if (issue.wirId) {
       const matchedCheckpoint = this.wirCheckpoints.find(cp => cp.wirId === issue.wirId);
       if (matchedCheckpoint?.wirNumber) {
-        return matchedCheckpoint.wirNumber;
+        return this.getDisplayWirNumber(matchedCheckpoint.wirNumber);
       }
     }
 
-    return issue.wirName || '—';
+    return this.getDisplayWirText(issue.wirName) || '—';
   }
 
   getQualityIssueStatusLabel(status?: QualityIssueStatus | string): string {
@@ -2676,7 +2925,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
     // Group by filename
     this.boxAttachments.wirCheckpointImages.forEach((image: any) => {
-      const fileName = image.originalName || 'WIR_Image';
+      const fileName = image.originalName || 'Stage_Image';
       if (!grouped.has(fileName)) {
         grouped.set(fileName, []);
       }
@@ -3288,7 +3537,11 @@ downloadFileDrawing(drawing: any): void {
         })));
         console.log('📊 VERSION DEBUG - Quality Images:', response.qualityIssueImages?.map((img: any) => ({
           name: img.originalName,
-          version: img.version
+          version: img.version,
+          hasImageData: !!img.imageData,
+          hasImageUrl: !!img.imageUrl,
+          imageUrl: img.imageUrl,
+          imageType: img.imageType
         })));
         
         this.boxAttachments = response;
@@ -3308,27 +3561,61 @@ downloadFileDrawing(drawing: any): void {
    * Format image data to ensure it has proper data URL format
    * Now handles both ImageUrl (blob storage) and ImageData (base64) for backward compatibility
    */
+  handleImageError(event: Event, image: any): void {
+    const imgElement = event.target as HTMLImageElement;
+    console.error('❌ Image failed to load:', {
+      originalName: image.originalName,
+      imageUrl: image.imageUrl,
+      imageFileName: image.imageFileName,
+      imageType: image.imageType,
+      hasImageData: !!image.imageData,
+      attemptedSrc: imgElement.src
+    });
+    
+    // Set a placeholder image or error state
+    imgElement.style.display = 'none';
+    const wrapper = imgElement.parentElement;
+    if (wrapper) {
+      wrapper.classList.add('image-load-error');
+      const errorMsg = wrapper.querySelector('.error-message');
+      if (!errorMsg) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'error-message';
+        errorDiv.textContent = 'Image failed to load';
+        wrapper.appendChild(errorDiv);
+      }
+    }
+  }
+
   formatImageData(imageData: string, imageType?: string, imageUrl?: string): string {
     // Priority 1: Use imageUrl from blob storage if available
-    if (imageUrl) {
+    if (imageUrl && imageUrl.trim()) {
       // If it's a relative URL, convert to absolute URL
       if (imageUrl.startsWith('/')) {
         const baseUrl = environment.apiUrl || window.location.origin;
-        return `${baseUrl}${imageUrl}`;
+        const fullUrl = `${baseUrl}${imageUrl}`;
+        console.log('🔗 Formatting relative URL:', imageUrl, '→', fullUrl);
+        return fullUrl;
       }
-      // If it's already an absolute URL, return as is
+      // If it's already an absolute URL (with or without protocol), return as is
       if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+        console.log('🔗 Using absolute URL:', imageUrl);
         return imageUrl;
       }
+      // For any other URL format, return it as is (might be a blob URL or other valid URL)
+      console.log('🔗 Using URL as-is:', imageUrl);
+      return imageUrl;
     }
 
     // Priority 2: Fall back to imageData for backward compatibility
-    if (!imageData) {
+    if (!imageData || !imageData.trim()) {
+      console.warn('⚠️ No imageUrl or imageData provided, returning empty string');
       return '';
     }
 
     // Check if imageData is already a valid data URL or regular URL
     if (imageData.startsWith('data:') || imageData.startsWith('http://') || imageData.startsWith('https://')) {
+      console.log('✅ Using imageData URL:', imageData.substring(0, 50) + '...');
       return imageData;
     }
 
@@ -3351,6 +3638,7 @@ downloadFileDrawing(drawing: any): void {
       }
     }
 
+    console.log('📦 Converting base64 to data URL with type:', mimeType);
     return `data:${mimeType};base64,${imageData}`;
   }
 
@@ -4034,8 +4322,15 @@ downloadFileDrawing(drawing: any): void {
         this.box = updatedBox;
         this.boxStatusUpdateLoading = false;
         this.closeBoxStatusModal();
-        // Optionally show success message
+        // Show success message
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { message: 'Box status updated successfully', type: 'success' }
+        }));
         console.log('✅ Box status updated successfully');
+        // Refresh page to show updated status across all sections
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       },
       error: (err) => {
         console.error('❌ Failed to update box status:', err);
@@ -4096,8 +4391,9 @@ downloadFileDrawing(drawing: any): void {
     const action = this.boxLogsAction?.trim() || undefined;
     const fromDate = this.boxLogsFromDate || undefined;
     const toDate = this.boxLogsToDate || undefined;
+    const changedBy = this.boxLogsChangedBy?.trim() || undefined;
 
-    this.boxService.getBoxLogs(this.boxId, page, pageSize, searchTerm, action, fromDate, toDate).subscribe({
+    this.boxService.getBoxLogs(this.boxId, page, pageSize, searchTerm, action, fromDate, toDate, changedBy).subscribe({
       next: (response) => {
         this.boxLogs = (response.items || []).map(log => ({
           ...log,
@@ -4127,6 +4423,28 @@ downloadFileDrawing(drawing: any): void {
     });
   }
 
+  loadBoxLogUsers(): void {
+    if (this.availableBoxLogUsers.length > 0) {
+      return; // Already loaded
+    }
+
+    this.loadingBoxLogUsers = true;
+    this.userService.getUsers(1, 1000).subscribe({
+      next: (response) => {
+        this.availableBoxLogUsers = response.items.sort((a, b) => {
+          const nameA = a.fullName || a.email || '';
+          const nameB = b.fullName || b.email || '';
+          return nameA.localeCompare(nameB);
+        });
+        this.loadingBoxLogUsers = false;
+      },
+      error: (err) => {
+        console.error('Failed to load users:', err);
+        this.loadingBoxLogUsers = false;
+      }
+    });
+  }
+
   applyBoxLogsSearch(): void {
     this.boxLogsCurrentPage = 1;
     this.loadBoxLogs(1, this.boxLogsPageSize);
@@ -4142,6 +4460,7 @@ downloadFileDrawing(drawing: any): void {
     this.boxLogsAction = '';
     this.boxLogsFromDate = '';
     this.boxLogsToDate = '';
+    this.boxLogsChangedBy = '';
     this.boxLogsSearchControl.setValue('');
     this.boxLogsCurrentPage = 1;
     this.loadBoxLogs(1, this.boxLogsPageSize);
@@ -4153,7 +4472,10 @@ downloadFileDrawing(drawing: any): void {
 
   toggleBoxLogsSearch(): void {
     this.showBoxLogsSearch = !this.showBoxLogsSearch;
-    if (!this.showBoxLogsSearch) {
+    if (this.showBoxLogsSearch) {
+      // Load users when opening search for the first time
+      this.loadBoxLogUsers();
+    } else {
       this.clearBoxLogsSearch();
     }
   }

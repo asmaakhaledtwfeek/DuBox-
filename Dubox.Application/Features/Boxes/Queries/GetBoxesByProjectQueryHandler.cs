@@ -42,6 +42,7 @@ public class GetBoxesByProjectQueryHandler : IRequestHandler<GetBoxesByProjectQu
                 try
                 {
                     var dto = _boxMapper.Map(box);
+                    dto.DrawingsCount = box.BoxDrawings.Count;
                     boxDtos.Add(dto);
                 }
                 catch (Exception ex)

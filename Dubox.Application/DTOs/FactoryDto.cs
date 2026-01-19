@@ -9,6 +9,10 @@ public record FactoryDto
     public string FactoryName { get; init; } = string.Empty;
     public ProjectLocationEnum Location { get; init; }
     public int? Capacity { get; init; }
+    public int MinRow { get; init; }
+    public int MaxRow { get; init; }
+    public string MinBay { get; init; } = string.Empty;
+    public string MaxBay { get; init; } = string.Empty;
     public int CurrentOccupancy { get; init; }
     public int AvailableCapacity { get; init; }
     public bool IsFull { get; init; }

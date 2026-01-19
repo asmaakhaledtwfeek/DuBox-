@@ -58,6 +58,20 @@ public interface IDbContext
     DbSet<CostCategory> CostCategories { get; }
     DbSet<BoxCost> BoxCosts { get; }
     
+    // Cost Management
+    DbSet<CostCodeMaster> CostCodes { get; }
+    DbSet<ProjectCostItem> ProjectCostItems { get; }
+    DbSet<HRCostRecord> HRCostRecords { get; }
+    DbSet<ProjectCost> ProjectCosts { get; }
+    
+    // Schedule Activities (New Module)
+    DbSet<ScheduleActivity> ScheduleActivities { get; }
+    DbSet<ScheduleActivityTeam> ScheduleActivityTeams { get; }
+    DbSet<ScheduleActivityMaterial> ScheduleActivityMaterials { get; }
+    
+    // BIM Models (New Module)
+    DbSet<BIMModel> BIMModels { get; }
+    
     // Risk & notifications
     DbSet<Risk> Risks { get; }
     DbSet<Notification> Notifications { get; }

@@ -168,6 +168,7 @@ namespace Dubox.Api.Controllers
             string issueDescription;
             Guid? assignedTo = null;
             Guid? assignedToUserId = null;
+            Guid? ccUserId = null;
             DateTime? dueDate = null;
             List<string>? imageUrls = null;
             List<IFormFile>? files = null; 
@@ -198,6 +199,9 @@ namespace Dubox.Api.Controllers
 
                 if (Guid.TryParse(form["AssignedToUserId"].FirstOrDefault(), out var assignedToUserTemp))
                     assignedToUserId = assignedToUserTemp;
+
+                if (Guid.TryParse(form["CCUserId"].FirstOrDefault(), out var ccUserTemp))
+                    ccUserId = ccUserTemp;
 
                 if (DateTime.TryParse(form["DueDate"].ToString(), out var parsedDueDate))
                     dueDate = parsedDueDate;
@@ -247,6 +251,7 @@ namespace Dubox.Api.Controllers
                 issueDescription = jsonCommand.IssueDescription;
                 assignedTo = jsonCommand.AssignedTo;
                 assignedToUserId = jsonCommand.AssignedToUserId;
+                ccUserId = jsonCommand.CCUserId;
                 dueDate = jsonCommand.DueDate;
                 imageUrls = jsonCommand.ImageUrls;
                 files = jsonCommand.Files; 
@@ -272,6 +277,7 @@ namespace Dubox.Api.Controllers
                 IssueDescription: issueDescription,
                 AssignedTo: assignedTo,
                 AssignedToUserId: assignedToUserId,
+                CCUserId: ccUserId,
                 DueDate: dueDate,
                 ImageUrls: validImageUrls,
                 Files: files, 

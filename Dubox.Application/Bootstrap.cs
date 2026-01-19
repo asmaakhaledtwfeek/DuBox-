@@ -18,6 +18,7 @@ namespace Dubox.Application
             services.AddScoped<IValidator<UpdateGroupCommand>, UpdateGroupCommandValidator>();
             services.AddScoped<IProjectProgressService, ProjectProgressService>();
             services.AddScoped<IBoxMapper, BoxMapper>();
+            services.AddScoped<IBoxCreationService, BoxCreationService>();
 
             return services;
         }

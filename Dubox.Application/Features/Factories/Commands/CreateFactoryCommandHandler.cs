@@ -25,13 +25,27 @@ public class CreateFactoryCommandHandler : IRequestHandler<CreateFactoryCommand,
         if (factoryExists)
             return Result.Failure<FactoryDto>("Factory with this code already exists");
 
+        // Calculate capacity if not provided: (MaxRow - MinRow + 1) * (MaxBay - MinBay + 1)
+        int? capacity = request.Capacity;
+       
+            var minBayChar = request.MinBay.ToUpper()[0];
+            var maxBayChar = request.MaxBay.ToUpper()[0];
+            var rowCount = request.MaxRow - request.MinRow + 1;
+            var bayCount = maxBayChar - minBayChar + 1;
+            capacity = rowCount * bayCount;
+      
+
         // Create new factory
         var factory = new Factory
         {
             FactoryCode = request.FactoryCode,
             FactoryName = request.FactoryName,
             Location = request.Location,
-            Capacity = request.Capacity,
+            Capacity = capacity,
+            MinRow = request.MinRow,
+            MaxRow = request.MaxRow,
+            MinBay = request.MinBay.ToUpper(),
+            MaxBay = request.MaxBay.ToUpper(),
             CurrentOccupancy = 0,
             IsActive = true
         };

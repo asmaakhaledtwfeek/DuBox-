@@ -29,8 +29,12 @@ public class Project
     public DateTime? ActualStartDate { get; set; }
     public int? Duration { get; set; }
     public DateTime? PlannedEndDate { get; set; }
+    public DateTime? ProjectedEndDate { get; set; }
     public DateTime? ActualEndDate { get; set; }
     public DateTime? CompressionStartDate { get; set; }
+    
+    [Column(TypeName = "decimal(18,2)")]
+    public decimal? ProjectValue { get; set; }
 
     [Required]
     public ProjectStatusEnum Status { get; set; } = ProjectStatusEnum.Active;
@@ -50,10 +54,13 @@ public class Project
     public string? ModifiedBy { get; set; }
     public DateTime? DeletedDated { get; set; }
     public DateTime? ArchivedDated { get; set; }
+    [ForeignKey(nameof(ProjectManger))]
+    public Guid? ProjectMangerId { get; set; }
     // Navigation properties
     public ICollection<Box> Boxes { get; set; } = new List<Box>();
     
     // Project Configuration Collections
+    public virtual User? ProjectManger {  get; set; }
     public ICollection<ProjectBuilding> ProjectBuildings { get; set; } = new List<ProjectBuilding>();
     public ICollection<ProjectLevel> ProjectLevels { get; set; } = new List<ProjectLevel>();
     public ICollection<ProjectBoxType> ProjectBoxTypes { get; set; } = new List<ProjectBoxType>();

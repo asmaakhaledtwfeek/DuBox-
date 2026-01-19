@@ -1,4 +1,4 @@
-using Dubox.Application.DTOs;
+﻿using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
@@ -23,10 +23,10 @@ namespace Dubox.Application.Features.Teams.Commands
             .GetByIdAsync(request.TeamId, cancellationToken);
             if (team == null)
                 return Result.Failure<TeamMembersDto>("This Team not found.");
-            
+
             if (!team.IsActive)
                 return Result.Failure<TeamMembersDto>("Cannot assign members to an inactive team.");
-            
+
             if (request.UserIds == null || !request.UserIds.Any())
                 return Result.Failure<TeamMembersDto>("No users provided to assign.");
 
@@ -37,12 +37,12 @@ namespace Dubox.Application.Features.Teams.Commands
                 return Result.Failure<TeamMembersDto>("No valid users found.");
 
             var existingMembersQuery = _unitOfWork.Repository<TeamMember>()
-                    .GetWithSpec(new TeamMembersByUserIdsSpecification(request.TeamId,true));
+                    .GetWithSpec(new TeamMembersByUserIdsSpecification(request.TeamId, true));
             var existingMembers = await existingMembersQuery.Data
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
             var membersToRemove = existingMembers
-                     .Where(tm =>tm.UserId!=null&& !request.UserIds.Contains(tm.UserId.Value))
+                     .Where(tm => tm.UserId != null && !request.UserIds.Contains(tm.UserId.Value))
                      .ToList();
 
             if (membersToRemove.Any())
@@ -60,7 +60,7 @@ namespace Dubox.Application.Features.Teams.Commands
                 {
                     TeamId = team.TeamId,
                     UserId = u.UserId,
-                    EmployeeName=u.FullName,
+                    EmployeeName = u.FullName,
                     IsActive = u.IsActive
                 })
                 .ToList();
@@ -120,11 +120,11 @@ namespace Dubox.Application.Features.Teams.Commands
             await _unitOfWork.CompleteAsync(cancellationToken);
 
             var teamMembersQuery = _unitOfWork.Repository<TeamMember>()
-                  .GetWithSpec(new TeamMembersByUserIdsSpecification(request.TeamId,false));
+                  .GetWithSpec(new TeamMembersByUserIdsSpecification(request.TeamId, false));
             var teamMembers = await teamMembersQuery.Data
                 .AsNoTracking()
                 .ToListAsync(cancellationToken);
-            
+
             // Manual mapping
             var memberDtos = teamMembers.Select(tm => new TeamMemberDto
             {

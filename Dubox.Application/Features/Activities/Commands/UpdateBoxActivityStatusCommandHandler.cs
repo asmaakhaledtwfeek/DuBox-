@@ -30,7 +30,7 @@ public class UpdateBoxActivityStatusCommandHandler : IRequestHandler<UpdateBoxAc
     public async Task<Result<BoxActivityDto>> Handle(UpdateBoxActivityStatusCommand request, CancellationToken cancellationToken)
     {
         var module = PermissionModuleEnum.Activities;
-        var action = PermissionActionEnum.UpdateStatus;
+        var action = PermissionActionEnum.Edit;
         var canModify = await _visibilityService.CanPerformAsync(module, action, cancellationToken);
         if (!canModify)
             return Result.Failure<BoxActivityDto>("Access denied. You do not have permission to update activities.");

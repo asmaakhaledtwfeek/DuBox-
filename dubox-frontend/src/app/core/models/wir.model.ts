@@ -268,6 +268,8 @@ export type SeverityType = 'Critical' | 'Major' | 'Minor';
 export type QualityIssueStatus = 'Open' | 'InProgress' | 'Resolved' | 'Closed';
 
 export interface QualityIssueItem {
+  issueId?: string;
+  issueNumber?: string;
   issueType: IssueType;
   severity: SeverityType;
   issueDescription: string;
@@ -275,14 +277,18 @@ export interface QualityIssueItem {
   assignedTeam?: string; // Team name from backend
   assignedToUserId?: string;
   assignedToUserName?: string;
+  ccUserId?: string;
+  ccUserName?: string;
   dueDate?: string | Date;
   photoPath?: string;
   reportedBy?: string;
   issueDate?: string | Date;
   status?: QualityIssueStatus | string;
   imageDataUrls?: string[];
+  projectId?: string;
   projectName?: string;
   projectCode?: string;
+  images?: QualityIssueImage[];
 }
 
 export interface QualityIssueImage {
@@ -300,6 +306,7 @@ export interface QualityIssueImage {
 
 export interface QualityIssueDetails extends QualityIssueItem {
   issueId: string;
+  issueNumber?: string;
   status?: QualityIssueStatus;
   resolutionDate?: string | Date;
   resolutionDescription?: string;
@@ -315,7 +322,9 @@ export interface QualityIssueDetails extends QualityIssueItem {
   isOverdue?: boolean;
   overdueDays?: number;
   images?: QualityIssueImage[];
-  projectName?:string;
+  projectId?: string;
+  projectName?: string;
+  projectCode?: string;
   assignedTeamName?: string;
 }
 
@@ -343,6 +352,7 @@ export interface AddQualityIssueRequest {
   issueDescription: string;
   assignedTo?: string;
   assignedToUserId?: string;
+  ccUserId?: string;
   dueDate?: string | Date;
   imageUrls?: string[];
   files?: File[];
@@ -355,6 +365,7 @@ export interface CreateQualityIssueForBoxRequest {
   issueDescription: string;
   assignedTo?: string;
   assignedToUserId?: string;
+  ccUserId?: string;
   dueDate?: string | Date;
   imageUrls?: string[];
   files?: File[];

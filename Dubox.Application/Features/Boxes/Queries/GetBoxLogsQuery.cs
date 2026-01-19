@@ -11,7 +11,8 @@ public record GetBoxLogsQuery(
     string? SearchTerm = null,
     string? Action = null,
     DateTime? FromDate = null,
-    DateTime? ToDate = null
+    DateTime? ToDate = null,
+    Guid? ChangedBy = null
 ) : IRequest<Result<PaginatedBoxLogsResponseDto>>;
 
 public record PaginatedBoxLogsResponseDto

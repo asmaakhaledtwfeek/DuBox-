@@ -14,6 +14,8 @@
             AddInclude(nameof(WIRCheckpoint.ChecklistItems));
             AddInclude(nameof(WIRCheckpoint.QualityIssues));
             AddInclude($"{nameof(WIRCheckpoint.QualityIssues)}.{nameof(QualityIssue.AssignedToTeam)}");
+            AddInclude($"{nameof(WIRCheckpoint.QualityIssues)}.{nameof(QualityIssue.AssignedToMember)}");
+            AddInclude($"{nameof(WIRCheckpoint.QualityIssues)}.{nameof(QualityIssue.CCUser)}");
 
             EnableSplitQuery();
 

@@ -1,4 +1,4 @@
-using Dubox.Application.DTOs;
+﻿using Dubox.Application.DTOs;
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
@@ -29,10 +29,10 @@ namespace Dubox.Application.Features.Teams.Commands
             // Check if team is active
             var team = await _unitOfWork.Repository<Team>()
                 .GetByIdAsync(teamMember.TeamId, cancellationToken);
-            
+
             if (team == null)
                 return Result.Failure<TeamMemberDto>("Team not found.");
-            
+
             if (!team.IsActive)
                 return Result.Failure<TeamMemberDto>("Cannot update member profile in an inactive team.");
 

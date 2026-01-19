@@ -17,6 +17,7 @@ namespace Dubox.Application.Features.Reports.Queries
         public string? BuildingNumber { get; init; }
         public string? Zone { get; init; }
         public List<int>? Status { get; init; }
+        public List<int>? ProjectStatus { get; init; }
         public decimal? ProgressMin { get; init; }
         public decimal? ProgressMax { get; init; }
         public string? Search { get; init; }

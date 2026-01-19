@@ -36,10 +36,13 @@ export class BoxesListComponent implements OnInit, OnDestroy {
   loading = true;
   error = '';
   canCreate = false;
+  showDuplicateConfirm = false;
+  boxToDuplicate: Box | null = null;
+  duplicating = false;
   
   searchControl = new FormControl('');
   boxTypeSearchControl = new FormControl('');
-  selectedStatus: BoxStatus | 'All' = 'All';
+  selectedStatus: BoxStatus | 'All' = BoxStatus.InProgress;
   BoxStatus = BoxStatus;
   
   private subscriptions: Subscription[] = [];
@@ -297,7 +300,7 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     this.boxes = [];
     this.filteredBoxes = [];
     this.searchControl.setValue('');
-    this.selectedStatus = 'All';
+    this.selectedStatus = BoxStatus.InProgress;
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {},
@@ -415,6 +418,85 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     this.router.navigate(['/boxes/create'], { 
       queryParams: { projectId: this.projectId }
     });
+  }
+
+  duplicateBox(box: Box): void {
+    if (!this.canCreate) {
+      return;
+    }
+    
+    // Show confirmation modal
+    this.boxToDuplicate = box;
+    this.showDuplicateConfirm = true;
+  }
+
+  confirmDuplicate(): void {
+    if (!this.boxToDuplicate) {
+      return;
+    }
+
+    this.duplicating = true;
+    
+    // Include activities by default, drawings optional (can be configured)
+    const includeActivities = true;
+    const includeDrawings = false; // Set to true if you want to copy drawing references
+    
+    // Call the duplicate endpoint
+    this.boxService.duplicateBox(this.boxToDuplicate.id, includeActivities, includeDrawings).subscribe({
+      next: (duplicatedBox) => {
+        console.log('✅ Box duplicated successfully:', duplicatedBox);
+        this.duplicating = false;
+        this.showDuplicateConfirm = false;
+        this.boxToDuplicate = null;
+        
+        // Show success message
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { 
+            message: `Box duplicated successfully! New box: ${duplicatedBox.code}`,
+            type: 'success' 
+          }
+        }));
+        
+        // Reload boxes to show the new duplicated box
+        this.loadBoxes();
+      },
+      error: (err) => {
+        console.error('❌ Error duplicating box:', err);
+        this.duplicating = false;
+        this.showDuplicateConfirm = false;
+        this.boxToDuplicate = null;
+        
+        const errorMessage = err.error?.message || err.error?.title || err.message || 'Unknown error';
+        document.dispatchEvent(new CustomEvent('app-toast', {
+          detail: { 
+            message: `Failed to duplicate box: ${errorMessage}`,
+            type: 'error' 
+          }
+        }));
+      }
+    });
+  }
+
+  cancelDuplicate(): void {
+    this.showDuplicateConfirm = false;
+    this.boxToDuplicate = null;
+    this.duplicating = false;
+  }
+
+  getDrawingsCount(box: Box): number {
+    console.log('🔍 Drawing count:', box.drawingsCount);
+    // Check for drawingsCount property (TypeScript convention)
+    if (box.drawingsCount !== undefined && box.drawingsCount !== null) {
+      return box.drawingsCount;
+    }
+    
+    // Check for DrawingsCount property (C# convention from backend)
+    if ((box as any).DrawingsCount !== undefined && (box as any).DrawingsCount !== null) {
+      return (box as any).DrawingsCount;
+    }
+    
+    // Return 0 as default if no count is available
+    return 0;
   }
 
   getStatusClass(status: BoxStatus): string {

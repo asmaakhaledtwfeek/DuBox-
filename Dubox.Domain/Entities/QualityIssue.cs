@@ -18,6 +18,10 @@ namespace Dubox.Domain.Entities
         [ForeignKey(nameof(Box))]
         public Guid BoxId { get; set; }
 
+        [Required]
+        [MaxLength(20)]
+        public string IssueNumber { get; set; } = string.Empty; // Auto-generated: 00001, 00002, etc.
+
         [ForeignKey(nameof(WIRCheckpoint))]
         public Guid? WIRId { get; set; }
 
@@ -39,6 +43,9 @@ namespace Dubox.Domain.Entities
 
         [ForeignKey(nameof(AssignedToMember))]
         public Guid? AssignedToMemberId { get; set; }
+
+        [ForeignKey(nameof(CCUser))]
+        public Guid? CCUserId { get; set; }
         
         public DateTime? DueDate { get; set; }
 
@@ -56,6 +63,7 @@ namespace Dubox.Domain.Entities
         public virtual Box Box { get; set; } = null!;
         public virtual Team? AssignedToTeam { get; set; }
         public virtual TeamMember? AssignedToMember { get; set; }
+        public virtual User? CCUser { get; set; }
         public virtual WIRCheckpoint? WIRCheckpoint { get; set; }
 
         public List<QualityIssueImage> Images { get; set; } = new();

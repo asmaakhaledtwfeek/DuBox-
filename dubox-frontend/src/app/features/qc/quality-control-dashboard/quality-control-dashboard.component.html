@@ -29,7 +29,7 @@
         [class.active]="activeTab === 'checkpoints'"
         (click)="setTab('checkpoints')"
       >
-        WIR (Checkpoints)
+        Stage (Checkpoints)
       </button>
       <button 
         class="tab" 
@@ -62,7 +62,7 @@
       <!-- Filters -->
       <form [formGroup]="filterForm" (ngSubmit)="applyFilters()" class="filter-row">
         <div class="field">
-          <label>WIR Number</label>
+          <label>Stage Number</label>
           <input type="text" formControlName="wirNumber" placeholder="e.g. MBI-12" />
         </div>
         <div class="field">
@@ -110,7 +110,7 @@
         <table class="designer-table" *ngIf="!checkpointsLoading && !checkpointsError && checkpoints.length > 0">
           <thead>
             <tr>
-              <th>WIR Number</th>
+              <th>Stage Number</th>
               <th>Box</th>
               <th>Project</th>
               <th>Status</th>
@@ -121,7 +121,7 @@
           <tbody>
             <tr *ngFor="let checkpoint of checkpoints">
               <td>
-                <strong>{{ checkpoint.wirNumber }}</strong>
+                <strong>{{ getDisplayWirNumber(checkpoint.wirNumber) }}</strong>
                <!--<div class="text-muted" *ngIf="checkpoint.wirName">{{ checkpoint.wirName }}</div>-->
               </td>
               <td>
@@ -176,7 +176,7 @@
           <div *ngFor="let checkpoint of checkpoints" class="mobile-checkpoint-card">
             <div class="checkpoint-card-header">
               <div class="checkpoint-wir-number">
-                <div class="wir-code">{{ checkpoint.wirNumber }}</div>
+                <div class="wir-code">{{ getDisplayWirNumber(checkpoint.wirNumber) }}</div>
               </div>
               <span class="status-pill" [ngClass]="getCheckpointStatusClass(checkpoint.status)">
                 {{ getStatusLabel(checkpoint.status) }}
@@ -313,22 +313,28 @@
       <!-- Filters -->
       <form [formGroup]="qualityIssuesFilterForm" class="filter-row">
         <div class="field">
-          <label>WIR Number</label>
-          <input type="text" formControlName="wirNumber" placeholder="e.g. MBI-12" />
+          <label>Issue Number</label>
+          <input type="text" formControlName="issueNumber" placeholder="e.g. #123" />
+        </div>
+        <div class="field">
+          <label>Project </label>
+          <select formControlName="projectCode">
+            <option [ngValue]="''">All</option>
+            <option *ngFor="let project of uniqueProjects" [ngValue]="project.id" [title]="project.name">
+             {{project.name}} - {{ project.code }}
+            </option>
+          </select>
         </div>
         <div class="field">
           <label>Box Tag</label>
           <input type="text" formControlName="boxTag" placeholder="e.g. B-12" />
         </div>
-        <div class="field">
-          <label>Project Code</label>
-          <input type="text" formControlName="projectCode" placeholder="e.g. PROJ-001" />
-        </div>
+      
         <div class="field">
           <label>Status</label>
           <select formControlName="status">
-            <option value="">All</option>
-            <option *ngFor="let status of qualityIssueStatuses" [value]="status">{{ getQualityIssueStatusLabel(status) }}</option>
+            <option [ngValue]="''">All</option>
+            <option *ngFor="let status of qualityIssueStatuses" [ngValue]="status">{{ getQualityIssueStatusLabel(status) }}</option>
           </select>
         </div>
         <div class="field">
@@ -347,6 +353,15 @@
             <option value="Critical">Critical</option>
             <option value="Major">Major</option>
             <option value="Minor">Minor</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Assigned User</label>
+          <select formControlName="assignedUser">
+            <option [ngValue]="''">All</option>
+            <option *ngFor="let user of uniqueAssignedUsers" [ngValue]="user.id" [title]="user.teamName ? user.name + ' (' + user.teamName + ')' : user.name">
+              {{ user.name }}{{ user.teamName ? ' (' + user.teamName + ')' : '' }}
+            </option>
           </select>
         </div>
         <div class="filter-actions">
@@ -381,19 +396,25 @@
         <table class="designer-table" *ngIf="!qualityIssuesLoading && !qualityIssuesError && qualityIssues.length > 0">
           <thead>
             <tr>
+              <th>Issue Number</th>
               <th>Status</th>
               <th>Issue Date</th>
               <th>Type</th>
               <th>Severity</th>
               <th>Project</th>
               <th>Box</th>
-              <th>WIR</th>
+              <th>Stage</th>
               <th>Assigned To</th>
+              <th>CC User</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let issue of qualityIssues">
+              <td>
+                <span *ngIf="issue.issueNumber" style="font-weight: 500; color: #3b82f6;">#{{ issue.issueNumber }}</span>
+                <span *ngIf="!issue.issueNumber">—</span>
+              </td>
               <td>
                 <span class="status-pill" [ngClass]="getQualityIssueStatusClass(issue.issueStatus || issue.status)">
                   {{ getQualityIssueStatusLabel(issue.issueStatus || issue.status) }}
@@ -412,12 +433,15 @@
                 <div class="text-muted">{{ issue.boxName || '—' }}</div>
               </td>
               <td>
-                <div>{{ issue.wirNumber || '—' }}</div>
-                <div class="text-muted" *ngIf="issue.wirName">{{ issue.wirName }}</div>
+                <div>{{ getDisplayWirNumber(issue.wirNumber) }}</div>
               </td>
               <td>
-                <div class="text-truncate" [title]="issue.assignedTeamName || '—'">
-                  {{ issue.assignedTeamName || '—' }}
+                <div style="font-weight: 500;">{{ issue.assignedTeamName || '—' }}</div>
+                <div class="text-muted" *ngIf="issue.assignedToUserName" style="font-size: 12px;">{{ issue.assignedToUserName }}</div>
+              </td>
+              <td>
+                <div class="text-truncate" [title]="issue.ccUserName || '—'">
+                  {{ issue.ccUserName || '—' }}
                 </div>
               </td>
               <td class="col-actions">
@@ -492,8 +516,8 @@
                 <span class="detail-value">{{ issue.boxTag }} - {{ issue.boxName || '—' }}</span>
               </div>
               <div class="detail-item" *ngIf="issue.wirNumber">
-                <span class="detail-label">WIR:</span>
-                <span class="detail-value">{{ issue.wirNumber }}</span>
+                <span class="detail-label">Stage:</span>
+                <span class="detail-value">{{ getDisplayWirNumber(issue.wirNumber) }}</span>
               </div>
               <div class="detail-item" *ngIf="issue.assignedTeamName">
                 <span class="detail-label">Assigned To:</span>

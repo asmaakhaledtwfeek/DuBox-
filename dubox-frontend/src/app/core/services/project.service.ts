@@ -49,8 +49,12 @@ export class ProjectService {
       plannedStartDate: plannedStartValue ? new Date(plannedStartValue) : undefined,
       actualStartDate: actualStartValue ? new Date(actualStartValue) : undefined,
       plannedEndDate: plannedEndValue ? new Date(plannedEndValue) : undefined,
+      projectedEndDate: (backendProject.projectedEndDate || backendProject.ProjectedEndDate) ? new Date(backendProject.projectedEndDate || backendProject.ProjectedEndDate) : undefined,
       compressionStartDate: (backendProject.compressionStartDate || backendProject.CompressionStartDate) ? new Date(backendProject.compressionStartDate || backendProject.CompressionStartDate) : undefined,
       duration: durationValue ? Number(durationValue) : undefined,
+      projectManagerId: backendProject.projectMangerId || backendProject.ProjectMangerId,
+      projectManagerName: backendProject.projectMangerName || backendProject.ProjectMangerName,
+      projectValue: backendProject.projectValue || backendProject.ProjectValue,
       status: backendProject.status || backendProject.Status,
       totalBoxes: backendProject.totalBoxes || backendProject.TotalBoxes || 0,
       completedBoxes: backendProject.completedBoxes || backendProject.CompletedBoxes || 0,
@@ -200,6 +204,18 @@ export class ProjectService {
   saveProjectConfiguration(projectId: string, configuration: ProjectConfiguration): Observable<ProjectConfiguration> {
     return this.apiService.post<any>(`${this.endpoint}/${projectId}/configuration`, configuration).pipe(
       map(response => response.data || response)
+    );
+  }
+
+  /**
+   * Get users with Project Manager role
+   */
+  getProjectManagers(): Observable<Array<{ userId: string; fullName: string; email: string }>> {
+    return this.apiService.get<any>('users/project-managers').pipe(
+      map(response => {
+        const data = response.data || response;
+        return Array.isArray(data) ? data : [];
+      })
     );
   }
 }

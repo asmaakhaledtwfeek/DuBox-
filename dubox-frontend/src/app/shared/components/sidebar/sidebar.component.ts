@@ -196,7 +196,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
     }
 
     // Filter menu items based on user permissions (done once)
-    this.menuItems = allMenuItems.filter(item => {
+    const filteredItems = allMenuItems.filter(item => {
       const hasExactPermission = this.permissionService.hasPermission(
         item.permissionModule,
         item.permissionAction
@@ -222,6 +222,15 @@ export class SidebarComponent implements OnInit, OnDestroy {
       }
 
       return hasExactPermission;
+    });
+
+    // Sort menu items: regular items first, then "Coming Soon" items at the bottom
+    this.menuItems = filteredItems.sort((a, b) => {
+      // If one has comingSoon and the other doesn't, put comingSoon items at the bottom
+      if (a.comingSoon && !b.comingSoon) return 1;
+      if (!a.comingSoon && b.comingSoon) return -1;
+      // Otherwise maintain original order
+      return 0;
     });
 
     console.log('✅ Filtered menu items:', this.menuItems.length, 'visible items');

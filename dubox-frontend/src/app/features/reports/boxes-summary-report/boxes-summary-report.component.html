@@ -82,7 +82,21 @@
         <h3 class="filter-section-title">Advanced Filters</h3>
         <div class="filter-row">
           <div class="filter-group">
-            <label>Status</label>
+            <label>Project Status</label>
+            <div class="status-checkboxes">
+              <label *ngFor="let status of [ProjectStatus.Active, ProjectStatus.OnHold, ProjectStatus.Completed, ProjectStatus.Archived, ProjectStatus.Closed]" 
+                     class="checkbox-label">
+                <input 
+                  type="checkbox" 
+                  [checked]="selectedProjectStatuses.includes(ProjectStatusToInt[status])"
+                  (change)="toggleProjectStatus(status); onFilterChange()">
+                <span>{{ status }}</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label>Box Status</label>
             <div class="status-checkboxes">
               <label *ngFor="let status of [BoxStatus.NotStarted, BoxStatus.InProgress, BoxStatus.Completed, BoxStatus.OnHold, BoxStatus.Dispatched]" 
                      class="checkbox-label">

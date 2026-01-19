@@ -74,6 +74,20 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<ProjectZone> ProjectZones { get; set; } = null!;
     public DbSet<ProjectBoxFunction> ProjectBoxFunctions { get; set; } = null!;
 
+    // Cost Management
+    public DbSet<CostCodeMaster> CostCodes { get; set; } = null!;
+    public DbSet<ProjectCostItem> ProjectCostItems { get; set; } = null!;
+    public DbSet<HRCostRecord> HRCostRecords { get; set; } = null!;
+    public DbSet<ProjectCost> ProjectCosts { get; set; } = null!;
+
+    // Schedule Activities (New Module - Coming Soon)
+    public DbSet<ScheduleActivity> ScheduleActivities { get; set; } = null!;
+    public DbSet<ScheduleActivityTeam> ScheduleActivityTeams { get; set; } = null!;
+    public DbSet<ScheduleActivityMaterial> ScheduleActivityMaterials { get; set; } = null!;
+
+    // BIM Models (New Module - Coming Soon)
+    public DbSet<BIMModel> BIMModels { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ConfigureRelationships(modelBuilder);
@@ -418,6 +432,19 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasForeignKey(bd => bd.BoxId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // ProjectCost relationships
+        modelBuilder.Entity<ProjectCost>()
+            .HasOne(pc => pc.Box)
+            .WithMany(b => b.ProjectCosts)
+            .HasForeignKey(pc => pc.BoxId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ProjectCost>()
+            .HasOne(pc => pc.Project)
+            .WithMany()
+            .HasForeignKey(pc => pc.ProjectId)
+            .OnDelete(DeleteBehavior.Restrict);
+
     }
 
     private void ConfigureIndexes(ModelBuilder modelBuilder)
@@ -429,7 +456,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
 
         // Box indexes
         modelBuilder.Entity<Box>()
-            .HasIndex(b => new { b.ProjectId, b.BoxTag })
+            .HasIndex(b => new { b.ProjectId, b.SerialNumber })
             .IsUnique();
 
 

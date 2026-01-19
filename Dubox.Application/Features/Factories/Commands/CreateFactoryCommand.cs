@@ -9,6 +9,10 @@ public record CreateFactoryCommand(
     string FactoryCode,
     string FactoryName,
     ProjectLocationEnum Location,
-    int? Capacity
+    int? Capacity,
+    int MinRow,
+    int MaxRow,
+    string MinBay,
+    string MaxBay
 ) : IRequest<Result<FactoryDto>>;
 

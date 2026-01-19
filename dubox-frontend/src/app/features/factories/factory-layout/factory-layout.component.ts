@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { Subscription, forkJoin, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { FactoryService, Factory } from '../../../core/services/factory.service';
@@ -8,19 +9,22 @@ import { BoxService } from '../../../core/services/box.service';
 import { Box, BoxStatus } from '../../../core/models/box.model';
 import { WIRService } from '../../../core/services/wir.service';
 import { WIRRecord } from '../../../core/models/wir.model';
+import { ProjectService } from '../../../core/services/project.service';
+import { Project } from '../../../core/models/project.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { 
   getCurrentActiveWIRStage, 
   getWIRStageInfo,
   WIRStageInfo,
-  COMPLETED_WIR_STAGE
+  COMPLETED_WIR_STAGE,
+  WIR_STAGE_COLORS
 } from '../../../core/utils/wir-stage.util';
 
 @Component({
   selector: 'app-factory-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, HeaderComponent, SidebarComponent],
+  imports: [CommonModule, RouterModule, FormsModule, HeaderComponent, SidebarComponent],
   templateUrl: './factory-layout.component.html',
   styleUrls: ['./factory-layout.component.scss']
 })
@@ -28,10 +32,28 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
   factoryId: string = '';
   factory: Factory | null = null;
   boxes: Box[] = [];
+  filteredBoxes: Box[] = [];
   // Map of boxId to WIR records for that box
   boxWIRRecordsMap: Map<string, WIRRecord[]> = new Map();
   loading = true;
   error = '';
+  
+  // Filter properties
+  projects: Project[] = [];
+  allProjects: Project[] = []; // Store all projects before filtering
+  selectedProjectId: string = '';
+  selectedStage: string = '';
+  selectedBuilding: string = '';
+  selectedFloor: string = '';
+  selectedLevel: string = '';
+  selectedZone: string = '';
+  availableStages: Array<{ wirCode: string; displayName: string }> = [];
+  
+  // Available filter options
+  availableBuildings: string[] = [];
+  availableFloors: string[] = [];
+  availableLevels: string[] = [];
+  availableZones: string[] = [];
   
   BoxStatus = BoxStatus;
   
@@ -42,12 +64,32 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
     private router: Router,
     private factoryService: FactoryService,
     private boxService: BoxService,
-    private wirService: WIRService
+    private wirService: WIRService,
+    private projectService: ProjectService
   ) {}
 
   ngOnInit(): void {
     this.factoryId = this.route.snapshot.params['id'];
+    this.initializeAvailableStages();
+    this.loadProjects();
     this.loadFactoryData();
+  }
+
+  /**
+   * Initialize available stages with predefined WIR stages from BUSINESS FLOW INDICATORS
+   */
+  initializeAvailableStages(): void {
+    // Use predefined WIR stages from WIR_STAGE_COLORS
+    this.availableStages = Object.values(WIR_STAGE_COLORS).map(stage => ({
+      wirCode: stage.wirCode,
+      displayName: stage.displayName
+    }));
+    
+    // Add Completed stage
+    this.availableStages.push({
+      wirCode: COMPLETED_WIR_STAGE.wirCode,
+      displayName: COMPLETED_WIR_STAGE.displayName
+    });
   }
   
   ngOnDestroy(): void {
@@ -74,12 +116,55 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
     this.subscriptions.push(factorySub);
   }
 
+  loadProjects(): void {
+    const projectsSub = this.projectService.getProjects().subscribe({
+      next: (projects: Project[]) => {
+        // Store all non-archived projects
+        this.allProjects = projects.filter(p => p.status !== 'Archived');
+        // Update projects list based on boxes (will be called after boxes are loaded)
+        this.updateProjectsList();
+      },
+      error: (err: any) => {
+        console.error('Error loading projects:', err);
+      }
+    });
+
+    this.subscriptions.push(projectsSub);
+  }
+
+  /**
+   * Update projects list to only show projects that have boxes in the current layout
+   * (boxes that have bay, row, or position assigned)
+   */
+  updateProjectsList(): void {
+    if (this.boxes.length === 0 || this.allProjects.length === 0) {
+      // If boxes aren't loaded yet, show all projects temporarily
+      this.projects = [...this.allProjects];
+      return;
+    }
+
+    // Get unique project IDs from boxes that have positions in the layout
+    const projectIdsWithBoxesInLayout = new Set<string>();
+    this.boxes.forEach(box => {
+      // Only include boxes that have position information (bay, row, or position)
+      if (box.bay || box.row || box.position) {
+        projectIdsWithBoxesInLayout.add(box.projectId);
+      }
+    });
+
+    // Filter projects to only show those with boxes in layout
+    this.projects = this.allProjects.filter(p => projectIdsWithBoxesInLayout.has(p.id));
+  }
+
   loadBoxes(): void {
     const boxesSub = this.boxService.getBoxesByFactory(this.factoryId).subscribe({
       next: (boxes: Box[]) => {
         // Backend already filters boxes (InProgress/Completed from active projects)
         // Just use the boxes directly and load WIR records
         this.boxes = boxes;
+        this.filteredBoxes = boxes;
+        this.updateProjectsList();
+        this.updateFilterOptions();
         this.loadWIRRecordsForBoxes(boxes);
       },
       error: (err: any) => {
@@ -90,6 +175,98 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
     });
 
     this.subscriptions.push(boxesSub);
+  }
+
+  /**
+   * Update available filter options based on boxes in the layout
+   */
+  updateFilterOptions(): void {
+    // Get unique values from boxes that have positions in the layout
+    const buildingsSet = new Set<string>();
+    const floorsSet = new Set<string>();
+    const levelsSet = new Set<string>();
+    const zonesSet = new Set<string>();
+
+    this.boxes.forEach(box => {
+      // Only consider boxes that have position information
+      if (box.bay || box.row || box.position) {
+        if (box.buildingNumber) {
+          buildingsSet.add(box.buildingNumber);
+        }
+        if (box.floor) {
+          floorsSet.add(box.floor);
+        }
+        // For level, we'll use floor as level (since there's no separate level property)
+        // If level needs to be different, it can be added later
+        if (box.floor) {
+          levelsSet.add(box.floor);
+        }
+        if (box.zone) {
+          zonesSet.add(box.zone);
+        }
+      }
+    });
+
+    this.availableBuildings = Array.from(buildingsSet).sort();
+    this.availableFloors = Array.from(floorsSet).sort();
+    this.availableLevels = Array.from(levelsSet).sort();
+    this.availableZones = Array.from(zonesSet).sort();
+  }
+
+  applyFilters(): void {
+    let filtered = [...this.boxes];
+
+    // When filtering by project or stage, show only InProgress or Completed boxes
+    if (this.selectedProjectId || this.selectedStage) {
+      filtered = filtered.filter(box => 
+        box.status === BoxStatus.InProgress || box.status === BoxStatus.Completed
+      );
+    }
+
+    // Filter by project
+    if (this.selectedProjectId) {
+      filtered = filtered.filter(box => box.projectId === this.selectedProjectId);
+    }
+
+    // Filter by stage
+    if (this.selectedStage) {
+      filtered = filtered.filter(box => {
+        const wirStage = this.getBoxWIRStage(box);
+        return wirStage && wirStage.wirCode === this.selectedStage;
+      });
+    }
+
+    // Filter by building
+    if (this.selectedBuilding) {
+      filtered = filtered.filter(box => box.buildingNumber === this.selectedBuilding);
+    }
+
+    // Filter by floor
+    if (this.selectedFloor) {
+      filtered = filtered.filter(box => box.floor === this.selectedFloor);
+    }
+
+    // Filter by level (using floor as level since there's no separate level property)
+    if (this.selectedLevel) {
+      filtered = filtered.filter(box => box.floor === this.selectedLevel);
+    }
+
+    // Filter by zone
+    if (this.selectedZone) {
+      filtered = filtered.filter(box => box.zone === this.selectedZone);
+    }
+
+    this.filteredBoxes = filtered;
+  }
+
+  clearFilters(): void {
+    this.selectedProjectId = '';
+    this.selectedStage = '';
+    this.selectedBuilding = '';
+    this.selectedFloor = '';
+    this.selectedLevel = '';
+    this.selectedZone = '';
+    this.filteredBoxes = [...this.boxes];
   }
 
   /**
@@ -147,9 +324,8 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
    */
 
   getGridLayout(): any {
-    // Backend already filters boxes (InProgress/Completed from active projects)
-    // Only filter by position information for grid display
-    const boxesWithPosition = this.boxes.filter(box => 
+    // Use filtered boxes instead of all boxes
+    const boxesWithPosition = this.filteredBoxes.filter(box => 
       (box.bay || box.row || box.position)
     );
     
@@ -157,24 +333,52 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
       return { rows: [], columns: [], matrix: [], totalBoxes: 0 };
     }
 
-    // Get unique bays (columns - A, B, C, D) and rows (1, 2, 3, 4)
+    // Get unique bays (columns - A, B, C, D) and rows (1, 2, 3, 4) from boxes
     const baysSet = new Set<string>();
     const rowsSet = new Set<string>();
     
     boxesWithPosition.forEach(box => {
-      baysSet.add(box.bay || 'A');
-      rowsSet.add(box.row || '1');
+      if (box.bay) baysSet.add(box.bay);
+      if (box.row) rowsSet.add(box.row);
     });
 
     // Sort columns (bays) and rows
-    const columns = Array.from(baysSet).sort((a, b) => a.localeCompare(b));
-    const rows = Array.from(rowsSet).sort((a, b) => {
+    const baysList = Array.from(baysSet).sort((a, b) => a.localeCompare(b));
+    const rowsList = Array.from(rowsSet).sort((a, b) => {
       const numA = parseInt(a) || 0;
       const numB = parseInt(b) || 0;
       return numA - numB;
     });
 
-    // Create matrix structure
+    // Find min and max bay (alphabetically)
+    const minBay = baysList[0];
+    const maxBay = baysList[baysList.length - 1];
+
+    // Find min and max row (numerically)
+    const minRow = Math.min(...rowsList.map(r => parseInt(r) || 0));
+    const maxRow = Math.max(...rowsList.map(r => parseInt(r) || 0));
+
+    // Generate all bays from min to max (A-Z range)
+    const allBays: string[] = [];
+    if (minBay && maxBay) {
+      const startCharCode = minBay.charCodeAt(0);
+      const endCharCode = maxBay.charCodeAt(0);
+      for (let i = startCharCode; i <= endCharCode; i++) {
+        allBays.push(String.fromCharCode(i));
+      }
+    }
+
+    // Generate all rows from min to max
+    const allRows: string[] = [];
+    for (let i = minRow; i <= maxRow; i++) {
+      allRows.push(i.toString());
+    }
+
+    // Use complete range
+    const columns = allBays;
+    const rows = allRows;
+
+    // Create matrix structure with ALL combinations
     const matrix: any[][] = [];
     let displayedBoxCount = 0;
     
@@ -183,7 +387,7 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
       columns.forEach(column => {
         // Find ALL boxes at this position (there might be duplicates)
         const boxesAtPosition = boxesWithPosition.filter(b => 
-          (b.bay || 'A') === column && (b.row || '1') === row
+          (b.bay || '') === column && (b.row || '') === row
         );
         
         // Use the first box for display, but track if there are multiple
@@ -295,8 +499,8 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
     let completedCount = 0;
     let noWIRCount = 0;
 
-    // Count boxes by WIR stage
-    this.boxes.forEach(box => {
+    // Count boxes by WIR stage (use filteredBoxes)
+    this.filteredBoxes.forEach(box => {
       if (!box.bay && !box.row && !box.position) return;
       if (box.status === BoxStatus.Dispatched) return;
 
@@ -349,8 +553,8 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
     const gridLayout = this.getGridLayout();
     if (gridLayout.totalBoxes === 0) return 0;
     
-    // Count boxes that are in any WIR stage (not completed)
-    const inProgressCount = this.boxes.filter(b => {
+    // Count boxes that are in any WIR stage (not completed) - use filteredBoxes
+    const inProgressCount = this.filteredBoxes.filter(b => {
       if (!b.bay && !b.row && !b.position) return false;
       if (b.status === BoxStatus.Dispatched) return false;
       const wirStage = this.getBoxWIRStage(b);
@@ -364,8 +568,8 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
     const gridLayout = this.getGridLayout();
     if (gridLayout.totalBoxes === 0) return 0;
     
-    // Count boxes that have completed all WIRs
-    const completedCount = this.boxes.filter(b => {
+    // Count boxes that have completed all WIRs - use filteredBoxes
+    const completedCount = this.filteredBoxes.filter(b => {
       if (!b.bay && !b.row && !b.position) return false;
       if (b.status === BoxStatus.Dispatched) return false;
       const wirStage = this.getBoxWIRStage(b);
@@ -399,5 +603,12 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
 
   goBack(): void {
     this.router.navigate(['/factories', this.factoryId]);
+  }
+
+  /**
+   * Navigate to walls status page
+   */
+  viewWallsStatus(): void {
+    this.router.navigate(['/factories', this.factoryId, 'walls-status']);
   }
 }

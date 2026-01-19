@@ -11,8 +11,12 @@ public record CreateProjectCommand(
     string ProjectName,
     string? ClientName,
     ProjectLocationEnum Location,
-    int Duration,
+    int? Duration,
     DateTime PlannedStartDate,
+    DateTime? PlannedEndtDate,
+    DateTime? ProjectedEndDate,
+    Guid? ProjectMangerId,
+    decimal? ProjectValue,
     string? Description,
     string? BimLink
 ) : IRequest<Result<ProjectDto>>;

@@ -24,6 +24,8 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
     private readonly IProjectProgressService _projectProgressService;
     private readonly ISerialNumberService _serialNumberService;
     private readonly IProjectTeamVisibilityService _visibilityService;
+    private readonly IBoxCreationService _boxCreationService;
+
 
     public CreateBoxCommandHandler(
         IUnitOfWork unitOfWork,
@@ -34,7 +36,8 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
         ICurrentUserService currentUserService,
         IProjectProgressService projectProgressService,
         ISerialNumberService serialNumberService,
-        IProjectTeamVisibilityService visibilityService)
+        IProjectTeamVisibilityService visibilityService,
+        IBoxCreationService boxCreationService)
     {
         _unitOfWork = unitOfWork;
         _dbContext = dbContext;
@@ -45,6 +48,7 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
         _projectProgressService = projectProgressService;
         _serialNumberService = serialNumberService;
         _visibilityService = visibilityService;
+        _boxCreationService = boxCreationService;
     }
 
     public async Task<Result<BoxDto>> Handle(CreateBoxCommand request, CancellationToken cancellationToken)
@@ -71,11 +75,6 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
         if (!projectStatusValidation.IsSuccess)
             return Result.Failure<BoxDto>(projectStatusValidation.Error!);
         
-        var boxExists = await _unitOfWork.Repository<Box>()
-            .IsExistAsync(b => b.ProjectId == request.ProjectId && b.BoxTag == request.BoxTag, cancellationToken);
-
-        if (boxExists)
-            return Result.Failure<BoxDto>("Box with this tag already exists in the project");
 
         var box = _mapper.Map<Box>(request);
 
@@ -83,19 +82,7 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
             box.PlannedEndDate = request.BoxPlannedStartDate.Value.AddDays(request.BoxDuration.Value);
 
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
-
-        // Generate unique serial number (global for project)
-        var lastSeq = _unitOfWork.Repository<Box>().Get()
-             .Where(b => b.ProjectId == request.ProjectId)
-              .Max(b => (int?)b.SequentialNumber) ?? 0;
-        box.SequentialNumber = lastSeq + 1;
-        var yearOfProject = project.CreatedDate.Year.ToString().Substring(2, 2);
-        box.SerialNumber = _serialNumberService.GenerateSerialNumber("X",lastSeq,yearOfProject);
-        
-        box.CreatedBy = currentUserId;
-        
-        // Automatically assign factory based on project location
-        // Get the first available factory for the project's location
+       
         var factory = _unitOfWork.Repository<Factory>()
             .Get()
             .Where(f => f.Location == project.Location && f.IsActive)
@@ -103,74 +90,13 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
             .FirstOrDefault();
         
         if (factory != null)
-        {
             box.FactoryId = factory.FactoryId;
-            Console.WriteLine($"✅ Auto-assigned Factory: {factory.FactoryCode} for project location: {project.Location}");
-        }
-        else
-        {
-            Console.WriteLine($"⚠️ No active factory found for location: {project.Location}");
-        }
+       
         
         box.BoxAssets = request.Assets?.Adapt<List<BoxAsset>>() ?? new List<BoxAsset>();
         foreach (var asset in box.BoxAssets)
             asset.Box = box;
-        //var typeExisit = await _unitOfWork.Repository<BoxType>().GetByIdAsync(box.BoxTypeId);
-        //box.BoxType = typeExisit;
-        //var typeExisitOfBoxsubType = await _unitOfWork.Repository<BoxType>().GetByIdAsync(box.BoxSubType.BoxTypeId);
-        //if (typeExisit ==null)
-        //    return Result.Failure<BoxDto>("Project not found");
-        await _unitOfWork.Repository<Box>().AddAsync(box, cancellationToken);
-        await _unitOfWork.CompleteAsync();
-         box = _unitOfWork.Repository<Box>().GetEntityWithSpec(new GetBoxWithIncludesSpecification(box.BoxId));
-        await _boxActivityService.CopyActivitiesToBox(box, cancellationToken);
-        var oldTotalBoxes = project.TotalBoxes;
-
-        project.TotalBoxes++;
-        _unitOfWork.Repository<Project>().Update(project);
-
-        const string dateFormat = "yyyy-MM-dd HH:mm:ss";
-        var boxLog = new AuditLog
-        {
-            TableName = nameof(Box),
-            RecordId = box.BoxId,
-            Action = "Creation",
-            OldValues = "N/A (New Entity)",
-            NewValues = $"Tag: {box.BoxTag}, ProjectId: {box.ProjectId}, PlannedStart: {box.PlannedStartDate?.ToString(dateFormat) ?? "N/A"}, Duration: {box.Duration}",
-            ChangedBy = currentUserId,
-            ChangedDate = DateTime.UtcNow,
-            Description = $"New Box '{box.BoxTag}' created successfully under Project '{project.ProjectCode}'."
-        };
-        await _unitOfWork.Repository<AuditLog>().AddAsync(boxLog, cancellationToken);
-        var projectLog = new AuditLog
-        {
-            TableName = nameof(Project),
-            RecordId = project.ProjectId,
-            Action = "TotalBoxesUpdate",
-            OldValues = $"TotalBoxes: {oldTotalBoxes}",
-            NewValues = $"TotalBoxes: {project.TotalBoxes}",
-            ChangedBy = currentUserId,
-            ChangedDate = DateTime.UtcNow,
-            Description = $"Total box count incremented from {oldTotalBoxes} to {project.TotalBoxes} due to new box creation."
-        };
-        await _unitOfWork.Repository<AuditLog>().AddAsync(projectLog, cancellationToken);
-        await _unitOfWork.CompleteAsync(cancellationToken);
-
-        await _projectProgressService.UpdateProjectProgressAsync(
-            project.ProjectId,
-            currentUserId,
-            $"Project progress recalculated due to new box '{box.BoxTag}' creation.",
-            cancellationToken);
-
-        
-
-        var boxDto = box.Adapt<BoxDto>() with
-        { 
-            
-            FactoryId = box.FactoryId,
-            FactoryCode = box.Factory?.FactoryCode,
-            FactoryName = box.Factory?.FactoryName
-        };
+       var boxDto= await _boxCreationService.CreateAsync(box, project, currentUserId, "Creation", $"New Box '{box.BoxTag}' created successfully under Project '{project.ProjectCode}'.", cancellationToken);
 
         return Result.Success(boxDto);
 

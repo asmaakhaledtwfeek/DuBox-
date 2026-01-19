@@ -1,0 +1,251 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="page-content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-left">
+        <button class="btn-back" (click)="goBack()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+          Back to Dashboard
+        </button>
+        <div class="title-section">
+          <h1 class="page-title">Quality Issues</h1>
+          <p class="page-subtitle" *ngIf="projectName">{{ projectName }}</p>
+        </div>
+      </div>
+      <div class="header-right" *ngIf="!loading && !error && filteredQualityIssues.length > 0">
+        <button class="btn btn-primary" (click)="exportToExcel()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Export to Excel
+        </button>
+      </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="stats-grid" *ngIf="!loading && !error">
+      <div class="stat-card clickable-stat-card" 
+           [class.active]="activeKpiCard === ''"
+           (click)="onKpiCardClick('')"
+           role="button"
+           tabindex="0"
+           title="Show all issues">
+        <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ qualityIssues.length }}</div>
+          <div class="stat-label">Total Issues</div>
+        </div>
+      </div>
+      
+      <div class="stat-card clickable-stat-card" 
+           [class.active]="activeKpiCard === 'Open'"
+           (click)="onKpiCardClick('Open')"
+           role="button"
+           tabindex="0"
+           title="Filter by Open issues">
+        <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ getStatusCount('Open') }}</div>
+          <div class="stat-label">Open</div>
+        </div>
+      </div>
+      
+      <div class="stat-card clickable-stat-card" 
+           [class.active]="activeKpiCard === 'InProgress'"
+           (click)="onKpiCardClick('InProgress')"
+           role="button"
+           tabindex="0"
+           title="Filter by In Progress issues">
+        <div class="stat-icon" style="background: rgba(59, 130, 246, 0.1); color: #3b82f6;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ getStatusCount('InProgress') }}</div>
+          <div class="stat-label">In Progress</div>
+        </div>
+      </div>
+      
+      <div class="stat-card clickable-stat-card" 
+           [class.active]="activeKpiCard === 'Resolved'"
+           (click)="onKpiCardClick('Resolved')"
+           role="button"
+           tabindex="0"
+           title="Filter by Resolved issues">
+        <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <div class="stat-value">{{ getStatusCount('Resolved') }}</div>
+          <div class="stat-label">Resolved</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-panel card" *ngIf="!loading && !error">
+      <div class="filter-row">
+        <div class="field">
+          <label>Search</label>
+          <input 
+            type="text" 
+            [(ngModel)]="searchTerm" 
+            (ngModelChange)="applyFilters()"
+            placeholder="Search by issue number, description, or box..."
+          />
+        </div>
+        
+        <div class="field">
+          <label>Status</label>
+          <select [(ngModel)]="selectedStatus" (ngModelChange)="applyFilters()">
+            <option value="">All</option>
+            <option *ngFor="let status of statusOptions" [value]="status">{{ getStatusLabel(status) }}</option>
+          </select>
+        </div>
+        
+        <div class="field">
+          <label>Type</label>
+          <select [(ngModel)]="selectedType" (ngModelChange)="applyFilters()">
+            <option value="">All</option>
+            <option *ngFor="let type of typeOptions" [value]="type">{{ type }}</option>
+          </select>
+        </div>
+        
+        <div class="field">
+          <label>Severity</label>
+          <select [(ngModel)]="selectedSeverity" (ngModelChange)="applyFilters()">
+            <option value="">All</option>
+            <option *ngFor="let severity of severityOptions" [value]="severity">{{ severity }}</option>
+          </select>
+        </div>
+        
+        <div class="filter-actions">
+          <button type="button" class="btn btn-secondary" (click)="resetFilters()">Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="table-state" *ngIf="loading">
+      <div class="spinner"></div>
+      <p>Loading quality issues...</p>
+    </div>
+
+    <!-- Error State -->
+    <div class="table-state error" *ngIf="!loading && error">
+      <p>{{ error }}</p>
+      <button class="btn btn-primary" (click)="loadQualityIssues()">Retry</button>
+    </div>
+
+    <!-- Empty State -->
+    <div class="table-state" *ngIf="!loading && !error && qualityIssues.length === 0">
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.3; margin-bottom: 16px;">
+        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+        <polyline points="22 4 12 14.01 9 11.01"/>
+      </svg>
+      <p>No quality issues found for this project</p>
+    </div>
+
+    <!-- No Results After Filtering -->
+    <div class="table-state" *ngIf="!loading && !error && qualityIssues.length > 0 && filteredQualityIssues.length === 0">
+      <p>No quality issues match your filters</p>
+      <button class="btn btn-secondary" (click)="resetFilters()">Clear Filters</button>
+    </div>
+
+    <!-- Quality Issues Table -->
+    <div class="quality-table-wrapper" *ngIf="!loading && !error && filteredQualityIssues.length > 0">
+      <table class="designer-table">
+        <thead>
+          <tr>
+            <th>Issue Number</th>
+            <th>Status</th>
+            <th>Issue Date</th>
+            <th>Type</th>
+            <th>Severity</th>
+            <th>Box</th>
+            <th>Stage</th>
+            <th>Description</th>
+            <th>Assigned To</th>
+            <th>Due Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let issue of filteredQualityIssues">
+            <td>
+              <span *ngIf="issue.issueNumber" style="font-weight: 500; color: #3b82f6;">#{{ issue.issueNumber }}</span>
+              <span *ngIf="!issue.issueNumber">—</span>
+            </td>
+            <td>
+              <span [ngClass]="getStatusClass(issue.status)">
+                {{ getStatusLabel(issue.status) }}
+              </span>
+            </td>
+            <td>{{ formatDate(issue.issueDate) }}</td>
+            <td>{{ issue.issueType || '—' }}</td>
+            <td>
+              <span class="severity-badge" [ngClass]="getSeverityClass(issue.severity)">
+                {{ issue.severity || '—' }}
+              </span>
+            </td>
+            <td>
+              <div style="font-weight: 500;">{{ issue.boxTag || '—' }}</div>
+              <div class="text-muted" style="font-size: 12px;">{{ issue.boxName || '—' }}</div>
+            </td>
+            <td>
+              <span *ngIf="issue.wirNumber" style="font-size: 13px;">{{ formatStageNumber(issue.wirNumber) }}</span>
+              <span *ngIf="!issue.wirNumber">—</span>
+            </td>
+            <td>
+              <div class="text-truncate" [title]="issue.issueDescription" style="max-width: 200px;">
+                {{ issue.issueDescription || '—' }}
+              </div>
+            </td>
+            <td>
+              <div style="font-weight: 500;">{{ issue.assignedTeamName || '—' }}</div>
+              <div class="text-muted" *ngIf="issue.assignedToUserName" style="font-size: 12px;">{{ issue.assignedToUserName }}</div>
+            </td>
+            <td>{{ formatDate(issue.dueDate) }}</td>
+            <td class="col-actions">
+              <button 
+                class="action-btn ghost" 
+                (click)="viewIssueDetails(issue)"
+                title="View Details"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+

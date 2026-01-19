@@ -30,6 +30,13 @@ public class UsersController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
+    [HttpGet("project-managers")]
+    public async Task<IActionResult> GetProjectManagers(CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetProjectManagersQuery(), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
     [HttpGet("{userId}")]
     public async Task<IActionResult> GetUserById(Guid userId, CancellationToken cancellationToken)
     {

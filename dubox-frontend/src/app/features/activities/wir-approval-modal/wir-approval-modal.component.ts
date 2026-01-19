@@ -121,7 +121,7 @@ export class WIRApprovalModalComponent implements OnInit, OnChanges {
     this.wirService.approveWIRRecord(request).subscribe({
       next: (updatedWIR) => {
         this.processing = false;
-        this.successMessage = 'WIR record approved successfully!';
+        this.successMessage = 'Stage record approved successfully!';
         this.wirUpdated.emit(updatedWIR);
         setTimeout(() => {
           this.close();
@@ -178,7 +178,7 @@ export class WIRApprovalModalComponent implements OnInit, OnChanges {
     this.wirService.rejectWIRRecord(request).subscribe({
       next: (updatedWIR) => {
         this.processing = false;
-        this.successMessage = 'WIR record rejected successfully!';
+        this.successMessage = 'Stage record rejected successfully!';
         this.wirUpdated.emit(updatedWIR);
         
         // Close modal after showing success message

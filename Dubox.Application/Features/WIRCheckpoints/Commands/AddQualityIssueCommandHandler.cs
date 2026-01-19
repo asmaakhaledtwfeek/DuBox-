@@ -69,9 +69,16 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                 }
             }
 
+            // Generate the issue number based on the count of issues in the project
+            var issueCountInProject = _unitOfWork.Repository<QualityIssue>()
+                .GetWithSpec(new GetQualityIssuesSpecification()).Data
+                .Count(qi => qi.Box.ProjectId == wir.Box.ProjectId);
+            var issueNumber = (issueCountInProject + 1).ToString("D5"); // Format as 5-digit number (00001, 00002, etc.)
+
             // Create a single quality issue
             var newIssue = new QualityIssue
             {
+                IssueNumber = issueNumber,
                 WIRId = wir.WIRId,
                 BoxId = wir.BoxId,
                 IssueType = request.IssueType,
@@ -79,6 +86,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                 IssueDescription = request.IssueDescription,
                 AssignedToTeamId = request.AssignedTo,
                 AssignedToMemberId = request.AssignedToUserId,
+                CCUserId = request.CCUserId,
                 DueDate = request.DueDate,
                 Status = QualityIssueStatusEnum.Open,
                 IssueDate = DateTime.UtcNow,

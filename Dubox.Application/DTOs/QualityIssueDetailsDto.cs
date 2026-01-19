@@ -5,6 +5,7 @@ namespace Dubox.Application.DTOs
     public class QualityIssueDetailsDto
     {
         public Guid IssueId { get; set; }
+        public string IssueNumber { get; set; } = string.Empty;
         public DateTime IssueDate { get; set; }
         public IssueTypeEnum? IssueType { get; set; }
         public SeverityEnum? Severity { get; set; }
@@ -14,6 +15,8 @@ namespace Dubox.Application.DTOs
         public string? AssignedTeamName { get; set; }
         public Guid? AssignedToUserId { get; set; }
         public string? AssignedToUserName { get; set; }
+        public Guid? CCUserId { get; set; }
+        public string? CCUserName { get; set; }
         public DateTime? DueDate { get; set; }
         public QualityIssueStatusEnum Status { get; set; }
         public DateTime? ResolutionDate { get; set; }
@@ -28,7 +31,9 @@ namespace Dubox.Application.DTOs
         public Guid BoxId { get; set; }
         public string BoxName { get; set; } = string.Empty;
         public string BoxTag { get; set; } = string.Empty;
+        public Guid? ProjectId { get; set; }
         public string ProjectName { get; set; } = string.Empty;
+        public string? ProjectCode { get; set; }
         public Guid? WIRId { get; set; }
         public string? WIRNumber { get; set; }
         public string? WIRName { get; set; }

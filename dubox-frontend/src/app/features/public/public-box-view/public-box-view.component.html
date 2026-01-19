@@ -241,7 +241,7 @@
           </div>
         </div>
 
-        <!-- WIR Checkpoints -->
+        <!-- Stage Checkpoints -->
         <div class="summary-card">
           <div class="summary-icon wir">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -251,7 +251,7 @@
           </div>
           <div class="summary-content">
             <div class="summary-value">{{ boxSummary.wirCheckpoint.total }}</div>
-            <div class="summary-label">WIR Checkpoints</div>
+            <div class="summary-label">Stage Checkpoints</div>
             <div class="summary-details">
               <div class="detail-item">
                 <span class="detail-label">Pending</span>
@@ -367,7 +367,7 @@
           <h2>Attachments</h2>
           <span class="count-badge">{{ getAllAttachments().length }} {{ getAllAttachments().length === 1 ? 'file' : 'files' }}</span>
         </div>
-        <div class="header-subtitle">View-only mode • Attachments from WIR Checkpoints, Progress Updates, and Quality Issues</div>
+        <div class="header-subtitle">View-only mode • Attachments from Stage Checkpoints, Progress Updates, and Quality Issues</div>
       </div>
       <div class="section-content">
         <div *ngIf="loadingAttachments" class="loading-state">
@@ -399,7 +399,7 @@
                   {{ getFileExtension(group.fileName) }}
                 </div>
 
-                <!-- Source Badge (WIR/Progress/Quality) -->
+                <!-- Source Badge (Stage/Progress/Quality) -->
                 <div class="source-badge" [class]="group.latestVersion.sourceIcon">
                   {{ group.latestVersion.sourceType }}
                 </div>

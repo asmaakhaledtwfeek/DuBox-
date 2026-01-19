@@ -33,6 +33,7 @@ export interface Box {
   progress: number;
   activities: BoxActivity[];
   activitiesCount?: number;
+  drawingsCount?: number;
   attachments: BoxDrawing[];
   logs: BoxLog[];
   qrCode?: string;
@@ -49,6 +50,15 @@ export interface Box {
   updatedBy?: string;
   createdAt?: Date;
   updatedAt?: Date;
+  wall1?: boolean;
+  wall2?: boolean;
+  wall3?: boolean;
+  wall4?: boolean;
+  slab?: boolean;
+  soffit?: boolean;
+  podDeliver?: boolean;
+  podName?: string;
+  podType?: string;
 
 }
 
@@ -363,7 +373,8 @@ export interface BoxLog {
   newValue?: string;
   oldValues?: string; // JSON string of all old values (like audit logs)
   newValues?: string; // JSON string of all new values (like audit logs)
-  performedBy: string;
+  performedByName: string;
+  performedById?: string | null;
   performedAt: Date;
 }
 

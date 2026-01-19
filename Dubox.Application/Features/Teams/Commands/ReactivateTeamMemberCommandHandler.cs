@@ -30,7 +30,7 @@ public class ReactivateTeamMemberCommandHandler : IRequestHandler<ReactivateTeam
         if (!team.IsActive)
             return Result.Failure<TeamMemberDto>("Cannot reactivate members in an inactive team.");
 
-        var teamMember =  _unitOfWork.Repository<TeamMember>()
+        var teamMember = _unitOfWork.Repository<TeamMember>()
             .FindAsync(tm => tm.TeamMemberId == request.TeamMemberId, cancellationToken).Result.FirstOrDefault();
 
         if (teamMember == null)

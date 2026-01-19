@@ -98,6 +98,7 @@
                   class="form-control"
                   placeholder="e.g., Dubai Marina Tower Construction"
                   [class.invalid]="isFieldInvalid('projectName')"
+                  (blur)="capitalizeProjectName()"
                 />
                 <div class="error-text" *ngIf="isFieldInvalid('projectName')">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -162,6 +163,7 @@
                   class="form-control"
                   placeholder="e.g., Amana Contracting"
                   [class.invalid]="isFieldInvalid('clientName')"
+                  (blur)="capitalizeClientName()"
                 />
                 <div class="error-text" *ngIf="isFieldInvalid('clientName')">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -263,7 +265,7 @@
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                   </svg>
-                  Duration (days) <span class="required">*</span>
+                  Duration (days)
                 </label>
                 <input
                   id="duration"
@@ -282,6 +284,119 @@
                   </svg>
                   {{ getFieldError('duration') }}
                 </div>
+                <small class="field-hint">Auto-calculated when Projected End Date is set</small>
+              </div>
+
+              <!-- Projected End Date -->
+              <div class="form-group">
+                <label for="projectedEndDate">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  Projected End Date
+                </label>
+                <input
+                  id="projectedEndDate"
+                  type="date"
+                  formControlName="projectedEndDate"
+                  class="form-control"
+                  [class.invalid]="isFieldInvalid('projectedEndDate')"
+                />
+                <div class="error-text" *ngIf="isFieldInvalid('projectedEndDate')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  {{ getFieldError('projectedEndDate') }}
+                </div>
+                <small class="field-hint">Auto-calculated when Duration is set</small>
+              </div>
+
+              <!-- Project Value -->
+              <div class="form-group">
+                <label for="projectValue">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="1" x2="12" y2="23"/>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                  </svg>
+                  Project Value
+                </label>
+                <input
+                  id="projectValue"
+                  type="number"
+                  formControlName="projectValue"
+                  class="form-control"
+                  min="0"
+                  step="0.01"
+                  placeholder="e.g., 5000000"
+                  [class.invalid]="isFieldInvalid('projectValue')"
+                />
+                <div class="error-text" *ngIf="isFieldInvalid('projectValue')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  {{ getFieldError('projectValue') }}
+                </div>
+                <small class="field-hint">Total estimated project value</small>
+              </div>
+
+              <!-- Project Manager -->
+              <div class="form-group">
+                <label for="projectManager">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  Project Manager
+                </label>
+                <!-- Show readonly input if current user is project manager -->
+                <input
+                  *ngIf="isCurrentUserProjectManager"
+                  type="text"
+                  class="form-control"
+                  [value]="currentUserFullName"
+                  readonly
+                  style="background-color: #f8fafc; cursor: not-allowed;"
+                />
+                
+                <!-- Show dropdown for other users or in edit mode -->
+                <select
+                  *ngIf="!isCurrentUserProjectManager"
+                  id="projectManager"
+                  formControlName="projectManager"
+                  class="form-control"
+                  [class.invalid]="isFieldInvalid('projectManager')"
+                  [disabled]="loadingProjectManagers"
+                >
+                  <option [ngValue]="null">{{ loadingProjectManagers ? 'Loading...' : 'Select project manager' }}</option>
+                  <option *ngFor="let manager of projectManagers" [ngValue]="manager.userId">
+                    {{ manager.fullName }} ({{ manager.email }})
+                  </option>
+                </select>
+                
+                <small *ngIf="isCurrentUserProjectManager" class="helper-text" style="color: #64748b; margin-top: 4px; display: block;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 4px;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  You are automatically assigned as the project manager for this project.
+                </small>
+                <div class="error-text" *ngIf="isFieldInvalid('projectManager')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  {{ getFieldError('projectManager') }}
+                </div>
+                <small class="field-hint">Assigned project manager</small>
               </div>
             </div>
           </div>
@@ -386,6 +501,7 @@
                   placeholder="e.g., B01, B02, B03" 
                   class="form-control config-input"
                   (input)="onBuildingInput($event)"
+                  (blur)="capitalizeBuildingInput()"
                   (keydown.enter)="$event.preventDefault(); addBuilding()"
                 />
                 <button type="button" class="btn-config-add" (click)="addBuilding()">
@@ -416,6 +532,7 @@
                   placeholder="e.g., GF, 1F, 2F, 3F" 
                   class="form-control config-input"
                   (input)="onLevelInput($event)"
+                  (blur)="capitalizeLevelInput()"
                   (keydown.enter)="$event.preventDefault(); addLevel()"
                 />
                 <button type="button" class="btn-config-add" (click)="addLevel()">
@@ -446,6 +563,7 @@
                   placeholder="e.g., S1, S2, S3, S4" 
                   class="form-control config-input"
                   (input)="onBoxTypeInput($event)"
+                  (blur)="capitalizeBoxTypeInput()"
                   (keydown.enter)="$event.preventDefault(); addBoxType()"
                 />
                 <button type="button" class="btn-config-add" (click)="addBoxType()">
@@ -481,6 +599,7 @@
                         placeholder="e.g., Type A, Type B, Type C" 
                         class="form-control config-input-sm"
                         (input)="onSubTypeInput($event, i)"
+                        (blur)="capitalizeSubTypeInput(i)"
                         (keydown.enter)="$event.preventDefault(); addSubType(i)"
                         (focus)="selectedTypeForSubType = i"
                       />
@@ -517,6 +636,7 @@
                   placeholder="e.g., Zone A, Zone B, Zone C" 
                   class="form-control config-input"
                   (input)="onZoneInput($event)"
+                  (blur)="capitalizeZoneInput()"
                   (keydown.enter)="$event.preventDefault(); addZone()"
                 />
                 <button type="button" class="btn-config-add" (click)="addZone()">
@@ -547,6 +667,7 @@
                   placeholder="e.g., Storage, Distribution, Assembly" 
                   class="form-control config-input"
                   (input)="onBoxFunctionInput($event)"
+                  (blur)="capitalizeBoxFunctionInput()"
                   (keydown.enter)="$event.preventDefault(); addBoxFunction()"
                 />
                 <button type="button" class="btn-config-add" (click)="addBoxFunction()">

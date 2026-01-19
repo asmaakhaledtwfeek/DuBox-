@@ -32,6 +32,11 @@ export class QualityIssueDetailsModalComponent implements OnInit, OnChanges {
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['issue'] && this.issue) {
+      console.log('🎭 Modal received issue data:', this.issue);
+      console.log('🎭 Modal IssueNumber:', this.issue.issueNumber);
+      console.log('🎭 Modal AssignedTeamName:', this.issue.assignedTeamName);
+      console.log('🎭 Modal AssignedToUserName:', this.issue.assignedToUserName);
+      console.log('🎭 Modal CCUserName:', this.issue.ccUserName);
       this.updateImageUrls();
     }
   }
@@ -98,21 +103,38 @@ export class QualityIssueDetailsModalComponent implements OnInit, OnChanges {
     return parsed.toISOString().split('T')[0];
   }
 
+  /**
+   * Transform WIR number to Stage number for display purposes only
+   * E.g., "WIR-1" -> "Stage-1", "WIR-2" -> "Stage-2"
+   */
+  getDisplayWirNumber(wirNumber: string | undefined | null): string {
+    if (!wirNumber) return '—';
+    return wirNumber.replace(/WIR-/gi, 'Stage-');
+  }
+
+  /**
+   * Transform WIR text to Stage text for display purposes only
+   */
+  getDisplayWirText(text: string | undefined | null): string {
+    if (!text) return '—';
+    return text.replace(/WIR-/gi, 'Stage-').replace(/WIR /gi, 'Stage ');
+  }
+
   getQualityIssueWir(issue: QualityIssueDetails | null): string {
     if (!issue) return '—';
     
     if (issue.wirNumber) {
-      return issue.wirNumber;
+      return this.getDisplayWirNumber(issue.wirNumber);
     }
 
     if (issue.wirId) {
       const matchedCheckpoint = this.wirCheckpoints.find(cp => cp.wirId === issue.wirId);
       if (matchedCheckpoint?.wirNumber) {
-        return matchedCheckpoint.wirNumber;
+        return this.getDisplayWirNumber(matchedCheckpoint.wirNumber);
       }
     }
 
-    return issue.wirName || '—';
+    return this.getDisplayWirText(issue.wirName);
   }
 
   getQualityIssueStatusLabel(status?: QualityIssueStatus | string): string {

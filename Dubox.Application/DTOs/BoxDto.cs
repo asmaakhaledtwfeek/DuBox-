@@ -46,6 +46,16 @@ public record BoxDto
     public string? Bay { get; init; }
     public string? Row { get; init; }
     public string? Position { get; init; }
+    public int? DrawingsCount { get; set; }
+    public bool? Wall1 { get; init; }
+    public bool? Wall2 { get; init; }
+    public bool? Wall3 { get; init; }
+    public bool? Wall4 { get; init; }
+    public bool? Slab { get; init; }
+    public bool? Soffit { get; init; }
+    public bool? PodDeliver { get; init; }
+    public string? PodName { get; init; }
+    public string? PodType { get; init; }
 }
 
 public record CreateBoxDto
@@ -129,7 +139,9 @@ public record BoxLogDto
     public string? NewValue { get; init; }
     public string? OldValues { get; init; } // JSON string of all old values
     public string? NewValues { get; init; } // JSON string of all new values
-    public string PerformedBy { get; init; } = string.Empty;
+    public string PerformedByName { get; init; } = string.Empty;
+    public Guid? PerformedById{ get; init; } 
+
     public DateTime PerformedAt { get; init; }
 }
 

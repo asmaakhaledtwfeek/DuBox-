@@ -98,6 +98,8 @@ export class BoxService {
       actualEndDate: this.parseDate(backendBox.actualEndDate ?? backendBox.ActualEndDate),
       progress: backendBox.progressPercentage || backendBox.progress || 0,
       activities: backendBox.activities || [],
+      activitiesCount: backendBox.activitiesCount || backendBox.ActivitiesCount || 0,
+      drawingsCount: backendBox.drawingsCount || backendBox.DrawingsCount || 0,
       attachments: backendBox.attachments || [],
       logs: backendBox.logs || [],
       notes: backendBox.notes ?? backendBox.Notes,
@@ -111,11 +113,20 @@ export class BoxService {
       bay: backendBox.bay || backendBox.Bay,
       row: backendBox.row || backendBox.Row,
       position: backendBox.position || backendBox.Position,
+      // Delivery information fields
+      wall1: backendBox.wall1,
+      wall2: backendBox.wall2,
+      wall3: backendBox.wall3,
+      wall4: backendBox.wall4,
+      slab: backendBox.slab,
+      soffit: backendBox.soffit,
+      podDeliver: backendBox.podDeliver,
+      podName: backendBox.podName,
+      podType: backendBox.podType,
       createdBy: backendBox.createdBy,
       updatedBy: backendBox.modifiedBy || backendBox.updatedBy,
       createdAt: this.parseDate(backendBox.createdDate ?? backendBox.CreatedDate),
-      updatedAt: this.parseDate(backendBox.modifiedDate ?? backendBox.ModifiedDate),
-      activitiesCount:backendBox.activitiesCount || backendBox.ActivitiesCount||0
+      updatedAt: this.parseDate(backendBox.modifiedDate ?? backendBox.ModifiedDate)
     };
   }
 
@@ -224,6 +235,18 @@ export class BoxService {
   }
 
   /**
+   * Duplicate box (creates a copy with new serial number)
+   */
+  duplicateBox(id: string, includeActivities: boolean = true, includeDrawings: boolean = false): Observable<Box> {
+    return this.apiService.post<any>(`${this.endpoint}/${id}/duplicate`, { 
+      includeActivities,
+      includeDrawings
+    }).pipe(
+      map(response => this.transformBox(response))
+    );
+  }
+
+  /**
    * Update box status
    */
   updateBoxStatus(id: string, status: string | number): Observable<Box> {
@@ -232,6 +255,28 @@ export class BoxService {
     return this.apiService.patch<any>(`${this.endpoint}/${id}/status`, { 
       boxId: id, 
       status: statusNumber 
+    }).pipe(
+      map(response => this.transformBox(response))
+    );
+  }
+
+  /**
+   * Update box delivery information (concrete panels and pod delivery)
+   */
+  updateBoxDeliveryInfo(id: string, deliveryInfo: {
+    wall1?: boolean;
+    wall2?: boolean;
+    wall3?: boolean;
+    wall4?: boolean;
+    slab?: boolean;
+    soffit?: boolean;
+    podDeliver?: boolean;
+    podName?: string;
+    podType?: string;
+  }): Observable<Box> {
+    return this.apiService.patch<any>(`${this.endpoint}/${id}/delivery-info`, {
+      boxId: id,
+      ...deliveryInfo
     }).pipe(
       map(response => this.transformBox(response))
     );
@@ -459,7 +504,8 @@ export class BoxService {
     searchTerm?: string,
     action?: string,
     fromDate?: string,
-    toDate?: string
+    toDate?: string,
+    changedBy?: string
   ): Observable<PaginatedResponse<BoxLog>> {
     const params: any = {
       pageNumber: page,
@@ -469,6 +515,7 @@ export class BoxService {
     if (action) params.action = action;
     if (fromDate) params.fromDate = fromDate;
     if (toDate) params.toDate = toDate;
+    if (changedBy) params.changedBy = changedBy;
     
     return this.apiService.get<PaginatedResponse<BoxLog>>(`${this.endpoint}/${boxId}/logs`, params);
   }

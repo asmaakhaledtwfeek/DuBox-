@@ -13,9 +13,13 @@ public record ProjectDto
     public DateTime? PlannedStartDate { get; init; }
     public DateTime? StartDate { get; init; }
     public DateTime? PlannedEndDate { get; init; }
+    public DateTime? ProjectedEndDate { get; init; }
     public DateTime? ActualEndDate { get; init; }
     public DateTime? CompressionStartDate { get; init; }
     public string Status { get; init; } = string.Empty;
+    public Guid? ProjectMangerId { get; init; }
+    public string? ProjectMangerName { get; init; }
+    public decimal? ProjectValue { get; init; }
     public string? Description { get; init; }
     public string? BimLink { get; init; }
     public int TotalBoxes { get; init; }

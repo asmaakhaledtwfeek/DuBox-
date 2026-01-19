@@ -367,8 +367,9 @@ export class ActivityDetailsComponent implements OnInit, OnDestroy {
     this.loadingMembers = true;
     this.teamService.getTeamMembers(teamId).subscribe({
       next: (response: any) => {
-        this.availableMembers = response.members || [];
-        console.log('✅ Team members loaded:', this.availableMembers);
+        // Filter to only include members that have a userId
+        this.availableMembers = (response.members || []).filter((member: TeamMember) => member.userId && member.userId.trim() !== '');
+        console.log('✅ Team members loaded (filtered by userId):', this.availableMembers);
         this.loadingMembers = false;
         if (onComplete) {
           onComplete(this.availableMembers);

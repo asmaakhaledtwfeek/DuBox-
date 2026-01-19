@@ -4,6 +4,7 @@ using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
+using Dubox.Domain.Helpers;
 using Mapster;
 using MapsterMapper;
 using MediatR;
@@ -47,14 +48,47 @@ public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand,
             return Result.Failure<ProjectDto>("Project with this code already exists");
 
         var project = _mapper.Map<Project>(request);
+        
+        // Capitalize project name and client name
+        project.ProjectName = TextTransformHelper.ToTitleCase(project.ProjectName);
+        if (!string.IsNullOrWhiteSpace(project.ClientName))
+        {
+            project.ClientName = TextTransformHelper.ToTitleCase(project.ClientName);
+        }
+        
+        // Calculate ProjectedEndDate or Duration based on what's provided
+        if (request.ProjectedEndDate.HasValue)
+        {
+            // If ProjectedEndDate is provided, calculate Duration
+            project.ProjectedEndDate = request.ProjectedEndDate;
+            if (!request.Duration.HasValue)
+            {
+                var duration = (request.ProjectedEndDate.Value - request.PlannedStartDate).Days;
+                project.Duration = duration > 0 ? duration : 1;
+            }
+            else
+            {
+                project.Duration = request.Duration;
+            }
+        }
+        else if (request.Duration.HasValue)
+        {
+            // If Duration is provided, calculate ProjectedEndDate
+            project.Duration = request.Duration;
+            project.ProjectedEndDate = request.PlannedStartDate.AddDays(request.Duration.Value);
+        }
+        
+        // Set PlannedEndDate (legacy field)
+        if(request.PlannedEndtDate != null)
+            project.PlannedEndDate = request.PlannedEndtDate;
+        else if (project.Duration.HasValue)
+            project.PlannedEndDate = request.PlannedStartDate.AddDays(project.Duration.Value);
 
-        project.PlannedEndDate = request.PlannedStartDate.AddDays(request.Duration);
-
+        project.ProjectValue = request.ProjectValue;
         project.ActualStartDate = null;
         project.ActualEndDate = null;
         
         project.CreatedBy = currentUserId;
-
         await _unitOfWork.Repository<Project>().AddAsync(project, cancellationToken);
         await _unitOfWork.CompleteAsync(cancellationToken);
 

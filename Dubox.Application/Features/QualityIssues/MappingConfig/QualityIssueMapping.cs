@@ -27,6 +27,8 @@ namespace Dubox.Application.Features.QualityIssues.MappingConfig
                 .Map(dest => dest.AssignedTeamName, src => src.AssignedToTeam != null ? src.AssignedToTeam.TeamName : null)
                 .Map(dest => dest.AssignedToUserId, src => src.AssignedToMemberId)
                 .Map(dest => dest.AssignedToUserName, src => src.AssignedToMember != null ? src.AssignedToMember.EmployeeName : null)
+                .Map(dest => dest.CCUserId, src => src.CCUserId)
+                .Map(dest => dest.CCUserName, src => src.CCUser != null ? src.CCUser.FullName : null)
 
                 ;
         }

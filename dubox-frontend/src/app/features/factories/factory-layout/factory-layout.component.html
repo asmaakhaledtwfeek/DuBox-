@@ -44,6 +44,14 @@
           </div>
         </div>
         <div class="header-right">
+          <button class="btn-view-walls" (click)="viewWallsStatus()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <line x1="3" y1="9" x2="21" y2="9"/>
+              <line x1="9" y1="21" x2="9" y2="9"/>
+            </svg>
+            View Walls Status
+          </button>
           <div class="factory-badge">
             <span class="badge-label">Code:</span>
             <span class="badge-value">{{ factory.factoryCode }}</span>
@@ -55,48 +63,133 @@
         </div>
       </div>
 
-      <!-- Warehouse Grid Layout with Sidebar -->
-      <div class="warehouse-layout-wrapper">
-        <!-- Business Flow Indicators Sidebar -->
-        <div class="business-flow-sidebar">
-          <div class="sidebar-title">BUSINESS FLOW INDICATORS</div>
-          <div class="flow-indicators">
-            <div class="flow-item">
-              <div class="flow-color wir-stage-1"></div>
-              <span>Assembly Clearance - WIR-1</span>
-            </div>
-            <div class="flow-item">
-              <div class="flow-color wir-stage-2"></div>
-              <span>Mechanical Clearance - WIR-2</span>
-            </div>
-            <div class="flow-item">
-              <div class="flow-color wir-stage-3"></div>
-              <span>Electrical Clearance - WIR-3</span>
-            </div>
-            <div class="flow-item">
-              <div class="flow-color wir-stage-4"></div>
-              <span>3rd Fix Installation - WIR-4</span>
-            </div>
-            <div class="flow-item">
-              <div class="flow-color wir-stage-5"></div>
-              <span>3rd Fix MEP - WIR-5</span>
-            </div>
-            <div class="flow-item">
-              <div class="flow-color wir-stage-6"></div>
-              <span>Ready for Dispatch - WIR-6</span>
-            </div>
-            <div class="flow-item">
-              <div class="flow-color wir-completed"></div>
-              <span>Completed</span>
-            </div>
-            <div class="flow-item">
-              <div class="flow-color empty-location"></div>
-              <span>Empty</span>
-            </div>
+      <!-- Filters Section -->
+      <div class="filters-section">
+        <div class="filters-container">
+          <div class="filter-group">
+            <label for="stageFilter" class="filter-label">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              Stage:
+            </label>
+            <select id="stageFilter" [(ngModel)]="selectedStage" (change)="applyFilters()" class="filter-select">
+              <option value="">All Stages</option>
+              <option *ngFor="let stage of availableStages" [value]="stage.wirCode">{{ stage.displayName }}</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="projectFilter" class="filter-label">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 3h18v18H3z"/>
+                <path d="M3 9h18M9 21V9"/>
+              </svg>
+              Project:
+            </label>
+            <select id="projectFilter" [(ngModel)]="selectedProjectId" (change)="applyFilters()" class="filter-select">
+              <option value="">All Projects</option>
+              <option *ngFor="let project of projects" [value]="project.id">{{ project.name }}</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="buildingFilter" class="filter-label">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <line x1="3" y1="9" x2="21" y2="9"/>
+                <line x1="9" y1="21" x2="9" y2="9"/>
+              </svg>
+              Building:
+            </label>
+            <select id="buildingFilter" [(ngModel)]="selectedBuilding" (change)="applyFilters()" class="filter-select">
+              <option value="">All Buildings</option>
+              <option *ngFor="let building of availableBuildings" [value]="building">{{ building }}</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="floorFilter" class="filter-label">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <line x1="3" y1="9" x2="21" y2="9"/>
+                <line x1="9" y1="21" x2="9" y2="9"/>
+              </svg>
+              Level:
+            </label>
+            <select id="floorFilter" [(ngModel)]="selectedFloor" (change)="applyFilters()" class="filter-select">
+              <option value="">All Levels</option>
+              <option *ngFor="let floor of availableFloors" [value]="floor">{{ floor }}</option>
+            </select>
+          </div>
+
+
+          <div class="filter-group">
+            <label for="zoneFilter" class="filter-label">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+              Zone:
+            </label>
+            <select id="zoneFilter" [(ngModel)]="selectedZone" (change)="applyFilters()" class="filter-select">
+              <option value="">All Zones</option>
+              <option *ngFor="let zone of availableZones" [value]="zone">{{ zone }}</option>
+            </select>
+          </div>
+
+          <button class="btn-clear-filters" (click)="clearFilters()" *ngIf="selectedProjectId || selectedStage || selectedBuilding || selectedFloor || selectedLevel || selectedZone">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            Clear Filters
+          </button>
+        </div>
+      </div>
+
+      <!-- Business Flow Indicators Section -->
+      <div class="business-flow-section">
+        <div class="section-title">BUSINESS FLOW INDICATORS</div>
+        <div class="flow-indicators-horizontal">
+          <div class="flow-item">
+            <div class="flow-color wir-stage-1"></div>
+            <span>Assembly Clearance - stage-1</span>
+          </div>
+          <div class="flow-item">
+            <div class="flow-color wir-stage-2"></div>
+            <span>Mechanical Clearance - stage-2</span>
+          </div>
+          <div class="flow-item">
+            <div class="flow-color wir-stage-3"></div>
+            <span>Electrical Clearance - stage-3</span>
+          </div>
+          <div class="flow-item">
+            <div class="flow-color wir-stage-4"></div>
+            <span>3rd Fix Installation - stage-4</span>
+          </div>
+          <div class="flow-item">
+            <div class="flow-color wir-stage-5"></div>
+            <span>3rd Fix MEP - stage-5</span>
+          </div>
+          <div class="flow-item">
+            <div class="flow-color wir-stage-6"></div>
+            <span>Ready for Dispatch - Stage-6</span>
+          </div>
+          <div class="flow-item">
+            <div class="flow-color wir-completed"></div>
+            <span>Completed</span>
+          </div>
+          <div class="flow-item">
+            <div class="flow-color empty-location"></div>
+            <span>Empty</span>
           </div>
         </div>
+      </div>
 
-        <!-- Factory Grid Content Area (Grid + Legend) -->
+      <!-- Factory Grid Content Area (Grid + Legend) -->
+      <div class="factory-grid-wrapper">
         <div class="grid-content-area">
           <!-- Scrollable Grid Container -->
           <div class="warehouse-grid">
@@ -232,18 +325,18 @@
                 <line x1="12" y1="16" x2="12" y2="12"/>
                 <line x1="12" y1="8" x2="12.01" y2="8"/>
               </svg>
-              Percentage Of Occupancy Layout:
+              Factory Occupancy (Solts/Stations):
             </div>
             <div class="legend-items">
-              <!-- Dynamic WIR Stage Legend Items - Color and Percentage only -->
+              <!-- Dynamic Stage Legend Items - Color, Count and Percentage -->
               <div class="legend-item compact" *ngFor="let stat of getWIRStageStats()" [title]="stat.stage?.displayName || 'Unknown'">
                 <div class="legend-box" [ngClass]="stat.stage?.colorClass || 'empty-box'"></div>
-                <span class="legend-percentage">{{ stat.percentage }}%</span>
+                <span class="legend-text">{{ stat.percentage }}% ({{ stat.count }} boxes)</span>
               </div>
               <!-- Empty Cells -->
               <div class="legend-item compact" title="Empty">
                 <div class="legend-box empty-box"></div>
-                <span class="legend-percentage">{{ getEmptyPercentage() }}%</span>
+                <span class="legend-text">{{ getEmptyPercentage() }}%</span>
               </div>
             </div>
           </div>
@@ -252,4 +345,3 @@
     </div>
   </div>
 </div>
-

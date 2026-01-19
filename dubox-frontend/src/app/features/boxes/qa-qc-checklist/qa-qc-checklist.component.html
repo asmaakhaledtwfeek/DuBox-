@@ -25,7 +25,7 @@
           </span>
         </p>
         <p class="page-subtitle" *ngIf="qualityIssuesOnlyView">
-          Box-wide quality issues across every WIR checkpoint.
+          Box-wide quality issues across every Stage checkpoint.
         </p>
       </div>
     </div>
@@ -69,22 +69,34 @@
               <thead>
                 <tr>
                   <th class="col-seq">Seq</th>
+                  <th class="col-extra">Issue Number</th>
                   <th class="col-extra">Issue Type</th>
                   <th class="col-extra">Severity</th>
                   <th class="col-extra">Assigned To</th>
+                  <th class="col-extra">CC User</th>
                   <th class="col-extra">Due Date</th>
                   <th class="col-extra">Reported By</th>
                   <th class="col-extra">Issue Date</th>
                   <th class="col-extra">Status</th>
-                  <th class="col-extra">WIR</th>
+                  <th class="col-extra">Stage</th>
                 </tr>
               </thead>
               <tbody>
                 <tr *ngFor="let issue of boxQualityIssues; let i = index">
                   <td class="text-center">{{ i + 1 }}</td>
+                  <td>
+                    <span *ngIf="issue.issueNumber" style="font-weight: 500; color: #3b82f6;">#{{ issue.issueNumber }}</span>
+                    <span *ngIf="!issue.issueNumber">—</span>
+                  </td>
                   <td>{{ issue.issueType || '—' }}</td>
                   <td>{{ issue.severity || '—' }}</td>
-                  <td>{{ issue.assignedTo || '—' }}</td>
+                  <td>
+                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                      <span style="font-weight: 500;">{{ issue.assignedTeamName || issue.assignedTo || '—' }}</span>
+                      <span *ngIf="issue.assignedToUserName" style="font-size: 12px; color: #64748b;">{{ issue.assignedToUserName }}</span>
+                    </div>
+                  </td>
+                  <td>{{ issue.ccUserName || '—' }}</td>
                   <td>{{ formatDate(issue.dueDate) }}</td>
                   <td>{{ issue.reportedBy || '—' }}</td>
                   <td>{{ formatDate(issue.issueDate) }}</td>
@@ -239,12 +251,12 @@
       <button class="btn btn-primary" (click)="loadWIRRecord()">Retry</button>
     </div>
 
-    <!-- Step 1: Create WIR Checkpoint -->
+    <!-- Step 1: Create Stage Checkpoint -->
     <div *ngIf="currentStep === 'create-checkpoint' && wirRecord && (!wirCheckpoint || wirCheckpoint.status === 'Pending') && !loading && !error" class="step-container">
       <div class="step-header">
-        <h2>Step 1: {{ wirCheckpoint ? 'Update' : 'Create' }} WIR Checkpoint</h2>
-        <p class="step-description" *ngIf="!wirCheckpoint">Create a new WIR checkpoint for this activity</p>
-        <p class="step-description" *ngIf="wirCheckpoint">Update WIR checkpoint information for this activity</p>
+        <h2>Step 1: {{ wirCheckpoint ? 'Update' : 'Create' }} Stage Checkpoint</h2>
+        <p class="step-description" *ngIf="!wirCheckpoint">Create a new Stage checkpoint for this activity</p>
+        <p class="step-description" *ngIf="wirCheckpoint">Update Stage checkpoint information for this activity</p>
       </div>
       
       <form [formGroup]="createCheckpointForm" (ngSubmit)="onCreateCheckpoint()">
@@ -267,7 +279,7 @@
                 <span class="value">{{ wirRecord.boxTag }}</span>
               </div>
               <div class="info-item">
-                <span class="label">WIR Number</span>
+                <span class="label">Stage Number</span>
                 <span class="value">{{ wirRecord.wirCode }}</span>
               </div>
               <div class="info-item" style="grid-column: span 3;">
@@ -284,32 +296,32 @@
           </div>
 
           <div class="form-group">
-            <label for="wirName">WIR Name</label>
+            <label for="wirName">Stage Name</label>
             <input 
               id="wirName" 
               type="text" 
               formControlName="wirName" 
               class="form-control"
               [class.invalid]="createCheckpointForm.get('wirName')?.invalid && createCheckpointForm.get('wirName')?.touched"
-              placeholder="e.g., Release from Assembly - WIR-1"
+              placeholder="e.g., Release from Assembly - Stage-1"
             >
             <div *ngIf="createCheckpointForm.get('wirName')?.invalid && createCheckpointForm.get('wirName')?.touched" class="error-text">
-              WIR Name max 200 characters.
+              Stage Name max 200 characters.
             </div>
           </div>
 
           <div class="form-group">
-            <label for="wirDescription">WIR Description</label>
+            <label for="wirDescription">Stage Description</label>
             <textarea 
               id="wirDescription" 
               formControlName="wirDescription" 
               class="form-control"
               [class.invalid]="createCheckpointForm.get('wirDescription')?.invalid && createCheckpointForm.get('wirDescription')?.touched"
               rows="3"
-              placeholder="Description of the WIR checkpoint"
+              placeholder="Description of the Stage checkpoint"
             ></textarea>
             <div *ngIf="createCheckpointForm.get('wirDescription')?.invalid && createCheckpointForm.get('wirDescription')?.touched" class="error-text">
-              WIR Description max 500 characters.
+              Stage Description max 500 characters.
             </div>
           </div>
 
@@ -488,7 +500,7 @@
     <div *ngIf="currentStep === 'add-items' && wirCheckpoint && !loading && !error" class="step-container">
       <div class="step-header">
         <h2>Step 2: Add Checklist Items</h2>
-        <p class="step-description">Add checklist items to the WIR checkpoint</p>
+        <p class="step-description">Add checklist items to the Stage checkpoint</p>
       </div>
 
       <div class="info-card summary-card">
@@ -533,7 +545,7 @@
         <div class="designer-headline">
           <div>
             <h3>Checklist Designer</h3>
-            <p *ngIf="selectedPredefinedItemIds.length === 0">Create or edit inspection checkpoints for this WIR.</p>
+            <p *ngIf="selectedPredefinedItemIds.length === 0">Create or edit inspection checkpoints for this Stage.</p>
             <p *ngIf="selectedPredefinedItemIds.length > 0" class="preview-message">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
                 <circle cx="12" cy="12" r="10"/>
@@ -667,7 +679,7 @@
     <form [formGroup]="checklistForm" *ngIf="currentStep === 'review' && wirCheckpoint && !loading && !error" class="review-form">
       <div class="review-layout">
         <div class="review-main">
-      <!-- WIR Information Card -->
+      <!-- Stage Information Card -->
           <div class="info-card summary-card">
             <div class="summary-header">
               <div>
@@ -1224,10 +1236,12 @@
               <thead>
                 <tr>
                   <th class="col-index">#</th>
+                  <th class="col-issue-number">Issue Number</th>
                   <th class="col-type">Issue Type</th>
                   <th class="col-severity">Severity</th>
                   <th class="col-description">Description</th>
                   <th class="col-assigned">Assigned To</th>
+                  <th class="col-cc-user">CC User</th>
                   <th class="col-due">Due Date</th>
                   <th class="col-actions">Actions</th>
                 </tr>
@@ -1236,6 +1250,16 @@
                 <tr *ngFor="let issue of qualityIssuesArray.controls; let i = index" [formGroupName]="i" class="quality-issue-row">
                   <td class="col-index">
                     <span class="index-badge">{{ i + 1 }}</span>
+                  </td>
+                  <td class="col-issue-number">
+                    <div  class="issue-number-badge">
+                      <span>
+                        #{{ getExistingQualityIssue(i)?.issueNumber }}
+                      </span>
+                      <ng-template #noIssueNumber>
+                        <span class="no-data">—</span>
+                      </ng-template>
+                    </div>
                   </td>
                   <td class="col-type">
                     <div class="issue-type-cell">
@@ -1259,15 +1283,30 @@
                     </div>
                   </td>
                   <td class="col-assigned">
-                    <div class="assigned-cell" *ngIf="issue.get('assignedTeam')?.value || issue.get('assignedTo')?.value; else noAssignee">
+                    <div class="assigned-cell" *ngIf="issue.get('assignedTeam')?.value || issue.get('assignedTo')?.value || getExistingQualityIssue(i)?.assignedTeam; else noAssignee">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                         <circle cx="12" cy="7" r="4"/>
                       </svg>
-                      <span>{{ issue.get('assignedTeam')?.value || 'Unassigned' }}</span>
+                      <span class="assigned-text">
+                        {{ issue.get('assignedTeam')?.value || getExistingQualityIssue(i)?.assignedTeam || 'Unassigned' }}<span *ngIf="getExistingQualityIssue(i)?.assignedToUserName"> / {{ getExistingQualityIssue(i)?.assignedToUserName }}</span>
+                      </span>
                     </div>
                     <ng-template #noAssignee>
                       <span class="no-data">Unassigned</span>
+                    </ng-template>
+                  </td>
+                  <td class="col-cc-user">
+                    <div class="cc-user-cell" *ngIf="getExistingQualityIssue(i)?.ccUserName; else noCCUser">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="8.5" cy="7" r="4"/>
+                        <path d="M20 8v6M23 11h-6"/>
+                      </svg>
+                      <span>{{ getExistingQualityIssue(i)?.ccUserName }}</span>
+                    </div>
+                    <ng-template #noCCUser>
+                      <span class="no-data">—</span>
                     </ng-template>
                   </td>
                   <td class="col-due">
@@ -1515,6 +1554,31 @@
           Loading team members...
         </div>
         <small class="form-hint" *ngIf="!loadingTeamUsers">Optional: Assign to a specific team member</small>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="8.5" cy="7" r="4"/>
+            <path d="M20 8v6M23 11h-6"/>
+          </svg>
+          CC User
+        </label>
+        <select 
+          formControlName="ccUserId" 
+          class="form-control form-select"
+          [disabled]="loadingCCUsers || savingQualityIssue"
+        >
+          <option [value]="''">Select User (Optional)</option>
+          <option *ngFor="let user of availableCCUsers" [value]="user.userId">
+           {{ user.userName }} <span *ngIf="user.userEmail">({{ user.userEmail }})</span>
+          </option>
+        </select>
+        <div *ngIf="loadingCCUsers" class="loading-text" style="font-size: 12px; color: #64748b; margin-top: 4px;">
+          Loading users...
+        </div>
+        <small class="form-hint" *ngIf="!loadingCCUsers">Optional: CC this issue to notify another user</small>
       </div>
 
       <div class="form-group">

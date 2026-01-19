@@ -9,7 +9,8 @@ import { AuthService } from '../../../core/services/auth.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { ApiService } from '../../../core/services/api.service';
 import { TeamService } from '../../../core/services/team.service';
-import { Team } from '../../../core/models/team.model';
+import { Team, TeamMember } from '../../../core/models/team.model';
+import { UserService } from '../../../core/services/user.service';
 import { Observable, forkJoin } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
@@ -273,26 +274,38 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     
     // Cast issue to QualityIssueDetails to access all possible fields
     const issueDetails = issue as QualityIssueDetails & QualityIssueItem;
-    
+  
     // Build QualityIssueDetails from available data
     const details: QualityIssueDetails = {
       issueId: (issue as any)?.issueId || (issueDetails as any)?.issueId || '',
+      issueNumber: issueDetails?.issueNumber || undefined,
       issueType: this.getQualityIssueDetail('issueType') || issue?.issueType || 'Defect',
       severity: this.getQualityIssueDetail('severity') || issue?.severity || 'Minor',
       issueDescription: this.getQualityIssueDetail('issueDescription') || issue?.issueDescription || '',
+      assignedTo: issue?.assignedTo || issueDetails?.assignedTo,
       assignedTeamName: this.getQualityIssueDetail('assignedTeam') || issue?.assignedTeam || issue?.assignedTo || issueDetails?.assignedTeamName || undefined,
+      assignedToUserId: issueDetails?.assignedToUserId || undefined,
+      assignedToUserName: issueDetails?.assignedToUserName || undefined,
+      ccUserId: issueDetails?.ccUserId || undefined,
+      ccUserName: issueDetails?.ccUserName || undefined,
       dueDate: this.getQualityIssueDetail('dueDate') || issue?.dueDate || issueDetails?.dueDate,
       reportedBy: this.getQualityIssueDetail('reportedBy') || issue?.reportedBy || issueDetails?.reportedBy,
       issueDate: this.getQualityIssueDetail('issueDate') || issue?.issueDate || issueDetails?.issueDate,
       status: (this.getQualityIssueDetail('status') || issue?.status || issueDetails?.status || 'Open') as QualityIssueStatus,
       resolutionDescription: this.getQualityIssueDetail('resolutionDescription') || issueDetails?.resolutionDescription || undefined,
       resolutionDate: this.getQualityIssueDetail('resolutionDate') || issueDetails?.resolutionDate || undefined,
+      boxId: issueDetails?.boxId,
       boxName: this.getQualityIssueDetail('boxName') || issueDetails?.boxName || this.wirRecord?.boxName || this.wirCheckpoint?.box?.boxName || undefined,
       boxTag: this.getQualityIssueDetail('boxTag') || issueDetails?.boxTag || this.wirRecord?.boxTag || this.wirCheckpoint?.box?.boxTag || undefined,
+      wirId: issueDetails?.wirId,
       wirNumber: this.getQualityIssueDetail('wirNumber') || issueDetails?.wirNumber || this.wirCheckpoint?.wirNumber || this.wirRecord?.wirCode || undefined,
       wirName: this.getQualityIssueDetail('wirName') || issueDetails?.wirName || this.wirCheckpoint?.wirName || undefined,
+      wirStatus: issueDetails?.wirStatus,
       wirRequestedDate: this.getQualityIssueDetail('wirRequestedDate') || issueDetails?.wirRequestedDate || this.wirCheckpoint?.requestedDate || this.wirRecord?.requestedDate || undefined,
       inspectorName: this.getQualityIssueDetail('inspectorName') || issueDetails?.inspectorName || this.wirCheckpoint?.inspectorName || undefined,
+      isOverdue: issueDetails?.isOverdue,
+      overdueDays: issueDetails?.overdueDays,
+      projectName: issueDetails?.projectName,
       photoPath: issue?.photoPath || issueDetails?.photoPath,
       // Convert images array to QualityIssueImage format
       images: images?.map((imgUrl, index) => ({
@@ -345,7 +358,10 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   availableTeams: Team[] = [];
   loadingTeams = false;
   availableTeamUsers: {userId: string, userName: string, userEmail: string}[] = [];
+  availableTeamMembers: TeamMember[] = [];
   loadingTeamUsers = false;
+  availableCCUsers: {userId: string, userName: string, userEmail: string}[] = [];
+  loadingCCUsers = false;
   isAddPredefinedItemsModalOpen = false;
   isItemReviewModalOpen = false;
   pendingDeleteIndex: number | null = null;
@@ -445,7 +461,8 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private permissionService: PermissionService,
     private apiService: ApiService,
-    private teamService: TeamService
+    private teamService: TeamService,
+    private userService: UserService
   ) {}
 
   // Permission getter for template
@@ -643,6 +660,7 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
       issueType: [this.issueTypes[0], Validators.required],
       assignedTo: ['', [Validators.maxLength(200)]],
       assignedToUserId: [''],
+      ccUserId: [''],
       dueDate: [''],
       photoPath: ['', [Validators.maxLength(500)]]
     });
@@ -763,7 +781,7 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
             
             this.createCheckpointForm.patchValue({
               wirName: `${this.wirRecord.wirCode} - ${activityDisplay}`,
-              wirDescription: `WIR checkpoint for ${activityDisplay}`
+              wirDescription: `Stage checkpoint for ${activityDisplay}`
             });
           }
           
@@ -946,7 +964,7 @@ console.log(expectedWirCode);
 
     if (!this.wirRecord) {
       console.error('❌ Cannot create checkpoint: wirRecord is null');
-      this.error = 'WIR Record is not loaded. Please refresh the page.';
+      this.error = 'Stage Record is not loaded. Please refresh the page.';
       return;
     }
 
@@ -1591,6 +1609,7 @@ console.log(expectedWirCode);
       issueType: this.issueTypes[0],
       assignedTo: '',
       assignedToUserId: '',
+      ccUserId: '',
       dueDate: ''
     });
     this.availableTeamUsers = [];
@@ -1602,6 +1621,7 @@ console.log(expectedWirCode);
     this.stopQualityIssueCamera();
     this.isQualityIssueModalOpen = true;
     this.loadAvailableTeams();
+    this.loadAllUsersForCC();
   }
 
   closeQualityIssueModal(): void {
@@ -1971,6 +1991,7 @@ console.log(expectedWirCode);
 
   addQualityIssueFromModal(): void {
     // Check if box status allows actions
+    console.log('📋 Box status:', this.boxStatus);
     if (this.boxStatus && !canPerformBoxActions(this.boxStatus as BoxStatus)) {
       const statusMessage = this.boxStatus === 'Dispatched' 
         ? 'Cannot add quality issue. The box is dispatched and no actions are allowed.'
@@ -1988,12 +2009,17 @@ console.log(expectedWirCode);
 
     if (!this.wirCheckpoint) {
       document.dispatchEvent(new CustomEvent('app-toast', {
-        detail: { message: 'WIR checkpoint not found.', type: 'error' }
+        detail: { message: 'Stage checkpoint not found.', type: 'error' }
       }));
       return;
     }
 
     const value = this.newQualityIssueForm.value;
+    
+    // Debug: Log form values
+    console.log('📋 Form value:', value);
+    console.log('📋 CC User ID from form:', value.ccUserId);
+    console.log('📋 CC User ID type:', typeof value.ccUserId);
     
     // Ensure issueDescription is not empty (form validation should catch this, but double-check)
     const issueDescription = value.issueDescription?.trim();
@@ -2023,6 +2049,21 @@ console.log(expectedWirCode);
     });
     
     // Build request for single issue
+    // Handle CC User ID - convert to string and trim, or set to undefined if empty
+    const ccUserIdValue = value.ccUserId;
+    let processedCCUserId: string | undefined = undefined;
+    
+    // Handle the ccUserId value properly - it might be a string or other type from the select
+    if (ccUserIdValue !== null && ccUserIdValue !== undefined && ccUserIdValue !== '') {
+      const ccUserIdString = String(ccUserIdValue).trim();
+      if (ccUserIdString !== '' && ccUserIdString !== 'undefined' && ccUserIdString !== 'null') {
+        processedCCUserId = ccUserIdString;
+      }
+    }
+    
+    console.log('📤 Processed CC User ID:', processedCCUserId);
+    console.log('📤 Processed CC User ID is undefined?', processedCCUserId === undefined);
+    
     const request: AddQualityIssueRequest = {
       wirId: this.wirCheckpoint.wirId,
       issueType: value.issueType,
@@ -2030,10 +2071,14 @@ console.log(expectedWirCode);
       issueDescription: issueDescription,
       assignedTo: value.assignedTo?.trim() || undefined,
       assignedToUserId: value.assignedToUserId?.trim() || undefined,
+      ccUserId: processedCCUserId,
       dueDate: value.dueDate || undefined,
       imageUrls: imageUrls.length > 0 ? imageUrls : undefined,
       files: files.length > 0 ? files : undefined
     };
+    
+    console.log('📤 Request being sent:', request);
+    console.log('📤 Request ccUserId field:', request.ccUserId);
 
     this.savingQualityIssue = true;
 
@@ -2126,11 +2171,12 @@ console.log(expectedWirCode);
     // Reset user selection when team changes
     this.newQualityIssueForm.get('assignedToUserId')?.setValue('');
     this.availableTeamUsers = [];
+    this.availableTeamMembers = [];
 
     // Load users if a team is selected
     const teamId = this.newQualityIssueForm.get('assignedTo')?.value;
     if (teamId) {
-      this.loadTeamUsers(teamId);
+      this.loadTeamMembersForAssignment(teamId);
     }
   }
 
@@ -2138,13 +2184,62 @@ console.log(expectedWirCode);
     this.loadingTeamUsers = true;
     this.teamService.getTeamUsers(teamId).subscribe({
       next: (users) => {
-        this.availableTeamUsers = users;
+        // Filter to only include users that have a userId
+        this.availableTeamUsers = users.filter(user => user.userId && user.userId.trim() !== '');
         this.loadingTeamUsers = false;
       },
       error: (err) => {
         console.error('❌ Error loading team users:', err);
         this.availableTeamUsers = [];
         this.loadingTeamUsers = false;
+      }
+    });
+  }
+
+  loadTeamMembersForAssignment(teamId: string): void {
+    this.loadingTeamUsers = true;
+    this.teamService.getTeamMembers(teamId).subscribe({
+      next: (response) => {
+        console.log('📥 Raw team members received for quality issue:', response);
+        // Filter to only include members that have a userId (actual user account)
+        this.availableTeamMembers = (response.members || []).filter(member => member.userId && member.userId.trim() !== '');
+        
+        // Map to the format expected by the dropdown
+        this.availableTeamUsers = this.availableTeamMembers.map(member => ({
+          userId: member.teamMemberId, // Use teamMemberId for assignment
+          userName: member.employeeName || member.fullName || 'Unknown',
+          userEmail: member.email || ''
+        }));
+        
+        console.log('✅ Filtered team members (with userId):', this.availableTeamMembers);
+        console.log('✅ Mapped to dropdown format:', this.availableTeamUsers);
+        this.loadingTeamUsers = false;
+      },
+      error: (err) => {
+        console.error('❌ Error loading team members:', err);
+        this.availableTeamUsers = [];
+        this.availableTeamMembers = [];
+        this.loadingTeamUsers = false;
+      }
+    });
+  }
+
+  loadAllUsersForCC(): void {
+    this.loadingCCUsers = true;
+    this.userService.getUsers(1, 1000).subscribe({
+      next: (response) => {
+        this.availableCCUsers = response.items.map((user: any) => ({
+          userId: user.userId,
+          userName: user.fullName || user.userName || 'Unknown',
+          userEmail: user.email || ''
+        }));
+        console.log('✅ Loaded CC Users:', this.availableCCUsers);
+        this.loadingCCUsers = false;
+      },
+      error: (err) => {
+        console.error('❌ Error loading users for CC:', err);
+        this.availableCCUsers = [];
+        this.loadingCCUsers = false;
       }
     });
   }
@@ -2553,7 +2648,15 @@ console.log(expectedWirCode);
 
   getExistingQualityIssue(index: number): QualityIssueItem | undefined {
     const issues = this.existingQualityIssues;
-    return index >= 0 && index < issues.length ? issues[index] : undefined;
+    const issue = index >= 0 && index < issues.length ? issues[index] : undefined;
+    if (issue && index === 0) {
+      console.log('🔍 getExistingQualityIssue - First issue data:', issue);
+      console.log('🔍 assignedTeam:', issue.assignedTeam);
+      console.log('🔍 assignedToUserName:', issue.assignedToUserName);
+      console.log('🔍 ccUserName:', issue.ccUserName);
+      console.log('🔍 issueNumber:', issue.issueNumber);
+    }
+    return issue;
   }
 
   formatDate(date?: string | Date): string {
@@ -2809,7 +2912,7 @@ console.log(expectedWirCode);
     // Define column headers
     const headers = [
       'No.',
-      'WIR Number',
+      'Stage Number',
       'Box Tag',
       'Box Name',
       'Status',
@@ -3302,7 +3405,7 @@ console.log(expectedWirCode);
     // Note: This method uploads a single file, but we'll batch uploads in onSubmitReview
     if (!this.wirRecord?.wirRecordId) {
       return new Observable(observer => {
-        observer.error(new Error('WIR Record ID is not available'));
+        observer.error(new Error('Stage Record ID is not available'));
         observer.complete();
       });
     }
@@ -3713,14 +3816,14 @@ console.log(expectedWirCode);
     this.resetQualityIssuesForm();
     
     const messageMap: Record<WIRCheckpointStatus, string> = {
-      [WIRCheckpointStatus.Approved]: 'WIR checkpoint approved successfully.',
-      [WIRCheckpointStatus.Rejected]: 'WIR checkpoint rejected and sent for rework.',
-      [WIRCheckpointStatus.ConditionalApproval]: 'WIR checkpoint conditionally approved.',
-      [WIRCheckpointStatus.Pending]: 'WIR checkpoint updated.'
+      [WIRCheckpointStatus.Approved]: 'Stage checkpoint approved successfully.',
+      [WIRCheckpointStatus.Rejected]: 'Stage checkpoint rejected and sent for rework.',
+      [WIRCheckpointStatus.ConditionalApproval]: 'Stage checkpoint conditionally approved.',
+      [WIRCheckpointStatus.Pending]: 'Stage checkpoint updated.'
     };
     document.dispatchEvent(new CustomEvent('app-toast', {
       detail: {
-        message: messageMap[status] || 'WIR checkpoint updated.',
+        message: messageMap[status] || 'Stage checkpoint updated.',
         type: 'success'
       }
     }));

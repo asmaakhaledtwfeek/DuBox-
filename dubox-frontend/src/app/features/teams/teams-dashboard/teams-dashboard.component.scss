@@ -3,17 +3,12 @@
   margin-top: var(--header-height, 64px);
   min-height: calc(100vh - var(--header-height, 64px));
   background: var(--gray-50, #f9fafb);
-  overflow-x: hidden;
-  width: 100%;
-  box-sizing: border-box;
 }
 
 .page-content {
   padding: var(--spacing-2xl, 48px);
   max-width: 1400px;
   margin: 0 auto;
-  width: 100%;
-  box-sizing: border-box;
 }
 
 .loading-container,

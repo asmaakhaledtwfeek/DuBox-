@@ -2,6 +2,7 @@ using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
+using Dubox.Domain.Helpers;
 using Mapster;
 using MediatR;
 using System.Linq;
@@ -182,7 +183,7 @@ public class SaveProjectConfigurationCommandHandler
             var existing = existingBuildings.FirstOrDefault(b => b.BuildingCode == dto.BuildingCode);
             if (existing != null)
             {
-                existing.BuildingName = dto.BuildingName;
+                existing.BuildingName = TextTransformHelper.ToUpperCase(dto.BuildingName);
                 existing.DisplayOrder = index;
                 existing.IsActive = true;
                 _unitOfWork.Repository<ProjectBuilding>().Update(existing);
@@ -192,8 +193,8 @@ public class SaveProjectConfigurationCommandHandler
                 var newBuilding = new ProjectBuilding
                 {
                     ProjectId = request.ProjectId,
-                    BuildingCode = dto.BuildingCode,
-                    BuildingName = dto.BuildingName,
+                    BuildingCode = TextTransformHelper.ToUpperCase(dto.BuildingCode),
+                    BuildingName = TextTransformHelper.ToUpperCase(dto.BuildingName),
                     DisplayOrder = index,
                     IsActive = true,
                     CreatedDate = DateTime.UtcNow
@@ -208,7 +209,7 @@ public class SaveProjectConfigurationCommandHandler
             var existing = existingLevels.FirstOrDefault(l => l.LevelCode == dto.LevelCode);
             if (existing != null)
             {
-                existing.LevelName = dto.LevelName;
+                existing.LevelName = TextTransformHelper.ToUpperCase(dto.LevelName);
                 existing.DisplayOrder = index;
                 existing.IsActive = true;
                 _unitOfWork.Repository<ProjectLevel>().Update(existing);
@@ -218,8 +219,8 @@ public class SaveProjectConfigurationCommandHandler
                 var newLevel = new ProjectLevel
                 {
                     ProjectId = request.ProjectId,
-                    LevelCode = dto.LevelCode,
-                    LevelName = dto.LevelName,
+                    LevelCode = TextTransformHelper.ToUpperCase(dto.LevelCode),
+                    LevelName = TextTransformHelper.ToUpperCase(dto.LevelName),
                     DisplayOrder = index,
                     IsActive = true,
                     CreatedDate = DateTime.UtcNow
@@ -234,7 +235,7 @@ public class SaveProjectConfigurationCommandHandler
             var existing = existingBoxTypes.FirstOrDefault(t => t.TypeName == dto.TypeName);
             if (existing != null)
             {
-                existing.Abbreviation = dto.Abbreviation;
+                existing.Abbreviation = TextTransformHelper.ToUpperCase(dto.Abbreviation);
                 existing.HasSubTypes = dto.HasSubTypes;
                 existing.DisplayOrder = index;
                 existing.IsActive = true;
@@ -251,7 +252,7 @@ public class SaveProjectConfigurationCommandHandler
                         var existingSub = existingSubTypes.FirstOrDefault(s => s.SubTypeName == subDto.SubTypeName);
                         if (existingSub != null)
                         {
-                            existingSub.Abbreviation = subDto.Abbreviation;
+                            existingSub.Abbreviation = TextTransformHelper.ToUpperCase(subDto.Abbreviation);
                             existingSub.DisplayOrder = subIndex;
                             existingSub.IsActive = true;
                             _unitOfWork.Repository<ProjectBoxSubType>().Update(existingSub);
@@ -261,8 +262,8 @@ public class SaveProjectConfigurationCommandHandler
                             var newSubType = new ProjectBoxSubType
                             {
                                 ProjectBoxTypeId = existing.Id,
-                                SubTypeName = subDto.SubTypeName,
-                                Abbreviation = subDto.Abbreviation,
+                                SubTypeName = TextTransformHelper.ToUpperCase(subDto.SubTypeName),
+                                Abbreviation = TextTransformHelper.ToUpperCase(subDto.Abbreviation),
                                 DisplayOrder = subIndex,
                                 IsActive = true,
                                 CreatedDate = DateTime.UtcNow
@@ -277,8 +278,8 @@ public class SaveProjectConfigurationCommandHandler
                 var newBoxType = new ProjectBoxType
                 {
                     ProjectId = request.ProjectId,
-                    TypeName = dto.TypeName,
-                    Abbreviation = dto.Abbreviation,
+                    TypeName = TextTransformHelper.ToUpperCase(dto.TypeName),
+                    Abbreviation = TextTransformHelper.ToUpperCase(dto.Abbreviation),
                     HasSubTypes = dto.HasSubTypes,
                     DisplayOrder = index,
                     IsActive = true,
@@ -295,8 +296,8 @@ public class SaveProjectConfigurationCommandHandler
                         var newSubType = new ProjectBoxSubType
                         {
                             ProjectBoxTypeId = newBoxType.Id,
-                            SubTypeName = subDto.SubTypeName,
-                            Abbreviation = subDto.Abbreviation,
+                            SubTypeName = TextTransformHelper.ToUpperCase(subDto.SubTypeName),
+                            Abbreviation = TextTransformHelper.ToUpperCase(subDto.Abbreviation),
                             DisplayOrder = subIndex,
                             IsActive = true,
                             CreatedDate = DateTime.UtcNow
@@ -313,7 +314,7 @@ public class SaveProjectConfigurationCommandHandler
             var existing = existingZones.FirstOrDefault(z => z.ZoneCode == dto.ZoneCode);
             if (existing != null)
             {
-                existing.ZoneName = dto.ZoneName;
+                existing.ZoneName = TextTransformHelper.ToTitleCase(dto.ZoneName);
                 existing.DisplayOrder = index;
                 existing.IsActive = true;
                 _unitOfWork.Repository<ProjectZone>().Update(existing);
@@ -323,8 +324,8 @@ public class SaveProjectConfigurationCommandHandler
                 var newZone = new ProjectZone
                 {
                     ProjectId = request.ProjectId,
-                    ZoneCode = dto.ZoneCode,
-                    ZoneName = dto.ZoneName,
+                    ZoneCode = TextTransformHelper.ToTitleCase(dto.ZoneCode),
+                    ZoneName = TextTransformHelper.ToTitleCase(dto.ZoneName),
                     DisplayOrder = index,
                     IsActive = true,
                     CreatedDate = DateTime.UtcNow
@@ -339,7 +340,7 @@ public class SaveProjectConfigurationCommandHandler
             var existing = existingFunctions.FirstOrDefault(f => f.FunctionName == dto.FunctionName);
             if (existing != null)
             {
-                existing.Description = dto.Description;
+                existing.Description = TextTransformHelper.ToTitleCase(dto.Description);
                 existing.DisplayOrder = index;
                 existing.IsActive = true;
                 _unitOfWork.Repository<ProjectBoxFunction>().Update(existing);
@@ -349,8 +350,8 @@ public class SaveProjectConfigurationCommandHandler
                 var newFunction = new ProjectBoxFunction
                 {
                     ProjectId = request.ProjectId,
-                    FunctionName = dto.FunctionName,
-                    Description = dto.Description,
+                    FunctionName = TextTransformHelper.ToTitleCase(dto.FunctionName),
+                    Description = TextTransformHelper.ToTitleCase(dto.Description),
                     DisplayOrder = index,
                     IsActive = true,
                     CreatedDate = DateTime.UtcNow

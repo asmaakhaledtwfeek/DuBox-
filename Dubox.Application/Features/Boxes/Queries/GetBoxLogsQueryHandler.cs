@@ -31,7 +31,8 @@ public class GetBoxLogsQueryHandler : IRequestHandler<GetBoxLogsQuery, Result<Pa
             SearchTerm = request.SearchTerm,
             Action = request.Action,
             FromDate = request.FromDate,
-            ToDate = request.ToDate
+            ToDate = request.ToDate,
+            ChangedBy = request.ChangedBy
         };
 
         var boxAuditResult = await _mediator.Send(boxAuditQuery, cancellationToken);
@@ -61,7 +62,8 @@ public class GetBoxLogsQueryHandler : IRequestHandler<GetBoxLogsQuery, Result<Pa
                 SearchTerm = request.SearchTerm,
                 Action = request.Action,
                 FromDate = request.FromDate,
-                ToDate = request.ToDate
+                ToDate = request.ToDate,
+                ChangedBy = request.ChangedBy
             };
 
             var qualityIssueAuditResult = await _mediator.Send(qualityIssueAuditQuery, cancellationToken);
@@ -113,7 +115,8 @@ public class GetBoxLogsQueryHandler : IRequestHandler<GetBoxLogsQuery, Result<Pa
             NewValue = log.Changes.FirstOrDefault()?.NewValue,
             OldValues = log.OldValues, // Include full old values JSON
             NewValues = log.NewValues, // Include full new values JSON
-            PerformedBy = log.ChangedByFullName ?? "System",
+            PerformedByName = log.ChangedByFullName ?? "System",
+            PerformedById=log.ChangedBy,
             PerformedAt = log.Timestamp
         }).ToList();
 

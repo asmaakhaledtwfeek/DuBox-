@@ -58,6 +58,9 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
             // Enrich checklist items with section and checklist information
             EnrichChecklistItems(checkpoints, checkpointDtos);
 
+            // Enrich quality issues with user names
+            EnrichQualityIssues(checkpoints, checkpointDtos);
+
             // Load image metadata separately (without base64 ImageData) for performance
            // await PopulateImageMetadata(checkpointDtos, cancellationToken);
 
@@ -106,6 +109,46 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
                                     dtoItem.CategoryName = predefinedItem.ChecklistSection.Checklist.Name;
                                 }
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        private void EnrichQualityIssues(List<WIRCheckpoint> checkpoints, List<WIRCheckpointDto> checkpointDtos)
+        {
+            for (int i = 0; i < checkpoints.Count && i < checkpointDtos.Count; i++)
+            {
+                var checkpoint = checkpoints[i];
+                var checkpointDto = checkpointDtos[i];
+
+                if (checkpointDto.QualityIssues == null || checkpoint.QualityIssues == null)
+                    continue;
+
+                foreach (var dtoIssue in checkpointDto.QualityIssues)
+                {
+                    // Find the corresponding entity issue
+                    var entityIssue = checkpoint.QualityIssues
+                        .FirstOrDefault(qi => qi.IssueId == dtoIssue.IssueId);
+
+                    if (entityIssue != null)
+                    {
+                        // Map CC User name
+                        if (entityIssue.CCUser != null)
+                        {
+                            dtoIssue.CcUserName = entityIssue.CCUser.FullName;
+                        }
+
+                        // Map Assigned To Member name
+                        if (entityIssue.AssignedToMember != null)
+                        {
+                            dtoIssue.AssignedUserName = entityIssue.AssignedToMember.EmployeeName;
+                        }
+
+                        // Map Assigned To Team name
+                        if (entityIssue.AssignedToTeam != null)
+                        {
+                            dtoIssue.AssignedTeam = entityIssue.AssignedToTeam.TeamName;
                         }
                     }
                 }

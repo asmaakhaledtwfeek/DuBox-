@@ -14,6 +14,10 @@ export interface Factory {
   factoryName: string;
   location: ProjectLocation;
   capacity?: number;
+  minRow?: number;
+  maxRow?: number;
+  minBay?: string;
+  maxBay?: string;
   currentOccupancy: number;
   availableCapacity: number;
   isFull: boolean;
@@ -26,6 +30,10 @@ export interface CreateFactoryRequest {
   factoryName: string;
   location: ProjectLocation;
   capacity?: number;
+  minRow: number;
+  maxRow: number;
+  minBay: string;
+  maxBay: string;
 }
 
 @Injectable({
@@ -46,6 +54,10 @@ export class FactoryService {
       factoryName: backendFactory.factoryName || backendFactory.name || '',
       location: backendFactory.location !== undefined ? backendFactory.location : ProjectLocation.UAE,
       capacity: backendFactory.capacity,
+      minRow: backendFactory.minRow,
+      maxRow: backendFactory.maxRow,
+      minBay: backendFactory.minBay,
+      maxBay: backendFactory.maxBay,
       currentOccupancy: backendFactory.currentOccupancy || 0,
       availableCapacity: backendFactory.availableCapacity || 0,
       isFull: backendFactory.isFull || false,

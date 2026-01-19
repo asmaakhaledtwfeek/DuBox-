@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs';
 import { skip } from 'rxjs/operators';
 import { ProjectService } from '../../../core/services/project.service';
 import { BoxService } from '../../../core/services/box.service';
+import { WIRService } from '../../../core/services/wir.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { Project, ProjectStatus, getAvailableProjectStatuses, canChangeProjectStatus } from '../../../core/models/project.model';
 import { Box, BoxImportResult, BoxStatus } from '../../../core/models/box.model';
@@ -79,6 +80,8 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
     notStarted: 0,
     onHold: 0
   };
+
+  qualityIssuesCount = 0;
   
   private subscriptions: Subscription[] = [];
 
@@ -87,6 +90,7 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
     private router: Router,
     private projectService: ProjectService,
     private boxService: BoxService,
+    private wirService: WIRService,
     private permissionService: PermissionService
   ) {}
 
@@ -161,6 +165,9 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
 
         // Load boxes to calculate accurate counts
         this.loadBoxesAndCalculateCounts();
+        
+        // Load quality issues count
+        this.loadQualityIssuesCount();
       },
       error: (error) => {
         this.error = 'Failed to load project';
@@ -345,6 +352,10 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
         document.dispatchEvent(new CustomEvent('app-toast', {
           detail: { message: 'Project status updated successfully', type: 'success' }
         }));
+        // Refresh page to show updated status across all sections
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       },
       error: (error) => {
         console.error('Failed to update project status', error);
@@ -387,6 +398,29 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
 
   viewDispatchedBoxes(): void {
     this.viewBoxesByStatus(BoxStatus.Dispatched);
+  }
+
+  loadQualityIssuesCount(): void {
+    this.wirService.getQualityIssuesByProject(this.projectId).subscribe({
+      next: (issues) => {
+        this.qualityIssuesCount = issues.length;
+        console.log('✅ Quality issues loaded:', this.qualityIssuesCount);
+      },
+      error: (err) => {
+        console.error('❌ Error loading quality issues:', err);
+        this.qualityIssuesCount = 0;
+      }
+    });
+  }
+
+  viewQualityIssues(): void {
+    console.log('🔍 Navigate to quality issues for project:', this.projectId);
+    if (!this.projectId) {
+      console.error('❌ Cannot navigate: projectId is undefined');
+      alert('Error: Project ID is missing. Cannot view quality issues.');
+      return;
+    }
+    this.router.navigate(['/projects', this.projectId, 'quality-issues']);
   }
 
   openImportExcel(): void {

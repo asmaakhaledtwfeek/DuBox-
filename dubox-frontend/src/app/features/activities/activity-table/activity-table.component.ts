@@ -7,7 +7,7 @@ import { BoxActivity, canPerformActivityActions, canPerformActivityActionsByStat
 import { UpdateProgressModalComponent } from '../update-progress-modal/update-progress-modal.component';
 import { WIRApprovalModalComponent } from '../wir-approval-modal/wir-approval-modal.component';
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
-import { BoxActivityDetail } from '../../../core/models/progress-update.model';
+import { BoxActivityDetail, ActivityProgressStatus } from '../../../core/models/progress-update.model';
 import { WIRService } from '../../../core/services/wir.service';
 import { WIRRecord, WIRStatus, WIRCheckpoint } from '../../../core/models/wir.model';
 import { PermissionService } from '../../../core/services/permission.service';
@@ -347,10 +347,10 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   openProgressModal(activity: BoxActivityDetail): void {
     // Allow opening modal for completed activities (to update position only)
     // Only block OnHold activities
-    if (activity.status === 'OnHold') {
+    if (activity.status === ActivityProgressStatus.OnHold) {
       document.dispatchEvent(new CustomEvent('app-toast', {
         detail: { 
-          message: 'Cannot update progress. Activities in "OnHold" status cannot be modified. Please change the activity status first.',
+          message: 'Cannot update progress. Activity is on hold.',
           type: 'error' 
         }
       }));
@@ -394,7 +394,7 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
     
     // Show WIR notification if created
     if (response.wirCreated) {
-      alert(`✅ Progress updated! WIR ${response.wirCode} has been created for QC inspection.`);
+      alert(`✅ Progress updated! ${this.getDisplayWirCode(response.wirCode)} has been created for QC inspection.`);
     }
   }
 
@@ -543,19 +543,19 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
    * Get WIR description for checkpoint
    */
   getWIRDescription(wir: any): string {
-    if (!wir) return 'Clearance/WIR';
+    if (!wir) return 'Clearance/Stage';
     
     const wirCode = wir.wirCode || '';
     const descriptionMap: Record<string, string> = {
-      'WIR-1': 'Release from Assembly - WIR-1',
-      'WIR-2': 'Mechanical Clearance - WIR-2',
-      'WIR-3': 'Ceiling Closure - WIR-3',
-      'WIR-4': '3rd Fix Installation - WIR-4',
-      'WIR-5': '3rd Fix Installation - WIR-5',
-      'WIR-6': 'Readiness for Dispatch - WIR-6'
+      'WIR-1': 'Release from Assembly - Stage-1',
+      'WIR-2': 'Mechanical Clearance - Stage-2',
+      'WIR-3': 'Ceiling Closure - Stage-3',
+      'WIR-4': '3rd Fix Installation - Stage-4',
+      'WIR-5': '3rd Fix Installation - Stage-5',
+      'WIR-6': 'Readiness for Dispatch - Stage-6'
     };
     
-    return descriptionMap[wirCode] || `${wirCode} Clearance`;
+    return descriptionMap[wirCode] || `${this.getDisplayWirCode(wirCode)} Clearance`;
   }
 
   /**
@@ -737,8 +737,17 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   private generateWirCode(sequence: number): string {
-    if (!sequence) return 'WIR';
+    if (!sequence) return 'Stage';
     return `WIR-${sequence}`;
+  }
+
+  /**
+   * Transform WIR code to Stage code for display purposes only
+   * E.g., "WIR-1" -> "Stage-1", "WIR-2" -> "Stage-2"
+   */
+  getDisplayWirCode(wirCode: string | undefined | null): string {
+    if (!wirCode) return 'Stage';
+    return wirCode.replace(/WIR-/gi, 'Stage-');
   }
 
   /**
@@ -981,11 +990,22 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
 
   /**
    * Check if update progress button should be disabled
-   * Disabled when: activity is completed or delayed AND next WIR has position disabled (position values already set)
+   * Disabled when: 
+   * 1. Activity is on hold
+   * 2. Activity is completed or delayed AND next WIR has position disabled (position values already set)
    */
   shouldDisableUpdateProgress(activity: BoxActivityDetail): boolean {
-    // Only disable if activity is completed or delayed
-    if (!activity || (activity.status !== 'Completed' && activity.status !== 'Delayed')) {
+    if (!activity) {
+      return false;
+    }
+
+    // Disable if activity is on hold
+    if (activity.status === ActivityProgressStatus.OnHold) {
+      return true;
+    }
+
+    // Only check WIR position logic if activity is completed or delayed
+    if (activity.status !== ActivityProgressStatus.Completed && activity.status !== ActivityProgressStatus.Delayed) {
       return false;
     }
 
@@ -1003,6 +1023,27 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
     
     // Disable button if next WIR has position values set
     return hasPositionValues;
+  }
+
+  /**
+   * Get tooltip text for update progress button
+   */
+  getUpdateProgressButtonTitle(activity: BoxActivityDetail): string {
+    if (!activity) {
+      return 'Update Progress';
+    }
+
+    // Check if activity is on hold
+    if (activity.status === ActivityProgressStatus.OnHold) {
+      return 'Update Progress disabled: Activity is on hold';
+    }
+
+    // Check if disabled due to WIR position lock
+    if (this.shouldDisableUpdateProgress(activity)) {
+      return 'Update Progress disabled: Activity is completed/delayed and next WIR position is locked';
+    }
+
+    return 'Update Progress';
   }
 
   /**

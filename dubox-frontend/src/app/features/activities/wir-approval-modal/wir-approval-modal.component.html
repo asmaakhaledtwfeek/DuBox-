@@ -11,10 +11,10 @@
     </div>
 
     <div class="modal-body">
-      <!-- WIR Info -->
+      <!-- Stage Info -->
       <div class="wir-info">
         <div class="info-item">
-          <span class="label">WIR Code:</span>
+          <span class="label">Stage Code:</span>
           <span class="value">{{ wirRecord?.wirCode }}</span>
         </div>
         <div class="info-item">
@@ -134,12 +134,12 @@
               <span *ngIf="processing">Processing...</span>
               <span *ngIf="!processing">
                 <span *ngIf="wirRecord?.status === WIRStatus.Approved">Already Approved</span>
-                <span *ngIf="wirRecord?.status !== WIRStatus.Approved">Start WIR</span>
+                <span *ngIf="wirRecord?.status !== WIRStatus.Approved">Start Stage</span>
               </span>
             </button>
           </div>
           <div *ngIf="!canApprove()" class="status-message">
-            <span class="badge badge-info">This WIR is already approved. Switch to Reject tab to change status.</span>
+            <span class="badge badge-info">This Stage is already approved. Switch to Reject tab to change status.</span>
           </div>
         </form>
       </div>

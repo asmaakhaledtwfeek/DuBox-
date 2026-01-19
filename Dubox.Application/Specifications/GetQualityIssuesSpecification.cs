@@ -14,6 +14,9 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(QualityIssue.WIRCheckpoint));
             AddInclude(nameof(QualityIssue.AssignedToTeam));
             AddInclude(nameof(QualityIssue.AssignedToMember));
+            AddInclude($"{nameof(QualityIssue.AssignedToMember)}.{nameof(TeamMember.User)}");
+
+            AddInclude(nameof(QualityIssue.CCUser));
             EnableSplitQuery();
 
             // Enable pagination
@@ -61,6 +64,16 @@ namespace Dubox.Application.Specifications
                 AddCriteria(q => q.IssueType == query.IssueType.Value);
             AddOrderByDescending(q => q.IssueDate);
         }
-    }
+        public GetQualityIssuesSpecification()
+        {
+            AddInclude(nameof(QualityIssue.Box));
+            AddInclude($"{nameof(QualityIssue.Box)}.{nameof(Box.Project)}");
+            AddInclude(nameof(QualityIssue.WIRCheckpoint));
+            AddInclude(nameof(QualityIssue.AssignedToTeam));
+            AddInclude(nameof(QualityIssue.AssignedToMember));
+            AddInclude(nameof(QualityIssue.CCUser));
+            EnableSplitQuery();
+        }
+        }
 
 }

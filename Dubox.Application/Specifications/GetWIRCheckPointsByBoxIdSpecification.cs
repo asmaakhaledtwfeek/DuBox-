@@ -16,6 +16,8 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(WIRCheckpoint.ChecklistItems));
             AddInclude(nameof(WIRCheckpoint.QualityIssues));
             AddInclude($"{nameof(WIRCheckpoint.QualityIssues)}.{nameof(QualityIssue.AssignedToTeam)}");
+            AddInclude($"{nameof(WIRCheckpoint.QualityIssues)}.{nameof(QualityIssue.AssignedToMember)}");
+            AddInclude($"{nameof(WIRCheckpoint.QualityIssues)}.{nameof(QualityIssue.CCUser)}");
             AddInclude($"{nameof(WIRCheckpoint.ChecklistItems)}.{nameof(WIRChecklistItem.PredefinedChecklistItem)}");
             AddInclude($"{nameof(WIRCheckpoint.ChecklistItems)}.{nameof(WIRChecklistItem.PredefinedChecklistItem)}.{nameof(PredefinedChecklistItem.ChecklistSection)}");
             AddInclude($"{nameof(WIRCheckpoint.ChecklistItems)}.{nameof(WIRChecklistItem.PredefinedChecklistItem)}.{nameof(PredefinedChecklistItem.ChecklistSection)}.{nameof(ChecklistSection.Checklist)}");

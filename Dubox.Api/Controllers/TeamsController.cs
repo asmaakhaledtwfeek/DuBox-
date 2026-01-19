@@ -214,10 +214,12 @@ public class TeamsController : ControllerBase
             return BadRequest(result);
 
         // Transform to simple user list for assignment dropdowns
+        // Note: userId field contains TeamMemberId for quality issue assignment
         var users = result.Data.Members
+            .Where(m => m.UserId != null && m.UserId != Guid.Empty) // Only include members with user accounts
             .Select(m => new 
             {
-                userId = m.UserId,
+                userId = m.TeamMemberId, // Use TeamMemberId for assignment (field name kept as userId for backwards compatibility)
                 userName = m.FullName,
                 userEmail = m.Email
             })

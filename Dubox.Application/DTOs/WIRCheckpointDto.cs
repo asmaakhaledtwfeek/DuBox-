@@ -114,6 +114,11 @@ namespace Dubox.Application.DTOs
         public Guid IssueId { get; set; }
         public string IssueType { get; set; } = string.Empty;
         public string? IssueDescription { get; set; }
+        public string? IssueNumber { get; set; }
+
+        public string? CcUserName { get; set; }
+        public string? AssignedUserName { get; set; }
+
         public string? AssignedTeam { get; set; }
         public string? Severity { get; set; }
         public DateTime IssueDate { get; set; }

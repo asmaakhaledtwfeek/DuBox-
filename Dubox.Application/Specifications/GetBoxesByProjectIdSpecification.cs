@@ -15,7 +15,7 @@ namespace Dubox.Application.Specifications
             // BoxTypeId/BoxSubTypeId now reference ProjectBoxTypes/ProjectBoxSubTypes
             AddInclude(nameof(Box.Factory));
             AddInclude(nameof(Box.CurrentLocation));
-
+            AddInclude(nameof(Box.BoxDrawings));
             // Enable split query to avoid Cartesian explosion with BoxActivities collection
             EnableSplitQuery();
         }

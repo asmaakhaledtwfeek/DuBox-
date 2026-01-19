@@ -3,17 +3,12 @@
   margin-top: var(--header-height);
   min-height: calc(100vh - var(--header-height));
   background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
-  overflow-x: hidden;
-  width: 100%;
-  box-sizing: border-box;
 }
 
 .page-content {
   padding: var(--spacing-2xl);
   max-width: 1400px;
   margin: 0 auto;
-  width: 100%;
-  box-sizing: border-box;
 }
 
 .page-header {
@@ -624,26 +619,6 @@
   font-weight: 500;
 }
 
-// Tablet Landscape (768px - 1024px)
-@media (max-width: 1024px) and (min-width: 769px) {
-  .page-container {
-    margin-left: 0;
-  }
-
-  .page-content {
-    padding: var(--spacing-xl);
-  }
-
-  .reports-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .stats-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-// Tablet Portrait (max-width: 768px)
 @media (max-width: 768px) {
   .page-container {
     margin-left: 0;
@@ -651,7 +626,6 @@
 
   .page-content {
     padding: var(--spacing-lg);
-    max-width: 100%;
   }
 
   .header-content {

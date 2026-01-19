@@ -94,6 +94,19 @@ public class Box
     [MaxLength(50)]
     public string? Position { get; set; } = string.Empty;
     public DateTime? DeletedDated { get; set; }
+    public bool? Wall1 { get; set; }
+    public bool? Wall2 { get; set; }
+    public bool? Wall3 { get; set; }
+    public bool? Wall4 { get; set; }
+    public bool? Slab { get; set; }
+    public bool? Soffit { get; set; }
+    public bool? PodDeliver { get; set; }
+    public string? PodName { get; set; }
+    public string? PodType { get; set; }
+
+
+
+
     // Navigation properties
     public virtual ProjectBoxType? BoxType { get; set; }
     public virtual ProjectBoxSubType? BoxSubType { get; set; }
@@ -103,6 +116,7 @@ public class Box
     public ICollection<MaterialTransaction> MaterialTransactions { get; set; } = new List<MaterialTransaction>();
     public virtual ICollection<BoxLocationHistory> BoxLocationHistory { get; set; } = new List<BoxLocationHistory>();
     public ICollection<BoxDrawing> BoxDrawings { get; set; } = new List<BoxDrawing>();
+    public ICollection<ProjectCost> ProjectCosts { get; set; } = new List<ProjectCost>();
 
 
 }

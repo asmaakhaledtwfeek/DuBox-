@@ -3176,6 +3176,47 @@
             }
           }
 
+          &.issue-number-cell {
+            .issue-number-badge {
+              display: inline-flex;
+              align-items: center;
+              justify-content: center;
+              font-weight: 700;
+              font-size: 13px;
+              padding: 6px 12px;
+              border-radius: 8px;
+              background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+              color: #075985;
+              border: 1px solid #7dd3fc;
+              letter-spacing: 0.3px;
+            }
+          }
+
+          &.assigned-cell {
+            .assigned-info {
+              display: flex;
+              flex-direction: column;
+              gap: 4px;
+
+              .assigned-team {
+                font-weight: 600;
+                color: #334155;
+                font-size: 14px;
+              }
+
+              .assigned-user {
+                font-size: 12px;
+                color: #64748b;
+                font-style: italic;
+              }
+            }
+          }
+
+          &.cc-user-cell {
+            color: #475569;
+            font-size: 13px;
+          }
+
           &.status-cell {
             .status-pill {
               display: inline-flex;
@@ -3204,6 +3245,10 @@
       width: 80px;
     }
 
+    .col-issue-number {
+      width: 120px;
+    }
+
     .col-wir {
       width: 120px;
     }
@@ -3211,6 +3256,10 @@
     .col-extra {
       white-space: nowrap;
       min-width: 100px;
+    }
+
+    .col-cc-user {
+      min-width: 150px;
     }
 
     .col-actions {
@@ -7310,219 +7359,7 @@
   }
 }
 
-/* =========================================================
-   TABLET/iPAD RESPONSIVE STYLES - BOX DETAILS
-========================================================= */
-
-// Tablet Landscape (1024px and below)
-@media (max-width: 1024px) and (min-width: 769px) {
-  .page-container {
-    margin-left: 250px;
-    padding: 80px 32px 32px;
-  }
-
-  .page-header {
-    padding: 20px 28px;
-
-    .box-info {
-      .box-name {
-        font-size: 24px;
-      }
-
-      .box-id {
-        font-size: 14px;
-        padding: 5px 10px;
-      }
-
-      .status-badge {
-        font-size: 12px;
-        padding: 5px 12px;
-      }
-    }
-
-    .header-actions {
-      gap: 8px;
-
-      .action-btn {
-        padding: 9px 18px;
-        font-size: 13px;
-
-        svg {
-          width: 16px;
-          height: 16px;
-        }
-      }
-    }
-  }
-
-  // Tabs - iPad landscape
-  .tabs {
-    margin-bottom: 28px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-
-    .tab {
-      padding: 14px 20px;
-      font-size: 14px;
-      white-space: nowrap;
-      min-width: fit-content;
-
-      svg {
-        width: 18px;
-        height: 18px;
-      }
-
-      .badge {
-        padding: 3px 8px;
-        font-size: 11px;
-      }
-    }
-  }
-
-  .tab-content {
-    min-height: 350px;
-  }
-
-  // Box summary cards
-  .box-summary-section {
-    .summary-grid {
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-    }
-
-    .summary-card {
-      padding: 16px;
-
-      .card-label {
-        font-size: 12px;
-      }
-
-      .card-value {
-        font-size: 18px;
-      }
-    }
-  }
-
-  // Modals - iPad landscape
-  .modal-backdrop {
-    padding: 20px;
-  }
-
-  .modal-content {
-    max-width: 85%;
-    max-height: 85vh;
-
-    .modal-header {
-      padding: 20px 24px;
-
-      h2, h3 {
-        font-size: 20px;
-      }
-
-      .close-btn {
-        width: 36px;
-        height: 36px;
-
-        svg {
-          width: 20px;
-          height: 20px;
-        }
-      }
-    }
-
-    .modal-body {
-      padding: 20px 24px;
-      max-height: calc(85vh - 160px);
-    }
-
-    .modal-footer {
-      padding: 16px 24px;
-      gap: 12px;
-
-      .btn {
-        padding: 10px 20px;
-        font-size: 14px;
-        min-width: 110px;
-      }
-    }
-  }
-
-  // Activity cards
-  .activities-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 16px;
-  }
-
-  .activity-card {
-    padding: 16px;
-
-    .activity-header {
-      h4 {
-        font-size: 15px;
-      }
-    }
-  }
-
-  // Box logs - iPad
-  .box-logs-card {
-    padding: 20px;
-
-    .card-header {
-      h3 {
-        font-size: 20px;
-      }
-
-      .card-header-actions {
-        gap: 10px;
-
-        .btn {
-          padding: 9px 16px;
-          font-size: 13px;
-        }
-      }
-    }
-  }
-
-  .log-entry {
-    .timeline-dot {
-      width: 38px;
-      height: 38px;
-      left: -30px;
-
-      svg {
-        width: 18px;
-        height: 18px;
-      }
-    }
-
-    .log-content {
-      padding: 16px;
-
-      .log-header {
-        h4 {
-          font-size: 15px;
-        }
-
-        .log-timestamp {
-          font-size: 12px;
-        }
-      }
-
-      .log-description {
-        font-size: 14px;
-      }
-    }
-  }
-
-  // Filters
-  .filter-row {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-  }
-}
-
-// Tablet Portrait (768px and below)
+// Responsive
 @media (max-width: 768px) {
   .page-container {
     margin-left: 0;
@@ -7530,51 +7367,18 @@
   }
 
   .page-header {
-    padding: 18px 20px;
     flex-direction: column;
 
-    .header-content {
-      flex-direction: column;
-      gap: 16px;
-    }
-
-    .box-info {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 10px;
+    .header-right {
       width: 100%;
-
-      .box-name {
-        font-size: 22px;
-        white-space: normal;
-        word-break: break-word;
-      }
-
-      .box-id, .status-badge {
-        font-size: 13px;
-      }
-    }
-
-    .header-actions {
-      width: 100%;
-      flex-wrap: wrap;
       
-      .action-btn {
-        flex: 1 1 calc(50% - 5px);
-        min-width: calc(50% - 5px);
-        padding: 12px 16px;
+      .btn {
+        flex: 1;
         justify-content: center;
-        font-size: 14px;
-
-        svg {
-          width: 18px;
-          height: 18px;
-        }
       }
     }
   }
 
-  // Tabs - Portrait tablet
   .tabs {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -7592,137 +7396,6 @@
       padding: 12px 16px;
       font-size: 13px;
       min-width: fit-content;
-      flex-shrink: 0;
-
-      svg {
-        width: 16px;
-        height: 16px;
-      }
-
-      .badge {
-        padding: 2px 6px;
-        font-size: 10px;
-      }
-    }
-  }
-
-  .tab-content {
-    min-height: 300px;
-  }
-
-  // Box summary - Portrait
-  .box-summary-section {
-    .summary-grid {
-      grid-template-columns: 1fr;
-      gap: 12px;
-    }
-
-    .summary-card {
-      padding: 14px;
-
-      .card-label {
-        font-size: 12px;
-      }
-
-      .card-value {
-        font-size: 16px;
-      }
-    }
-  }
-
-  // Modals - Portrait tablet
-  .modal-backdrop {
-    padding: 16px;
-  }
-
-  .modal-content {
-    max-width: 95%;
-    max-height: 92vh;
-    margin: 0 auto;
-
-    .modal-header {
-      padding: 16px 20px;
-      flex-wrap: wrap;
-
-      h2, h3 {
-        font-size: 18px;
-        flex: 1;
-      }
-
-      .close-btn {
-        width: 34px;
-        height: 34px;
-
-        svg {
-          width: 18px;
-          height: 18px;
-        }
-      }
-    }
-
-    .modal-body {
-      padding: 16px 20px;
-      max-height: calc(92vh - 140px);
-
-      // Form inputs in modals
-      input, select, textarea {
-        font-size: 16px; // Prevents iOS zoom
-        padding: 12px 14px;
-      }
-
-      // Buttons in modal body
-      .btn {
-        padding: 12px 20px;
-        font-size: 15px;
-        
-        svg {
-          width: 18px;
-          height: 18px;
-        }
-      }
-    }
-
-    .modal-footer {
-      padding: 14px 20px;
-      flex-direction: column-reverse;
-      gap: 10px;
-
-      .btn {
-        width: 100%;
-        padding: 12px 20px;
-        font-size: 15px;
-        justify-content: center;
-      }
-    }
-  }
-
-  // Activities - Portrait
-  .activities-grid {
-    grid-template-columns: 1fr;
-    gap: 14px;
-  }
-
-  .activity-card {
-    padding: 14px;
-
-    .activity-header {
-      flex-wrap: wrap;
-      gap: 8px;
-
-      h4 {
-        font-size: 15px;
-        flex: 1 1 100%;
-      }
-
-      .activity-status {
-        font-size: 11px;
-      }
-    }
-
-    .activity-progress {
-      .progress-bar {
-        height: 6px;
-      }
     }
   }
 
@@ -9505,5 +9178,661 @@
   .pagination-controls {
     justify-content: center;
     width: 100%;
+  }
+}
+// ============= Delivery Info Section ============= //
+.delivery-info-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+
+  .delivery-card {
+    background: white;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    padding: 28px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+
+    .card-title {
+      font-size: 17px;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+  }
+
+  .delivery-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .delivery-item {
+    display: flex;
+    align-items: center;
+  }
+
+  .checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.2s;
+    padding: 6px 8px;
+    border-radius: 6px;
+
+    &:hover {
+      background: #f8fafc;
+    }
+
+    .checkbox-input {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: var(--amana-teal);
+      
+      &:disabled {
+        cursor: not-allowed;
+        opacity: 0.5;
+      }
+    }
+
+    .checkbox-text {
+      font-size: 15px;
+      color: #1e293b;
+      font-weight: 400;
+    }
+  }
+
+  .pod-delivery-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    .pod-deliver-checkbox {
+      margin-bottom: 8px;
+    }
+
+    .pod-details {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding-left: 28px;
+      border-left: 3px solid var(--amana-teal);
+      margin-left: 9px;
+
+      .form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        label {
+          font-size: 13px;
+          font-weight: 600;
+          color: #64748b;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .form-input {
+          padding: 10px 14px;
+          border: 1px solid #cbd5e1;
+          border-radius: 8px;
+          font-size: 14px;
+          color: #1e293b;
+          transition: all 0.2s;
+
+          &:focus {
+            outline: none;
+            border-color: var(--amana-teal);
+            box-shadow: 0 0 0 3px rgba(0, 163, 163, 0.1);
+          }
+
+          &:disabled {
+            background: #f1f5f9;
+            cursor: not-allowed;
+            opacity: 0.6;
+          }
+
+          &::placeholder {
+            color: #94a3b8;
+          }
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .delivery-info-section {
+    grid-template-columns: 1fr;
+
+    .delivery-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// ============= Activity Progress and Delivery Side by Side Layout ============= //
+.activity-delivery-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+  align-items: start;
+
+  .chart-card {
+    margin-bottom: 0;
+    height: 100%;
+    grid-column: auto; // Override the full-width grid-column from parent
+  }
+
+  .delivery-card {
+    margin-bottom: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+
+    .delivery-grid {
+      flex: 1;
+    }
+  }
+}
+
+.pod-delivery-full-card {
+  margin-bottom: 24px;
+
+  .pod-delivery-container {
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 24px;
+
+    .pod-deliver-checkbox {
+      min-width: 150px;
+      margin-bottom: 0;
+    }
+
+    .pod-details {
+      display: flex;
+      flex-direction: row;
+      gap: 20px;
+      flex: 1;
+      padding-left: 24px;
+      border-left: 3px solid var(--amana-teal);
+      margin-left: 0;
+
+      .form-group {
+        flex: 1;
+        min-width: 200px;
+      }
+    }
+  }
+}
+
+@media (max-width: 1200px) {
+  .activity-delivery-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .pod-delivery-full-card .pod-delivery-container {
+    flex-direction: column;
+    
+    .pod-details {
+      padding-left: 28px;
+      margin-left: 9px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .pod-delivery-full-card .pod-delivery-container .pod-details {
+    flex-direction: column;
+  }
+}
+
+// ============= Enhanced Delivery Info Section Design ============= //
+.delivery-info-wrapper {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 28px;
+  margin-bottom: 28px;
+
+  .delivery-card {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    padding: 32px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.08);
+      transform: translateY(-2px);
+    }
+
+    .card-header-with-icon {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 28px;
+
+      .icon-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+
+        &.concrete-icon {
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+
+          svg {
+            color: white;
+          }
+        }
+
+        &.pod-icon {
+          background: linear-gradient(135deg, var(--amana-teal) 0%, #0d9488 100%);
+          box-shadow: 0 4px 12px rgba(0, 163, 163, 0.3);
+
+          svg {
+            color: white;
+          }
+        }
+      }
+
+      .card-title {
+        font-size: 19px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        letter-spacing: -0.3px;
+      }
+    }
+  }
+
+  // Concrete Panel Specific Styles
+  .concrete-panel-card {
+    .delivery-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+    }
+
+    .delivery-item {
+      position: relative;
+    }
+  }
+
+  // Pod Delivery Specific Styles
+  .pod-delivery-card {
+    .pod-delivery-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+  }
+
+  // Enhanced Checkbox Label Styles
+  .checkbox-label {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 14px 16px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 2px solid #e2e8f0;
+    width: 100%;
+
+    &:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      transform: translateX(2px);
+    }
+
+    &.checked {
+      background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+      border-color: #10b981;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
+
+      .checkbox-text {
+        color: #047857;
+        font-weight: 600;
+      }
+    }
+
+    .checkbox-input {
+      position: absolute;
+      opacity: 0;
+      cursor: pointer;
+      
+      &:disabled ~ .checkbox-custom {
+        cursor: not-allowed;
+        opacity: 0.5;
+        background: #e2e8f0;
+      }
+    }
+
+    .checkbox-custom {
+      position: relative;
+      width: 22px;
+      height: 22px;
+      border: 2px solid #cbd5e1;
+      border-radius: 6px;
+      background: white;
+      flex-shrink: 0;
+      transition: all 0.25s ease;
+
+      &::after {
+        content: '';
+        position: absolute;
+        display: none;
+        left: 6px;
+        top: 2px;
+        width: 6px;
+        height: 11px;
+        border: solid white;
+        border-width: 0 2.5px 2.5px 0;
+        transform: rotate(45deg);
+      }
+    }
+
+    input:checked ~ .checkbox-custom {
+      background: var(--amana-teal);
+      border-color: var(--amana-teal);
+
+      &::after {
+        display: block;
+      }
+    }
+
+    .checkbox-text {
+      font-size: 15px;
+      color: #334155;
+      font-weight: 500;
+      flex: 1;
+      transition: all 0.2s ease;
+    }
+
+    .check-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: auto;
+      color: #10b981;
+      animation: checkmark 0.3s ease-in-out;
+    }
+
+    &:disabled,
+    &.disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+  }
+
+  // Pod Details Enhanced Styles
+  .pod-details {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 24px;
+    background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
+    border-radius: 12px;
+    border: 2px dashed var(--amana-teal);
+    margin-top: 8px;
+    animation: slideDown 0.3s ease-out;
+
+    .pod-details-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #99f6e4;
+      margin-bottom: 8px;
+
+      svg {
+        color: var(--amana-teal);
+      }
+
+      span {
+        font-size: 14px;
+        font-weight: 700;
+        color: #0f766e;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+      }
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+
+      label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #0f766e;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+
+        svg {
+          color: var(--amana-teal);
+        }
+      }
+
+      .form-input {
+        padding: 12px 16px;
+        border: 2px solid #5eead4;
+        border-radius: 10px;
+        font-size: 15px;
+        color: #1e293b;
+        background: white;
+        transition: all 0.25s ease;
+        font-weight: 500;
+
+        &:focus {
+          outline: none;
+          border-color: var(--amana-teal);
+          box-shadow: 0 0 0 4px rgba(0, 163, 163, 0.15);
+          transform: translateY(-1px);
+        }
+
+        &:hover:not(:disabled) {
+          border-color: var(--amana-teal);
+        }
+
+        &:disabled {
+          background: #f1f5f9;
+          cursor: not-allowed;
+          opacity: 0.6;
+          border-color: #cbd5e1;
+        }
+
+        &::placeholder {
+          color: #94a3b8;
+          font-weight: 400;
+        }
+      }
+    }
+
+    // Pod Actions (Save Button)
+    .pod-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 2px solid #99f6e4;
+
+      .save-pod-btn {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 24px;
+        background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
+        color: #64748b;
+        border: none;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: not-allowed;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        opacity: 0.6;
+
+        svg {
+          flex-shrink: 0;
+        }
+
+        &.has-changes:not(:disabled) {
+          background: linear-gradient(135deg, var(--amana-teal) 0%, #0d9488 100%);
+          color: white;
+          cursor: pointer;
+          opacity: 1;
+          box-shadow: 0 4px 12px rgba(0, 163, 163, 0.3);
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(0, 163, 163, 0.4);
+          }
+
+          &:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 8px rgba(0, 163, 163, 0.3);
+          }
+        }
+
+        &:disabled {
+          cursor: not-allowed;
+          opacity: 0.5;
+        }
+
+        .spinner {
+          animation: spin 1s linear infinite;
+        }
+      }
+    }
+  }
+}
+
+// Spinner animation
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+// Checkmark Animation
+@keyframes checkmark {
+  0% {
+    transform: scale(0) rotate(45deg);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.2) rotate(45deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+// Slide Down Animation
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .delivery-info-wrapper {
+    grid-template-columns: 1fr;
+    gap: 20px;
+
+    .delivery-card {
+      padding: 24px;
+
+      .card-header-with-icon {
+        margin-bottom: 20px;
+
+        .icon-wrapper {
+          width: 38px;
+          height: 38px;
+        }
+
+        .card-title {
+          font-size: 17px;
+        }
+      }
+    }
+
+    .concrete-panel-card .delivery-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .pod-details {
+      padding: 18px;
+
+      .form-row {
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .delivery-info-wrapper {
+    .checkbox-label {
+      padding: 12px 14px;
+      font-size: 14px;
+    }
+
+    .pod-details {
+      padding: 16px;
+
+      .pod-details-header span {
+        font-size: 12px;
+      }
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .delivery-info-section {
+    grid-template-columns: 1fr;
+
+    .pod-delivery-section .pod-delivery-container .pod-details {
+      padding: 12px;
+    }
   }
 }

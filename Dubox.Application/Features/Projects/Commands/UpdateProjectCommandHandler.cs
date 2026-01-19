@@ -4,6 +4,7 @@ using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
+using Dubox.Domain.Helpers;
 using Mapster;
 using MediatR;
 
@@ -98,13 +99,37 @@ public class UpdateProjectCommandHandler : IRequestHandler<UpdateProjectCommand,
     private void ApplyProjectUpdates(Project project, UpdateProjectCommand request)
     {
         if (!string.IsNullOrEmpty(request.ProjectName))
-            project.ProjectName = request.ProjectName;
+            project.ProjectName = TextTransformHelper.ToTitleCase(request.ProjectName);
         if (!string.IsNullOrEmpty(request.ClientName))
-            project.ClientName = request.ClientName;
+            project.ClientName = TextTransformHelper.ToTitleCase(request.ClientName);
         if (request.PlannedStartDate.HasValue)
             project.PlannedStartDate = request.PlannedStartDate;
-        if (request.Duration.HasValue)
+        
+        // Handle ProjectedEndDate and Duration calculation
+        if (request.ProjectedEndDate.HasValue)
+        {
+            project.ProjectedEndDate = request.ProjectedEndDate;
+            // If ProjectedEndDate is provided, recalculate Duration
+            if (project.PlannedStartDate.HasValue)
+            {
+                var duration = (request.ProjectedEndDate.Value - project.PlannedStartDate.Value).Days;
+                project.Duration = duration > 0 ? duration : 1;
+            }
+        }
+        else if (request.Duration.HasValue)
+        {
             project.Duration = request.Duration.Value;
+            // If Duration is provided, recalculate ProjectedEndDate
+            if (project.PlannedStartDate.HasValue)
+            {
+                project.ProjectedEndDate = project.PlannedStartDate.Value.AddDays(request.Duration.Value);
+            }
+        }
+        
+        if (request.ProjectMangerId.HasValue)
+            project.ProjectMangerId = request.ProjectMangerId;
+        if (request.ProjectValue.HasValue)
+            project.ProjectValue = request.ProjectValue;
         if (!string.IsNullOrEmpty(request.Description))
             project.Description = request.Description;
         if (request.BimLink != null)

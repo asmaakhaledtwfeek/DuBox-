@@ -236,7 +236,7 @@ export class PublicBoxViewComponent implements OnInit, OnDestroy {
     if (this.boxAttachments.wirCheckpointImages) {
       all.push(...this.boxAttachments.wirCheckpointImages.map((img: any) => ({
         ...img,
-        sourceType: 'WIR Checkpoint',
+        sourceType: 'Stage Checkpoint',
         sourceIcon: 'checkpoint'
       })));
     }

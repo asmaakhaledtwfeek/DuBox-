@@ -32,14 +32,7 @@
       
       <div class="filters-content" [class.collapsed]="filtersCollapsed">
         <div class="filter-row">
-          <div class="filter-group">
-            <label>Active Status</label>
-            <select [(ngModel)]="isActiveFilter" (change)="applyFilters()">
-              <option [ngValue]="null">All</option>
-              <option [ngValue]="true">Active Only</option>
-              <option [ngValue]="false">Inactive Only</option>
-            </select>
-          </div>
+          
 
           <div class="filter-group">
             <label>Status</label>

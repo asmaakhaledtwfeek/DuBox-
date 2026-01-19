@@ -97,6 +97,16 @@
         font-size: 13px;
         font-weight: 600;
 
+        .issue-number {
+          background: #6366f1;
+          padding: 6px 16px;
+          border-radius: 6px;
+          font-weight: 700;
+          color: white;
+          font-size: 12px;
+          letter-spacing: 0.5px;
+        }
+
         .issue-type {
           background: #f59e0b;
           padding: 6px 16px;

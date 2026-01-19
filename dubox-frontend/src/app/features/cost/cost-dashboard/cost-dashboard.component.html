@@ -1,0 +1,1248 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="page-content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-left">
+        <h1 class="page-title">Cost Management</h1>
+        <p class="page-subtitle">View and manage material costs and human resource costs</p>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs-container">
+      <button 
+        class="tab-button" 
+        [class.active]="activeTab === 'projectCost'"
+        (click)="switchTab('projectCost')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <path d="M3 9h18M9 21V9"/>
+        </svg>
+        Project Cost
+        <span class="count-badge" *ngIf="projectCosts.length > 0">{{ projectCosts.length }}</span>
+      </button>
+      <button 
+        class="tab-button" 
+        [class.active]="activeTab === 'materials'"
+        (click)="switchTab('materials')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 7h-4M4 7h4m0 0V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-6 0h6m-6 0v10m6-10v10"/>
+        </svg>
+        Cost Codes Master
+        <span class="count-badge" *ngIf="costCodesTotalCount > 0">{{ costCodesTotalCount }}</span>
+      </button>
+      <button 
+        class="tab-button" 
+        [class.active]="activeTab === 'hr'"
+        (click)="switchTab('hr')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87m-4-12a4 4 0 0 1 0 7.75"/>
+        </svg>
+        HRC Code
+        <span class="count-badge" *ngIf="hrCostsTotalCount > 0">{{ hrCostsTotalCount }}</span>
+      </button>
+    </div>
+
+    <!-- Project Cost Tab -->
+    <div *ngIf="activeTab === 'projectCost'" class="tab-content">
+      <!-- Project Selection Section -->
+      <div class="project-selection-section">
+        <div class="selection-header">
+          <div class="selection-controls">
+            <div class="form-group">
+              <label for="projectSelect">Project Name</label>
+              <select 
+                id="projectSelect" 
+                [(ngModel)]="selectedProject" 
+                (ngModelChange)="onProjectSelect($event)"
+                class="filter-select project-select">
+                <option [ngValue]="null">Select a project...</option>
+                <option *ngFor="let project of projects" [ngValue]="project">
+                  {{ project.projectName }}
+                </option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="projectCodeSelect">Project Number</label>
+              <select 
+                id="projectCodeSelect" 
+                [(ngModel)]="selectedProject" 
+                (ngModelChange)="onProjectSelect($event)"
+                class="filter-select project-select">
+                <option [ngValue]="null">Select a project number...</option>
+                <option *ngFor="let project of projects" [ngValue]="project">
+                  {{ project.projectCode }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group add-button-group">
+              <label>&nbsp;</label>
+              <button class="btn-add-cost" (click)="openCreateCostModal()" [disabled]="!selectedProject">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Add Project Cost
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Project Details -->
+        <div *ngIf="selectedProject" class="project-details-card">
+          <h3>Project Details</h3>
+          <div class="project-info-grid">
+            <div class="info-item">
+              <span class="info-label">Client:</span>
+              <span class="info-value">{{ selectedProject.clientName || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Location:</span>
+              <span class="info-value">{{ selectedProject.location || 'N/A' }}</span>
+            </div>
+            <div class="info-item">
+              <span class="info-label">Status:</span>
+              <span class="status-badge" [class]="selectedProject.status?.toLowerCase()">
+                {{ selectedProject.status }}
+              </span>
+            </div>
+            <div class="info-item" *ngIf="projectCosts.length > 0">
+              <span class="info-label">Total Cost:</span>
+              <span class="info-value total-cost">{{ getTotalProjectCost() | number:'1.2-2' }} SAR</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- No Project Selected State -->
+      <div *ngIf="!selectedProject" class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <path d="M3 9h18M9 21V9"/>
+        </svg>
+        <h3>Select a Project</h3>
+        <p>Choose a project from the dropdown above to view and manage its costs</p>
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="selectedProject && projectCostsLoading" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading project costs...</p>
+      </div>
+
+      <!-- Error -->
+      <div *ngIf="selectedProject && projectCostsError && !projectCostsLoading" class="error-state">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <h3>{{ projectCostsError }}</h3>
+        <button class="btn-primary" (click)="loadProjectCosts()">Retry</button>
+      </div>
+
+      <!-- Project Costs Content -->
+      <div *ngIf="selectedProject && !projectCostsLoading && !projectCostsError">
+        <!-- Project Costs Table -->
+        <div class="table-container">
+          <table class="cost-table project-cost-table">
+            <thead>
+              <tr>
+                <th>Box Tag</th>
+                <th>Cost Type</th>
+                <th>Cost Code</th>
+                <th>Amount</th>
+                <th>Created Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let cost of projectCosts">
+                <td>
+                  <span class="code-badge">{{ cost.boxTag }}</span>
+                </td>
+                <td>
+                  <span class="cost-type-badge">{{ cost.costType }}</span>
+                </td>
+                <td>
+                  <span class="cost-code-text" *ngIf="cost.hrCostCode">{{ cost.hrCostCode }}</span>
+                  <span class="text-muted" *ngIf="!cost.hrCostCode">-</span>
+                </td>
+                <td>
+                  <span class="cost-amount">{{ cost.cost | number:'1.2-2' }} SAR</span>
+                </td>
+                <td>{{ cost.createdDate | date:'short' }}</td>
+                <td>
+                  <button class="btn-icon" title="View Details">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="projectCosts.length === 0">
+                <td colspan="6" class="no-data">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2"/>
+                    <path d="M3 9h18M9 21V9"/>
+                  </svg>
+                  <p>No cost items found for this project</p>
+                  <small>Click "Add Cost Item" to create a new cost entry</small>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Cost Summary -->
+        <div *ngIf="projectCosts.length > 0" class="cost-summary">
+          <div class="summary-card">
+            <div class="summary-title">Total Cost</div>
+            <div class="summary-value">{{ getTotalProjectCost() | number:'1.2-2' }} SAR</div>
+          </div>
+          <div class="summary-card">
+            <div class="summary-title">Total Items</div>
+            <div class="summary-value">{{ projectCosts.length }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Material Costs Tab -->
+    <div *ngIf="activeTab === 'materials'" class="tab-content">
+      <!-- Enhanced Filters Section -->
+      <div class="enhanced-filters-card">
+        <div class="filters-header">
+          <div class="header-content">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+            </svg>
+            <h3>Search & Filter Cost Codes</h3>
+          </div>
+          <button class="btn-add-cost-header" (click)="openCreateCostCodeModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="16"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+            Add Cost Code
+          </button>
+        </div>
+
+        <div class="filters-grid">
+          <!-- Search Fields Group -->
+          <div class="filter-group search-fields-group">
+            <!-- Cost Code Filter -->
+            <div class="filter-field">
+              <label class="filter-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3 3a1.5 1.5 0 0 0 2.12 0 1.5 1.5 0 0 0 0-2.12l-3-3A5 5 0 1 0 10 13zm0-8a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/>
+                </svg>
+                Cost Code
+              </label>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  [(ngModel)]="searchCode"
+                  (keyup.enter)="onSearch()"
+                  placeholder="e.g., 00.01.03"
+                  class="filter-input"
+                />
+              </div>
+            </div>
+
+            <!-- Cost Level 1 Dropdown -->
+            <div class="filter-field">
+              <label class="filter-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 3h7v7H3zM14 3h7v7h-7z"/>
+                </svg>
+                Cost Level 1
+              </label>
+              <select [(ngModel)]="selectedCostLevel1" class="filter-select-enhanced" (ngModelChange)="onSearch()" [disabled]="loadingCostLevel1Options">
+                <option [ngValue]="null">{{ loadingCostLevel1Options ? 'Loading...' : 'All Levels' }}</option>
+                <option *ngFor="let level of costLevel1Options" [value]="level">{{ level }}</option>
+              </select>
+            </div>
+
+            <!-- Cost Level 2 Dropdown -->
+            <div class="filter-field">
+              <label class="filter-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3z"/>
+                </svg>
+                Cost Level 2
+              </label>
+              <select [(ngModel)]="selectedCostLevel2" class="filter-select-enhanced" (ngModelChange)="onSearch()" [disabled]="loadingCostLevel2Options">
+                <option [ngValue]="null">{{ loadingCostLevel2Options ? 'Loading...' : 'All Levels' }}</option>
+                <option *ngFor="let level of costLevel2Options" [value]="level">{{ level }}</option>
+              </select>
+            </div>
+
+            <!-- Cost Level 3 Dropdown -->
+            <div class="filter-field">
+              <label class="filter-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7z"/>
+                </svg>
+                Cost Level 3
+              </label>
+              <select [(ngModel)]="selectedCostLevel3" class="filter-select-enhanced" (ngModelChange)="onSearch()" [disabled]="loadingCostLevel3Options">
+                <option [ngValue]="null">{{ loadingCostLevel3Options ? 'Loading...' : 'All Levels' }}</option>
+                <option *ngFor="let level of costLevel3Options" [value]="level">{{ level }}</option>
+              </select>
+            </div>
+
+            <!-- Level 1 Description -->
+            <div class="filter-field">
+              <label class="filter-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="12" y1="18" x2="12" y2="12"/>
+                  <line x1="9" y1="15" x2="15" y2="15"/>
+                </svg>
+                Level 1 Description
+              </label>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  [(ngModel)]="searchLevel1Description"
+                  (keyup.enter)="onSearch()"
+                  placeholder="Search level 1 description..."
+                  class="filter-input"
+                />
+              </div>
+            </div>
+
+            <!-- Level 2 Description -->
+            <div class="filter-field">
+              <label class="filter-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="12" y1="16" x2="12" y2="12"/>
+                  <line x1="9" y1="14" x2="15" y2="14"/>
+                </svg>
+                Level 2 Description
+              </label>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  [(ngModel)]="searchLevel2Description"
+                  (keyup.enter)="onSearch()"
+                  placeholder="Search level 2 description..."
+                  class="filter-input"
+                />
+              </div>
+            </div>
+
+            <!-- Level 3 Description -->
+            <div class="filter-field">
+              <label class="filter-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="12" y1="14" x2="12" y2="12"/>
+                  <line x1="9" y1="13" x2="15" y2="13"/>
+                </svg>
+                Level 3 Description
+              </label>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  [(ngModel)]="searchLevel3Description"
+                  (keyup.enter)="onSearch()"
+                  placeholder="Search level 3 description..."
+                  class="filter-input"
+                />
+              </div>
+            </div>
+
+            <!-- Status Filter -->
+            <div class="filter-field">
+              <label class="filter-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 6v6l4 2"/>
+                </svg>
+                Status
+              </label>
+              <select [(ngModel)]="selectedIsActive" class="filter-select-enhanced" (ngModelChange)="onSearch()">
+                <option [ngValue]="null">All Status</option>
+                <option [ngValue]="true">Active Only</option>
+                <option [ngValue]="false">Inactive Only</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="filters-actions">
+          <button class="btn-search-primary" (click)="onSearch()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
+            Search
+          </button>
+
+          <button class="btn-clear" (click)="clearFilters()" *ngIf="hasActiveFilters()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+            Clear Filters
+          </button>
+
+          <div class="active-filters-count" *ngIf="hasActiveFilters()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 6v6l4 2"/>
+            </svg>
+            Filters Active
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="loading" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading cost codes master...</p>
+      </div>
+
+      <!-- Error -->
+      <div *ngIf="error && !loading" class="error-state">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <h3>{{ error }}</h3>
+        <button class="btn-primary" (click)="loadCostCodes()">Retry</button>
+      </div>
+
+      <!-- Cost Codes Master Table -->
+      <div *ngIf="!loading && !error" class="table-container">
+        <table class="cost-table compact-table">
+          <thead>
+            <tr>
+              <th>Cost<br>Code</th>
+              <th>Cost Code<br>Level 1</th>
+              <th>Level 1<br>Description</th>
+              <th>Cost Code<br>Level 2</th>
+              <th>Level 2<br>Description</th>
+              <th>Cost Code<br>Level 3</th>
+              <th>Level 3 Description<br>– as per CSI</th>
+              <th>Level 3 Description<br>– CSI (abbrev)</th>
+              <th>Level 3 Description<br>– AMANA</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let code of costCodes">
+              <td><span class="code-badge">{{ code.code }}</span></td>
+              <td>{{ code.costCodeLevel1 || '-' }}</td>
+              <td>{{ code.level1Description || '-' }}</td>
+              <td>{{ code.costCodeLevel2 || '-' }}</td>
+              <td>{{ code.level2Description || '-' }}</td>
+              <td>{{ code.costCodeLevel3 || '-' }}</td>
+              <td>{{ code.description }}</td>
+              <td>{{ code.level3DescriptionAbbrev || '-' }}</td>
+              <td>{{ code.level3DescriptionAmana || '-' }}</td>
+              <td>
+                <span class="status-badge" [class.active]="code.isActive" [class.inactive]="!code.isActive">
+                  {{ code.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+            </tr>
+            <tr *ngIf="costCodes.length === 0">
+              <td colspan="10" class="no-data">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 7h-4M4 7h4m0 0V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-6 0h6m-6 0v10m6-10v10"/>
+                </svg>
+                <p>No cost codes found</p>
+                <small>Data will be automatically imported on server startup</small>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- HR Costs Tab -->
+    <div *ngIf="activeTab === 'hr'" class="tab-content">
+      <!-- Enhanced HRC Filters Section -->
+      <div class="enhanced-filters-card">
+        <div class="filters-header">
+          <div class="header-content">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+            </svg>
+            <h3>Search & Filter HRC Codes</h3>
+          </div>
+          <button class="btn-add-cost-header" (click)="openCreateHRCostModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="16"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+            Add HRC Cost
+          </button>
+        </div>
+
+        <div class="filters-grid hrc-filters-compact">
+          <!-- All Filters in One Row -->
+          <div class="filter-group single-row-group">
+            <div class="filter-field compact-filter">
+              <label class="filter-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3 3a1.5 1.5 0 0 0 2.12 0 1.5 1.5 0 0 0 0-2.12l-3-3A5 5 0 1 0 10 13zm0-8a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/>
+                </svg>
+                HRC Code
+              </label>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  [(ngModel)]="hrSearchCode"
+                  (keyup.enter)="onHRSearch()"
+                  placeholder="e.g., HR001"
+                  class="filter-input"
+                />
+              </div>
+            </div>
+
+            <div class="filter-field compact-filter">
+              <label class="filter-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                Resource Name
+              </label>
+              <div class="input-wrapper">
+                <input
+                  type="text"
+                  [(ngModel)]="hrSearchName"
+                  (keyup.enter)="onHRSearch()"
+                  placeholder="Search by name..."
+                  class="filter-input"
+                />
+              </div>
+            </div>
+
+            <div class="filter-field compact-filter">
+              <label class="filter-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="3" y1="9" x2="21" y2="9"/>
+                  <line x1="9" y1="21" x2="9" y2="9"/>
+                </svg>
+                Units
+              </label>
+              <select [(ngModel)]="hrSearchUnits" class="filter-select-enhanced" (ngModelChange)="onHRSearch()" [disabled]="loadingHRUnitsOptions">
+                <option value="">{{ loadingHRUnitsOptions ? 'Loading...' : 'All Units' }}</option>
+                <option *ngFor="let unit of hrUnitsOptions" [value]="unit">{{ unit }}</option>
+              </select>
+            </div>
+
+            <div class="filter-field compact-filter">
+              <label class="filter-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 7h-9M14 17H5M17 12H3"/>
+                </svg>
+                Cost Type
+              </label>
+              <select [(ngModel)]="selectedHRCostType" class="filter-select-enhanced" (ngModelChange)="onHRSearch()" [disabled]="loadingHRCostTypes">
+                <option [ngValue]="null">{{ loadingHRCostTypes ? 'Loading...' : 'All Types' }}</option>
+                <option *ngFor="let type of hrCostTypes" [value]="type">{{ type }}</option>
+              </select>
+            </div>
+
+            <div class="filter-field compact-filter">
+              <label class="filter-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <path d="M12 6v6l4 2"/>
+                </svg>
+                Status
+              </label>
+              <select [(ngModel)]="selectedHRIsActive" class="filter-select-enhanced" (ngModelChange)="onHRSearch()">
+                <option [ngValue]="null">All Status</option>
+                <option [ngValue]="true">Active Only</option>
+                <option [ngValue]="false">Inactive Only</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="filters-actions">
+          <button class="btn-search-primary" (click)="onHRSearch()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="m21 21-4.35-4.35"/>
+            </svg>
+            Search
+          </button>
+
+          <button class="btn-clear" (click)="clearHRFilters()" *ngIf="hasActiveHRFilters()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+            </svg>
+            Clear Filters
+          </button>
+
+          <div class="active-filters-count" *ngIf="hasActiveHRFilters()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 6v6l4 2"/>
+            </svg>
+            Filters Active
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="hrLoading" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading HRC codes...</p>
+      </div>
+
+      <!-- Error -->
+      <div *ngIf="hrError && !hrLoading" class="error-state">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <h3>{{ hrError }}</h3>
+        <button class="btn-primary" (click)="loadHRCosts()">Retry</button>
+      </div>
+
+      <!-- HRC Code Table -->
+      <div *ngIf="!hrLoading && !hrError" class="table-container">
+        <table class="cost-table hr-table">
+          <thead>
+            <tr>
+              <th>Code</th>
+              <th>Name</th>
+              <th>Units</th>
+              <th>Type</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let hr of hrCosts">
+              <td>
+                <span class="code-badge" *ngIf="hr.code">{{ hr.code }}</span>
+                <span class="text-muted" *ngIf="!hr.code">-</span>
+              </td>
+              <td>
+                <div class="resource-info">
+                  <strong>{{ hr.name }}</strong>
+                </div>
+              </td>
+              <td>{{ hr.units || '-' }}</td>
+              <td>
+                <span class="trade-badge" *ngIf="hr.costType">{{ hr.costType }}</span>
+                <span class="text-muted" *ngIf="!hr.costType">-</span>
+              </td>
+              <td>
+                <span class="status-badge" [class.active]="hr.isActive" [class.inactive]="!hr.isActive">
+                  {{ hr.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+            </tr>
+            <tr *ngIf="hrCosts.length === 0">
+              <td colspan="5" class="no-data">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                </svg>
+                <p>No HRC codes found</p>
+                <small>Data will be automatically imported on server startup</small>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Pagination (works for all tabs) -->
+    <div *ngIf="(activeTab === 'materials' && !loading && costCodes.length > 0) || 
+                (activeTab === 'hr' && !hrLoading && hrCosts.length > 0) ||
+                (activeTab === 'projectCost' && selectedProject && !projectCostsLoading && projectCosts.length > 0)" 
+         class="pagination">
+      <button class="btn-pagination" (click)="previousPage()" [disabled]="currentPage === 1">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Previous
+      </button>
+      <span class="page-info">Page {{ currentPage }}</span>
+      <button class="btn-pagination" (click)="nextPage()" 
+              [disabled]="(activeTab === 'materials' && costCodes.length < pageSize) || 
+                          (activeTab === 'hr' && hrCosts.length < pageSize) ||
+                          (activeTab === 'projectCost' && projectCosts.length < pageSize)">
+        Next
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Project Cost Modal -->
+<div class="modal-overlay" *ngIf="showCreateCostModal" (click)="closeCreateCostModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Add Project Cost</h2>
+      <button class="close-button" (click)="closeCreateCostModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <form (ngSubmit)="createProjectCost()">
+        <!-- Box Selection -->
+        <div class="form-group">
+          <label for="boxSelect">Select Box <span class="required">*</span></label>
+          <select 
+            id="boxSelect" 
+            [(ngModel)]="newCost.boxId" 
+            name="boxId"
+            class="form-control"
+            required>
+            <option value="">Select a box...</option>
+            <option *ngFor="let box of projectBoxes" [value]="box.boxId">
+              {{ box.boxTag }} - {{ box.boxName || 'No Name' }}
+            </option>
+          </select>
+          <div *ngIf="loadingBoxes" class="loading-text">
+            <div class="small-spinner"></div>
+            Loading boxes...
+          </div>
+        </div>
+
+        <!-- Cost Type -->
+        <div class="form-group">
+          <label for="costType">Cost Type <span class="required">*</span></label>
+          <select 
+            id="costType" 
+            [(ngModel)]="newCost.costType" 
+            name="costType"
+            (ngModelChange)="onCostTypeChange()"
+            class="form-control"
+            required>
+            <option value="">Select cost type...</option>
+            <option *ngFor="let costType of costTypes" [value]="costType">
+              {{ costType }}
+            </option>
+          </select>
+          <div *ngIf="loadingCostTypes" class="loading-text">
+            <div class="small-spinner"></div>
+            Loading cost types...
+          </div>
+        </div>
+
+        <!-- HRC Cost Code -->
+        <div class="form-group" *ngIf="newCost.costType">
+          <label for="hrCostCode">Cost Code <span class="required">*</span></label>
+          <select 
+            id="hrCostCode" 
+            [(ngModel)]="newCost.hrCostRecordId" 
+            name="hrCostRecordId"
+            class="form-control"
+            required>
+            <option value="">Select cost code...</option>
+            <option *ngFor="let hrCost of filteredHRCosts" [value]="hrCost.hrCostRecordId">
+              {{ hrCost.code || 'N/A' }}
+            </option>
+          </select>
+          <div *ngIf="loadingFilteredHRCosts" class="loading-text">
+            <div class="small-spinner"></div>
+            Loading cost codes...
+          </div>
+          <div *ngIf="!loadingFilteredHRCosts && filteredHRCosts.length === 0 && newCost.costType" class="info-text">
+            No cost codes found for this cost type.
+          </div>
+        </div>
+
+        <!-- Cost Value -->
+        <div class="form-group">
+          <label for="costValue">Cost Amount (SAR) <span class="required">*</span></label>
+          <input 
+            type="number" 
+            id="costValue" 
+            [(ngModel)]="newCost.cost" 
+            name="cost"
+            class="form-control"
+            placeholder="0.00"
+            step="0.01"
+            min="0"
+            required
+          />
+        </div>
+
+        <!-- Error Message -->
+        <div *ngIf="createCostError" class="error-message">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          {{ createCostError }}
+        </div>
+
+        <!-- Success Message -->
+        <div *ngIf="createCostSuccess" class="success-message">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Cost added successfully!
+        </div>
+
+        <!-- Modal Actions -->
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeCreateCostModal()">
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            class="btn-primary" 
+            [disabled]="creatingCost || !newCost.boxId || !newCost.costType || !newCost.hrCostRecordId || !newCost.cost">
+            <span *ngIf="!creatingCost">Add Cost</span>
+            <span *ngIf="creatingCost" class="btn-loading">
+              <div class="small-spinner"></div>
+              Adding...
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Add Cost Code Modal -->
+<div class="modal-overlay" *ngIf="showCreateCostCodeModal" (click)="closeCreateCostCodeModal()">
+  <div class="modal-container cost-code-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Add New Cost Code</h2>
+      <button class="close-button" (click)="closeCreateCostCodeModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <form (ngSubmit)="createCostCode()">
+        <div class="form-grid">
+          <!-- Cost Code -->
+          <div class="form-group full-width">
+            <label for="costCode">Cost Code <span class="required">*</span></label>
+            <input 
+              type="text" 
+              id="costCode" 
+              [(ngModel)]="newCostCode.code" 
+              name="code"
+              class="form-control"
+              placeholder="Enter cost code"
+              required
+            />
+          </div>
+
+          <!-- Cost Code Level 1 -->
+          <div class="form-group">
+            <label for="costCodeLevel1">Cost Code Level 1</label>
+            <select 
+              id="costCodeLevel1" 
+              [(ngModel)]="newCostCode.costCodeLevel1" 
+              name="costCodeLevel1"
+              class="form-control"
+              [disabled]="loadingModalCostLevel1Options">
+              <option [ngValue]="null">{{ loadingModalCostLevel1Options ? 'Loading...' : 'Select level 1 code' }}</option>
+              <option *ngFor="let level of modalCostLevel1Options" [ngValue]="level">{{ level }}</option>
+            </select>
+          </div>
+
+          <!-- Level 1 Description -->
+          <div class="form-group">
+            <label for="level1Description">Level 1 Description</label>
+            <select 
+              id="level1Description" 
+              [(ngModel)]="newCostCode.level1Description" 
+              name="level1Description"
+              class="form-control"
+              [disabled]="loadingModalLevel1DescOptions">
+              <option [ngValue]="null">{{ loadingModalLevel1DescOptions ? 'Loading...' : 'Select level 1 description' }}</option>
+              <option *ngFor="let desc of modalLevel1DescriptionOptions" [ngValue]="desc">{{ desc }}</option>
+            </select>
+          </div>
+
+          <!-- Cost Code Level 2 -->
+          <div class="form-group">
+            <label for="costCodeLevel2">Cost Code Level 2</label>
+            <select 
+              id="costCodeLevel2" 
+              [(ngModel)]="newCostCode.costCodeLevel2" 
+              name="costCodeLevel2"
+              class="form-control"
+              [disabled]="loadingModalCostLevel2Options">
+              <option [ngValue]="null">{{ loadingModalCostLevel2Options ? 'Loading...' : 'Select level 2 code' }}</option>
+              <option *ngFor="let level of modalCostLevel2Options" [ngValue]="level">{{ level }}</option>
+            </select>
+          </div>
+
+          <!-- Level 2 Description -->
+          <div class="form-group">
+            <label for="level2Description">Level 2 Description</label>
+            <select 
+              id="level2Description" 
+              [(ngModel)]="newCostCode.level2Description" 
+              name="level2Description"
+              class="form-control"
+              [disabled]="loadingModalLevel2DescOptions">
+              <option [ngValue]="null">{{ loadingModalLevel2DescOptions ? 'Loading...' : 'Select level 2 description' }}</option>
+              <option *ngFor="let desc of modalLevel2DescriptionOptions" [ngValue]="desc">{{ desc }}</option>
+            </select>
+          </div>
+
+          <!-- Cost Code Level 3 -->
+          <div class="form-group">
+            <label for="costCodeLevel3">Cost Code Level 3</label>
+            <input 
+              type="text" 
+              id="costCodeLevel3" 
+              [(ngModel)]="newCostCode.costCodeLevel3" 
+              name="costCodeLevel3"
+              class="form-control"
+              placeholder="Enter level 3 code"
+            />
+          </div>
+
+          <!-- Level 3 Description – as per CSI -->
+          <div class="form-group full-width">
+            <label for="description">Level 3 Description – as per CSI <span class="required">*</span></label>
+            <input 
+              type="text" 
+              id="description" 
+              [(ngModel)]="newCostCode.description" 
+              name="description"
+              class="form-control"
+              placeholder="Enter CSI description"
+              required
+            />
+          </div>
+
+          <!-- Level 3 Description Abbreviation -->
+          <div class="form-group">
+            <label for="level3DescriptionAbbrev">Level 3 Description – Abbreviation (< 50 chars)</label>
+            <input 
+              type="text" 
+              id="level3DescriptionAbbrev" 
+              [(ngModel)]="newCostCode.level3DescriptionAbbrev" 
+              name="level3DescriptionAbbrev"
+              class="form-control"
+              placeholder="Enter abbreviated description"
+              maxlength="50"
+            />
+          </div>
+
+          <!-- Level 3 Description AMANA -->
+          <div class="form-group">
+            <label for="level3DescriptionAmana">Level 3 Description – AMANA</label>
+            <input 
+              type="text" 
+              id="level3DescriptionAmana" 
+              [(ngModel)]="newCostCode.level3DescriptionAmana" 
+              name="level3DescriptionAmana"
+              class="form-control"
+              placeholder="Enter AMANA description"
+            />
+          </div>
+
+          <!-- Category -->
+          <div class="form-group">
+            <label for="category">Category</label>
+            <input 
+              type="text" 
+              id="category" 
+              [(ngModel)]="newCostCode.category" 
+              name="category"
+              class="form-control"
+              placeholder="Enter category"
+            />
+          </div>
+
+          <!-- Unit of Measure -->
+          <div class="form-group">
+            <label for="unitOfMeasure">Unit of Measure</label>
+            <input 
+              type="text" 
+              id="unitOfMeasure" 
+              [(ngModel)]="newCostCode.unitOfMeasure" 
+              name="unitOfMeasure"
+              class="form-control"
+              placeholder="e.g., m², kg, units"
+            />
+          </div>
+
+          <!-- Unit Rate -->
+          <div class="form-group">
+            <label for="unitRate">Unit Rate</label>
+            <input 
+              type="number" 
+              id="unitRate" 
+              [(ngModel)]="newCostCode.unitRate" 
+              name="unitRate"
+              class="form-control"
+              placeholder="0.00"
+              step="0.01"
+              min="0"
+            />
+          </div>
+
+          <!-- Currency -->
+          <div class="form-group">
+            <label for="currency">Currency</label>
+            <select 
+              id="currency" 
+              [(ngModel)]="newCostCode.currency" 
+              name="currency"
+              class="form-control">
+              <option value="SAR">SAR</option>
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="AED">AED</option>
+            </select>
+          </div>
+
+          <!-- Active Status -->
+          <div class="form-group">
+            <label for="isActive">Status</label>
+            <select 
+              id="isActive" 
+              [(ngModel)]="newCostCode.isActive" 
+              name="isActive"
+              class="form-control">
+              <option [ngValue]="true">Active</option>
+              <option [ngValue]="false">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Error Message -->
+        <div *ngIf="createCostCodeError" class="error-message">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          {{ createCostCodeError }}
+        </div>
+
+        <!-- Success Message -->
+        <div *ngIf="createCostCodeSuccess" class="success-message">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          Cost code added successfully!
+        </div>
+
+        <!-- Modal Actions -->
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeCreateCostCodeModal()">
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            class="btn-primary" 
+            [disabled]="creatingCostCode || !newCostCode.code || !newCostCode.description">
+            <span *ngIf="!creatingCostCode">Add Cost Code</span>
+            <span *ngIf="creatingCostCode" class="btn-loading">
+              <div class="small-spinner"></div>
+              Adding...
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Add HRC Cost Modal -->
+<div class="modal-overlay" *ngIf="showCreateHRCostModal" (click)="closeCreateHRCostModal()">
+  <div class="modal-container hrc-cost-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87m-4-12a4 4 0 0 1 0 7.75"/>
+        </svg>
+        Add New HRC Cost
+      </h2>
+      <button class="close-button" (click)="closeCreateHRCostModal()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <form (ngSubmit)="createHRCost()">
+        <div class="form-grid">
+          <!-- Code -->
+          <div class="form-group">
+            <label for="hrCode">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+              </svg>
+              Code
+            </label>
+            <input 
+              type="text" 
+              id="hrCode" 
+              [(ngModel)]="newHRCost.code" 
+              name="code"
+              class="form-control"
+              placeholder="Enter HR code"
+            />
+          </div>
+
+          <!-- Name -->
+          <div class="form-group">
+            <label for="hrName">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+              </svg>
+              Name <span class="required">*</span>
+            </label>
+            <input 
+              type="text" 
+              id="hrName" 
+              [(ngModel)]="newHRCost.name" 
+              name="name"
+              class="form-control"
+              placeholder="Enter name"
+              required
+            />
+          </div>
+
+          <!-- Units -->
+          <div class="form-group">
+            <label for="hrUnits">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+              </svg>
+              Units
+            </label>
+            <select 
+              id="hrUnits" 
+              [(ngModel)]="newHRCost.units" 
+              name="units"
+              class="form-control">
+              <option value="">Select units</option>
+              <option value="Ls">Ls</option>
+              <option value="Hr">Hr</option>
+              <option value="Day">Day</option>
+              <option value="Month">Month</option>
+            </select>
+          </div>
+
+          <!-- Type -->
+          <div class="form-group">
+            <label for="hrType">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 7h16M4 12h16M4 17h10"/>
+              </svg>
+              Type
+            </label>
+            <select 
+              id="hrType" 
+              [(ngModel)]="newHRCost.costType" 
+              name="costType"
+              class="form-control"
+              [disabled]="loadingHRCostTypes">
+              <option [ngValue]="null">{{ loadingHRCostTypes ? 'Loading...' : 'Select type' }}</option>
+              <option *ngFor="let type of hrCostTypes" [ngValue]="type">{{ type }}</option>
+            </select>
+          </div>
+
+          <!-- Active Status -->
+          <div class="form-group full-width">
+            <label for="hrIsActive">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="9 12 12 15 16 10"/>
+              </svg>
+              Status
+            </label>
+            <select 
+              id="hrIsActive" 
+              [(ngModel)]="newHRCost.isActive" 
+              name="isActive"
+              class="form-control">
+              <option [ngValue]="true">Active</option>
+              <option [ngValue]="false">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Error Message -->
+        <div *ngIf="createHRCostError" class="error-message">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          {{ createHRCostError }}
+        </div>
+
+        <!-- Success Message -->
+        <div *ngIf="createHRCostSuccess" class="success-message">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+          HRC cost added successfully!
+        </div>
+
+        <!-- Modal Actions -->
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="closeCreateHRCostModal()">
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            class="btn-primary" 
+            [disabled]="creatingHRCost || !newHRCost.name">
+            <span *ngIf="!creatingHRCost">Add HRC Cost</span>
+            <span *ngIf="creatingHRCost" class="btn-loading">
+              <div class="small-spinner"></div>
+              Adding...
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -71,7 +71,7 @@ export class CreateWIRCheckpointComponent implements OnInit {
             // Pre-fill form with suggested values
             this.checkpointForm.patchValue({
               wirName: `${this.wirRecord.wirCode} - ${this.wirRecord.activityName}`,
-              wirDescription: `WIR checkpoint for ${this.wirRecord.activityName}`
+              wirDescription: `Stage checkpoint for ${this.wirRecord.activityName}`
             });
           }
         } else {

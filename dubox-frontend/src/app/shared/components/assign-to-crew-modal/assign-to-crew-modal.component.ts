@@ -175,7 +175,8 @@ export class AssignToCrewModalComponent implements OnInit, OnChanges, OnDestroy 
     this.loadingMembers = true;
     this.teamService.getTeamMembers(teamId).subscribe({
       next: (response) => {
-        this.availableMembers = response.members || [];
+        // Filter to only include members that have a userId
+        this.availableMembers = (response.members || []).filter(member => member.userId && member.userId.trim() !== '');
         this.loadingMembers = false;
         if (onComplete) {
           onComplete(this.availableMembers);

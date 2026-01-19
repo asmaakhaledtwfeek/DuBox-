@@ -68,6 +68,8 @@ namespace Dubox.Application.Features.QualityIssues.Commands
             var oldMemberName = issue.AssignedToMember != null 
                 ? $"{issue.AssignedToMember.EmployeeName}".Trim() 
                 : "None";
+            var oldCCUserId = issue.CCUserId?.ToString() ?? "None";
+            var oldCCUserName = issue.CCUser?.FullName ?? "None";
 
             var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId)
                 ? parsedUserId
@@ -76,6 +78,10 @@ namespace Dubox.Application.Features.QualityIssues.Commands
             // Update assignment
             issue.AssignedToTeamId = request.TeamId;
             issue.AssignedToMemberId = request.TeamMemberId;
+            if (request.CCUserId.HasValue)
+            {
+                issue.CCUserId = request.CCUserId;
+            }
             issue.UpdatedBy = currentUserId;
 
             _unitOfWork.Repository<QualityIssue>().Update(issue);
@@ -83,18 +89,26 @@ namespace Dubox.Application.Features.QualityIssues.Commands
             // Create audit log
             var teamName = team?.TeamName ?? "None";
             var memberName = teamMember != null ? teamMember.EmployeeName ?? "Unknown" : "None";
+            
+            // Get CC User name if provided
+            TeamMember? ccUser = null;
+            if (request.CCUserId.HasValue && request.CCUserId.Value != Guid.Empty)
+            {
+                ccUser = await _unitOfWork.Repository<TeamMember>().GetByIdAsync(request.CCUserId.Value);
+            }
+            var ccUserName = ccUser?.EmployeeName ?? "None";
 
             var auditLog = new AuditLog
             {
                 TableName = nameof(QualityIssue),
                 RecordId = issue.IssueId,
                 Action = "UPDATE",
-                OldValues = $"TeamId: {oldTeamId}, TeamName: {oldTeamName}, MemberId: {oldMemberId}, MemberName: {oldMemberName}",
-                NewValues = $"TeamId: {request.TeamId?.ToString() ?? "None"}, TeamName: {teamName}, MemberId: {request.TeamMemberId?.ToString() ?? "None"}, MemberName: {memberName}",
+                OldValues = $"TeamId: {oldTeamId}, TeamName: {oldTeamName}, MemberId: {oldMemberId}, MemberName: {oldMemberName}, CCUserId: {oldCCUserId}, CCUserName: {oldCCUserName}",
+                NewValues = $"TeamId: {request.TeamId?.ToString() ?? "None"}, TeamName: {teamName}, MemberId: {request.TeamMemberId?.ToString() ?? "None"}, MemberName: {memberName}, CCUserId: {request.CCUserId?.ToString() ?? "None"}, CCUserName: {ccUserName}",
                 ChangedBy = currentUserId,
                 ChangedDate = DateTime.UtcNow,
                 Description = request.TeamId.HasValue && request.TeamId.Value != Guid.Empty
-                    ? $"Quality issue assigned to Team '{teamName}'" + (teamMember != null ? $" and team member '{memberName}'" : "") + $". Previous team was '{oldTeamName}'."
+                    ? $"Quality issue assigned to Team '{teamName}'" + (teamMember != null ? $" and team member '{memberName}'" : "") + (ccUser != null ? $", CC to '{ccUserName}'" : "") + $". Previous team was '{oldTeamName}'."
                     : $"Quality issue unassigned from Team '{oldTeamName}'."
             };
 
@@ -108,6 +122,7 @@ namespace Dubox.Application.Features.QualityIssues.Commands
 
             var dto = issue.Adapt<QualityIssueDetailsDto>();
             dto.AssignedToUserName = issue.AssignedToMember?.EmployeeName;
+            dto.CCUserName = issue.CCUser?.FullName;
             return Result.Success(dto);
         }
     }

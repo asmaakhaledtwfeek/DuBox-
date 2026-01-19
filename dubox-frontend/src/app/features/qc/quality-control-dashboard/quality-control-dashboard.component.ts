@@ -105,6 +105,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   qualityIssuesFilterForm: FormGroup;
   checkpoints: EnrichedCheckpoint[] = [];
   qualityIssues: AggregatedQualityIssue[] = [];
+  allQualityIssues: AggregatedQualityIssue[] = []; // Unfiltered list for extracting unique values
   checkpointsLoading = false;
   checkpointsError = '';
   qualityIssuesLoading = false;
@@ -144,6 +145,8 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   statusUpdateLoading = false;
   statusUpdateError = '';
   qualityIssueStatuses: QualityIssueStatus[] = ['Open', 'InProgress', 'Resolved', 'Closed'];
+  uniqueProjects: Array<{ id: string; code: string; name: string }> = [];
+  uniqueAssignedUsers: Array<{ id: string; name: string; teamName?: string }> = [];
   
   // Multiple images state
   selectedImages: Array<{
@@ -197,12 +200,13 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     });
 
     this.qualityIssuesFilterForm = this.fb.group({
-      wirNumber: [''],
+      issueNumber: [''],
       boxTag: [''],
       projectCode: [''],
       status: [''],
       issueType: [''],
-      severity: ['']
+      severity: [''],
+      assignedUser: ['']
     });
 
     // Apply filters when form values change - trigger API call with backend pagination
@@ -409,6 +413,15 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
       day: '2-digit',
       year: 'numeric'
     });
+  }
+
+  /**
+   * Transform WIR number to Stage number for display purposes only
+   * E.g., "WIR-1" -> "Stage-1", "WIR-2" -> "Stage-2"
+   */
+  getDisplayWirNumber(wirNumber: string | undefined | null): string {
+    if (!wirNumber) return '—';
+    return wirNumber.replace(/WIR-/gi, 'Stage-');
   }
 
   canNavigateToAddChecklist(checkpoint: EnrichedCheckpoint | null): boolean {
@@ -851,11 +864,12 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   private updateQualityIssuesSummaryFromBackend(response: any): void {
     // Check if any filters are active
     const hasActiveFilters = this.qualityIssuesFilterForm.value.status || 
-                             this.qualityIssuesFilterForm.value.wirNumber || 
+                             this.qualityIssuesFilterForm.value.issueNumber || 
                              this.qualityIssuesFilterForm.value.boxTag || 
                              this.qualityIssuesFilterForm.value.projectCode ||
                              this.qualityIssuesFilterForm.value.issueType ||
-                             this.qualityIssuesFilterForm.value.severity;
+                             this.qualityIssuesFilterForm.value.severity ||
+                             this.qualityIssuesFilterForm.value.assignedUser;
     
     // Only update summary if no filters are active (initial load or after reset)
     // This ensures counts remain unchanged when filtering
@@ -1009,14 +1023,20 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
       
       console.log('📋 Raw quality issues from API:', issues);
       
-      this.qualityIssues = issues.map((issue: any) => {
+      // Store the full unfiltered list
+      this.allQualityIssues = issues.map((issue: any) => {
         const mapped = {
           issueId: issue.issueId || issue.IssueId || issue.qualityIssueId || issue.QualityIssueId,
+          issueNumber: issue.issueNumber || undefined,
           issueType: issue.issueType,
           severity: issue.severity,
           issueDescription: issue.issueDescription,
           assignedTo: issue.assignedTo,
           assignedTeamName: issue.assignedTeamName || issue.assignedTeam || undefined,
+          assignedToUserId: issue.assignedToUserId || undefined,
+          assignedToUserName: issue.assignedToUserName || undefined,
+          ccUserId: issue.ccUserId || undefined,
+          ccUserName: issue.ccUserName || undefined,
           dueDate: issue.dueDate,
           photoPath: issue.photoPath,
           reportedBy: issue.reportedBy,
@@ -1032,10 +1052,13 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
           projectId: issue.projectId || undefined,
           checkpointStatus: issue.wirStatus as WIRCheckpointStatus | undefined,
           issueStatus: issue.status,
-          assignedToUserId: issue.assignedToUserId || undefined,
-          assignedToUserName: issue.assignedToUserName || undefined,
         };
+        console.log('📋 Mapped issue projectId:', mapped.projectId);
+        console.log('📋 Mapped issue projectCode:', mapped.projectCode);
         console.log('📋 Mapped issue projectName:', mapped.projectName);
+        console.log('📋 Mapped issue issueNumber:', mapped.issueNumber);
+        console.log('📋 Mapped issue ccUserName:', mapped.ccUserName);
+        console.log('📋 Mapped issue assignedToUserName:', mapped.assignedToUserName);
         
         // Pre-fetch box status and project status for this issue
         if (mapped.boxId && !this.boxStatusCache.has(mapped.boxId) && !this.boxStatusLoading.has(mapped.boxId)) {
@@ -1057,25 +1080,76 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     // Update summary cards using backend summary data
     this.updateQualityIssuesSummaryFromBackend(response);
     
+    // Extract unique projects and assigned users for filter dropdowns
+    this.extractUniqueFilterOptions();
+    
     // Apply client-side filters for WIR Number, Box Tag, and Project Code
     // (these are not supported by backend API)
     this.applyClientSideFilters();
   }
   
   /**
-   * Apply client-side filters (WIR Number, Box Tag, Project Code)
+   * Extract unique projects and assigned users from quality issues for filter dropdowns
+   */
+  private extractUniqueFilterOptions(): void {
+    console.log('📋 All quality issues for extraction:', this.allQualityIssues.length);
+    
+    // Extract unique projects from the unfiltered list
+    const projectsMap = new Map<string, { id: string; code: string; name: string }>();
+    this.allQualityIssues.forEach((issue, index) => {
+      console.log(`📋 Issue ${index}:`, {
+        projectId: issue.projectId,
+        projectCode: issue.projectCode,
+        projectName: issue.projectName
+      });
+      
+      if (issue.projectCode) {
+        // Use projectId if available, otherwise use projectCode as fallback
+        const key = issue.projectId || issue.projectCode;
+        projectsMap.set(key, {
+          id: issue.projectId || issue.projectCode, // Use projectId if available, fallback to projectCode
+          code: issue.projectCode,
+          name: issue.projectName || issue.projectCode
+        });
+      }
+    });
+    
+    this.uniqueProjects = Array.from(projectsMap.values()).sort((a, b) => 
+      a.code.localeCompare(b.code)
+    );
+    console.log('📋 Extracted unique projects:', this.uniqueProjects);
+
+    // Extract unique assigned users from the unfiltered list
+    const usersMap = new Map<string, { id: string; name: string; teamName?: string }>();
+    this.allQualityIssues.forEach(issue => {
+      if (issue.assignedToUserId && issue.assignedToUserName) {
+        usersMap.set(issue.assignedToUserId, {
+          id: issue.assignedToUserId,
+          name: issue.assignedToUserName,
+          teamName: issue.assignedTeamName
+        });
+      }
+    });
+    this.uniqueAssignedUsers = Array.from(usersMap.values()).sort((a, b) => 
+      a.name.localeCompare(b.name)
+    );
+    console.log('📋 Extracted unique assigned users:', this.uniqueAssignedUsers);
+  }
+  
+  /**
+   * Apply client-side filters (WIR Number, Box Tag, Project Code, Assigned User)
    * These filters are applied after receiving data from backend
    */
   private applyClientSideFilters(): void {
     const filters = this.qualityIssuesFilterForm.value;
-    let filtered = [...this.qualityIssues];
+    // Always start from the full unfiltered list
+    let filtered = [...this.allQualityIssues];
     
-    // Filter by WIR Number (client-side only)
-    if (filters.wirNumber && filters.wirNumber.trim()) {
+    // Filter by Issue Number (client-side only)
+    if (filters.issueNumber && filters.issueNumber.trim()) {
       filtered = filtered.filter(issue => {
-        const wirMatch = (issue.wirNumber || '').toLowerCase().includes(filters.wirNumber.toLowerCase().trim()) ||
-                        (issue.wirName || '').toLowerCase().includes(filters.wirNumber.toLowerCase().trim());
-        return wirMatch;
+        const issueNumberStr = issue.issueNumber ? issue.issueNumber.toString() : '';
+        return issueNumberStr.toLowerCase().includes(filters.issueNumber.toLowerCase().trim());
       });
     }
 
@@ -1087,16 +1161,27 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
       });
     }
 
-    // Filter by Project Code (client-side only)
+    // Filter by Project ID (client-side only) - exact match since using dropdown
+    // Note: formControlName is still "projectCode" but it stores projectId (or projectCode as fallback)
     if (filters.projectCode && filters.projectCode.trim()) {
+      const selectedValue = filters.projectCode.trim();
       filtered = filtered.filter(issue => {
-        const projectMatch = (issue.projectCode || '').toLowerCase().includes(filters.projectCode.toLowerCase().trim());
-        return projectMatch;
+        // Match by projectId if available, otherwise fall back to projectCode
+        return (issue.projectId && issue.projectId === selectedValue) || 
+               (issue.projectCode && issue.projectCode === selectedValue);
+      });
+    }
+
+    // Filter by Assigned User (client-side only)
+    if (filters.assignedUser && filters.assignedUser.trim()) {
+      filtered = filtered.filter(issue => {
+        return issue.assignedToUserId === filters.assignedUser.trim();
       });
     }
     
     // Update the displayed list (note: pagination counts are from backend)
     this.qualityIssues = filtered;
+    console.log('📋 Filtered quality issues count:', filtered.length);
   }
 
   /**
@@ -1823,11 +1908,16 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   private convertToQualityIssueDetails(issue: AggregatedQualityIssue, boxId?: string): QualityIssueDetails {
     return {
       issueId: issue.issueId || '',
+      issueNumber: issue.issueNumber,
       issueType: issue.issueType,
       severity: issue.severity,
       issueDescription: issue.issueDescription,
       assignedTo: issue.assignedTo,
       assignedTeamName: issue.assignedTeamName || issue.assignedTeam || undefined,
+      assignedToUserId: issue.assignedToUserId,
+      assignedToUserName: issue.assignedToUserName,
+      ccUserId: issue.ccUserId,
+      ccUserName: issue.ccUserName,
       dueDate: issue.dueDate,
       photoPath: issue.photoPath,
       reportedBy: issue.reportedBy,
@@ -1874,7 +1964,8 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     // Define column headers
     const headers = [
       'No.',
-      'WIR Number',
+      'Issue Number',
+      'Stage Number',
       'Box Tag',
       'Box Name',
       'Project Code',
@@ -1882,7 +1973,9 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
       'Issue Type',
       'Severity',
       'Project Name',
-      'Assigned To',
+      'Assigned Team',
+      'Assigned User',
+      'CC User',
       'Reported By',
       'Issue Date',
       'Due Date',
@@ -1894,6 +1987,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     // Set column widths
     worksheet.columns = [
       { width: 5 },   // No.
+      { width: 15 },  // Issue Number
       { width: 15 },  // WIR Number
       { width: 15 },  // Box Tag
       { width: 20 },  // Box Name
@@ -1902,7 +1996,9 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
       { width: 15 },  // Issue Type
       { width: 10 },  // Severity
       { width: 30 },  // Project Name
-      { width: 15 },  // Assigned To
+      { width: 20 },  // Assigned Team
+      { width: 20 },  // Assigned User
+      { width: 15 },  // CC User
       { width: 15 },  // Reported By
       { width: 12 },  // Issue Date
       { width: 12 },  // Due Date
@@ -1942,6 +2038,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     this.qualityIssues.forEach((issue, index) => {
       const row = worksheet.addRow([
         index + 1,
+        issue.issueNumber ? `#${issue.issueNumber}` : '—',
         issue.wirNumber || issue.wirName || '—',
         issue.boxTag || '—',
         issue.boxName || '—',
@@ -1951,6 +2048,8 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
         issue.severity || '—',
         issue.projectName || '—',
         issue.assignedTeamName || issue.assignedTo || '—',
+        issue.assignedToUserName || '—',
+        issue.ccUserName || '—',
         issue.reportedBy || '—',
         formatDateForExcel(issue.issueDate),
         formatDateForExcel(issue.dueDate),

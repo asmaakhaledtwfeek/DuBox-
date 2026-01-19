@@ -80,6 +80,7 @@ export interface BoxSummaryReportQueryParams {
   buildingNumber?: string;
   zone?: string;
   status?: number[];
+  projectStatus?: number[];
   progressMin?: number;
   progressMax?: number;
   search?: string;

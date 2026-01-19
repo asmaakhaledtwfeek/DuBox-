@@ -1,20 +1,21 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, skip } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { FactoryService, Factory, ProjectLocation } from '../../../core/services/factory.service';
 import { BoxService } from '../../../core/services/box.service';
 import { Box, BoxStatus } from '../../../core/models/box.model';
-import { ProjectStatus } from '../../../core/models/project.model';
+import { Project, ProjectStatus } from '../../../core/models/project.model';
+import { ProjectService } from '../../../core/services/project.service';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 
 @Component({
   selector: 'app-factory-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, HeaderComponent, SidebarComponent],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, FormsModule, HeaderComponent, SidebarComponent],
   templateUrl: './factory-details.component.html',
   styleUrls: ['./factory-details.component.scss']
 })
@@ -34,17 +35,31 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
   // Track active status card for visual indication
   activeStatusCard: BoxStatus | 'All' | 'CurrentOccupancy' | null = null;
   
+  // New filter properties
+  projects: Project[] = [];
+  selectedProjectId: string = '';
+  selectedBuilding: string = '';
+  selectedLevel: string = '';
+  selectedZone: string = '';
+  
+  // Available filter options
+  availableBuildings: string[] = [];
+  availableLevels: string[] = [];
+  availableZones: string[] = [];
+  
   private subscriptions: Subscription[] = [];
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private factoryService: FactoryService,
-    private boxService: BoxService
+    private boxService: BoxService,
+    private projectService: ProjectService
   ) {}
 
   ngOnInit(): void {
     this.factoryId = this.route.snapshot.params['id'];
+    this.loadProjects();
     this.loadFactoryDetails();
     this.setupSearch();
   }
@@ -71,11 +86,24 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
     });
   }
 
+  loadProjects(): void {
+    this.projectService.getProjects().subscribe({
+      next: (projects) => {
+        // Only show non-archived projects
+        this.projects = projects.filter(p => p.status !== ProjectStatus.Archived);
+      },
+      error: (err) => {
+        console.error('Error loading projects:', err);
+      }
+    });
+  }
+
   loadBoxes(): void {
     // Request all boxes including dispatched ones for filtering
     this.boxService.getBoxesByFactory(this.factoryId, true).subscribe({
       next: (boxes) => {
         this.boxes = boxes;
+        this.updateFilterOptions();
         this.applyFilters();
         this.loading = false;
       },
@@ -85,6 +113,31 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
         console.error('Error loading boxes:', err);
       }
     });
+  }
+
+  /**
+   * Update available filter options based on boxes in the factory
+   */
+  updateFilterOptions(): void {
+    const buildingsSet = new Set<string>();
+    const levelsSet = new Set<string>();
+    const zonesSet = new Set<string>();
+
+    this.boxes.forEach(box => {
+      if (box.buildingNumber) {
+        buildingsSet.add(box.buildingNumber);
+      }
+      if (box.floor) {
+        levelsSet.add(box.floor);
+      }
+      if (box.zone) {
+        zonesSet.add(box.zone);
+      }
+    });
+
+    this.availableBuildings = Array.from(buildingsSet).sort();
+    this.availableLevels = Array.from(levelsSet).sort();
+    this.availableZones = Array.from(zonesSet).sort();
   }
 
   private setupSearch(): void {
@@ -117,6 +170,26 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
       filtered = filtered.filter(box => box.status !== BoxStatus.Dispatched);
     }
     
+    // Apply project filter
+    if (this.selectedProjectId) {
+      filtered = filtered.filter(box => box.projectId === this.selectedProjectId);
+    }
+
+    // Apply building filter
+    if (this.selectedBuilding) {
+      filtered = filtered.filter(box => box.buildingNumber === this.selectedBuilding);
+    }
+
+    // Apply level filter (using floor field)
+    if (this.selectedLevel) {
+      filtered = filtered.filter(box => box.floor === this.selectedLevel);
+    }
+
+    // Apply zone filter
+    if (this.selectedZone) {
+      filtered = filtered.filter(box => box.zone === this.selectedZone);
+    }
+    
     // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(box => {
@@ -128,6 +201,20 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
     }
     
     this.filteredBoxes = filtered;
+  }
+
+  /**
+   * Clear all filters and reset to default view
+   */
+  clearFilters(): void {
+    this.selectedProjectId = '';
+    this.selectedBuilding = '';
+    this.selectedLevel = '';
+    this.selectedZone = '';
+    this.selectedStatus = 'All';
+    this.activeStatusCard = null;
+    this.searchControl.setValue('');
+    this.applyFilters();
   }
 
   onStatusChange(status: BoxStatus | 'All'): void {

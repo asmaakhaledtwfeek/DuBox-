@@ -1,4 +1,5 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
@@ -62,14 +63,28 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                 : Guid.Empty;
             var user = await _unitOfWork.Repository<User>().GetByIdAsync(currentUserId);
 
+            // Get the project from the box
+            var project = await _unitOfWork.Repository<Project>().GetByIdAsync(box.ProjectId);
+            if (project == null)
+                return Result.Failure<QualityIssueDetailsDto>("Project not found.");
+
+            // Generate the issue number based on the count of issues in the project
+            var issueCountInProject = _unitOfWork.Repository<QualityIssue>()
+                .GetWithSpec( new GetQualityIssuesSpecification()).Data
+                .Count(qi => qi.Box.ProjectId == box.ProjectId);
+            var issueNumber = (issueCountInProject + 1).ToString("D5"); // Format as 5-digit number (00001, 00002, etc.)
+
             var newIssue = request.Adapt<QualityIssue>();
           
+            newIssue.IssueNumber = issueNumber;
             newIssue.CreatedDate = DateTime.UtcNow;
             newIssue.CreatedBy = currentUserId;
             newIssue.WIRId = null; 
             newIssue.Status = QualityIssueStatusEnum.Open;
             newIssue.ReportedBy = user?.FullName?? string.Empty;
-
+            newIssue.AssignedToTeamId = request.AssignedTo;
+            newIssue.AssignedToMemberId = request.AssignedToUserId;
+            newIssue.CCUserId = request.CCUserId;
             await _unitOfWork.Repository<QualityIssue>().AddAsync(newIssue, cancellationToken);
             await _unitOfWork.CompleteAsync(cancellationToken);
 

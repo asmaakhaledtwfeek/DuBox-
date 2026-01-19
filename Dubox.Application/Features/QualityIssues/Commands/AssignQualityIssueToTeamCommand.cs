@@ -7,7 +7,8 @@ namespace Dubox.Application.Features.QualityIssues.Commands
     public record AssignQualityIssueToTeamCommand(
         Guid IssueId,
         Guid? TeamId,
-        Guid? TeamMemberId
+        Guid? TeamMemberId,
+        Guid? CCUserId = null
     ) : IRequest<Result<QualityIssueDetailsDto>>;
 }
 

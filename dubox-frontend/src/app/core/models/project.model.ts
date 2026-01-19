@@ -12,9 +12,13 @@ export interface Project {
   endDate?: Date;
   plannedStartDate?: Date;
   plannedEndDate?: Date;
+  projectedEndDate?: Date;
   actualStartDate?: Date;
   compressionStartDate?: Date;
   duration?: number;
+  projectManagerId?: string;
+  projectManagerName?: string;
+  projectValue?: number;
   status: ProjectStatus;
   totalBoxes: number;
   completedBoxes: number;

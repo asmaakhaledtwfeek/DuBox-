@@ -34,7 +34,7 @@ public class BoxesController : ControllerBase
 
     [HttpGet("factory/{factoryId}")]
     public async Task<IActionResult> GetBoxesByFactory(
-        Guid factoryId, 
+        Guid factoryId,
         [FromQuery] bool includeDispatched = false,
         CancellationToken cancellationToken = default)
     {
@@ -58,6 +58,7 @@ public class BoxesController : ControllerBase
         [FromQuery] string? action = null,
         [FromQuery] DateTime? fromDate = null,
         [FromQuery] DateTime? toDate = null,
+        [FromQuery] Guid? changedBy = null,
         CancellationToken cancellationToken = default)
     {
         var result = await _mediator.Send(new GetBoxLogsQuery(
@@ -67,7 +68,8 @@ public class BoxesController : ControllerBase
             searchTerm,
             action,
             fromDate,
-            toDate
+            toDate,
+            changedBy
         ), cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
@@ -86,6 +88,24 @@ public class BoxesController : ControllerBase
         return result.IsSuccess ? CreatedAtAction(nameof(GetBoxById), new { boxId = result.Data!.BoxId }, result) : BadRequest(result);
     }
 
+    /// <summary>
+
+    [HttpPost("{boxId}/duplicate")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> DuplicateBox(
+        Guid boxId,
+        [FromBody] DuplicateBoxRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new DuplicateBoxCommand(
+            boxId
+        );
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
 
     [HttpPut("{boxId}")]
     public async Task<IActionResult> UpdateBox(Guid boxId, [FromBody] UpdateBoxCommand command, CancellationToken cancellationToken)
@@ -99,6 +119,16 @@ public class BoxesController : ControllerBase
 
     [HttpPatch("{boxId}/status")]
     public async Task<IActionResult> UpdateBoxStatus(Guid boxId, [FromBody] UpdateBoxStatusCommand command, CancellationToken cancellationToken)
+    {
+        if (boxId != command.BoxId)
+            return BadRequest("Box ID mismatch");
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpPatch("{boxId}/delivery-info")]
+    public async Task<IActionResult> UpdateBoxDeliveryInfo(Guid boxId, [FromBody] UpdateBoxDeliveryInfoCommand command, CancellationToken cancellationToken)
     {
         if (boxId != command.BoxId)
             return BadRequest("Box ID mismatch");
@@ -182,10 +212,6 @@ public class BoxesController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-    /// <summary>
-    /// Generate QR code with public URL for a box
-    /// Returns both the QR code image and the public URL
-    /// </summary>
     [HttpGet("{boxId}/qrcode-with-url")]
     public async Task<IActionResult> GetBoxQRCodeWithUrl(Guid boxId, CancellationToken cancellationToken)
     {
@@ -220,7 +246,13 @@ public class BoxesController : ControllerBase
         var result = await _mediator.Send(new GetBoxAttachmentsQuery(boxId), cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
-
-   
 }
+
+/// <summary>
+/// Request model for duplicating a box
+/// </summary>
+public record DuplicateBoxRequest(
+    bool IncludeActivities = true,
+    bool IncludeDrawings = false
+);
 

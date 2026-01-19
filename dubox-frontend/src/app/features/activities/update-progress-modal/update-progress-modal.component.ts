@@ -52,6 +52,12 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
   factoryBoxes: Box[] = [];
   isLoadingFactoryLayout = false;
   showFactoryLayout = false; // Show only when WIR Position is editable
+  
+  // Dropdown options for available positions
+  availableBays: string[] = [];
+  availableRows: string[] = [];
+  selectedBay: string = '';
+  selectedRow: string = '';
 
   constructor(
     private fb: FormBuilder,
@@ -259,6 +265,7 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
             this.factoryBoxes = boxes.filter(b => 
               (b.bay || b.row || b.position)
             );
+            this.updateAvailablePositions();
             this.updateFactoryLayoutVisibility();
             this.isLoadingFactoryLayout = false;
           },
@@ -296,13 +303,14 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
   /**
    * Get simplified factory grid layout for display in modal
    * Similar to factory-details component but optimized for compact display
+   * Shows all rows and bays within min/max range, even if empty
    */
   getFactoryGridLayout(): any {
     if (this.factoryBoxes.length === 0) {
       return { rows: [], columns: [], matrix: [], totalBoxes: 0 };
     }
 
-    // Get unique bays (columns) and rows
+    // Get unique bays (columns) and rows from boxes with positions
     const baysSet = new Set<string>();
     const rowsSet = new Set<string>();
     
@@ -312,14 +320,42 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
     });
 
     // Sort columns (bays) and rows
-    const columns = Array.from(baysSet).sort((a, b) => a.localeCompare(b));
-    const rows = Array.from(rowsSet).sort((a, b) => {
+    const baysList = Array.from(baysSet).sort((a, b) => a.localeCompare(b));
+    const rowsList = Array.from(rowsSet).sort((a, b) => {
       const numA = parseInt(a) || 0;
       const numB = parseInt(b) || 0;
       return numA - numB;
     });
 
-    // Create matrix structure
+    // Find min and max bay (alphabetically)
+    const minBay = baysList[0];
+    const maxBay = baysList[baysList.length - 1];
+
+    // Find min and max row (numerically)
+    const minRow = Math.min(...rowsList.map(r => parseInt(r) || 0));
+    const maxRow = Math.max(...rowsList.map(r => parseInt(r) || 0));
+
+    // Generate all bays from min to max (A-Z range)
+    const allBays: string[] = [];
+    if (minBay && maxBay) {
+      const startCharCode = minBay.charCodeAt(0);
+      const endCharCode = maxBay.charCodeAt(0);
+      for (let i = startCharCode; i <= endCharCode; i++) {
+        allBays.push(String.fromCharCode(i));
+      }
+    }
+
+    // Generate all rows from min to max
+    const allRows: string[] = [];
+    for (let i = minRow; i <= maxRow; i++) {
+      allRows.push(i.toString());
+    }
+
+    // Use complete range
+    const columns = allBays;
+    const rows = allRows;
+
+    // Create matrix structure with ALL combinations
     const matrix: any[][] = [];
     
     rows.forEach(row => {
@@ -359,7 +395,102 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
       const isCurrent = cell.isCurrentBox ? ' (Current Box)' : '';
       return `${cell.box.code}${isCurrent}\nBay: ${cell.bay}, Row: ${cell.row}\nPosition: ${cell.position || '-'}\nStatus: ${status}`;
     }
-    return `Available\nBay: ${cell.bay}, Row: ${cell.row}`;
+    return `Available - Click to select\nBay: ${cell.bay}, Row: ${cell.row}`;
+  }
+
+  /**
+   * Update available bays that have at least one empty position
+   */
+  private updateAvailablePositions(): void {
+    const gridLayout = this.getFactoryGridLayout();
+    const baysWithAvailable = new Set<string>();
+    
+    // Find all bays that have at least one available position
+    gridLayout.matrix.forEach((rowCells: any[]) => {
+      rowCells.forEach((cell: any) => {
+        if (!cell.box) {
+          baysWithAvailable.add(cell.bay);
+        }
+      });
+    });
+    
+    this.availableBays = Array.from(baysWithAvailable).sort((a, b) => a.localeCompare(b));
+  }
+
+  /**
+   * Update available rows when a bay is selected
+   */
+  onBayChange(bay: string): void {
+    this.selectedBay = bay;
+    this.progressForm.patchValue({ wirBay: bay });
+    
+    if (!bay) {
+      this.availableRows = [];
+      this.selectedRow = '';
+      return;
+    }
+    
+    const gridLayout = this.getFactoryGridLayout();
+    const rowsWithAvailable = new Set<string>();
+    
+    // Find all rows in this bay that have available positions
+    gridLayout.matrix.forEach((rowCells: any[]) => {
+      rowCells.forEach((cell: any) => {
+        if (cell.bay === bay && !cell.box) {
+          rowsWithAvailable.add(cell.row);
+        }
+      });
+    });
+    
+    this.availableRows = Array.from(rowsWithAvailable).sort((a, b) => {
+      const numA = parseInt(a) || 0;
+      const numB = parseInt(b) || 0;
+      return numA - numB;
+    });
+  }
+
+  /**
+   * Update selected row and highlight position
+   */
+  onRowChange(row: string): void {
+    this.selectedRow = row;
+    this.progressForm.patchValue({ wirRow: row });
+  }
+
+  /**
+   * Handle cell click - auto-fill WIR position inputs
+   */
+  onCellClick(cell: any): void {
+    // Only allow clicking on available (empty) cells
+    if (cell.box) {
+      return;
+    }
+    
+    // Check if fields are editable
+    const isBayEditable = !this.progressForm.get('wirBay')?.disabled;
+    const isRowEditable = !this.progressForm.get('wirRow')?.disabled;
+    
+    if (!isBayEditable || !isRowEditable) {
+      return;
+    }
+    
+    // Fill the form with selected position
+    this.selectedBay = cell.bay;
+    this.selectedRow = cell.row;
+    this.progressForm.patchValue({
+      wirBay: cell.bay,
+      wirRow: cell.row
+    });
+    
+    // Update available rows for the selected bay
+    this.onBayChange(cell.bay);
+  }
+
+  /**
+   * Check if a cell is selected
+   */
+  isCellSelected(cell: any): boolean {
+    return cell.bay === this.selectedBay && cell.row === this.selectedRow;
   }
 
   /**
@@ -626,7 +757,7 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
             // Previous WIR record doesn't exist yet - LOCK fields
             this.progressForm.get('wirBay')?.disable();
             this.progressForm.get('wirRow')?.disable();
-            this.positionLockedReason = `Position is locked. Previous WIR (${previousWIRActivity.activityMaster?.wirCode || previousWIRActivity.wirCode || 'WIR'}) must be created first.`;
+            this.positionLockedReason = `Position is locked. Previous Stage (${previousWIRActivity.activityMaster?.wirCode || previousWIRActivity.wirCode || 'Stage'}) must be created first.`;
             console.log('🔒 Locking: Previous WIR record not created yet');
             this.updateFactoryLayoutVisibility();
             return;
@@ -783,6 +914,13 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
       wirRow: rowValue,
       wirPosition: positionValue
     }, { emitEvent: false });
+    
+    // Sync with dropdown selections
+    this.selectedBay = bayValue;
+    this.selectedRow = rowValue;
+    if (bayValue) {
+      this.onBayChange(bayValue);
+    }
     
     // Load checkpoint for this WIR if not already loaded
     if (wir.wirCode && !this.nearestWIRCheckpoint) {
@@ -1263,6 +1401,8 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
           setTimeout(() => {
             this.progressUpdated.emit(response);
             this.close();
+            // Refresh page to show updated activity status and progress
+            window.location.reload();
           }, 2000);
         },
         error: (error) => {
@@ -1311,6 +1451,9 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
     this.successMessage = '';
     this.nearestWIRCheckpoint = null; // Clear checkpoint
     this.positionLockedReason = ''; // Clear locked reason
+    this.selectedBay = '';
+    this.selectedRow = '';
+    this.availableRows = [];
     this.closeModal.emit();
   }
 

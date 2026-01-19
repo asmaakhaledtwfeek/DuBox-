@@ -49,7 +49,7 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
         if (isProjectManager)
         {
             var pmOwnProjects = await _context.Projects
-                .Where(p => p.CreatedBy == userId)
+                .Where(p => p.CreatedBy == userId || p.ProjectMangerId==userId)
                 .Select(p => p.ProjectId)
                 .ToListAsync(cancellationToken);
 

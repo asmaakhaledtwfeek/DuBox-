@@ -424,6 +424,14 @@ export class WIRService {
         formData.append('AssignedTo', request.assignedTo);
       }
       
+      if (request.assignedToUserId) {
+        formData.append('AssignedToUserId', request.assignedToUserId);
+      }
+      
+      if (request.ccUserId) {
+        formData.append('CCUserId', request.ccUserId);
+      }
+      
       if (request.dueDate) {
         const dueDateStr = request.dueDate instanceof Date 
           ? request.dueDate.toISOString() 
@@ -551,6 +559,18 @@ export class WIRService {
   }
 
   /**
+   * Get quality issues for a project
+   */
+  getQualityIssuesByProject(projectId: string): Observable<QualityIssueDetails[]> {
+    return this.apiService.get<any>(`qualityissues/project/${projectId}`).pipe(
+      map(response => {
+        const issues = response?.data || response || [];
+        return issues.map((issue: any) => this.transformQualityIssueDetails(issue));
+      })
+    );
+  }
+
+  /**
    * Get a single quality issue by id
    */
   getQualityIssueById(issueId: string): Observable<QualityIssueDetails> {
@@ -575,6 +595,14 @@ export class WIRService {
     
     if (request.assignedTo) {
       formData.append('AssignedTo', request.assignedTo);
+    }
+    
+    if (request.assignedToUserId) {
+      formData.append('AssignedToUserId', request.assignedToUserId);
+    }
+    
+    if (request.ccUserId) {
+      formData.append('CCUserId', request.ccUserId);
     }
     
     if (request.dueDate) {
@@ -791,13 +819,18 @@ export class WIRService {
           console.log(`[WIR Service] Quality Issue ${issue.issueId || issue.IssueId} has ${transformedImages.length} images`);
         }
         
-        const transformed: QualityIssueItem & { issueId?: string; images?: QualityIssueImage[] } = {
+        const transformed: QualityIssueItem = {
           issueId: issue.issueId || issue.IssueId || '',
+          issueNumber: issue.issueNumber || issue.IssueNumber,
           issueType: issue.issueType || issue.IssueType || 'Defect',
           severity: issue.severity || issue.Severity || 'Minor',
           issueDescription: issue.issueDescription || issue.IssueDescription || '',
           assignedTo: issue.assignedTo || issue.AssignedTo,
           assignedTeam: issue.assignedTeam || issue.AssignedTeam, // Team name from backend
+          assignedToUserId: issue.assignedToUserId || issue.AssignedToUserId,
+          assignedToUserName: issue.assignedToUserName || issue.AssignedToUserName || issue.AssignedUserName,
+          ccUserId: issue.ccUserId || issue.CCUserId,
+          ccUserName: issue.ccUserName || issue.CCUserName || issue.CcUserName,
           dueDate: issue.dueDate ? new Date(issue.dueDate) : undefined,
           photoPath: issue.photoPath || issue.PhotoPath,
           reportedBy: issue.reportedBy || issue.ReportedBy,
@@ -826,6 +859,14 @@ export class WIRService {
   }
 
   private transformQualityIssueDetails(issue: any): QualityIssueDetails {
+    // Debug: Log raw backend response for quality issue
+    console.log('🔍 transformQualityIssueDetails - Raw issue data:', issue);
+    console.log('🔍 IssueNumber:', issue.issueNumber, issue.IssueNumber);
+    console.log('🔍 AssignedTeamName:', issue.assignedTeamName, issue.AssignedTeamName);
+    console.log('🔍 AssignedToUserName:', issue.assignedToUserName, issue.AssignedToUserName);
+    console.log('🔍 CCUserId:', issue.ccUserId, issue.CCUserId);
+    console.log('🔍 CCUserName:', issue.ccUserName, issue.CCUserName);
+    
     // Transform images array if present
     const images = issue.images || issue.Images || [];
     const transformedImages = Array.isArray(images) ? images.map((img: any) => ({
@@ -840,8 +881,9 @@ export class WIRService {
       createdDate: img.createdDate ? new Date(img.createdDate) : (img.CreatedDate ? new Date(img.CreatedDate) : new Date())
     })) : [];
 
-    return {
+    const transformed = {
       issueId: issue.issueId || issue.IssueId,
+      issueNumber: issue.issueNumber || issue.IssueNumber,
       issueType: issue.issueType || issue.IssueType,
       severity: issue.severity || issue.Severity,
       issueDescription: issue.issueDescription || issue.IssueDescription,
@@ -850,6 +892,8 @@ export class WIRService {
       assignedTeamName: issue.assignedTeamName || issue.AssignedTeamName,
       assignedToUserId: issue.assignedToUserId || issue.AssignedToUserId,
       assignedToUserName: issue.assignedToUserName || issue.AssignedToUserName,
+      ccUserId: issue.ccUserId || issue.CCUserId,
+      ccUserName: issue.ccUserName || issue.CCUserName,
       dueDate: issue.dueDate ? new Date(issue.dueDate) : undefined,
       photoPath: issue.photoPath || issue.PhotoPath,
       issueDate: issue.issueDate ? new Date(issue.issueDate) : undefined,
@@ -869,7 +913,17 @@ export class WIRService {
       overdueDays: issue.overdueDays ?? issue.OverdueDays,
       images: transformedImages,
       projectName: issue.projectName || issue.ProjectName,
+      projectId: issue.projectId || issue.ProjectId,
+      projectCode: issue.projectCode || issue.ProjectCode,
     };
+    
+    console.log('✅ transformQualityIssueDetails - Transformed issue:', transformed);
+    console.log('✅ Final IssueNumber:', transformed.issueNumber);
+    console.log('✅ Final AssignedTeamName:', transformed.assignedTeamName);
+    console.log('✅ Final AssignedToUserName:', transformed.assignedToUserName);
+    console.log('✅ Final CCUserName:', transformed.ccUserName);
+    
+    return transformed;
   }
 }
 

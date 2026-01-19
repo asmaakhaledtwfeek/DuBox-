@@ -8,6 +8,7 @@ namespace Dubox.Application.Specifications
         public GetProjectByIdSpecification(Guid projectId)
         {
             AddCriteria(p => p.ProjectId == projectId);
+            AddInclude(nameof(Project.ProjectManger)); // Include project manager user details
         }
     }
 }

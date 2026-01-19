@@ -119,7 +119,7 @@ export class DynamicChecklistComponent implements OnInit {
     this.wirService.reviewWIR(this.selectedWIR.wirId, request).subscribe({
       next: (response) => {
         if (response.isSuccess) {
-          alert(`WIR ${this.selectedWIR!.wirNumber} ${status} successfully!`);
+          alert(`Stage ${this.selectedWIR!.wirNumber} ${status} successfully!`);
           this.loadChecklists(); // Reload to get updated status
           this.checklistCompleted.emit();
         } else {

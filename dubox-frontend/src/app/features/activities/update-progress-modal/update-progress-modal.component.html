@@ -11,13 +11,13 @@
     </div>
 
     <div class="modal-body">
-      <!-- WIR Checkpoint Badge (moved to top after removing activity info card) -->
+      <!-- Stage Checkpoint Badge (moved to top after removing activity info card) -->
       <div *ngIf="isWIRCheckpoint" class="wir-badge-standalone">
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M9 11l3 3L22 4"/>
           <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
         </svg>
-        <span>WIR Checkpoint - {{ wirCode }}</span>
+        <span>Stage Checkpoint - {{ wirCode }}</span>
       </div>
 
       <!-- Alert Messages -->
@@ -28,7 +28,7 @@
         {{ successMessage }}
       </div>
 
-      <!-- WIR Warning for Checkpoint Activities -->
+      <!-- Stage Warning for Checkpoint Activities -->
       <div *ngIf="isWIRCheckpoint && progressForm.get('progressPercentage')?.value === 100" class="alert alert-info">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"></circle>
@@ -50,7 +50,7 @@
         </svg>
         <div>
           <strong>Activity Completed</strong>
-          <p>This activity is completed. You can only update the position (Bay/Row) if this is a WIR checkpoint.</p>
+          <p>This activity is completed. You can only update the position (Bay/Row) if this is a Stage checkpoint.</p>
         </div>
       </div>
 
@@ -267,19 +267,19 @@
           ></textarea>
         </div>
 
-        <!-- WIR Position Section (always shown with fields) -->
+        <!-- Stage Position Section (always shown with fields) -->
         <div class="form-group wir-position-section">
           <div class="wir-position-header">
-            <label>WIR Position</label>
+            <label>Stage Position</label>
             <span class="wir-position-note">
               <span *ngIf="nearestWIR" title="All activities up to {{ nearestWIR.wirCode }} share this position">
                 Shared position for {{ nearestWIR.wirCode }}
               </span>
               <span *ngIf="!nearestWIR && hasWIRActivityBelow">
-                Set position for next WIR checkpoint
+                Set position for next Stage checkpoint
               </span>
               <span *ngIf="!nearestWIR && !hasWIRActivityBelow">
-                No WIR checkpoint found
+                No Stage checkpoint found
               </span>
               <span *ngIf="progressForm.get('wirBay')?.disabled || progressForm.get('wirRow')?.disabled" class="locked-indicator" title="Position locked - cannot edit">
                 🔒 Locked
@@ -290,7 +290,7 @@
             </span>
           </div>
           
-          <!-- Locked Reason Message (shown when fields are locked due to WIR status) -->
+          <!-- Locked Reason Message (shown when fields are locked due to Stage status) -->
           <div *ngIf="positionLockedReason" class="alert alert-warning position-locked-alert">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
@@ -299,30 +299,47 @@
             <span>{{ positionLockedReason }}</span>
           </div>
           
+          <!-- Helper Message (shown when fields are editable) -->
+          <div *ngIf="!positionLockedReason && showFactoryLayout" class="alert alert-info position-helper-alert">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <span>Select position using dropdowns OR click on any available position in the grid below</span>
+          </div>
+          
           <!-- Position Fields (always shown) -->
           <div class="wir-position-fields">
             <div class="form-group-inline">
               <label for="wirBay">Bay</label>
-              <input 
-                type="text" 
+              <select 
                 id="wirBay" 
-                formControlName="wirBay"
                 class="form-control"
-                placeholder="Enter bay (e.g., A, B, 1)"
-                maxlength="10"
-                [title]="progressForm.get('wirBay')?.disabled ? 'This field cannot be edited once set' : 'Enter bay identifier'"
-              />
+                [(ngModel)]="selectedBay"
+                [ngModelOptions]="{standalone: true}"
+                (ngModelChange)="onBayChange($event)"
+                [disabled]="progressForm.get('wirBay')?.disabled ?? false"
+                [title]="progressForm.get('wirBay')?.disabled ? 'This field cannot be edited once set' : 'Select bay from available positions'"
+              >
+                <option value="">Select Bay</option>
+                <option *ngFor="let bay of availableBays" [value]="bay">{{ bay }}</option>
+              </select>
             </div>
             <div class="form-group-inline">
               <label for="wirRow">Row</label>
-              <input 
-                type="number" 
+              <select 
                 id="wirRow" 
-                formControlName="wirRow"
                 class="form-control"
-                placeholder="Enter row"
-                [title]="progressForm.get('wirRow')?.disabled ? 'This field cannot be edited once set' : 'Enter row number'"
-              />
+                [(ngModel)]="selectedRow"
+                [ngModelOptions]="{standalone: true}"
+                (ngModelChange)="onRowChange($event)"
+                [disabled]="(progressForm.get('wirRow')?.disabled ?? false) || !selectedBay"
+                [title]="progressForm.get('wirRow')?.disabled ? 'This field cannot be edited once set' : (selectedBay ? 'Select row from available positions in this bay' : 'Select a bay first')"
+              >
+                <option value="">Select Row</option>
+                <option *ngFor="let row of availableRows" [value]="row">{{ row }}</option>
+              </select>
             </div>
             <div class="form-group-inline">
               <label for="wirPosition">Position</label>
@@ -338,7 +355,7 @@
             </div>
           </div>
 
-          <!-- Simplified Factory Layout Grid (shown only when WIR Position is editable) -->
+          <!-- Simplified Factory Layout Grid (shown only when Stage Position is editable) -->
           <div *ngIf="showFactoryLayout && !isLoadingFactoryLayout" class="factory-layout-mini">
             <div class="layout-header">
               <div class="header-content">
@@ -351,6 +368,16 @@
                 <span class="layout-title">Factory Layout</span>
               </div>
               <span class="layout-info">{{ getFactoryGridLayout().totalBoxes }} boxes positioned</span>
+            </div>
+            
+            <div class="scroll-hint" *ngIf="getFactoryGridLayout().columns.length > 8">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+              <span>Scroll horizontally to view all positions</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
             </div>
 
             <div class="mini-grid-container">
@@ -375,9 +402,12 @@
                      [class.occupied]="cell.box"
                      [class.available]="!cell.box"
                      [class.current-box]="cell.isCurrentBox"
+                     [class.selected]="isCellSelected(cell) && !cell.box"
                      [class.in-progress]="cell.box?.status === 'InProgress'"
                      [class.completed]="cell.box?.status === 'Completed'"
-                     [title]="getGridCellTooltip(cell)">
+                     [class.clickable]="!cell.box"
+                     [title]="getGridCellTooltip(cell)"
+                     (click)="onCellClick(cell)">
                   <!-- Occupied cell -->
                   <div *ngIf="cell.box" class="cell-content">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -388,7 +418,18 @@
                   </div>
 
                   <!-- Available cell -->
-                  <div *ngIf="!cell.box" class="cell-empty"></div>
+                  <div *ngIf="!cell.box" class="cell-empty">
+                    <!-- Click indicator for available cells -->
+                    <svg *ngIf="!isCellSelected(cell)" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="click-icon">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12 8 12 12"/>
+                      <line x1="12" y1="16" x2="12.01" y2="16"/>
+                    </svg>
+                    <!-- Selected indicator -->
+                    <svg *ngIf="isCellSelected(cell)" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" class="selected-icon">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                  </div>
 
                   <!-- Position Label -->
                   <span class="cell-coord">{{ cell.column }}{{ cell.row }}</span>

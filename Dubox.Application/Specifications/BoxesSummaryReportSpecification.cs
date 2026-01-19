@@ -21,8 +21,16 @@ public class BoxesSummaryReportSpecification : Specification<Box>
             AddCriteria(b => accessibleProjectIds.Contains(b.ProjectId));
         }
 
-        // Filter out boxes from closed projects
-        AddCriteria(b => b.Project.Status != Domain.Enums.ProjectStatusEnum.Closed);
+        // Filter by project status if specified, otherwise exclude closed projects
+        if (query.ProjectStatus != null && query.ProjectStatus.Any())
+        {
+            AddCriteria(b => query.ProjectStatus.Contains((int)b.Project.Status));
+        }
+        else
+        {
+            // Filter out boxes from closed projects when no project status filter is applied
+            AddCriteria(b => b.Project.Status != Domain.Enums.ProjectStatusEnum.Closed);
+        }
 
         if (query.ProjectId.HasValue && query.ProjectId.Value != Guid.Empty)
             AddCriteria(b => b.ProjectId == query.ProjectId.Value);

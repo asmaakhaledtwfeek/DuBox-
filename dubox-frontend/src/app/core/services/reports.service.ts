@@ -325,6 +325,9 @@ export class ReportsService {
     if (params.status && params.status.length > 0) {
       queryParams.status = params.status;
     }
+    if (params.projectStatus && params.projectStatus.length > 0) {
+      queryParams.projectStatus = params.projectStatus;
+    }
 
     return this.apiService.get<any>(`${this.endpoint}/boxes`, queryParams).pipe(
       map(response => this.transformBoxesSummaryReport(response))

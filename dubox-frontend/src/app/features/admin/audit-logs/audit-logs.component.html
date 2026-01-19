@@ -44,6 +44,16 @@
         </div>
 
         <div class="filter-field">
+          <label for="changedBy">Changed By</label>
+          <select id="changedBy" [(ngModel)]="filterChangedBy" class="filter-input">
+            <option value="">All Users</option>
+            <option *ngFor="let user of availableUsers" [value]="user.userId">
+              {{ user.fullName || user.email }}
+            </option>
+          </select>
+        </div>
+
+        <div class="filter-field">
           <label for="searchTerm">Search</label>
           <input 
             type="text" 

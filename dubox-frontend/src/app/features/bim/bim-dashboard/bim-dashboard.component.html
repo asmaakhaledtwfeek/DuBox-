@@ -1,0 +1,279 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="bim-workspace">
+    
+    <!-- LEFT PANEL: Forms & Lists -->
+    <div class="left-panel">
+      <div class="panel-header">
+        <h2>BIM Module</h2>
+      </div>
+
+      <!-- Disciplines Section -->
+      <div class="section">
+        <h3 class="section-title">Disciplines</h3>
+        <select [(ngModel)]="newModel.discipline" class="form-select">
+          <option value="">Select Discipline</option>
+          <option *ngFor="let disc of disciplines" [value]="disc">{{ disc }}</option>
+        </select>
+      </div>
+
+      <!-- Category Section -->
+      <div class="section">
+        <h3 class="section-title">Category</h3>
+        <select [(ngModel)]="newModel.category" class="form-select">
+          <option value="">Select Category</option>
+          <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+        </select>
+      </div>
+
+      <!-- Model Revit Family -->
+      <div class="section">
+        <h3 class="section-title">Model Revit Family</h3>
+        <input 
+          type="text" 
+          [(ngModel)]="newModel.revitFamily" 
+          placeholder="Enter Revit family"
+          class="form-input"
+        />
+      </div>
+
+      <!-- Types -->
+      <div class="section">
+        <h3 class="section-title">Types</h3>
+        <input 
+          type="text" 
+          [(ngModel)]="newModel.type" 
+          placeholder="Enter type"
+          class="form-input"
+        />
+      </div>
+
+      <!-- Instances -->
+      <div class="section">
+        <h3 class="section-title">Instances</h3>
+        <input 
+          type="text" 
+          [(ngModel)]="newModel.instance" 
+          placeholder="Enter instance"
+          class="form-input"
+        />
+      </div>
+
+      <!-- Model Name (Main Field) -->
+      <div class="section">
+        <h3 class="section-title">Model Name *</h3>
+        <input 
+          type="text" 
+          [(ngModel)]="newModel.modelName" 
+          placeholder="Enter model name"
+          class="form-input"
+        />
+      </div>
+
+      <!-- Action Button -->
+      <button class="btn-primary btn-create" (click)="createModel()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Create BIM Model
+      </button>
+
+      <!-- Models List -->
+      <div class="models-list">
+        <h3 class="section-title">Existing Models</h3>
+        <div class="model-items">
+          <div 
+            *ngFor="let model of getFilteredModels(); let i = index" 
+            class="model-item"
+            [class.active]="i === currentModelIndex"
+            (click)="selectModel(i)"
+          >
+            <span class="model-icon">📦</span>
+            <div class="model-info">
+              <strong>{{ model.modelName }}</strong>
+              <small>{{ model.category }}</small>
+            </div>
+          </div>
+          <div *ngIf="models.length === 0" class="empty-list">
+            No models yet
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MIDDLE PANEL: BIM 5D & 4D -->
+    <div class="middle-panel">
+      
+      <!-- BIM 5D Section -->
+      <div class="bim-section bim-5d">
+        <div class="section-header" (click)="toggleBIM5D()">
+          <h3>BIM 5D</h3>
+          <span class="toggle-icon">{{ showBIM5D ? '▼' : '▶' }}</span>
+        </div>
+        <div class="section-content" *ngIf="showBIM5D">
+          <div class="schedule-label">Quantity</div>
+          
+          <div class="schedule-row bim-5d-row">
+            <label>Qty</label>
+            <input 
+              type="number" 
+              [(ngModel)]="newModel.quantity" 
+              placeholder="0"
+              class="form-input-date"
+            />
+          </div>
+
+          <div class="schedule-row bim-5d-row">
+            <label>Unit</label>
+            <input 
+              type="text" 
+              [(ngModel)]="newModel.unit" 
+              placeholder="Unit"
+              class="form-input-date"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- BIM 4D Section -->
+      <div class="bim-section bim-4d">
+        <div class="section-header" (click)="toggleBIM4D()">
+          <h3>BIM 4D</h3>
+          <span class="toggle-icon">{{ showBIM4D ? '▼' : '▶' }}</span>
+        </div>
+        <div class="section-content" *ngIf="showBIM4D">
+          <div class="schedule-label">Schedule</div>
+          
+          <div class="schedule-row">
+            <label>Planned Start</label>
+            <input 
+              type="date" 
+              [(ngModel)]="newModel.plannedStartDate"
+              class="form-input-date"
+            />
+          </div>
+
+          <div class="schedule-row">
+            <label>Planned Finish</label>
+            <input 
+              type="date" 
+              [(ngModel)]="newModel.plannedFinishDate"
+              class="form-input-date"
+            />
+          </div>
+
+          <div class="schedule-row">
+            <label>Actual Start</label>
+            <input 
+              type="date" 
+              [(ngModel)]="newModel.actualStartDate"
+              class="form-input-date"
+            />
+          </div>
+
+          <div class="schedule-row">
+            <label>Actual Finish</label>
+            <input 
+              type="date" 
+              [(ngModel)]="newModel.actualFinishDate"
+              class="form-input-date"
+            />
+          </div>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <div class="section-full">
+        <label>Description</label>
+        <textarea 
+          [(ngModel)]="newModel.description" 
+          placeholder="Add description..."
+          rows="4"
+          class="form-textarea"
+        ></textarea>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: 3D Model Viewer -->
+    <div class="right-panel">
+      <div class="viewer-container">
+        <div class="viewer-header">
+          <h3>3D Model Viewer</h3>
+          <div class="viewer-controls">
+            <button class="control-btn" title="Home View">🏠</button>
+            <button class="control-btn" title="Rotate">🔄</button>
+            <button class="control-btn" title="Pan">✋</button>
+            <button class="control-btn" title="Zoom">🔍</button>
+          </div>
+        </div>
+
+        <div class="viewer-canvas">
+          <!-- 3D Model iFrame (Default or Selected) -->
+          <iframe 
+            *ngIf="models.length === 0"
+            [src]="defaultModelUrl | safe:'resourceUrl'" 
+            class="model-iframe"
+            frameborder="0" 
+            allow="autoplay; fullscreen; xr-spatial-tracking" 
+            allowfullscreen>
+          </iframe>
+          
+          <!-- Placeholder when models exist but none selected -->
+          <div class="viewer-placeholder" *ngIf="models.length > 0">
+            <svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+              <line x1="12" y1="22.08" x2="12" y2="12"/>
+            </svg>
+            <p class="placeholder-text">3D Model Viewer</p>
+            <p class="placeholder-hint">Select a model from the list to view</p>
+            <div class="loading-bar"></div>
+          </div>
+
+          <!-- Model Info Overlay - Only show for custom models, not default -->
+          <div class="model-info-overlay" *ngIf="models.length > 0 && currentModelIndex < models.length">
+            <div class="info-card">
+              <h4>{{ models[currentModelIndex].modelName }}</h4>
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="info-label">Category:</span>
+                  <span class="info-value">{{ models[currentModelIndex].category || 'N/A' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Type:</span>
+                  <span class="info-value">{{ models[currentModelIndex].type || 'N/A' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="info-label">Quantity:</span>
+                  <span class="info-value">{{ models[currentModelIndex].quantity || 0 }} {{ models[currentModelIndex].unit }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Viewer Footer/Timeline -->
+        <div class="viewer-footer">
+          <div class="timeline-bar">
+            <div class="timeline-progress" style="width: 35%"></div>
+          </div>
+          <div class="timeline-label" *ngIf="models.length === 0">
+            Viewing: <strong>{{ defaultModelName }}</strong>
+            <span class="model-category">(Default Sample)</span>
+          </div>
+          <div class="timeline-label" *ngIf="models.length > 0 && currentModelIndex < models.length">
+            Viewing: <strong>{{ models[currentModelIndex].modelName }}</strong>
+            <span class="model-category" *ngIf="models[currentModelIndex].category">
+              ({{ models[currentModelIndex].category }})
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+

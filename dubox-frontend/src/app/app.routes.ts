@@ -59,6 +59,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/boxes/boxes-list/boxes-list.component').then(m => m.BoxesListComponent)
   },
   {
+    path: 'projects/:id/quality-issues',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/projects/project-quality-issues/project-quality-issues.component').then(m => m.ProjectQualityIssuesComponent)
+  },
+  {
     path: 'boxes/create',
     canActivate: [authGuard, permissionGuard],
     data: { 
@@ -169,6 +174,14 @@ export const routes: Routes = [
     loadComponent: () => import('./features/factories/factory-layout/factory-layout.component').then(m => m.FactoryLayoutComponent)
   },
   {
+    path: 'factories/:id/walls-status',
+    canActivate: [authGuard, permissionGuard],
+    data: {
+      permission: { module: 'factories', action: 'view' }
+    },
+    loadComponent: () => import('./features/factories/factory-walls-status/factory-walls-status.component').then(m => m.FactoryWallsStatusComponent)
+  },
+  {
     path: 'admin',
     canActivate: [authGuard, permissionGuard],
     data: { 
@@ -204,6 +217,38 @@ export const routes: Routes = [
         loadComponent: () => import('./features/admin/audit-logs/audit-logs.component').then(m => m.AuditLogsComponent)
       }
     ]
+  },
+  {
+    path: 'cost',
+    canActivate: [authGuard, permissionGuard],
+    data: {
+      permission: { module: 'cost', action: 'view' }
+    },
+    loadComponent: () => import('./features/cost/cost-dashboard/cost-dashboard.component').then(m => m.CostDashboardComponent)
+  },
+  {
+    path: 'schedule',
+    canActivate: [authGuard, permissionGuard],
+    data: {
+      permission: { module: 'schedule', action: 'view' }
+    },
+    loadComponent: () => import('./features/schedule/schedule-dashboard/schedule-dashboard.component').then(m => m.ScheduleDashboardComponent)
+  },
+  {
+    path: 'bim',
+    canActivate: [authGuard, permissionGuard],
+    data: {
+      permission: { module: 'bim', action: 'view' }
+    },
+    loadComponent: () => import('./features/bim/bim-dashboard/bim-dashboard.component').then(m => m.BIMDashboardComponent)
+  },
+  {
+    path: 'help',
+    canActivate: [authGuard, permissionGuard],
+    data: {
+      permission: { module: 'help', action: 'view' }
+    },
+    loadComponent: () => import('./features/help/help-dashboard/help-dashboard.component').then(m => m.HelpDashboardComponent)
   },
   {
     path: 'materials',

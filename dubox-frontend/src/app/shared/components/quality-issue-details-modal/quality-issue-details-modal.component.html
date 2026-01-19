@@ -13,6 +13,8 @@
         <div>
           <h3>Quality Issue Details</h3>
           <div class="header-meta">
+            <span class="issue-number" *ngIf="issue.issueNumber">#{{ issue.issueNumber }}</span>
+            <span class="separator" *ngIf="issue.issueNumber">•</span>
             <span class="issue-type">{{ issue.issueType || 'Defect' }}</span>
             <span class="separator">•</span>
             <span class="severity" [class.severity-critical]="issue.severity === 'Critical'" 
@@ -80,14 +82,29 @@
             <div class="info-content">
               <span class="info-label">Assigned To</span>
               <span class="info-value">
-                {{ issue.assignedTeamName || '—' }}
-                <span class="assigned-member" *ngIf="issue.assignedToUserName">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin: 0 4px;">
-                    <path d="M9 18l6-6-6-6"/>
+                <span *ngIf="issue.assignedTeamName">{{ issue.assignedTeamName }}</span>
+                <span *ngIf="!issue.assignedTeamName && !issue.assignedToUserName">—</span>
+                <span class="assigned-member" *ngIf="issue.assignedToUserName" [style.display]="issue.assignedTeamName ? 'block' : 'inline'" [style.marginTop]="issue.assignedTeamName ? '4px' : '0'" [style.fontSize]="'13px'" [style.color]="'#64748b'">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; vertical-align: middle;">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
                   </svg>
                   {{ issue.assignedToUserName }}
                 </span>
               </span>
+            </div>
+          </div>
+          <div class="info-item" *ngIf="issue.ccUserName">
+            <div class="info-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="8.5" cy="7" r="4"/>
+                <path d="M20 8v6M23 11h-6"/>
+              </svg>
+            </div>
+            <div class="info-content">
+              <span class="info-label">CC User</span>
+              <span class="info-value">{{ issue.ccUserName }}</span>
             </div>
           </div>
           <div class="info-item" [class.overdue]="issue.isOverdue">
@@ -207,7 +224,7 @@
               </svg>
             </div>
             <div class="info-content">
-              <span class="info-label">WIR</span>
+              <span class="info-label">Stage</span>
               <span class="info-value">
                 {{ getQualityIssueWir(issue) }}
                 <span class="wir-status-badge" *ngIf="issue.wirStatus">
@@ -226,7 +243,7 @@
               </svg>
             </div>
             <div class="info-content">
-              <span class="info-label">WIR Requested</span>
+              <span class="info-label">Stage Requested</span>
               <span class="info-value">{{ formatIssueDate(issue.wirRequestedDate) }}</span>
             </div>
           </div>

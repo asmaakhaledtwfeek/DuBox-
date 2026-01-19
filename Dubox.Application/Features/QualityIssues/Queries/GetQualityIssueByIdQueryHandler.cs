@@ -37,7 +37,17 @@ namespace Dubox.Application.Features.QualityIssues.Queries
             }
 
             var dto = issue.Adapt<QualityIssueDetailsDto>();
-            dto.AssignedToUserName = issue.AssignedToMember?.EmployeeName;
+            dto.AssignedToUserName = !string.IsNullOrEmpty(issue.AssignedToMember?.EmployeeName)? issue.AssignedToMember?.EmployeeName:issue.AssignedToMember.User.FullName;
+            dto.CCUserName = issue.CCUser?.FullName;
+            
+            // Map project information from Box.Project
+            if (issue.Box?.Project != null)
+            {
+                dto.ProjectId = issue.Box.Project.ProjectId;
+                dto.ProjectName = issue.Box.Project.ProjectName;
+                dto.ProjectCode = issue.Box.Project.ProjectCode;
+            }
+            
             dto.Images = issue.Images
            .OrderBy(img => img.Sequence)
            .Select(img => new QualityIssueImageDto

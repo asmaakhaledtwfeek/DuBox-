@@ -110,6 +110,12 @@ public static class PermissionSeedData
     private static readonly Guid PermissionsViewId = new("10000000-0000-0000-0017-000000000001");
     private static readonly Guid PermissionsManageId = new("10000000-0000-0000-0017-000000000002");
 
+    // New Modules (Coming Soon)
+    private static readonly Guid CostViewId = new("10000000-0000-0000-0025-000000000001");
+    private static readonly Guid ScheduleViewId = new("10000000-0000-0000-0026-000000000001");
+    private static readonly Guid BIMViewId = new("10000000-0000-0000-0027-000000000001");
+    private static readonly Guid HelpViewId = new("10000000-0000-0000-0028-000000000001");
+
     // Pre-defined Role GUIDs (must match RoleAndUserSeedData)
     private static readonly Guid SystemAdminRoleId = new("11111111-1111-1111-1111-111111111111");
     private static readonly Guid ProjectManagerRoleId = new("22222222-2222-2222-2222-222222222222");
@@ -249,6 +255,18 @@ public static class PermissionSeedData
             // Permissions Module
             new() { PermissionId = PermissionsViewId, Module = "Permissions", Action = "View", PermissionKey = "permissions.view", DisplayName = "View Permissions", Description = "View all permissions", Category = "Administration", DisplayOrder = 160, CreatedDate = now },
             new() { PermissionId = PermissionsManageId, Module = "Permissions", Action = "Manage", PermissionKey = "permissions.manage", DisplayName = "Manage Permissions", Description = "Assign permissions to roles", Category = "Administration", DisplayOrder = 161, CreatedDate = now },
+
+            // Cost Module (Coming Soon)
+            new() { PermissionId = CostViewId, Module = "Cost", Action = "View", PermissionKey = "cost.view", DisplayName = "View Cost", Description = "View cost management features", Category = "Coming Soon", DisplayOrder = 170, CreatedDate = now },
+
+            // Schedule Module (Coming Soon)
+            new() { PermissionId = ScheduleViewId, Module = "Schedule", Action = "View", PermissionKey = "schedule.view", DisplayName = "View Schedule", Description = "View schedule management features", Category = "Coming Soon", DisplayOrder = 171, CreatedDate = now },
+
+            // BIM Module (Coming Soon)
+            new() { PermissionId = BIMViewId, Module = "BIM", Action = "View", PermissionKey = "bim.view", DisplayName = "View BIM", Description = "View BIM features", Category = "Coming Soon", DisplayOrder = 172, CreatedDate = now },
+
+            // Help Module
+            new() { PermissionId = HelpViewId, Module = "Help", Action = "View", PermissionKey = "help.view", DisplayName = "View Help", Description = "Access help and documentation", Category = "General", DisplayOrder = 173, CreatedDate = now },
         };
 
         modelBuilder.Entity<Permission>().HasData(permissions);
@@ -289,7 +307,8 @@ public static class PermissionSeedData
             DashboardViewId, DashboardExportId,
             AuditLogsViewId, AuditLogsExportId,
             ProgressUpdatesViewId, ProgressUpdatesCreateId, ProgressUpdatesEditId, ProgressUpdatesManageId,
-            PermissionsViewId, PermissionsManageId
+            PermissionsViewId, PermissionsManageId,
+            CostViewId, ScheduleViewId, BIMViewId, HelpViewId
         };
 
         foreach (var permId in allPermissionIds)
@@ -310,7 +329,8 @@ public static class PermissionSeedData
             DepartmentsViewId,
             LocationsViewId, LocationsCreateId, LocationsEditId,
             DashboardViewId, DashboardExportId,
-            ProgressUpdatesViewId, ProgressUpdatesCreateId, ProgressUpdatesEditId, ProgressUpdatesManageId
+            ProgressUpdatesViewId, ProgressUpdatesCreateId, ProgressUpdatesEditId, ProgressUpdatesManageId,
+            CostViewId, ScheduleViewId, BIMViewId, HelpViewId
         };
 
         foreach (var permId in pmPermissions)

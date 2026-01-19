@@ -28,6 +28,20 @@ namespace Dubox.Domain.Entities
         public ProjectLocationEnum Location { get; set; } = ProjectLocationEnum.UAE;
         public int? Capacity { get; set; }
 
+        [Required]
+        public int MinRow { get; set; } = 1;
+
+        [Required]
+        public int MaxRow { get; set; } = 20;
+        
+        [Required]
+        [MaxLength(1)]
+        public string MinBay { get; set; } = "A";
+        
+        [Required]
+        [MaxLength(1)]
+        public string MaxBay { get; set; } = "Z";
+
         public int CurrentOccupancy { get; set; } = 0;
 
         public bool IsActive { get; set; } = true;

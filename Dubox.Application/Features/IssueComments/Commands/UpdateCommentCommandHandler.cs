@@ -3,6 +3,7 @@ using Dubox.Domain.Entities;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Dubox.Application.Features.IssueComments.Commands
 {
@@ -10,16 +11,16 @@ namespace Dubox.Application.Features.IssueComments.Commands
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserService _currentUserService;
-        private readonly IMediator _mediator;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
         public UpdateCommentCommandHandler(
             IUnitOfWork unitOfWork,
             ICurrentUserService currentUserService,
-            IMediator mediator)
+            IServiceScopeFactory serviceScopeFactory)
         {
             _unitOfWork = unitOfWork;
             _currentUserService = currentUserService;
-            _mediator = mediator;
+            _serviceScopeFactory = serviceScopeFactory;
         }
 
         public async Task<Result> Handle(UpdateCommentCommand request, CancellationToken cancellationToken)
@@ -61,12 +62,16 @@ namespace Dubox.Application.Features.IssueComments.Commands
                 _unitOfWork.Repository<IssueComment>().Update(comment);
                 await _unitOfWork.CompleteAsync(cancellationToken);
 
-                // Send notifications asynchronously
+                // Send notifications asynchronously with proper scoping
                 _ = Task.Run(async () =>
                 {
                     try
                     {
-                        await _mediator.Send(new SendCommentNotificationsCommand(
+                        // Create a new scope for the background task
+                        using var scope = _serviceScopeFactory.CreateScope();
+                        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+                        
+                        await mediator.Send(new SendCommentNotificationsCommand(
                             comment.CommentId,
                             IsUpdate: true
                         ), CancellationToken.None);

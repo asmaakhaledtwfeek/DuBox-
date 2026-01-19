@@ -304,26 +304,27 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .OnDelete(DeleteBehavior.Restrict);
 
         // Notification relationships for comments
+        // Using NoAction to prevent cascade cycles since QualityIssue already has cascade delete from Box
         modelBuilder.Entity<Notification>()
             .HasOne(n => n.RelatedIssue)
             .WithMany()
             .HasForeignKey(n => n.RelatedIssueId)
             .IsRequired(false)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
 
         modelBuilder.Entity<Notification>()
             .HasOne(n => n.RelatedComment)
             .WithMany()
             .HasForeignKey(n => n.RelatedCommentId)
             .IsRequired(false)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
 
         modelBuilder.Entity<Notification>()
             .HasOne(n => n.RecipientUser)
             .WithMany()
             .HasForeignKey(n => n.RecipientUserId)
             .IsRequired(false)
-            .OnDelete(DeleteBehavior.SetNull);
+            .OnDelete(DeleteBehavior.NoAction);
 
         modelBuilder.Entity<BoxActivity>()
             .HasOne(ba => ba.Box)

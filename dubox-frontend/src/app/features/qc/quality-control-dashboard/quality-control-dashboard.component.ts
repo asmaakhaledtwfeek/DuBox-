@@ -6,6 +6,7 @@ import { HeaderComponent } from '../../../shared/components/header/header.compon
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { QualityIssueDetailsModalComponent } from '../../../shared/components/quality-issue-details-modal/quality-issue-details-modal.component';
 import { AssignToCrewModalComponent, AssignableIssue } from '../../../shared/components/assign-to-crew-modal/assign-to-crew-modal.component';
+import { IssueCommentsComponent } from '../../../shared/components/issue-comments/issue-comments.component';
 import { WIRService } from '../../../core/services/wir.service';
 import { QualityIssueItem, QualityIssueDetails, QualityIssueStatus, UpdateQualityIssueStatusRequest, WIRCheckpoint, WIRCheckpointStatus } from '../../../core/models/wir.model';
 import { FormsModule } from '@angular/forms';
@@ -43,7 +44,7 @@ type AggregatedQualityIssue = QualityIssueItem & {
 @Component({
   selector: 'app-quality-control-dashboard',
   standalone: true,
-  imports: [HeaderComponent, CommonModule, RouterModule, SidebarComponent, ReactiveFormsModule, FormsModule, QualityIssueDetailsModalComponent, AssignToCrewModalComponent],
+  imports: [HeaderComponent, CommonModule, RouterModule, SidebarComponent, ReactiveFormsModule, FormsModule, QualityIssueDetailsModalComponent, AssignToCrewModalComponent, IssueCommentsComponent],
   templateUrl: './quality-control-dashboard.component.html',
   styleUrl: './quality-control-dashboard.component.scss'
 })
@@ -169,6 +170,9 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   isAssignModalOpen = false;
   selectedIssueForAssign: AggregatedQualityIssue | null = null;
   assignLoading = false;
+
+  // Comments section state
+  showComments = true;
 
   // Cache for box statuses to avoid multiple API calls
   private boxStatusCache: Map<string, BoxStatus | null> = new Map();
@@ -1473,7 +1477,12 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     this.currentImageInputMode = 'url';
     this.currentUrlInput = '';
     this.showCamera = false;
+    this.showComments = true;
     this.stopCamera();
+  }
+
+  toggleComments(): void {
+    this.showComments = !this.showComments;
   }
 
   requiresResolutionDescription(status: QualityIssueStatus | string | undefined): boolean {

@@ -7,7 +7,9 @@ namespace Dubox.Application.Specifications
     {
         public GetUserNotificationsSpecification(Guid userId, bool unreadOnly = false)
         {
-            AddCriteria(n => n.RecipientUserId == userId && !n.IsExpired);
+            // Filter by user and exclude expired notifications
+            // Use ExpiryDate instead of IsExpired computed property for EF Core translation
+            AddCriteria(n => n.RecipientUserId == userId && (!n.ExpiryDate.HasValue || n.ExpiryDate >= DateTime.UtcNow));
 
             if (unreadOnly)
             {

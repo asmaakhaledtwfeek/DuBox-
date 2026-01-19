@@ -1829,6 +1829,109 @@
       @extend .selected-images-list;
     }
   }
+
+  // Comments Section
+  .comments-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 24px;
+    background: linear-gradient(135deg, #fafbfc 0%, #f8f9fa 100%);
+    border: 2px solid var(--gray-200);
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--gray-200);
+
+      .modal-label {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+
+        svg {
+          flex-shrink: 0;
+          color: var(--amana-teal);
+        }
+      }
+
+      .btn-toggle-comments {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: white;
+        border: 2px solid var(--gray-300);
+        border-radius: 8px;
+        color: var(--text-primary);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover:not(:disabled) {
+          background: var(--gray-50);
+          border-color: var(--amana-teal);
+          color: var(--amana-teal);
+
+          svg {
+            transform: translateY(-1px);
+          }
+        }
+
+        &:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        svg {
+          flex-shrink: 0;
+          transition: transform 0.2s ease;
+        }
+      }
+    }
+
+    .comments-wrapper {
+      margin-top: 8px;
+      padding: 16px;
+      background: white;
+      border-radius: 12px;
+      border: 2px solid var(--gray-200);
+      max-height: 500px;
+      overflow-y: auto;
+
+      // Smooth scrolling
+      scroll-behavior: smooth;
+
+      // Custom scrollbar
+      &::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: var(--gray-100);
+        border-radius: 4px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: var(--gray-300);
+        border-radius: 4px;
+
+        &:hover {
+          background: var(--gray-400);
+        }
+      }
+    }
+  }
 }
 
 @keyframes spin {

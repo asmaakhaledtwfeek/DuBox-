@@ -3,6 +3,7 @@ using Dubox.Domain.Entities;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Dubox.Application.Features.IssueComments.Commands
 {
@@ -10,16 +11,16 @@ namespace Dubox.Application.Features.IssueComments.Commands
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly ICurrentUserService _currentUserService;
-        private readonly IMediator _mediator;
+        private readonly IServiceScopeFactory _serviceScopeFactory;
 
         public AddCommentCommandHandler(
             IUnitOfWork unitOfWork,
             ICurrentUserService currentUserService,
-            IMediator mediator)
+            IServiceScopeFactory serviceScopeFactory)
         {
             _unitOfWork = unitOfWork;
             _currentUserService = currentUserService;
-            _mediator = mediator;
+            _serviceScopeFactory = serviceScopeFactory;
         }
 
         public async Task<Result> Handle(AddCommentCommand request, CancellationToken cancellationToken)
@@ -73,12 +74,16 @@ namespace Dubox.Application.Features.IssueComments.Commands
                 await _unitOfWork.Repository<IssueComment>().AddAsync(comment, cancellationToken);
                 await _unitOfWork.CompleteAsync(cancellationToken);
 
-                // Send notifications asynchronously (fire and forget pattern with proper error handling)
+                // Send notifications asynchronously with proper scoping
                 _ = Task.Run(async () =>
                 {
                     try
                     {
-                        await _mediator.Send(new SendCommentNotificationsCommand(
+                        // Create a new scope for the background task
+                        using var scope = _serviceScopeFactory.CreateScope();
+                        var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+                        
+                        await mediator.Send(new SendCommentNotificationsCommand(
                             comment.CommentId,
                             IsUpdate: false
                         ), CancellationToken.None);

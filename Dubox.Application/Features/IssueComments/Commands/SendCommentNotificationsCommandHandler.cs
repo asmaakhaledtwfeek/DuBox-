@@ -136,10 +136,11 @@ namespace Dubox.Application.Features.IssueComments.Commands
                                         notification.CreatedDate
                                     });
 
-                                // Get updated unread count for the user
+                                // Get updated unread count for the user (exclude expired notifications)
                                 var unreadCount = await _unitOfWork.Repository<Notification>()
                                     .CountAsync(n => n.RecipientUserId == notification.RecipientUserId.Value 
-                                        && !n.IsRead && !n.IsExpired, 
+                                        && !n.IsRead 
+                                        && (!n.ExpiryDate.HasValue || n.ExpiryDate >= DateTime.UtcNow), 
                                         cancellationToken);
 
                                 // Send count update

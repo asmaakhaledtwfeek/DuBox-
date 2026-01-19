@@ -80,20 +80,22 @@ public class ImportHRCostsCommandHandler : IRequestHandler<ImportHRCostsCommand,
             {
                 try
                 {
-                    // Excel columns: Code | Name | Units | Type | Status
-                    var code = GetCellValue(worksheet, row, headers, new[] { "code", "resource code", "employee code", "id", "hrc code" });
-                    var name = GetCellValue(worksheet, row, headers, new[] { "name", "resource name", "position", "role", "designation" });
+                    // Excel columns mapping to new structure
+                    var code = GetCellValue(worksheet, row, headers, new[] { "code", "cost code" });
+                    var chapter = GetCellValue(worksheet, row, headers, new[] { "chapter" });
+                    var subChapter = GetCellValue(worksheet, row, headers, new[] { "sub chapter", "subchapter" });
+                    var classification = GetCellValue(worksheet, row, headers, new[] { "classification" });
+                    var subClassification = GetCellValue(worksheet, row, headers, new[] { "sub classification", "subclassification" });
+                    var name = GetCellValue(worksheet, row, headers, new[] { "name", "description" });
                     var units = GetCellValue(worksheet, row, headers, new[] { "units", "unit", "uom" });
-                    var type = GetCellValue(worksheet, row, headers, new[] { "type", "cost type", "category", "manpower type" });
-                    var statusText = GetCellValue(worksheet, row, headers, new[] { "status", "active", "is active" });
-                    
-                    // Try to parse additional rate columns if they exist
-                    var hourlyRateText = GetCellValue(worksheet, row, headers, new[] { "hourly rate", "hour rate", "rate/hour", "hourly", "ls" });
-                    var dailyRateText = GetCellValue(worksheet, row, headers, new[] { "daily rate", "day rate", "rate/day", "daily" });
-                    var monthlyRateText = GetCellValue(worksheet, row, headers, new[] { "monthly rate", "month rate", "rate/month", "monthly", "salary" });
-                    var overtimeRateText = GetCellValue(worksheet, row, headers, new[] { "overtime rate", "ot rate", "overtime", "ot" });
-                    var trade = GetCellValue(worksheet, row, headers, new[] { "trade", "discipline", "department" });
-                    var position = GetCellValue(worksheet, row, headers, new[] { "position", "role", "title" });
+                    var type = GetCellValue(worksheet, row, headers, new[] { "type", "cost type" });
+                    var budgetLevel = GetCellValue(worksheet, row, headers, new[] { "budget level", "budgetlevel" });
+                    var status = GetCellValue(worksheet, row, headers, new[] { "status" });
+                    var job = GetCellValue(worksheet, row, headers, new[] { "job" });
+                    var officeAccount = GetCellValue(worksheet, row, headers, new[] { "office account", "officeaccount" });
+                    var jobCostAccount = GetCellValue(worksheet, row, headers, new[] { "job cost account", "jobcostaccount" });
+                    var specialAccount = GetCellValue(worksheet, row, headers, new[] { "special account", "specialaccount" });
+                    var idlAccount = GetCellValue(worksheet, row, headers, new[] { "idl account", "idlaccount" });
 
                     // Skip empty rows
                     if (string.IsNullOrWhiteSpace(code) && string.IsNullOrWhiteSpace(name))
@@ -110,8 +112,11 @@ public class ImportHRCostsCommandHandler : IRequestHandler<ImportHRCostsCommand,
                         continue;
                     }
 
-                    // Determine if active
-                    var isActive = statusText?.ToLower() == "active" || statusText?.ToLower() == "yes" || statusText?.ToLower() == "true" || string.IsNullOrWhiteSpace(statusText);
+                    // Set default status if empty
+                    if (string.IsNullOrWhiteSpace(status))
+                    {
+                        status = "Active";
+                    }
 
                     // Check if record already exists in our in-memory dictionary
                     var lookupKey = code ?? name;
@@ -122,16 +127,20 @@ public class ImportHRCostsCommandHandler : IRequestHandler<ImportHRCostsCommand,
                         if (existing != null)
                         {
                             existing.Code = code;
+                            existing.Chapter = chapter;
+                            existing.SubChapter = subChapter;
+                            existing.Classification = classification;
+                            existing.SubClassification = subClassification;
                             existing.Name = name;
                             existing.Units = units;
-                            existing.CostType = type;
-                            existing.Trade = trade;
-                            existing.Position = position;
-                            existing.HourlyRate = ParseDecimal(hourlyRateText);
-                            existing.DailyRate = ParseDecimal(dailyRateText);
-                            existing.MonthlyRate = ParseDecimal(monthlyRateText);
-                            existing.OvertimeRate = ParseDecimal(overtimeRateText);
-                            existing.IsActive = isActive;
+                            existing.Type = type;
+                            existing.BudgetLevel = budgetLevel;
+                            existing.Status = status;
+                            existing.Job = job;
+                            existing.OfficeAccount = officeAccount;
+                            existing.JobCostAccount = jobCostAccount;
+                            existing.SpecialAccount = specialAccount;
+                            existing.IDLAccount = idlAccount;
                             existing.ModifiedDate = DateTime.UtcNow;
                             existing.ModifiedBy = _currentUserService.UserId;
                         }
@@ -143,17 +152,20 @@ public class ImportHRCostsCommandHandler : IRequestHandler<ImportHRCostsCommand,
                         {
                             HRCostRecordId = newId,
                             Code = code,
+                            Chapter = chapter,
+                            SubChapter = subChapter,
+                            Classification = classification,
+                            SubClassification = subClassification,
                             Name = name,
                             Units = units,
-                            CostType = type,
-                            Trade = trade,
-                            Position = position,
-                            HourlyRate = ParseDecimal(hourlyRateText),
-                            DailyRate = ParseDecimal(dailyRateText),
-                            MonthlyRate = ParseDecimal(monthlyRateText),
-                            OvertimeRate = ParseDecimal(overtimeRateText),
-                            Currency = "SAR",
-                            IsActive = isActive,
+                            Type = type,
+                            BudgetLevel = budgetLevel,
+                            Status = status,
+                            Job = job,
+                            OfficeAccount = officeAccount,
+                            JobCostAccount = jobCostAccount,
+                            SpecialAccount = specialAccount,
+                            IDLAccount = idlAccount,
                             CreatedDate = DateTime.UtcNow,
                             CreatedBy = _currentUserService.UserId
                         };

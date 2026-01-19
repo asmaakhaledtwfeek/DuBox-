@@ -5,12 +5,13 @@ import { WIRService } from '../../../core/services/wir.service';
 import { QualityIssueDetails } from '../../../core/models/wir.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
+import { IssueCommentsComponent } from '../../../shared/components/issue-comments/issue-comments.component';
 import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-project-quality-issues',
   standalone: true,
-  imports: [CommonModule, HeaderComponent, SidebarComponent, FormsModule],
+  imports: [CommonModule, HeaderComponent, SidebarComponent, FormsModule, IssueCommentsComponent],
   templateUrl: './project-quality-issues.component.html',
   styleUrl: './project-quality-issues.component.scss'
 })
@@ -32,6 +33,10 @@ export class ProjectQualityIssuesComponent implements OnInit {
   statusOptions = ['Open', 'InProgress', 'Resolved', 'Closed'];
   typeOptions = ['Defect', 'NonConformance', 'Observation'];
   severityOptions = ['Critical', 'Major', 'Minor'];
+
+  // Comments modal state
+  isCommentsModalOpen = false;
+  selectedIssueForComments: QualityIssueDetails | null = null;
 
   constructor(
     private route: ActivatedRoute,
@@ -185,6 +190,16 @@ export class ProjectQualityIssuesComponent implements OnInit {
         queryParams: { tab: 'quality-issues' }
       });
     }
+  }
+
+  viewComments(issue: QualityIssueDetails): void {
+    this.selectedIssueForComments = issue;
+    this.isCommentsModalOpen = true;
+  }
+
+  closeCommentsModal(): void {
+    this.isCommentsModalOpen = false;
+    this.selectedIssueForComments = null;
   }
 
   goBack(): void {

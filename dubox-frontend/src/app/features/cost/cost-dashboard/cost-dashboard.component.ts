@@ -30,17 +30,31 @@ interface CostCode {
 interface HRCost {
   hrCostRecordId: string;
   code?: string | null;
+  chapter?: string | null;
+  subChapter?: string | null;
+  classification?: string | null;
+  subClassification?: string | null;
   name: string;
-  units?: string | null;        // Units: Ls, Hr, Day, Month
-  costType?: string | null;     // Type: Manpower, etc.
-  trade?: string | null;
-  position?: string | null;
-  hourlyRate?: number | null;
-  dailyRate?: number | null;
-  monthlyRate?: number | null;
-  overtimeRate?: number | null;
-  currency: string;
-  isActive: boolean;
+  units?: string | null;
+  type?: string | null;
+  budgetLevel?: string | null;
+  status?: string | null;
+  job?: string | null;
+  officeAccount?: string | null;
+  jobCostAccount?: string | null;
+  specialAccount?: string | null;
+  idlAccount?: string | null;
+}
+
+interface HRCostFilterOptions {
+  codes: string[];
+  chapters: string[];
+  subChapters: string[];
+  classifications: string[];
+  subClassifications: string[];
+  units: string[];
+  types: string[];
+  statuses: string[];
 }
 
 interface Project {
@@ -54,10 +68,22 @@ interface Project {
 
 interface ProjectCost {
   projectCostId: string;
-  boxId: string;
+  boxId?: string;
+  costCodeId?: string;
   hrCostRecordId?: string;
   cost: number;
   costType: string;
+  // Cost Code Master fields
+  costCodeLevel1?: string;
+  costCodeLevel2?: string;
+  costCodeLevel3?: string;
+  // HRC Code fields
+  chapter?: string;
+  subChapter?: string;
+  classification?: string;
+  subClassification?: string;
+  units?: string;
+  type?: string;
   createdDate: string;
   createdBy?: string;
   boxTag?: string;
@@ -72,10 +98,26 @@ interface Box {
 }
 
 interface NewCostForm {
-  boxId: string;
-  costType: string;
-  hrCostRecordId: string;
+  boxId: string | null;
+  // Cost Code Master fields
+  costCodeLevel1: string | null;
+  costCodeLevel2: string | null;
+  costCodeLevel3: string | null;
+  // HRC Code fields
+  chapter: string | null;
+  subChapter: string | null;
+  classification: string | null;
+  subClassification: string | null;
+  units: string | null;
+  type: string | null;
+  // Cost amount
   cost: number | null;
+}
+
+interface CostCodeFilterOptions {
+  level1Options: string[];
+  level2Options: string[];
+  level3Options: string[];
 }
 
 interface NewCostCodeForm {
@@ -97,10 +139,20 @@ interface NewCostCodeForm {
 
 interface NewHRCostForm {
   code: string | null;
+  chapter: string | null;
+  subChapter: string | null;
+  classification: string | null;
+  subClassification: string | null;
   name: string;
   units: string | null;
-  costType: string | null;
-  isActive: boolean;
+  type: string | null;
+  budgetLevel: string | null;
+  status: string | null;
+  job: string | null;
+  officeAccount: string | null;
+  jobCostAccount: string | null;
+  specialAccount: string | null;
+  idlAccount: string | null;
 }
 
 @Component({
@@ -140,15 +192,29 @@ export class CostDashboardComponent implements OnInit {
   hrCostsTotalCount = 0;
   hrLoading = false;
   hrError: string | null = null;
-  hrSearchCode = '';
+  
+  // HR Cost Filters
+  hrFilterCode: string | null = null;
+  hrFilterChapter: string | null = null;
+  hrFilterSubChapter: string | null = null;
+  hrFilterClassification: string | null = null;
+  hrFilterSubClassification: string | null = null;
+  hrFilterUnits: string | null = null;
+  hrFilterType: string | null = null;
+  hrFilterStatus: string | null = null;
   hrSearchName = '';
-  hrSearchUnits = '';
-  selectedHRCostType: string | null = null;
-  selectedHRIsActive: boolean | null = null;
-  hrCostTypes: string[] = [];
-  loadingHRCostTypes = false;
-  hrUnitsOptions: string[] = [];
-  loadingHRUnitsOptions = false;
+  
+  // Filter Options (for dropdowns)
+  hrFilterOptions: HRCostFilterOptions = {
+    codes: [],
+    chapters: [],
+    subChapters: [],
+    classifications: [],
+    subClassifications: [],
+    units: [],
+    types: [],
+    statuses: []
+  };
   
   // Project Costs
   projects: Project[] = [];
@@ -162,14 +228,22 @@ export class CostDashboardComponent implements OnInit {
   // Create Cost Modal
   projectBoxes: Box[] = [];
   loadingBoxes = false;
-  costTypes: string[] = [];
-  loadingCostTypes = false;
-  filteredHRCosts: HRCost[] = [];
-  loadingFilteredHRCosts = false;
+  costCodeFilterOptions: CostCodeFilterOptions = {
+    level1Options: [],
+    level2Options: [],
+    level3Options: []
+  };
   newCost: NewCostForm = {
-    boxId: '',
-    costType: '',
-    hrCostRecordId: '',
+    boxId: null,
+    costCodeLevel1: null,
+    costCodeLevel2: null,
+    costCodeLevel3: null,
+    chapter: null,
+    subChapter: null,
+    classification: null,
+    subClassification: null,
+    units: null,
+    type: null,
     cost: null
   };
   creatingCost = false;
@@ -212,10 +286,20 @@ export class CostDashboardComponent implements OnInit {
   showCreateHRCostModal = false;
   newHRCost: NewHRCostForm = {
     code: null,
+    chapter: null,
+    subChapter: null,
+    classification: null,
+    subClassification: null,
     name: '',
     units: null,
-    costType: null,
-    isActive: true
+    type: null,
+    budgetLevel: null,
+    status: 'Active',
+    job: null,
+    officeAccount: null,
+    jobCostAccount: null,
+    specialAccount: null,
+    idlAccount: null
   };
   creatingHRCost = false;
   createHRCostError: string | null = null;
@@ -230,13 +314,12 @@ export class CostDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCostCodes();
+    this.loadHRFilterOptions(); // Load filter options first
     this.loadHRCosts();
     this.loadProjects();
-    this.loadCostTypes();
     this.loadCostLevel1Options();
     this.loadCostLevel2Options();
     this.loadCostLevel3Options();
-    this.loadHRUnitsOptions();
   }
 
   switchTab(tab: 'materials' | 'hr' | 'projectCost'): void {
@@ -244,8 +327,8 @@ export class CostDashboardComponent implements OnInit {
     if (tab === 'projectCost' && this.projects.length === 0) {
       this.loadProjects();
     }
-    if (tab === 'hr' && this.hrCostTypes.length === 0) {
-      this.loadHRCostTypes();
+    if (tab === 'hr' && this.hrFilterOptions.types.length === 0) {
+      this.loadHRFilterOptions();
     }
   }
 
@@ -384,29 +467,18 @@ export class CostDashboardComponent implements OnInit {
       pageSize: this.pageSize
     };
 
-    // Add search filters based on new backend parameters
-    if (this.hrSearchCode) {
-      params.code = this.hrSearchCode.trim();
-    }
+    // Add filters
+    if (this.hrFilterCode) params.code = this.hrFilterCode;
+    if (this.hrFilterChapter) params.chapter = this.hrFilterChapter;
+    if (this.hrFilterSubChapter) params.subChapter = this.hrFilterSubChapter;
+    if (this.hrFilterClassification) params.classification = this.hrFilterClassification;
+    if (this.hrFilterSubClassification) params.subClassification = this.hrFilterSubClassification;
+    if (this.hrFilterUnits) params.units = this.hrFilterUnits;
+    if (this.hrFilterType) params.type = this.hrFilterType;
+    if (this.hrFilterStatus) params.status = this.hrFilterStatus;
+    if (this.hrSearchName) params.name = this.hrSearchName.trim();
 
-    if (this.hrSearchName) {
-      params.name = this.hrSearchName.trim();
-    }
-
-    if (this.hrSearchUnits) {
-      params.units = this.hrSearchUnits.trim();
-    }
-
-    if (this.selectedHRCostType) {
-      params.costType = this.selectedHRCostType;
-    }
-
-    if (this.selectedHRIsActive !== null) {
-      params.isActive = this.selectedHRIsActive;
-    }
-
-    // Debug logging
-    console.log('🔍 Loading HRC Costs with params:', params);
+    console.log('🔍 Loading HR Costs with params:', params);
 
     this.http.get<any>(`${environment.apiUrl}/cost/hr-costs`, { params })
       .subscribe({
@@ -417,32 +489,60 @@ export class CostDashboardComponent implements OnInit {
           this.hrLoading = false;
         },
         error: (err) => {
-          this.hrError = 'Failed to load HRC codes. Please try again.';
+          this.hrError = 'Failed to load HR costs. Please try again.';
           this.hrLoading = false;
-          console.error('Error loading HRC codes:', err);
+          console.error('Error loading HR costs:', err);
         }
       });
   }
 
-  onHRSearch(): void {
-    console.log('🔎 HR Search triggered - code:', this.hrSearchCode, 'name:', this.hrSearchName, 'units:', this.hrSearchUnits);
-    this.currentPage = 1;
+  loadHRFilterOptions(): void {
+    const params: any = {};
+    
+    // Send current filter values to get cascaded options
+    if (this.hrFilterCode) params.code = this.hrFilterCode;
+    if (this.hrFilterChapter) params.chapter = this.hrFilterChapter;
+    if (this.hrFilterSubChapter) params.subChapter = this.hrFilterSubChapter;
+    if (this.hrFilterClassification) params.classification = this.hrFilterClassification;
+    if (this.hrFilterSubClassification) params.subClassification = this.hrFilterSubClassification;
+    if (this.hrFilterUnits) params.units = this.hrFilterUnits;
+    if (this.hrFilterType) params.type = this.hrFilterType;
+    if (this.hrFilterStatus) params.status = this.hrFilterStatus;
+
+    this.http.get<any>(`${environment.apiUrl}/cost/hr-costs/filter-options`, { params })
+      .subscribe({
+        next: (response) => {
+          const data = response.data || response;
+          this.hrFilterOptions = data;
+          console.log('📊 Loaded filter options:', this.hrFilterOptions);
+        },
+        error: (err) => {
+          console.error('Error loading filter options:', err);
+        }
+      });
+  }
+
+  onHRFilterChange(filterName: string): void {
+    // When a filter changes, reload filter options to cascade the dropdowns
+    this.loadHRFilterOptions();
+    // Reload the HR costs list
     this.loadHRCosts();
   }
 
   clearHRFilters(): void {
-    this.hrSearchCode = '';
+    this.hrFilterCode = null;
+    this.hrFilterChapter = null;
+    this.hrFilterSubChapter = null;
+    this.hrFilterClassification = null;
+    this.hrFilterSubClassification = null;
+    this.hrFilterUnits = null;
+    this.hrFilterType = null;
+    this.hrFilterStatus = null;
     this.hrSearchName = '';
-    this.hrSearchUnits = '';
-    this.selectedHRCostType = null;
-    this.selectedHRIsActive = null;
-    this.currentPage = 1;
+    this.loadHRFilterOptions();
     this.loadHRCosts();
   }
 
-  hasActiveHRFilters(): boolean {
-    return !!(this.hrSearchCode || this.hrSearchName || this.hrSearchUnits || this.selectedHRCostType || this.selectedHRIsActive !== null);
-  }
 
   // Project Cost Methods
   loadProjects(): void {
@@ -502,30 +602,39 @@ export class CostDashboardComponent implements OnInit {
     this.showCreateCostModal = true;
     this.createCostError = null;
     this.createCostSuccess = false;
-    this.filteredHRCosts = [];
     this.newCost = {
-      boxId: '',
-      costType: '',
-      hrCostRecordId: '',
+      boxId: null,
+      costCodeLevel1: null,
+      costCodeLevel2: null,
+      costCodeLevel3: null,
+      chapter: null,
+      subChapter: null,
+      classification: null,
+      subClassification: null,
+      units: null,
+      type: null,
       cost: null
     };
     this.loadProjectBoxes();
-    
-    // Load cost types if not already loaded
-    if (this.costTypes.length === 0) {
-      this.loadCostTypes();
-    }
+    this.loadCostCodeFilterOptions();
+    this.loadHRFilterOptions();
   }
 
   closeCreateCostModal(): void {
     this.showCreateCostModal = false;
     this.createCostError = null;
     this.createCostSuccess = false;
-    this.filteredHRCosts = [];
     this.newCost = {
-      boxId: '',
-      costType: '',
-      hrCostRecordId: '',
+      boxId: null,
+      costCodeLevel1: null,
+      costCodeLevel2: null,
+      costCodeLevel3: null,
+      chapter: null,
+      subChapter: null,
+      classification: null,
+      subClassification: null,
+      units: null,
+      type: null,
       cost: null
     };
   }
@@ -549,43 +658,53 @@ export class CostDashboardComponent implements OnInit {
       });
   }
 
-  onCostTypeChange(): void {
-    // Reset HRC cost selection when cost type changes
-    this.newCost.hrCostRecordId = '';
-    this.filteredHRCosts = [];
-    
-    if (this.newCost.costType) {
-      this.loadHRCostsByCostType(this.newCost.costType);
-    }
-  }
+  loadCostCodeFilterOptions(): void {
+    const params: any = {};
+    if (this.newCost.costCodeLevel1) params.level1 = this.newCost.costCodeLevel1;
+    if (this.newCost.costCodeLevel2) params.level2 = this.newCost.costCodeLevel2;
 
-  loadHRCostsByCostType(costType: string): void {
-    this.loadingFilteredHRCosts = true;
-
-    const params: any = {
-      costType: costType,
-      isActive: true,
-      pageSize: 1000 // Get all active HRC costs for this type
-    };
-
-    this.http.get<any>(`${environment.apiUrl}/cost/hr-costs`, { params })
+    this.http.get<any>(`${environment.apiUrl}/cost/codes/filter-options`, { params })
       .subscribe({
         next: (response) => {
-          const responseData = response.data || response;
-          this.filteredHRCosts = responseData?.data || responseData || [];
-          this.loadingFilteredHRCosts = false;
-          console.log('✅ Loaded HRC costs for cost type:', costType, this.filteredHRCosts.length);
+          const data = response.data || response;
+          this.costCodeFilterOptions = data;
+          console.log('📊 Loaded cost code filter options:', this.costCodeFilterOptions);
         },
         error: (err) => {
-          console.error('Error loading HRC costs by cost type:', err);
-          this.filteredHRCosts = [];
-          this.loadingFilteredHRCosts = false;
+          console.error('Error loading cost code filter options:', err);
         }
       });
   }
 
+  onProjectCostCodeChange(level: string): void {
+    if (level === 'level1') {
+      this.newCost.costCodeLevel2 = null;
+      this.newCost.costCodeLevel3 = null;
+    } else if (level === 'level2') {
+      this.newCost.costCodeLevel3 = null;
+    }
+    this.loadCostCodeFilterOptions();
+  }
+
+  onProjectHRCostChange(field: string): void {
+    // Reset dependent fields when parent changes
+    const fields = ['chapter', 'subChapter', 'classification', 'subClassification', 'units', 'type'];
+    const index = fields.indexOf(field);
+    if (index >= 0) {
+      for (let i = index + 1; i < fields.length; i++) {
+        (this.newCost as any)[fields[i]] = null;
+      }
+    }
+    this.loadHRFilterOptions();
+  }
+
   createProjectCost(): void {
-    if (!this.selectedProject || !this.newCost.boxId || !this.newCost.costType || !this.newCost.hrCostRecordId || !this.newCost.cost) {
+    // Validate required fields (box is optional)
+    if (!this.selectedProject || !this.newCost.cost ||
+        !this.newCost.costCodeLevel1 || !this.newCost.costCodeLevel2 ||
+        !this.newCost.chapter || !this.newCost.subChapter || !this.newCost.classification ||
+        !this.newCost.subClassification || !this.newCost.units || !this.newCost.type) {
+      this.createCostError = 'Please fill in all required fields';
       return;
     }
 
@@ -594,10 +713,20 @@ export class CostDashboardComponent implements OnInit {
     this.createCostSuccess = false;
 
     const payload = {
+      projectId: this.selectedProject.projectId, // Include selected project ID
       boxId: this.newCost.boxId,
-      costType: this.newCost.costType,
-      hrCostRecordId: this.newCost.hrCostRecordId,
-      cost: this.newCost.cost
+      cost: this.newCost.cost,
+      // Cost Code Master
+      costCodeLevel1: this.newCost.costCodeLevel1,
+      costCodeLevel2: this.newCost.costCodeLevel2,
+      costCodeLevel3: this.newCost.costCodeLevel3,
+      // HRC Code
+      chapter: this.newCost.chapter,
+      subChapter: this.newCost.subChapter,
+      classification: this.newCost.classification,
+      subClassification: this.newCost.subClassification,
+      units: this.newCost.units,
+      type: this.newCost.type
     };
 
     this.http.post<any>(`${environment.apiUrl}/cost/project-costs`, payload)
@@ -722,9 +851,9 @@ export class CostDashboardComponent implements OnInit {
     this.createHRCostSuccess = false;
     this.resetHRCostForm();
     
-    // Load cost types for dropdown if not already loaded
-    if (this.hrCostTypes.length === 0) {
-      this.loadHRCostTypes();
+    // Load filter options for dropdowns if not already loaded
+    if (this.hrFilterOptions.chapters.length === 0) {
+      this.loadHRFilterOptions();
     }
   }
 
@@ -738,10 +867,20 @@ export class CostDashboardComponent implements OnInit {
   resetHRCostForm(): void {
     this.newHRCost = {
       code: null,
+      chapter: null,
+      subChapter: null,
+      classification: null,
+      subClassification: null,
       name: '',
       units: null,
-      costType: null,
-      isActive: true
+      type: null,
+      budgetLevel: null,
+      status: 'Active',
+      job: null,
+      officeAccount: null,
+      jobCostAccount: null,
+      specialAccount: null,
+      idlAccount: null
     };
   }
 
@@ -757,10 +896,20 @@ export class CostDashboardComponent implements OnInit {
 
     const payload = {
       code: this.newHRCost.code || null,
+      chapter: this.newHRCost.chapter || null,
+      subChapter: this.newHRCost.subChapter || null,
+      classification: this.newHRCost.classification || null,
+      subClassification: this.newHRCost.subClassification || null,
       name: this.newHRCost.name,
       units: this.newHRCost.units || null,
-      costType: this.newHRCost.costType || null,
-      isActive: this.newHRCost.isActive
+      type: this.newHRCost.type || null,
+      budgetLevel: this.newHRCost.budgetLevel || null,
+      status: this.newHRCost.status || 'Active',
+      job: this.newHRCost.job || null,
+      officeAccount: this.newHRCost.officeAccount || null,
+      jobCostAccount: this.newHRCost.jobCostAccount || null,
+      specialAccount: this.newHRCost.specialAccount || null,
+      idlAccount: this.newHRCost.idlAccount || null
     };
 
     this.http.post<any>(`${environment.apiUrl}/cost/hr-costs`, payload)
@@ -783,88 +932,7 @@ export class CostDashboardComponent implements OnInit {
       });
   }
 
-  loadCostTypes(): void {
-    this.loadingCostTypes = true;
 
-    // Use the new distinct cost-types endpoint
-    this.http.get<any>(`${environment.apiUrl}/cost/cost-types`)
-      .subscribe({
-        next: (response) => {
-          const costTypesData = response.data || response || [];
-          
-          // Extract just the type names from the response
-          this.costTypes = costTypesData.map((ct: any) => ct.costType).sort();
-          
-        
-          this.loadingCostTypes = false;
-        },
-        error: (err) => {
-          console.error('Error loading cost types:', err);
-          // Use default list on error
-          this.costTypes = ['Direct Labor', 'Indirect', 'Overhead', 'Material', 'Equipment', 'Subcontract', 'Other'];
-          this.loadingCostTypes = false;
-        }
-      });
-  }
-
-  loadHRCostTypes(): void {
-    this.loadingHRCostTypes = true;
-
-    // Use the cost-types endpoint to get HRC cost types
-    this.http.get<any>(`${environment.apiUrl}/cost/cost-types`)
-      .subscribe({
-        next: (response) => {
-          const costTypesData = response.data || response || [];
-          
-          // Extract just the type names from the response and sort
-          this.hrCostTypes = costTypesData.map((ct: any) => ct.costType).sort();
-          
-          console.log('✅ HRC Cost Types loaded:', this.hrCostTypes);
-          this.loadingHRCostTypes = false;
-        },
-        error: (err) => {
-          console.error('Error loading HRC cost types:', err);
-          // Use default list on error
-          this.hrCostTypes = ['Manpower', 'Equipment', 'Labor', 'Supervision'];
-          this.loadingHRCostTypes = false;
-        }
-      });
-  }
-
-  loadHRUnitsOptions(): void {
-    this.loadingHRUnitsOptions = true;
-
-    // Fetch all HRC costs and extract distinct units values
-    const params: any = {
-      pageSize: 10000 // Get all records to extract distinct values
-    };
-
-    this.http.get<any>(`${environment.apiUrl}/cost/hr-costs`, { params })
-      .subscribe({
-        next: (response) => {
-          const responseData = response.data || response;
-          const hrCosts = responseData?.data || responseData || [];
-          
-          // Extract distinct units values and filter out nulls/empty
-          const distinctUnits = new Set<string>();
-          hrCosts.forEach((cost: HRCost) => {
-            if (cost.units) {
-              distinctUnits.add(cost.units);
-            }
-          });
-          
-          this.hrUnitsOptions = Array.from(distinctUnits).sort();
-          console.log('✅ HR Units options loaded:', this.hrUnitsOptions.length);
-          this.loadingHRUnitsOptions = false;
-        },
-        error: (err) => {
-          console.error('Error loading HR units options:', err);
-          // Use default list on error
-          this.hrUnitsOptions = ['Ls', 'Hr', 'Day', 'Month'];
-          this.loadingHRUnitsOptions = false;
-        }
-      });
-  }
 
   loadCostLevel1Options(): void {
     this.loadingCostLevel1Options = true;

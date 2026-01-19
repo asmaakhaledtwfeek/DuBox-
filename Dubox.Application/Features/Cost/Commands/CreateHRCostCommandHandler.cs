@@ -47,7 +47,7 @@ public class CreateHRCostCommandHandler : IRequestHandler<CreateHRCostCommand, R
             await _unitOfWork.Repository<HRCostRecord>().AddAsync(hrCost, cancellationToken);
             await _unitOfWork.CompleteAsync(cancellationToken);
 
-            // Create audit log for HRC cost creation
+            // Create audit log for HR cost creation
             var currentUserId = Guid.TryParse(_currentUserService.UserId, out var userId) ? userId : Guid.Empty;
             var auditLog = new AuditLog
             {
@@ -55,10 +55,10 @@ public class CreateHRCostCommandHandler : IRequestHandler<CreateHRCostCommand, R
                 RecordId = hrCost.HRCostRecordId,
                 Action = "INSERT",
                 OldValues = null,
-                NewValues = $"Code: {hrCost.Code ?? "N/A"}, Name: {hrCost.Name}, Units: {hrCost.Units ?? "N/A"}, Type: {hrCost.CostType ?? "N/A"}, Status: {(hrCost.IsActive ? "Active" : "Inactive")}",
+                NewValues = $"Code: {hrCost.Code ?? "N/A"}, Chapter: {hrCost.Chapter ?? "N/A"}, Name: {hrCost.Name}, Units: {hrCost.Units ?? "N/A"}, Type: {hrCost.Type ?? "N/A"}, Status: {hrCost.Status ?? "N/A"}",
                 ChangedBy = currentUserId,
                 ChangedDate = DateTime.UtcNow,
-                Description = $"HRC cost '{hrCost.Name}' created successfully."
+                Description = $"HR cost '{hrCost.Name}' created successfully."
             };
             await _unitOfWork.Repository<AuditLog>().AddAsync(auditLog, cancellationToken);
             await _unitOfWork.CompleteAsync(cancellationToken);

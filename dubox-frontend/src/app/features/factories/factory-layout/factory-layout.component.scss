@@ -185,6 +185,49 @@
       border-color: var(--amana-teal);
       box-shadow: 0 0 0 3px rgba(27, 154, 170, 0.1);
     }
+
+    // Color-coded options for stage select
+    &.stage-select {
+      option {
+        padding: 8px 12px;
+        font-weight: 500;
+      }
+
+      option[data-color-class="wir-stage-1"] {
+        color: #1b9aaa;
+        font-weight: 600;
+      }
+
+      option[data-color-class="wir-stage-2"] {
+        color: #2d6a4f;
+        font-weight: 600;
+      }
+
+      option[data-color-class="wir-stage-3"] {
+        color: #7a9e2e;
+        font-weight: 600;
+      }
+
+      option[data-color-class="wir-stage-4"] {
+        color: #e6ac00;
+        font-weight: 600;
+      }
+
+      option[data-color-class="wir-stage-5"] {
+        color: #d45d1e;
+        font-weight: 600;
+      }
+
+      option[data-color-class="wir-stage-6"] {
+        color: #5a189a;
+        font-weight: 600;
+      }
+
+      option[data-color-class="wir-completed"] {
+        color: #059669;
+        font-weight: 600;
+      }
+    }
   }
 }
 

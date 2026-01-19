@@ -241,10 +241,53 @@
                   <circle cx="12" cy="12" r="3"/>
                 </svg>
               </button>
+              <button 
+                class="action-btn comments" 
+                (click)="viewComments(issue)"
+                title="View Comments"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+              </button>
             </td>
           </tr>
         </tbody>
       </table>
+    </div>
+  </div>
+</div>
+
+<!-- Comments Modal -->
+<div class="status-modal-backdrop" *ngIf="isCommentsModalOpen">
+  <div class="status-modal comments-modal">
+    <div class="modal-header">
+      <div>
+        <h3>Discussion & Comments</h3>
+        <p class="modal-subtitle" *ngIf="selectedIssueForComments">
+          {{ selectedIssueForComments.issueType }} • {{ selectedIssueForComments.severity }} • 
+          Issue #{{ selectedIssueForComments.issueNumber }}
+        </p>
+      </div>
+      <button class="icon-button" (click)="closeCommentsModal()" type="button">
+        &times;
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="comments-modal-wrapper" *ngIf="selectedIssueForComments">
+        <app-issue-comments
+          [issueId]="selectedIssueForComments.issueId || ''"
+          [issueNumber]="selectedIssueForComments.issueNumber || ''"
+          [issueTitle]="selectedIssueForComments.issueDescription || ''"
+        ></app-issue-comments>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" (click)="closeCommentsModal()" type="button">
+        Close
+      </button>
     </div>
   </div>
 </div>

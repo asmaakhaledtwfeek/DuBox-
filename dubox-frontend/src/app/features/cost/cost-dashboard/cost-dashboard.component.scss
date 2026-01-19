@@ -368,6 +368,24 @@
     flex-direction: column;
     gap: 24px;
 
+    &.hrc-filters-cascading {
+      gap: 16px;
+
+      .filter-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+
+        @media (max-width: 1200px) {
+          grid-template-columns: repeat(2, 1fr);
+        }
+
+        @media (max-width: 768px) {
+          grid-template-columns: 1fr;
+        }
+      }
+    }
+
     .filter-group {
       display: grid;
       gap: 16px;
@@ -1712,6 +1730,23 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 18px;
+
+    .form-section-header {
+      grid-column: 1 / -1;
+      margin-top: 16px;
+      margin-bottom: 8px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid var(--amana-teal);
+
+      h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--amana-teal);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+    }
     margin-bottom: 20px;
     
     .form-group {

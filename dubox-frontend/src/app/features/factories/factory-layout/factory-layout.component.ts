@@ -80,9 +80,10 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
    */
   initializeAvailableStages(): void {
     // Use predefined WIR stages from WIR_STAGE_COLORS
+    // Remove the code part (e.g., "- WIR-1") from display name
     this.availableStages = Object.values(WIR_STAGE_COLORS).map(stage => ({
       wirCode: stage.wirCode,
-      displayName: stage.displayName
+      displayName: stage.displayName.replace(/\s*-\s*WIR-\d+$/, '')
     }));
     
     // Add Completed stage
@@ -492,14 +493,18 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
    * Returns an array of WIR stages with their counts and percentages
    */
   getWIRStageStats(): Array<{ stage: WIRStageInfo | null; count: number; percentage: number }> {
-    const gridLayout = this.getGridLayout();
-    if (gridLayout.totalBoxes === 0) return [];
+    // Calculate total boxes in factory with position (ALL boxes, not filtered)
+    const totalBoxesInFactory = this.boxes.filter(box => 
+      (box.bay || box.row || box.position) && box.status !== BoxStatus.Dispatched
+    ).length;
+    
+    if (totalBoxesInFactory === 0) return [];
 
     const stageCounts = new Map<string, number>();
     let completedCount = 0;
     let noWIRCount = 0;
 
-    // Count boxes by WIR stage (use filteredBoxes)
+    // Count boxes by WIR stage (use filteredBoxes for display)
     this.filteredBoxes.forEach(box => {
       if (!box.bay && !box.row && !box.position) return;
       if (box.status === BoxStatus.Dispatched) return;
@@ -520,12 +525,13 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
     const stats: Array<{ stage: WIRStageInfo | null; count: number; percentage: number }> = [];
 
     // Add WIR stages that have boxes
+    // Percentage is calculated against ALL boxes in factory, not just filtered ones
     stageCounts.forEach((count, wirCode) => {
       const stage = getWIRStageInfo(wirCode);
       stats.push({
         stage,
         count,
-        percentage: Math.round((count / gridLayout.totalBoxes) * 100)
+        percentage: Math.round((count / totalBoxesInFactory) * 100)
       });
     });
 
@@ -534,7 +540,7 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
       stats.push({
         stage: COMPLETED_WIR_STAGE,
         count: completedCount,
-        percentage: Math.round((completedCount / gridLayout.totalBoxes) * 100)
+        percentage: Math.round((completedCount / totalBoxesInFactory) * 100)
       });
     }
 
@@ -550,8 +556,12 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
   }
 
   getInProgressPercentage(): number {
-    const gridLayout = this.getGridLayout();
-    if (gridLayout.totalBoxes === 0) return 0;
+    // Calculate total boxes in factory with position (ALL boxes, not filtered)
+    const totalBoxesInFactory = this.boxes.filter(box => 
+      (box.bay || box.row || box.position) && box.status !== BoxStatus.Dispatched
+    ).length;
+    
+    if (totalBoxesInFactory === 0) return 0;
     
     // Count boxes that are in any WIR stage (not completed) - use filteredBoxes
     const inProgressCount = this.filteredBoxes.filter(b => {
@@ -561,12 +571,17 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
       return wirStage && wirStage.wirCode !== 'COMPLETED';
     }).length;
     
-    return Math.round((inProgressCount / gridLayout.totalBoxes) * 100);
+    // Percentage is calculated against ALL boxes in factory, not just filtered ones
+    return Math.round((inProgressCount / totalBoxesInFactory) * 100);
   }
 
   getCompletedPercentage(): number {
-    const gridLayout = this.getGridLayout();
-    if (gridLayout.totalBoxes === 0) return 0;
+    // Calculate total boxes in factory with position (ALL boxes, not filtered)
+    const totalBoxesInFactory = this.boxes.filter(box => 
+      (box.bay || box.row || box.position) && box.status !== BoxStatus.Dispatched
+    ).length;
+    
+    if (totalBoxesInFactory === 0) return 0;
     
     // Count boxes that have completed all WIRs - use filteredBoxes
     const completedCount = this.filteredBoxes.filter(b => {
@@ -576,7 +591,8 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
       return wirStage && wirStage.wirCode === 'COMPLETED';
     }).length;
     
-    return Math.round((completedCount / gridLayout.totalBoxes) * 100);
+    // Percentage is calculated against ALL boxes in factory, not just filtered ones
+    return Math.round((completedCount / totalBoxesInFactory) * 100);
   }
 
   getEmptyPercentage(): number {
@@ -589,6 +605,18 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
     const emptyCells = totalCells - occupiedCells;
     
     return Math.round((emptyCells / totalCells) * 100);
+  }
+
+  /**
+   * Get the color class for a WIR stage
+   * Used for coloring the stage dropdown options
+   */
+  getStageColorClass(wirCode: string): string {
+    if (wirCode === 'COMPLETED') {
+      return 'wir-completed';
+    }
+    const stageInfo = getWIRStageInfo(wirCode);
+    return stageInfo.colorClass;
   }
 
   viewBox(boxId: string): void {

@@ -3152,11 +3152,19 @@ namespace Dubox.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Code")
+                    b.Property<string>("BudgetLevel")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
-                    b.Property<string>("CostType")
+                    b.Property<string>("Chapter")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Classification")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Code")
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
 
@@ -3166,28 +3174,23 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Currency")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("nvarchar(10)");
+                    b.Property<string>("IDLAccount")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<decimal?>("DailyRate")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<string>("Job")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
-                    b.Property<decimal?>("HourlyRate")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
+                    b.Property<string>("JobCostAccount")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ModifiedBy")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("ModifiedDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<decimal?>("MonthlyRate")
-                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -3198,16 +3201,29 @@ namespace Dubox.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<decimal?>("OvertimeRate")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Position")
+                    b.Property<string>("OfficeAccount")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<string>("Trade")
+                    b.Property<string>("SpecialAccount")
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Status")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("SubChapter")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("SubClassification")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Type")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Units")
                         .HasMaxLength(20)
@@ -11090,11 +11106,34 @@ namespace Dubox.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("BoxId")
+                    b.Property<Guid?>("BoxId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Chapter")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Classification")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<decimal>("Cost")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<Guid?>("CostCodeId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CostCodeLevel1")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("CostCodeLevel2")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("CostCodeLevel3")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("CostType")
                         .IsRequired()
@@ -11114,9 +11153,27 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<Guid>("ProjectId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("SubChapter")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("SubClassification")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Type")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Units")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.HasKey("ProjectCostId");
 
                     b.HasIndex("BoxId");
+
+                    b.HasIndex("CostCodeId");
 
                     b.HasIndex("HRCostRecordId");
 
@@ -14862,8 +14919,11 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasOne("Dubox.Domain.Entities.Box", "Box")
                         .WithMany("ProjectCosts")
                         .HasForeignKey("BoxId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("Dubox.Domain.Entities.CostCodeMaster", "CostCodeMaster")
+                        .WithMany()
+                        .HasForeignKey("CostCodeId");
 
                     b.HasOne("Dubox.Domain.Entities.HRCostRecord", "HRCost")
                         .WithMany()
@@ -14876,6 +14936,8 @@ namespace Dubox.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Box");
+
+                    b.Navigation("CostCodeMaster");
 
                     b.Navigation("HRCost");
 

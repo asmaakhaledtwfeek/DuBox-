@@ -171,6 +171,10 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   selectedIssueForAssign: AggregatedQualityIssue | null = null;
   assignLoading = false;
 
+  // Comments modal state
+  isCommentsModalOpen = false;
+  selectedIssueForComments: AggregatedQualityIssue | null = null;
+
   // Comments section state
   showComments = true;
 
@@ -1366,6 +1370,27 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   closeAssignModal(): void {
     this.isAssignModalOpen = false;
     this.selectedIssueForAssign = null;
+  }
+
+  openCommentsModal(issue: AggregatedQualityIssue): void {
+    // Close other modals first
+    if (this.isDetailsModalOpen) {
+      this.closeIssueDetails();
+    }
+    if (this.isStatusModalOpen) {
+      this.closeStatusModal();
+    }
+    if (this.isAssignModalOpen) {
+      this.closeAssignModal();
+    }
+
+    this.selectedIssueForComments = issue;
+    this.isCommentsModalOpen = true;
+  }
+
+  closeCommentsModal(): void {
+    this.isCommentsModalOpen = false;
+    this.selectedIssueForComments = null;
   }
 
   onAssignToCrew(event: { teamId: string | null; memberId: string | null; ccUserId: string | null }): void {

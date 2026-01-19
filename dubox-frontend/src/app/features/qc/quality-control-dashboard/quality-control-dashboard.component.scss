@@ -552,13 +552,16 @@
   }
 
   .col-actions {
-    width: 140px;
+    width: 180px;
+    min-width: 180px;
+    white-space: nowrap;
 
     .action-stack {
       display: flex;
       justify-content: flex-end;
       align-items: center;
       gap: 10px;
+      flex-wrap: nowrap;
     }
 
     .action-btn {
@@ -606,6 +609,30 @@
 
         &:active {
           transform: translateY(0);
+        }
+      }
+
+      &.comments {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        border-color: #bae6fd;
+        color: #0284c7;
+        box-shadow: 0 2px 8px rgba(2, 132, 199, 0.2);
+
+        &:hover {
+          background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+          border-color: #7dd3fc;
+          color: #0369a1;
+          transform: translateY(-2px) scale(1.05);
+          box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
+
+          svg {
+            transform: scale(1.1);
+          }
+        }
+
+        &:active {
+          transform: translateY(0) scale(1);
+          box-shadow: 0 2px 6px rgba(2, 132, 199, 0.2);
         }
       }
 
@@ -1932,10 +1959,54 @@
       }
     }
   }
+
+  // Comments Modal specific styles
+  &.comments-modal {
+    width: min(800px, 96%);
+
+    .comments-modal-wrapper {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+      min-height: 300px;
+      max-height: 500px;
+      overflow-y: auto;
+
+      &::-webkit-scrollbar {
+        width: 8px;
+      }
+      
+      &::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+        
+        &:hover {
+          background: #94a3b8;
+        }
+      }
+    }
+  }
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 // Modal Backdrop - Enhanced dark overlay

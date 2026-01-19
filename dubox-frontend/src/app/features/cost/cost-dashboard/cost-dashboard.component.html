@@ -84,7 +84,7 @@
 
             <div class="form-group add-button-group">
               <label>&nbsp;</label>
-              <button class="btn-add-cost" (click)="openCreateCostModal()" [disabled]="!selectedProject">
+              <button type="button" class="btn-add-cost" (click)="openCreateCostModal()" [disabled]="!selectedProject">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="12" y1="5" x2="12" y2="19"/>
                   <line x1="5" y1="12" x2="19" y2="12"/>
@@ -156,8 +156,15 @@
             <thead>
               <tr>
                 <th>Box Tag</th>
-                <th>Cost Type</th>
-                <th>Cost Code</th>
+                <th>Cost Code L1</th>
+                <th>Cost Code L2</th>
+                <th>Cost Code L3</th>
+                <th>Chapter</th>
+                <th>Sub Chapter</th>
+                <th>Classification</th>
+                <th>Sub Classification</th>
+                <th>Units</th>
+                <th>Type</th>
                 <th>Amount</th>
                 <th>Created Date</th>
                 <th>Actions</th>
@@ -166,14 +173,20 @@
             <tbody>
               <tr *ngFor="let cost of projectCosts">
                 <td>
-                  <span class="code-badge">{{ cost.boxTag }}</span>
+                  <span class="code-badge" *ngIf="cost.boxTag">{{ cost.boxTag }}</span>
+                  <span class="text-muted" *ngIf="!cost.boxTag">-</span>
                 </td>
+                <td>{{ cost.costCodeLevel1 || '-' }}</td>
+                <td>{{ cost.costCodeLevel2 || '-' }}</td>
+                <td>{{ cost.costCodeLevel3 || '-' }}</td>
+                <td>{{ cost.chapter || '-' }}</td>
+                <td>{{ cost.subChapter || '-' }}</td>
+                <td>{{ cost.classification || '-' }}</td>
+                <td>{{ cost.subClassification || '-' }}</td>
+                <td>{{ cost.units || '-' }}</td>
                 <td>
-                  <span class="cost-type-badge">{{ cost.costType }}</span>
-                </td>
-                <td>
-                  <span class="cost-code-text" *ngIf="cost.hrCostCode">{{ cost.hrCostCode }}</span>
-                  <span class="text-muted" *ngIf="!cost.hrCostCode">-</span>
+                  <span class="cost-type-badge" *ngIf="cost.type">{{ cost.type }}</span>
+                  <span class="text-muted" *ngIf="!cost.type">-</span>
                 </td>
                 <td>
                   <span class="cost-amount">{{ cost.cost | number:'1.2-2' }} SAR</span>
@@ -189,13 +202,13 @@
                 </td>
               </tr>
               <tr *ngIf="projectCosts.length === 0">
-                <td colspan="6" class="no-data">
+                <td colspan="13" class="no-data">
                   <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="3" width="18" height="18" rx="2"/>
                     <path d="M3 9h18M9 21V9"/>
                   </svg>
                   <p>No cost items found for this project</p>
-                  <small>Click "Add Cost Item" to create a new cost entry</small>
+                  <small>Click "Add Project Cost" to create a new cost entry</small>
                 </td>
               </tr>
             </tbody>
@@ -498,94 +511,97 @@
           </button>
         </div>
 
-        <div class="filters-grid hrc-filters-compact">
-          <!-- All Filters in One Row -->
-          <div class="filter-group single-row-group">
+        <div class="filters-grid hrc-filters-cascading">
+          <!-- Row 1: Code, Chapter, Sub Chapter -->
+          <div class="filter-group filter-row">
             <div class="filter-field compact-filter">
-              <label class="filter-label">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M10 13a5 5 0 0 0 7.54.54l3 3a1.5 1.5 0 0 0 2.12 0 1.5 1.5 0 0 0 0-2.12l-3-3A5 5 0 1 0 10 13zm0-8a3 3 0 1 1 0 6 3 3 0 0 1 0-6z"/>
-                </svg>
-                HRC Code
-              </label>
-              <div class="input-wrapper">
-                <input
-                  type="text"
-                  [(ngModel)]="hrSearchCode"
-                  (keyup.enter)="onHRSearch()"
-                  placeholder="e.g., HR001"
-                  class="filter-input"
-                />
-              </div>
+              <label class="filter-label">Code</label>
+              <select [(ngModel)]="hrFilterCode" class="filter-select-enhanced" (ngModelChange)="onHRFilterChange('code')">
+                <option [ngValue]="null">All Codes</option>
+                <option *ngFor="let code of hrFilterOptions.codes" [value]="code">{{ code }}</option>
+              </select>
             </div>
 
             <div class="filter-field compact-filter">
-              <label class="filter-label">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                  <circle cx="12" cy="7" r="4"/>
-                </svg>
-                Resource Name
-              </label>
+              <label class="filter-label">Chapter</label>
+              <select [(ngModel)]="hrFilterChapter" class="filter-select-enhanced" (ngModelChange)="onHRFilterChange('chapter')">
+                <option [ngValue]="null">All Chapters</option>
+                <option *ngFor="let chapter of hrFilterOptions.chapters" [value]="chapter">{{ chapter }}</option>
+              </select>
+            </div>
+
+            <div class="filter-field compact-filter">
+              <label class="filter-label">Sub Chapter</label>
+              <select [(ngModel)]="hrFilterSubChapter" class="filter-select-enhanced" (ngModelChange)="onHRFilterChange('subChapter')">
+                <option [ngValue]="null">All Sub Chapters</option>
+                <option *ngFor="let sub of hrFilterOptions.subChapters" [value]="sub">{{ sub }}</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Row 2: Classification, Sub Classification, Units -->
+          <div class="filter-group filter-row">
+            <div class="filter-field compact-filter">
+              <label class="filter-label">Classification</label>
+              <select [(ngModel)]="hrFilterClassification" class="filter-select-enhanced" (ngModelChange)="onHRFilterChange('classification')">
+                <option [ngValue]="null">All Classifications</option>
+                <option *ngFor="let cls of hrFilterOptions.classifications" [value]="cls">{{ cls }}</option>
+              </select>
+            </div>
+
+            <div class="filter-field compact-filter">
+              <label class="filter-label">Sub Classification</label>
+              <select [(ngModel)]="hrFilterSubClassification" class="filter-select-enhanced" (ngModelChange)="onHRFilterChange('subClassification')">
+                <option [ngValue]="null">All Sub Classifications</option>
+                <option *ngFor="let sub of hrFilterOptions.subClassifications" [value]="sub">{{ sub }}</option>
+              </select>
+            </div>
+
+            <div class="filter-field compact-filter">
+              <label class="filter-label">Units</label>
+              <select [(ngModel)]="hrFilterUnits" class="filter-select-enhanced" (ngModelChange)="onHRFilterChange('units')">
+                <option [ngValue]="null">All Units</option>
+                <option *ngFor="let unit of hrFilterOptions.units" [value]="unit">{{ unit }}</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Row 3: Type, Status, Name Search -->
+          <div class="filter-group filter-row">
+            <div class="filter-field compact-filter">
+              <label class="filter-label">Type</label>
+              <select [(ngModel)]="hrFilterType" class="filter-select-enhanced" (ngModelChange)="onHRFilterChange('type')">
+                <option [ngValue]="null">All Types</option>
+                <option *ngFor="let type of hrFilterOptions.types" [value]="type">{{ type }}</option>
+              </select>
+            </div>
+
+            <div class="filter-field compact-filter">
+              <label class="filter-label">Status</label>
+              <select [(ngModel)]="hrFilterStatus" class="filter-select-enhanced" (ngModelChange)="onHRFilterChange('status')">
+                <option [ngValue]="null">All Status</option>
+                <option *ngFor="let status of hrFilterOptions.statuses" [value]="status">{{ status }}</option>
+              </select>
+            </div>
+
+            <div class="filter-field compact-filter">
+              <label class="filter-label">Name Search</label>
               <div class="input-wrapper">
                 <input
                   type="text"
                   [(ngModel)]="hrSearchName"
-                  (keyup.enter)="onHRSearch()"
+                  (keyup.enter)="loadHRCosts()"
                   placeholder="Search by name..."
                   class="filter-input"
                 />
               </div>
-            </div>
-
-            <div class="filter-field compact-filter">
-              <label class="filter-label">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                  <line x1="3" y1="9" x2="21" y2="9"/>
-                  <line x1="9" y1="21" x2="9" y2="9"/>
-                </svg>
-                Units
-              </label>
-              <select [(ngModel)]="hrSearchUnits" class="filter-select-enhanced" (ngModelChange)="onHRSearch()" [disabled]="loadingHRUnitsOptions">
-                <option value="">{{ loadingHRUnitsOptions ? 'Loading...' : 'All Units' }}</option>
-                <option *ngFor="let unit of hrUnitsOptions" [value]="unit">{{ unit }}</option>
-              </select>
-            </div>
-
-            <div class="filter-field compact-filter">
-              <label class="filter-label">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M20 7h-9M14 17H5M17 12H3"/>
-                </svg>
-                Cost Type
-              </label>
-              <select [(ngModel)]="selectedHRCostType" class="filter-select-enhanced" (ngModelChange)="onHRSearch()" [disabled]="loadingHRCostTypes">
-                <option [ngValue]="null">{{ loadingHRCostTypes ? 'Loading...' : 'All Types' }}</option>
-                <option *ngFor="let type of hrCostTypes" [value]="type">{{ type }}</option>
-              </select>
-            </div>
-
-            <div class="filter-field compact-filter">
-              <label class="filter-label">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="10"/>
-                  <path d="M12 6v6l4 2"/>
-                </svg>
-                Status
-              </label>
-              <select [(ngModel)]="selectedHRIsActive" class="filter-select-enhanced" (ngModelChange)="onHRSearch()">
-                <option [ngValue]="null">All Status</option>
-                <option [ngValue]="true">Active Only</option>
-                <option [ngValue]="false">Inactive Only</option>
-              </select>
             </div>
           </div>
         </div>
 
         <!-- Action Buttons -->
         <div class="filters-actions">
-          <button class="btn-search-primary" (click)="onHRSearch()">
+          <button class="btn-search-primary" (click)="loadHRCosts()">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="11" cy="11" r="8"/>
               <path d="m21 21-4.35-4.35"/>
@@ -593,14 +609,14 @@
             Search
           </button>
 
-          <button class="btn-clear" (click)="clearHRFilters()" *ngIf="hasActiveHRFilters()">
+          <button class="btn-clear" (click)="clearHRFilters()">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
             </svg>
             Clear Filters
           </button>
 
-          <div class="active-filters-count" *ngIf="hasActiveHRFilters()">
+          <div class="active-filters-count" *ngIf="hrFilterCode || hrFilterChapter || hrFilterSubChapter || hrFilterClassification || hrFilterSubClassification || hrFilterUnits || hrFilterType || hrFilterStatus || hrSearchName">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"/>
               <path d="M12 6v6l4 2"/>
@@ -633,10 +649,20 @@
           <thead>
             <tr>
               <th>Code</th>
+              <th>Chapter</th>
+              <th>Sub Chapter</th>
+              <th>Classification</th>
+              <th>Sub Classification</th>
               <th>Name</th>
               <th>Units</th>
               <th>Type</th>
+              <th>Budget Level</th>
               <th>Status</th>
+              <th>Job</th>
+              <th>Office Account</th>
+              <th>Job Cost Account</th>
+              <th>Special Account</th>
+              <th>IDL Account</th>
             </tr>
           </thead>
           <tbody>
@@ -645,6 +671,10 @@
                 <span class="code-badge" *ngIf="hr.code">{{ hr.code }}</span>
                 <span class="text-muted" *ngIf="!hr.code">-</span>
               </td>
+              <td>{{ hr.chapter || '-' }}</td>
+              <td>{{ hr.subChapter || '-' }}</td>
+              <td>{{ hr.classification || '-' }}</td>
+              <td>{{ hr.subClassification || '-' }}</td>
               <td>
                 <div class="resource-info">
                   <strong>{{ hr.name }}</strong>
@@ -652,23 +682,29 @@
               </td>
               <td>{{ hr.units || '-' }}</td>
               <td>
-                <span class="trade-badge" *ngIf="hr.costType">{{ hr.costType }}</span>
-                <span class="text-muted" *ngIf="!hr.costType">-</span>
+                <span class="trade-badge" *ngIf="hr.type">{{ hr.type }}</span>
+                <span class="text-muted" *ngIf="!hr.type">-</span>
               </td>
+              <td>{{ hr.budgetLevel || '-' }}</td>
               <td>
-                <span class="status-badge" [class.active]="hr.isActive" [class.inactive]="!hr.isActive">
-                  {{ hr.isActive ? 'Active' : 'Inactive' }}
+                <span class="status-badge" [class.active]="hr.status === 'Active'" [class.inactive]="hr.status !== 'Active'">
+                  {{ hr.status || 'N/A' }}
                 </span>
               </td>
+              <td>{{ hr.job || '-' }}</td>
+              <td>{{ hr.officeAccount || '-' }}</td>
+              <td>{{ hr.jobCostAccount || '-' }}</td>
+              <td>{{ hr.specialAccount || '-' }}</td>
+              <td>{{ hr.idlAccount || '-' }}</td>
             </tr>
             <tr *ngIf="hrCosts.length === 0">
-              <td colspan="5" class="no-data">
+              <td colspan="15" class="no-data">
                 <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
                   <circle cx="9" cy="7" r="4"/>
                 </svg>
-                <p>No HRC codes found</p>
-                <small>Data will be automatically imported on server startup</small>
+                <p>No HR costs found</p>
+                <small>Try adjusting your filters or add new HR cost records</small>
               </td>
             </tr>
           </tbody>
@@ -706,7 +742,7 @@
   <div class="modal-container" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>Add Project Cost</h2>
-      <button class="close-button" (click)="closeCreateCostModal()">
+      <button type="button" class="close-button" (click)="closeCreateCostModal()">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18"/>
           <line x1="6" y1="6" x2="18" y2="18"/>
@@ -716,84 +752,190 @@
 
     <div class="modal-body">
       <form (ngSubmit)="createProjectCost()">
-        <!-- Box Selection -->
-        <div class="form-group">
-          <label for="boxSelect">Select Box <span class="required">*</span></label>
-          <select 
-            id="boxSelect" 
-            [(ngModel)]="newCost.boxId" 
-            name="boxId"
-            class="form-control"
-            required>
-            <option value="">Select a box...</option>
-            <option *ngFor="let box of projectBoxes" [value]="box.boxId">
-              {{ box.boxTag }} - {{ box.boxName || 'No Name' }}
-            </option>
-          </select>
-          <div *ngIf="loadingBoxes" class="loading-text">
-            <div class="small-spinner"></div>
-            Loading boxes...
+        <div class="form-grid">
+          <!-- Box Selection (Optional) -->
+          <div class="form-group full-width">
+            <label for="boxSelect">Select Box (Optional)</label>
+            <select 
+              id="boxSelect" 
+              [(ngModel)]="newCost.boxId" 
+              name="boxId"
+              class="form-control">
+              <option [ngValue]="null">No box selected</option>
+              <option *ngFor="let box of projectBoxes" [value]="box.boxId">
+                {{ box.boxTag }} - {{ box.boxName || 'No Name' }}
+              </option>
+            </select>
+            <div *ngIf="loadingBoxes" class="loading-text">
+              <div class="small-spinner"></div>
+              Loading boxes...
+            </div>
           </div>
-        </div>
 
-        <!-- Cost Type -->
-        <div class="form-group">
-          <label for="costType">Cost Type <span class="required">*</span></label>
-          <select 
-            id="costType" 
-            [(ngModel)]="newCost.costType" 
-            name="costType"
-            (ngModelChange)="onCostTypeChange()"
-            class="form-control"
-            required>
-            <option value="">Select cost type...</option>
-            <option *ngFor="let costType of costTypes" [value]="costType">
-              {{ costType }}
-            </option>
-          </select>
-          <div *ngIf="loadingCostTypes" class="loading-text">
-            <div class="small-spinner"></div>
-            Loading cost types...
+          <!-- Section Header: Cost Code Master -->
+          <div class="form-section-header full-width">
+            <h3>Cost Code Master (Required)</h3>
           </div>
-        </div>
 
-        <!-- HRC Cost Code -->
-        <div class="form-group" *ngIf="newCost.costType">
-          <label for="hrCostCode">Cost Code <span class="required">*</span></label>
-          <select 
-            id="hrCostCode" 
-            [(ngModel)]="newCost.hrCostRecordId" 
-            name="hrCostRecordId"
-            class="form-control"
-            required>
-            <option value="">Select cost code...</option>
-            <option *ngFor="let hrCost of filteredHRCosts" [value]="hrCost.hrCostRecordId">
-              {{ hrCost.code || 'N/A' }}
-            </option>
-          </select>
-          <div *ngIf="loadingFilteredHRCosts" class="loading-text">
-            <div class="small-spinner"></div>
-            Loading cost codes...
+          <!-- Cost Code Level 1 -->
+          <div class="form-group">
+            <label for="costCodeLevel1">Cost Code Level 1 <span class="required">*</span></label>
+            <select 
+              id="costCodeLevel1" 
+              [(ngModel)]="newCost.costCodeLevel1" 
+              name="costCodeLevel1"
+              (ngModelChange)="onProjectCostCodeChange('level1')"
+              class="form-control"
+              required>
+              <option [ngValue]="null">Select level 1...</option>
+              <option *ngFor="let level of costCodeFilterOptions.level1Options" [value]="level">{{ level }}</option>
+            </select>
           </div>
-          <div *ngIf="!loadingFilteredHRCosts && filteredHRCosts.length === 0 && newCost.costType" class="info-text">
-            No cost codes found for this cost type.
-          </div>
-        </div>
 
-        <!-- Cost Value -->
-        <div class="form-group">
-          <label for="costValue">Cost Amount (SAR) <span class="required">*</span></label>
-          <input 
-            type="number" 
-            id="costValue" 
-            [(ngModel)]="newCost.cost" 
-            name="cost"
-            class="form-control"
-            placeholder="0.00"
-            step="0.01"
-            min="0"
-            required
-          />
+          <!-- Cost Code Level 2 -->
+          <div class="form-group">
+            <label for="costCodeLevel2">Cost Code Level 2 <span class="required">*</span></label>
+            <select 
+              id="costCodeLevel2" 
+              [(ngModel)]="newCost.costCodeLevel2" 
+              name="costCodeLevel2"
+              (ngModelChange)="onProjectCostCodeChange('level2')"
+              class="form-control"
+              [disabled]="!newCost.costCodeLevel1"
+              required>
+              <option [ngValue]="null">Select level 2...</option>
+              <option *ngFor="let level of costCodeFilterOptions.level2Options" [value]="level">{{ level }}</option>
+            </select>
+          </div>
+
+          <!-- Cost Code Level 3 (Optional) -->
+          <div class="form-group">
+            <label for="costCodeLevel3">Cost Code Level 3 (Optional)</label>
+            <select 
+              id="costCodeLevel3" 
+              [(ngModel)]="newCost.costCodeLevel3" 
+              name="costCodeLevel3"
+              class="form-control"
+              [disabled]="!newCost.costCodeLevel2">
+              <option [ngValue]="null">Select level 3...</option>
+              <option *ngFor="let level of costCodeFilterOptions.level3Options" [value]="level">{{ level }}</option>
+            </select>
+          </div>
+
+          <!-- Section Header: HRC Code -->
+          <div class="form-section-header full-width">
+            <h3>HRC Code (Required)</h3>
+          </div>
+
+          <!-- Chapter -->
+          <div class="form-group">
+            <label for="chapter">Chapter <span class="required">*</span></label>
+            <select 
+              id="chapter" 
+              [(ngModel)]="newCost.chapter" 
+              name="chapter"
+              (ngModelChange)="onProjectHRCostChange('chapter')"
+              class="form-control"
+              required>
+              <option [ngValue]="null">Select chapter...</option>
+              <option *ngFor="let chapter of hrFilterOptions.chapters" [value]="chapter">{{ chapter }}</option>
+            </select>
+          </div>
+
+          <!-- Sub Chapter -->
+          <div class="form-group">
+            <label for="subChapter">Sub Chapter <span class="required">*</span></label>
+            <select 
+              id="subChapter" 
+              [(ngModel)]="newCost.subChapter" 
+              name="subChapter"
+              (ngModelChange)="onProjectHRCostChange('subChapter')"
+              class="form-control"
+              [disabled]="!newCost.chapter"
+              required>
+              <option [ngValue]="null">Select sub chapter...</option>
+              <option *ngFor="let sub of hrFilterOptions.subChapters" [value]="sub">{{ sub }}</option>
+            </select>
+          </div>
+
+          <!-- Classification -->
+          <div class="form-group">
+            <label for="classification">Classification <span class="required">*</span></label>
+            <select 
+              id="classification" 
+              [(ngModel)]="newCost.classification" 
+              name="classification"
+              (ngModelChange)="onProjectHRCostChange('classification')"
+              class="form-control"
+              [disabled]="!newCost.subChapter"
+              required>
+              <option [ngValue]="null">Select classification...</option>
+              <option *ngFor="let cls of hrFilterOptions.classifications" [value]="cls">{{ cls }}</option>
+            </select>
+          </div>
+
+          <!-- Sub Classification -->
+          <div class="form-group">
+            <label for="subClassification">Sub Classification <span class="required">*</span></label>
+            <select 
+              id="subClassification" 
+              [(ngModel)]="newCost.subClassification" 
+              name="subClassification"
+              (ngModelChange)="onProjectHRCostChange('subClassification')"
+              class="form-control"
+              [disabled]="!newCost.classification"
+              required>
+              <option [ngValue]="null">Select sub classification...</option>
+              <option *ngFor="let sub of hrFilterOptions.subClassifications" [value]="sub">{{ sub }}</option>
+            </select>
+          </div>
+
+          <!-- Units -->
+          <div class="form-group">
+            <label for="units">Units <span class="required">*</span></label>
+            <select 
+              id="units" 
+              [(ngModel)]="newCost.units" 
+              name="units"
+              (ngModelChange)="onProjectHRCostChange('units')"
+              class="form-control"
+              [disabled]="!newCost.subClassification"
+              required>
+              <option [ngValue]="null">Select units...</option>
+              <option *ngFor="let unit of hrFilterOptions.units" [value]="unit">{{ unit }}</option>
+            </select>
+          </div>
+
+          <!-- Type -->
+          <div class="form-group">
+            <label for="type">Type <span class="required">*</span></label>
+            <select 
+              id="type" 
+              [(ngModel)]="newCost.type" 
+              name="type"
+              class="form-control"
+              [disabled]="!newCost.units"
+              required>
+              <option [ngValue]="null">Select type...</option>
+              <option *ngFor="let type of hrFilterOptions.types" [value]="type">{{ type }}</option>
+            </select>
+          </div>
+
+          <!-- Cost Amount -->
+          <div class="form-group full-width">
+            <label for="costValue">Cost Amount (SAR) <span class="required">*</span></label>
+            <input 
+              type="number" 
+              id="costValue" 
+              [(ngModel)]="newCost.cost" 
+              name="cost"
+              class="form-control"
+              placeholder="0.00"
+              step="0.01"
+              min="0"
+              required
+            />
+          </div>
         </div>
 
         <!-- Error Message -->
@@ -822,7 +964,10 @@
           <button 
             type="submit" 
             class="btn-primary" 
-            [disabled]="creatingCost || !newCost.boxId || !newCost.costType || !newCost.hrCostRecordId || !newCost.cost">
+            [disabled]="creatingCost || !newCost.cost || 
+                       !newCost.costCodeLevel1 || !newCost.costCodeLevel2 ||
+                       !newCost.chapter || !newCost.subChapter || !newCost.classification ||
+                       !newCost.subClassification || !newCost.units || !newCost.type">
             <span *ngIf="!creatingCost">Add Cost</span>
             <span *ngIf="creatingCost" class="btn-loading">
               <div class="small-spinner"></div>
@@ -1107,31 +1252,22 @@
     <div class="modal-body">
       <form (ngSubmit)="createHRCost()">
         <div class="form-grid">
-          <!-- Code -->
+          <!-- Code (Free Text) -->
           <div class="form-group">
-            <label for="hrCode">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
-              </svg>
-              Code
-            </label>
+            <label for="hrCode">Code</label>
             <input 
               type="text" 
               id="hrCode" 
               [(ngModel)]="newHRCost.code" 
               name="code"
               class="form-control"
-              placeholder="Enter HR code"
+              placeholder="Enter code"
             />
           </div>
 
-          <!-- Name -->
+          <!-- Name (Free Text) - Required -->
           <div class="form-group">
             <label for="hrName">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                <circle cx="12" cy="7" r="4"/>
-              </svg>
               Name <span class="required">*</span>
             </label>
             <input 
@@ -1145,66 +1281,175 @@
             />
           </div>
 
-          <!-- Units -->
+          <!-- Chapter (Dropdown) -->
           <div class="form-group">
-            <label for="hrUnits">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="7" height="7"/>
-                <rect x="14" y="3" width="7" height="7"/>
-                <rect x="14" y="14" width="7" height="7"/>
-                <rect x="3" y="14" width="7" height="7"/>
-              </svg>
-              Units
-            </label>
+            <label for="hrChapter">Chapter</label>
+            <select 
+              id="hrChapter" 
+              [(ngModel)]="newHRCost.chapter" 
+              name="chapter"
+              class="form-control">
+              <option [ngValue]="null">Select chapter</option>
+              <option *ngFor="let chapter of hrFilterOptions.chapters" [value]="chapter">{{ chapter }}</option>
+            </select>
+          </div>
+
+          <!-- Sub Chapter (Dropdown) -->
+          <div class="form-group">
+            <label for="hrSubChapter">Sub Chapter</label>
+            <select 
+              id="hrSubChapter" 
+              [(ngModel)]="newHRCost.subChapter" 
+              name="subChapter"
+              class="form-control">
+              <option [ngValue]="null">Select sub chapter</option>
+              <option *ngFor="let sub of hrFilterOptions.subChapters" [value]="sub">{{ sub }}</option>
+            </select>
+          </div>
+
+          <!-- Classification (Dropdown) -->
+          <div class="form-group">
+            <label for="hrClassification">Classification</label>
+            <select 
+              id="hrClassification" 
+              [(ngModel)]="newHRCost.classification" 
+              name="classification"
+              class="form-control">
+              <option [ngValue]="null">Select classification</option>
+              <option *ngFor="let cls of hrFilterOptions.classifications" [value]="cls">{{ cls }}</option>
+            </select>
+          </div>
+
+          <!-- Sub Classification (Dropdown) -->
+          <div class="form-group">
+            <label for="hrSubClassification">Sub Classification</label>
+            <select 
+              id="hrSubClassification" 
+              [(ngModel)]="newHRCost.subClassification" 
+              name="subClassification"
+              class="form-control">
+              <option [ngValue]="null">Select sub classification</option>
+              <option *ngFor="let sub of hrFilterOptions.subClassifications" [value]="sub">{{ sub }}</option>
+            </select>
+          </div>
+
+          <!-- Units (Dropdown) -->
+          <div class="form-group">
+            <label for="hrUnits">Units</label>
             <select 
               id="hrUnits" 
               [(ngModel)]="newHRCost.units" 
               name="units"
               class="form-control">
-              <option value="">Select units</option>
-              <option value="Ls">Ls</option>
-              <option value="Hr">Hr</option>
-              <option value="Day">Day</option>
-              <option value="Month">Month</option>
+              <option [ngValue]="null">Select units</option>
+              <option *ngFor="let unit of hrFilterOptions.units" [value]="unit">{{ unit }}</option>
             </select>
           </div>
 
-          <!-- Type -->
+          <!-- Type (Dropdown) -->
           <div class="form-group">
-            <label for="hrType">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 7h16M4 12h16M4 17h10"/>
-              </svg>
-              Type
-            </label>
+            <label for="hrType">Type</label>
             <select 
               id="hrType" 
-              [(ngModel)]="newHRCost.costType" 
-              name="costType"
-              class="form-control"
-              [disabled]="loadingHRCostTypes">
-              <option [ngValue]="null">{{ loadingHRCostTypes ? 'Loading...' : 'Select type' }}</option>
-              <option *ngFor="let type of hrCostTypes" [ngValue]="type">{{ type }}</option>
+              [(ngModel)]="newHRCost.type" 
+              name="type"
+              class="form-control">
+              <option [ngValue]="null">Select type</option>
+              <option *ngFor="let type of hrFilterOptions.types" [value]="type">{{ type }}</option>
             </select>
           </div>
 
-          <!-- Active Status -->
-          <div class="form-group full-width">
-            <label for="hrIsActive">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="9 12 12 15 16 10"/>
-              </svg>
-              Status
-            </label>
+          <!-- Budget Level (Dropdown) -->
+          <div class="form-group">
+            <label for="hrBudgetLevel">Budget Level</label>
             <select 
-              id="hrIsActive" 
-              [(ngModel)]="newHRCost.isActive" 
-              name="isActive"
+              id="hrBudgetLevel" 
+              [(ngModel)]="newHRCost.budgetLevel" 
+              name="budgetLevel"
               class="form-control">
-              <option [ngValue]="true">Active</option>
-              <option [ngValue]="false">Inactive</option>
+              <option [ngValue]="null">Select budget level</option>
+              <option value="Level 1">Level 1</option>
+              <option value="Level 2">Level 2</option>
+              <option value="Level 3">Level 3</option>
             </select>
+          </div>
+
+          <!-- Status (Dropdown) -->
+          <div class="form-group">
+            <label for="hrStatus">Status</label>
+            <select 
+              id="hrStatus" 
+              [(ngModel)]="newHRCost.status" 
+              name="status"
+              class="form-control">
+              <option [ngValue]="null">Select status</option>
+              <option *ngFor="let status of hrFilterOptions.statuses" [value]="status">{{ status }}</option>
+            </select>
+          </div>
+
+          <!-- Job (Free Text) -->
+          <div class="form-group">
+            <label for="hrJob">Job</label>
+            <input 
+              type="text" 
+              id="hrJob" 
+              [(ngModel)]="newHRCost.job" 
+              name="job"
+              class="form-control"
+              placeholder="Enter job"
+            />
+          </div>
+
+          <!-- Office Account (Free Text) -->
+          <div class="form-group">
+            <label for="hrOfficeAccount">Office Account</label>
+            <input 
+              type="text" 
+              id="hrOfficeAccount" 
+              [(ngModel)]="newHRCost.officeAccount" 
+              name="officeAccount"
+              class="form-control"
+              placeholder="Enter office account"
+            />
+          </div>
+
+          <!-- Job Cost Account (Free Text) -->
+          <div class="form-group">
+            <label for="hrJobCostAccount">Job Cost Account</label>
+            <input 
+              type="text" 
+              id="hrJobCostAccount" 
+              [(ngModel)]="newHRCost.jobCostAccount" 
+              name="jobCostAccount"
+              class="form-control"
+              placeholder="Enter job cost account"
+            />
+          </div>
+
+          <!-- Special Account (Free Text) -->
+          <div class="form-group">
+            <label for="hrSpecialAccount">Special Account</label>
+            <input 
+              type="text" 
+              id="hrSpecialAccount" 
+              [(ngModel)]="newHRCost.specialAccount" 
+              name="specialAccount"
+              class="form-control"
+              placeholder="Enter special account"
+            />
+          </div>
+
+          <!-- IDL Account (Free Text) -->
+          <div class="form-group">
+            <label for="hrIDLAccount">IDL Account</label>
+            <input 
+              type="text" 
+              id="hrIDLAccount" 
+              [(ngModel)]="newHRCost.idlAccount" 
+              name="idlAccount"
+              class="form-control"
+              placeholder="Enter IDL account"
+            />
           </div>
         </div>
 

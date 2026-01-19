@@ -15,82 +15,101 @@ public class HRCostRecord : IAuditableEntity
     public Guid HRCostRecordId { get; set; }
 
     /// <summary>
-    /// Resource Code or Employee Code
+    /// Cost Code
     /// </summary>
     [MaxLength(50)]
     public string? Code { get; set; }
 
     /// <summary>
-    /// Resource/Position Name (e.g., "Civil Engineer", "Foreman", "Labor")
+    /// Chapter
+    /// </summary>
+    [MaxLength(100)]
+    public string? Chapter { get; set; }
+
+    /// <summary>
+    /// Sub Chapter
+    /// </summary>
+    [MaxLength(100)]
+    public string? SubChapter { get; set; }
+
+    /// <summary>
+    /// Classification
+    /// </summary>
+    [MaxLength(100)]
+    public string? Classification { get; set; }
+
+    /// <summary>
+    /// Sub Classification
+    /// </summary>
+    [MaxLength(100)]
+    public string? SubClassification { get; set; }
+
+    /// <summary>
+    /// Name/Description
     /// </summary>
     [Required]
     [MaxLength(200)]
     public string Name { get; set; } = string.Empty;
 
     /// <summary>
-    /// Trade or Discipline (e.g., "Civil", "MEP", "Structural")
-    /// </summary>
-    [MaxLength(100)]
-    public string? Trade { get; set; }
-
-    /// <summary>
-    /// Position/Role
-    /// </summary>
-    [MaxLength(100)]
-    public string? Position { get; set; }
-
-    /// <summary>
-    /// Hourly Rate
-    /// </summary>
-    [Column(TypeName = "decimal(18,2)")]
-    public decimal? HourlyRate { get; set; }
-
-    /// <summary>
-    /// Daily Rate
-    /// </summary>
-    [Column(TypeName = "decimal(18,2)")]
-    public decimal? DailyRate { get; set; }
-
-    /// <summary>
-    /// Monthly Rate
-    /// </summary>
-    [Column(TypeName = "decimal(18,2)")]
-    public decimal? MonthlyRate { get; set; }
-
-    /// <summary>
-    /// Currency
-    /// </summary>
-    [MaxLength(10)]
-    public string Currency { get; set; } = "SAR";
-
-    /// <summary>
-    /// Overtime Rate
-    /// </summary>
-    [Column(TypeName = "decimal(18,2)")]
-    public decimal? OvertimeRate { get; set; }
-
-    /// <summary>
-    /// Units (e.g., "Ls" for Lump Sum, "Hr" for Hourly, "Day", "Month")
+    /// Units (e.g., "LS", "HR", "M2", "M3", "EA")
     /// </summary>
     [MaxLength(20)]
     public string? Units { get; set; }
 
     /// <summary>
-    /// Cost Type/Manpower Type (e.g., "Manpower", "Direct Labor", "Indirect", "Overhead")
+    /// Cost Type (e.g., "Direct", "Indirect", "Overhead")
     /// </summary>
     [MaxLength(50)]
-    public string? CostType { get; set; }
+    public string? Type { get; set; }
+
+    /// <summary>
+    /// Budget Level
+    /// </summary>
+    [MaxLength(50)]
+    public string? BudgetLevel { get; set; }
+
+    /// <summary>
+    /// Status (e.g., "Active", "Inactive", "Archived")
+    /// </summary>
+    [MaxLength(20)]
+    public string? Status { get; set; }
+
+    /// <summary>
+    /// Job
+    /// </summary>
+    [MaxLength(100)]
+    public string? Job { get; set; }
+
+    /// <summary>
+    /// Office Account
+    /// </summary>
+    [MaxLength(100)]
+    public string? OfficeAccount { get; set; }
+
+    /// <summary>
+    /// Job Cost Account
+    /// </summary>
+    [MaxLength(100)]
+    public string? JobCostAccount { get; set; }
+
+    /// <summary>
+    /// Special Account
+    /// </summary>
+    [MaxLength(100)]
+    public string? SpecialAccount { get; set; }
+
+    /// <summary>
+    /// IDL Account
+    /// </summary>
+    [MaxLength(100)]
+    public string? IDLAccount { get; set; }
 
     /// <summary>
     /// Additional notes or description
     /// </summary>
     [MaxLength(500)]
     public string? Notes { get; set; }
-
-    /// <summary>
-    /// Whether this record is active
-    /// </summary>
-    public bool IsActive { get; set; } = true;
 
     // Audit fields
     public DateTime CreatedDate { get; set; }

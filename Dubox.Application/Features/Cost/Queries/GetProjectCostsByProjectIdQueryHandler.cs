@@ -39,8 +39,8 @@ public class GetProjectCostsByProjectIdQueryHandler : IRequestHandler<GetProject
             {
                 var dto = projectCostDto.Adapt<ProjectCostDto>() with
                 {
-                    BoxTag= projectCostDto.Box.BoxTag,
-                    BoxSerialNumber= projectCostDto.Box.SerialNumber,
+                    BoxTag= projectCostDto.Box?.BoxTag,
+                    BoxSerialNumber= projectCostDto.Box?.SerialNumber,
                     HRCostCode = projectCostDto.HRCost?.Code,
                     HRCostName = projectCostDto.HRCost?.Name
                 };

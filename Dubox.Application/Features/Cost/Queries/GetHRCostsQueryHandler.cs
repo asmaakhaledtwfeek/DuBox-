@@ -29,17 +29,20 @@ public class GetHRCostsQueryHandler : IRequestHandler<GetHRCostsQuery, Result<HR
             var hrCosts = data.Select(h => new HRCostDto(
                 h.HRCostRecordId,
                 h.Code,
+                h.Chapter,
+                h.SubChapter,
+                h.Classification,
+                h.SubClassification,
                 h.Name,
                 h.Units,
-                h.CostType,
-                h.Trade,
-                h.Position,
-                h.HourlyRate,
-                h.DailyRate,
-                h.MonthlyRate,
-                h.OvertimeRate,
-                h.Currency,
-                h.IsActive
+                h.Type,
+                h.BudgetLevel,
+                h.Status,
+                h.Job,
+                h.OfficeAccount,
+                h.JobCostAccount,
+                h.SpecialAccount,
+                h.IDLAccount
             )).ToList();
 
             var response = new HRCostsResponse(hrCosts, totalCount);

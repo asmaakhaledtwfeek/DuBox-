@@ -3003,6 +3003,7 @@
 
   .quality-table-wrapper {
     overflow-x: auto;
+    overflow-y: visible;
     border: 1px solid #e2e8f0;
     border-radius: 16px;
     background: white;
@@ -3024,6 +3025,7 @@
   .designer-table.quality-issues-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: auto;
     font-size: 14px;
     margin: 0;
 
@@ -3242,34 +3244,37 @@
     }
 
     .col-seq {
-      width: 80px;
+      width: 60px;
     }
 
     .col-issue-number {
-      width: 120px;
+      width: 100px;
     }
 
     .col-wir {
-      width: 120px;
+      width: 100px;
     }
 
     .col-extra {
       white-space: nowrap;
-      min-width: 100px;
+      min-width: 90px;
     }
 
     .col-cc-user {
-      min-width: 150px;
+      min-width: 130px;
     }
 
     .col-actions {
-      width: 140px;
+      width: 220px;
+      min-width: 220px;
+      white-space: nowrap;
 
       .action-stack {
         display: flex;
         justify-content: flex-end;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
+        flex-wrap: nowrap;
       }
 
       .action-btn {
@@ -3334,7 +3339,146 @@
             }
           }
         }
+
+        &.comments-toggle {
+          background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+          border-color: #bae6fd;
+          color: #0284c7;
+
+          &:hover {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            border-color: #7dd3fc;
+            color: #0369a1;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(2, 132, 199, 0.15);
+
+            &::before {
+              opacity: 1;
+            }
+          }
+
+          &.active {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
+
+            &:hover {
+              background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
+              box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+            }
+          }
+        }
+
+        &.comments {
+          background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+          border-color: #bae6fd;
+          color: #0284c7;
+
+          &:hover {
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            border-color: #7dd3fc;
+            color: #0369a1;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(2, 132, 199, 0.15);
+
+            &::before {
+              opacity: 1;
+            }
+          }
+        }
+
+        &.assign {
+          background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%);
+          border-color: #ddd6fe;
+          color: #7c3aed;
+
+          &:hover {
+            background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+            border-color: #c4b5fd;
+            color: #6d28d9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(124, 58, 237, 0.15);
+
+            &::before {
+              opacity: 1;
+            }
+          }
+        }
       }
+    }
+  }
+
+  // Expandable Comments Row
+  .comments-expanded-row {
+    background: linear-gradient(135deg, #fafbfc 0%, #f8f9fa 100%);
+    border-left: 3px solid var(--amana-teal);
+
+    .comments-cell {
+      padding: 0;
+    }
+
+    .comments-container {
+      padding: 24px;
+      animation: slideDown 0.3s ease-out;
+    }
+
+    .comments-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e5e7eb;
+
+      h4 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 16px;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+
+        svg {
+          color: var(--amana-teal);
+        }
+      }
+    }
+
+    .comments-wrapper {
+      max-height: 600px;
+      overflow-y: auto;
+      padding-right: 8px;
+
+      /* Custom Scrollbar */
+      &::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      &::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 10px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+
+        &:hover {
+          background: #94a3b8;
+        }
+      }
+    }
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 }
@@ -4218,6 +4362,101 @@
               }
             }
           }
+        }
+      }
+    }
+  }
+
+  // Modal Comments Section
+  .modal-comments-section {
+    margin-top: 8px;
+    padding: 24px;
+    background: linear-gradient(to bottom, #f8f9fa, #fafbfc);
+    border-radius: 16px;
+    border: 2px solid var(--gray-200);
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+
+    .comments-section-header {
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid var(--gray-200);
+
+      h4 {
+        margin: 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+
+        svg {
+          width: 20px;
+          height: 20px;
+          color: var(--amana-teal);
+          flex-shrink: 0;
+        }
+      }
+    }
+
+    .comments-wrapper {
+      background: white;
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+      max-height: 400px;
+      overflow-y: auto;
+
+      // Custom scrollbar styling
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      &::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+        
+        &:hover {
+          background: #94a3b8;
+        }
+      }
+    }
+  }
+
+  // Comments Modal specific styles
+  &.comments-modal {
+    width: min(800px, 96%);
+
+    .comments-modal-wrapper {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+      min-height: 300px;
+      max-height: 500px;
+      overflow-y: auto;
+
+      // Custom scrollbar styling
+      &::-webkit-scrollbar {
+        width: 8px;
+      }
+      
+      &::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 4px;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 4px;
+        
+        &:hover {
+          background: #94a3b8;
         }
       }
     }

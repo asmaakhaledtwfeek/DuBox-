@@ -74,9 +74,11 @@
               </svg>
               Stage:
             </label>
-            <select id="stageFilter" [(ngModel)]="selectedStage" (change)="applyFilters()" class="filter-select">
+            <select id="stageFilter" [(ngModel)]="selectedStage" (change)="applyFilters()" class="filter-select stage-select">
               <option value="">All Stages</option>
-              <option *ngFor="let stage of availableStages" [value]="stage.wirCode">{{ stage.displayName }}</option>
+              <option *ngFor="let stage of availableStages" [value]="stage.wirCode" [attr.data-color-class]="getStageColorClass(stage.wirCode)">
+                ⬤ {{ stage.displayName }}
+              </option>
             </select>
           </div>
 

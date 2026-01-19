@@ -190,22 +190,96 @@ public class CostController : ControllerBase
     [HttpGet("hr-costs")]
     public async Task<IActionResult> GetHRCosts(
         [FromQuery] string? code,
+        [FromQuery] string? chapter,
+        [FromQuery] string? subChapter,
+        [FromQuery] string? classification,
+        [FromQuery] string? subClassification,
         [FromQuery] string? name,
-        [FromQuery] string? costType,
-        [FromQuery] bool? isActive,
         [FromQuery] string? units,
+        [FromQuery] string? type,
+        [FromQuery] string? budgetLevel,
+        [FromQuery] string? status,
+        [FromQuery] string? job,
+        [FromQuery] string? officeAccount,
+        [FromQuery] string? jobCostAccount,
+        [FromQuery] string? specialAccount,
+        [FromQuery] string? idlAccount,
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 50)
     {
         var query = new GetHRCostsQuery
         {
-            Name = name,
             Code = code,
-            IsActive = isActive,
+            Chapter = chapter,
+            SubChapter = subChapter,
+            Classification = classification,
+            SubClassification = subClassification,
+            Name = name,
             Units = units,
-            CostType = costType,
+            Type = type,
+            BudgetLevel = budgetLevel,
+            Status = status,
+            Job = job,
+            OfficeAccount = officeAccount,
+            JobCostAccount = jobCostAccount,
+            SpecialAccount = specialAccount,
+            IDLAccount = idlAccount,
             PageNumber = pageNumber,
             PageSize = pageSize
+        };
+
+        var result = await _mediator.Send(query);
+
+        return result.IsSuccess 
+            ? Ok(result) 
+            : BadRequest(result);
+    }
+
+    /// <summary>
+    /// Get available filter options for HR costs (cascading dropdowns)
+    /// </summary>
+    [HttpGet("hr-costs/filter-options")]
+    public async Task<IActionResult> GetHRCostFilterOptions(
+        [FromQuery] string? code,
+        [FromQuery] string? chapter,
+        [FromQuery] string? subChapter,
+        [FromQuery] string? classification,
+        [FromQuery] string? subClassification,
+        [FromQuery] string? units,
+        [FromQuery] string? type,
+        [FromQuery] string? status)
+    {
+        var query = new GetHRCostFilterOptionsQuery
+        {
+            Code = code,
+            Chapter = chapter,
+            SubChapter = subChapter,
+            Classification = classification,
+            SubClassification = subClassification,
+            Units = units,
+            Type = type,
+            Status = status
+        };
+
+        var result = await _mediator.Send(query);
+
+        return result.IsSuccess 
+            ? Ok(result) 
+            : BadRequest(result);
+    }
+
+    /// <summary>
+    /// Get available filter options for cost codes (cascading dropdowns)
+    /// </summary>
+    [HttpGet("codes/filter-options")]
+    public async Task<IActionResult> GetCostCodeFilterOptions(
+        [FromQuery] string? level1,
+        [FromQuery] string? level2)
+    {
+        var query = new GetCostCodeFilterOptionsQuery
+        {
+            Level1 = level1,
+            Level2 = level2
         };
 
         var result = await _mediator.Send(query);

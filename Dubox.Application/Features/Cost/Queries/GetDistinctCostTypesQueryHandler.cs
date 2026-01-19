@@ -19,15 +19,15 @@ public class GetDistinctCostTypesQueryHandler : IRequestHandler<GetDistinctCostT
     {
         try
         {
-            // First, get all active HR costs with non-empty cost types
+            // Get all HR costs with non-empty types and Active status
             var hrCosts = await _context.Set<HRCostRecord>()
-                .Where(h => !string.IsNullOrEmpty(h.CostType) && h.IsActive)
-                .Select(h => new { h.HRCostRecordId, h.CostType })
+                .Where(h => !string.IsNullOrEmpty(h.Type) && (h.Status == "Active" || h.Status == null))
+                .Select(h => new { h.HRCostRecordId, h.Type })
                 .ToListAsync(cancellationToken);
 
-            // Then group and get distinct cost types in memory
+            // Then group and get distinct types in memory
             var costTypes = hrCosts
-                .GroupBy(h => h.CostType)
+                .GroupBy(h => h.Type)
                 .Select(g => new CostTypeDto(
                     g.First().HRCostRecordId,
                     g.Key!

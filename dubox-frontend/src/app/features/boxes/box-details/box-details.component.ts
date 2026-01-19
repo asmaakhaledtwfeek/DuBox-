@@ -23,6 +23,7 @@ import { BoxLogDetailsModalComponent } from '../box-log-details-modal/box-log-de
 import { UploadDrawingModalComponent } from '../upload-drawing-modal/upload-drawing-modal.component';
 import { QualityIssueDetailsModalComponent } from '../../../shared/components/quality-issue-details-modal/quality-issue-details-modal.component';
 import { AssignToCrewModalComponent, AssignableIssue } from '../../../shared/components/assign-to-crew-modal/assign-to-crew-modal.component';
+import { IssueCommentsComponent } from '../../../shared/components/issue-comments/issue-comments.component';
 import { LocationService, FactoryLocation, BoxLocationHistory } from '../../../core/services/location.service';
 import { ApiService } from '../../../core/services/api.service';
 import { WirExportService, ProjectInfo } from '../../../core/services/wir-export.service';
@@ -56,7 +57,7 @@ type BoxDrawing = {
 @Component({
   selector: 'app-box-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent, HeaderComponent, BoxLogDetailsModalComponent, UploadDrawingModalComponent, QualityIssueDetailsModalComponent, AssignToCrewModalComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent, HeaderComponent, BoxLogDetailsModalComponent, UploadDrawingModalComponent, QualityIssueDetailsModalComponent, AssignToCrewModalComponent, IssueCommentsComponent],
   providers: [LocationService],
   animations: [
     trigger('slideDown', [
@@ -141,6 +142,10 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   assignLoading = false;
   selectedIssueDetails: QualityIssueDetails | null = null;
   selectedCommentId?: string; // For scrolling to specific comment from notifications
+  
+  // Comments modal state
+  isCommentsModalOpen = false;
+  selectedIssueForComments: QualityIssueDetails | null = null;
   
   // Multiple images state
   selectedImages: Array<{
@@ -2402,6 +2407,27 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   closeAssignModal(): void {
     this.isAssignModalOpen = false;
     this.selectedIssueForAssign = null;
+  }
+
+  openCommentsModal(issue: QualityIssueDetails): void {
+    // Close other modals first
+    if (this.isDetailsModalOpen) {
+      this.closeIssueDetails();
+    }
+    if (this.isStatusModalOpen) {
+      this.closeStatusModal();
+    }
+    if (this.isAssignModalOpen) {
+      this.closeAssignModal();
+    }
+
+    this.selectedIssueForComments = issue;
+    this.isCommentsModalOpen = true;
+  }
+
+  closeCommentsModal(): void {
+    this.isCommentsModalOpen = false;
+    this.selectedIssueForComments = null;
   }
 
   onAssignToCrew(event: { teamId: string | null; memberId: string | null; ccUserId: string | null }): void {

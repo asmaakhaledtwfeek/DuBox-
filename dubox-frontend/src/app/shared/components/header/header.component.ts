@@ -5,6 +5,8 @@ import { AuthService } from '../../../core/services/auth.service';
 import { User, UserRole, getUserPrimaryRole } from '../../../core/models/user.model';
 import { SidebarService } from '../../../core/services/sidebar.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { SignalRService } from '../../../core/services/signalr.service';
+import { NotificationService } from '../../../core/services/notification.service';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -25,12 +27,18 @@ export class HeaderComponent implements OnInit, OnDestroy {
   toasts: Array<{ message: string; type: string; id: number }> = [];
   private toastSubscription?: Subscription;
   private toastIdCounter = 0;
+  
+  // SignalR subscriptions
+  private signalRSubscription?: Subscription;
+  private notificationCountSubscription?: Subscription;
 
   constructor(
     private authService: AuthService,
     private router: Router,
     private sidebarService: SidebarService,
-    private toastService: ToastService
+    private toastService: ToastService,
+    private signalRService: SignalRService,
+    private notificationService: NotificationService
   ) {
     this.checkMobile();
   }
@@ -52,6 +60,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.authService.authState$.subscribe(state => {
       this.currentUser = state.user;
       this.primaryRole = getUserPrimaryRole(state.user);
+      
+      if (state.isAuthenticated) {
+        // Load initial notification count
+        this.loadNotificationCount();
+      }
     });
     
     // Subscribe to toast service
@@ -59,12 +72,44 @@ export class HeaderComponent implements OnInit, OnDestroy {
       this.showToast(toast.message, toast.type, toast.duration);
     });
     
+    // Subscribe to SignalR real-time notification count updates
+    this.signalRSubscription = this.signalRService.notificationCount$.subscribe(count => {
+      if (count !== null && count !== this.unreadNotifications) {
+        this.unreadNotifications = count;
+      }
+    });
+    
+    // Subscribe to notification service count updates (for manual refresh)
+    this.notificationCountSubscription = this.notificationService.unreadCount$.subscribe(count => {
+      this.unreadNotifications = count;
+    });
+    
+    // Subscribe to new notifications for toast display
+    this.signalRService.notificationReceived$.subscribe(notification => {
+      if (notification) {
+        this.showToast(notification.title || 'New Notification', 'info', 5000);
+      }
+    });
+    
     // Listen for custom app-toast events (for backward compatibility)
     document.addEventListener('app-toast', this.handleCustomToastEvent.bind(this));
   }
   
+  private loadNotificationCount(): void {
+    this.notificationService.getUnreadCount().subscribe({
+      next: (result) => {
+        this.unreadNotifications = result.count || 0;
+      },
+      error: (error) => {
+        console.error('Error loading notification count:', error);
+      }
+    });
+  }
+  
   ngOnDestroy(): void {
     this.toastSubscription?.unsubscribe();
+    this.signalRSubscription?.unsubscribe();
+    this.notificationCountSubscription?.unsubscribe();
     document.removeEventListener('app-toast', this.handleCustomToastEvent.bind(this));
   }
   

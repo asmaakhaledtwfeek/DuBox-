@@ -174,6 +174,7 @@ namespace Dubox.Api.Controllers
             [FromForm] string? ResolutionDescription,
             [FromForm] List<IFormFile>? Files,
             [FromForm] List<string>? ImageUrls,
+            [FromForm] string? Comment,
             CancellationToken cancellationToken)
         {
 
@@ -201,7 +202,8 @@ namespace Dubox.Api.Controllers
                 ResolutionDescription: ResolutionDescription,
                 Files: Files,
                 ImageUrls: validImageUrls,
-                FileNames: fileNames
+                FileNames: fileNames,
+                Comment: Comment
             );
 
             var result = await _mediator.Send(command, cancellationToken);

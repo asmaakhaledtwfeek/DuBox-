@@ -1,28 +1,176 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
+import { NotificationService } from '../../../core/services/notification.service';
+import { ToastService } from '../../../core/services/toast.service';
+
+interface Notification {
+  notificationId: string;
+  notificationType: string;
+  priority: string;
+  title: string;
+  message: string;
+  directLink?: string;
+  isRead: boolean;
+  readDate?: Date;
+  createdDate: Date;
+  relatedIssueId?: string;
+  relatedIssueNumber?: string;
+  relatedCommentId?: string;
+  commentAuthorName?: string;
+}
 
 @Component({
   selector: 'app-notifications-center',
   standalone: true,
   imports: [CommonModule, RouterModule, HeaderComponent, SidebarComponent],
-  template: `
-    <app-header></app-header>
-    <app-sidebar></app-sidebar>
-    <div class="page-container">
-      <div class="page-content">
-        <h1 class="page-title">Notifications</h1>
-        <div class="card" style="padding: var(--spacing-2xl); text-align: center;">
-          <p>Notifications Center - Implementation Ready</p>
-          <p style="color: var(--gray-600); font-size: var(--font-size-sm); margin-top: var(--spacing-md);">
-            This page will display all system notifications with filtering and mark as read functionality.
-          </p>
-        </div>
-      </div>
-    </div>
-  `,
+  templateUrl: './notifications-center.component.html',
   styleUrls: ['./notifications-center.component.scss']
 })
-export class NotificationsCenterComponent {}
+export class NotificationsCenterComponent implements OnInit {
+  notifications: Notification[] = [];
+  loading = false;
+  filter: 'all' | 'unread' = 'all';
+  currentPage = 1;
+  pageSize = 20;
+  totalPages = 1;
+  totalCount = 0;
+
+  constructor(
+    public notificationService: NotificationService,
+    private toastService: ToastService,
+    private router: Router
+  ) {}
+
+  ngOnInit(): void {
+    this.loadNotifications();
+  }
+
+  loadNotifications(): void {
+    this.loading = true;
+    const unreadOnly = this.filter === 'unread';
+    
+    this.notificationService.getNotifications({ 
+      unreadOnly, 
+      pageNumber: this.currentPage, 
+      pageSize: this.pageSize 
+    }).subscribe({
+      next: (response: any) => {
+        if (response.data) {
+          this.notifications = response.data.notifications || [];
+          this.totalCount = response.data.totalCount || 0;
+          this.totalPages = response.data.totalPages || 1;
+        }
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading notifications:', error);
+        this.toastService.showError('Failed to load notifications');
+        this.loading = false;
+      }
+    });
+  }
+
+  markAsRead(notification: Notification): void {
+    if (notification.isRead) {
+      this.navigateToLink(notification);
+      return;
+    }
+
+    this.notificationService.markAsRead(notification.notificationId).subscribe({
+      next: () => {
+        notification.isRead = true;
+        notification.readDate = new Date();
+        this.navigateToLink(notification);
+      },
+      error: (error) => {
+        console.error('Error marking notification as read:', error);
+      }
+    });
+  }
+
+  navigateToLink(notification: Notification): void {
+    if (notification.directLink) {
+      this.router.navigateByUrl(notification.directLink);
+    } else if (notification.relatedIssueId) {
+      // Navigate to quality issue
+      this.router.navigate(['/quality-issues', notification.relatedIssueId]);
+    }
+  }
+
+  setFilter(filter: 'all' | 'unread'): void {
+    this.filter = filter;
+    this.currentPage = 1;
+    this.loadNotifications();
+  }
+
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.loadNotifications();
+    }
+  }
+
+  previousPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.loadNotifications();
+    }
+  }
+
+  getNotificationIcon(type: string): string {
+    switch (type) {
+      case 'CommentAdded':
+        return 'bi-chat-left-text';
+      case 'CommentUpdated':
+        return 'bi-chat-left-dots';
+      case 'Alert':
+        return 'bi-exclamation-triangle';
+      case 'Warning':
+        return 'bi-exclamation-circle';
+      case 'Info':
+        return 'bi-info-circle';
+      default:
+        return 'bi-bell';
+    }
+  }
+
+  getNotificationClass(type: string): string {
+    switch (type) {
+      case 'CommentAdded':
+      case 'CommentUpdated':
+        return 'notification-comment';
+      case 'Alert':
+        return 'notification-alert';
+      case 'Warning':
+        return 'notification-warning';
+      case 'Info':
+        return 'notification-info';
+      default:
+        return 'notification-default';
+    }
+  }
+
+  formatTime(date: Date | string): string {
+    const d = new Date(date);
+    const now = new Date();
+    const diff = now.getTime() - d.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (days > 7) {
+      return d.toLocaleDateString();
+    } else if (days > 0) {
+      return `${days}d ago`;
+    } else if (hours > 0) {
+      return `${hours}h ago`;
+    } else if (minutes > 0) {
+      return `${minutes}m ago`;
+    } else {
+      return 'Just now';
+    }
+  }
+}

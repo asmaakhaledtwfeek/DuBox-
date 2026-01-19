@@ -289,6 +289,76 @@
           </div>
         </div>
       </div>
+
+      <!-- Update Status Section -->
+      <div class="update-status-section">
+        <div class="section-header clickable" (click)="toggleUpdateStatus()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+          </svg>
+          <h4>Update Status</h4>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" [style.transform]="showUpdateStatus ? 'rotate(180deg)' : 'rotate(0deg)'" style="margin-left: auto; transition: transform 0.3s;">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+
+        <div class="update-status-content" *ngIf="showUpdateStatus">
+          <!-- Status Options -->
+          <div class="status-options">
+            <div *ngFor="let status of statuses" class="status-option" [class.selected]="selectedStatus === status.value" (click)="selectedStatus = status.value">
+              <div class="status-icon" [ngClass]="status.class">
+                <i class="bi bi-{{ status.icon }}"></i>
+              </div>
+              <span>{{ status.label }}</span>
+            </div>
+          </div>
+
+          <!-- Resolution Description -->
+          <div class="form-group" *ngIf="requiresResolution()">
+            <label>Resolution Description <span class="required">*</span></label>
+            <textarea [(ngModel)]="resolutionDescription" class="form-control" rows="4" placeholder="Describe how the issue was resolved..."></textarea>
+          </div>
+
+          <!-- Status Comment -->
+          <div class="form-group">
+            <label>Add Comment (Optional)</label>
+            <textarea [(ngModel)]="statusComment" class="form-control" rows="3" placeholder="Add a comment about this status update..."></textarea>
+          </div>
+
+          <!-- File Upload -->
+          <div class="form-group">
+            <label>Attach Images (Optional)</label>
+            <input type="file" id="statusFileInput" multiple accept="image/*" (change)="onFileSelected($event)" hidden />
+            <label for="statusFileInput" class="file-upload-btn">
+              <i class="bi bi-cloud-upload"></i> Choose Images
+            </label>
+            <div *ngIf="selectedFiles.length > 0" class="selected-files">
+              <div *ngFor="let file of selectedFiles; let i = index" class="file-item">
+                <i class="bi bi-image"></i>
+                <span>{{ file.name }}</span>
+                <button type="button" (click)="removeFile(i)"><i class="bi bi-x"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Update Button -->
+          <button class="btn-update-status" [disabled]="!isUpdateValid() || isSubmitting" (click)="updateStatus()">
+            <span *ngIf="!isSubmitting"><i class="bi bi-check2"></i> Update Status</span>
+            <span *ngIf="isSubmitting"><span class="spinner-border spinner-border-sm"></span> Updating...</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Comments Section -->
+      <div class="comments-section" *ngIf="issue">
+        <div class="section-header">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+          <h4>Comments & Discussion</h4>
+        </div>
+        <app-issue-comments [issueId]="issue.issueId" [issueNumber]="issue.issueNumber || ''" [issueTitle]="issue.issueDescription || ''"></app-issue-comments>
+      </div>
     </div>
 
     <!-- Footer -->

@@ -223,6 +223,13 @@ export class AuthService {
   }
 
   /**
+   * Get user info (alias for getCurrentUser)
+   */
+  getUserInfo(): User | null {
+    return this.getCurrentUser();
+  }
+
+  /**
    * Get authentication token
    */
   getToken(): string | null {

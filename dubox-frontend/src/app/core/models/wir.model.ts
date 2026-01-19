@@ -99,6 +99,7 @@ export interface WIRCheckpoint {
   comments?: string;
   attachmentPath?: string;
   createdDate: Date;
+  
   checklistItems?: WIRCheckpointChecklistItem[];
   qualityIssues?: QualityIssueItem[];
   images?: WIRCheckpointImage[];

@@ -3090,3 +3090,223 @@
   }
 }
 
+// Versioning Styles
+.wir-number-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  &.older {
+    opacity: 0.7;
+  }
+  
+  .version-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+    color: white;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(74, 144, 226, 0.2);
+    
+    &.older {
+      background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+      box-shadow: 0 2px 4px rgba(127, 140, 141, 0.2);
+    }
+  }
+  
+  .btn-expand-versions {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    font-size: 11px;
+    color: #4a90e2;
+    background: transparent;
+    border: 1px solid #4a90e2;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      background: #e8f4fd;
+      border-color: #357abd;
+    }
+    
+    &.expanded {
+      background: #4a90e2;
+      color: white;
+      
+      &:hover {
+        background: #357abd;
+      }
+    }
+    
+    .chevron-icon {
+      transition: transform 0.2s ease;
+      
+      &.rotated {
+        transform: rotate(90deg);
+      }
+    }
+    
+    .version-count {
+      font-weight: 600;
+    }
+  }
+}
+
+tbody tr.older-version-row {
+  background-color: #f9fafb;
+  
+  td {
+    border-top: 1px dashed #e0e4e8;
+    font-size: 0.95em;
+    padding: 10px 16px;
+  }
+  
+  .status-pill.older {
+    opacity: 0.8;
+  }
+  
+  .text-muted {
+    color: #6b7280;
+    
+    &.small {
+      font-size: 0.85em;
+      font-style: italic;
+    }
+  }
+}
+
+tbody tr.has-versions {
+  border-bottom: 2px solid #e0e4e8;
+}
+
+// Mobile versioning styles
+.mobile-checkpoint-card {
+  &.has-versions {
+    border: 2px solid #e0e4e8;
+  }
+  
+  .wir-code-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    
+    .version-badge-mobile {
+      display: inline-block;
+      padding: 2px 8px;
+      font-size: 10px;
+      font-weight: 600;
+      background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+      color: white;
+      border-radius: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 4px rgba(74, 144, 226, 0.2);
+      
+      &.older {
+        background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+        box-shadow: 0 2px 4px rgba(127, 140, 141, 0.2);
+      }
+    }
+  }
+  
+  .btn-expand-versions-mobile {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 12px;
+    margin-top: 8px;
+    font-size: 12px;
+    color: #4a90e2;
+    background: white;
+    border: 1px solid #4a90e2;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    
+    &:hover {
+      background: #e8f4fd;
+      border-color: #357abd;
+    }
+    
+    &.expanded {
+      background: #4a90e2;
+      color: white;
+      
+      &:hover {
+        background: #357abd;
+      }
+    }
+    
+    .chevron-icon {
+      transition: transform 0.2s ease;
+      
+      &.rotated {
+        transform: rotate(90deg);
+      }
+    }
+  }
+  
+  .older-versions-mobile {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 2px dashed #e0e4e8;
+    
+    .older-version-card-mobile {
+      margin-top: 12px;
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 8px;
+      border: 1px solid #e0e4e8;
+      
+      .older-version-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+        
+        .wir-code {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 14px;
+          font-weight: 600;
+          
+          &.older {
+            opacity: 0.8;
+          }
+        }
+        
+        .status-pill.older {
+          opacity: 0.8;
+        }
+      }
+      
+      .older-version-details {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        
+        .detail-item {
+          font-size: 13px;
+          
+          .text-muted {
+            color: #6b7280;
+            
+            &.small {
+              font-size: 12px;
+              font-style: italic;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

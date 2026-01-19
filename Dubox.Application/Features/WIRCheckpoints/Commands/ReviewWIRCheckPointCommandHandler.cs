@@ -139,19 +139,10 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             return Result.Success(dto);
         }
 
-        /// <summary>
-        /// Creates a new version of a checkpoint after rejection.
-        /// The new version copies the checkpoint data but clears review status, reviewer data, and attachments.
-        /// </summary>
         private async Task<WIRCheckpoint> CreateNewCheckpointVersion(WIRCheckpoint rejectedCheckpoint, CancellationToken cancellationToken)
         {
-            // Determine the parent checkpoint ID
-            // If this rejected checkpoint is already a version (has a parent), use the original parent
-            // Otherwise, use the rejected checkpoint itself as the parent
             var parentWIRId = rejectedCheckpoint.ParentWIRId ?? rejectedCheckpoint.WIRId;
             
-            // Calculate the next version number
-            // Get all checkpoints in this version chain
             var allVersions = await _unitOfWork.Repository<WIRCheckpoint>()
                 .FindAsync(c => c.WIRId == parentWIRId || c.ParentWIRId == parentWIRId, cancellationToken);
             

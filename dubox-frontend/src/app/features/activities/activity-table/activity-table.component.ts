@@ -928,6 +928,7 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
     if (!wirRecord?.wirCode) return null;
     const versions = this.wirCheckpoints.get(wirRecord.wirCode.toUpperCase());
     // Return the first checkpoint (already sorted by version descending in loadWIRCheckpoints)
+    // versions[0] is the latest because array is sorted with newest first (descending order)
     return versions && versions.length > 0 ? versions[0] : null;
   }
 
@@ -1060,7 +1061,10 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
       wirRecord.boxActivityId,
       'qa-qc'
     ], {
-      queryParams: { step: step }
+      queryParams: { 
+        step: step,
+        wirId: checkpoint.wirId // Pass the specific checkpoint version ID
+      }
     });
   }
 
@@ -1164,11 +1168,38 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   /**
-   * Check if WIR has position values set (bay, row, or position)
+   * Check if WIR position should be locked based on checkpoint status
+   * Position locking logic:
+   * - If latest checkpoint is Approved OR ConditionalApproval → Position is NOT BLOCKED (return false)
+   * - If latest checkpoint is Pending OR Rejected → Position is BLOCKED (return true)
+   * - If no checkpoint exists → Check if position values are set
    */
   private hasWIRPositionValues(wir: WIRRecord): boolean {
     if (!wir) return false;
     
+    // Get the latest checkpoint for this WIR
+    const checkpoint = this.getCheckpoint(wir);
+    
+    // If there's a checkpoint, check its status to determine if position is locked
+    if (checkpoint) {
+      const checkpointStatus = checkpoint.status;
+      
+      // Position is NOT BLOCKED if checkpoint is Approved or ConditionalApproval
+      if (checkpointStatus === 'Approved' || checkpointStatus === 'ConditionalApproval') {
+        console.log(`Latest checkpoint is ${checkpointStatus} - position NOT BLOCKED`);
+        return false; // Unlock position (enable update progress button)
+      }
+      
+      // Position is BLOCKED if checkpoint is Pending or Rejected
+      if (checkpointStatus === 'Pending' || checkpointStatus === 'Rejected') {
+        console.log(`Latest checkpoint is ${checkpointStatus} - position BLOCKED`);
+        return true; // Lock position (disable update progress button)
+      }
+      
+      console.log(`Latest checkpoint status: ${checkpointStatus} - unknown status, checking position values`);
+    }
+    
+    // Fallback: If no checkpoint or unknown status, check if position values exist
     const bayValue = (wir.bay && wir.bay.trim() !== '' && wir.bay !== '-') ? wir.bay : '';
     const rowValue = (wir.row && wir.row.trim() !== '' && wir.row !== '-') ? wir.row : '';
     const positionValue = (wir.position && wir.position.trim() !== '' && wir.position !== '-') ? wir.position : '';

@@ -112,6 +112,8 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   wirCheckpoints: WIRCheckpoint[] = [];
   wirLoading = false;
   wirError = '';
+  expandedCheckpointVersions: Set<string> = new Set(); // Track which checkpoints have versions expanded
+  allCheckpointVersionsMap: Map<string, WIRCheckpoint[]> = new Map(); // Store all versions for each checkpoint
   qualityIssueCount = 0;
   qualityIssues: QualityIssueDetails[] = [];
   qualityIssuesLoading = false;
@@ -640,9 +642,21 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.wirLoading = true;
     this.wirError = '';
 
-        this.wirService.getWIRCheckpointsByBox(this.boxId).subscribe({
+    this.wirService.getWIRCheckpointsByBox(this.boxId).subscribe({
       next: (checkpoints) => {
-        this.wirCheckpoints = checkpoints || [];
+        const allCheckpoints = checkpoints || [];
+        
+        if (!allCheckpoints.length) {
+          this.wirCheckpoints = [];
+          this.wirLoading = false;
+          return;
+        }
+
+        // Group checkpoints by WIR number AND BoxActivityId, then keep only the latest version
+        this.wirCheckpoints = this.getLatestCheckpointsOnly(allCheckpoints);
+        
+        console.log(`📋 Loaded ${allCheckpoints.length} total checkpoint(s), showing ${this.wirCheckpoints.length} latest version(s)`);
+        
         if (!this.wirCheckpoints.length) {
           this.wirLoading = false;
           return;
@@ -655,6 +669,133 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         this.wirLoading = false;
       }
     });
+  }
+
+  /**
+   * Group checkpoints by WIR number and BoxActivityId, returning only the latest version for each group
+   * This ensures that when a checkpoint has multiple versions (after rejection/resubmission),
+   * only the latest version is displayed in the list.
+   */
+  private getLatestCheckpointsOnly(checkpoints: WIRCheckpoint[]): WIRCheckpoint[] {
+    if (!checkpoints || checkpoints.length === 0) {
+      return [];
+    }
+
+    // Clear the versions map
+    this.allCheckpointVersionsMap.clear();
+
+    // Group checkpoints by a composite key: wirNumber + boxActivityId
+    const groupedMap = new Map<string, WIRCheckpoint[]>();
+    
+    checkpoints.forEach(checkpoint => {
+      const wirNumber = (checkpoint.wirNumber || '').toUpperCase();
+      const boxActivityId = checkpoint.boxActivityId || 'NO_ACTIVITY';
+      
+      // Create a composite key to group by both WIR number and activity
+      const groupKey = `${wirNumber}_${boxActivityId}`;
+      
+      if (!groupedMap.has(groupKey)) {
+        groupedMap.set(groupKey, []);
+      }
+      groupedMap.get(groupKey)!.push(checkpoint);
+    });
+
+    // For each group, sort by version descending and take the latest (first one)
+    const latestCheckpoints: WIRCheckpoint[] = [];
+    
+    groupedMap.forEach((versions, groupKey) => {
+      // Sort by version descending (highest version first)
+      versions.sort((a, b) => (b.version || 1) - (a.version || 1));
+      
+      // Take the first one (latest version)
+      const latest = versions[0];
+      
+      // Store the total version count in a custom property for display
+      (latest as any)._totalVersions = versions.length;
+      (latest as any)._groupKey = groupKey; // Store group key for version lookup
+      
+      // Store all versions in the map using wirId of the latest as key
+      if (latest.wirId) {
+        this.allCheckpointVersionsMap.set(latest.wirId, versions);
+      }
+      
+      if (versions.length > 1) {
+        console.log(`📋 Group "${groupKey}": Found ${versions.length} version(s), showing latest v${latest.version || 1}`);
+      }
+      
+      latestCheckpoints.push(latest);
+    });
+
+    // Sort by WIR number for consistent display order
+    latestCheckpoints.sort((a, b) => {
+      const numA = parseInt(a.wirNumber?.replace(/\D/g, '') || '0');
+      const numB = parseInt(b.wirNumber?.replace(/\D/g, '') || '0');
+      return numA - numB;
+    });
+
+    return latestCheckpoints;
+  }
+
+  /**
+   * Get the version label for a checkpoint
+   * Returns "v{number}" (e.g., "v2", "v3") or empty string if version 1
+   */
+  getCheckpointVersionLabel(checkpoint: WIRCheckpoint): string {
+    const version = checkpoint.version || 1;
+    return version > 1 ? `v${version}` : '';
+  }
+
+  /**
+   * Check if a checkpoint has multiple versions
+   */
+  hasMultipleVersions(checkpoint: WIRCheckpoint): boolean {
+    const totalVersions = (checkpoint as any)._totalVersions || 1;
+    return totalVersions > 1;
+  }
+
+  /**
+   * Get total version count for a checkpoint
+   */
+  getTotalVersionCount(checkpoint: WIRCheckpoint): number {
+    return (checkpoint as any)._totalVersions || 1;
+  }
+
+  /**
+   * Toggle expansion of checkpoint versions
+   */
+  toggleCheckpointVersions(checkpoint: WIRCheckpoint): void {
+    if (!checkpoint.wirId) return;
+    
+    if (this.expandedCheckpointVersions.has(checkpoint.wirId)) {
+      this.expandedCheckpointVersions.delete(checkpoint.wirId);
+    } else {
+      this.expandedCheckpointVersions.add(checkpoint.wirId);
+    }
+  }
+
+  /**
+   * Check if checkpoint versions are expanded
+   */
+  isCheckpointVersionsExpanded(checkpoint: WIRCheckpoint): boolean {
+    return checkpoint.wirId ? this.expandedCheckpointVersions.has(checkpoint.wirId) : false;
+  }
+
+  /**
+   * Get older versions of a checkpoint (excluding the latest)
+   */
+  getOlderVersions(checkpoint: WIRCheckpoint): WIRCheckpoint[] {
+    if (!checkpoint.wirId) return [];
+    
+    const allVersions = this.allCheckpointVersionsMap.get(checkpoint.wirId) || [];
+    // Return all except the first one (which is the latest)
+    return allVersions.slice(1);
+  }
+
+  /**
+   * Check if a checkpoint is an older version (not the latest)
+   */
+  isOlderVersion(checkpoint: WIRCheckpoint, latestCheckpoint: WIRCheckpoint): boolean {
+    return checkpoint.wirId !== latestCheckpoint.wirId;
   }
 
   generateQRCode(): void {

@@ -1,4 +1,4 @@
-﻿using Dubox.Application.DTOs;
+using Dubox.Application.DTOs;
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
@@ -15,20 +15,33 @@ namespace Dubox.Application.Features.QualityIssues.Queries
         private readonly IUnitOfWork _unitOfWork;
         private readonly IDbContext _dbContext;
         private readonly IProjectTeamVisibilityService _visibilityService;
+        private readonly ICurrentUserService _currentUserService;
         
         public GetQualityIssuesQueryHandler(
             IUnitOfWork unitOfWork, 
             IDbContext dbContext,
-            IProjectTeamVisibilityService visibilityService)
+            IProjectTeamVisibilityService visibilityService,
+            ICurrentUserService currentUserService)
         {
             _unitOfWork = unitOfWork;
             _dbContext = dbContext;
             _visibilityService = visibilityService;
+            _currentUserService = currentUserService;
         }
 
         public async Task<Result<PaginatedQualityIssuesResponseDto>> Handle(GetQualityIssuesQuery request, CancellationToken cancellationToken)
         {
             var accessibleProjectIds = await _visibilityService.GetAccessibleProjectIdsAsync(cancellationToken);
+            
+            // Get current user ID for filtering issues assigned to them
+            Guid? currentUserId = null;
+            if (_currentUserService.IsAuthenticated && !string.IsNullOrEmpty(_currentUserService.UserId))
+            {
+                if (Guid.TryParse(_currentUserService.UserId, out var userId))
+                {
+                    currentUserId = userId;
+                }
+            }
             
             var (page, pageSize) = new PaginatedRequest
             {
@@ -37,7 +50,7 @@ namespace Dubox.Application.Features.QualityIssues.Queries
             }.GetNormalizedPagination();
             
             var qualityIssuesResult = _unitOfWork.Repository<QualityIssue>()
-                .GetWithSpec(new GetQualityIssuesSpecification(request, accessibleProjectIds));
+                .GetWithSpec(new GetQualityIssuesSpecification(request, accessibleProjectIds, currentUserId));
             
             var qualityIssues = await qualityIssuesResult.Data
                 .AsNoTracking()
@@ -65,7 +78,7 @@ namespace Dubox.Application.Features.QualityIssues.Queries
             var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
 
             // Calculate summary statistics for ALL quality issues (not just current page)
-            var summary = await CalculateSummaryAsync(request, accessibleProjectIds, cancellationToken);
+            var summary = await CalculateSummaryAsync(request, accessibleProjectIds, currentUserId, cancellationToken);
 
            var response = new PaginatedQualityIssuesResponseDto
             {
@@ -82,11 +95,12 @@ namespace Dubox.Application.Features.QualityIssues.Queries
 
         private async Task<QualityIssuesSummary> CalculateSummaryAsync(
             GetQualityIssuesQuery request, 
-            List<Guid>? accessibleProjectIds, 
+            List<Guid>? accessibleProjectIds,
+            Guid? currentUserId,
             CancellationToken cancellationToken)
         {
             var allIssuesResult = _unitOfWork.Repository<QualityIssue>()
-                .GetWithSpec(new GetQualityIssuesSummarySpecification(request, accessibleProjectIds));
+                .GetWithSpec(new GetQualityIssuesSummarySpecification(request, accessibleProjectIds, currentUserId));
 
             var statusCounts = await allIssuesResult.Data
                 .AsNoTracking()

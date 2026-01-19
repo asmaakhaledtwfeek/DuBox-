@@ -2320,9 +2320,49 @@
         gap: 16px;
         flex-wrap: wrap;
 
+        // View All Versions Button in Header
+        .btn-view-versions-header {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 6px 12px;
+          background: rgba(59, 130, 246, 0.08);
+          color: #2563eb;
+          border: 1px solid rgba(59, 130, 246, 0.2);
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          margin-left: auto;
+
+          .chevron-icon {
+            width: 16px;
+            height: 16px;
+            transition: transform 0.2s ease;
+
+            &.rotated {
+              transform: rotate(90deg);
+            }
+          }
+
+          &:hover {
+            background: rgba(59, 130, 246, 0.15);
+            border-color: rgba(59, 130, 246, 0.4);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
+          }
+
+          &.expanded {
+            background: rgba(59, 130, 246, 0.12);
+            border-color: rgba(59, 130, 246, 0.3);
+          }
+        }
+
         .checkpoint-number {
           display: inline-flex;
           align-items: center;
+          gap: 8px;
           padding: 10px 20px;
           background: linear-gradient(135deg, #91ced5 0%, #e9edf1 100%);
           color: rgb(52, 50, 50);
@@ -2331,6 +2371,27 @@
           border-radius: 10px;
           letter-spacing: 0.5px;
           box-shadow: 0 4px 12px rgba(188, 229, 235, 0.3);
+
+          .checkpoint-version {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            background: rgba(59, 130, 246, 0.15);
+            color: #2563eb;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 6px;
+            letter-spacing: 0.3px;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            cursor: help;
+            transition: all 0.2s ease;
+
+            &:hover {
+              background: rgba(59, 130, 246, 0.25);
+              border-color: rgba(59, 130, 246, 0.5);
+              transform: scale(1.05);
+            }
+          }
         }
 
         .checkpoint-status-badge {
@@ -2508,6 +2569,121 @@
             border-color: var(--amana-teal);
             color: var(--amana-teal);
             transform: translateY(-1px);
+          }
+        }
+      }
+    }
+
+    // Older Versions List
+    .older-versions-list {
+      padding: 16px 24px 20px 24px;
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+
+      .older-version-card {
+        background: white;
+        border-radius: 12px;
+        border: 2px solid #e2e8f0;
+        overflow: hidden;
+        margin-bottom: 16px;
+        transition: all 0.3s ease;
+        opacity: 0.95;
+
+        &:last-child {
+          margin-bottom: 0;
+        }
+
+        &:hover {
+          opacity: 1;
+          border-color: rgba(100, 116, 139, 0.4);
+          box-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+        }
+
+        // Older version header - slightly darker to indicate historical
+        .checkpoint-header.older-version-header {
+          background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+          
+          .checkpoint-number.older {
+            background: linear-gradient(135deg, #cbd5e1 0%, #e2e8f0 100%);
+            color: #475569;
+            box-shadow: 0 2px 8px rgba(100, 116, 139, 0.2);
+
+            .checkpoint-version.older {
+              background: rgba(100, 116, 139, 0.15);
+              color: #475569;
+              border-color: rgba(100, 116, 139, 0.3);
+            }
+          }
+        }
+
+        // Actions for older versions - with read-only badge
+        .checkpoint-actions.older-version-actions {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          padding: 16px 24px;
+          background: #f8fafc;
+          border-top: 1px solid #e2e8f0;
+          flex-wrap: wrap;
+
+          .action-buttons-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+          }
+
+          .read-only-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            background: rgba(251, 191, 36, 0.1);
+            color: #d97706;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            flex-shrink: 0;
+
+            svg {
+              width: 14px;
+              height: 14px;
+            }
+          }
+
+          .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+
+            svg {
+              width: 18px;
+              height: 18px;
+              flex-shrink: 0;
+            }
+
+            &.outline {
+              background: transparent;
+              color: #64748b;
+              border: 1.5px solid #cbd5e1;
+
+              &:hover {
+                background: white;
+                border-color: #64748b;
+                color: #475569;
+                transform: translateY(-1px);
+              }
+            }
           }
         }
       }

@@ -576,6 +576,29 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
   }
 
   /**
+   * Get the latest (highest version) checkpoint for a given WIR code
+   * Returns null if no checkpoint exists
+   * CRITICAL: When multiple checkpoint versions exist (after rejection), 
+   * we must check the LATEST version, not just any version
+   */
+  private getLatestCheckpoint(checkpoints: WIRCheckpoint[], wirCode: string): WIRCheckpoint | null {
+    if (!checkpoints || !wirCode) return null;
+    
+    const matchingCheckpoints = checkpoints.filter(cp => 
+      cp.wirNumber && cp.wirNumber.toUpperCase() === wirCode.toUpperCase()
+    );
+    
+    if (matchingCheckpoints.length === 0) return null;
+    
+    // Sort by version descending and return the first one (latest version)
+    matchingCheckpoints.sort((a, b) => (b.version || 1) - (a.version || 1));
+    
+    console.log(`📋 Found ${matchingCheckpoints.length} checkpoint(s) for ${wirCode}, latest version: ${matchingCheckpoints[0].version || 1}`);
+    
+    return matchingCheckpoints[0];
+  }
+
+  /**
    * Check if position fields should be locked based on current WIR status and previous WIR status
    * Called only when WIR has NO position values set yet
    * 
@@ -605,9 +628,8 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
     
     this.wirService.getWIRCheckpointsByBox(this.activity.boxId).subscribe({
       next: (checkpoints) => {
-        const currentCheckpoint = checkpoints.find(cp => 
-          cp.wirNumber && cp.wirNumber.toUpperCase() === wir.wirCode.toUpperCase()
-        );
+        // Get the LATEST checkpoint version for this WIR (critical fix for multiple versions)
+        const currentCheckpoint = this.getLatestCheckpoint(checkpoints, wir.wirCode);
         
         // Use checkpoint.status if available, otherwise fall back to wir.status
         const effectiveStatus = currentCheckpoint?.status || wir.status;
@@ -767,9 +789,8 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
           // The checkpoint.status is the source of truth, not wir.checkpointStatus
           this.wirService.getWIRCheckpointsByBox(this.activity.boxId).subscribe({
             next: (checkpoints) => {
-              const prevCheckpoint = checkpoints.find(cp => 
-                cp.wirNumber && cp.wirNumber.toUpperCase() === previousWIR.wirCode.toUpperCase()
-              );
+              // Get the LATEST checkpoint version for previous WIR (critical fix for multiple versions)
+              const prevCheckpoint = this.getLatestCheckpoint(checkpoints, previousWIR.wirCode);
               
               // Use checkpoint.status if available, otherwise fall back to wir.status
               const effectiveStatus = prevCheckpoint?.status || previousWIR.status;
@@ -974,10 +995,8 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
     
     this.wirService.getWIRCheckpointsByBox(this.activity.boxId).subscribe({
       next: (checkpoints) => {
-        // Find checkpoint matching the WIR code
-        const checkpoint = checkpoints.find(cp => 
-          cp.wirNumber && cp.wirNumber.toUpperCase() === wirCode.toUpperCase()
-        );
+        // Get the LATEST checkpoint version for this WIR (critical fix for multiple versions)
+        const checkpoint = this.getLatestCheckpoint(checkpoints, wirCode);
         
         if (checkpoint) {
           this.nearestWIRCheckpoint = checkpoint;

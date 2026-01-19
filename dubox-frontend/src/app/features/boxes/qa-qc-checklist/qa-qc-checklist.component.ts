@@ -530,6 +530,8 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     
     const stepParam = this.route.snapshot.queryParamMap.get('step');
     const viewParam = this.route.snapshot.queryParamMap.get('view');
+    const wirIdParam = this.route.snapshot.queryParamMap.get('wirId'); // Check for specific checkpoint version
+    
     if (viewParam === 'quality-list') {
       this.qualityIssuesOnlyView = true;
     }
@@ -540,7 +542,20 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     
     this.initForm();
     this.loadBox(); // Load box to get its status
-    this.loadWIRRecord();
+    
+    // If wirId is provided, load that specific checkpoint version directly
+    if (wirIdParam) {
+      this.loadSpecificCheckpoint(wirIdParam);
+      // Clear the wirId query param after loading
+      this.router.navigate([], { 
+        queryParams: { wirId: null }, 
+        queryParamsHandling: 'merge',
+        replaceUrl: true 
+      });
+    } else {
+      this.loadWIRRecord();
+    }
+    
     this.loadBoxQualityIssues();
     // Don't load predefined items here - will load when modal opens with correct WIR filter
   }
@@ -787,6 +802,58 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
 
   get qualityIssuesArray(): FormArray {
     return this.qualityIssuesForm.get('issues') as FormArray;
+  }
+
+  /**
+   * Load a specific checkpoint version by its wirId
+   * Used when navigating directly to a specific checkpoint version from the activities table
+   */
+  loadSpecificCheckpoint(wirId: string): void {
+    this.loading = true;
+    this.error = '';
+    
+    console.log('Loading specific checkpoint with wirId:', wirId);
+    
+    // Load the WIR record first (needed for context)
+    this.wirService.getWIRRecordsByActivity(this.activityId).subscribe({
+      next: (wirs) => {
+        if (wirs && wirs.length > 0) {
+          this.wirRecord = wirs[0]; // Use the first WIR record as context
+        }
+        
+        // Now load the specific checkpoint by ID
+        this.wirService.getWIRCheckpointById(wirId).subscribe({
+          next: (checkpoint) => {
+            console.log('Loaded specific checkpoint:', checkpoint);
+            this.wirCheckpoint = checkpoint;
+            this.syncReviewFormFromCheckpoint();
+            this.processCheckpointLoaded();
+          },
+          error: (err) => {
+            console.error('Error loading specific checkpoint:', err);
+            this.error = err.error?.message || err.message || 'Failed to load checkpoint';
+            this.loading = false;
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Error loading WIR record:', err);
+        // Continue to load checkpoint even if WIR record fails
+        this.wirService.getWIRCheckpointById(wirId).subscribe({
+          next: (checkpoint) => {
+            console.log('Loaded specific checkpoint (without WIR record):', checkpoint);
+            this.wirCheckpoint = checkpoint;
+            this.syncReviewFormFromCheckpoint();
+            this.processCheckpointLoaded();
+          },
+          error: (err) => {
+            console.error('Error loading specific checkpoint:', err);
+            this.error = err.error?.message || err.message || 'Failed to load checkpoint';
+            this.loading = false;
+          }
+        });
+      }
+    });
   }
 
   loadWIRRecord(): void {

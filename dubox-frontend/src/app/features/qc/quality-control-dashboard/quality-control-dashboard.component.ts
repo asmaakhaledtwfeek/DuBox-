@@ -112,6 +112,10 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   qualityIssuesLoading = false;
   qualityIssuesError = '';
   
+  // Versioning support
+  expandedCheckpointVersions: Set<string> = new Set(); // Track which checkpoints have versions expanded
+  allCheckpointVersionsMap: Map<string, EnrichedCheckpoint[]> = new Map(); // Store all versions for each checkpoint
+  
   // Pagination for checkpoints (backend pagination)
   checkpointsCurrentPage = 1;
   checkpointsPageSize = 25;
@@ -757,8 +761,9 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     this.wirService.getWIRCheckpoints(params).subscribe({
       next: (response) => {
         // Handle paginated response
+        let allCheckpoints: EnrichedCheckpoint[] = [];
         if (response.items) {
-          this.checkpoints = response.items as EnrichedCheckpoint[];
+          allCheckpoints = response.items as EnrichedCheckpoint[];
           this.checkpointsTotalCount = response.totalCount || 0;
           this.checkpointsCurrentPage = response.page || 1;
           this.checkpointsPageSize = response.pageSize || 25;
@@ -766,10 +771,13 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
         } else {
           // Fallback for non-paginated response (backward compatibility)
           const checkpoints = (response as any) || [];
-          this.checkpoints = Array.isArray(checkpoints) ? checkpoints as EnrichedCheckpoint[] : [];
-          this.checkpointsTotalCount = this.checkpoints.length;
+          allCheckpoints = Array.isArray(checkpoints) ? checkpoints as EnrichedCheckpoint[] : [];
+          this.checkpointsTotalCount = allCheckpoints.length;
           this.checkpointsTotalPages = 1;
         }
+        
+        // Apply versioning grouping - show only latest versions
+        this.checkpoints = this.getLatestCheckpointsOnly(allCheckpoints);
         
         // Pre-fetch box statuses and project statuses for all checkpoints
         this.checkpoints.forEach(checkpoint => {
@@ -2140,5 +2148,139 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   
   // Expose Math for template
   readonly Math = Math;
+
+  /**
+   * Group checkpoints by WIR number and BoxId, returning only the latest version for each group
+   * This ensures that when a checkpoint has multiple versions (after rejection/resubmission),
+   * only the latest version is displayed in the list.
+   */
+  private getLatestCheckpointsOnly(checkpoints: EnrichedCheckpoint[]): EnrichedCheckpoint[] {
+    if (!checkpoints || checkpoints.length === 0) {
+      return [];
+    }
+
+    // Clear the versions map
+    this.allCheckpointVersionsMap.clear();
+
+    // Group checkpoints by a composite key: wirNumber + boxId
+    const groupedMap = new Map<string, EnrichedCheckpoint[]>();
+    
+    checkpoints.forEach(checkpoint => {
+      const wirNumber = (checkpoint.wirNumber || '').toUpperCase();
+      const boxId = checkpoint.boxId || 'NO_BOX';
+      
+      // Create a composite key to group by both WIR number and box
+      const groupKey = `${wirNumber}_${boxId}`;
+      
+      if (!groupedMap.has(groupKey)) {
+        groupedMap.set(groupKey, []);
+      }
+      groupedMap.get(groupKey)!.push(checkpoint);
+    });
+
+    // For each group, sort by version (descending) and take the latest
+    const latestCheckpoints: EnrichedCheckpoint[] = [];
+    groupedMap.forEach((versions, groupKey) => {
+      // Sort by version descending, then by createdDate descending
+      versions.sort((a, b) => {
+        const versionDiff = (b.version || 1) - (a.version || 1);
+        if (versionDiff !== 0) return versionDiff;
+        
+        const dateA = a.createdDate ? new Date(a.createdDate).getTime() : 0;
+        const dateB = b.createdDate ? new Date(b.createdDate).getTime() : 0;
+        return dateB - dateA;
+      });
+      
+      // Take the first one (latest version)
+      const latest = versions[0];
+      
+      // Store the total version count in a custom property for display
+      (latest as any)._totalVersions = versions.length;
+      (latest as any)._groupKey = groupKey; // Store group key for version lookup
+      
+      // Store all versions in the map using wirId of the latest as key
+      if (latest.wirId) {
+        this.allCheckpointVersionsMap.set(latest.wirId, versions);
+      }
+      
+      if (versions.length > 1) {
+        console.log(`📋 Group "${groupKey}": Found ${versions.length} version(s), showing latest v${latest.version || 1}`);
+      }
+      
+      latestCheckpoints.push(latest);
+    });
+
+    // Sort by WIR number for consistent display order
+    return latestCheckpoints.sort((a, b) => {
+      const wirA = (a.wirNumber || '').toUpperCase();
+      const wirB = (b.wirNumber || '').toUpperCase();
+      return wirA.localeCompare(wirB);
+    });
+  }
+
+  /**
+   * Check if a checkpoint has multiple versions
+   */
+  hasMultipleVersions(checkpoint: EnrichedCheckpoint): boolean {
+    return this.getTotalVersionCount(checkpoint) > 1;
+  }
+
+  /**
+   * Get checkpoint version label for display
+   */
+  getCheckpointVersionLabel(checkpoint: EnrichedCheckpoint): string | null {
+    const version = checkpoint.version || 1;
+    const totalVersions = this.getTotalVersionCount(checkpoint);
+    
+    if (totalVersions > 1) {
+      return `v${version}`;
+    }
+    return null; // Don't show version label if there's only one version
+  }
+
+  /**
+   * Get total number of versions for a checkpoint
+   */
+  getTotalVersionCount(checkpoint: EnrichedCheckpoint): number {
+    return (checkpoint as any)._totalVersions || 1;
+  }
+
+  /**
+   * Toggle expansion of checkpoint versions
+   */
+  toggleCheckpointVersions(checkpoint: EnrichedCheckpoint): void {
+    if (!checkpoint.wirId) return;
+    
+    if (this.expandedCheckpointVersions.has(checkpoint.wirId)) {
+      this.expandedCheckpointVersions.delete(checkpoint.wirId);
+    } else {
+      this.expandedCheckpointVersions.add(checkpoint.wirId);
+    }
+  }
+
+  /**
+   * Check if checkpoint versions are expanded
+   */
+  isCheckpointVersionsExpanded(checkpoint: EnrichedCheckpoint): boolean {
+    return checkpoint.wirId ? this.expandedCheckpointVersions.has(checkpoint.wirId) : false;
+  }
+
+  /**
+   * Get older versions of a checkpoint (excluding the latest)
+   */
+  getOlderVersions(checkpoint: EnrichedCheckpoint): EnrichedCheckpoint[] {
+    if (!checkpoint.wirId) return [];
+    
+    const allVersions = this.allCheckpointVersionsMap.get(checkpoint.wirId) || [];
+    // Return all except the first one (which is the latest)
+    return allVersions.slice(1);
+  }
+
+  /**
+   * Check if a checkpoint is an older version (not the latest)
+   */
+  isOlderVersion(checkpoint: EnrichedCheckpoint, latestCheckpoint: EnrichedCheckpoint): boolean {
+    return checkpoint.wirId !== latestCheckpoint.wirId;
+  }
 }
 

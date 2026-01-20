@@ -39,18 +39,25 @@ public class GenerateBoxPanelsExcelQueryHandler : IRequestHandler<GenerateBoxPan
             if (!boxes.Any())
                 return Result.Failure<byte[]>("No boxes found for this project");
 
-            // Get existing panels for all boxes to determine max panel count
-            var existingPanels = await _dbContext.BoxPanels
-                .Where(p => p.ProjectId == request.ProjectId)
+            // Get panel types for the project
+            var panelTypes = await _dbContext.PanelTypes
+                .Where(pt => pt.ProjectId == request.ProjectId && pt.IsActive)
+                .OrderBy(pt => pt.PanelTypeCode)
                 .ToListAsync(cancellationToken);
 
-            // Group panels by box and find max panel count
+            // Get existing panels for all boxes
+            var existingPanels = await _dbContext.BoxPanels
+                .Where(p => p.ProjectId == request.ProjectId)
+                .Include(p => p.PanelType)
+                .ToListAsync(cancellationToken);
+
+            // Group panels by box and panel type
             var panelsByBox = existingPanels
                 .GroupBy(p => p.BoxId)
-                .ToDictionary(g => g.Key, g => g.Select(p => p.PanelName).OrderBy(n => n).ToList());
-
-            // Determine the maximum number of panels across all boxes
-            int maxPanelCount = Math.Max(6, panelsByBox.Values.Any() ? panelsByBox.Values.Max(p => p.Count) : 0);
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.ToDictionary(p => p.PanelTypeId ?? Guid.Empty, p => p.PanelName ?? "")
+                );
 
             // Generate Excel file
             ExcelPackage.LicenseContext = OfficeOpenXml.LicenseContext.NonCommercial;
@@ -59,9 +66,22 @@ public class GenerateBoxPanelsExcelQueryHandler : IRequestHandler<GenerateBoxPan
 
             // Create headers
             var headers = new List<string> { "BoxSerialNumber", "BoxTag" };
-            for (int i = 1; i <= maxPanelCount; i++)
+            
+            // Add dynamic panel type columns
+            if (panelTypes.Any())
             {
-                headers.Add($"Panel_{i}");
+                foreach (var panelType in panelTypes)
+                {
+                    headers.Add($"Panel_{panelType.PanelTypeCode}");
+                }
+            }
+            else
+            {
+                // Fallback to generic columns if no panel types defined
+                for (int i = 1; i <= 6; i++)
+                {
+                    headers.Add($"Panel_{i}");
+                }
             }
 
             // Write headers
@@ -87,15 +107,29 @@ public class GenerateBoxPanelsExcelQueryHandler : IRequestHandler<GenerateBoxPan
                 // BoxTag (optional if exists)
                 worksheet.Cells[dataRow, 2].Value = box.BoxTag ?? string.Empty;
 
-                // Panel columns
-                var boxPanels = panelsByBox.ContainsKey(box.BoxId) 
+                // Panel columns based on panel types
+                var boxPanelData = panelsByBox.ContainsKey(box.BoxId) 
                     ? panelsByBox[box.BoxId] 
-                    : new List<string>();
+                    : new Dictionary<Guid, string>();
 
-                for (int panelIndex = 0; panelIndex < maxPanelCount; panelIndex++)
+                if (panelTypes.Any())
                 {
-                    var panelValue = panelIndex < boxPanels.Count ? boxPanels[panelIndex] : string.Empty;
-                    worksheet.Cells[dataRow, panelIndex + 3].Value = panelValue;
+                    for (int i = 0; i < panelTypes.Count; i++)
+                    {
+                        var panelType = panelTypes[i];
+                        var panelValue = boxPanelData.ContainsKey(panelType.PanelTypeId) 
+                            ? boxPanelData[panelType.PanelTypeId] 
+                            : string.Empty;
+                        worksheet.Cells[dataRow, i + 3].Value = panelValue;
+                    }
+                }
+                else
+                {
+                    // Fallback for no panel types - populate first 6 columns with empty values
+                    for (int i = 0; i < 6; i++)
+                    {
+                        worksheet.Cells[dataRow, i + 3].Value = string.Empty;
+                    }
                 }
             }
 

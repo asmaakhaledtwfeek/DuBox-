@@ -13,6 +13,7 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(Box.BoxActivities));
             AddInclude(nameof(Box.CurrentLocation));
             AddInclude(nameof(Box.BoxPanels));
+            AddInclude($"{nameof(Box.BoxPanels)}.{nameof(BoxPanel.PanelType)}");
             
             AddInclude(nameof(Box.Factory));
         }

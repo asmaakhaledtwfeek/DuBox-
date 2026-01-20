@@ -84,8 +84,22 @@ namespace Dubox.Application.Services
                     BoxPanelId = p.BoxPanelId,
                     BoxId = p.BoxId,
                     ProjectId = p.ProjectId,
+                    PanelTypeId = p.PanelTypeId,
+                    TypeName = p.PanelType?.PanelTypeName,
+                    TypeCode = p.PanelType?.PanelTypeCode,
                     PanelName = p.PanelName,
                     PanelStatus = p.PanelStatus,
+                    Barcode = p.Barcode,
+                    // First Approval
+                    FirstApprovalStatus = p.FirstApprovalStatus,
+                    FirstApprovalBy = p.FirstApprovalBy,
+                    FirstApprovalDate = p.FirstApprovalDate,
+                    FirstApprovalNotes = p.FirstApprovalNotes,
+                    // Second Approval
+                    SecondApprovalStatus = p.SecondApprovalStatus,
+                    SecondApprovalBy = p.SecondApprovalBy,
+                    SecondApprovalDate = p.SecondApprovalDate,
+                    SecondApprovalNotes = p.SecondApprovalNotes,
                     CreatedDate = p.CreatedDate,
                     ModifiedDate = p.ModifiedDate
                 }).ToList() ?? new List<BoxPanelDto>();

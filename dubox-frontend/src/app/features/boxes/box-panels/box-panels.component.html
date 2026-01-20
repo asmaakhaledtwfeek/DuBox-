@@ -1,0 +1,207 @@
+<div class="box-panels-section">
+  <div class="section-header">
+    <div>
+      <h3>Panel Approvals</h3>
+      <p class="helper-text">Review and approve panels for this box</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-scan" (click)="openBarcodeScanner('SiteArrival')" title="Scan barcode to approve arrival at site">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <path d="M7 7v10"/>
+          <path d="M11 7v10"/>
+          <path d="M15 7v10"/>
+        </svg>
+        Scan Barcode
+      </button>
+    </div>
+  </div>
+
+  <!-- Scan Result Message -->
+  <div class="scan-result-message" *ngIf="lastScanResult">
+    {{ lastScanResult }}
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading panels...</p>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-message" *ngIf="error && !loading">
+    {{ error }}
+  </div>
+
+  <!-- Panels Table -->
+  <div class="panels-table" *ngIf="!loading && panels.length > 0">
+    <table>
+      <thead>
+        <tr>
+          <th>Panel Name</th>
+          <th>Barcode</th>
+          <th>Panel Type</th>
+          <th>Status</th>
+          <th>First Approval</th>
+          <th>Second Approval</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let panel of panels">
+          <td>
+            <strong>{{ panel.panelName }}</strong>
+          </td>
+          <td>
+            <code class="barcode-display" *ngIf="panel.barcode" title="Click to copy" (click)="copyBarcode(panel.barcode)">
+              {{ panel.barcode }}
+            </code>
+            <span class="no-barcode" *ngIf="!panel.barcode">—</span>
+          </td>
+          <td>
+            <span class="panel-type-badge" *ngIf="panel.typeName">
+              {{ panel.typeCode }} - {{ panel.typeName }}
+            </span>
+            <span class="panel-type-badge gray" *ngIf="!panel.typeName">
+              No Type
+            </span>
+          </td>
+          <td>
+            <span class="status-badge" [ngClass]="getPanelStatusClass(panel.panelStatus)">
+              {{ getStatusDisplayName(panel.panelStatus) }}
+            </span>
+          </td>
+          <td>
+            <div class="approval-status" *ngIf="panel.firstApprovalDate">
+              <span [ngClass]="panel.firstApprovalStatus === 'Approved' ? 'approved' : 'rejected'">
+                {{ panel.firstApprovalStatus }}
+              </span>
+              <small>{{ panel.firstApprovalDate | date: 'short' }}</small>
+              <small *ngIf="panel.firstApprovalNotes">{{ panel.firstApprovalNotes }}</small>
+            </div>
+            <span *ngIf="!panel.firstApprovalDate" class="pending-badge">Pending</span>
+          </td>
+          <td>
+            <div class="approval-status" *ngIf="panel.secondApprovalDate">
+              <span [ngClass]="panel.secondApprovalStatus === 'Approved' ? 'approved' : 'rejected'">
+                {{ panel.secondApprovalStatus }}
+              </span>
+              <small>{{ panel.secondApprovalDate | date: 'short' }}</small>
+              <small *ngIf="panel.secondApprovalNotes">{{ panel.secondApprovalNotes }}</small>
+            </div>
+            <span *ngIf="!panel.secondApprovalDate" class="pending-badge">Pending</span>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <!-- First Approval -->
+              <button 
+                class="btn btn-sm btn-success"
+                *ngIf="canApproveFirst(panel)"
+                (click)="openApprovalModal(panel, 'first', 'approve')"
+                title="First Approval - Approve">
+                ✓ 1st
+              </button>
+              <button 
+                class="btn btn-sm btn-danger"
+                *ngIf="canApproveFirst(panel)"
+                (click)="openApprovalModal(panel, 'first', 'reject')"
+                title="First Approval - Reject">
+                ✗ 1st
+              </button>
+
+              <!-- Second Approval -->
+              <button 
+                class="btn btn-sm btn-success"
+                *ngIf="canApproveSecond(panel)"
+                (click)="openApprovalModal(panel, 'second', 'approve')"
+                title="Second Approval - Approve">
+                ✓ 2nd
+              </button>
+              <button 
+                class="btn btn-sm btn-danger"
+                *ngIf="canApproveSecond(panel)"
+                (click)="openApprovalModal(panel, 'second', 'reject')"
+                title="Second Approval - Reject">
+                ✗ 2nd
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!loading && panels.length === 0">
+    <p>No panels found for this box.</p>
+    <p class="helper-text">Panels are added via the Excel import on the Project Dashboard.</p>
+  </div>
+
+  <!-- Approval Modal -->
+  <div class="modal-overlay" *ngIf="showApprovalModal" (click)="closeApprovalModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>
+          {{ approvalType === 'first' ? 'First' : 'Second' }} Approval - 
+          {{ approvalAction === 'approve' ? 'Approve' : 'Reject' }}
+        </h3>
+        <button class="close-btn" (click)="closeApprovalModal()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="panel-info" *ngIf="selectedPanel">
+          <p><strong>Panel:</strong> {{ selectedPanel.panelName }}</p>
+          <p><strong>Type:</strong> {{ selectedPanel.typeName || 'No Type' }}</p>
+          <p><strong>Current Status:</strong> {{ getStatusDisplayName(selectedPanel.panelStatus) }}</p>
+        </div>
+
+        <div class="form-group">
+          <label for="approvalNotes">Notes (Optional)</label>
+          <textarea 
+            id="approvalNotes"
+            [(ngModel)]="approvalNotes"
+            rows="4"
+            placeholder="Add notes about this approval decision..."
+            [disabled]="submitting">
+          </textarea>
+        </div>
+
+        <div class="error-message" *ngIf="error">
+          {{ error }}
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button 
+          class="btn btn-secondary" 
+          (click)="closeApprovalModal()"
+          [disabled]="submitting">
+          Cancel
+        </button>
+        <button 
+          class="btn"
+          [ngClass]="approvalAction === 'approve' ? 'btn-success' : 'btn-danger'"
+          (click)="submitApproval()"
+          [disabled]="submitting">
+          <span *ngIf="!submitting">
+            {{ approvalAction === 'approve' ? 'Approve' : 'Reject' }}
+          </span>
+          <span *ngIf="submitting" class="spinner-inline">
+            <span class="spinner small"></span>
+            Processing...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barcode Scanner Modal -->
+  <app-barcode-scanner
+    *ngIf="showBarcodeScanner"
+    [projectId]="projectId"
+    [scanType]="scanType"
+    (scanComplete)="handleScanComplete($event)"
+    (close)="closeBarcodeScanner()">
+  </app-barcode-scanner>
+</div>
+

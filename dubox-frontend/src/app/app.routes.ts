@@ -64,6 +64,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/projects/project-quality-issues/project-quality-issues.component').then(m => m.ProjectQualityIssuesComponent)
   },
   {
+    path: 'projects/:id/panel-types',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/projects/project-panel-types/project-panel-types.component').then(m => m.ProjectPanelTypesComponent)
+  },
+  {
     path: 'boxes/create',
     canActivate: [authGuard, permissionGuard],
     data: { 

@@ -68,6 +68,11 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<BoxDrawing> BoxDrawings { get; set; } = null!;
     public DbSet<BoxPanel> BoxPanels { get; set; } = null!;
     
+    // Panel Management
+    public DbSet<PanelType> PanelTypes { get; set; } = null!;
+    public DbSet<PanelDeliveryNote> PanelDeliveryNotes { get; set; } = null!;
+    public DbSet<PanelScanLog> PanelScanLogs { get; set; } = null!;
+    
     // Project Configuration
     public DbSet<ProjectBuilding> ProjectBuildings { get; set; } = null!;
     public DbSet<ProjectLevel> ProjectLevels { get; set; } = null!;

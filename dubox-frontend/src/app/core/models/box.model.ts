@@ -433,16 +433,114 @@ export interface BoxPanel {
   boxPanelId: string;
   boxId: string;
   projectId: string;
+  panelTypeId?: string;
+  typeName?: string;  // From PanelType navigation
+  typeCode?: string;  // From PanelType navigation
   panelName: string;
   panelStatus: PanelStatus;
+  
+  // Barcode & QR
+  barcode: string;  // Auto-generated barcode
+  qrCodeUrl?: string;
+  
+  // Manufacturing
+  manufacturerName?: string;
+  manufacturedDate?: Date;
+  
+  // Delivery & Tracking
+  dispatchedDate?: Date;
+  estimatedArrivalDate?: Date;
+  actualArrivalDate?: Date;
+  deliveryNoteNumber?: string;
+  deliveryNoteUrl?: string;
+  
+  // First Approval
+  firstApprovalStatus?: string; // Pending, Approved, Rejected
+  firstApprovalBy?: string;
+  firstApprovalDate?: Date;
+  firstApprovalNotes?: string;
+  
+  // Second Approval
+  secondApprovalStatus?: string; // Pending, Approved, Rejected
+  secondApprovalBy?: string;
+  secondApprovalDate?: Date;
+  secondApprovalNotes?: string;
+  
+  // Location
+  currentLocationStatus?: string; // InTransit, ArrivedFactory, Installed, Rejected
+  scannedAtFactory?: Date;
+  installedDate?: Date;
+  
+  // Physical Info
+  weight?: number;
+  dimensions?: string;
+  notes?: string;
+  
   createdDate: Date;
   modifiedDate?: Date;
 }
 
 export enum PanelStatus {
   NotStarted = 1,
-  Yellow = 2,
-  Green = 3
+  Manufacturing = 2,
+  ReadyForDispatch = 3,
+  InTransit = 4,              // YELLOW - On the way to factory
+  ArrivedFactory = 5,         // GREEN - Arrived at factory
+  FirstApprovalPending = 6,
+  FirstApprovalApproved = 7,
+  FirstApprovalRejected = 8,
+  SecondApprovalPending = 9,
+  SecondApprovalApproved = 10, // GREEN with checkmark - Ready for installation
+  SecondApprovalRejected = 11,
+  Installed = 12,             // PURPLE - Panel installed
+  Rejected = 13,              // GRAY - Panel rejected
+  
+  // Legacy support
+  Yellow = InTransit,
+  Green = ArrivedFactory
+}
+
+export interface PanelType {
+  panelTypeId: string;
+  projectId: string;
+  panelTypeName: string;
+  panelTypeCode: string;
+  description?: string;
+  isActive: boolean;
+  displayOrder: number;
+  createdDate: Date;
+  modifiedDate?: Date;
+}
+
+export interface PanelScanLog {
+  scanLogId: string;
+  boxPanelId: string;
+  barcode: string;
+  scanType: string; // Dispatch, SiteArrival, Installation, Inspection
+  scanLocation?: string;
+  scannedBy?: string;
+  scannedDate: Date;
+  latitude?: number;
+  longitude?: number;
+  notes?: string;
+}
+
+export interface PanelDeliveryNote {
+  deliveryNoteId: string;
+  deliveryNoteNumber: string;
+  projectId: string;
+  factoryId?: string;
+  supplierName?: string;
+  driverName?: string;
+  vehicleNumber?: string;
+  deliveryDate: Date;
+  qrCodeUrl?: string;
+  documentUrl?: string;
+  status: string; // Draft, InTransit, Delivered, Completed
+  notes?: string;
+  panels?: BoxPanel[];
+  createdDate: Date;
+  modifiedDate?: Date;
 }
 
 export interface ProjectTypeCategory {

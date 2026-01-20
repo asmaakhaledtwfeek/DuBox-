@@ -268,6 +268,50 @@ public class BoxesController : ControllerBase
         var result = await _mediator.Send(command, cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+
+    // Panel Scanning & Tracking
+    [HttpPost("panels/scan")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ScanPanelBarcode(
+        [FromBody] ScanPanelBarcodeCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    // Panel Approval - First Approval
+    [HttpPost("panels/{boxPanelId}/first-approval")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ApprovePanelFirstApproval(
+        Guid boxPanelId,
+        [FromBody] ApprovePanelFirstApprovalCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        if (boxPanelId != command.BoxPanelId)
+            return BadRequest("Panel ID mismatch");
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    // Panel Approval - Second Approval
+    [HttpPost("panels/{boxPanelId}/second-approval")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ApprovePanelSecondApproval(
+        Guid boxPanelId,
+        [FromBody] ApprovePanelSecondApprovalCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        if (boxPanelId != command.BoxPanelId)
+            return BadRequest("Panel ID mismatch");
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
 }
 
 public record DuplicateBoxRequest(

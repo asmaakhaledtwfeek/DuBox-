@@ -987,7 +987,7 @@
             [disabled]="creatingCost || !newCost.cost || 
                        !newCost.costCodeLevel1 || !newCost.costCodeLevel2 ||
                        !newCost.type || !newCost.chapter || !newCost.subChapter || 
-                       !newCost.classification || !newCost.subClassification || !newCost.units"
+                       !newCost.classification || !newCost.subClassification || !newCost.units">
             <span *ngIf="!creatingCost">Add Cost</span>
             <span *ngIf="creatingCost" class="btn-loading">
               <div class="small-spinner"></div>

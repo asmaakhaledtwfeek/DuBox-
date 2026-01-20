@@ -25,6 +25,12 @@ public interface IDbContext
     DbSet<Box> Boxes { get; }
     DbSet<BoxAsset> BoxAssets { get; }
     DbSet<BoxPanel> BoxPanels { get; }
+    
+    // Panel Management
+    DbSet<PanelType> PanelTypes { get; }
+    DbSet<PanelDeliveryNote> PanelDeliveryNotes { get; }
+    DbSet<PanelScanLog> PanelScanLogs { get; }
+    
     DbSet<ActivityMaster> ActivityMasters { get; }
     DbSet<BoxActivity> BoxActivities { get; }
     DbSet<ActivityDependency> ActivityDependencies { get; }

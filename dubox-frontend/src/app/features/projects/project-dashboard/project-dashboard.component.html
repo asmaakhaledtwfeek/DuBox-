@@ -188,6 +188,21 @@
             <div class="kpi-label">Quality Issues</div>
           </div>
         </div>
+
+        <div class="kpi-card clickable-card" (click)="viewPanelTypes()">
+          <div class="kpi-icon" style="background: rgba(249, 115, 22, 0.1); color: #f97316;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="7" height="7"/>
+              <rect x="14" y="3" width="7" height="7"/>
+              <rect x="14" y="14" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/>
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ panelTypesCount }}</div>
+            <div class="kpi-label">Panel Types</div>
+          </div>
+        </div>
       </div>
 
       <!-- Progress Overview -->

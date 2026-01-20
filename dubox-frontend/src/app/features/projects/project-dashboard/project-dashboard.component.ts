@@ -8,6 +8,7 @@ import { ProjectService } from '../../../core/services/project.service';
 import { BoxService } from '../../../core/services/box.service';
 import { WIRService } from '../../../core/services/wir.service';
 import { PermissionService } from '../../../core/services/permission.service';
+import { PanelTypeService } from '../../../core/services/panel-type.service';
 import { Project, ProjectStatus, getAvailableProjectStatuses, canChangeProjectStatus } from '../../../core/models/project.model';
 import { Box, BoxImportResult, BoxStatus } from '../../../core/models/box.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
@@ -90,6 +91,7 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
   };
 
   qualityIssuesCount = 0;
+  panelTypesCount = 0;
   
   private subscriptions: Subscription[] = [];
 
@@ -99,7 +101,8 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
     private projectService: ProjectService,
     private boxService: BoxService,
     private wirService: WIRService,
-    private permissionService: PermissionService
+    private permissionService: PermissionService,
+    private panelTypeService: PanelTypeService
   ) {}
 
   ngOnInit(): void {
@@ -176,6 +179,9 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
         
         // Load quality issues count
         this.loadQualityIssuesCount();
+
+        // Load panel types count
+        this.loadPanelTypesCount();
       },
       error: (error) => {
         this.error = 'Failed to load project';
@@ -421,6 +427,21 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+  loadPanelTypesCount(): void {
+    this.panelTypeService.getPanelTypesByProject(this.projectId).subscribe({
+      next: (response) => {
+        console.log('📦 Panel types response:', response);
+        const types = response?.data || response || [];
+        this.panelTypesCount = Array.isArray(types) ? types.length : 0;
+        console.log('✅ Panel types loaded:', this.panelTypesCount);
+      },
+      error: (err) => {
+        console.error('❌ Error loading panel types:', err);
+        this.panelTypesCount = 0;
+      }
+    });
+  }
+
   viewQualityIssues(): void {
     console.log('🔍 Navigate to quality issues for project:', this.projectId);
     if (!this.projectId) {
@@ -429,6 +450,16 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
       return;
     }
     this.router.navigate(['/projects', this.projectId, 'quality-issues']);
+  }
+
+  viewPanelTypes(): void {
+    console.log('🔍 Navigate to panel types for project:', this.projectId);
+    if (!this.projectId) {
+      console.error('❌ Cannot navigate: projectId is undefined');
+      alert('Error: Project ID is missing. Cannot view panel types.');
+      return;
+    }
+    this.router.navigate(['/projects', this.projectId, 'panel-types']);
   }
 
   openImportExcel(): void {

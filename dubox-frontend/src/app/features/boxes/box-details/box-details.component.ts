@@ -21,6 +21,7 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
 import { ActivityTableComponent } from '../../activities/activity-table/activity-table.component';
 import { BoxLogDetailsModalComponent } from '../box-log-details-modal/box-log-details-modal.component';
 import { UploadDrawingModalComponent } from '../upload-drawing-modal/upload-drawing-modal.component';
+import { BoxPanelsComponent } from '../box-panels/box-panels.component';
 import { QualityIssueDetailsModalComponent } from '../../../shared/components/quality-issue-details-modal/quality-issue-details-modal.component';
 import { AssignToCrewModalComponent, AssignableIssue } from '../../../shared/components/assign-to-crew-modal/assign-to-crew-modal.component';
 import { IssueCommentsComponent } from '../../../shared/components/issue-comments/issue-comments.component';
@@ -57,7 +58,7 @@ type BoxDrawing = {
 @Component({
   selector: 'app-box-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent, HeaderComponent, BoxLogDetailsModalComponent, UploadDrawingModalComponent, QualityIssueDetailsModalComponent, AssignToCrewModalComponent, IssueCommentsComponent],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent, HeaderComponent, BoxLogDetailsModalComponent, UploadDrawingModalComponent, QualityIssueDetailsModalComponent, AssignToCrewModalComponent, IssueCommentsComponent, BoxPanelsComponent],
   providers: [LocationService],
   animations: [
     trigger('slideDown', [
@@ -95,7 +96,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   showDeleteConfirm = false;
   deleteSuccess = false;
   
-  activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'drawings' | 'progress-updates' | 'attachments' = 'overview';
+  activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'drawings' | 'progress-updates' | 'attachments' | 'panels' = 'overview';
   
   canEdit = false;
   canDelete = false;
@@ -1073,7 +1074,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'drawings' | 'progress-updates' | 'attachments'): void {
+  setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'drawings' | 'progress-updates' | 'attachments' | 'panels'): void {
     this.activeTab = tab;
     
     // Scroll to top of page for better UX when switching tabs

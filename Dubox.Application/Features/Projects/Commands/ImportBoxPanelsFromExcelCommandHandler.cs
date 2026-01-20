@@ -83,6 +83,22 @@ public class ImportBoxPanelsFromExcelCommandHandler : IRequestHandler<ImportBoxP
                 return Result.Failure<BoxPanelsImportResultDto>("No panel columns found. Columns must start with 'Panel_'");
             }
 
+            // Get panel types for the project
+            var panelTypes = await _dbContext.PanelTypes
+                .Where(pt => pt.ProjectId == request.ProjectId && pt.IsActive)
+                .ToListAsync(cancellationToken);
+
+            // Create a mapping from column header to panel type
+            var panelTypesByColumn = new Dictionary<string, PanelType?>(StringComparer.OrdinalIgnoreCase);
+            foreach (var panelCol in panelColumns)
+            {
+                // Extract type code from "Panel_XXX" header
+                var typeCode = panelCol.Header.Substring(6).Trim(); // Remove "Panel_" prefix
+                var panelType = panelTypes.FirstOrDefault(pt => 
+                    pt.PanelTypeCode.Equals(typeCode, StringComparison.OrdinalIgnoreCase));
+                panelTypesByColumn[panelCol.Header] = panelType;
+            }
+
             // Get all boxes for the project by SerialNumber
             var boxesBySerialNumber = await _dbContext.Boxes
                 .Where(b => b.ProjectId == request.ProjectId)
@@ -123,37 +139,42 @@ public class ImportBoxPanelsFromExcelCommandHandler : IRequestHandler<ImportBoxP
 
                     var box = boxesBySerialNumber[serialNumberUpper];
 
-                    // Collect panel values from Panel_ columns
-                    var panelValues = new List<string>();
+                    // Collect panel values from Panel_ columns with their types
+                    var panelData = new List<(string PanelName, Guid? PanelTypeId)>();
                     foreach (var panelCol in panelColumns)
                     {
                         var cellValue = worksheet.Cells[row, panelCol.Index].Value?.ToString()?.Trim();
                         if (!string.IsNullOrWhiteSpace(cellValue))
                         {
-                            panelValues.Add(cellValue);
+                            var panelType = panelTypesByColumn[panelCol.Header];
+                            panelData.Add((cellValue, panelType?.PanelTypeId));
                         }
                     }
 
                     // If no panels provided, skip this row
-                    if (!panelValues.Any())
+                    if (!panelData.Any())
                     {
                         continue; 
                     }
 
+                    // Delete existing panels for this box
                     if (existingPanelsByBoxId.ContainsKey(box.BoxId))
                     {
                         var panelsToDelete = existingPanelsByBoxId[box.BoxId];
                         _dbContext.BoxPanels.RemoveRange(panelsToDelete);
                     }
 
-                    // Create new panel records
-                    var newPanels = panelValues.Select(panelName => new BoxPanel
+                    // Create new panel records with auto-generated barcodes
+                    var newPanels = panelData.Select((data, index) => new BoxPanel
                     {
                         BoxId = box.BoxId,
                         ProjectId = request.ProjectId,
-                        PanelName = panelName,
-                        PanelStatus = Domain.Enums.PanelStatusEnum.NotStarted,
-                        CreatedDate = DateTime.UtcNow
+                        PanelName = data.PanelName,
+                        PanelTypeId = data.PanelTypeId,
+                        PanelStatus = Domain.Enums.PanelStatusEnum.Manufacturing,
+                        Barcode = $"PANEL-{project.ProjectCode}-{box.SerialNumber}-{(index + 1):D3}", // ProjectCode-SerialNumber-PanelIndex
+                        CreatedDate = DateTime.UtcNow,
+                        ModifiedDate = DateTime.UtcNow
                     }).ToList();
 
                     await _dbContext.BoxPanels.AddRangeAsync(newPanels, cancellationToken);

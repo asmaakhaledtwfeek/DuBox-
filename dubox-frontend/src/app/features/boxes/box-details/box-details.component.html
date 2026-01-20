@@ -124,6 +124,13 @@
           Drawing
         </button>
         <button 
+          class="tab" 
+          [class.active]="activeTab === 'panels'"
+          (click)="setActiveTab('panels')"
+        >
+          Panel Approvals
+        </button>
+        <button 
         class="tab" 
         [class.active]="activeTab === 'attachments'"
         (click)="setActiveTab('attachments')"
@@ -2653,6 +2660,15 @@
             (clearSearch)="clearProgressUpdatesSearch()"
             (toggleSearch)="toggleProgressUpdatesSearch()"
           ></app-progress-updates-table>
+        </div>
+
+        <!-- Panel Approvals Tab -->
+        <div *ngIf="activeTab === 'panels'" class="panels-tab">
+          <app-box-panels 
+            [boxId]="boxId" 
+            [projectId]="projectId"
+            [panels]="boxPanels">
+          </app-box-panels>
         </div>
 
         <!-- All Attachments Tab -->

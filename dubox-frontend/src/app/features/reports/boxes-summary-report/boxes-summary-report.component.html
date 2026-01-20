@@ -34,132 +34,7 @@
       </div>
     </div>
 
-    <!-- Filters Section -->
-    <div class="filters-section">
-      <div class="filters-header" (click)="filtersCollapsed = !filtersCollapsed">
-        <h2>Filters</h2>
-        <span class="collapse-icon">{{ filtersCollapsed ? '▼' : '▲' }}</span>
-      </div>
-      
-      <div class="filters-content" [class.collapsed]="filtersCollapsed">
-        <!-- Basic Filters Section -->
-        <h3 class="filter-section-title">Basic Filters</h3>
-        <div class="filter-row">
-          <div class="filter-group">
-            <label>Project</label>
-            <select [(ngModel)]="selectedProjectId" (change)="onFilterChange()">
-              <option value="">All Projects</option>
-              <option *ngFor="let project of projects" [value]="project.id">{{ project.name }} ({{ project.code }})</option>
-            </select>
-          </div>
-
-          <div class="filter-group">
-            <label>Floor</label>
-            <select [(ngModel)]="selectedFloor" (change)="onFilterChange()">
-              <option value="">All Floors</option>
-              <option *ngFor="let floor of availableFloors" [value]="floor">{{ floor }}</option>
-            </select>
-          </div>
-
-          <div class="filter-group">
-            <label>Building Number</label>
-            <select [(ngModel)]="selectedBuildingNumber" (change)="onFilterChange()">
-              <option value="">All Building Numbers</option>
-              <option *ngFor="let buildingNumber of availableBuildingNumbers" [value]="buildingNumber">{{ buildingNumber }}</option>
-            </select>
-          </div>
-
-          <div class="filter-group">
-            <label>Zone</label>
-            <select [(ngModel)]="selectedZone" (change)="onFilterChange()">
-              <option value="">All Zones</option>
-              <option *ngFor="let zone of availableZones" [value]="zone">{{ zone }}</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Advanced Filters Section -->
-        <h3 class="filter-section-title">Advanced Filters</h3>
-        <div class="filter-row">
-          <div class="filter-group">
-            <label>Project Status</label>
-            <div class="status-checkboxes">
-              <label *ngFor="let status of [ProjectStatus.Active, ProjectStatus.OnHold, ProjectStatus.Completed, ProjectStatus.Archived, ProjectStatus.Closed]" 
-                     class="checkbox-label">
-                <input 
-                  type="checkbox" 
-                  [checked]="selectedProjectStatuses.includes(ProjectStatusToInt[status])"
-                  (change)="toggleProjectStatus(status); onFilterChange()">
-                <span>{{ status }}</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="filter-group">
-            <label>Box Status</label>
-            <div class="status-checkboxes">
-              <label *ngFor="let status of [BoxStatus.NotStarted, BoxStatus.InProgress, BoxStatus.Completed, BoxStatus.OnHold, BoxStatus.Dispatched]" 
-                     class="checkbox-label">
-                <input 
-                  type="checkbox" 
-                  [checked]="selectedStatuses.includes(getBoxStatusNumber(status))"
-                  (change)="toggleStatus(status); onFilterChange()">
-                <span>{{ status }}</span>
-              </label>
-            </div>
-          </div>
-
-          <div class="filter-group">
-            <label>Progress Range</label>
-            <div class="range-inputs">
-              <div class="range-display">
-                <span>Min: {{ progressMin }}%</span>
-                <span>Max: {{ progressMax }}%</span>
-              </div>
-              <div>
-                <label style="font-size: 0.7rem; color: var(--gray-500); margin-bottom: 0.25rem; display: block;">Minimum</label>
-                <input type="range" [(ngModel)]="progressMin" min="0" max="100" (change)="onFilterChange()">
-              </div>
-              <div>
-                <label style="font-size: 0.7rem; color: var(--gray-500); margin-bottom: 0.25rem; display: block;">Maximum</label>
-                <input type="range" [(ngModel)]="progressMax" min="0" max="100" (change)="onFilterChange()">
-              </div>
-            </div>
-          </div>
-
-          <div class="filter-group">
-            <label>Date Filter</label>
-            <select [(ngModel)]="dateFilterType" (change)="onFilterChange()" style="margin-bottom: var(--spacing-sm, 0.5rem);">
-              <option value="LastUpdate">Last Update</option>
-              <option value="PlannedStart">Planned Start</option>
-            </select>
-            <div class="date-inputs-group">
-              <input type="date" [(ngModel)]="dateFrom" (change)="onFilterChange()" placeholder="From">
-              <input type="date" [(ngModel)]="dateTo" (change)="onFilterChange()" placeholder="To">
-            </div>
-          </div>
-
-          <div class="filter-group">
-            <label>Quick Search</label>
-            <input 
-              type="text" 
-              [(ngModel)]="searchTerm" 
-              (input)="onSearchChange()"
-              placeholder="Search Box Tag, Serial Number, Box Name"
-              style="padding-left: 2.5rem; background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%239ca3af\' stroke-width=\'2\'><circle cx=\'11\' cy=\'11\' r=\'8\'/><path d=\'m21 21-4.35-4.35\'/></svg>'); background-repeat: no-repeat; background-position: 0.75rem center;">
-          </div>
-        </div>
-
-        <div class="filter-actions">
-          <button class="btn btn-secondary" (click)="onResetFilters()">
-            <span>🔄</span> Reset All
-          </button>
-          <button class="btn btn-primary" (click)="onApplyFilters()">
-            <span>✓</span> Apply Filters
-          </button>
-        </div>
-      </div>
-    </div>
+   
 
     <!-- Loading/Error State -->
     <div *ngIf="loading" class="loading-state">
@@ -301,7 +176,132 @@
         </div>
       </div>
     </div>
+ <!-- Filters Section -->
+ <div class="filters-section">
+  <div class="filters-header" (click)="filtersCollapsed = !filtersCollapsed">
+    <h2>Filters</h2>
+    <span class="collapse-icon">{{ filtersCollapsed ? '▼' : '▲' }}</span>
+  </div>
+  
+  <div class="filters-content" [class.collapsed]="filtersCollapsed">
+    <!-- Basic Filters Section -->
+    <h3 class="filter-section-title">Basic Filters</h3>
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>Project</label>
+        <select [(ngModel)]="selectedProjectId" (change)="onFilterChange()">
+          <option value="">All Projects</option>
+          <option *ngFor="let project of projects" [value]="project.id">{{ project.name }} ({{ project.code }})</option>
+        </select>
+      </div>
 
+      <div class="filter-group">
+        <label>Floor</label>
+        <select [(ngModel)]="selectedFloor" (change)="onFilterChange()">
+          <option value="">All Floors</option>
+          <option *ngFor="let floor of availableFloors" [value]="floor">{{ floor }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Building Number</label>
+        <select [(ngModel)]="selectedBuildingNumber" (change)="onFilterChange()">
+          <option value="">All Building Numbers</option>
+          <option *ngFor="let buildingNumber of availableBuildingNumbers" [value]="buildingNumber">{{ buildingNumber }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label>Zone</label>
+        <select [(ngModel)]="selectedZone" (change)="onFilterChange()">
+          <option value="">All Zones</option>
+          <option *ngFor="let zone of availableZones" [value]="zone">{{ zone }}</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Advanced Filters Section -->
+    <h3 class="filter-section-title">Advanced Filters</h3>
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>Project Status</label>
+        <div class="status-checkboxes">
+          <label *ngFor="let status of [ProjectStatus.Active, ProjectStatus.OnHold, ProjectStatus.Completed, ProjectStatus.Archived, ProjectStatus.Closed]" 
+                 class="checkbox-label">
+            <input 
+              type="checkbox" 
+              [checked]="selectedProjectStatuses.includes(ProjectStatusToInt[status])"
+              (change)="toggleProjectStatus(status); onFilterChange()">
+            <span>{{ status }}</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Box Status</label>
+        <div class="status-checkboxes">
+          <label *ngFor="let status of [BoxStatus.NotStarted, BoxStatus.InProgress, BoxStatus.Completed, BoxStatus.OnHold, BoxStatus.Dispatched]" 
+                 class="checkbox-label">
+            <input 
+              type="checkbox" 
+              [checked]="selectedStatuses.includes(getBoxStatusNumber(status))"
+              (change)="toggleStatus(status); onFilterChange()">
+            <span>{{ status }}</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Progress Range</label>
+        <div class="range-inputs">
+          <div class="range-display">
+            <span>Min: {{ progressMin }}%</span>
+            <span>Max: {{ progressMax }}%</span>
+          </div>
+          <div>
+            <label style="font-size: 0.7rem; color: var(--gray-500); margin-bottom: 0.25rem; display: block;">Minimum</label>
+            <input type="range" [(ngModel)]="progressMin" min="0" max="100" (change)="onFilterChange()">
+          </div>
+          <div>
+            <label style="font-size: 0.7rem; color: var(--gray-500); margin-bottom: 0.25rem; display: block;">Maximum</label>
+            <input type="range" [(ngModel)]="progressMax" min="0" max="100" (change)="onFilterChange()">
+          </div>
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Date Filter</label>
+        <select [(ngModel)]="dateFilterType" (change)="onFilterChange()" style="margin-bottom: var(--spacing-sm, 0.5rem);">
+          <option value="LastUpdate">Last Update</option>
+          <option value="PlannedStart">Planned Start</option>
+        </select>
+        <div class="date-inputs-group">
+          <input type="date" [(ngModel)]="dateFrom" (change)="onFilterChange()" placeholder="From">
+          <input type="date" [(ngModel)]="dateTo" (change)="onFilterChange()" placeholder="To">
+        </div>
+      </div>
+
+      <div class="filter-group">
+        <label>Quick Search</label>
+        <input 
+          type="text" 
+          [(ngModel)]="searchTerm" 
+          (input)="onSearchChange()"
+          placeholder="Search Box Tag, Serial Number, Box Name"
+          style="padding-left: 2.5rem; background-image: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'16\' height=\'16\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%239ca3af\' stroke-width=\'2\'><circle cx=\'11\' cy=\'11\' r=\'8\'/><path d=\'m21 21-4.35-4.35\'/></svg>'); background-repeat: no-repeat; background-position: 0.75rem center;">
+      </div>
+    </div>
+
+    <div class="filter-actions">
+      <button class="btn btn-secondary" (click)="onResetFilters()">
+        <span>🔄</span> Reset All
+      </button>
+      <button class="btn btn-primary" (click)="onApplyFilters()">
+        <span>✓</span> Apply Filters
+      </button>
+    </div>
+  </div>
+</div>
     <!-- Table Section -->
     <div *ngIf="reportData && !loading" class="table-section">
       <div class="table-header">

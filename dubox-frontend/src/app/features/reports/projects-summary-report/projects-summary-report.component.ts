@@ -165,6 +165,9 @@ export class ProjectsSummaryReportComponent implements OnInit {
     } else {
       this.selectedStatuses.push(status);
     }
+    // Automatically apply filters when status is toggled
+    this.currentPage = 1;
+    this.loadReportData();
   }
 
   applyFilters(): void {

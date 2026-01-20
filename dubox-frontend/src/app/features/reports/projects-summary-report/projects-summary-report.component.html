@@ -23,46 +23,7 @@
       </div>
     </div>
 
-    <!-- Filters Section -->
-    <div class="filters-section">
-      <div class="filters-header" (click)="filtersCollapsed = !filtersCollapsed">
-        <h2>Filters</h2>
-        <span class="collapse-icon">{{ filtersCollapsed ? '▼' : '▲' }}</span>
-      </div>
-      
-      <div class="filters-content" [class.collapsed]="filtersCollapsed">
-        <div class="filter-row">
-          
-
-          <div class="filter-group">
-            <label>Status</label>
-            <div class="status-checkboxes">
-              <label *ngFor="let status of statusOptions" class="checkbox-label">
-                <input 
-                  type="checkbox" 
-                  [checked]="selectedStatuses.includes(status.value)"
-                  (change)="toggleStatus(status.value)">
-                {{ status.label }}
-              </label>
-            </div>
-          </div>
-
-          <div class="filter-group filter-group-search">
-            <label>Search</label>
-            <input 
-              type="text" 
-              [(ngModel)]="searchTerm" 
-              placeholder="Search by code, name, or client..."
-              (keyup.enter)="applyFilters()">
-          </div>
-        </div>
-
-        <div class="filter-actions">
-          <button class="btn btn-primary" (click)="applyFilters()">Apply Filters</button>
-          <button class="btn btn-secondary" (click)="resetFilters()">Reset</button>
-        </div>
-      </div>
-    </div>
+    
 
     <!-- Error Message -->
     <div *ngIf="error" class="error-message">
@@ -207,7 +168,46 @@
           </div>
         </div>
       </div>
+<!-- Filters Section -->
+<div class="filters-section">
+  <div class="filters-header" (click)="filtersCollapsed = !filtersCollapsed">
+    <h2>Filters</h2>
+    <span class="collapse-icon">{{ filtersCollapsed ? '▼' : '▲' }}</span>
+  </div>
+  
+  <div class="filters-content" [class.collapsed]="filtersCollapsed">
+    <div class="filter-row">
+      
 
+      <div class="filter-group">
+        <label>Status</label>
+        <div class="status-checkboxes">
+          <label *ngFor="let status of statusOptions" class="checkbox-label">
+            <input 
+              type="checkbox" 
+              [checked]="selectedStatuses.includes(status.value)"
+              (change)="toggleStatus(status.value)">
+            {{ status.label }}
+          </label>
+        </div>
+      </div>
+
+      <div class="filter-group filter-group-search">
+        <label>Search</label>
+        <input 
+          type="text" 
+          [(ngModel)]="searchTerm" 
+          placeholder="Search by code, name, or client..."
+          (keyup.enter)="applyFilters()">
+      </div>
+    </div>
+
+    <div class="filter-actions">
+      <button class="btn btn-primary" (click)="applyFilters()">Apply Filters</button>
+      <button class="btn btn-secondary" (click)="resetFilters()">Reset</button>
+    </div>
+  </div>
+</div>
       <!-- Projects Table -->
       <div class="table-section">
         <div class="table-header">

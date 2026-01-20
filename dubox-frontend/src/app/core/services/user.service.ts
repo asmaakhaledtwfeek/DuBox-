@@ -74,11 +74,15 @@ export class UserService {
    * Get all users with pagination
    */
   getUsers(pageNumber: number = 1, pageSize: number = 25): Observable<PaginatedUsersResponse> {
+    console.log('🔍 UserService.getUsers called with:', { pageNumber, pageSize, endpoint: this.endpoint });
     const params = new URLSearchParams();
     params.set('pageNumber', pageNumber.toString());
     params.set('pageSize', pageSize.toString());
     
-    return this.apiService.get<any>(`${this.endpoint}?${params.toString()}`).pipe(
+    const url = `${this.endpoint}?${params.toString()}`;
+    console.log('🔍 UserService.getUsers - Calling API with URL:', url);
+    
+    return this.apiService.get<any>(url).pipe(
       map((response: any) => {
         console.log('🔍 UserService.getUsers - Raw API response:', response);
         

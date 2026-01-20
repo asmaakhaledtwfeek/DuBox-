@@ -362,6 +362,8 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   loadingTeamUsers = false;
   availableCCUsers: {userId: string, userName: string, userEmail: string}[] = [];
   loadingCCUsers = false;
+  availableInspectors: {userId: string, userName: string, userEmail: string}[] = [];
+  loadingInspectors = false;
   isAddPredefinedItemsModalOpen = false;
   isItemReviewModalOpen = false;
   pendingDeleteIndex: number | null = null;
@@ -541,17 +543,14 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     }
     
     this.initForm();
+    // Load inspectors for the Create/Update checkpoint step dropdown
+    this.loadAvailableInspectors();
     this.loadBox(); // Load box to get its status
     
     // If wirId is provided, load that specific checkpoint version directly
     if (wirIdParam) {
       this.loadSpecificCheckpoint(wirIdParam);
-      // Clear the wirId query param after loading
-      this.router.navigate([], { 
-        queryParams: { wirId: null }, 
-        queryParamsHandling: 'merge',
-        replaceUrl: true 
-      });
+      // Keep wirId in URL for refresh support - don't clear it
     } else {
       this.loadWIRRecord();
     }
@@ -687,6 +686,7 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
     this.createCheckpointForm = this.fb.group({
       wirName: ['', [Validators.maxLength(1000)]],
       wirDescription: ['', [Validators.maxLength(1000)]],
+      inspectorId: [''], // Inspector selection
       attachmentPath: ['', [Validators.maxLength(500)]],
       comments: ['', [Validators.maxLength(1000)]]
     });
@@ -827,6 +827,16 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
             console.log('Loaded specific checkpoint:', checkpoint);
             this.wirCheckpoint = checkpoint;
             this.syncReviewFormFromCheckpoint();
+            // Ensure wirId is in URL for refresh support (in case it was missing)
+            const currentWirId = this.route.snapshot.queryParamMap.get('wirId');
+            if (!currentWirId || currentWirId !== checkpoint.wirId) {
+              this.router.navigate([], {
+                relativeTo: this.route,
+                queryParams: { wirId: checkpoint.wirId },
+                queryParamsHandling: 'merge',
+                replaceUrl: true
+              });
+            }
             this.processCheckpointLoaded();
           },
           error: (err) => {
@@ -844,6 +854,16 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
             console.log('Loaded specific checkpoint (without WIR record):', checkpoint);
             this.wirCheckpoint = checkpoint;
             this.syncReviewFormFromCheckpoint();
+            // Ensure wirId is in URL for refresh support (in case it was missing)
+            const currentWirId = this.route.snapshot.queryParamMap.get('wirId');
+            if (!currentWirId || currentWirId !== checkpoint.wirId) {
+              this.router.navigate([], {
+                relativeTo: this.route,
+                queryParams: { wirId: checkpoint.wirId },
+                queryParamsHandling: 'merge',
+                replaceUrl: true
+              });
+            }
             this.processCheckpointLoaded();
           },
           error: (err) => {
@@ -948,6 +968,16 @@ console.log(expectedWirCode);
               
               this.wirCheckpoint = fullCheckpoint;
               this.syncReviewFormFromCheckpoint();
+              // Ensure wirId is in URL for refresh support
+              const currentWirId = this.route.snapshot.queryParamMap.get('wirId');
+              if (!currentWirId || currentWirId !== fullCheckpoint.wirId) {
+                this.router.navigate([], {
+                  relativeTo: this.route,
+                  queryParams: { wirId: fullCheckpoint.wirId },
+                  queryParamsHandling: 'merge',
+                  replaceUrl: true
+                });
+              }
               this.processCheckpointLoaded();
             },
             error: (err) => {
@@ -958,6 +988,16 @@ console.log(expectedWirCode);
                 console.log('Using checkpoint from search:', checkpoint);
                 console.log('Checkpoint checklist items:', checkpoint.checklistItems?.length || 0, checkpoint.checklistItems);
                 this.syncReviewFormFromCheckpoint();
+                // Ensure wirId is in URL for refresh support
+                const currentWirId = this.route.snapshot.queryParamMap.get('wirId');
+                if (!currentWirId || currentWirId !== checkpoint.wirId) {
+                  this.router.navigate([], {
+                    relativeTo: this.route,
+                    queryParams: { wirId: checkpoint.wirId },
+                    queryParamsHandling: 'merge',
+                    replaceUrl: true
+                  });
+                }
                 this.processCheckpointLoaded();
               } else {
                 this.error = 'Failed to load correct checkpoint data.';
@@ -998,14 +1038,24 @@ console.log(expectedWirCode);
       if (this.initialStepFromQuery === 'create-checkpoint') {
         // Allow create-checkpoint if status is Pending, otherwise redirect to add-items
         if (this.wirCheckpoint.status === 'Pending') {
-          console.log('Checkpoint exists with Pending status, allowing edit in Step 1');
+          console.log('Checkpoint exists with Pending status, allowing edit in Step 1', this.wirCheckpoint);
           this.currentStep = 'create-checkpoint';
           this.pendingAction = null;
+          
+          // Prefer InspectorId from backend; if missing (old checkpoints), fall back to matching by InspectorName
+          let inspectorId = this.wirCheckpoint?.inspectorId?.toString() || '';
+          console.log('inspectorId', inspectorId);
+          if (!inspectorId && this.wirCheckpoint?.inspectorName && this.availableInspectors.length > 0) {
+            const inspector = this.availableInspectors.find(i => i.userId === this.wirCheckpoint!.inspectionDate?.toString());
+            if (inspector) {
+              inspectorId = inspector.userId;
+            }
+          }
+          
           this.createCheckpointForm.patchValue({
-            wirName: this.wirCheckpoint.wirName || '',
-            wirDescription: this.wirCheckpoint.wirDescription || '',
-            inspectorName: this.wirCheckpoint.inspectorName || '',
-            inspectorRole: this.wirCheckpoint.inspectorRole || ''
+            wirName: this.wirCheckpoint?.wirName || '',
+            wirDescription: this.wirCheckpoint?.wirDescription || '',
+            inspectorId: this.wirCheckpoint?.inspectorId || ''
           });
           
           // Load existing images from checkpoint
@@ -1034,17 +1084,36 @@ console.log(expectedWirCode);
         this.applyInitialStepFromQuery();
       }
     } else {
-      // No step query parameter - checkpoint exists, navigate directly to add-items
-      console.log('Checkpoint already exists, navigating directly to add-items');
-      console.log('Setting currentStep to add-items immediately');
-      this.currentStep = 'add-items'; // Set immediately
-      this.router.navigate([], {
-        relativeTo: this.route,
-        queryParams: { step: 'add-items' },
-        queryParamsHandling: 'merge',
-        replaceUrl: true
-      });
-      this.startAddChecklistFlow();
+      // No step query parameter - determine appropriate step based on checkpoint state and user role
+      const hasChecklistItems = this.wirCheckpoint.checklistItems && this.wirCheckpoint.checklistItems.length > 0;
+      const isAssignedInspector = this.isCurrentUserAssignedInspector;
+      const hasReviewPermission = this.permissionService.hasPermission('wir', 'review');
+      
+      // If checklist items exist and user is assigned inspector (or has review permission), go to review step
+      if (hasChecklistItems && (isAssignedInspector || hasReviewPermission)) {
+        console.log('Checkpoint exists with checklist items, navigating to review step');
+        console.log('isAssignedInspector:', isAssignedInspector, 'hasReviewPermission:', hasReviewPermission);
+        this.currentStep = 'review';
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { step: 'review' },
+          queryParamsHandling: 'merge',
+          replaceUrl: true
+        });
+        this.startReviewFlow();
+      } else {
+        // Otherwise, go to add-items step
+        console.log('Checkpoint already exists, navigating directly to add-items');
+        console.log('Setting currentStep to add-items immediately');
+        this.currentStep = 'add-items'; // Set immediately
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { step: 'add-items' },
+          queryParamsHandling: 'merge',
+          replaceUrl: true
+        });
+        this.startAddChecklistFlow();
+      }
     }
     
     this.updateAvailablePredefinedItems();
@@ -1104,6 +1173,7 @@ console.log(expectedWirCode);
       wirNumber: this.wirRecord.wirCode || '', // Get from WIRRecord
       wirName: formValue.wirName?.trim() || undefined,
       wirDescription: formValue.wirDescription?.trim() || undefined,
+      inspectorId: formValue.inspectorId?.trim() || undefined,
       attachmentPath: attachmentPath || formValue.attachmentPath?.trim() || undefined,
       comments: formValue.comments?.trim() || undefined,
       files: files.length > 0 ? files : undefined,
@@ -1385,11 +1455,14 @@ console.log(expectedWirCode);
     if (!this.wirCheckpoint || !this.hasChecklistItems) {
       return;
     }
-    // Check if user has permission to review WIR checkpoints
+    // Allow navigation to review step for viewing (anyone can view, but only assigned inspector can interact)
+    // Check if user has permission to review WIR checkpoints (for viewing)
     if (!this.permissionService.hasPermission('wir', 'review')) {
-      this.error = 'You do not have permission to review WIR checkpoints.';
+      this.error = 'You do not have permission to view WIR checkpoints.';
       return;
     }
+    // Clear any previous error messages
+    this.error = '';
     this.currentStep = 'review';
     this.pendingAction = null;
     this.loadChecklistItems();
@@ -1719,6 +1792,7 @@ console.log(expectedWirCode);
     this.isQualityIssueModalOpen = true;
     this.loadAvailableTeams();
     this.loadAllUsersForCC();
+    this.loadAvailableInspectors();
   }
 
   closeQualityIssueModal(): void {
@@ -1735,6 +1809,14 @@ console.log(expectedWirCode);
    * Open Pass All modal
    */
   passAllItems(): void {
+    // Only the assigned inspector can review checklist items
+    if (!this.isCurrentUserAssignedInspector) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: 'Only the assigned inspector can review checklist items.', type: 'error' }
+      }));
+      return;
+    }
+    
     // Check if box status allows actions
     if (this.boxStatus && !canPerformBoxActions(this.boxStatus as BoxStatus)) {
       const statusMessage = this.boxStatus === 'Dispatched' 
@@ -1839,6 +1921,14 @@ console.log(expectedWirCode);
    * Open Reject All modal
    */
   rejectAllItems(): void {
+    // Only the assigned inspector can review checklist items
+    if (!this.isCurrentUserAssignedInspector) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: 'Only the assigned inspector can review checklist items.', type: 'error' }
+      }));
+      return;
+    }
+    
     // Check if box status allows actions
     if (this.boxStatus && !canPerformBoxActions(this.boxStatus as BoxStatus)) {
       const statusMessage = this.boxStatus === 'Dispatched' 
@@ -1946,7 +2036,14 @@ console.log(expectedWirCode);
   }
 
   openItemReviewModal(itemIndex: number): void {
-    // Allow opening review modal at any time - users can change reviews
+    // Only the assigned inspector can review checklist items
+    if (!this.isCurrentUserAssignedInspector) {
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { message: 'Only the assigned inspector can review checklist items.', type: 'error' }
+      }));
+      return;
+    }
+    
     if (itemIndex < 0 || itemIndex >= this.checklistItems.length) {
       return;
     }
@@ -2339,6 +2436,61 @@ console.log(expectedWirCode);
         this.loadingCCUsers = false;
       }
     });
+  }
+
+  loadAvailableInspectors(): void {
+    console.log('🔍 loadAvailableInspectors called (qa-qc-checklist)');
+    this.loadingInspectors = true;
+    
+    const subscription = this.userService.getUsers(1, 1000).subscribe({
+      next: (response) => {
+        console.log('🔍 Users API response received (qa-qc-checklist):', response);
+        console.log('🔍 Total users:', response.items.length);
+        
+        // Debug: Log all users and their roles
+        response.items.forEach((user, index) => {
+          console.log(`🔍 User ${index + 1}:`, {
+            userId: user.userId,
+            email: user.email,
+            fullName: user.fullName,
+            isActive: user.isActive,
+            allRoles: user.allRoles,
+            directRoles: user.directRoles,
+            hasQCInspector: user.allRoles?.includes('QCInspector')
+          });
+        });
+        
+        // Filter to only active users with QCInspector role
+        const filteredInspectors = response.items.filter(user => {
+          const isActive = user.isActive;
+          const hasQCInspectorRole = user.allRoles?.includes('QCInspector') || 
+                                     user.directRoles?.includes('QCInspector') ||
+                                     user.allRoleSummaries?.some(r => r.roleName === 'QCInspector');
+          
+          console.log(`🔍 User ${user.email}: isActive=${isActive}, hasQCInspector=${hasQCInspectorRole}`);
+          return isActive && hasQCInspectorRole;
+        });
+        
+        console.log('🔍 Filtered inspectors:', filteredInspectors.length);
+        
+        this.availableInspectors = filteredInspectors.map(user => ({
+          userId: user.userId,
+          userName: user.fullName || user.email || 'Unknown',
+          userEmail: user.email || ''
+        }));
+        
+        console.log('🔍 Available inspectors:', this.availableInspectors);
+        this.loadingInspectors = false;
+      },
+      error: (err) => {
+        console.error('❌ Error loading inspectors (qa-qc-checklist):', err);
+        console.error('❌ Error details:', JSON.stringify(err, null, 2));
+        this.availableInspectors = [];
+        this.loadingInspectors = false;
+      }
+    });
+    
+    console.log('🔍 Subscription created (qa-qc-checklist):', subscription);
   }
 
 
@@ -2797,9 +2949,9 @@ console.log(expectedWirCode);
       return this.isStep1Completed() && !this.isChecklistLocked;
     }
     
-    // Step 3: Only accessible if Step 2 is completed AND user has review permission
+    // Step 3: Accessible if Step 2 is completed (anyone can view, but only assigned inspector can interact)
     if (step === 'review') {
-      return this.isStep2Completed() && this.canReviewWIR;
+      return this.isStep2Completed();
     }
     
     // Step 4: Only accessible if Step 3 is completed
@@ -2834,7 +2986,7 @@ console.log(expectedWirCode);
             wirName: this.wirCheckpoint.wirName || '',
             wirDescription: this.wirCheckpoint.wirDescription || '',
             inspectorName: this.wirCheckpoint.inspectorName || '',
-            inspectorRole: this.wirCheckpoint.inspectorRole || ''
+            inspectorId: this.wirCheckpoint.inspectorId || '',
           });
           
           // Load existing images from checkpoint
@@ -2903,7 +3055,7 @@ console.log(expectedWirCode);
               wirName: this.wirCheckpoint.wirName || '',
               wirDescription: this.wirCheckpoint.wirDescription || '',
               inspectorName: this.wirCheckpoint.inspectorName || '',
-              inspectorRole: this.wirCheckpoint.inspectorRole || ''
+              inspectorId: this.wirCheckpoint.inspectorId || '',
             });
             
             // Load existing images from checkpoint
@@ -3819,6 +3971,8 @@ console.log(expectedWirCode);
 
   canSubmitReview(): boolean {
     if (!this.wirCheckpoint) return false;
+    // Only the assigned inspector can submit review
+    if (!this.isCurrentUserAssignedInspector) return false;
     const status = this.finalStatusControl.value;
     if (!status) return false;
     if (this.hasPendingChecklistItems()) return false;
@@ -4428,7 +4582,15 @@ console.log(expectedWirCode);
   }
 
   get canStartReview(): boolean {
-    return this.hasChecklistItems;
+    return this.hasChecklistItems && this.isCurrentUserAssignedInspector && this.permissionService.hasPermission('wir', 'review');
+  }
+
+  get isCurrentUserAssignedInspector(): boolean {
+    const currentUser: any = this.authService.getCurrentUser();
+    const currentUserId: string | undefined = (currentUser?.userId || currentUser?.id)?.toString?.();
+    const inspectorId: string | undefined = this.wirCheckpoint?.inspectorId?.toString?.();
+    if (!currentUserId || !inspectorId) return false;
+    return currentUserId.toLowerCase() === inspectorId.toLowerCase();
   }
 
   get displayChecklistItems(): WIRCheckpointChecklistItem[] {

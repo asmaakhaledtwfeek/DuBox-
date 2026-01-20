@@ -71,6 +71,14 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
   compressionDateError = '';
 
   boxes: Box[] = [];
+  
+  // Box Panels Excel
+  boxPanelsExcelDownloading = false;
+  boxPanelsExcelUploading = false;
+  selectedPanelsFile: File | null = null;
+  panelsImportSuccessMessage = '';
+  panelsImportErrorMessage = '';
+  panelsImportResult: { successCount: number; failureCount: number; errors: string[] } | null = null;
 
   dashboardData = {
     totalBoxes: 0,
@@ -1054,5 +1062,94 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
     const target = event.target as HTMLInputElement;
     const value = target.value;
     this.selectedCompressionDate = value ? new Date(value) : null;
+  }
+
+  downloadBoxPanelsExcel(): void {
+    if (this.boxPanelsExcelDownloading || !this.projectId) {
+      return;
+    }
+
+    this.boxPanelsExcelDownloading = true;
+    this.panelsImportErrorMessage = '';
+    this.panelsImportSuccessMessage = '';
+
+    this.projectService.downloadBoxPanelsExcel(this.projectId).subscribe({
+      next: (blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${this.project?.code || 'project'}-BoxPanels.xlsx`;
+        link.click();
+        window.URL.revokeObjectURL(url);
+        this.boxPanelsExcelDownloading = false;
+        this.panelsImportSuccessMessage = 'Excel file downloaded successfully';
+        setTimeout(() => {
+          this.panelsImportSuccessMessage = '';
+        }, 3000);
+      },
+      error: async (error) => {
+        console.error('❌ Error downloading box panels Excel:', error);
+        this.boxPanelsExcelDownloading = false;
+        
+        if (error.error instanceof Blob) {
+          try {
+            const errorText = await error.error.text();
+            const errorJson = JSON.parse(errorText);
+            this.panelsImportErrorMessage = errorJson.message || errorJson.title || 'Unable to download Excel file.';
+          } catch (e) {
+            this.panelsImportErrorMessage = 'Unable to download Excel file.';
+          }
+        } else {
+          this.panelsImportErrorMessage = error?.error?.message || error?.message || 'Unable to download Excel file.';
+        }
+      }
+    });
+  }
+
+  onPanelsFileChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input?.files && input.files.length > 0) {
+      this.selectedPanelsFile = input.files[0];
+      this.panelsImportErrorMessage = '';
+      this.panelsImportSuccessMessage = '';
+      this.panelsImportResult = null;
+    }
+  }
+
+  removeSelectedPanelsFile(): void {
+    this.selectedPanelsFile = null;
+    this.panelsImportErrorMessage = '';
+    this.panelsImportSuccessMessage = '';
+    this.panelsImportResult = null;
+  }
+
+  uploadBoxPanelsExcel(): void {
+    if (!this.selectedPanelsFile || !this.projectId || this.boxPanelsExcelUploading) {
+      return;
+    }
+
+    this.boxPanelsExcelUploading = true;
+    this.panelsImportErrorMessage = '';
+    this.panelsImportSuccessMessage = '';
+    this.panelsImportResult = null;
+
+    this.projectService.uploadBoxPanelsExcel(this.projectId, this.selectedPanelsFile).subscribe({
+      next: (result) => {
+        this.boxPanelsExcelUploading = false;
+        this.panelsImportResult = result;
+        
+        if (result.failureCount === 0) {
+          this.panelsImportSuccessMessage = `Successfully imported ${result.successCount} box panel(s).`;
+          this.selectedPanelsFile = null;
+        } else {
+          this.panelsImportSuccessMessage = `Imported ${result.successCount} box panel(s) with ${result.failureCount} error(s).`;
+        }
+      },
+      error: (error) => {
+        console.error('❌ Error uploading box panels Excel:', error);
+        this.boxPanelsExcelUploading = false;
+        this.panelsImportErrorMessage = error?.error?.message || error?.message || 'Failed to upload Excel file.';
+      }
+    });
   }
 }

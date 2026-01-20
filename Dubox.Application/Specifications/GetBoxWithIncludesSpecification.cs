@@ -1,4 +1,4 @@
-﻿using Dubox.Domain.Entities;
+using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
 using Dubox.Domain.Specification;
 
@@ -12,6 +12,7 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(Box.Project));;
             AddInclude(nameof(Box.BoxActivities));
             AddInclude(nameof(Box.CurrentLocation));
+            AddInclude(nameof(Box.BoxPanels));
             
             AddInclude(nameof(Box.Factory));
         }

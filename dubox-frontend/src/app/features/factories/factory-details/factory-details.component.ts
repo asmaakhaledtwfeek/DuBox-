@@ -59,7 +59,6 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.factoryId = this.route.snapshot.params['id'];
-    this.loadProjects();
     this.loadFactoryDetails();
     this.setupSearch();
   }
@@ -86,16 +85,66 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
     });
   }
 
-  loadProjects(): void {
+  /**
+   * Extract unique projects from boxes and load their full details
+   */
+  loadProjectsFromBoxes(boxes: Box[]): void {
+    // Extract unique project IDs from boxes
+    const projectIdsSet = new Set<string>();
+    boxes.forEach(box => {
+      if (box.projectId) {
+        projectIdsSet.add(box.projectId);
+      }
+    });
+
+    const projectIds = Array.from(projectIdsSet);
+    
+    if (projectIds.length === 0) {
+      this.projects = [];
+      return;
+    }
+
+    // Load all projects and filter to only those that have boxes in this factory
     this.projectService.getProjects().subscribe({
-      next: (projects) => {
-        // Only show non-archived projects
-        this.projects = projects.filter(p => p.status !== ProjectStatus.Archived);
+      next: (allProjects) => {
+        // Filter to only projects that have boxes in this factory
+        // Also exclude archived projects
+        this.projects = allProjects.filter(p => 
+          projectIds.includes(p.id) && p.status !== ProjectStatus.Archived
+        );
       },
       error: (err) => {
         console.error('Error loading projects:', err);
+        // Fallback: create minimal project objects from box data
+        this.createProjectsFromBoxes(boxes);
       }
     });
+  }
+
+  /**
+   * Fallback: Create minimal project objects from box data if project service fails
+   */
+  private createProjectsFromBoxes(boxes: Box[]): void {
+    const projectMap = new Map<string, Project>();
+    
+    boxes.forEach(box => {
+      if (box.projectId && !projectMap.has(box.projectId)) {
+        projectMap.set(box.projectId, {
+          id: box.projectId,
+          name: box.projectCode || 'Unknown Project',
+          code: box.projectCode || '',
+          location: '',
+          status: (box.projectStatus as ProjectStatus) || ProjectStatus.Active,
+          totalBoxes: 0,
+          completedBoxes: 0,
+          inProgressBoxes: 0,
+          readyForDeliveryBoxes: 0,
+          progress: 0
+        });
+      }
+    });
+
+    this.projects = Array.from(projectMap.values()).filter(p => p.status !== ProjectStatus.Archived);
   }
 
   loadBoxes(): void {
@@ -103,6 +152,8 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
     this.boxService.getBoxesByFactory(this.factoryId, true).subscribe({
       next: (boxes) => {
         this.boxes = boxes;
+        // Load projects based on boxes in this factory
+        this.loadProjectsFromBoxes(boxes);
         this.updateFilterOptions();
         this.applyFilters();
         this.loading = false;
@@ -117,13 +168,27 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
 
   /**
    * Update available filter options based on boxes in the factory
+   * Filters are cascading: Project -> Building -> Level/Zone
    */
   updateFilterOptions(): void {
     const buildingsSet = new Set<string>();
     const levelsSet = new Set<string>();
     const zonesSet = new Set<string>();
 
-    this.boxes.forEach(box => {
+    // Start with all boxes, then filter by project if selected
+    let boxesToUse = this.boxes;
+    
+    if (this.selectedProjectId) {
+      boxesToUse = boxesToUse.filter(box => box.projectId === this.selectedProjectId);
+    }
+
+    // Further filter by building if selected
+    if (this.selectedBuilding) {
+      boxesToUse = boxesToUse.filter(box => box.buildingNumber === this.selectedBuilding);
+    }
+
+    // Collect unique values from filtered boxes
+    boxesToUse.forEach(box => {
       if (box.buildingNumber) {
         buildingsSet.add(box.buildingNumber);
       }
@@ -138,6 +203,48 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
     this.availableBuildings = Array.from(buildingsSet).sort();
     this.availableLevels = Array.from(levelsSet).sort();
     this.availableZones = Array.from(zonesSet).sort();
+  }
+
+  /**
+   * Handle project filter change - update dependent filters
+   */
+  onProjectChange(): void {
+    // Reset dependent filters when project changes
+    this.selectedBuilding = '';
+    this.selectedLevel = '';
+    this.selectedZone = '';
+    
+    // Update available filter options based on selected project
+    this.updateFilterOptions();
+    
+    // Apply filters
+    this.applyFilters();
+  }
+
+  /**
+   * Handle building filter change - update level and zone filters
+   */
+  onBuildingChange(): void {
+    // Reset level and zone when building changes
+    this.selectedLevel = '';
+    this.selectedZone = '';
+    
+    // Update available filter options
+    this.updateFilterOptions();
+    
+    // Apply filters
+    this.applyFilters();
+  }
+
+  /**
+   * Handle level or zone filter change
+   */
+  onLevelOrZoneChange(): void {
+    // Update available filter options (in case other filters need updating)
+    this.updateFilterOptions();
+    
+    // Apply filters
+    this.applyFilters();
   }
 
   private setupSearch(): void {
@@ -214,6 +321,8 @@ export class FactoryDetailsComponent implements OnInit, OnDestroy {
     this.selectedStatus = 'All';
     this.activeStatusCard = null;
     this.searchControl.setValue('');
+    // Update filter options to show all available options
+    this.updateFilterOptions();
     this.applyFilters();
   }
 

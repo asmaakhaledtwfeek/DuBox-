@@ -214,7 +214,10 @@
             >
               Add Checklist Item
             </button>
-            <button class="btn btn-primary btn-sm" (click)="startReviewFlow()" [disabled]="!canStartReview">
+            <button class="btn btn-primary btn-sm"
+              (click)="startReviewFlow()"
+              [disabled]="!canStartReview"
+              [title]="!isCurrentUserAssignedInspector ? 'Only the assigned inspector can review' : null">
               Review Checkpoint
             </button>
           </div>
@@ -340,6 +343,25 @@
             <div *ngIf="createCheckpointForm.get('wirDescription')?.invalid && createCheckpointForm.get('wirDescription')?.touched" class="error-text">
               Stage Description max 500 characters.
             </div>
+          </div>
+
+          <div class="form-group">
+            <label for="inspectorId">Inspector <span class="optional">(Optional)</span></label>
+            <select 
+              id="inspectorId" 
+              formControlName="inspectorId" 
+              class="form-control form-select"
+              [disabled]="loadingInspectors || creatingCheckpoint"
+            >
+              <option [value]="null">Select an Inspector (Optional)</option>
+              <option *ngFor="let inspector of availableInspectors" [value]="inspector.userId">
+                {{ inspector.userName }} ({{ inspector.userEmail }})
+              </option>
+            </select>
+            <div class="loading-text" *ngIf="loadingInspectors">Loading inspectors...</div>
+            <small class="helper-text" *ngIf="!loadingInspectors && availableInspectors.length === 0">
+              No inspectors available.
+            </small>
           </div>
 
           <!-- Attachment/Image Upload Section -->
@@ -587,7 +609,7 @@
               type="button" 
               class="btn btn-secondary btn-sm"
               (click)="handleStepClick('review')"
-              [disabled]="!canNavigateToStep('review')"
+              [disabled]="!canNavigateToStep('review')|| !canSubmitReview()"
             >
               Review
             </button>
@@ -694,6 +716,15 @@
 
     <!-- Step 3: Review Checklist -->
     <form [formGroup]="checklistForm" *ngIf="currentStep === 'review' && wirCheckpoint && !loading && !error" class="review-form">
+      <!-- Warning message for non-assigned inspectors -->
+      <div *ngIf="!isCurrentUserAssignedInspector" class="alert alert-warning" style="margin-bottom: 24px; padding: 16px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; color: #856404;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px; vertical-align: middle;">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <strong>Read-only mode:</strong> Only the assigned inspector can review this checkpoint. You can view all details but cannot submit changes or review checklist items.
+      </div>
       <div class="review-layout">
         <div class="review-main">
       <!-- Stage Information Card -->
@@ -805,7 +836,7 @@
                   type="button" 
                   class="remove-image-btn" 
                   (click)="removeImage(image.id)" 
-                  [disabled]="isUploadingPhoto || submitting"
+                  [disabled]="isUploadingPhoto || submitting || !isCurrentUserAssignedInspector"
                   title="Remove image"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -827,7 +858,7 @@
               type="button" 
               class="btn-clear-all" 
               (click)="clearAllImages()" 
-              [disabled]="isUploadingPhoto || submitting"
+              [disabled]="isUploadingPhoto || submitting || !isCurrentUserAssignedInspector"
               *ngIf="selectedImages.length > 1"
             >
               Clear All
@@ -841,6 +872,7 @@
               class="tab-button"
               [class.active]="photoInputMethod === 'url'"
               (click)="photoInputMethod = 'url'; showCamera = false"
+              [disabled]="!isCurrentUserAssignedInspector"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
@@ -853,6 +885,7 @@
               class="tab-button"
               [class.active]="photoInputMethod === 'upload'"
               (click)="openFileInput(); photoInputMethod = 'upload'"
+              [disabled]="!isCurrentUserAssignedInspector"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -866,6 +899,7 @@
               class="tab-button"
               [class.active]="photoInputMethod === 'camera'"
               (click)="openCamera()"
+              [disabled]="!isCurrentUserAssignedInspector"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
@@ -884,14 +918,14 @@
                 placeholder="Enter photo URL (e.g., https://example.com/photo.jpg)"
                 [(ngModel)]="currentUrlInput"
                 [ngModelOptions]="{standalone: true}"
-                [disabled]="isUploadingPhoto || submitting"
+                [disabled]="isUploadingPhoto || submitting || !isCurrentUserAssignedInspector"
                 (keydown.enter)="addImageFromUrl(); $event.preventDefault()"
               />
               <button 
                 type="button" 
                 class="btn-add-url" 
                 (click)="addImageFromUrl()"
-                [disabled]="isUploadingPhoto || submitting || !currentUrlInput?.trim()"
+                [disabled]="isUploadingPhoto || submitting || !currentUrlInput?.trim() || !isCurrentUserAssignedInspector"
               >
                 Add URL
               </button>
@@ -906,7 +940,7 @@
             multiple
             style="display: none"
             (change)="onPhotosSelected($event)"
-            [disabled]="isUploadingPhoto || submitting"
+            [disabled]="isUploadingPhoto || submitting || !isCurrentUserAssignedInspector"
           />
 
           <!-- Camera Preview -->
@@ -922,7 +956,7 @@
               <button type="button" class="btn btn-secondary btn-sm" (click)="stopCamera()">
                 Cancel
               </button>
-              <button type="button" class="btn btn-primary btn-sm" (click)="capturePhoto()" [disabled]="submitting">
+              <button type="button" class="btn btn-primary btn-sm" (click)="capturePhoto()" [disabled]="submitting || !isCurrentUserAssignedInspector">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <circle cx="12" cy="12" r="3"/>
                 </svg>
@@ -958,7 +992,7 @@
               type="button" 
               class="btn btn-success btn-sm"
               (click)="passAllItems()"
-              [disabled]="checklistItems.length === 0"
+              [disabled]="checklistItems.length === 0 || !isCurrentUserAssignedInspector"
               title="Mark all checklist items as PASS and save to database"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -970,7 +1004,7 @@
               type="button" 
               class="btn btn-danger btn-sm"
               (click)="rejectAllItems()"
-              [disabled]="checklistItems.length === 0"
+              [disabled]="checklistItems.length === 0 || !isCurrentUserAssignedInspector"
               title="Mark all checklist items as FAIL with reason and save to database"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -1048,8 +1082,8 @@
                               type="button" 
                               class="btn btn-primary btn-sm btn-review" 
                               (click)="openItemReviewModal(itemData.index)"
-                              [disabled]="false"
-                              [title]="getReviewButtonTitle(itemData.control.value.status, isChecklistLocked)"
+                              [disabled]="!isCurrentUserAssignedInspector || isChecklistLocked || !canSubmitReview()"
+                              [title]="!isCurrentUserAssignedInspector ? 'Only the assigned inspector can review items' : getReviewButtonTitle(itemData.control.value.status, isChecklistLocked)"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
                                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
@@ -1135,7 +1169,7 @@
                 class="status-chip-btn" 
                 *ngFor="let option of availableFinalStatusOptions"
                 [class.active]="finalStatusControl.value === option.value"
-                [disabled]="submitting"
+                [disabled]="submitting || !isCurrentUserAssignedInspector"
                 (click)="onFinalStatusSelect(option.value)"
               >
                 {{ option.label }}

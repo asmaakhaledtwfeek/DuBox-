@@ -13,6 +13,7 @@ import { ProjectService } from '../../../core/services/project.service';
 import { Project } from '../../../core/models/project.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
+import { BoxQuickViewModalComponent } from '../box-quick-view-modal/box-quick-view-modal.component';
 import { 
   getCurrentActiveWIRStage, 
   getWIRStageInfo,
@@ -24,7 +25,7 @@ import {
 @Component({
   selector: 'app-factory-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, HeaderComponent, SidebarComponent],
+  imports: [CommonModule, RouterModule, FormsModule, HeaderComponent, SidebarComponent, BoxQuickViewModalComponent],
   templateUrl: './factory-layout.component.html',
   styleUrls: ['./factory-layout.component.scss']
 })
@@ -57,6 +58,11 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
   
   BoxStatus = BoxStatus;
   
+  // Modal state
+  isBoxQuickViewModalOpen = false;
+  selectedBoxId: string = '';
+  selectedBoxProjectId: string = '';
+  
   private subscriptions: Subscription[] = [];
 
   constructor(
@@ -74,7 +80,7 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
     this.loadProjects();
     this.loadFactoryData();
   }
-
+  
   /**
    * Initialize available stages with predefined WIR stages from BUSINESS FLOW INDICATORS
    */
@@ -180,6 +186,7 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
 
   /**
    * Update available filter options based on boxes in the layout
+   * If a project is selected, only show options for that project
    */
   updateFilterOptions(): void {
     // Get unique values from boxes that have positions in the layout
@@ -188,7 +195,12 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
     const levelsSet = new Set<string>();
     const zonesSet = new Set<string>();
 
-    this.boxes.forEach(box => {
+    // Filter boxes based on selected project if one is selected
+    const boxesToConsider = this.selectedProjectId
+      ? this.boxes.filter(box => box.projectId === this.selectedProjectId)
+      : this.boxes;
+
+    boxesToConsider.forEach(box => {
       // Only consider boxes that have position information
       if (box.bay || box.row || box.position) {
         if (box.buildingNumber) {
@@ -212,13 +224,56 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
     this.availableFloors = Array.from(floorsSet).sort();
     this.availableLevels = Array.from(levelsSet).sort();
     this.availableZones = Array.from(zonesSet).sort();
+
+    // Clear selections if they're no longer valid after project change
+    if (this.selectedProjectId) {
+      if (this.selectedBuilding && !this.availableBuildings.includes(this.selectedBuilding)) {
+        this.selectedBuilding = '';
+      }
+      if (this.selectedFloor && !this.availableFloors.includes(this.selectedFloor)) {
+        this.selectedFloor = '';
+      }
+      if (this.selectedLevel && !this.availableLevels.includes(this.selectedLevel)) {
+        this.selectedLevel = '';
+      }
+      if (this.selectedZone && !this.availableZones.includes(this.selectedZone)) {
+        this.selectedZone = '';
+      }
+    }
+  }
+
+  /**
+   * Handle project filter change - update dependent filter options
+   */
+  onProjectChange(): void {
+    // Update filter options based on selected project
+    this.updateFilterOptions();
+    // Apply filters to update the grid
+    this.applyFilters();
+  }
+
+  /**
+   * Handle click on stage card in BUSINESS FLOW INDICATORS
+   * Toggles the stage filter - clicking again clears it
+   */
+  onStageCardClick(wirCode: string): void {
+    // If clicking the same stage, clear the filter
+    if (this.selectedStage === wirCode) {
+      this.selectedStage = '';
+    } else {
+      // Set the new stage filter
+      this.selectedStage = wirCode;
+    }
+    // Apply filters to update the grid
+    this.applyFilters();
   }
 
   applyFilters(): void {
     let filtered = [...this.boxes];
 
     // When filtering by project or stage, show only InProgress or Completed boxes
-    if (this.selectedProjectId || this.selectedStage) {
+    // Exception: EMPTY filter should show all boxes (to identify empty cells)
+    if (this.selectedProjectId || (this.selectedStage && this.selectedStage !== 'EMPTY')) {
       filtered = filtered.filter(box => 
         box.status === BoxStatus.InProgress || box.status === BoxStatus.Completed
       );
@@ -231,10 +286,18 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
 
     // Filter by stage
     if (this.selectedStage) {
-      filtered = filtered.filter(box => {
-        const wirStage = this.getBoxWIRStage(box);
-        return wirStage && wirStage.wirCode === this.selectedStage;
-      });
+      if (this.selectedStage === 'EMPTY') {
+        // For EMPTY filter, we'll handle it in getGridLayout() by showing empty cells
+        // Here we just don't filter boxes - empty cells will be shown in the grid
+        // But we still need to filter out boxes that have positions to show empty cells
+        // Actually, we want to show ALL positions, but highlight empty ones
+        // So we don't filter boxes here - the grid will show empty cells
+      } else {
+        filtered = filtered.filter(box => {
+          const wirStage = this.getBoxWIRStage(box);
+          return wirStage && wirStage.wirCode === this.selectedStage;
+        });
+      }
     }
 
     // Filter by building
@@ -267,7 +330,16 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
     this.selectedFloor = '';
     this.selectedLevel = '';
     this.selectedZone = '';
+    // Update filter options to show all available options (not filtered by project)
+    this.updateFilterOptions();
     this.filteredBoxes = [...this.boxes];
+  }
+
+  /**
+   * Check if a stage card is currently active/selected
+   */
+  isStageCardActive(wirCode: string): boolean {
+    return this.selectedStage === wirCode;
   }
 
   /**
@@ -325,51 +397,36 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
    */
 
   getGridLayout(): any {
-    // Use filtered boxes instead of all boxes
-    const boxesWithPosition = this.filteredBoxes.filter(box => 
-      (box.bay || box.row || box.position)
-    );
-    
-    if (boxesWithPosition.length === 0) {
+    // Use factory's min/max row and bay values from database to determine the full layout range
+    // This ensures we always show the complete factory layout as defined in the database
+    if (!this.factory) {
       return { rows: [], columns: [], matrix: [], totalBoxes: 0 };
     }
 
-    // Get unique bays (columns - A, B, C, D) and rows (1, 2, 3, 4) from boxes
-    const baysSet = new Set<string>();
-    const rowsSet = new Set<string>();
-    
-    boxesWithPosition.forEach(box => {
-      if (box.bay) baysSet.add(box.bay);
-      if (box.row) rowsSet.add(box.row);
-    });
+    // Get min/max values from factory (with fallback defaults if not set)
+    const minRow = this.factory.minRow ?? 1;
+    const maxRow = this.factory.maxRow ?? 20;
+    const minBay = this.factory.minBay ?? 'A';
+    const maxBay = this.factory.maxBay ?? 'Z';
 
-    // Sort columns (bays) and rows
-    const baysList = Array.from(baysSet).sort((a, b) => a.localeCompare(b));
-    const rowsList = Array.from(rowsSet).sort((a, b) => {
-      const numA = parseInt(a) || 0;
-      const numB = parseInt(b) || 0;
-      return numA - numB;
-    });
+    // Get filtered boxes to determine which boxes to display in the grid
+    // For EMPTY filter, we need all boxes to identify empty cells
+    const allBoxesWithPosition = this.boxes.filter(box => (box.bay || box.row || box.position));
+    const boxesForDisplay = this.selectedStage === 'EMPTY' 
+      ? allBoxesWithPosition
+      : this.filteredBoxes.filter(box => (box.bay || box.row || box.position));
 
-    // Find min and max bay (alphabetically)
-    const minBay = baysList[0];
-    const maxBay = baysList[baysList.length - 1];
-
-    // Find min and max row (numerically)
-    const minRow = Math.min(...rowsList.map(r => parseInt(r) || 0));
-    const maxRow = Math.max(...rowsList.map(r => parseInt(r) || 0));
-
-    // Generate all bays from min to max (A-Z range)
+    // Generate all bays from min to max (A-Z range) based on factory configuration
     const allBays: string[] = [];
     if (minBay && maxBay) {
-      const startCharCode = minBay.charCodeAt(0);
-      const endCharCode = maxBay.charCodeAt(0);
+      const startCharCode = minBay.toUpperCase().charCodeAt(0);
+      const endCharCode = maxBay.toUpperCase().charCodeAt(0);
       for (let i = startCharCode; i <= endCharCode; i++) {
         allBays.push(String.fromCharCode(i));
       }
     }
 
-    // Generate all rows from min to max
+    // Generate all rows from min to max based on factory configuration
     const allRows: string[] = [];
     for (let i = minRow; i <= maxRow; i++) {
       allRows.push(i.toString());
@@ -386,10 +443,26 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
     rows.forEach(row => {
       const rowCells: any[] = [];
       columns.forEach(column => {
-        // Find ALL boxes at this position (there might be duplicates)
-        const boxesAtPosition = boxesWithPosition.filter(b => 
+        // Find boxes at this position from filtered boxes (for display)
+        const boxesAtPosition = boxesForDisplay.filter(b => 
           (b.bay || '') === column && (b.row || '') === row
         );
+        
+        // For EMPTY filter, only show empty cells (no boxes)
+        if (this.selectedStage === 'EMPTY' && boxesAtPosition.length > 0) {
+          // Skip this cell - it has a box, so it's not empty
+          rowCells.push({
+            row,
+            column,
+            bay: column,
+            box: null,
+            position: null,
+            boxCount: 0,
+            allBoxes: [],
+            hidden: true // Mark as hidden for EMPTY filter
+          });
+          return;
+        }
         
         // Use the first box for display, but track if there are multiple
         const box = boxesAtPosition.length > 0 ? boxesAtPosition[0] : null;
@@ -413,15 +486,27 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
           allBoxes: boxesAtPosition // Keep reference to all boxes at this position
         });
       });
-      matrix.push(rowCells);
+      
+      // For EMPTY filter, only add rows that have at least one visible (empty) cell
+      // For other filters, always add all rows to show full layout
+      if (this.selectedStage === 'EMPTY') {
+        const hasVisibleCells = rowCells.some(cell => !cell.hidden);
+        if (hasVisibleCells) {
+          matrix.push(rowCells);
+        }
+      } else {
+        // Always add all rows to show full layout with filtered boxes
+        matrix.push(rowCells);
+      }
     });
 
     return {
       rows,
       columns,
       matrix,
-      totalBoxes: boxesWithPosition.length, // Total boxes with positions
-      displayedBoxes: displayedBoxCount // Unique positions with boxes
+      totalBoxes: boxesForDisplay.length, // Total filtered boxes with positions
+      displayedBoxes: displayedBoxCount, // Unique positions with filtered boxes
+      totalBoxesInFactory: allBoxesWithPosition.length // Total boxes in factory (for reference)
     };
   }
 
@@ -488,27 +573,24 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
     }
   }
 
-  /**
-   * Get WIR stage statistics for legend
-   * Returns an array of WIR stages with their counts and percentages
-   */
+ 
   getWIRStageStats(): Array<{ stage: WIRStageInfo | null; count: number; percentage: number }> {
-    // Calculate total boxes in factory with position (ALL boxes, not filtered)
-    const totalBoxesInFactory = this.boxes.filter(box => 
-      (box.bay || box.row || box.position) && box.status !== BoxStatus.Dispatched
-    ).length;
+    const gridLayout = this.getGridLayout();
+    const totalSlots = gridLayout.rows.length * gridLayout.columns.length;
     
-    if (totalBoxesInFactory === 0) return [];
+    if (totalSlots === 0) return [];
 
     const stageCounts = new Map<string, number>();
     let completedCount = 0;
     let noWIRCount = 0;
 
-    // Count boxes by WIR stage (use filteredBoxes for display)
-    this.filteredBoxes.forEach(box => {
-      if (!box.bay && !box.row && !box.position) return;
-      if (box.status === BoxStatus.Dispatched) return;
+    // Count boxes by WIR stage (use ALL boxes with positions, not filtered, for accurate percentages)
+    // But only count boxes that are not dispatched
+    const boxesToCount = this.boxes.filter(box => 
+      (box.bay || box.row || box.position) && box.status !== BoxStatus.Dispatched
+    );
 
+    boxesToCount.forEach(box => {
       const wirStage = this.getBoxWIRStage(box);
       if (wirStage) {
         if (wirStage.wirCode === 'COMPLETED') {
@@ -524,87 +606,144 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
 
     const stats: Array<{ stage: WIRStageInfo | null; count: number; percentage: number }> = [];
 
-    // Add WIR stages that have boxes
-    // Percentage is calculated against ALL boxes in factory, not just filtered ones
-    stageCounts.forEach((count, wirCode) => {
-      const stage = getWIRStageInfo(wirCode);
-      stats.push({
-        stage,
-        count,
-        percentage: Math.round((count / totalBoxesInFactory) * 100)
+    // If a stage filter is active (and not EMPTY), only show that stage
+    if (this.selectedStage && this.selectedStage !== 'EMPTY') {
+      // Find the selected stage and add it to stats
+      if (this.selectedStage === 'COMPLETED') {
+        if (completedCount > 0) {
+          const percentage = totalSlots > 0 ? (completedCount / totalSlots) * 100 : 0;
+          const rounded = Math.round(percentage * 10) / 10;
+          const finalPercentage = (completedCount > 0 && rounded === 0) ? 0.1 : rounded;
+         
+          stats.push({
+            stage: COMPLETED_WIR_STAGE,
+            count: completedCount,
+            percentage: finalPercentage
+          });
+        }
+      } else {
+        const count = stageCounts.get(this.selectedStage) || 0;
+        if (count > 0) {
+          const stage = getWIRStageInfo(this.selectedStage);
+          const percentage = totalSlots > 0 ? (count / totalSlots) * 100 : 0;
+          const rounded = Math.round(percentage * 10) / 10;
+          const finalPercentage = (count > 0 && rounded === 0) ? 0.1 : rounded;
+          
+          stats.push({
+            stage,
+            count,
+            percentage: finalPercentage
+          });
+        }
+      }
+    } else {
+      // No stage filter - show all stages
+      // Add WIR stages that have boxes
+      // Percentage is calculated against total slots (cells) in the grid
+      stageCounts.forEach((count, wirCode) => {
+        const stage = getWIRStageInfo(wirCode);
+        const percentage = totalSlots > 0 ? (count / totalSlots) * 100 : 0;
+        const rounded = Math.round(percentage * 10) / 10; // Round to 1 decimal place
+        
+        // If percentage is very small but there are boxes, show at least 0.1%
+        const finalPercentage = (count > 0 && rounded === 0) ? 0.1 : rounded;
+        
+        stats.push({
+          stage,
+          count,
+          percentage: finalPercentage
+        });
       });
-    });
 
-    // Add completed if there are any
-    if (completedCount > 0) {
-      stats.push({
-        stage: COMPLETED_WIR_STAGE,
-        count: completedCount,
-        percentage: Math.round((completedCount / totalBoxesInFactory) * 100)
+      // Add completed if there are any
+      if (completedCount > 0) {
+        const percentage = totalSlots > 0 ? (completedCount / totalSlots) * 100 : 0;
+        const rounded = Math.round(percentage * 10) / 10;
+        
+        // If percentage is very small but there are boxes, show at least 0.1%
+        const finalPercentage = (completedCount > 0 && rounded === 0) ? 0.1 : rounded;
+        
+        stats.push({
+          stage: COMPLETED_WIR_STAGE,
+          count: completedCount,
+          percentage: finalPercentage
+        });
+      }
+
+      // Sort by WIR number
+      stats.sort((a, b) => {
+        if (!a.stage || !b.stage) return 0;
+        const numA = a.stage.wirCode === 'COMPLETED' ? 999 : parseInt(a.stage.wirCode.replace('WIR-', '')) || 0;
+        const numB = b.stage.wirCode === 'COMPLETED' ? 999 : parseInt(b.stage.wirCode.replace('WIR-', '')) || 0;
+        return numA - numB;
       });
     }
-
-    // Sort by WIR number
-    stats.sort((a, b) => {
-      if (!a.stage || !b.stage) return 0;
-      const numA = a.stage.wirCode === 'COMPLETED' ? 999 : parseInt(a.stage.wirCode.replace('WIR-', '')) || 0;
-      const numB = b.stage.wirCode === 'COMPLETED' ? 999 : parseInt(b.stage.wirCode.replace('WIR-', '')) || 0;
-      return numA - numB;
-    });
 
     return stats;
   }
 
+  /**
+   * Get the sum of all stage percentages
+   * Used to calculate empty percentage as remainder
+   */
+  private getTotalStagePercentage(): number {
+    const stats = this.getWIRStageStats();
+    return stats.reduce((sum, stat) => sum + stat.percentage, 0);
+  }
+
   getInProgressPercentage(): number {
-    // Calculate total boxes in factory with position (ALL boxes, not filtered)
-    const totalBoxesInFactory = this.boxes.filter(box => 
-      (box.bay || box.row || box.position) && box.status !== BoxStatus.Dispatched
-    ).length;
+    // Calculate total slots based on factory's min/max row and bay configuration
+    const gridLayout = this.getGridLayout();
+    const totalSlots = gridLayout.rows.length * gridLayout.columns.length;
     
-    if (totalBoxesInFactory === 0) return 0;
+    if (totalSlots === 0) return 0;
     
-    // Count boxes that are in any WIR stage (not completed) - use filteredBoxes
-    const inProgressCount = this.filteredBoxes.filter(b => {
+    // Count boxes that are in any WIR stage (not completed) - use ALL boxes with positions
+    const inProgressCount = this.boxes.filter(b => {
       if (!b.bay && !b.row && !b.position) return false;
       if (b.status === BoxStatus.Dispatched) return false;
       const wirStage = this.getBoxWIRStage(b);
       return wirStage && wirStage.wirCode !== 'COMPLETED';
     }).length;
     
-    // Percentage is calculated against ALL boxes in factory, not just filtered ones
-    return Math.round((inProgressCount / totalBoxesInFactory) * 100);
+    // Percentage is calculated against total slots from factory configuration
+    return Math.round((inProgressCount / totalSlots) * 100);
   }
 
   getCompletedPercentage(): number {
-    // Calculate total boxes in factory with position (ALL boxes, not filtered)
-    const totalBoxesInFactory = this.boxes.filter(box => 
-      (box.bay || box.row || box.position) && box.status !== BoxStatus.Dispatched
-    ).length;
+    // Calculate total slots based on factory's min/max row and bay configuration
+    const gridLayout = this.getGridLayout();
+    const totalSlots = gridLayout.rows.length * gridLayout.columns.length;
     
-    if (totalBoxesInFactory === 0) return 0;
+    if (totalSlots === 0) return 0;
     
-    // Count boxes that have completed all WIRs - use filteredBoxes
-    const completedCount = this.filteredBoxes.filter(b => {
+    // Count boxes that have completed all WIRs - use ALL boxes with positions
+    const completedCount = this.boxes.filter(b => {
       if (!b.bay && !b.row && !b.position) return false;
       if (b.status === BoxStatus.Dispatched) return false;
       const wirStage = this.getBoxWIRStage(b);
       return wirStage && wirStage.wirCode === 'COMPLETED';
     }).length;
     
-    // Percentage is calculated against ALL boxes in factory, not just filtered ones
-    return Math.round((completedCount / totalBoxesInFactory) * 100);
+    // Percentage is calculated against total slots from factory configuration
+    return Math.round((completedCount / totalSlots) * 100);
   }
 
   getEmptyPercentage(): number {
     const gridLayout = this.getGridLayout();
+    // Calculate total cells based on factory's min/max row and bay configuration
     const totalCells = gridLayout.rows.length * gridLayout.columns.length;
     
     if (totalCells === 0) return 0;
     
-    const occupiedCells = gridLayout.totalBoxes;
-    const emptyCells = totalCells - occupiedCells;
+    // Calculate empty percentage as remainder to ensure sum equals 100%
+    // This accounts for rounding errors in individual stage percentages
+    // Empty percentage represents unoccupied slots in the factory layout
+    const totalStagePercentage = this.getTotalStagePercentage();
+    const emptyPercentage = Math.max(0, 100 - totalStagePercentage);
     
-    return Math.round((emptyCells / totalCells) * 100);
+    // Round to 1 decimal place to match stage percentages
+    return Math.round(emptyPercentage * 10) / 10;
   }
 
   /**
@@ -623,10 +762,18 @@ export class FactoryLayoutComponent implements OnInit, OnDestroy {
     // Find the box to get projectId
     const box = this.boxes.find(b => b.id === boxId);
     if (box && box.projectId) {
-      this.router.navigate(['/projects', box.projectId, 'boxes', boxId]);
+      this.selectedBoxId = boxId;
+      this.selectedBoxProjectId = box.projectId;
+      this.isBoxQuickViewModalOpen = true;
     } else {
       console.error('Box not found or missing projectId:', boxId);
     }
+  }
+
+  closeBoxQuickViewModal(): void {
+    this.isBoxQuickViewModalOpen = false;
+    this.selectedBoxId = '';
+    this.selectedBoxProjectId = '';
   }
 
   goBack(): void {

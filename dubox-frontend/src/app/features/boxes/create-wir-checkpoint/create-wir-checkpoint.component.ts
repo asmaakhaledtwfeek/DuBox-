@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { WIRService } from '../../../core/services/wir.service';
+import { UserService } from '../../../core/services/user.service';
 import { CreateWIRCheckpointRequest, WIRRecord } from '../../../core/models/wir.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
@@ -24,12 +25,15 @@ export class CreateWIRCheckpointComponent implements OnInit {
   loading = true;
   error = '';
   submitting = false;
+  availableInspectors: {userId: string, userName: string, userEmail: string}[] = [];
+  loadingInspectors = false;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private fb: FormBuilder,
-    private wirService: WIRService
+    private wirService: WIRService,
+    private userService: UserService
   ) {}
 
   ngOnInit(): void {
@@ -39,6 +43,7 @@ export class CreateWIRCheckpointComponent implements OnInit {
     
     this.initForm();
     this.loadWIRRecord();
+    this.loadAvailableInspectors();
   }
 
   private initForm(): void {
@@ -46,6 +51,7 @@ export class CreateWIRCheckpointComponent implements OnInit {
       boxActivityId: [''], // Hidden field
       wirName: ['', [Validators.maxLength(200)]],
       wirDescription: ['', [Validators.maxLength(500)]],
+      inspectorId: [''], // Inspector selection
       attachmentPath: ['', [Validators.maxLength(500)]],
       comments: ['', [Validators.maxLength(1000)]]
     });
@@ -102,6 +108,7 @@ export class CreateWIRCheckpointComponent implements OnInit {
       wirNumber: this.wirRecord.wirCode || '', // From WIRRecord
       wirName: formValue.wirName?.trim() || undefined,
       wirDescription: formValue.wirDescription?.trim() || undefined,
+      inspectorId: formValue.inspectorId?.trim() || undefined,
       attachmentPath: formValue.attachmentPath?.trim() || undefined,
       comments: formValue.comments?.trim() || undefined
     };
@@ -132,6 +139,61 @@ export class CreateWIRCheckpointComponent implements OnInit {
 
   goBack(): void {
     this.router.navigate(['/projects', this.projectId, 'boxes', this.boxId]);
+  }
+
+  loadAvailableInspectors(): void {
+    console.log('🔍 loadAvailableInspectors called');
+    this.loadingInspectors = true;
+    
+    const subscription = this.userService.getUsers(1, 1000).subscribe({
+      next: (response) => {
+        console.log('🔍 Users API response received:', response);
+        console.log('🔍 Total users:', response.items.length);
+        
+        // Debug: Log all users and their roles
+        response.items.forEach((user, index) => {
+          console.log(`🔍 User ${index + 1}:`, {
+            userId: user.userId,
+            email: user.email,
+            fullName: user.fullName,
+            isActive: user.isActive,
+            allRoles: user.allRoles,
+            directRoles: user.directRoles,
+            hasQCInspector: user.allRoles?.includes('QCInspector')
+          });
+        });
+        
+        // Filter to only active users with QCInspector role
+        const filteredInspectors = response.items.filter(user => {
+          const isActive = user.isActive;
+          const hasQCInspectorRole = user.allRoles?.includes('QCInspector') || 
+                                     user.directRoles?.includes('QCInspector') ||
+                                     user.allRoleSummaries?.some(r => r.roleName === 'QCInspector');
+          
+          console.log(`🔍 User ${user.email}: isActive=${isActive}, hasQCInspector=${hasQCInspectorRole}`);
+          return isActive && hasQCInspectorRole;
+        });
+        
+        console.log('🔍 Filtered inspectors:', filteredInspectors.length);
+        
+        this.availableInspectors = filteredInspectors.map(user => ({
+          userId: user.userId,
+          userName: user.fullName || user.email || 'Unknown',
+          userEmail: user.email || ''
+        }));
+        
+        console.log('🔍 Available inspectors:', this.availableInspectors);
+        this.loadingInspectors = false;
+      },
+      error: (err) => {
+        console.error('❌ Error loading inspectors:', err);
+        console.error('❌ Error details:', JSON.stringify(err, null, 2));
+        this.availableInspectors = [];
+        this.loadingInspectors = false;
+      }
+    });
+    
+    console.log('🔍 Subscription created:', subscription);
   }
 
   private markFormGroupTouched(formGroup: FormGroup): void {

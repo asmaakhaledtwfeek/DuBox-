@@ -735,6 +735,10 @@ namespace Dubox.Infrastructure.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<string>("BoxNumber")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
                     b.Property<string>("BoxTag")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -848,18 +852,6 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<int?>("UnitOfMeasure")
                         .HasMaxLength(50)
                         .HasColumnType("int");
-
-                    b.Property<bool?>("Wall1")
-                        .HasColumnType("bit");
-
-                    b.Property<bool?>("Wall2")
-                        .HasColumnType("bit");
-
-                    b.Property<bool?>("Wall3")
-                        .HasColumnType("bit");
-
-                    b.Property<bool?>("Wall4")
-                        .HasColumnType("bit");
 
                     b.Property<decimal?>("Width")
                         .HasColumnType("decimal(18,2)");
@@ -1205,6 +1197,47 @@ namespace Dubox.Infrastructure.Migrations
                     b.HasIndex("MaterialId");
 
                     b.ToTable("BoxMaterials");
+                });
+
+            modelBuilder.Entity("Dubox.Domain.Entities.BoxPanel", b =>
+                {
+                    b.Property<Guid>("BoxPanelId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BoxId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CreatedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ModifiedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("ModifiedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("PanelName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("PanelStatus")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("ProjectId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("BoxPanelId");
+
+                    b.HasIndex("BoxId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("BoxPanels");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.Checklist", b =>
@@ -14293,6 +14326,9 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime?>("InspectionDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid?>("InspectorId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("InspectorName")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
@@ -14652,6 +14688,25 @@ namespace Dubox.Infrastructure.Migrations
                     b.Navigation("Box");
 
                     b.Navigation("Material");
+                });
+
+            modelBuilder.Entity("Dubox.Domain.Entities.BoxPanel", b =>
+                {
+                    b.HasOne("Dubox.Domain.Entities.Box", "Box")
+                        .WithMany("BoxPanels")
+                        .HasForeignKey("BoxId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Dubox.Domain.Entities.Project", "Project")
+                        .WithMany()
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Box");
+
+                    b.Navigation("Project");
                 });
 
             modelBuilder.Entity("Dubox.Domain.Entities.ChecklistSection", b =>
@@ -15341,6 +15396,8 @@ namespace Dubox.Infrastructure.Migrations
                     b.Navigation("BoxDrawings");
 
                     b.Navigation("BoxLocationHistory");
+
+                    b.Navigation("BoxPanels");
 
                     b.Navigation("MaterialTransactions");
 

@@ -15,11 +15,13 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IProjectTeamVisibilityService _visibilityService;
+        private readonly ICurrentUserService _currentUserService;
 
-        public GetWIRCheckpointByIdQueryHandler(IUnitOfWork unitOfWork, IProjectTeamVisibilityService visibilityService)
+        public GetWIRCheckpointByIdQueryHandler(IUnitOfWork unitOfWork, IProjectTeamVisibilityService visibilityService, ICurrentUserService currentUserService)
         {
             _unitOfWork = unitOfWork;
             _visibilityService = visibilityService;
+            _currentUserService = currentUserService;
         }
 
         public async Task<Result<WIRCheckpointDto>> Handle(GetWIRCheckpointByIdQuery request, CancellationToken cancellationToken)
@@ -31,8 +33,10 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
             if (checkpoint == null)
                 return Result.Failure<WIRCheckpointDto>("WIR checkpoint not found");
 
+            var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
+
             var canAccessProject = await _visibilityService.CanAccessProjectAsync(checkpoint.Box.ProjectId, cancellationToken);
-            if (!canAccessProject)
+            if (!canAccessProject && (checkpoint.InspectorId !=null && checkpoint.InspectorId != currentUserId))
                 return Result.Failure<WIRCheckpointDto>("Access denied. You do not have permission to view this WIR checkpoint.");
 
             var dto = checkpoint.Adapt<WIRCheckpointDto>();

@@ -33,7 +33,7 @@
             Back
           </button>
           <div class="header-info">
-            <h1>Walls, Slab & Soffit Status</h1>
+            <h1>Panels, Slab & Soffit Status</h1>
             <div class="factory-name">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
@@ -62,7 +62,7 @@
               </svg>
               Project:
             </label>
-            <select id="projectFilter" [(ngModel)]="selectedProjectId" (change)="applyFilters()" class="filter-select">
+            <select id="projectFilter" [(ngModel)]="selectedProjectId" (change)="onProjectChange()" class="filter-select">
               <option value="">All Projects</option>
               <option *ngFor="let project of projects" [value]="project.id">{{ project.name }}</option>
             </select>
@@ -98,7 +98,21 @@
             </select>
           </div>
 
-          <button class="btn-clear-filters" (click)="clearFilters()" *ngIf="selectedProjectId || selectedBuildingNumber || selectedFloor">
+          <div class="filter-group">
+            <label for="zoneFilter" class="filter-label">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
+              Zone:
+            </label>
+            <select id="zoneFilter" [(ngModel)]="selectedZone" (change)="applyFilters()" class="filter-select">
+              <option value="">All Zones</option>
+              <option *ngFor="let zone of availableZones" [value]="zone">{{ zone }}</option>
+            </select>
+          </div>
+
+          <button class="btn-clear-filters" (click)="clearFilters()" *ngIf="selectedProjectId || selectedBuildingNumber || selectedFloor || selectedZone">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
@@ -138,50 +152,21 @@
       <!-- Statistics Cards Grid -->
       <div class="stats-grid" *ngIf="filteredBoxes.length > 0">
 
-        <div class="stat-card wall-stat">
+        <!-- Dynamic Panel Stats -->
+        <div class="stat-card wall-stat" *ngFor="let panelName of getUniquePanelNames()">
           <div class="stat-content">
-            <div class="stat-label">Wall 1</div>
+            <div class="stat-label">{{ panelName }}</div>
             <div class="stat-progress">
               <div class="progress-bar">
-                <div class="progress-fill" [style.width.%]="getCompletionPercentage(getCompletionStats().wall1Complete)"></div>
+                <div class="progress-fill" 
+                     [style.width.%]="getCompletionPercentage(getCompletionStats().panelStats.get(panelName)?.green || 0)"
+                     [style.backgroundColor]="'#10b981'"></div>
               </div>
-              <span class="progress-text">{{ getCompletionStats().wall1Complete }}/{{ getCompletionStats().total }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="stat-card wall-stat">
-          <div class="stat-content">
-            <div class="stat-label">Wall 2</div>
-            <div class="stat-progress">
-              <div class="progress-bar">
-                <div class="progress-fill" [style.width.%]="getCompletionPercentage(getCompletionStats().wall2Complete)"></div>
-              </div>
-              <span class="progress-text">{{ getCompletionStats().wall2Complete }}/{{ getCompletionStats().total }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="stat-card wall-stat">
-          <div class="stat-content">
-            <div class="stat-label">Wall 3</div>
-            <div class="stat-progress">
-              <div class="progress-bar">
-                <div class="progress-fill" [style.width.%]="getCompletionPercentage(getCompletionStats().wall3Complete)"></div>
-              </div>
-              <span class="progress-text">{{ getCompletionStats().wall3Complete }}/{{ getCompletionStats().total }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="stat-card wall-stat">
-          <div class="stat-content">
-            <div class="stat-label">Wall 4</div>
-            <div class="stat-progress">
-              <div class="progress-bar">
-                <div class="progress-fill" [style.width.%]="getCompletionPercentage(getCompletionStats().wall4Complete)"></div>
-              </div>
-              <span class="progress-text">{{ getCompletionStats().wall4Complete }}/{{ getCompletionStats().total }}</span>
+              <span class="progress-text">
+                Green: {{ getCompletionStats().panelStats.get(panelName)?.green || 0 }} / 
+                Yellow: {{ getCompletionStats().panelStats.get(panelName)?.yellow || 0 }} / 
+                Total: {{ getCompletionStats().panelStats.get(panelName)?.total || 0 }}
+              </span>
             </div>
           </div>
         </div>
@@ -248,13 +233,10 @@
           <table class="walls-table">
             <thead>
               <tr>
-                <th class="sticky-col">Box Tag / Serial Number</th>
+                <th class="sticky-col">Box Tag / Box Number / Serial Number</th>
                 <th>Building</th>
                 <th>Floor</th>
-                <th>Wall 1</th>
-                <th>Wall 2</th>
-                <th>Wall 3</th>
-                <th>Wall 4</th>
+                <th *ngFor="let panelName of getUniquePanelNames()">{{ panelName }}</th>
                 <th>Slab</th>
                 <th>Soffit</th>
                 <th>POD Deliver</th>
@@ -265,6 +247,7 @@
             <tbody>
               <tr *ngFor="let box of filteredBoxes" (click)="viewBox(box.id)" class="clickable-row">
                 <td class="sticky-col box-identifier">
+                  <div class="box-number" *ngIf="box.boxNumber">#{{ box.boxNumber }}</div>
                   <div class="box-tag">{{ box.code }}</div>
                   <div class="box-serial" *ngIf="box.serialNumber">{{ box.serialNumber }}</div>
                 </td>
@@ -276,57 +259,34 @@
                   <span *ngIf="box.floor">{{ box.floor }}</span>
                   <span *ngIf="!box.floor" class="no-data">-</span>
                 </td>
-                <td [class.status-finished]="box.wall1" [class.status-not-finished]="!box.wall1">
-                  <span class="status-icon" *ngIf="box.wall1">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                  </span>
-                  <span class="status-icon" *ngIf="!box.wall1">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                      <line x1="18" y1="6" x2="6" y2="18"/>
-                      <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                  </span>
-                </td>
-                <td [class.status-finished]="box.wall2" [class.status-not-finished]="!box.wall2">
-                  <span class="status-icon" *ngIf="box.wall2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                  </span>
-                  <span class="status-icon" *ngIf="!box.wall2">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                      <line x1="18" y1="6" x2="6" y2="18"/>
-                      <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                  </span>
-                </td>
-                <td [class.status-finished]="box.wall3" [class.status-not-finished]="!box.wall3">
-                  <span class="status-icon" *ngIf="box.wall3">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                  </span>
-                  <span class="status-icon" *ngIf="!box.wall3">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                      <line x1="18" y1="6" x2="6" y2="18"/>
-                      <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                  </span>
-                </td>
-                <td [class.status-finished]="box.wall4" [class.status-not-finished]="!box.wall4">
-                  <span class="status-icon" *ngIf="box.wall4">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                  </span>
-                  <span class="status-icon" *ngIf="!box.wall4">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                      <line x1="18" y1="6" x2="6" y2="18"/>
-                      <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                  </span>
+                <!-- Dynamic Panel Columns -->
+                <td *ngFor="let panelName of getUniquePanelNames()" 
+                    [class.panel-cell]="true"
+                    [class.panel-green]="getPanelStatus(box, panelName) === PanelStatus.Green"
+                    [class.panel-yellow]="getPanelStatus(box, panelName) === PanelStatus.Yellow"
+                    [class.panel-not-started]="getPanelStatus(box, panelName) === PanelStatus.NotStarted"
+                    [class.panel-not-have]="getPanelStatus(box, panelName) === null">
+                  <div class="panel-content">
+                    <span class="panel-name">{{ panelName }}</span>
+                    <span class="panel-status-icon" *ngIf="getPanelStatus(box, panelName) === PanelStatus.Green">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </span>
+                    <span class="panel-status-icon" *ngIf="getPanelStatus(box, panelName) === PanelStatus.Yellow">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="8" x2="12" y2="12"/>
+                        <line x1="12" y1="16" x2="12.01" y2="16"/>
+                      </svg>
+                    </span>
+                    <span class="panel-status-icon" *ngIf="getPanelStatus(box, panelName) === PanelStatus.NotStarted">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <line x1="18" y1="6" x2="6" y2="18"/>
+                        <line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </span>
+                  </div>
                 </td>
                 <td [class.status-finished]="box.slab" [class.status-not-finished]="!box.slab">
                   <span class="status-icon" *ngIf="box.slab">
@@ -395,27 +355,114 @@
         <!-- Legend -->
         <div class="table-legend" *ngIf="filteredBoxes.length > 0">
           <div class="legend-item">
-            <span class="status-icon status-finished-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                <polyline points="20 6 9 17 4 12"/>
-              </svg>
-            </span>
-            <span>Finished</span>
+            <span class="legend-panel-cell panel-green">Green</span>
+            <span>Completed (Green)</span>
           </div>
           <div class="legend-item">
-            <span class="status-icon status-not-finished-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-            </span>
-            <span>Not Finished</span>
+            <span class="legend-panel-cell panel-yellow">Yellow</span>
+            <span>In Progress (Yellow)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-panel-cell panel-not-started">Not Started</span>
+            <span>Not Started (Red)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-panel-cell panel-not-have">P-001</span>
+            <span>Not Have This Panel</span>
           </div>
           <div class="legend-item hint">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/>
             </svg>
             <span>Click on any row to view box details</span>
+          </div>
+        </div>
+
+        <!-- Pagination Controls -->
+        <div class="pagination-container" *ngIf="totalPages > 1">
+          <div class="pagination-left">
+            <div class="pagination-info-text">
+              <span class="info-label">Showing</span>
+              <span class="info-value">{{ ((currentPage - 1) * pageSize) + 1 }}</span>
+              <span class="info-separator">-</span>
+              <span class="info-value">{{ Math.min(currentPage * pageSize, totalCount) }}</span>
+              <span class="info-label">of</span>
+              <span class="info-total">{{ totalCount }}</span>
+              <span class="info-label">boxes</span>
+            </div>
+            <div class="page-size-selector">
+              <label class="page-size-label">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <line x1="3" y1="9" x2="21" y2="9"/>
+                  <line x1="9" y1="21" x2="9" y2="9"/>
+                </svg>
+                Per page:
+              </label>
+              <select 
+                class="page-size-select" 
+                [ngModel]="pageSize" 
+                (ngModelChange)="onPageSizeChange($event)"
+              >
+                <option [value]="25">25</option>
+                <option [value]="50">50</option>
+                <option [value]="100">100</option>
+              </select>
+            </div>
+          </div>
+          <div class="pagination-controls">
+            <button 
+              class="pagination-btn" 
+              [disabled]="currentPage === 1"
+              (click)="onPageChange(1)"
+              title="First page"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="11 17 6 12 11 7"/>
+                <polyline points="18 17 13 12 18 7"/>
+              </svg>
+            </button>
+            <button 
+              class="pagination-btn" 
+              [disabled]="currentPage === 1"
+              (click)="onPageChange(currentPage - 1)"
+              title="Previous page"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"/>
+              </svg>
+            </button>
+            <div class="page-numbers">
+              <button 
+                *ngFor="let page of getPageNumbers()"
+                class="page-number"
+                [class.active]="page === currentPage"
+                (click)="onPageChange(page)"
+              >
+                {{ page }}
+              </button>
+            </div>
+            <button 
+              class="pagination-btn" 
+              [disabled]="currentPage === totalPages"
+              (click)="onPageChange(currentPage + 1)"
+              title="Next page"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+            <button 
+              class="pagination-btn" 
+              [disabled]="currentPage === totalPages"
+              (click)="onPageChange(totalPages)"
+              title="Last page"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="13 17 18 12 13 7"/>
+                <polyline points="6 17 11 12 6 7"/>
+              </svg>
+            </button>
           </div>
         </div>
       </div>

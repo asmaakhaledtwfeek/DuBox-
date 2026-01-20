@@ -363,6 +363,123 @@
           </div>
         </div>
       </div>
+
+      <!-- Box Panels Excel Section -->
+      <div class="excel-import card" *ngIf="!isProjectArchived">
+        <div class="excel-header">
+          <div>
+            <h2 class="card-title">Box Panels Management</h2>
+            <p class="helper-text">Download Excel file with all boxes and their panels, update panel information, then upload to save changes.</p>
+          </div>
+          <button class="btn btn-secondary" (click)="downloadBoxPanelsExcel()" [disabled]="boxPanelsExcelDownloading">
+            <span *ngIf="!boxPanelsExcelDownloading">Download Excel</span>
+            <span *ngIf="boxPanelsExcelDownloading" class="spinner-inline">
+              <span class="spinner small"></span>
+              Downloading...
+            </span>
+          </button>
+        </div>
+
+        <div class="upload-zone"
+             [class.disabled]="isProjectOnHold || isProjectClosed || isProjectArchived">
+          <input type="file"
+                 accept=".xlsx,.xls"
+                 hidden
+                 [disabled]="isProjectOnHold || isProjectClosed || isProjectArchived"
+                 (change)="onPanelsFileChange($event)"
+                 #panelsFileInput>
+
+          <ng-container *ngIf="!selectedPanelsFile">
+            <div class="upload-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 5v14"/>
+                <path d="M5 12l7-7 7 7"/>
+                <path d="M5 19h14"/>
+              </svg>
+            </div>
+            <p class="upload-title" *ngIf="!isProjectOnHold && !isProjectClosed && !isProjectArchived">Select your completed Excel file</p>
+            <p class="upload-title" *ngIf="isProjectOnHold || isProjectClosed || isProjectArchived" style="color: #999;">File upload is disabled for projects {{ isProjectArchived ? 'archived' : (isProjectClosed ? 'closed' : 'on hold') }}</p>
+            <button 
+              class="btn btn-outline" 
+              type="button" 
+              (click)="panelsFileInput.click()"
+              [disabled]="isProjectOnHold || isProjectClosed || isProjectArchived"
+              *ngIf="!isProjectOnHold && !isProjectClosed && !isProjectArchived"
+            >
+              Browse files
+            </button>
+            <p class="upload-note" *ngIf="!isProjectOnHold && !isProjectClosed && !isProjectArchived">Accepted formats: .xlsx, .xls (max 10 MB)</p>
+          </ng-container>
+
+          <div class="file-pill" *ngIf="selectedPanelsFile">
+            <div>
+              <p class="file-name">{{ selectedPanelsFile.name }}</p>
+              <p class="file-meta">{{ formatFileSize(selectedPanelsFile.size) }}</p>
+            </div>
+            <button class="link-btn" type="button" (click)="removeSelectedPanelsFile()">Remove</button>
+          </div>
+        </div>
+
+        <div class="upload-actions" *ngIf="selectedPanelsFile">
+          <button class="btn btn-primary"
+                  type="button"
+                  (click)="uploadBoxPanelsExcel()"
+                  [disabled]="boxPanelsExcelUploading">
+            <span *ngIf="!boxPanelsExcelUploading">Upload & Save</span>
+            <span *ngIf="boxPanelsExcelUploading" class="spinner-inline">
+              <span class="spinner small"></span>
+              Uploading...
+            </span>
+          </button>
+        </div>
+
+        <div class="alert alert-error" *ngIf="panelsImportErrorMessage">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          {{ panelsImportErrorMessage }}
+        </div>
+
+        <div class="alert alert-success" *ngIf="panelsImportSuccessMessage">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg>
+          {{ panelsImportSuccessMessage }}
+        </div>
+
+        <div class="import-summary" *ngIf="panelsImportResult">
+          <div class="summary-stats">
+            <div class="stat-item success">
+              <strong>{{ panelsImportResult.successCount }}</strong>
+              <span>Success</span>
+            </div>
+            <div class="stat-item error" *ngIf="panelsImportResult.failureCount > 0">
+              <strong>{{ panelsImportResult.failureCount }}</strong>
+              <span>Errors</span>
+            </div>
+          </div>
+          <div *ngIf="panelsImportResult.errors?.length" class="result-table">
+            <div class="table-header">
+              <h3>Errors</h3>
+              <span>{{ panelsImportResult.errors.length }} errors</span>
+            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Error</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let error of panelsImportResult.errors; let idx = index">
+                  <td>{{ error }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>

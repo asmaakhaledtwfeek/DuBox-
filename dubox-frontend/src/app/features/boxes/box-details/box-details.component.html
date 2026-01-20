@@ -45,7 +45,10 @@
       <div class="page-header">
         <div class="header-content">
           <div class="box-info">
-            <h1 class="box-name">{{ box.name || box.code }}</h1>
+            <h1 class="box-name">
+              {{ box.name || box.code }}
+              <span class="box-number" *ngIf="box.boxNumber">#{{ box.boxNumber }}</span>
+            </h1>
             <span class="box-id">{{ box.code }}</span>
             <span class="status-badge" [ngClass]="getStatusClass(box.status)">
               {{ getStatusLabel(box.status) }}
@@ -150,6 +153,11 @@
               <h3 class="card-title">Box Information</h3>
                 <div class="info-grid-compact">
               
+                <!-- Box Number -->
+                <div class="info-item" *ngIf="box.boxNumber">
+                  <span class="label">Box Number</span>
+                  <span class="value">{{ box.boxNumber }}</span>
+                </div>
                 <!-- Order matches tag format: Building -> Floor -> Box Type -> Box Sub Type -->
                 <div class="info-item" *ngIf="box.buildingNumber">
                   <span class="label">Building Number</span>
@@ -450,22 +458,60 @@
                 </div>
                 
                 <div class="delivery-grid concrete-grid">
-                  <div class="delivery-item" *ngFor="let wall of concreteWalls">
-                    <label class="checkbox-label" [class.checked]="wall.checked">
+                  <!-- Dynamic Panels -->
+                  <div class="delivery-item panel-item" *ngFor="let panel of boxPanels">
+                    <div class="panel-status-controls">
+                      <span class="panel-name">{{ panel.panelName }}</span>
+                      <div class="panel-status-indicator"
+                           [class.status-not-started]="panel.panelStatus === PanelStatus.NotStarted"
+                           [class.status-yellow]="panel.panelStatus === PanelStatus.Yellow"
+                           [class.status-green]="panel.panelStatus === PanelStatus.Green"
+                           [title]="getPanelStatusLabel(panel.panelStatus)">
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Slab -->
+                  <div class="delivery-item">
+                    <label class="checkbox-label" [class.checked]="slabChecked">
                       <input 
                         type="checkbox" 
-                        [checked]="wall.checked"
-                        (change)="toggleWall(wall.key, $event)"
+                        [checked]="slabChecked"
+                        (change)="toggleSlabOrSoffit('slab', $event)"
                         [disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed"
                         class="checkbox-input">
                       <span class="checkbox-custom"></span>
-                      <span class="checkbox-text">{{ wall.label }}</span>
-                      <span class="check-icon" *ngIf="wall.checked">
+                      <span class="checkbox-text">Slab</span>
+                      <span class="check-icon" *ngIf="slabChecked">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                           <polyline points="20 6 9 17 4 12"/>
                         </svg>
                       </span>
                     </label>
+                  </div>
+                  
+                  <!-- Soffit -->
+                  <div class="delivery-item">
+                    <label class="checkbox-label" [class.checked]="soffitChecked">
+                      <input 
+                        type="checkbox" 
+                        [checked]="soffitChecked"
+                        (change)="toggleSlabOrSoffit('soffit', $event)"
+                        [disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed"
+                        class="checkbox-input">
+                      <span class="checkbox-custom"></span>
+                      <span class="checkbox-text">Soffit</span>
+                      <span class="check-icon" *ngIf="soffitChecked">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      </span>
+                    </label>
+                  </div>
+                  
+                  <!-- Empty state -->
+                  <div class="delivery-item empty-state" *ngIf="boxPanels.length === 0">
+                    <span class="empty-message">No panels configured for this box</span>
                   </div>
                 </div>
               </div>

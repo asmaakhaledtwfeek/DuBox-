@@ -111,6 +111,9 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                 .Select(b => b.BoxTag.ToLower())
                 .ToListAsync(cancellationToken);
 
+            // Dictionary to track BoxNumber generation per type/subtype combination
+            var boxNumberCounters = new Dictionary<string, int>();
+
             for (int i = 0; i < importedDtos.Count; i++)
             {
                 var boxDto = importedDtos[i];
@@ -312,6 +315,34 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                    var SequentialNumber = lastSeq + 1;
                     var yearOfProject = project.CreatedDate.Year.ToString().Substring(2, 2);
                     var serialNumber = _serialNumberService.GenerateSerialNumber("X", lastSeq, yearOfProject);
+                    
+                    var boxNumberKey = $"{request.ProjectId}_{boxTypeId}_{boxSubTypeId ?? 0}";
+                    
+                   if (!boxNumberCounters.ContainsKey(boxNumberKey))
+                    {
+                        var existingBoxNumbers = await _dbContext.Boxes
+                            .Where(b => b.ProjectId == request.ProjectId 
+                                && b.ProjectBoxTypeId == boxTypeId
+                                && (boxSubTypeId.HasValue 
+                                    ? b.ProjectBoxSubTypeId == boxSubTypeId.Value 
+                                    : b.ProjectBoxSubTypeId == null))
+                            .Where(b => !string.IsNullOrEmpty(b.BoxNumber))
+                            .Select(b => b.BoxNumber)
+                            .ToListAsync(cancellationToken);
+
+                        int maxNumber = 0;
+                        foreach (var existingBoxNumber in existingBoxNumbers)
+                        {
+                            if (int.TryParse(existingBoxNumber, out int num))
+                                maxNumber = Math.Max(maxNumber, num);
+                        }
+                        boxNumberCounters[boxNumberKey] = maxNumber;
+                    }
+
+                    // Increment counter for this type/subtype combination
+                    boxNumberCounters[boxNumberKey]++;
+                    var boxNumber = boxNumberCounters[boxNumberKey].ToString("000");
+                    
                     // Try to parse Zone enum if provided
                    
                      
@@ -334,6 +365,7 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                         Notes = boxDto.Notes?.Trim(),
                         SerialNumber = serialNumber,
                         SequentialNumber = SequentialNumber,
+                        BoxNumber = boxNumber,
                         Status = BoxStatusEnum.NotStarted,
                         ProgressPercentage = 0,
                         IsActive = true,

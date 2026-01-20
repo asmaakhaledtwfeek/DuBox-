@@ -9,6 +9,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
     Guid BoxActivityId,
     string WIRNumber,
     string? WIRName,
+    Guid? InspectorId,
     string? WIRDescription,
     string? AttachmentPath,
     string? Comments,

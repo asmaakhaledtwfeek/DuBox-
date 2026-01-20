@@ -24,6 +24,8 @@ namespace Dubox.Application.DTOs
 
         public DateTime? InspectionDate { get; set; }
         public string? InspectorName { get; set; }
+        public Guid? InspectorId { get; set; }
+
         public string? InspectorRole { get; set; }
 
         public WIRCheckpointStatusEnum Status { get; set; }

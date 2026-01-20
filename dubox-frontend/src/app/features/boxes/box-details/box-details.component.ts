@@ -10,7 +10,7 @@ import { UserService, UserDto } from '../../../core/services/user.service';
 import { TeamService } from '../../../core/services/team.service';
 import { ProjectService } from '../../../core/services/project.service';
 import { Team, TeamMember } from '../../../core/models/team.model';
-import { Box, BoxStatus, BoxLog, getBoxStatusNumber, getAvailableBoxStatuses, canPerformBoxActions, canPerformActivityActions } from '../../../core/models/box.model';
+import { Box, BoxStatus, BoxLog, BoxPanel, PanelStatus, getBoxStatusNumber, getAvailableBoxStatuses, canPerformBoxActions, canPerformActivityActions } from '../../../core/models/box.model';
 import { WIRService } from '../../../core/services/wir.service';
 import { ProgressUpdate, ProgressUpdatesSearchParams } from '../../../core/models/progress-update.model';
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
@@ -304,15 +304,11 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   readonly DiffUtil = DiffUtil;
   
   // Concrete Panel Delivery and Pod Delivery
-  concreteWalls: Array<{key: string, label: string, checked: boolean}> = [
-    {key: 'wall1', label: 'Wall 01', checked: false},
-    {key: 'wall2', label: 'Wall 02', checked: false},
-    {key: 'wall3', label: 'Wall 03', checked: false},
-    {key: 'wall4', label: 'Wall 04', checked: false},
-    {key: 'slab', label: 'Slab', checked: false},
-    {key: 'soffit', label: 'Soffit', checked: false}
-  ];
+  boxPanels: BoxPanel[] = [];
+  slabChecked = false;
+  soffitChecked = false;
   podDeliverChecked = false;
+  readonly PanelStatus = PanelStatus;
   podName: string = '';
   podType: string = '';
   updatingDeliveryInfo = false;
@@ -486,13 +482,12 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   }
 
   private initializeDeliveryInfo(box: Box): void {
-    // Initialize concrete walls
-    this.concreteWalls[0].checked = box.wall1 ?? false;
-    this.concreteWalls[1].checked = box.wall2 ?? false;
-    this.concreteWalls[2].checked = box.wall3 ?? false;
-    this.concreteWalls[3].checked = box.wall4 ?? false;
-    this.concreteWalls[4].checked = box.slab ?? false;
-    this.concreteWalls[5].checked = box.soffit ?? false;
+    // Initialize panels from box.boxPanels
+    this.boxPanels = box.boxPanels ? [...box.boxPanels] : [];
+    
+    // Initialize slab and soffit (these are still boolean properties on Box)
+    this.slabChecked = box.slab ?? false;
+    this.soffitChecked = box.soffit ?? false;
     
     // Initialize pod delivery
     this.podDeliverChecked = box.podDeliver ?? false;
@@ -506,19 +501,63 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.hasPodDeliveryChanges = false;
   }
 
-  toggleWall(wallKey: string, event: Event): void {
+  getPanelStatusLabel(status: PanelStatus): string {
+    switch (status) {
+      case PanelStatus.NotStarted:
+        return 'Not Started';
+      case PanelStatus.Yellow:
+        return 'Yellow';
+      case PanelStatus.Green:
+        return 'Green';
+      default:
+        return 'Unknown';
+    }
+  }
+
+  togglePanelStatus(panel: BoxPanel, newStatus: PanelStatus): void {
+    if (!this.box) return;
+    
+    // Update local state immediately for better UX
+    const panelIndex = this.boxPanels.findIndex(p => p.boxPanelId === panel.boxPanelId);
+    if (panelIndex !== -1) {
+      this.boxPanels[panelIndex] = { ...this.boxPanels[panelIndex], panelStatus: newStatus };
+    }
+    
+    // Update backend
+    this.updatingDeliveryInfo = true;
+    this.boxService.updateBoxPanelStatus(panel.boxPanelId, newStatus).subscribe({
+      next: (response) => {
+        // Reload box to get updated data
+        this.loadBox();
+        this.updatingDeliveryInfo = false;
+        console.log('✅ Panel status updated successfully');
+      },
+      error: (err) => {
+        console.error('❌ Error updating panel status:', err);
+        this.updatingDeliveryInfo = false;
+        // Revert local state on error
+        if (panelIndex !== -1) {
+          this.boxPanels[panelIndex] = panel;
+        }
+        alert('Failed to update panel status. Please try again.');
+      }
+    });
+  }
+
+  toggleSlabOrSoffit(key: 'slab' | 'soffit', event: Event): void {
     const checkbox = event.target as HTMLInputElement;
     const isChecked = checkbox.checked;
     
     // Update local state
-    const wall = this.concreteWalls.find(w => w.key === wallKey);
-    if (wall) {
-      wall.checked = isChecked;
+    if (key === 'slab') {
+      this.slabChecked = isChecked;
+    } else {
+      this.soffitChecked = isChecked;
     }
     
     // Prepare update payload
     const deliveryInfo: any = {};
-    deliveryInfo[wallKey] = isChecked;
+    deliveryInfo[key] = isChecked;
     
     // Update backend
     this.updateDeliveryInfo(deliveryInfo);

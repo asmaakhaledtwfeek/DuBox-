@@ -31,14 +31,11 @@ public class GetBoxTypeStatsByProjectQueryHandler : IRequestHandler<GetBoxTypeSt
             .Where(b => b.ProjectId == request.ProjectId && b.IsActive)
             .ToListAsync(cancellationToken);
 
-        // Parse BoxTag to extract type and subtype abbreviations
-        // BoxTag format: ProjectNumber-Building-Floor-Type-SubType
         var boxesWithParsedTags = boxes.Select(b => {
             var parts = b.BoxTag.Split('-');
             string boxType = "Unknown";
             string? subType = null;
-            
-            // Extract type and subtype from BoxTag (format: Project-Building-Floor-Type-SubType)
+           
             if (parts.Length >= 4)
             {
                 boxType = parts[3]; // Type abbreviation

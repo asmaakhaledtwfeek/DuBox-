@@ -1,4 +1,4 @@
-﻿using Dubox.Domain.Entities;
+using Dubox.Domain.Entities;
 using Dubox.Domain.Specification;
 
 namespace Dubox.Application.Specifications
@@ -16,6 +16,7 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(Box.Factory));
             AddInclude(nameof(Box.CurrentLocation));
             AddInclude(nameof(Box.BoxDrawings));
+            AddInclude(nameof(Box.BoxPanels));
             // Enable split query to avoid Cartesian explosion with BoxActivities collection
             EnableSplitQuery();
         }

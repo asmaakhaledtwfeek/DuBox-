@@ -9,6 +9,7 @@ import { AssignToCrewModalComponent, AssignableIssue } from '../../../shared/com
 import { IssueCommentsComponent } from '../../../shared/components/issue-comments/issue-comments.component';
 import { WIRService } from '../../../core/services/wir.service';
 import { QualityIssueItem, QualityIssueDetails, QualityIssueStatus, UpdateQualityIssueStatusRequest, WIRCheckpoint, WIRCheckpointStatus } from '../../../core/models/wir.model';
+import { UserRole } from '../../../core/models/user.model';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { PermissionService } from '../../../core/services/permission.service';
@@ -19,6 +20,7 @@ import { BoxService } from '../../../core/services/box.service';
 import { BoxStatus } from '../../../core/models/box.model';
 import { ProjectService } from '../../../core/services/project.service';
 import { ProjectStatus } from '../../../core/models/project.model';
+import { WirExportService } from '../../../core/services/wir-export.service';
 import { map } from 'rxjs/operators';
 import * as ExcelJS from 'exceljs';
 import { environment } from '../../../../environments/environment';
@@ -33,6 +35,7 @@ type AggregatedQualityIssue = QualityIssueItem & {
   wirName?: string;
   boxTag?: string;
   boxName?: string;
+  boxNumber?: string;
   projectCode?: string | null;
   projectName?: string | null;
   projectId?: string;
@@ -199,7 +202,8 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private teamService: TeamService,
     private boxService: BoxService,
-    private projectService: ProjectService
+    private projectService: ProjectService,
+    private wirExportService: WirExportService
   ) {
     this.isSystemAdmin = this.authService.isSystemAdmin();
     this.filterForm = this.fb.group({
@@ -461,7 +465,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     if (projectId && this.isProjectRestricted(projectId)) {
       return false;
     }
-    
+   
     // Check if user has permission to create/manage WIR checkpoints
     return this.permissionService.hasPermission('wir', 'create') || 
            this.permissionService.hasPermission('wir', 'manage');
@@ -475,7 +479,6 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
       checkpoint.boxId &&
       (checkpoint.projectId || checkpoint.box?.projectId)
     );
-    
     if (!hasRequiredData) {
       return false;
     }
@@ -720,9 +723,11 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
       'qa-qc'
     ];
 
-    const queryParams = {
+    const queryParams: any = {
       ...(query?.step ? { step: query.step } : {}),
-      ...(query?.from ? { from: query.from } : {})
+      ...(query?.from ? { from: query.from } : {}),
+      // Always pass wirId when available to ensure direct checkpoint loading by ID
+      ...(checkpoint.wirId ? { wirId: checkpoint.wirId } : {})
     };
 
     this.router.navigate(route, { queryParams: Object.keys(queryParams).length ? queryParams : undefined });
@@ -747,6 +752,12 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     this.qualityIssuesError = '';
 
     const filters = this.filterForm.value;
+    
+    // If user is QC Inspector, automatically filter by their userId (inspectorId)
+    const currentUser = this.authService.getCurrentUser();
+    const isQCInspector = (currentUser?.allRoles as any)?.includes('QCInspector') || false;
+    const currentUserId = currentUser?.id;
+    
     const params: any = {
       projectCode: filters.projectCode || undefined,
       boxTag: filters.boxTag || undefined,
@@ -754,6 +765,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
       wirNumber: filters.wirNumber || undefined,
       from: filters.from || undefined,
       to: filters.to || undefined,
+      inspectorId: isQCInspector && currentUserId ? currentUserId : (filters.inspectorId || undefined),
       page: this.checkpointsCurrentPage,
       pageSize: this.checkpointsPageSize
     };
@@ -2281,6 +2293,15 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
    */
   isOlderVersion(checkpoint: EnrichedCheckpoint, latestCheckpoint: EnrichedCheckpoint): boolean {
     return checkpoint.wirId !== latestCheckpoint.wirId;
+  }
+
+  /**
+   * Download WIR checkpoint as PDF (for historical versions)
+   */
+  async downloadWIRAsPDF(checkpoint: EnrichedCheckpoint): Promise<void> {
+    // Direct PDF download with DuBox logo watermark (no print dialog)
+    // Note: checkpoint.box is a partial object, so we pass null and let the service handle it
+    await this.wirExportService.downloadWIRAsPDF(checkpoint, null, null);
   }
 }
 

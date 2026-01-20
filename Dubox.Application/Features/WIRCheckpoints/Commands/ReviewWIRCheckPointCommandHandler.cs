@@ -57,6 +57,17 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             if (!boxStatusValidation.IsSuccess)
                 return Result.Failure<WIRCheckpointDto>(boxStatusValidation.Error!);
            
+            var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId)
+                ? parsedUserId
+                : Guid.Empty;
+
+            // Only the assigned inspector can review this checkpoint
+            if (!wir.InspectorId.HasValue || wir.InspectorId.Value == Guid.Empty)
+                return Result.Failure<WIRCheckpointDto>("Inspector is not assigned to this checkpoint. Please assign an inspector first.");
+
+            if (currentUserId == Guid.Empty || wir.InspectorId.Value != currentUserId)
+                return Result.Failure<WIRCheckpointDto>("Access denied. Only the assigned inspector can review this checkpoint.");
+
             var invalidIds = request.Items
                 .Select(i => i.ChecklistItemId)
                 .Except(wir.ChecklistItems.Select(c => c.ChecklistItemId))
@@ -73,16 +84,6 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             }
             if(wir.InspectionDate ==null)
                   wir.InspectionDate = DateTime.UtcNow;
-
-            var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId)
-                ? parsedUserId
-                : Guid.Empty;
-            if (currentUserId != Guid.Empty)
-            {
-                var user = await _unitOfWork.Repository<User>().GetByIdAsync(currentUserId);
-                if (user != null)
-                    wir.InspectorName = user.FullName;
-            }
 
             if (!string.IsNullOrWhiteSpace(request.InspectorRole))
                 wir.InspectorRole = request.InspectorRole.Trim();

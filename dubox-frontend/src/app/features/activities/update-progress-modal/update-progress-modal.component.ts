@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators, FormsModule } 
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
 import { WIRService } from '../../../core/services/wir.service';
 import { BoxService } from '../../../core/services/box.service';
+import { FactoryService, Factory } from '../../../core/services/factory.service';
 import { ActivityProgressStatus, BoxActivityDetail } from '../../../core/models/progress-update.model';
 import { WIRRecord, WIRStatus, WIRCheckpoint, CheckpointStatus } from '../../../core/models/wir.model';
 import { Box, BoxStatus } from '../../../core/models/box.model';
@@ -50,6 +51,7 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
   // Factory Layout Grid
   currentBox: Box | null = null;
   factoryBoxes: Box[] = [];
+  factory: Factory | null = null;
   isLoadingFactoryLayout = false;
   showFactoryLayout = false; // Show only when WIR Position is editable
   
@@ -63,7 +65,8 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
     private fb: FormBuilder,
     private progressUpdateService: ProgressUpdateService,
     private wirService: WIRService,
-    private boxService: BoxService
+    private boxService: BoxService,
+    private factoryService: FactoryService
   ) {}
 
   ngOnInit(): void {
@@ -257,22 +260,56 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
           return;
         }
 
-        // Load all boxes in the same factory
-        this.boxService.getBoxesByFactory(box.factoryId).subscribe({
-          next: (boxes) => {
-            // Backend already filters boxes (InProgress/Completed from active projects)
-            // Only filter by position information for factory layout display
-            this.factoryBoxes = boxes.filter(b => 
-              (b.bay || b.row || b.position)
-            );
-            this.updateAvailablePositions();
-            this.updateFactoryLayoutVisibility();
-            this.isLoadingFactoryLayout = false;
+        // Store factoryId in a variable to satisfy TypeScript
+        const factoryId = box.factoryId;
+
+        // Load factory data to get min/max bay and row configuration
+        this.factoryService.getFactoryById(factoryId).subscribe({
+          next: (factory) => {
+            this.factory = factory;
+            
+            // Load all boxes in the same factory
+            this.boxService.getBoxesByFactory(factoryId).subscribe({
+              next: (boxes) => {
+                // Backend already filters boxes (InProgress/Completed from active projects)
+                // Only filter by position information for factory layout display
+                this.factoryBoxes = boxes.filter(b => 
+                  (b.bay || b.row || b.position)
+                );
+                this.updateAvailablePositions();
+                this.updateFactoryLayoutVisibility();
+                this.isLoadingFactoryLayout = false;
+              },
+              error: (err) => {
+                console.error('Error loading factory boxes:', err);
+                this.isLoadingFactoryLayout = false;
+                this.showFactoryLayout = false;
+              }
+            });
           },
           error: (err) => {
-            console.error('Error loading factory boxes:', err);
-            this.isLoadingFactoryLayout = false;
-            this.showFactoryLayout = false;
+            console.error('Error loading factory:', err);
+            // Continue loading boxes even if factory load fails (factoryId is guaranteed to be defined here)
+            if (factoryId) {
+              this.boxService.getBoxesByFactory(factoryId).subscribe({
+                next: (boxes) => {
+                  this.factoryBoxes = boxes.filter(b => 
+                    (b.bay || b.row || b.position)
+                  );
+                  this.updateAvailablePositions();
+                  this.updateFactoryLayoutVisibility();
+                  this.isLoadingFactoryLayout = false;
+                },
+                error: (boxErr) => {
+                  console.error('Error loading factory boxes:', boxErr);
+                  this.isLoadingFactoryLayout = false;
+                  this.showFactoryLayout = false;
+                }
+              });
+            } else {
+              this.isLoadingFactoryLayout = false;
+              this.showFactoryLayout = false;
+            }
           }
         });
       },
@@ -303,49 +340,32 @@ export class UpdateProgressModalComponent implements OnInit, OnChanges, OnDestro
   /**
    * Get simplified factory grid layout for display in modal
    * Similar to factory-details component but optimized for compact display
-   * Shows all rows and bays within min/max range, even if empty
+   * Uses factory's min/max bay and row configuration from database, not based on boxes
    */
   getFactoryGridLayout(): any {
-    if (this.factoryBoxes.length === 0) {
+    // Use factory's min/max row and bay values from database to determine the full layout range
+    // This ensures we always show the complete factory layout as defined in the database
+    if (!this.factory) {
       return { rows: [], columns: [], matrix: [], totalBoxes: 0 };
     }
 
-    // Get unique bays (columns) and rows from boxes with positions
-    const baysSet = new Set<string>();
-    const rowsSet = new Set<string>();
-    
-    this.factoryBoxes.forEach(box => {
-      if (box.bay) baysSet.add(box.bay);
-      if (box.row) rowsSet.add(box.row);
-    });
+    // Get min/max values from factory (with fallback defaults if not set)
+    const minRow = this.factory.minRow ?? 1;
+    const maxRow = this.factory.maxRow ?? 20;
+    const minBay = this.factory.minBay ?? 'A';
+    const maxBay = this.factory.maxBay ?? 'Z';
 
-    // Sort columns (bays) and rows
-    const baysList = Array.from(baysSet).sort((a, b) => a.localeCompare(b));
-    const rowsList = Array.from(rowsSet).sort((a, b) => {
-      const numA = parseInt(a) || 0;
-      const numB = parseInt(b) || 0;
-      return numA - numB;
-    });
-
-    // Find min and max bay (alphabetically)
-    const minBay = baysList[0];
-    const maxBay = baysList[baysList.length - 1];
-
-    // Find min and max row (numerically)
-    const minRow = Math.min(...rowsList.map(r => parseInt(r) || 0));
-    const maxRow = Math.max(...rowsList.map(r => parseInt(r) || 0));
-
-    // Generate all bays from min to max (A-Z range)
+    // Generate all bays from min to max (A-Z range) based on factory configuration
     const allBays: string[] = [];
     if (minBay && maxBay) {
-      const startCharCode = minBay.charCodeAt(0);
-      const endCharCode = maxBay.charCodeAt(0);
+      const startCharCode = minBay.toUpperCase().charCodeAt(0);
+      const endCharCode = maxBay.toUpperCase().charCodeAt(0);
       for (let i = startCharCode; i <= endCharCode; i++) {
         allBays.push(String.fromCharCode(i));
       }
     }
 
-    // Generate all rows from min to max
+    // Generate all rows from min to max based on factory configuration
     const allRows: string[] = [];
     for (let i = minRow; i <= maxRow; i++) {
       allRows.push(i.toString());

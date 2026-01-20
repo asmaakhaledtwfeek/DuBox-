@@ -24,6 +24,7 @@ public interface IDbContext
     DbSet<Project> Projects { get; }
     DbSet<Box> Boxes { get; }
     DbSet<BoxAsset> BoxAssets { get; }
+    DbSet<BoxPanel> BoxPanels { get; }
     DbSet<ActivityMaster> ActivityMasters { get; }
     DbSet<BoxActivity> BoxActivities { get; }
     DbSet<ActivityDependency> ActivityDependencies { get; }

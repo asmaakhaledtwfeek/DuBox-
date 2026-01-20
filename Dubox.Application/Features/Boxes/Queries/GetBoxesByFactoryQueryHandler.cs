@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.Boxes.Queries;
 
-public class GetBoxesByFactoryQueryHandler : IRequestHandler<GetBoxesByFactoryQuery, Result<List<BoxDto>>>
+public class GetBoxesByFactoryQueryHandler : IRequestHandler<GetBoxesByFactoryQuery, Result<PaginatedBoxesByFactoryResponseDto>>
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IQRCodeService _qrCodeService;
@@ -25,7 +25,7 @@ public class GetBoxesByFactoryQueryHandler : IRequestHandler<GetBoxesByFactoryQu
         _boxMapper = boxMapper;
     }
 
-    public async Task<Result<List<BoxDto>>> Handle(GetBoxesByFactoryQuery request, CancellationToken cancellationToken)
+    public async Task<Result<PaginatedBoxesByFactoryResponseDto>> Handle(GetBoxesByFactoryQuery request, CancellationToken cancellationToken)
     {
         try
         {
@@ -33,12 +33,25 @@ public class GetBoxesByFactoryQueryHandler : IRequestHandler<GetBoxesByFactoryQu
             var factory = await _unitOfWork.Repository<Factory>().GetByIdAsync(request.FactoryId, cancellationToken);
             if (factory == null)
             {
-                return Result.Failure<List<BoxDto>>("Factory not found");
+                return Result.Failure<PaginatedBoxesByFactoryResponseDto>("Factory not found");
             }
 
+            // Normalize pagination parameters
+            var page = request.Page < 1 ? 1 : request.Page;
+            var pageSize = request.PageSize < 1 ? 25 : (request.PageSize > 100 ? 100 : request.PageSize);
+
             // Get boxes for this factory (InProgress, Completed, and optionally Dispatched)
-            var boxes = _unitOfWork.Repository<Box>()
-                .GetWithSpec(new GetBoxesByFactoryIdSpecification(request.FactoryId, request.IncludeDispatched)).Data.ToList();
+            var specification = new GetBoxesByFactoryIdSpecification(request.FactoryId, request.IncludeDispatched);
+            var boxesResult = _unitOfWork.Repository<Box>().GetWithSpec(specification);
+            
+            // Get total count before pagination
+            var totalCount = boxesResult.Count;
+            
+            // Apply pagination
+            var boxes = boxesResult.Data
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
 
             var boxDtos = new List<BoxDto>();
 
@@ -56,11 +69,23 @@ public class GetBoxesByFactoryQueryHandler : IRequestHandler<GetBoxesByFactoryQu
                 }
             }
 
-            return Result.Success(boxDtos);
+            // Calculate total pages
+            var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+
+            var response = new PaginatedBoxesByFactoryResponseDto
+            {
+                Items = boxDtos,
+                TotalCount = totalCount,
+                Page = page,
+                PageSize = pageSize,
+                TotalPages = totalPages
+            };
+
+            return Result.Success(response);
         }
         catch (Exception ex)
         {
-            return Result.Failure<List<BoxDto>>($"Error in GetBoxesByFactoryQueryHandler: {ex.Message}. Inner exception: {ex.InnerException?.Message}");
+            return Result.Failure<PaginatedBoxesByFactoryResponseDto>($"Error in GetBoxesByFactoryQueryHandler: {ex.Message}. Inner exception: {ex.InnerException?.Message}");
         }
     }
 

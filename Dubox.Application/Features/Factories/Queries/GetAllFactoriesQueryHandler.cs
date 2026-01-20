@@ -1,4 +1,5 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
@@ -25,7 +26,8 @@ public class GetAllFactoriesQueryHandler : IRequestHandler<GetAllFactoriesQuery,
         var factories = await _dbContext.Factories
             .Include(f => f.Boxes)
                 .ThenInclude(b => b.Project)
-            .ToListAsync(cancellationToken);
+            .ToListAsync(cancellationToken); ;
+      
 
         var dtos = factories.Select(f =>
         {

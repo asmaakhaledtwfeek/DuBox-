@@ -1,4 +1,5 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
@@ -29,7 +30,7 @@ public class GetFactoryByIdQueryHandler : IRequestHandler<GetFactoryByIdQuery, R
 
         if (factory == null)
             return Result.Failure<FactoryDto>("Factory not found");
-
+      
         // Calculate current occupancy: Only InProgress or Completed boxes from active projects
         // Exclude boxes from OnHold, Closed, or Archived projects
         var currentOccupancy = factory.Boxes?

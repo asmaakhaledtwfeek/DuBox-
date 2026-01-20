@@ -16,7 +16,11 @@ public class GetBoxesByFactoryIdSpecification : Specification<Box>
             // Include InProgress, Completed, and Dispatched boxes
             AddCriteria(b => b.Status == BoxStatusEnum.InProgress ||
                             b.Status == BoxStatusEnum.Completed ||
+
                             b.Status == BoxStatusEnum.Dispatched);
+            AddCriteria(b => b.Project != null &&
+                           b.Project.Status != ProjectStatusEnum.OnHold &&
+                           b.Project.Status != ProjectStatusEnum.Closed );
             // When including dispatched, include all boxes regardless of project status
             // because dispatched boxes can be from completed/closed projects
             AddCriteria(b => b.Project != null);

@@ -105,6 +105,14 @@
       margin: 0;
       letter-spacing: -0.5px;
       white-space: nowrap;
+
+      .box-number {
+        font-size: 22px;
+        font-weight: 600;
+        color: var(--amana-teal, #1b9aaa);
+        margin-left: 10px;
+        opacity: 0.8;
+      }
     }
 
     .box-id {
@@ -9943,12 +9951,68 @@
   .concrete-panel-card {
     .delivery-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 12px;
     }
 
     .delivery-item {
       position: relative;
+      
+      &.panel-item {
+        padding: 14px 16px;
+        border-radius: 10px;
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        
+        .panel-status-controls {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+          
+          .panel-name {
+            font-weight: 600;
+            color: var(--text-primary);
+            font-size: 14px;
+            flex: 1;
+          }
+          
+          .panel-status-indicator {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+            
+            &.status-not-started {
+              background: #64748b;
+              border-color: #475569;
+            }
+            
+            &.status-yellow {
+              background: #fbbf24;
+              border-color: #f59e0b;
+            }
+            
+            &.status-green {
+              background: #10b981;
+              border-color: #059669;
+            }
+          }
+        }
+      }
+      
+      &.empty-state {
+        padding: 20px;
+        text-align: center;
+        
+        .empty-message {
+          color: var(--text-secondary);
+          font-size: 14px;
+          font-style: italic;
+        }
+      }
     }
   }
 

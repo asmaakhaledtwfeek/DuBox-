@@ -238,7 +238,7 @@
                 </svg>
                 Project:
               </label>
-              <select id="projectFilter" [(ngModel)]="selectedProjectId" (change)="applyFilters()" class="filter-select">
+              <select id="projectFilter" [(ngModel)]="selectedProjectId" (change)="onProjectChange()" class="filter-select">
                 <option value="">All Projects</option>
                 <option *ngFor="let project of projects" [value]="project.id">{{ project.name }}</option>
               </select>
@@ -253,7 +253,7 @@
                 </svg>
                 Building:
               </label>
-              <select id="buildingFilter" [(ngModel)]="selectedBuilding" (change)="applyFilters()" class="filter-select">
+              <select id="buildingFilter" [(ngModel)]="selectedBuilding" (change)="onBuildingChange()" class="filter-select">
                 <option value="">All Buildings</option>
                 <option *ngFor="let building of availableBuildings" [value]="building">{{ building }}</option>
               </select>
@@ -267,7 +267,7 @@
                 </svg>
                 Level:
               </label>
-              <select id="levelFilter" [(ngModel)]="selectedLevel" (change)="applyFilters()" class="filter-select">
+              <select id="levelFilter" [(ngModel)]="selectedLevel" (change)="onLevelOrZoneChange()" class="filter-select">
                 <option value="">All Levels</option>
                 <option *ngFor="let level of availableLevels" [value]="level">{{ level }}</option>
               </select>
@@ -281,7 +281,7 @@
                 </svg>
                 Zone:
               </label>
-              <select id="zoneFilter" [(ngModel)]="selectedZone" (change)="applyFilters()" class="filter-select">
+              <select id="zoneFilter" [(ngModel)]="selectedZone" (change)="onLevelOrZoneChange()" class="filter-select">
                 <option value="">All Zones</option>
                 <option *ngFor="let zone of availableZones" [value]="zone">{{ zone }}</option>
               </select>

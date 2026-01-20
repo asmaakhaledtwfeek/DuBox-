@@ -11,6 +11,7 @@ import { BoxActivityDetail, ActivityProgressStatus } from '../../../core/models/
 import { WIRService } from '../../../core/services/wir.service';
 import { WIRRecord, WIRStatus, WIRCheckpoint } from '../../../core/models/wir.model';
 import { PermissionService } from '../../../core/services/permission.service';
+import { WirExportService } from '../../../core/services/wir-export.service';
 import { calculateAndFormatDuration, calculateDurationInDays } from '../../../core/utils/duration.util';
 
 // Combined type for activities, WIR rows, and checkpoint version rows
@@ -64,7 +65,8 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
     private wirService: WIRService,
     private router: Router,
     private cdr: ChangeDetectorRef,
-    private permissionService: PermissionService
+    private permissionService: PermissionService,
+    private wirExportService: WirExportService
   ) {
     this.updatePermissions();
   }
@@ -1206,5 +1208,14 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
     
     // Check if any position value is set
     return !!(bayValue || rowValue || positionValue);
+  }
+
+  /**
+   * Download WIR checkpoint as PDF (for read-only checkpoints)
+   */
+  async downloadWIRAsPDF(checkpoint: WIRCheckpoint): Promise<void> {
+    // Direct PDF download with DuBox logo watermark (no print dialog)
+    // Note: checkpoint.box is a partial object, so we pass null and let the service handle it
+    await this.wirExportService.downloadWIRAsPDF(checkpoint, null, null);
   }
 }

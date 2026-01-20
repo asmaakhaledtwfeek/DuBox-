@@ -64,31 +64,6 @@ public class UpdateBoxDeliveryInfoCommandHandler : IRequestHandler<UpdateBoxDeli
             }
         }
 
-        // Update concrete panel delivery fields - only update if explicitly provided (not null)
-        if (request.Wall1.HasValue && request.Wall1 != box.Wall1)
-        {
-            RecordChange("Wall1", box.Wall1, request.Wall1);
-            box.Wall1 = request.Wall1;
-        }
-
-        if (request.Wall2.HasValue && request.Wall2 != box.Wall2)
-        {
-            RecordChange("Wall2", box.Wall2, request.Wall2);
-            box.Wall2 = request.Wall2;
-        }
-
-        if (request.Wall3.HasValue && request.Wall3 != box.Wall3)
-        {
-            RecordChange("Wall3", box.Wall3, request.Wall3);
-            box.Wall3 = request.Wall3;
-        }
-
-        if (request.Wall4.HasValue && request.Wall4 != box.Wall4)
-        {
-            RecordChange("Wall4", box.Wall4, request.Wall4);
-            box.Wall4 = request.Wall4;
-        }
-
         if (request.Slab.HasValue && request.Slab != box.Slab)
         {
             RecordChange("Slab", box.Slab, request.Slab);

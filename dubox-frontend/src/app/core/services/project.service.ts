@@ -218,4 +218,20 @@ export class ProjectService {
       })
     );
   }
+
+  /**
+   * Download box panels Excel file for a project
+   */
+  downloadBoxPanelsExcel(projectId: string): Observable<Blob> {
+    return this.apiService.download(`${this.endpoint}/${projectId}/box-panels/excel`);
+  }
+
+  /**
+   * Upload box panels Excel file for a project
+   */
+  uploadBoxPanelsExcel(projectId: string, file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.apiService.postFormData<any>(`${this.endpoint}/${projectId}/box-panels/import-excel`, formData);
+  }
 }

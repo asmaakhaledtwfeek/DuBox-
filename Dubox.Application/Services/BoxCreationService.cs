@@ -1,11 +1,13 @@
-﻿using Dubox.Application.DTOs;
+using Dubox.Application.DTOs;
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Services;
 using Mapster;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Dubox.Application.Services
@@ -48,6 +50,13 @@ namespace Dubox.Application.Services
             string auditDescription,
             CancellationToken cancellationToken)
         {
+            // Generate BoxNumber - unique within project type/subtype
+            box.BoxNumber = await GenerateBoxNumberAsync(
+                box.ProjectId,
+                box.ProjectBoxTypeId,
+                box.ProjectBoxSubTypeId,
+                cancellationToken);
+
             // Generate sequential + serial
             var lastSeq = _unitOfWork.Repository<Box>().Get()
                 .Where(b => b.ProjectId == box.ProjectId)
@@ -114,6 +123,40 @@ namespace Dubox.Application.Services
                 FactoryCode = box.Factory?.FactoryCode,
                 FactoryName = box.Factory?.FactoryName
             };
+        }
+
+        private async Task<string> GenerateBoxNumberAsync(
+            Guid projectId,
+            int? projectBoxTypeId,
+            int? projectBoxSubTypeId,
+            CancellationToken cancellationToken)
+        {
+            var boxRepository = _unitOfWork.Repository<Box>();
+            var query = boxRepository.Get()
+                .Where(b => b.ProjectId == projectId 
+                    && b.ProjectBoxTypeId == projectBoxTypeId);
+
+            // If subtype exists, filter by subtype; otherwise ensure no subtype
+            if (projectBoxSubTypeId.HasValue)
+                query = query.Where(b => b.ProjectBoxSubTypeId == projectBoxSubTypeId.Value);
+            else
+                query = query.Where(b => b.ProjectBoxSubTypeId == null);
+
+            var existingBoxNumbers =  query
+                .Where(b => !string.IsNullOrEmpty(b.BoxNumber))
+                .Select(b => b.BoxNumber)
+                .ToList();
+
+            int maxNumber = 0;
+            foreach (var boxNumber in existingBoxNumbers)
+            {
+                if (int.TryParse(boxNumber, out int num))
+                    maxNumber = Math.Max(maxNumber, num);
+            }
+
+            int nextNumber = maxNumber + 1;
+
+            return nextNumber.ToString("000");
         }
     }
 

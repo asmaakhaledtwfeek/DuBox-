@@ -44,14 +44,6 @@
           </div>
         </div>
         <div class="header-right">
-          <button class="btn-view-walls" (click)="viewWallsStatus()">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
-              <line x1="3" y1="9" x2="21" y2="9"/>
-              <line x1="9" y1="21" x2="9" y2="9"/>
-            </svg>
-            View Walls Status
-          </button>
           <div class="factory-badge">
             <span class="badge-label">Code:</span>
             <span class="badge-value">{{ factory.factoryCode }}</span>
@@ -66,21 +58,7 @@
       <!-- Filters Section -->
       <div class="filters-section">
         <div class="filters-container">
-          <div class="filter-group">
-            <label for="stageFilter" class="filter-label">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <polyline points="12 6 12 12 16 14"/>
-              </svg>
-              Stage:
-            </label>
-            <select id="stageFilter" [(ngModel)]="selectedStage" (change)="applyFilters()" class="filter-select stage-select">
-              <option value="">All Stages</option>
-              <option *ngFor="let stage of availableStages" [value]="stage.wirCode" [attr.data-color-class]="getStageColorClass(stage.wirCode)">
-                ⬤ {{ stage.displayName }}
-              </option>
-            </select>
-          </div>
+          
 
           <div class="filter-group">
             <label for="projectFilter" class="filter-label">
@@ -90,7 +68,7 @@
               </svg>
               Project:
             </label>
-            <select id="projectFilter" [(ngModel)]="selectedProjectId" (change)="applyFilters()" class="filter-select">
+            <select id="projectFilter" [(ngModel)]="selectedProjectId" (change)="onProjectChange()" class="filter-select">
               <option value="">All Projects</option>
               <option *ngFor="let project of projects" [value]="project.id">{{ project.name }}</option>
             </select>
@@ -155,38 +133,45 @@
       <div class="business-flow-section">
         <div class="section-title">BUSINESS FLOW INDICATORS</div>
         <div class="flow-indicators-horizontal">
-          <div class="flow-item">
-            <div class="flow-color wir-stage-1"></div>
-            <span>Assembly Clearance - stage-1</span>
+          <!-- Dynamic Stage Cards -->
+          <div 
+            class="flow-item clickable" 
+            *ngFor="let stage of availableStages"
+            [class.active]="selectedStage === stage.wirCode"
+            (click)="onStageCardClick(stage.wirCode)"
+            [title]="'Filter by ' + stage.displayName"
+            role="button"
+            tabindex="0"
+            (keydown.enter)="onStageCardClick(stage.wirCode)"
+            (keydown.space)="onStageCardClick(stage.wirCode); $event.preventDefault()"
+          >
+            <div class="flow-color" [ngClass]="stage.wirCode === 'COMPLETED' ? 'wir-completed' : getStageColorClass(stage.wirCode)"></div>
+            <span>{{ stage.displayName }}</span>
           </div>
-          <div class="flow-item">
-            <div class="flow-color wir-stage-2"></div>
-            <span>Mechanical Clearance - stage-2</span>
-          </div>
-          <div class="flow-item">
-            <div class="flow-color wir-stage-3"></div>
-            <span>Electrical Clearance - stage-3</span>
-          </div>
-          <div class="flow-item">
-            <div class="flow-color wir-stage-4"></div>
-            <span>3rd Fix Installation - stage-4</span>
-          </div>
-          <div class="flow-item">
-            <div class="flow-color wir-stage-5"></div>
-            <span>3rd Fix MEP - stage-5</span>
-          </div>
-          <div class="flow-item">
-            <div class="flow-color wir-stage-6"></div>
-            <span>Ready for Dispatch - Stage-6</span>
-          </div>
-          <div class="flow-item">
-            <div class="flow-color wir-completed"></div>
-            <span>Completed</span>
-          </div>
-          <div class="flow-item">
+          <!-- Empty Location Card -->
+          <div 
+            class="flow-item clickable" 
+            [class.active]="selectedStage === 'EMPTY'"
+            (click)="onStageCardClick('EMPTY')"
+            title="Filter by empty locations"
+            role="button"
+            tabindex="0"
+            (keydown.enter)="onStageCardClick('EMPTY')"
+            (keydown.space)="onStageCardClick('EMPTY'); $event.preventDefault()"
+          >
             <div class="flow-color empty-location"></div>
             <span>Empty</span>
           </div>
+          
+          <!-- View Walls Status Button -->
+          <button class="btn-view-walls" (click)="viewWallsStatus()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <line x1="3" y1="9" x2="21" y2="9"/>
+              <line x1="9" y1="21" x2="9" y2="9"/>
+            </svg>
+            View Walls Status
+          </button>
         </div>
       </div>
 
@@ -229,7 +214,8 @@
               <div class="matrix-cell"
                    *ngFor="let cell of rowCells"
                    [class.has-box]="cell.box"
-                   [class.empty]="!cell.box"
+                   [class.empty]="!cell.box && !cell.hidden"
+                   [class.hidden]="cell.hidden"
                    [ngClass]="cell.box ? getBoxColorClass(cell.box) : ''"
                    (click)="cell.box && viewBox(cell.box.id)"
                    [title]="getCellTooltip(cell)">
@@ -333,12 +319,12 @@
               <!-- Dynamic Stage Legend Items - Color, Count and Percentage -->
               <div class="legend-item compact" *ngFor="let stat of getWIRStageStats()" [title]="stat.stage?.displayName || 'Unknown'">
                 <div class="legend-box" [ngClass]="stat.stage?.colorClass || 'empty-box'"></div>
-                <span class="legend-text">{{ stat.percentage }}% ({{ stat.count }} boxes)</span>
+                <span class="legend-text">{{ stat.percentage | number:'1.1-1' }}% ({{ stat.count }} boxes)</span>
               </div>
               <!-- Empty Cells -->
               <div class="legend-item compact" title="Empty">
                 <div class="legend-box empty-box"></div>
-                <span class="legend-text">{{ getEmptyPercentage() }}%</span>
+                <span class="legend-text">{{ getEmptyPercentage() | number:'1.1-1' }}%</span>
               </div>
             </div>
           </div>
@@ -347,3 +333,11 @@
     </div>
   </div>
 </div>
+
+<!-- Box Quick View Modal -->
+<app-box-quick-view-modal 
+  *ngIf="isBoxQuickViewModalOpen"
+  [boxId]="selectedBoxId"
+  [projectId]="selectedBoxProjectId"
+  (close)="closeBoxQuickViewModal()">
+</app-box-quick-view-modal>

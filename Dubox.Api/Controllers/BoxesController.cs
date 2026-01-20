@@ -1,5 +1,6 @@
 using Dubox.Application.Features.Boxes.Commands;
 using Dubox.Application.Features.Boxes.Queries;
+using Dubox.Application.Features.BoxPanels.Commands;
 using Dubox.Application.Features.Projects.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -37,9 +38,11 @@ public class BoxesController : ControllerBase
     public async Task<IActionResult> GetBoxesByFactory(
         Guid factoryId,
         [FromQuery] bool includeDispatched = false,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
         CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetBoxesByFactoryQuery(factoryId, includeDispatched), cancellationToken);
+        var result = await _mediator.Send(new GetBoxesByFactoryQuery(factoryId, includeDispatched, page, pageSize), cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
@@ -255,11 +258,18 @@ public class BoxesController : ControllerBase
         var result = await _mediator.Send(new GetBoxAttachmentsQuery(boxId), cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+
+    [HttpPut("panels/{boxPanelId}/status")]
+    public async Task<IActionResult> UpdateBoxPanelStatus(Guid boxPanelId, [FromBody] UpdateBoxPanelStatusCommand command, CancellationToken cancellationToken)
+    {
+        if (boxPanelId != command.BoxPanelId)
+            return BadRequest("Box Panel ID mismatch");
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
 }
 
-/// <summary>
-/// Request model for duplicating a box
-/// </summary>
 public record DuplicateBoxRequest(
     bool IncludeActivities = true,
     bool IncludeDrawings = false

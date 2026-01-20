@@ -62,7 +62,12 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
             var user = await _unitOfWork.Repository<User>().GetByIdAsync(currentUserId);
             var currentUserName = user != null ? user.FullName : string.Empty;
-
+            string? instractorName =null;
+            if (request.InspectorId != null && request.InspectorId != Guid.Empty)
+            {
+                var inspector = await _unitOfWork.Repository<User>().GetByIdAsync(request.InspectorId.Value);
+               instractorName = inspector != null ? inspector.FullName : null;
+            }
             var existCheckpoint = _unitOfWork.Repository<WIRCheckpoint>().Get().Where(c => c.BoxId == boxActicity.BoxId && c.WIRCode == request.WIRNumber).FirstOrDefault();
 
             if (existCheckpoint != null)
@@ -77,7 +82,8 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
                 existCheckpoint.BoxId = boxActicity.BoxId;
                 existCheckpoint.WIRCode = request.WIRNumber;
                 existCheckpoint.CreatedBy = currentUserId;
-                
+                existCheckpoint.InspectorId = request.InspectorId;
+                existCheckpoint.InspectorName = instractorName;
                 _unitOfWork.Repository<WIRCheckpoint>().Update(existCheckpoint);
                 await _unitOfWork.CompleteAsync(cancellationToken);
 
@@ -135,6 +141,8 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             checkpoint.RequestedDate = DateTime.UtcNow;
             checkpoint.RequestedBy = currentUserName;
             checkpoint.CreatedBy = currentUserId;
+            checkpoint.InspectorId = request.InspectorId;
+            checkpoint.InspectorName = instractorName;
             await _unitOfWork.Repository<WIRCheckpoint>().AddAsync(checkpoint);
             await _unitOfWork.CompleteAsync(cancellationToken);
 

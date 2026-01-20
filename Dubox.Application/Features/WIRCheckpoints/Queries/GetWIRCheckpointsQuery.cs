@@ -1,4 +1,4 @@
-﻿using Dubox.Application.DTOs;
+using Dubox.Application.DTOs;
 using Dubox.Domain.Enums;
 using Dubox.Domain.Shared;
 using MediatR;
@@ -12,6 +12,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Queries
      string? WIRNumber,
      DateTime? From,
      DateTime? To,
+     Guid? InspectorId,
      int Page = 1,
      int PageSize = 25
  ) : IRequest<Result<PaginatedWIRCheckpointsResponseDto>>;

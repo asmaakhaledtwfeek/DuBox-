@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, throwError, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { ApiService, PaginatedResponse } from './api.service';
-import { Box, BoxActivity, BoxDrawing, BoxDrawingDto, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview, BoxTypeStatsByProject, BoxDrawingsResponse, BoxDrawingImage, BoxAllAttachmentsResponse, BoxType, BoxSubType, BoxSummary } from '../models/box.model';
+import { Box, BoxActivity, BoxDrawing, BoxDrawingDto, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview, BoxTypeStatsByProject, BoxDrawingsResponse, BoxDrawingImage, BoxAllAttachmentsResponse, BoxType, BoxSubType, BoxSummary, BoxPanel } from '../models/box.model';
 
 @Injectable({
   providedIn: 'root'
@@ -65,6 +65,7 @@ export class BoxService {
       name: backendBox.boxName || backendBox.name,
       code: backendBox.boxTag || backendBox.boxCode || backendBox.code,
       serialNumber: backendBox.serialNumber || backendBox.SerialNumber,
+      boxNumber: backendBox.boxNumber || backendBox.BoxNumber,
       projectId: backendBox.projectId,
       projectCode: backendBox.projectCode || backendBox.ProjectCode,
       projectStatus: backendBox.projectStatus || backendBox.ProjectStatus,
@@ -123,11 +124,30 @@ export class BoxService {
       podDeliver: backendBox.podDeliver,
       podName: backendBox.podName,
       podType: backendBox.podType,
+      boxPanels: this.transformBoxPanels(backendBox.boxPanels || backendBox.BoxPanels || []),
       createdBy: backendBox.createdBy,
       updatedBy: backendBox.modifiedBy || backendBox.updatedBy,
       createdAt: this.parseDate(backendBox.createdDate ?? backendBox.CreatedDate),
       updatedAt: this.parseDate(backendBox.modifiedDate ?? backendBox.ModifiedDate)
     };
+  }
+
+  /**
+   * Transform backend box panels response to frontend model
+   */
+  private transformBoxPanels(backendPanels: any[]): BoxPanel[] {
+    if (!Array.isArray(backendPanels)) {
+      return [];
+    }
+    return backendPanels.map((panel: any) => ({
+      boxPanelId: panel.boxPanelId || panel.BoxPanelId,
+      boxId: panel.boxId || panel.BoxId,
+      projectId: panel.projectId || panel.ProjectId,
+      panelName: panel.panelName || panel.PanelName,
+      panelStatus: panel.panelStatus || panel.PanelStatus || 1, // Default to NotStarted (1)
+      createdDate: this.parseDate(panel.createdDate || panel.CreatedDate) || new Date(),
+      modifiedDate: this.parseDate(panel.modifiedDate || panel.ModifiedDate)
+    } as BoxPanel));
   }
 
   private transformImportResult(result: any): BoxImportResult {
@@ -190,12 +210,63 @@ export class BoxService {
    * @param includeDispatched Whether to include dispatched boxes (default: false)
    */
   getBoxesByFactory(factoryId: string, includeDispatched: boolean = false): Observable<Box[]> {
-    const params: any = {};
+    // Backend now always returns paginated response, so we need to handle it
+    // Use a large page size to get all boxes (backend limits to 100)
+    const params: any = {
+      page: '1',
+      pageSize: '100'
+    };
     if (includeDispatched) {
       params.includeDispatched = 'true';
     }
-    return this.apiService.get<any[]>(`${this.endpoint}/factory/${factoryId}`, params).pipe(
-      map(boxes => boxes.map(b => this.transformBox(b)))
+    return this.apiService.get<any>(`${this.endpoint}/factory/${factoryId}`, params).pipe(
+      map(response => {
+        // Handle paginated response - extract items array
+        const items = response.items || response.Items || [];
+        return items.map((b: any) => this.transformBox(b));
+      })
+    );
+  }
+
+  /**
+   * Get boxes by factory with pagination
+   * @param factoryId Factory ID
+   * @param page Page number (default: 1)
+   * @param pageSize Page size (default: 50)
+   * @param includeDispatched Whether to include dispatched boxes (default: false)
+   */
+  getBoxesByFactoryPaginated(
+    factoryId: string, 
+    page: number = 1, 
+    pageSize: number = 50, 
+    includeDispatched: boolean = false
+  ): Observable<PaginatedResponse<Box>> {
+    const params: any = {
+      page: page.toString(),
+      pageSize: pageSize.toString()
+    };
+    if (includeDispatched) {
+      params.includeDispatched = 'true';
+    }
+    return this.apiService.get<any>(`${this.endpoint}/factory/${factoryId}`, params).pipe(
+      map(response => {
+        // API service already extracts data from Result wrapper
+        // Handle both camelCase and PascalCase properties from backend DTO
+        const items = (response.items || response.Items || []).map((b: any) => this.transformBox(b));
+        const totalCount = response.totalCount ?? response.TotalCount ?? 0;
+        // Backend uses 'Page' and 'PageSize', frontend expects 'pageNumber' and 'pageSize'
+        const pageNumber = response.pageNumber ?? response.PageNumber ?? response.page ?? response.Page ?? page;
+        const responsePageSize = response.pageSize ?? response.PageSize ?? pageSize;
+        const totalPages = response.totalPages ?? response.TotalPages ?? 0;
+
+        return {
+          items,
+          totalCount,
+          pageNumber,
+          pageSize: responsePageSize,
+          totalPages
+        };
+      })
     );
   }
 
@@ -775,5 +846,15 @@ export class BoxService {
         return of([]);
       })
     );
+  }
+
+  /**
+   * Update box panel status
+   */
+  updateBoxPanelStatus(boxPanelId: string, panelStatus: number): Observable<any> {
+    return this.apiService.put<any>(`${this.endpoint}/panels/${boxPanelId}/status`, {
+      boxPanelId: boxPanelId,
+      panelStatus: panelStatus
+    });
   }
 }

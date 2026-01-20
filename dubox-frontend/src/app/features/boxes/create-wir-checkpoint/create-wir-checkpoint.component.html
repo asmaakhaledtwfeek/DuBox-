@@ -101,6 +101,25 @@
             </div>
 
             <div class="form-group full-width">
+              <label for="inspectorId">Inspector <span class="optional">(Optional)</span></label>
+              <select 
+                id="inspectorId" 
+                formControlName="inspectorId" 
+                class="form-control form-select"
+                [disabled]="loadingInspectors || submitting"
+              >
+                <option [value]="null">Select an Inspector (Optional)</option>
+                <option *ngFor="let inspector of availableInspectors" [value]="inspector.userId">
+                  {{ inspector.userName }} ({{ inspector.userEmail }})
+                </option>
+              </select>
+              <div class="loading-text" *ngIf="loadingInspectors">Loading inspectors...</div>
+              <small class="helper-text" *ngIf="!loadingInspectors && availableInspectors.length === 0">
+                No inspectors available.
+              </small>
+            </div>
+
+            <div class="form-group full-width">
               <label for="attachmentPath">Attachment Path</label>
               <input 
                 id="attachmentPath" 

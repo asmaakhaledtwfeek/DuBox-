@@ -92,5 +92,59 @@ public class ProjectsController : ControllerBase
         var result = await _mediator.Send(command, cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+
+    [HttpGet("{projectId}/box-panels/excel")]
+    public async Task<IActionResult> DownloadBoxPanelsExcel(Guid projectId, CancellationToken cancellationToken)
+    {
+        if (projectId == Guid.Empty)
+            return BadRequest("Project ID is required");
+
+        // Get project details to construct filename
+        var projectResult = await _mediator.Send(new GetProjectByIdQuery(projectId), cancellationToken);
+        if (!projectResult.IsSuccess || projectResult.Data == null)
+            return BadRequest("Project not found");
+
+        var result = await _mediator.Send(new GenerateBoxPanelsExcelQuery(projectId), cancellationToken);
+
+        if (!result.IsSuccess)
+            return BadRequest(result);
+
+        // Construct filename: ProjectCode-ProjectName-BoxPanels.xlsx
+        var fileName = $"{projectResult.Data.ProjectCode}-{projectResult.Data.ProjectName}-BoxPanels.xlsx";
+
+        return File(result.Data!,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            fileName);
+    }
+
+    [HttpPost("{projectId}/box-panels/import-excel")]
+    [RequestSizeLimit(10_485_760)] // 10 MB
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> ImportBoxPanelsFromExcel(Guid projectId, [FromForm] IFormFile? file, CancellationToken cancellationToken)
+    {
+        if (projectId == Guid.Empty)
+            return BadRequest("Project ID is required");
+
+        // Support file from FormData
+        IFormFile? actualFile = file;
+        if (actualFile == null && Request.HasFormContentType)
+        {
+            var form = await Request.ReadFormAsync(cancellationToken);
+            actualFile = form.Files["file"];
+        }
+
+        if (actualFile == null || actualFile.Length == 0)
+            return BadRequest("No file uploaded");
+
+        using var stream = actualFile.OpenReadStream();
+        using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream, cancellationToken);
+        memoryStream.Position = 0;
+
+        var command = new ImportBoxPanelsFromExcelCommand(projectId, memoryStream, actualFile.FileName);
+        var result = await _mediator.Send(command, cancellationToken);
+
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
 }
 

@@ -1,4 +1,4 @@
-﻿using Dubox.Domain.Enums;
+using Dubox.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -21,12 +21,12 @@ public class Box
     [MaxLength(50)]
     public string? SerialNumber { get; set; } // e.g., SN-2025-000123 (nullable for backward compatibility with existing boxes)
 
+    [MaxLength(50)]
+    public string? BoxNumber { get; set; } // e.g., 001, 002, 003 - unique within project type/subtype
+
     [MaxLength(200)]
     public string? BoxName { get; set; }
 
-    // Project configuration box type and subtype IDs
-    // NOTE: These IDs now reference ProjectBoxTypes/ProjectBoxSubTypes (project-specific config)
-    // The navigation properties below are for backward compatibility but may be null
     public int? ProjectBoxTypeId { get; set; }
     public int? ProjectBoxSubTypeId { get; set; }
 
@@ -94,18 +94,11 @@ public class Box
     [MaxLength(50)]
     public string? Position { get; set; } = string.Empty;
     public DateTime? DeletedDated { get; set; }
-    public bool? Wall1 { get; set; }
-    public bool? Wall2 { get; set; }
-    public bool? Wall3 { get; set; }
-    public bool? Wall4 { get; set; }
     public bool? Slab { get; set; }
     public bool? Soffit { get; set; }
     public bool? PodDeliver { get; set; }
     public string? PodName { get; set; }
     public string? PodType { get; set; }
-
-
-
 
     // Navigation properties
     public virtual ProjectBoxType? BoxType { get; set; }
@@ -117,6 +110,7 @@ public class Box
     public virtual ICollection<BoxLocationHistory> BoxLocationHistory { get; set; } = new List<BoxLocationHistory>();
     public ICollection<BoxDrawing> BoxDrawings { get; set; } = new List<BoxDrawing>();
     public ICollection<ProjectCost> ProjectCosts { get; set; } = new List<ProjectCost>();
+    public ICollection<BoxPanel> BoxPanels { get; set; } = new List<BoxPanel>();
 
 
 }

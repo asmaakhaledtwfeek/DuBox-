@@ -53,6 +53,9 @@ namespace Dubox.Application.Specifications
 
             if (query.To.HasValue)
                 AddCriteria(x => x.CreatedDate <= query.To.Value);
+
+            if (query.InspectorId.HasValue)
+                AddCriteria(x => x.InspectorId.HasValue && x.InspectorId.Value == query.InspectorId.Value);
         }
     }
 

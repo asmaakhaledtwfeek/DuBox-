@@ -11,6 +11,7 @@ public record BoxDto
     public string Client { get; init; } = string.Empty;
     public string BoxTag { get; init; } = string.Empty;
     public string? SerialNumber { get; init; }
+    public string? BoxNumber { get; init; }
     public string? BoxName { get; init; }
     public string BoxType { get; init; } = string.Empty;
     public int? BoxTypeId { get; init; }
@@ -47,10 +48,7 @@ public record BoxDto
     public string? Row { get; init; }
     public string? Position { get; init; }
     public int? DrawingsCount { get; set; }
-    public bool? Wall1 { get; init; }
-    public bool? Wall2 { get; init; }
-    public bool? Wall3 { get; init; }
-    public bool? Wall4 { get; init; }
+    public List<BoxPanelDto> BoxPanels { get; init; } = new();
     public bool? Slab { get; init; }
     public bool? Soffit { get; init; }
     public bool? PodDeliver { get; init; }
@@ -143,5 +141,14 @@ public record BoxLogDto
     public Guid? PerformedById{ get; init; } 
 
     public DateTime PerformedAt { get; init; }
+}
+
+public record PaginatedBoxesByFactoryResponseDto
+{
+    public List<BoxDto> Items { get; init; } = new();
+    public int TotalCount { get; init; }
+    public int Page { get; init; }
+    public int PageSize { get; init; }
+    public int TotalPages { get; init; }
 }
 

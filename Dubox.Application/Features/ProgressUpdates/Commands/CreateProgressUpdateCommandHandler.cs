@@ -590,8 +590,6 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         var previousWIR = await _dbContext.WIRRecords
             .Where(w => w.BoxActivityId == previousWIRActivity.BoxActivityId)
             .FirstOrDefaultAsync(cancellationToken);
-
-        // If previous WIR record doesn't exist yet, don't allow current WIR position update
         if (previousWIR == null)
         {
             throw new InvalidOperationException(
@@ -601,29 +599,51 @@ public class CreateProgressUpdateCommandHandler : IRequestHandler<CreateProgress
         var previousCheckpoint = await _dbContext.WIRCheckpoints
             .Include(cp => cp.ChecklistItems)
             .Where(cp => cp.BoxId == boxId && cp.WIRCode == previousWIR.WIRCode)
+            .OrderByDescending(cp => cp.Version)
             .FirstOrDefaultAsync(cancellationToken);
 
-        var effectiveStatus = previousCheckpoint?.Status ?? (WIRCheckpointStatusEnum)previousWIR.Status;
+        if (previousCheckpoint != null)
+        {
+            if (previousCheckpoint.Status == WIRCheckpointStatusEnum.Rejected)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot update WIR position. Previous WIR '{previousWIR.WIRCode}' (Version {previousCheckpoint.Version}) was Rejected. " +
+                    $"Issues must be resolved and it must be approved before proceeding.");
+            }
+
+            if (previousCheckpoint.Status == WIRCheckpointStatusEnum.Pending)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot update WIR position. Previous WIR '{previousWIR.WIRCode}' (Version {previousCheckpoint.Version}) is still Pending. " +
+                    $"It must be approved first.");
+            }
+        }
+
+        // If no checkpoint exists, use WIR record status
+        if (previousCheckpoint == null)
+        {
+            var wirStatus = (WIRCheckpointStatusEnum)previousWIR.Status;
+            if (wirStatus == WIRCheckpointStatusEnum.Pending)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot update WIR position. Previous WIR '{previousWIR.WIRCode}' is still Pending. " +
+                    $"It must be approved first.");
+            }
+            if (wirStatus == WIRCheckpointStatusEnum.Rejected)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot update WIR position. Previous WIR '{previousWIR.WIRCode}' was Rejected. " +
+                    $"Issues must be resolved and it must be approved.");
+            }
+            return; // If no checkpoint exists and WIR status is acceptable, allow
+        }
+
+        var effectiveStatus = previousCheckpoint.Status;
 
         // ConditionallyApproved is ALWAYS acceptable - validation passes immediately
         if (effectiveStatus == WIRCheckpointStatusEnum.ConditionalApproval)
         {
             return; // Allow position update for conditionally approved WIRs
-        }
-
-        // Check if previous WIR status is Pending or Rejected
-        if (effectiveStatus == WIRCheckpointStatusEnum.Pending)
-        {
-            throw new InvalidOperationException(
-                $"Cannot update WIR position. Previous WIR '{previousWIR.WIRCode}' is still Pending. " +
-                $"It must be approved first.");
-        }
-
-        if (effectiveStatus == WIRCheckpointStatusEnum.Rejected)
-        {
-            throw new InvalidOperationException(
-                $"Cannot update WIR position. Previous WIR '{previousWIR.WIRCode}' was Rejected. " +
-                $"Issues must be resolved and it must be approved.");
         }
 
         // If status is Approved, check if it's "Under Review" (not all checklist items are Pass)

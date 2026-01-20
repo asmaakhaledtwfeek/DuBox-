@@ -7,6 +7,22 @@
   color: var(--text-secondary, #6b7280);
   font-size: 13px;
   font-weight: 400;
+
+  .box-number {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--amana-teal, #1b9aaa);
+    margin-left: 6px;
+    opacity: 0.9;
+  }
+}
+
+.box-number {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--amana-teal, #1b9aaa);
+  margin-left: 6px;
+  opacity: 0.9;
 }
 
 .text-truncate {

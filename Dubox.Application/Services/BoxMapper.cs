@@ -1,8 +1,9 @@
-﻿using Dubox.Application.DTOs;
+using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Dubox.Application.Services
@@ -22,11 +23,9 @@ namespace Dubox.Application.Services
         {
             try
             {
-                // Safely get Project information
                 var projectCode = box.Project?.ProjectCode ?? string.Empty;
                 var client = box.Project?.ClientName ?? string.Empty;
 
-                // Get BoxType and BoxSubType names from project configuration
                 var boxTypeId = box.ProjectBoxTypeId;
                 var boxSubTypeId = box.ProjectBoxSubTypeId;
                 string boxType = string.Empty;
@@ -80,6 +79,17 @@ namespace Dubox.Application.Services
                 // Get ActivitiesCount
                 var activitiesCount = box.BoxActivities?.Count ?? 0;
 
+                var boxPanels = box.BoxPanels?.Select(p => new BoxPanelDto
+                {
+                    BoxPanelId = p.BoxPanelId,
+                    BoxId = p.BoxId,
+                    ProjectId = p.ProjectId,
+                    PanelName = p.PanelName,
+                    PanelStatus = p.PanelStatus,
+                    CreatedDate = p.CreatedDate,
+                    ModifiedDate = p.ModifiedDate
+                }).ToList() ?? new List<BoxPanelDto>();
+
                 return new BoxDto
                 {
                     BoxId = box.BoxId,
@@ -122,15 +132,13 @@ namespace Dubox.Application.Services
                     Bay = box.Bay,
                     Row = box.Row,
                     Position = box.Position,
-                    Wall1 = box.Wall1,
-                    Wall2 = box.Wall2,
-                    Wall3 = box.Wall3,
-                    Wall4 = box.Wall4,
+                    BoxPanels = boxPanels,
                     Slab = box.Slab,
                     Soffit = box.Soffit,
                     PodDeliver = box.PodDeliver,
                     PodName = box.PodName,
-                    PodType = box.PodType
+                    PodType = box.PodType, 
+                    BoxNumber=box.BoxNumber
                 };
             }
             catch (Exception ex)

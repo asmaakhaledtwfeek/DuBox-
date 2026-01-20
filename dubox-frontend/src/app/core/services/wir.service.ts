@@ -250,6 +250,9 @@ export class WIRService {
       if (request.wirDescription) {
         formData.append('WIRDescription', request.wirDescription);
       }
+      if (request.inspectorId) {
+        formData.append('InspectorId', request.inspectorId);
+      }
       if (request.attachmentPath) {
         formData.append('AttachmentPath', request.attachmentPath);
       }
@@ -761,6 +764,7 @@ export class WIRService {
       requestedBy: backendCheckpoint.requestedBy || backendCheckpoint.RequestedBy,
       inspectionDate: backendCheckpoint.inspectionDate ? new Date(backendCheckpoint.inspectionDate) : undefined,
       inspectorName: backendCheckpoint.inspectorName || backendCheckpoint.InspectorName,
+      inspectorId: (backendCheckpoint.inspectorId || backendCheckpoint.InspectorId || undefined)?.toString?.() ?? (backendCheckpoint.inspectorId || backendCheckpoint.InspectorId),
       inspectorRole: backendCheckpoint.inspectorRole || backendCheckpoint.InspectorRole,
       status: backendCheckpoint.status || backendCheckpoint.Status || 'Pending',
       approvalDate: backendCheckpoint.approvalDate ? new Date(backendCheckpoint.approvalDate) : undefined,

@@ -145,7 +145,10 @@
                 </td>
                 <td>
                   <div>{{ checkpoint.box?.boxTag || '—' }}</div>
-                  <div class="text-muted">{{ checkpoint.box?.boxName || '—' }}</div>
+                  <div class="text-muted">
+                    {{ checkpoint.box?.boxName || '—' }}
+                    <span *ngIf="checkpoint.box?.boxNumber" class="box-number">#{{ checkpoint.box?.boxNumber }}</span>
+                  </div>
                 </td>
                 <td>
                   <div class="text-muted" *ngIf="checkpoint.projectName">{{ checkpoint.projectName }}</div>
@@ -201,7 +204,10 @@
                   </td>
                   <td class="text-muted">
                     <div>{{ olderVersion.box?.boxTag || '—' }}</div>
-                    <div class="text-muted">{{ olderVersion.box?.boxName || '—' }}</div>
+                    <div class="text-muted">
+                      {{ olderVersion.box?.boxName || '—' }}
+                      <span *ngIf="olderVersion.box?.boxNumber" class="box-number">#{{ olderVersion.box?.boxNumber }}</span>
+                    </div>
                   </td>
                   <td>
                     <div class="text-muted" *ngIf="olderVersion.projectName">{{ olderVersion.projectName }}</div>
@@ -213,7 +219,19 @@
                   </td>
                   <td class="text-muted">{{ formatDate(olderVersion.requestedDate) }}</td>
                   <td class="col-actions" *ngIf="canManageWIRCheckpoints">
-                    <span class="text-muted small">Historical Version</span>
+                    <div class="action-stack">
+                      <button 
+                        class="action-btn primary" 
+                        (click)="downloadWIRAsPDF(olderVersion)"
+                        title="Download Checkpoint as PDF"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                          <polyline points="7 10 12 15 17 10"/>
+                          <line x1="12" y1="15" x2="12" y2="3"/>
+                        </svg>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               </ng-container>
@@ -258,7 +276,10 @@
               </div>
               <div class="detail-item" *ngIf="checkpoint.box?.boxName">
                 <span class="detail-label">Box Name:</span>
-                <span class="detail-value">{{ checkpoint.box?.boxName }}</span>
+                <span class="detail-value">
+                  {{ checkpoint.box?.boxName }}
+                  <span *ngIf="checkpoint.box?.boxNumber" class="box-number">#{{ checkpoint.box?.boxNumber }}</span>
+                </span>
               </div>
               <div class="detail-item" *ngIf="checkpoint.projectName">
                 <span class="detail-label">Project:</span>
@@ -322,9 +343,19 @@
                     <span class="detail-label">Requested Date:</span>
                     <span class="detail-value text-muted">{{ formatDate(olderVersion.requestedDate) }}</span>
                   </div>
-                  <div class="detail-item">
-                    <span class="text-muted small">Historical Version</span>
-                  </div>
+                </div>
+                <div class="older-version-actions-mobile" *ngIf="canManageWIRCheckpoints">
+                  <button 
+                    class="btn-icon btn-download"
+                    (click)="downloadWIRAsPDF(olderVersion)"
+                    title="Download Checkpoint as PDF"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="7 10 12 15 17 10"/>
+                      <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                  </button>
                 </div>
               </div>
             </div>
@@ -622,7 +653,10 @@
               </div>
               <div class="detail-item" *ngIf="issue.boxTag">
                 <span class="detail-label">Box:</span>
-                <span class="detail-value">{{ issue.boxTag }} - {{ issue.boxName || '—' }}</span>
+                <span class="detail-value">
+                  {{ issue.boxTag }} - {{ issue.boxName || '—' }}
+                  <span *ngIf="issue.boxNumber" class="box-number">#{{ issue.boxNumber }}</span>
+                </span>
               </div>
               <div class="detail-item" *ngIf="issue.wirNumber">
                 <span class="detail-label">Stage:</span>

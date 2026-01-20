@@ -3,6 +3,7 @@ export interface Box {
   name: string;
   code: string;
   serialNumber?: string;
+  boxNumber?: string;
   projectId: string;
   projectCode?: string;
   projectStatus?: string; // Project status (Active, OnHold, Closed, Completed, Archived)
@@ -54,6 +55,7 @@ export interface Box {
   wall2?: boolean;
   wall3?: boolean;
   wall4?: boolean;
+  boxPanels?: BoxPanel[];
   slab?: boolean;
   soffit?: boolean;
   podDeliver?: boolean;
@@ -425,6 +427,22 @@ export interface BoxTypeStat {
 export interface BoxTypeStatsByProject {
   projectId: string;
   boxTypeStats: BoxTypeStat[];
+}
+
+export interface BoxPanel {
+  boxPanelId: string;
+  boxId: string;
+  projectId: string;
+  panelName: string;
+  panelStatus: PanelStatus;
+  createdDate: Date;
+  modifiedDate?: Date;
+}
+
+export enum PanelStatus {
+  NotStarted = 1,
+  Yellow = 2,
+  Green = 3
 }
 
 export interface ProjectTypeCategory {

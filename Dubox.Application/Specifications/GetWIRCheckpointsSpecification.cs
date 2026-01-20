@@ -36,10 +36,15 @@ namespace Dubox.Application.Specifications
             AddCriteria(x => x.Box.Project.Status != Domain.Enums.ProjectStatusEnum.OnHold);
             AddCriteria(x => x.Box.Project.Status != Domain.Enums.ProjectStatusEnum.Closed);
             AddCriteria(x => x.Box.Project.Status != Domain.Enums.ProjectStatusEnum.Archived);
-
             if (accessibleProjectIds != null)
             {
-                AddCriteria(x => accessibleProjectIds.Contains(x.Box.ProjectId));
+                AddCriteria(x =>
+                (accessibleProjectIds.Contains(x.Box.ProjectId))
+               || (query.InspectorId.HasValue
+                  && x.InspectorId.HasValue
+                     && x.InspectorId.Value == query.InspectorId.Value)
+           );
+
             }
 
             if (!string.IsNullOrWhiteSpace(query.ProjectCode))
@@ -62,8 +67,6 @@ namespace Dubox.Application.Specifications
             if (query.To.HasValue)
                 AddCriteria(x => x.CreatedDate <= query.To.Value);
 
-            // Order by created date descending, then by version descending
-            // This ensures latest checkpoints appear first, with newest versions on top
             AddOrderByDescending(x => x.CreatedDate);
             AddOrderByDescending(x => x.Version);
         }

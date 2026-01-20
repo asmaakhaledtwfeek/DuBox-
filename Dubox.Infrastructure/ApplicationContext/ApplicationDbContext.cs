@@ -1,4 +1,4 @@
-﻿using Dubox.Domain.Abstraction;
+using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
 using Dubox.Domain.Interfaces;
@@ -66,6 +66,7 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<ChecklistSection> ChecklistSections { get; set; } = null!;
     public DbSet<Checklist> Checklists { get; set; } = null!;
     public DbSet<BoxDrawing> BoxDrawings { get; set; } = null!;
+    public DbSet<BoxPanel> BoxPanels { get; set; } = null!;
     
     // Project Configuration
     public DbSet<ProjectBuilding> ProjectBuildings { get; set; } = null!;
@@ -482,6 +483,19 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .WithMany(b => b.BoxDrawings)
             .HasForeignKey(bd => bd.BoxId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // BoxPanel relationships
+        modelBuilder.Entity<BoxPanel>()
+            .HasOne(bp => bp.Box)
+            .WithMany(b => b.BoxPanels)
+            .HasForeignKey(bp => bp.BoxId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<BoxPanel>()
+            .HasOne(bp => bp.Project)
+            .WithMany()
+            .HasForeignKey(bp => bp.ProjectId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // ProjectCost relationships
         modelBuilder.Entity<ProjectCost>()

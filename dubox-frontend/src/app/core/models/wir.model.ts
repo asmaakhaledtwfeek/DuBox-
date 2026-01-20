@@ -85,6 +85,7 @@ export interface WIRCheckpoint {
     projectCode?: string;
     boxTag?: string;
     boxName?: string;
+    boxNumber?: string;
   };
   wirNumber: string;
   wirName?: string;
@@ -93,6 +94,7 @@ export interface WIRCheckpoint {
   requestedBy?: string;
   inspectionDate?: Date;
   inspectorName?: string;
+  inspectorId?: string;
   inspectorRole?: string;
   status: WIRCheckpointStatus;
   approvalDate?: Date;
@@ -131,6 +133,7 @@ export interface WIRCheckpointFilter {
   wirNumber?: string;
   from?: string;
   to?: string;
+  inspectorId?: string;
   page?: number;
   pageSize?: number;
 }
@@ -232,6 +235,7 @@ export interface CreateWIRCheckpointRequest {
   wirNumber: string; // Auto-filled from WIRRecord
   wirName?: string; // User input
   wirDescription?: string; // User input
+  inspectorId?: string; // Inspector user ID
   attachmentPath?: string; // User input (deprecated, use files/imageUrls instead)
   comments?: string; // User input
   files?: File[]; // Image files to upload

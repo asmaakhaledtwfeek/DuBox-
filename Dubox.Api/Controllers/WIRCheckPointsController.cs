@@ -51,6 +51,14 @@ namespace Dubox.Api.Controllers
                 var wirDescription = form["WIRDescription"].ToString();
                 var attachmentPath = form["AttachmentPath"].ToString();
                 var comments = form["Comments"].ToString();
+                Guid? inspectorId = null;
+
+                var inspectorIdValue = form["InspectorId"].ToString();
+                if (!string.IsNullOrWhiteSpace(inspectorIdValue))
+                {
+                    if (Guid.TryParse(inspectorIdValue, out var parsedInspectorId))
+                        inspectorId = parsedInspectorId;
+                }
 
                 var formFiles = form.Files.Where(f => f.Name == "Files" && f.Length > 0).ToList();
                 if (formFiles.Count > 0)
@@ -80,6 +88,7 @@ namespace Dubox.Api.Controllers
                           AttachmentPath: string.IsNullOrWhiteSpace(attachmentPath) ? null : attachmentPath,
                           Comments: string.IsNullOrWhiteSpace(comments) ? null : comments,
                           Files: files, 
+                          InspectorId: inspectorId,
                          ImageUrls: imageUrls,
                          FileNames: fileNames
                      );

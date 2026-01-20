@@ -1,4 +1,4 @@
-﻿using Dubox.Domain.Entities;
+using Dubox.Domain.Entities;
 using Dubox.Domain.Specification;
 
 namespace Dubox.Application.Specifications
@@ -13,6 +13,7 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(Box.BoxAssets));
             AddInclude(nameof(Box.BoxActivities));
             AddInclude(nameof(Box.ProgressUpdates));
+            AddInclude(nameof(Box.BoxPanels));
             AddInclude(nameof(Box.Factory));
             AddOrderByDescending(x => x.CreatedDate);
             

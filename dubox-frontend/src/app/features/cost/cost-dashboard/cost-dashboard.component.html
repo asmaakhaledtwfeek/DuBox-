@@ -171,7 +171,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let cost of projectCosts">
+              <tr *ngFor="let cost of projectCosts; trackBy: trackByProjectCostId">
                 <td>
                   <span class="code-badge" *ngIf="cost.boxTag">{{ cost.boxTag }}</span>
                   <span class="text-muted" *ngIf="!cost.boxTag">-</span>
@@ -280,9 +280,12 @@
                 </svg>
                 Cost Level 1
               </label>
-              <select [(ngModel)]="selectedCostLevel1" class="filter-select-enhanced" (ngModelChange)="onSearch()" [disabled]="loadingCostLevel1Options">
+              <select [(ngModel)]="selectedCostLevel1" class="filter-select-enhanced" 
+                      (click)="onCostLevel1DropdownClick()"
+                      (ngModelChange)="onCostCodeFilterChange('level1')" 
+                      [disabled]="loadingCostLevel1Options">
                 <option [ngValue]="null">{{ loadingCostLevel1Options ? 'Loading...' : 'All Levels' }}</option>
-                <option *ngFor="let level of costLevel1Options" [value]="level">{{ level }}</option>
+                <option *ngFor="let level of costLevel1Options; trackBy: trackByValue" [value]="level">{{ level }}</option>
               </select>
             </div>
 
@@ -294,9 +297,9 @@
                 </svg>
                 Cost Level 2
               </label>
-              <select [(ngModel)]="selectedCostLevel2" class="filter-select-enhanced" (ngModelChange)="onSearch()" [disabled]="loadingCostLevel2Options">
+              <select [(ngModel)]="selectedCostLevel2" class="filter-select-enhanced" (ngModelChange)="onCostCodeFilterChange('level2')" [disabled]="loadingCostLevel2Options">
                 <option [ngValue]="null">{{ loadingCostLevel2Options ? 'Loading...' : 'All Levels' }}</option>
-                <option *ngFor="let level of costLevel2Options" [value]="level">{{ level }}</option>
+                <option *ngFor="let level of costLevel2Options; trackBy: trackByValue" [value]="level">{{ level }}</option>
               </select>
             </div>
 
@@ -308,9 +311,9 @@
                 </svg>
                 Cost Level 3
               </label>
-              <select [(ngModel)]="selectedCostLevel3" class="filter-select-enhanced" (ngModelChange)="onSearch()" [disabled]="loadingCostLevel3Options">
+              <select [(ngModel)]="selectedCostLevel3" class="filter-select-enhanced" (ngModelChange)="onCostCodeFilterChange('level3')" [disabled]="loadingCostLevel3Options">
                 <option [ngValue]="null">{{ loadingCostLevel3Options ? 'Loading...' : 'All Levels' }}</option>
-                <option *ngFor="let level of costLevel3Options" [value]="level">{{ level }}</option>
+                <option *ngFor="let level of costLevel3Options; trackBy: trackByValue" [value]="level">{{ level }}</option>
               </select>
             </div>
 
@@ -389,7 +392,7 @@
                 </svg>
                 Status
               </label>
-              <select [(ngModel)]="selectedIsActive" class="filter-select-enhanced" (ngModelChange)="onSearch()">
+              <select [(ngModel)]="selectedIsActive" class="filter-select-enhanced">
                 <option [ngValue]="null">All Status</option>
                 <option [ngValue]="true">Active Only</option>
                 <option [ngValue]="false">Inactive Only</option>
@@ -460,7 +463,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let code of costCodes">
+            <tr *ngFor="let code of costCodes; trackBy: trackByCostCodeId">
               <td><span class="code-badge">{{ code.code }}</span></td>
               <td>{{ code.costCodeLevel1 || '-' }}</td>
               <td>{{ code.level1Description || '-' }}</td>
@@ -512,29 +515,34 @@
         </div>
 
         <div class="filters-grid hrc-filters-cascading">
-          <!-- Row 1: Code, Chapter, Sub Chapter -->
+          <!-- Row 1: Type, Chapter, Sub Chapter -->
           <div class="filter-group filter-row">
             <div class="filter-field compact-filter">
-              <label class="filter-label">Code</label>
-              <select [(ngModel)]="hrFilterCode" class="filter-select-enhanced" (ngModelChange)="onHRFilterChange('code')">
-                <option [ngValue]="null">All Codes</option>
-                <option *ngFor="let code of hrFilterOptions.codes" [value]="code">{{ code }}</option>
+              <label class="filter-label">Type</label>
+              <select [(ngModel)]="hrFilterType" class="filter-select-enhanced" 
+                      (ngModelChange)="onHRFilterChange('type')">
+                <option [ngValue]="null">All Types</option>
+                <option *ngFor="let type of hrFilterOptions.types; trackBy: trackByValue" [value]="type">{{ type }}</option>
               </select>
             </div>
 
             <div class="filter-field compact-filter">
               <label class="filter-label">Chapter</label>
-              <select [(ngModel)]="hrFilterChapter" class="filter-select-enhanced" (ngModelChange)="onHRFilterChange('chapter')">
-                <option [ngValue]="null">All Chapters</option>
-                <option *ngFor="let chapter of hrFilterOptions.chapters" [value]="chapter">{{ chapter }}</option>
+              <select [(ngModel)]="hrFilterChapter" class="filter-select-enhanced" 
+                      (ngModelChange)="onHRFilterChange('chapter')"
+                      [disabled]="!hrFilterType && hrFilterOptions.chapters.length === 0">
+                <option [ngValue]="null">{{ hrFilterType ? 'All Chapters' : 'Select type first' }}</option>
+                <option *ngFor="let chapter of hrFilterOptions.chapters; trackBy: trackByValue" [value]="chapter">{{ chapter }}</option>
               </select>
             </div>
 
             <div class="filter-field compact-filter">
               <label class="filter-label">Sub Chapter</label>
-              <select [(ngModel)]="hrFilterSubChapter" class="filter-select-enhanced" (ngModelChange)="onHRFilterChange('subChapter')">
-                <option [ngValue]="null">All Sub Chapters</option>
-                <option *ngFor="let sub of hrFilterOptions.subChapters" [value]="sub">{{ sub }}</option>
+              <select [(ngModel)]="hrFilterSubChapter" class="filter-select-enhanced" 
+                      (ngModelChange)="onHRFilterChange('subChapter')"
+                      [disabled]="!hrFilterChapter && hrFilterOptions.subChapters.length === 0">
+                <option [ngValue]="null">{{ hrFilterChapter ? 'All Sub Chapters' : 'Select chapter first' }}</option>
+                <option *ngFor="let sub of hrFilterOptions.subChapters; trackBy: trackByValue" [value]="sub">{{ sub }}</option>
               </select>
             </div>
           </div>
@@ -543,44 +551,43 @@
           <div class="filter-group filter-row">
             <div class="filter-field compact-filter">
               <label class="filter-label">Classification</label>
-              <select [(ngModel)]="hrFilterClassification" class="filter-select-enhanced" (ngModelChange)="onHRFilterChange('classification')">
-                <option [ngValue]="null">All Classifications</option>
-                <option *ngFor="let cls of hrFilterOptions.classifications" [value]="cls">{{ cls }}</option>
+              <select [(ngModel)]="hrFilterClassification" class="filter-select-enhanced" 
+                      (ngModelChange)="onHRFilterChange('classification')"
+                      [disabled]="!hrFilterSubChapter && hrFilterOptions.classifications.length === 0">
+                <option [ngValue]="null">{{ hrFilterSubChapter ? 'All Classifications' : 'Select sub chapter first' }}</option>
+                <option *ngFor="let cls of hrFilterOptions.classifications; trackBy: trackByValue" [value]="cls">{{ cls }}</option>
               </select>
             </div>
 
             <div class="filter-field compact-filter">
               <label class="filter-label">Sub Classification</label>
-              <select [(ngModel)]="hrFilterSubClassification" class="filter-select-enhanced" (ngModelChange)="onHRFilterChange('subClassification')">
-                <option [ngValue]="null">All Sub Classifications</option>
-                <option *ngFor="let sub of hrFilterOptions.subClassifications" [value]="sub">{{ sub }}</option>
+              <select [(ngModel)]="hrFilterSubClassification" class="filter-select-enhanced" 
+                      (ngModelChange)="onHRFilterChange('subClassification')"
+                      [disabled]="!hrFilterClassification && hrFilterOptions.subClassifications.length === 0">
+                <option [ngValue]="null">{{ hrFilterClassification ? 'All Sub Classifications' : 'Select classification first' }}</option>
+                <option *ngFor="let sub of hrFilterOptions.subClassifications; trackBy: trackByValue" [value]="sub">{{ sub }}</option>
               </select>
             </div>
 
             <div class="filter-field compact-filter">
               <label class="filter-label">Units</label>
-              <select [(ngModel)]="hrFilterUnits" class="filter-select-enhanced" (ngModelChange)="onHRFilterChange('units')">
-                <option [ngValue]="null">All Units</option>
-                <option *ngFor="let unit of hrFilterOptions.units" [value]="unit">{{ unit }}</option>
+              <select [(ngModel)]="hrFilterUnits" class="filter-select-enhanced" 
+                      (ngModelChange)="onHRFilterChange('units')"
+                      [disabled]="!hrFilterSubClassification && hrFilterOptions.units.length === 0">
+                <option [ngValue]="null">{{ hrFilterSubClassification ? 'All Units' : 'Select sub classification first' }}</option>
+                <option *ngFor="let unit of hrFilterOptions.units; trackBy: trackByValue" [value]="unit">{{ unit }}</option>
               </select>
             </div>
           </div>
 
-          <!-- Row 3: Type, Status, Name Search -->
+          <!-- Row 3: Status, Name Search -->
           <div class="filter-group filter-row">
             <div class="filter-field compact-filter">
-              <label class="filter-label">Type</label>
-              <select [(ngModel)]="hrFilterType" class="filter-select-enhanced" (ngModelChange)="onHRFilterChange('type')">
-                <option [ngValue]="null">All Types</option>
-                <option *ngFor="let type of hrFilterOptions.types" [value]="type">{{ type }}</option>
-              </select>
-            </div>
-
-            <div class="filter-field compact-filter">
               <label class="filter-label">Status</label>
-              <select [(ngModel)]="hrFilterStatus" class="filter-select-enhanced" (ngModelChange)="onHRFilterChange('status')">
+              <select [(ngModel)]="hrFilterStatus" class="filter-select-enhanced" 
+                      (ngModelChange)="onHRFilterChange('status')">
                 <option [ngValue]="null">All Status</option>
-                <option *ngFor="let status of hrFilterOptions.statuses" [value]="status">{{ status }}</option>
+                <option *ngFor="let status of hrStatusOptions; trackBy: trackByValue" [value]="status">{{ status }}</option>
               </select>
             </div>
 
@@ -595,6 +602,10 @@
                   class="filter-input"
                 />
               </div>
+            </div>
+
+            <div class="filter-field compact-filter">
+              <!-- Empty placeholder for grid alignment -->
             </div>
           </div>
         </div>
@@ -616,7 +627,7 @@
             Clear Filters
           </button>
 
-          <div class="active-filters-count" *ngIf="hrFilterCode || hrFilterChapter || hrFilterSubChapter || hrFilterClassification || hrFilterSubClassification || hrFilterUnits || hrFilterType || hrFilterStatus || hrSearchName">
+          <div class="active-filters-count" *ngIf="hrFilterType || hrFilterChapter || hrFilterSubChapter || hrFilterClassification || hrFilterSubClassification || hrFilterUnits || (hrFilterStatus && hrFilterStatus !== 'Active') || hrSearchName">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"/>
               <path d="M12 6v6l4 2"/>
@@ -649,13 +660,13 @@
           <thead>
             <tr>
               <th>Code</th>
+              <th>Type</th>
               <th>Chapter</th>
               <th>Sub Chapter</th>
               <th>Classification</th>
               <th>Sub Classification</th>
-              <th>Name</th>
               <th>Units</th>
-              <th>Type</th>
+              <th>Name</th>
               <th>Budget Level</th>
               <th>Status</th>
               <th>Job</th>
@@ -666,24 +677,24 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let hr of hrCosts">
+            <tr *ngFor="let hr of hrCosts; trackBy: trackByHRCostId">
               <td>
                 <span class="code-badge" *ngIf="hr.code">{{ hr.code }}</span>
                 <span class="text-muted" *ngIf="!hr.code">-</span>
+              </td>
+              <td>
+                <span class="trade-badge" *ngIf="hr.type">{{ hr.type }}</span>
+                <span class="text-muted" *ngIf="!hr.type">-</span>
               </td>
               <td>{{ hr.chapter || '-' }}</td>
               <td>{{ hr.subChapter || '-' }}</td>
               <td>{{ hr.classification || '-' }}</td>
               <td>{{ hr.subClassification || '-' }}</td>
+              <td>{{ hr.units || '-' }}</td>
               <td>
                 <div class="resource-info">
                   <strong>{{ hr.name }}</strong>
                 </div>
-              </td>
-              <td>{{ hr.units || '-' }}</td>
-              <td>
-                <span class="trade-badge" *ngIf="hr.type">{{ hr.type }}</span>
-                <span class="text-muted" *ngIf="!hr.type">-</span>
               </td>
               <td>{{ hr.budgetLevel || '-' }}</td>
               <td>
@@ -724,6 +735,15 @@
         Previous
       </button>
       <span class="page-info">Page {{ currentPage }}</span>
+      <div class="page-size-selector" style="display: inline-flex; align-items: center; margin: 0 15px;">
+        <label style="margin-right: 8px; font-size: 14px;">Items per page:</label>
+        <select [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()" style="padding: 4px 8px; border-radius: 4px;">
+          <option [value]="10">10</option>
+          <option [value]="25">25</option>
+          <option [value]="50">50</option>
+          <option [value]="100">100</option>
+        </select>
+      </div>
       <button class="btn-pagination" (click)="nextPage()" 
               [disabled]="(activeTab === 'materials' && costCodes.length < pageSize) || 
                           (activeTab === 'hr' && hrCosts.length < pageSize) ||
@@ -827,6 +847,21 @@
             <h3>HRC Code (Required)</h3>
           </div>
 
+          <!-- Type (First in cascade) -->
+          <div class="form-group">
+            <label for="type">Type <span class="required">*</span></label>
+            <select 
+              id="type" 
+              [(ngModel)]="newCost.type" 
+              name="type"
+              (ngModelChange)="onProjectHRCostChange('type')"
+              class="form-control"
+              required>
+              <option [ngValue]="null">Select type...</option>
+              <option *ngFor="let type of hrFilterOptions.types" [value]="type">{{ type }}</option>
+            </select>
+          </div>
+
           <!-- Chapter -->
           <div class="form-group">
             <label for="chapter">Chapter <span class="required">*</span></label>
@@ -836,6 +871,7 @@
               name="chapter"
               (ngModelChange)="onProjectHRCostChange('chapter')"
               class="form-control"
+              [disabled]="!newCost.type"
               required>
               <option [ngValue]="null">Select chapter...</option>
               <option *ngFor="let chapter of hrFilterOptions.chapters" [value]="chapter">{{ chapter }}</option>
@@ -897,27 +933,11 @@
               id="units" 
               [(ngModel)]="newCost.units" 
               name="units"
-              (ngModelChange)="onProjectHRCostChange('units')"
               class="form-control"
               [disabled]="!newCost.subClassification"
               required>
               <option [ngValue]="null">Select units...</option>
               <option *ngFor="let unit of hrFilterOptions.units" [value]="unit">{{ unit }}</option>
-            </select>
-          </div>
-
-          <!-- Type -->
-          <div class="form-group">
-            <label for="type">Type <span class="required">*</span></label>
-            <select 
-              id="type" 
-              [(ngModel)]="newCost.type" 
-              name="type"
-              class="form-control"
-              [disabled]="!newCost.units"
-              required>
-              <option [ngValue]="null">Select type...</option>
-              <option *ngFor="let type of hrFilterOptions.types" [value]="type">{{ type }}</option>
             </select>
           </div>
 
@@ -966,8 +986,8 @@
             class="btn-primary" 
             [disabled]="creatingCost || !newCost.cost || 
                        !newCost.costCodeLevel1 || !newCost.costCodeLevel2 ||
-                       !newCost.chapter || !newCost.subChapter || !newCost.classification ||
-                       !newCost.subClassification || !newCost.units || !newCost.type">
+                       !newCost.type || !newCost.chapter || !newCost.subChapter || 
+                       !newCost.classification || !newCost.subClassification || !newCost.units"
             <span *ngIf="!creatingCost">Add Cost</span>
             <span *ngIf="creatingCost" class="btn-loading">
               <div class="small-spinner"></div>

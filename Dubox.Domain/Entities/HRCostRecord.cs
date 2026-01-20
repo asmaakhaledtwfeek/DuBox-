@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Dubox.Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Domain.Entities;
 
@@ -8,6 +9,16 @@ namespace Dubox.Domain.Entities;
 /// HR Cost/Resource Cost Record - for labor/personnel costs
 /// </summary>
 [Table("HRCostRecords")]
+[Index(nameof(Code))]
+[Index(nameof(Chapter))]
+[Index(nameof(SubChapter))]
+[Index(nameof(Classification))]
+[Index(nameof(SubClassification))]
+[Index(nameof(Units))]
+[Index(nameof(Type))]
+[Index(nameof(Status))]
+[Index(nameof(Chapter), nameof(SubChapter))]
+[Index(nameof(Chapter), nameof(SubChapter), nameof(Classification))]
 public class HRCostRecord : IAuditableEntity
 {
     [Key]
@@ -117,6 +128,7 @@ public class HRCostRecord : IAuditableEntity
     public DateTime? ModifiedDate { get; set; }
     public string? ModifiedBy { get; set; }
 }
+
 
 
 

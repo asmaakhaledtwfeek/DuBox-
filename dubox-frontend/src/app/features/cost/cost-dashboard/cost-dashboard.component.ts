@@ -186,6 +186,7 @@ export class CostDashboardComponent implements OnInit {
   loadingCostLevel1Options = false;
   loadingCostLevel2Options = false;
   loadingCostLevel3Options = false;
+  loadingCostCodeFilterOptions = false; // Prevent duplicate requests
   
   // HR Costs
   hrCosts: HRCost[] = [];
@@ -193,16 +194,18 @@ export class CostDashboardComponent implements OnInit {
   hrLoading = false;
   hrError: string | null = null;
   
-  // HR Cost Filters
-  hrFilterCode: string | null = null;
+  // HR Cost Filters - Hierarchy: Type → Chapter → Sub Chapter → Classification → Sub Classification → Units
+  hrFilterType: string | null = null;
   hrFilterChapter: string | null = null;
   hrFilterSubChapter: string | null = null;
   hrFilterClassification: string | null = null;
   hrFilterSubClassification: string | null = null;
   hrFilterUnits: string | null = null;
-  hrFilterType: string | null = null;
-  hrFilterStatus: string | null = null;
+  hrFilterStatus: string | null = 'Active'; // Default to Active
   hrSearchName = '';
+  
+  // Hardcoded status options (always available) - matching database values
+  hrStatusOptions: string[] = ['Active', 'InActive'];
   
   // Filter Options (for dropdowns)
   hrFilterOptions: HRCostFilterOptions = {
@@ -305,34 +308,50 @@ export class CostDashboardComponent implements OnInit {
   createHRCostError: string | null = null;
   createHRCostSuccess = false;
   
-  // Pagination
+  // Pagination - Start with small page size for better performance
   currentPage = 1;
-  pageSize = 50;
+  pageSize = 10; // Reduced from 50 to 10 for faster initial load
   totalRecords = 0;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) {
+  }
 
   ngOnInit(): void {
+    // Only load materials tab initially - true lazy loading
     this.loadCostCodes();
-    this.loadHRFilterOptions(); // Load filter options first
-    this.loadHRCosts();
-    this.loadProjects();
-    this.loadCostLevel1Options();
-    this.loadCostLevel2Options();
-    this.loadCostLevel3Options();
+    // Don't load filter options until user interacts with dropdowns
+    // Don't load other tabs until user switches to them
   }
 
   switchTab(tab: 'materials' | 'hr' | 'projectCost'): void {
     this.activeTab = tab;
+    
+    // Lazy load data only when switching to that tab
+    if (tab === 'hr' && this.hrCosts.length === 0) {
+      console.log('⏳ Loading HR costs tab for first time');
+      this.loadHRCosts();
+      // Load Types (first filter in hierarchy) when switching to HR tab
+      this.loadHRFilterOptions();
+    }
+    
     if (tab === 'projectCost' && this.projects.length === 0) {
+      console.log('⏳ Loading projects for first time');
       this.loadProjects();
     }
-    if (tab === 'hr' && this.hrFilterOptions.types.length === 0) {
-      this.loadHRFilterOptions();
+    
+    if (tab === 'materials' && this.costCodes.length === 0) {
+      console.log('⏳ Loading materials tab for first time');
+      this.loadCostCodes();
     }
   }
 
   loadCostCodes(): void {
+    // Prevent duplicate requests
+    if (this.loading) {
+      console.log('⏳ Cost codes already loading, skipping duplicate request');
+      return;
+    }
+    
     this.loading = true;
     this.error = null;
 
@@ -457,8 +476,28 @@ export class CostDashboardComponent implements OnInit {
     }
   }
 
+  onPageSizeChange(): void {
+    console.log('📄 Page size changed to:', this.pageSize);
+    this.currentPage = 1; // Reset to first page
+    
+    // Reload current tab data with new page size
+    if (this.activeTab === 'materials') {
+      this.loadCostCodes();
+    } else if (this.activeTab === 'hr') {
+      this.loadHRCosts();
+    } else if (this.activeTab === 'projectCost') {
+      this.loadProjectCosts();
+    }
+  }
+
   // HR Cost Methods
   loadHRCosts(): void {
+    // Prevent duplicate requests
+    if (this.hrLoading) {
+      console.log('⏳ HR costs already loading, skipping duplicate request');
+      return;
+    }
+    
     this.hrLoading = true;
     this.hrError = null;
 
@@ -467,14 +506,13 @@ export class CostDashboardComponent implements OnInit {
       pageSize: this.pageSize
     };
 
-    // Add filters
-    if (this.hrFilterCode) params.code = this.hrFilterCode;
+    // Add filters - hierarchy: Type → Chapter → Sub Chapter → Classification → Sub Classification → Units
+    if (this.hrFilterType) params.type = this.hrFilterType;
     if (this.hrFilterChapter) params.chapter = this.hrFilterChapter;
     if (this.hrFilterSubChapter) params.subChapter = this.hrFilterSubChapter;
     if (this.hrFilterClassification) params.classification = this.hrFilterClassification;
     if (this.hrFilterSubClassification) params.subClassification = this.hrFilterSubClassification;
     if (this.hrFilterUnits) params.units = this.hrFilterUnits;
-    if (this.hrFilterType) params.type = this.hrFilterType;
     if (this.hrFilterStatus) params.status = this.hrFilterStatus;
     if (this.hrSearchName) params.name = this.hrSearchName.trim();
 
@@ -499,22 +537,27 @@ export class CostDashboardComponent implements OnInit {
   loadHRFilterOptions(): void {
     const params: any = {};
     
-    // Send current filter values to get cascaded options
-    if (this.hrFilterCode) params.code = this.hrFilterCode;
+    // Cascading hierarchy: Type → Chapter → Sub Chapter → Classification → Sub Classification → Units
+    // Send current filter values to get dependent options
+    if (this.hrFilterType) params.type = this.hrFilterType;
     if (this.hrFilterChapter) params.chapter = this.hrFilterChapter;
     if (this.hrFilterSubChapter) params.subChapter = this.hrFilterSubChapter;
     if (this.hrFilterClassification) params.classification = this.hrFilterClassification;
     if (this.hrFilterSubClassification) params.subClassification = this.hrFilterSubClassification;
-    if (this.hrFilterUnits) params.units = this.hrFilterUnits;
-    if (this.hrFilterType) params.type = this.hrFilterType;
-    if (this.hrFilterStatus) params.status = this.hrFilterStatus;
 
     this.http.get<any>(`${environment.apiUrl}/cost/hr-costs/filter-options`, { params })
       .subscribe({
         next: (response) => {
           const data = response.data || response;
           this.hrFilterOptions = data;
-          console.log('📊 Loaded filter options:', this.hrFilterOptions);
+          console.log('📊 HRC filter options loaded:', {
+            types: this.hrFilterOptions.types.length,
+            chapters: this.hrFilterOptions.chapters.length,
+            subChapters: this.hrFilterOptions.subChapters.length,
+            classifications: this.hrFilterOptions.classifications.length,
+            subClassifications: this.hrFilterOptions.subClassifications.length,
+            units: this.hrFilterOptions.units.length
+          });
         },
         error: (err) => {
           console.error('Error loading filter options:', err);
@@ -523,24 +566,97 @@ export class CostDashboardComponent implements OnInit {
   }
 
   onHRFilterChange(filterName: string): void {
-    // When a filter changes, reload filter options to cascade the dropdowns
-    this.loadHRFilterOptions();
-    // Reload the HR costs list
-    this.loadHRCosts();
+    console.log('🔄 HRC filter changed:', filterName, 'value:', (this as any)['hrFilter' + filterName.charAt(0).toUpperCase() + filterName.slice(1)]);
+    
+    // Clear dependent filters based on hierarchy: Type → Chapter → Sub Chapter → Classification → Sub Classification → Units
+    if (filterName === 'type') {
+      // Type is the first filter - clear all dependent filters
+      this.hrFilterChapter = null;
+      this.hrFilterSubChapter = null;
+      this.hrFilterClassification = null;
+      this.hrFilterSubClassification = null;
+      this.hrFilterUnits = null;
+      
+      this.hrFilterOptions.chapters = [];
+      this.hrFilterOptions.subChapters = [];
+      this.hrFilterOptions.classifications = [];
+      this.hrFilterOptions.subClassifications = [];
+      this.hrFilterOptions.units = [];
+      
+      if (this.hrFilterType) {
+        this.loadHRFilterOptions();
+      }
+    } else if (filterName === 'chapter') {
+      // Clear dependent filters
+      this.hrFilterSubChapter = null;
+      this.hrFilterClassification = null;
+      this.hrFilterSubClassification = null;
+      this.hrFilterUnits = null;
+      
+      this.hrFilterOptions.subChapters = [];
+      this.hrFilterOptions.classifications = [];
+      this.hrFilterOptions.subClassifications = [];
+      this.hrFilterOptions.units = [];
+      
+      if (this.hrFilterChapter) {
+        this.loadHRFilterOptions();
+      }
+    } else if (filterName === 'subChapter') {
+      this.hrFilterClassification = null;
+      this.hrFilterSubClassification = null;
+      this.hrFilterUnits = null;
+      
+      this.hrFilterOptions.classifications = [];
+      this.hrFilterOptions.subClassifications = [];
+      this.hrFilterOptions.units = [];
+      
+      if (this.hrFilterSubChapter) {
+        this.loadHRFilterOptions();
+      }
+    } else if (filterName === 'classification') {
+      this.hrFilterSubClassification = null;
+      this.hrFilterUnits = null;
+      
+      this.hrFilterOptions.subClassifications = [];
+      this.hrFilterOptions.units = [];
+      
+      if (this.hrFilterClassification) {
+        this.loadHRFilterOptions();
+      }
+    } else if (filterName === 'subClassification') {
+      this.hrFilterUnits = null;
+      this.hrFilterOptions.units = [];
+      
+      if (this.hrFilterSubClassification) {
+        this.loadHRFilterOptions();
+      }
+    } else if (filterName === 'units' || filterName === 'status') {
+      // These don't have dependents in the cascade
+      // Status is independent with hardcoded options
+    }
   }
 
   clearHRFilters(): void {
-    this.hrFilterCode = null;
+    this.hrFilterType = null;
     this.hrFilterChapter = null;
     this.hrFilterSubChapter = null;
     this.hrFilterClassification = null;
     this.hrFilterSubClassification = null;
     this.hrFilterUnits = null;
-    this.hrFilterType = null;
-    this.hrFilterStatus = null;
+    this.hrFilterStatus = 'Active'; // Reset to default Active
     this.hrSearchName = '';
-    this.loadHRFilterOptions();
+    
+    // Clear cascading filter options (except types which are always loaded)
+    this.hrFilterOptions.chapters = [];
+    this.hrFilterOptions.subChapters = [];
+    this.hrFilterOptions.classifications = [];
+    this.hrFilterOptions.subClassifications = [];
+    this.hrFilterOptions.units = [];
+    
+    // Reload HR costs with default Active status filter and reload Types
+    this.currentPage = 1;
     this.loadHRCosts();
+    this.loadHRFilterOptions();
   }
 
 
@@ -573,6 +689,12 @@ export class CostDashboardComponent implements OnInit {
 
   loadProjectCosts(): void {
     if (!this.selectedProject) return;
+
+    // Prevent duplicate requests
+    if (this.projectCostsLoading) {
+      console.log('⏳ Project costs already loading, skipping duplicate request');
+      return;
+    }
 
     this.projectCostsLoading = true;
     this.projectCostsError = null;
@@ -688,7 +810,8 @@ export class CostDashboardComponent implements OnInit {
 
   onProjectHRCostChange(field: string): void {
     // Reset dependent fields when parent changes
-    const fields = ['chapter', 'subChapter', 'classification', 'subClassification', 'units', 'type'];
+    // Cascade order: type → chapter → subChapter → classification → subClassification → units
+    const fields = ['type', 'chapter', 'subChapter', 'classification', 'subClassification', 'units'];
     const index = fields.indexOf(field);
     if (index >= 0) {
       for (let i = index + 1; i < fields.length; i++) {
@@ -757,6 +880,31 @@ export class CostDashboardComponent implements OnInit {
     return this.projectCosts.filter(c => c.costType === costType).length;
   }
 
+  // TrackBy functions for performance optimization
+  trackByCostCodeId(index: number, item: CostCode): string {
+    return item.costCodeId;
+  }
+
+  trackByHRCostId(index: number, item: HRCost): string {
+    return item.hrCostRecordId;
+  }
+
+  trackByProjectCostId(index: number, item: ProjectCost): string {
+    return item.projectCostId;
+  }
+
+  trackByProjectId(index: number, item: Project): string {
+    return item.projectId;
+  }
+
+  trackByBoxId(index: number, item: Box): string {
+    return item.boxId;
+  }
+
+  trackByValue(index: number, item: string): string {
+    return item;
+  }
+
   // Cost Code Modal Functions
   openCreateCostCodeModal(): void {
     this.showCreateCostCodeModal = true;
@@ -764,11 +912,8 @@ export class CostDashboardComponent implements OnInit {
     this.createCostCodeSuccess = false;
     this.resetCostCodeForm();
     
-    // Load dropdown options for modal
-    this.loadModalCostLevel1Options();
-    this.loadModalCostLevel2Options();
-    this.loadModalLevel1DescriptionOptions();
-    this.loadModalLevel2DescriptionOptions();
+    // Load dropdown options for modal using efficient endpoint
+    this.loadModalCostCodeFilterOptions();
   }
 
   closeCreateCostCodeModal(): void {
@@ -934,233 +1079,156 @@ export class CostDashboardComponent implements OnInit {
 
 
 
-  loadCostLevel1Options(): void {
-    this.loadingCostLevel1Options = true;
+  // Lazy load filter options - only load what's needed based on selection
+  loadCostCodeFilterOptionsForSearch(): void {
+    // Prevent duplicate requests
+    if (this.loadingCostCodeFilterOptions) {
+      console.log('⏳ Filter options already loading, skipping duplicate request');
+      return;
+    }
 
-    // Fetch all cost codes and extract distinct costCodeLevel1 values
-    const params: any = {
-      pageSize: 10000 // Get all records to extract distinct values
-    };
+    this.loadingCostCodeFilterOptions = true;
 
-    this.http.get<any>(`${environment.apiUrl}/cost/codes`, { params })
+    const params: any = {};
+    
+    // Cascading: only request options based on current selections
+    if (this.selectedCostLevel1) {
+      params.level1 = this.selectedCostLevel1;
+      this.loadingCostLevel2Options = true;
+      
+      if (this.selectedCostLevel2) {
+        params.level2 = this.selectedCostLevel2;
+        this.loadingCostLevel3Options = true;
+      }
+    } else {
+      // Only load level 1 initially
+      this.loadingCostLevel1Options = true;
+    }
+
+    this.http.get<any>(`${environment.apiUrl}/cost/codes/filter-options`, { params })
       .subscribe({
         next: (response) => {
-          const responseData = response.data || response;
-          const costCodes = responseData?.data || responseData || [];
+          const data = response.data || response;
           
-          // Extract distinct costCodeLevel1 values and filter out nulls/empty
-          const distinctLevels = new Set<string>();
-          costCodes.forEach((code: CostCode) => {
-            if (code.costCodeLevel1) {
-              distinctLevels.add(code.costCodeLevel1);
-            }
-          });
+          // Only populate the options that were requested
+          if (!this.selectedCostLevel1) {
+            this.costLevel1Options = data.level1Options || [];
+            console.log('✅ Level 1 options loaded:', this.costLevel1Options.length);
+          }
           
-          this.costLevel1Options = Array.from(distinctLevels).sort();
-          console.log('✅ Cost Level 1 options loaded:', this.costLevel1Options.length);
+          if (this.selectedCostLevel1) {
+            this.costLevel2Options = data.level2Options || [];
+            console.log('✅ Level 2 options loaded:', this.costLevel2Options.length);
+          }
+          
+          if (this.selectedCostLevel2) {
+            this.costLevel3Options = data.level3Options || [];
+            console.log('✅ Level 3 options loaded:', this.costLevel3Options.length);
+          }
+          
+          this.loadingCostCodeFilterOptions = false;
           this.loadingCostLevel1Options = false;
-        },
-        error: (err) => {
-          console.error('Error loading cost level 1 options:', err);
-          this.costLevel1Options = [];
-          this.loadingCostLevel1Options = false;
-        }
-      });
-  }
-
-  loadCostLevel2Options(): void {
-    this.loadingCostLevel2Options = true;
-
-    // Fetch all cost codes and extract distinct costCodeLevel2 values
-    const params: any = {
-      pageSize: 10000 // Get all records to extract distinct values
-    };
-
-    this.http.get<any>(`${environment.apiUrl}/cost/codes`, { params })
-      .subscribe({
-        next: (response) => {
-          const responseData = response.data || response;
-          const costCodes = responseData?.data || responseData || [];
-          
-          // Extract distinct costCodeLevel2 values and filter out nulls/empty
-          const distinctLevels = new Set<string>();
-          costCodes.forEach((code: CostCode) => {
-            if (code.costCodeLevel2) {
-              distinctLevels.add(code.costCodeLevel2);
-            }
-          });
-          
-          this.costLevel2Options = Array.from(distinctLevels).sort();
-          console.log('✅ Cost Level 2 options loaded:', this.costLevel2Options.length);
           this.loadingCostLevel2Options = false;
-        },
-        error: (err) => {
-          console.error('Error loading cost level 2 options:', err);
-          this.costLevel2Options = [];
-          this.loadingCostLevel2Options = false;
-        }
-      });
-  }
-
-  loadCostLevel3Options(): void {
-    this.loadingCostLevel3Options = true;
-
-    // Fetch all cost codes and extract distinct costCodeLevel3 values
-    const params: any = {
-      pageSize: 10000 // Get all records to extract distinct values
-    };
-
-    this.http.get<any>(`${environment.apiUrl}/cost/codes`, { params })
-      .subscribe({
-        next: (response) => {
-          const responseData = response.data || response;
-          const costCodes = responseData?.data || responseData || [];
-          
-          // Extract distinct costCodeLevel3 values and filter out nulls/empty
-          const distinctLevels = new Set<string>();
-          costCodes.forEach((code: CostCode) => {
-            if (code.costCodeLevel3) {
-              distinctLevels.add(code.costCodeLevel3);
-            }
-          });
-          
-          this.costLevel3Options = Array.from(distinctLevels).sort();
-          console.log('✅ Cost Level 3 options loaded:', this.costLevel3Options.length);
           this.loadingCostLevel3Options = false;
         },
         error: (err) => {
-          console.error('Error loading cost level 3 options:', err);
-          this.costLevel3Options = [];
+          console.error('Error loading cost code filter options:', err);
+          this.loadingCostCodeFilterOptions = false;
+          this.loadingCostLevel1Options = false;
+          this.loadingCostLevel2Options = false;
           this.loadingCostLevel3Options = false;
         }
       });
   }
 
-  // Load dropdown options for Create Cost Code Modal
+  // Lazy load Level 1 options when dropdown is clicked
+  onCostLevel1DropdownClick(): void {
+    if (this.costLevel1Options.length === 0 && !this.loadingCostLevel1Options) {
+      console.log('🔄 Lazy loading Level 1 options...');
+      this.loadCostCodeFilterOptionsForSearch();
+    }
+  }
+
+  // Handle cascading filter updates - load dependent options on demand
+  onCostCodeFilterChange(level: string): void {
+    if (level === 'level1') {
+      // Clear dependent selections
+      this.selectedCostLevel2 = null;
+      this.selectedCostLevel3 = null;
+      this.costLevel2Options = [];
+      this.costLevel3Options = [];
+      
+      // Load level 2 options based on selected level 1
+      if (this.selectedCostLevel1) {
+        console.log('🔄 Loading Level 2 options for:', this.selectedCostLevel1);
+        this.loadCostCodeFilterOptionsForSearch();
+      }
+    } else if (level === 'level2') {
+      // Clear dependent selections
+      this.selectedCostLevel3 = null;
+      this.costLevel3Options = [];
+      
+      // Load level 3 options based on selected level 2
+      if (this.selectedCostLevel2) {
+        console.log('🔄 Loading Level 3 options for:', this.selectedCostLevel2);
+        this.loadCostCodeFilterOptionsForSearch();
+      }
+    }
+  }
+
+  // Load dropdown options for Create Cost Code Modal using efficient endpoint
   loadModalCostLevel1Options(): void {
-    this.loadingModalCostLevel1Options = true;
-
-    const params: any = {
-      pageSize: 10000
-    };
-
-    this.http.get<any>(`${environment.apiUrl}/cost/codes`, { params })
-      .subscribe({
-        next: (response) => {
-          const responseData = response.data || response;
-          const costCodes = responseData?.data || responseData || [];
-          
-          const distinctLevels = new Set<string>();
-          costCodes.forEach((code: CostCode) => {
-            if (code.costCodeLevel1) {
-              distinctLevels.add(code.costCodeLevel1);
-            }
-          });
-          
-          this.modalCostLevel1Options = Array.from(distinctLevels).sort();
-          console.log('✅ Modal Cost Level 1 options loaded:', this.modalCostLevel1Options.length);
-          this.loadingModalCostLevel1Options = false;
-        },
-        error: (err) => {
-          console.error('Error loading modal cost level 1 options:', err);
-          this.modalCostLevel1Options = [];
-          this.loadingModalCostLevel1Options = false;
-        }
-      });
+    // Modal options will be loaded together with loadModalCostCodeFilterOptions
+    this.loadModalCostCodeFilterOptions();
   }
 
   loadModalCostLevel2Options(): void {
-    this.loadingModalCostLevel2Options = true;
-
-    const params: any = {
-      pageSize: 10000
-    };
-
-    this.http.get<any>(`${environment.apiUrl}/cost/codes`, { params })
-      .subscribe({
-        next: (response) => {
-          const responseData = response.data || response;
-          const costCodes = responseData?.data || responseData || [];
-          
-          const distinctLevels = new Set<string>();
-          costCodes.forEach((code: CostCode) => {
-            if (code.costCodeLevel2) {
-              distinctLevels.add(code.costCodeLevel2);
-            }
-          });
-          
-          this.modalCostLevel2Options = Array.from(distinctLevels).sort();
-          console.log('✅ Modal Cost Level 2 options loaded:', this.modalCostLevel2Options.length);
-          this.loadingModalCostLevel2Options = false;
-        },
-        error: (err) => {
-          console.error('Error loading modal cost level 2 options:', err);
-          this.modalCostLevel2Options = [];
-          this.loadingModalCostLevel2Options = false;
-        }
-      });
+    // Modal options will be loaded together with loadModalCostCodeFilterOptions
+    this.loadModalCostCodeFilterOptions();
   }
 
   loadModalLevel1DescriptionOptions(): void {
-    this.loadingModalLevel1DescOptions = true;
-
-    const params: any = {
-      pageSize: 10000
-    };
-
-    this.http.get<any>(`${environment.apiUrl}/cost/codes`, { params })
-      .subscribe({
-        next: (response) => {
-          const responseData = response.data || response;
-          const costCodes = responseData?.data || responseData || [];
-          
-          const distinctDescriptions = new Set<string>();
-          costCodes.forEach((code: CostCode) => {
-            if (code.level1Description) {
-              distinctDescriptions.add(code.level1Description);
-            }
-          });
-          
-          this.modalLevel1DescriptionOptions = Array.from(distinctDescriptions).sort();
-          console.log('✅ Modal Level 1 Description options loaded:', this.modalLevel1DescriptionOptions.length);
-          this.loadingModalLevel1DescOptions = false;
-        },
-        error: (err) => {
-          console.error('Error loading modal level 1 description options:', err);
-          this.modalLevel1DescriptionOptions = [];
-          this.loadingModalLevel1DescOptions = false;
-        }
-      });
+    // Descriptions are loaded as part of the main filter options
+    // This is now a placeholder for compatibility
+    this.loadingModalLevel1DescOptions = false;
   }
 
   loadModalLevel2DescriptionOptions(): void {
-    this.loadingModalLevel2DescOptions = true;
+    // Descriptions are loaded as part of the main filter options
+    // This is now a placeholder for compatibility
+    this.loadingModalLevel2DescOptions = false;
+  }
 
-    const params: any = {
-      pageSize: 10000
-    };
+  // Centralized method to load modal filter options efficiently
+  loadModalCostCodeFilterOptions(): void {
+    this.loadingModalCostLevel1Options = true;
+    this.loadingModalCostLevel2Options = true;
 
-    this.http.get<any>(`${environment.apiUrl}/cost/codes`, { params })
+    const params: any = {};
+    if (this.newCostCode.costCodeLevel1) params.level1 = this.newCostCode.costCodeLevel1;
+    if (this.newCostCode.costCodeLevel2) params.level2 = this.newCostCode.costCodeLevel2;
+
+    this.http.get<any>(`${environment.apiUrl}/cost/codes/filter-options`, { params })
       .subscribe({
         next: (response) => {
-          const responseData = response.data || response;
-          const costCodes = responseData?.data || responseData || [];
+          const data = response.data || response;
+          this.modalCostLevel1Options = data.level1Options || [];
+          this.modalCostLevel2Options = data.level2Options || [];
           
-          const distinctDescriptions = new Set<string>();
-          costCodes.forEach((code: CostCode) => {
-            if (code.level2Description) {
-              distinctDescriptions.add(code.level2Description);
-            }
+          console.log('✅ Modal Cost Code filter options loaded:', {
+            level1: this.modalCostLevel1Options.length,
+            level2: this.modalCostLevel2Options.length
           });
           
-          this.modalLevel2DescriptionOptions = Array.from(distinctDescriptions).sort();
-          console.log('✅ Modal Level 2 Description options loaded:', this.modalLevel2DescriptionOptions.length);
-          this.loadingModalLevel2DescOptions = false;
+          this.loadingModalCostLevel1Options = false;
+          this.loadingModalCostLevel2Options = false;
         },
         error: (err) => {
-          console.error('Error loading modal level 2 description options:', err);
-          this.modalLevel2DescriptionOptions = [];
-          this.loadingModalLevel2DescOptions = false;
+          console.error('Error loading modal cost code filter options:', err);
+          this.modalCostLevel1Options = [];
+          this.modalCostLevel2Options = [];
+          this.loadingModalCostLevel1Options = false;
+          this.loadingModalCostLevel2Options = false;
         }
       });
   }

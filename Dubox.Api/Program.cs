@@ -18,7 +18,7 @@ Dubox.Infrastructure.Bootstrap.AddInfrastructureStrapping(builder.Services);
 Dubox.Application.Bootstrap.AddApplicationStrapping(builder.Services);
 
 // Add Automatic Data Seeding on Startup
-builder.Services.AddHostedService<Dubox.Api.Services.DataSeederHostedService>();
+//builder.Services.AddHostedService<Dubox.Api.Services.DataSeederHostedService>();
 
 
 builder.Services.AddMediatR(cfg =>

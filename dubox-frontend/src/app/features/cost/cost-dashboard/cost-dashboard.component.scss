@@ -2258,3 +2258,76 @@
   }
 }
 
+// Autocomplete dropdown for HRC Code search
+.autocomplete-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  margin-top: 2px;
+}
+
+.autocomplete-header {
+  padding: 8px 15px;
+  background-color: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.autocomplete-item {
+  padding: 10px 15px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: all 0.2s;
+  font-size: 14px;
+
+  &:hover {
+    background-color: #eff6ff;
+    color: #2563eb;
+    padding-left: 18px;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+  
+  mark {
+    background-color: #fef08a;
+    font-weight: 600;
+    padding: 2px 4px;
+    border-radius: 2px;
+  }
+}
+
+.autocomplete-no-results {
+  padding: 20px 15px;
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  
+  svg {
+    color: #94a3b8;
+  }
+}
+
+// Filter field needs relative positioning for autocomplete
+.filter-field.compact-filter {
+  position: relative;
+}
+

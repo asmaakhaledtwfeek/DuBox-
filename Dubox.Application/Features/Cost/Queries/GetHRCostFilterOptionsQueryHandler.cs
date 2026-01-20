@@ -19,58 +19,29 @@ public class GetHRCostFilterOptionsQueryHandler : IRequestHandler<GetHRCostFilte
     {
         try
         {
-            // Start with all records
+            // Cascading filter hierarchy: Type → Chapter → Sub Chapter → Classification → Sub Classification → Units
+            // Type is always loaded independently (all available types)
+            // Each subsequent filter depends on the previous selections
+
+            // Types are always loaded independently (first in hierarchy)
+            // Filter out null and empty string values
+            var types = await _context.HRCostRecords
+                .Where(h => h.Type != null && h.Type != "")
+                .Select(h => h.Type!)
+                .Distinct()
+                .OrderBy(t => t)
+                .ToListAsync(cancellationToken);
+
+            // Start building cascading query for dependent filters
             var query = _context.HRCostRecords.AsQueryable();
 
-            // Apply cascading filters based on what's already selected
-            if (!string.IsNullOrWhiteSpace(request.Code))
-            {
-                query = query.Where(h => h.Code == request.Code);
-            }
-
-            if (!string.IsNullOrWhiteSpace(request.Chapter))
-            {
-                query = query.Where(h => h.Chapter == request.Chapter);
-            }
-
-            if (!string.IsNullOrWhiteSpace(request.SubChapter))
-            {
-                query = query.Where(h => h.SubChapter == request.SubChapter);
-            }
-
-            if (!string.IsNullOrWhiteSpace(request.Classification))
-            {
-                query = query.Where(h => h.Classification == request.Classification);
-            }
-
-            if (!string.IsNullOrWhiteSpace(request.SubClassification))
-            {
-                query = query.Where(h => h.SubClassification == request.SubClassification);
-            }
-
-            if (!string.IsNullOrWhiteSpace(request.Units))
-            {
-                query = query.Where(h => h.Units == request.Units);
-            }
-
+            // Apply Type filter first (required for cascading)
             if (!string.IsNullOrWhiteSpace(request.Type))
             {
                 query = query.Where(h => h.Type == request.Type);
             }
 
-            if (!string.IsNullOrWhiteSpace(request.Status))
-            {
-                query = query.Where(h => h.Status == request.Status);
-            }
-
-            // Get distinct values for each filter
-            var codes = await query
-                .Where(h => h.Code != null)
-                .Select(h => h.Code!)
-                .Distinct()
-                .OrderBy(c => c)
-                .ToListAsync(cancellationToken);
-
+            // Chapters depend on Type selection
             var chapters = await query
                 .Where(h => h.Chapter != null)
                 .Select(h => h.Chapter!)
@@ -78,6 +49,13 @@ public class GetHRCostFilterOptionsQueryHandler : IRequestHandler<GetHRCostFilte
                 .OrderBy(c => c)
                 .ToListAsync(cancellationToken);
 
+            // Apply Chapter filter for next level
+            if (!string.IsNullOrWhiteSpace(request.Chapter))
+            {
+                query = query.Where(h => h.Chapter == request.Chapter);
+            }
+
+            // Sub Chapters depend on Chapter selection
             var subChapters = await query
                 .Where(h => h.SubChapter != null)
                 .Select(h => h.SubChapter!)
@@ -85,6 +63,13 @@ public class GetHRCostFilterOptionsQueryHandler : IRequestHandler<GetHRCostFilte
                 .OrderBy(s => s)
                 .ToListAsync(cancellationToken);
 
+            // Apply SubChapter filter for next level
+            if (!string.IsNullOrWhiteSpace(request.SubChapter))
+            {
+                query = query.Where(h => h.SubChapter == request.SubChapter);
+            }
+
+            // Classifications depend on Sub Chapter selection
             var classifications = await query
                 .Where(h => h.Classification != null)
                 .Select(h => h.Classification!)
@@ -92,6 +77,13 @@ public class GetHRCostFilterOptionsQueryHandler : IRequestHandler<GetHRCostFilte
                 .OrderBy(c => c)
                 .ToListAsync(cancellationToken);
 
+            // Apply Classification filter for next level
+            if (!string.IsNullOrWhiteSpace(request.Classification))
+            {
+                query = query.Where(h => h.Classification == request.Classification);
+            }
+
+            // Sub Classifications depend on Classification selection
             var subClassifications = await query
                 .Where(h => h.SubClassification != null)
                 .Select(h => h.SubClassification!)
@@ -99,6 +91,13 @@ public class GetHRCostFilterOptionsQueryHandler : IRequestHandler<GetHRCostFilte
                 .OrderBy(s => s)
                 .ToListAsync(cancellationToken);
 
+            // Apply SubClassification filter for next level
+            if (!string.IsNullOrWhiteSpace(request.SubClassification))
+            {
+                query = query.Where(h => h.SubClassification == request.SubClassification);
+            }
+
+            // Units depend on Sub Classification selection
             var units = await query
                 .Where(h => h.Units != null)
                 .Select(h => h.Units!)
@@ -106,19 +105,11 @@ public class GetHRCostFilterOptionsQueryHandler : IRequestHandler<GetHRCostFilte
                 .OrderBy(u => u)
                 .ToListAsync(cancellationToken);
 
-            var types = await query
-                .Where(h => h.Type != null)
-                .Select(h => h.Type!)
-                .Distinct()
-                .OrderBy(t => t)
-                .ToListAsync(cancellationToken);
+            // Codes are not used in filtering anymore but kept for API compatibility
+            var codes = new List<string>();
 
-            var statuses = await query
-                .Where(h => h.Status != null)
-                .Select(h => h.Status!)
-                .Distinct()
-                .OrderBy(s => s)
-                .ToListAsync(cancellationToken);
+            // Statuses are returned empty - frontend will use hardcoded values
+            var statuses = new List<string>();
 
             var result = new HRCostFilterOptionsDto(
                 codes,

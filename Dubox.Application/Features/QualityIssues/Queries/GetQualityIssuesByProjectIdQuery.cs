@@ -7,3 +7,4 @@ namespace Dubox.Application.Features.QualityIssues.Queries
     public record GetQualityIssuesByProjectIdQuery(Guid ProjectId) : IRequest<Result<List<QualityIssueDetailsDto>>>;
 }
 
+

@@ -1,10 +1,18 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Dubox.Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Domain.Entities;
 
 [Table("CostCodesMaster")]
+[Index(nameof(Code), IsUnique = true)]
+[Index(nameof(CostCodeLevel1))]
+[Index(nameof(CostCodeLevel2))]
+[Index(nameof(CostCodeLevel3))]
+[Index(nameof(IsActive))]
+[Index(nameof(CostCodeLevel1), nameof(CostCodeLevel2))]
+[Index(nameof(CostCodeLevel1), nameof(CostCodeLevel2), nameof(CostCodeLevel3))]
 public class CostCodeMaster : IAuditableEntity
 {
     [Key]
@@ -122,6 +130,7 @@ public class CostCodeMaster : IAuditableEntity
     // Navigation properties
     public virtual ICollection<ProjectCostItem> ProjectCostItems { get; set; } = new List<ProjectCostItem>();
 }
+
 
 
 

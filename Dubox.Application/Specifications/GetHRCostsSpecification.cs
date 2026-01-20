@@ -71,11 +71,11 @@ namespace Dubox.Application.Specifications
                 AddCriteria(h => h.BudgetLevel != null && h.BudgetLevel.ToLower().Contains(budgetLevelLower));
             }
 
-            // Apply Status filter
+            // Apply Status filter (exact match, not Contains)
             if (!string.IsNullOrWhiteSpace(query.Status))
             {
                 var statusLower = query.Status.ToLower().Trim();
-                AddCriteria(h => h.Status != null && h.Status.ToLower().Contains(statusLower));
+                AddCriteria(h => h.Status != null && h.Status.ToLower() == statusLower);
             }
 
             // Apply Job filter
@@ -126,6 +126,7 @@ namespace Dubox.Application.Specifications
         }
     }
 }
+
 
 
 

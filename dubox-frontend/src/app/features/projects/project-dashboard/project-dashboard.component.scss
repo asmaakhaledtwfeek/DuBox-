@@ -934,6 +934,24 @@
   font-size: 12px;
 }
 
+.config-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(249, 115, 22, 0.15) 100%);
+  color: #f97316;
+  border: 1px solid rgba(249, 115, 22, 0.2);
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 1px 3px rgba(249, 115, 22, 0.1);
+  z-index: 10;
+  white-space: nowrap;
+}
+
 .card {
   background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   border-radius: 24px;

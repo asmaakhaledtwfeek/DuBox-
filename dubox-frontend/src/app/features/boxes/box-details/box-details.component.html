@@ -518,44 +518,19 @@
                            [title]="getPanelStatusLabel(panel.panelStatus)">
                       </div>
                     </div>
-                  </div>
-                  
-                  <!-- Slab -->
-                  <div class="delivery-item">
-                    <label class="checkbox-label" [class.checked]="slabChecked">
-                      <input 
-                        type="checkbox" 
-                        [checked]="slabChecked"
-                        (change)="toggleSlabOrSoffit('slab', $event)"
-                        [disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed"
-                        class="checkbox-input">
-                      <span class="checkbox-custom"></span>
-                      <span class="checkbox-text">Slab</span>
-                      <span class="check-icon" *ngIf="slabChecked">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                          <polyline points="20 6 9 17 4 12"/>
+                    <!-- Rejection Reason -->
+                    <div class="rejection-reason" 
+                         *ngIf="isPanelRejected(panel) && getPanelRejectionReason(panel)">
+                      <div class="rejection-reason-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <circle cx="12" cy="12" r="10"/>
+                          <line x1="12" y1="8" x2="12" y2="12"/>
+                          <line x1="12" y1="16" x2="12.01" y2="16"/>
                         </svg>
-                      </span>
-                    </label>
-                  </div>
-                  
-                  <!-- Soffit -->
-                  <div class="delivery-item">
-                    <label class="checkbox-label" [class.checked]="soffitChecked">
-                      <input 
-                        type="checkbox" 
-                        [checked]="soffitChecked"
-                        (change)="toggleSlabOrSoffit('soffit', $event)"
-                        [disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed"
-                        class="checkbox-input">
-                      <span class="checkbox-custom"></span>
-                      <span class="checkbox-text">Soffit</span>
-                      <span class="check-icon" *ngIf="soffitChecked">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                          <polyline points="20 6 9 17 4 12"/>
-                        </svg>
-                      </span>
-                    </label>
+                        <span>Rejection Reason:</span>
+                      </div>
+                      <div class="rejection-reason-text">{{ getPanelRejectionReason(panel) }}</div>
+                    </div>
                   </div>
                   
                   <!-- Empty state -->
@@ -575,11 +550,11 @@
                       <line x1="12" y1="22.08" x2="12" y2="12"/>
                     </svg>
                   </div>
-                  <h3 class="card-title">Pod Delivery</h3>
-                </div>
-                
-                <div class="pod-delivery-container">
-                  <label class="checkbox-label pod-deliver-checkbox" [class.checked]="podDeliverChecked">
+                  <div class="card-title-section">
+                    <h3 class="card-title">Pod Delivery</h3>
+                    <!-- Pod Deliver Checkbox aligned with Status Legend button -->
+                    <div class="pod-deliver-wrapper">
+                      <label class="checkbox-label pod-deliver-checkbox" [class.checked]="podDeliverChecked">
                     <input 
                       type="checkbox" 
                       [(ngModel)]="podDeliverChecked"
@@ -594,8 +569,12 @@
                       </svg>
                     </span>
                   </label>
-                  
-                  <div class="pod-details" *ngIf="podDeliverChecked">
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="pod-delivery-container">
+                  <div class="pod-details" >
                     <div class="pod-details-header">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -673,41 +652,42 @@
             </div>
           </div>
 
-          <!-- Progress Card -->
-          <div class="info-card progress-card">
-            <h3 class="card-title">Progress</h3>
-            <div class="progress-container">
-              <div class="progress-header">
-                <span class="progress-label">Overall Completion</span>
-                <span class="progress-value">{{ box.progress | number:'1.2-2' }}%</span>
-              </div>
-              <div class="progress-bar">
-                <div class="progress-fill" [style.width.%]="box.progress"></div>
+          <!-- Progress and Schedule Cards - Side by Side -->
+          <div class="progress-schedule-layout">
+            <!-- Progress Card -->
+            <div class="info-card progress-card">
+              <h3 class="card-title">Progress</h3>
+              <div class="progress-container">
+                <div class="progress-header">
+                  <span class="progress-label">Overall Completion</span>
+                  <span class="progress-value">{{ box.progress | number:'1.2-2' }}%</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" [style.width.%]="box.progress"></div>
+                </div>
               </div>
             </div>
-          </div>
 
-        
-
-          <!-- Dates Card -->
-          <div class="info-card">
-            <h3 class="card-title">Schedule</h3>
-            <div class="info-grid">
-              <div class="info-item">
-                <span class="label">Planned Start</span>
-                <span class="value">{{ box.plannedStartDate ? (box.plannedStartDate | date: 'MMM d, yyyy') : 'Not set' }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">Actual Start</span>
-                <span class="value">{{ box.actualStartDate ? (box.actualStartDate | date: 'MMM d, yyyy') : 'Not started' }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">Planned End</span>
-                <span class="value">{{ box.plannedEndDate ? (box.plannedEndDate | date: 'MMM d, yyyy') : 'Not set' }}</span>
-              </div>
-              <div class="info-item">
-                <span class="label">Actual End</span>
-                <span class="value">{{ box.actualEndDate ? (box.actualEndDate | date: 'MMM d, yyyy') : 'Not completed' }}</span>
+            <!-- Dates Card / Schedule -->
+            <div class="info-card schedule-card">
+              <h3 class="card-title">Schedule</h3>
+              <div class="info-grid">
+                <div class="info-item">
+                  <span class="label">Planned Start</span>
+                  <span class="value">{{ box.plannedStartDate ? (box.plannedStartDate | date: 'MMM d, yyyy') : 'Not set' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">Actual Start</span>
+                  <span class="value">{{ box.actualStartDate ? (box.actualStartDate | date: 'MMM d, yyyy') : 'Not started' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">Planned End</span>
+                  <span class="value">{{ box.plannedEndDate ? (box.plannedEndDate | date: 'MMM d, yyyy') : 'Not set' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">Actual End</span>
+                  <span class="value">{{ box.actualEndDate ? (box.actualEndDate | date: 'MMM d, yyyy') : 'Not completed' }}</span>
+                </div>
               </div>
             </div>
           </div>

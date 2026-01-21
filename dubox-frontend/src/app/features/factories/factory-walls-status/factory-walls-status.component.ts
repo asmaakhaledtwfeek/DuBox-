@@ -395,8 +395,6 @@ export class FactoryWallsStatusComponent implements OnInit, OnDestroy {
     panelsGreen: number;
     panelsRed: number;
     panelsGray: number;
-    slabComplete: number;
-    soffitComplete: number;
     allComplete: number;
     podDeliverComplete: number;
     panelStats: Map<string, { total: number; yellow: number; green: number; red: number; gray: number }>;
@@ -475,17 +473,15 @@ export class FactoryWallsStatusComponent implements OnInit, OnDestroy {
         });
       }
       
-      if (box.slab) stats.slabComplete++;
-      if (box.soffit) stats.soffitComplete++;
       if (box.podDeliver) stats.podDeliverComplete++;
       
-      // All complete if box has panels (all SecondApprovalApproved), slab, and soffit
+      // All complete if box has panels (all SecondApprovalApproved)
       const hasPanels = box.boxPanels && box.boxPanels.length > 0;
       const allPanelsGreen = hasPanels && box.boxPanels!.every((p: BoxPanel) => {
         const normalized = this.normalizePanelStatus(p.panelStatus);
         return normalized === PanelStatus.SecondApprovalApproved;
       });
-      if (allPanelsGreen && box.slab && box.soffit) {
+      if (allPanelsGreen) {
         stats.allComplete++;
       }
     });
@@ -804,7 +800,7 @@ export class FactoryWallsStatusComponent implements OnInit, OnDestroy {
     });
 
     // Add delivery columns
-    headers.push('Slab', 'Soffit', 'POD Deliver', 'POD Name', 'POD Type');
+    headers.push('POD Deliver', 'POD Name', 'POD Type');
 
     // Prepare data rows
     const dataRows: any[] = boxesToExport.map(box => {
@@ -832,8 +828,6 @@ export class FactoryWallsStatusComponent implements OnInit, OnDestroy {
       });
 
       // Add delivery information
-      row['Slab'] = box.slab ? 'Yes' : 'No';
-      row['Soffit'] = box.soffit ? 'Yes' : 'No';
       row['POD Deliver'] = box.podDeliver ? 'Yes' : 'No';
       row['POD Name'] = box.podName || '-';
       row['POD Type'] = box.podType || '-';
@@ -860,8 +854,6 @@ export class FactoryWallsStatusComponent implements OnInit, OnDestroy {
 
     // Add widths for delivery columns
     columnWidths.push(
-      { wch: 10 }, // Slab
-      { wch: 10 }, // Soffit
       { wch: 12 }, // POD Deliver
       { wch: 20 }, // POD Name
       { wch: 15 }  // POD Type
@@ -879,7 +871,7 @@ export class FactoryWallsStatusComponent implements OnInit, OnDestroy {
     const today = new Date();
     const dateStr = today.toISOString().split('T')[0];
     const factoryCode = this.factory?.factoryCode || 'factory';
-    const fileName = `Panels_Slab_Soffit_Status_${factoryCode}_${dateStr}.xlsx`;
+    const fileName = `Panels_Status_${factoryCode}_${dateStr}.xlsx`;
 
     // Save file
     XLSX.writeFile(workbook, fileName);

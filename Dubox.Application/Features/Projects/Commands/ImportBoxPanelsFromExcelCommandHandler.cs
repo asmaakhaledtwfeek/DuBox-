@@ -59,7 +59,7 @@ public class ImportBoxPanelsFromExcelCommandHandler : IRequestHandler<ImportBoxP
             var headers = new List<string>();
             for (int col = 1; col <= worksheet.Dimension.End.Column; col++)
             {
-                var headerValue = worksheet.Cells[1, col].Value?.ToString()?.Trim();
+                var headerValue = worksheet.Cells[1, col].Value?.ToString()?.Trim()?.ToUpper();
                 if (!string.IsNullOrWhiteSpace(headerValue))
                 {
                     headers.Add(headerValue);
@@ -93,7 +93,7 @@ public class ImportBoxPanelsFromExcelCommandHandler : IRequestHandler<ImportBoxP
             foreach (var panelCol in panelColumns)
             {
                 // Extract type code from "Panel_XXX" header
-                var typeCode = panelCol.Header.Substring(6).Trim(); // Remove "Panel_" prefix
+                var typeCode = panelCol.Header.Substring(6).Trim().ToUpper(); // Remove "Panel_" prefix
                 var panelType = panelTypes.FirstOrDefault(pt => 
                     pt.PanelTypeCode.Equals(typeCode, StringComparison.OrdinalIgnoreCase));
                 panelTypesByColumn[panelCol.Header] = panelType;
@@ -110,8 +110,6 @@ public class ImportBoxPanelsFromExcelCommandHandler : IRequestHandler<ImportBoxP
                 .Where(p => p.ProjectId == request.ProjectId)
                 .ToListAsync(cancellationToken);
 
-            // Create a dictionary to match existing panels by BoxId + PanelTypeId
-            // Key: (BoxId, PanelTypeId), Value: BoxPanel
             var existingPanelsByKey = existingPanels
                 .Where(p => p.PanelTypeId.HasValue)
                 .GroupBy(p => new { p.BoxId, PanelTypeId = p.PanelTypeId!.Value })
@@ -160,7 +158,7 @@ public class ImportBoxPanelsFromExcelCommandHandler : IRequestHandler<ImportBoxP
                     var panelData = new List<(string PanelName, Guid? PanelTypeId)>();
                     foreach (var panelCol in panelColumns)
                     {
-                        var cellValue = worksheet.Cells[row, panelCol.Index].Value?.ToString()?.Trim();
+                        var cellValue = worksheet.Cells[row, panelCol.Index].Value?.ToString()?.Trim()?.ToUpper();
                         if (!string.IsNullOrWhiteSpace(cellValue))
                         {
                             var panelType = panelTypesByColumn[panelCol.Header];

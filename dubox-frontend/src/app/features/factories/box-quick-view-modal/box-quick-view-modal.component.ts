@@ -27,10 +27,6 @@ export class BoxQuickViewModalComponent implements OnInit, OnDestroy {
   boxPanels: BoxPanel[] = [];
   showLegend = false;
   
-  // Slab and Soffit (these remain as checkboxes)
-  slabChecked = false;
-  soffitChecked = false;
-  
   // Pod Delivery
   podDeliverChecked = false;
   podName: string = '';
@@ -103,9 +99,7 @@ export class BoxQuickViewModalComponent implements OnInit, OnDestroy {
     this.boxPanels = box.boxPanels || [];
     
     // Initialize slab and soffit (these remain as simple checkboxes)
-    this.slabChecked = box.slab ?? false;
-    this.soffitChecked = box.soffit ?? false;
-    
+  
     // Initialize pod delivery
     this.podDeliverChecked = box.podDeliver ?? false;
     this.podName = box.podName ?? '';

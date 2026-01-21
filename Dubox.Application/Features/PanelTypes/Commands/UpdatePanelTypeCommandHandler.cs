@@ -42,6 +42,16 @@ public class UpdatePanelTypeCommandHandler : IRequestHandler<UpdatePanelTypeComm
         if (existingPanelType != null)
             return Result.Failure<PanelTypeDto>($"Panel type with code '{request.PanelTypeCode}' already exists in this project");
 
+        // Check for duplicate displayOrder in the same project (excluding current panel type)
+        var existingPanelTypeWithOrder = await _dbContext.PanelTypes
+            .FirstOrDefaultAsync(pt => pt.ProjectId == panelType.ProjectId && 
+                                      pt.DisplayOrder == request.DisplayOrder &&
+                                      pt.PanelTypeId != request.PanelTypeId, 
+                                 cancellationToken);
+
+        if (existingPanelTypeWithOrder != null)
+            return Result.Failure<PanelTypeDto>($"Panel type with display order '{request.DisplayOrder}' already exists in this project. Display order must be unique.");
+
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
 
         panelType.PanelTypeName = request.PanelTypeName;

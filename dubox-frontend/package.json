@@ -28,6 +28,7 @@
     "@ngrx/store": "^19.2.0",
     "@types/jsbarcode": "^3.11.4",
     "@types/jszip": "^3.4.0",
+    "@zxing/library": "^0.21.3",
     "chart.js": "^4.5.1",
     "date-fns": "^4.1.0",
     "exceljs": "^4.4.0",

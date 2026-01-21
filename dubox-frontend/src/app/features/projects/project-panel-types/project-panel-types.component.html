@@ -178,6 +178,22 @@
           <div class="form-group">
             <label for="displayOrder">Display Order</label>
             <input type="number" id="displayOrder" formControlName="displayOrder" class="form-control" min="0">
+            <p class="helper-text" style="margin-top: 6px; font-size: 12px; color: #6b7280; display: flex; align-items: center; gap: 4px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+              Display order must be unique. Default is set to the last order + 1.
+            </p>
+            <span class="error" *ngIf="panelTypeForm.get('displayOrder')?.invalid && panelTypeForm.get('displayOrder')?.touched">
+              <span *ngIf="panelTypeForm.get('displayOrder')?.errors?.['min']">
+                Display order must be 0 or greater
+              </span>
+              <span *ngIf="panelTypeForm.get('displayOrder')?.errors?.['uniqueDisplayOrder']">
+                {{ panelTypeForm.get('displayOrder')?.errors?.['uniqueDisplayOrder']?.message }}
+              </span>
+            </span>
           </div>
           
           <div class="form-group" *ngIf="editingPanelType">

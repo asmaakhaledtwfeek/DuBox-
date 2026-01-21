@@ -56,8 +56,6 @@ export interface Box {
   wall3?: boolean;
   wall4?: boolean;
   boxPanels?: BoxPanel[];
-  slab?: boolean;
-  soffit?: boolean;
   podDeliver?: boolean;
   podName?: string;
   podType?: string;

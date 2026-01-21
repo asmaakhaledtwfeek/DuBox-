@@ -49,8 +49,6 @@ public record BoxDto
     public string? Position { get; init; }
     public int? DrawingsCount { get; set; }
     public List<BoxPanelDto> BoxPanels { get; init; } = new();
-    public bool? Slab { get; init; }
-    public bool? Soffit { get; init; }
     public bool? PodDeliver { get; init; }
     public string? PodName { get; init; }
     public string? PodType { get; init; }

@@ -10,8 +10,6 @@ public record UpdateBoxDeliveryInfoCommand(
     bool? Wall2,
     bool? Wall3,
     bool? Wall4,
-    bool? Slab,
-    bool? Soffit,
     bool? PodDeliver,
     string? PodName,
     string? PodType

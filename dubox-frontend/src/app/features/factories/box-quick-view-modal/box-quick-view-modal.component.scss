@@ -165,7 +165,7 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 24px;
-    align-items: start;
+    align-items: stretch;
 
     @media (max-width: 1200px) {
       grid-template-columns: 1fr;
@@ -174,11 +174,14 @@
 
   // Info Card Base Styles
   .info-card {
+    display: flex;
+    flex-direction: column;
     background: white;
     border-radius: 16px;
     border: 1px solid #e2e8f0;
     padding: 24px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    height: 100%;
 
     .card-title {
       display: flex;
@@ -188,6 +191,7 @@
       font-weight: 700;
       color: #1e293b;
       margin: 0 0 20px 0;
+      flex-shrink: 0;
 
       svg {
         color: var(--amana-teal);
@@ -202,6 +206,7 @@
       display: flex;
       flex-direction: column;
       gap: 24px;
+      flex: 1;
     }
 
     .visual-chart-section {
@@ -379,6 +384,7 @@
     display: flex;
     flex-direction: column;
     gap: 24px;
+    height: 100%;
 
     .delivery-card {
       .card-header-with-icon {
@@ -520,6 +526,7 @@
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
         gap: 12px;
+        flex: 1;
 
         .delivery-item {
           &.panel-item {
@@ -617,7 +624,7 @@
             }
           }
 
-          // Regular checkbox items (Slab, Soffit)
+          // Regular checkbox items
           .checkbox-label {
             position: relative;
             display: flex;
@@ -699,126 +706,162 @@
 
     // Pod Delivery Card
     .pod-delivery-card {
+      overflow: hidden;
+      
       .pod-delivery-container {
         display: flex;
         flex-direction: column;
-        gap: 20px;
+        gap: 18px;
+        flex: 1;
 
-        .pod-deliver-checkbox {
-          .checkbox-label {
-            position: relative;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            cursor: default;
-            padding: 14px 16px;
-            border-radius: 10px;
-            background: #f8fafc;
-            border: 2px solid #e2e8f0;
-            width: 100%;
+        // Pod deliver checkbox
+        .checkbox-label.pod-deliver-checkbox {
+          position: relative;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          cursor: default;
+          padding: 12px 14px;
+          border-radius: 8px;
+          background: #f8fafc;
+          border: 2px solid #e2e8f0;
+          width: 100%;
+          box-sizing: border-box;
+          margin: 0;
 
-            &.checked {
-              background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
-              border-color: #10b981;
-              box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
-            }
-
-            .checkbox-input {
-              position: absolute;
-              opacity: 0;
-              cursor: default;
-            }
-
-            .checkbox-custom {
-              width: 20px;
-              height: 20px;
-              border: 2px solid #cbd5e1;
-              border-radius: 4px;
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              flex-shrink: 0;
-              transition: all 0.2s ease;
-              background: white;
-            }
-
-            &.checked .checkbox-custom {
-              background: #10b981;
-              border-color: #10b981;
-            }
+          &.checked {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border-color: #10b981;
+            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
 
             .checkbox-text {
-              font-size: 14px;
-              font-weight: 500;
-              color: #475569;
-              flex: 1;
+              color: #047857;
+              font-weight: 600;
             }
+          }
 
-            .check-icon {
-              margin-left: auto;
-              color: #10b981;
-              flex-shrink: 0;
-            }
+          .checkbox-input {
+            position: absolute;
+            opacity: 0;
+            cursor: default;
+          }
+
+          .checkbox-custom {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #cbd5e1;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            transition: all 0.2s ease;
+            background: white;
+          }
+
+          &.checked .checkbox-custom {
+            background: #10b981;
+            border-color: #10b981;
+          }
+
+          .checkbox-text {
+            font-size: 14px;
+            font-weight: 500;
+            color: #475569;
+            flex: 1;
+          }
+
+          .check-icon {
+            margin-left: auto;
+            color: #10b981;
+            flex-shrink: 0;
           }
         }
 
+        // Pod details section
         .pod-details {
-          padding: 20px;
-          background: #f8fafc;
-          border-radius: 12px;
-          border: 1px solid #e2e8f0;
+          padding: 16px;
+          background: #f0fdfa;
+          border-radius: 8px;
+          border: 2px dashed #99f6e4;
+          box-sizing: border-box;
+          max-width: 100%;
 
           .pod-details-header {
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-bottom: 16px;
-            font-size: 14px;
-            font-weight: 600;
-            color: #475569;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #99f6e4;
+            font-size: 11px;
+            font-weight: 700;
+            color: #0f766e;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
 
             svg {
               color: var(--amana-teal);
+              width: 14px;
+              height: 14px;
+              flex-shrink: 0;
             }
           }
 
           .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 16px;
+            gap: 12px;
 
             @media (max-width: 768px) {
               grid-template-columns: 1fr;
             }
 
             .form-group {
+              min-width: 0;
+              
               label {
                 display: flex;
                 align-items: center;
-                gap: 6px;
-                font-size: 12px;
-                font-weight: 600;
-                color: #64748b;
-                margin-bottom: 8px;
+                gap: 4px;
+                font-size: 10px;
+                font-weight: 700;
+                color: #0f766e;
+                margin-bottom: 6px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
 
                 svg {
                   color: var(--amana-teal);
+                  width: 12px;
+                  height: 12px;
+                  flex-shrink: 0;
                 }
               }
 
               .form-input {
                 width: 100%;
-                padding: 10px 12px;
-                border: 1px solid #e2e8f0;
-                border-radius: 8px;
-                font-size: 14px;
+                padding: 8px 10px;
+                border: 1px solid #99f6e4;
+                border-radius: 6px;
+                font-size: 13px;
+                font-weight: 500;
                 background: white;
                 color: #1e293b;
                 cursor: not-allowed;
+                transition: all 0.2s ease;
+                box-sizing: border-box;
+                min-width: 0;
 
                 &:disabled {
-                  background: #f8fafc;
+                  background: white;
                   color: #64748b;
+                }
+
+                &::placeholder {
+                  color: #94a3b8;
+                  font-style: italic;
+                  font-size: 12px;
                 }
               }
             }

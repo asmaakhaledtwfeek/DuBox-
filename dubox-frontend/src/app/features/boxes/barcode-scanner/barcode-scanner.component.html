@@ -37,18 +37,60 @@
         {{ scanType }}
       </div>
 
-      <!-- Manual Barcode Entry -->
-      <div class="barcode-input-section">
-        <label for="barcodeInput" class="input-label">
+      <!-- Camera Scanner View -->
+      <div class="camera-section" *ngIf="isCameraMode">
+        <div class="camera-container">
+          <video #videoElement class="camera-video" playsinline autoplay muted></video>
+          <canvas #canvasElement class="camera-canvas" style="display: none;"></canvas>
+          <div class="camera-overlay" *ngIf="barcodeDetector && cameraActive">
+            <div class="scan-frame"></div>
+          </div>
+          <div class="camera-loading" *ngIf="!cameraActive">
+            <div class="loading-spinner-large"></div>
+            <p>Starting camera...</p>
+          </div>
+        </div>
+        <p class="camera-hint" *ngIf="cameraActive && isBarcodeDetectionAvailable()">
+          Point camera at barcode to scan automatically
+        </p>
+        <p class="camera-hint" *ngIf="cameraActive && !isBarcodeDetectionAvailable()" style="color: #f59e0b;">
+          Camera active. Barcode detection initializing...
+        </p>
+        <button class="btn btn-secondary btn-camera-toggle" (click)="toggleCameraMode()">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="18" height="18" rx="2"/>
-            <path d="M7 7v10"/>
-            <path d="M11 7v10"/>
-            <path d="M15 7v10"/>
-            <path d="M19 7v10"/>
+            <path d="M8 11h8"/>
+            <path d="M8 15h4"/>
           </svg>
-          Enter Barcode Manually
-        </label>
+          Switch to Manual Entry
+        </button>
+      </div>
+
+      <!-- Manual Barcode Entry -->
+      <div class="barcode-input-section" *ngIf="!isCameraMode">
+        <div class="input-header">
+          <label for="barcodeInput" class="input-label">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <path d="M7 7v10"/>
+              <path d="M11 7v10"/>
+              <path d="M15 7v10"/>
+              <path d="M19 7v10"/>
+            </svg>
+            Enter Barcode Manually
+          </label>
+          <button 
+            class="btn-camera-toggle-small" 
+            *ngIf="cameraSupported && !isCameraMode"
+            (click)="toggleCameraMode()"
+            title="Scan with camera">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+              <circle cx="12" cy="13" r="4"/>
+            </svg>
+            Use Camera
+          </button>
+        </div>
         <div class="input-with-button">
           <input
             id="barcodeInput"
@@ -128,18 +170,22 @@
       <button
         class="btn btn-primary"
         (click)="scanManualBarcode()"
-        [disabled]="!manualBarcode.trim() || scanning">
+        [disabled]="(!manualBarcode.trim() && !isCameraMode) || scanning">
         <span *ngIf="!scanning" class="btn-content">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg *ngIf="!isCameraMode" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <rect x="3" y="3" width="18" height="18" rx="2"/>
             <path d="M7 7v10"/>
             <path d="M11 7v10"/>
           </svg>
-          Scan Barcode
+          <svg *ngIf="isCameraMode" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+          {{ isCameraMode ? 'Scanning...' : 'Scan Barcode' }}
         </span>
         <span *ngIf="scanning" class="btn-content">
           <span class="spinner-small"></span>
-          Scanning...
+          Processing...
         </span>
       </button>
     </div>

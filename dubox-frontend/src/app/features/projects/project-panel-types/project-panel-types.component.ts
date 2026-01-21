@@ -42,9 +42,33 @@ export class ProjectPanelTypesComponent implements OnInit {
       panelTypeName: ['', Validators.required],
       panelTypeCode: ['', Validators.required],
       description: [''],
-      displayOrder: [0, Validators.min(0)],
+      displayOrder: [0, [Validators.min(0), this.uniqueDisplayOrderValidator.bind(this)]],
       isActive: [true]
     });
+  }
+
+  /**
+   * Custom validator to ensure displayOrder is unique within the project
+   */
+  private uniqueDisplayOrderValidator(control: any): { [key: string]: any } | null {
+    if (!control || control.value === null || control.value === undefined) {
+      return null;
+    }
+
+    const displayOrder = control.value;
+    const currentPanelTypeId = this.editingPanelType?.panelTypeId;
+
+    // Check if this displayOrder is already used by another panel type
+    const existingPanelType = this.allPanelTypes.find(
+      pt => pt.displayOrder === displayOrder && 
+           pt.panelTypeId !== currentPanelTypeId
+    );
+
+    if (existingPanelType) {
+      return { uniqueDisplayOrder: { message: `Display order ${displayOrder} is already used by "${existingPanelType.panelTypeName}"` } };
+    }
+
+    return null;
   }
 
   ngOnInit(): void {
@@ -78,6 +102,8 @@ export class ProjectPanelTypesComponent implements OnInit {
       next: (response) => {
         this.allPanelTypes = response.data || [];
         this.applyFilter();
+        // Update validation after loading panel types
+        this.panelTypeForm.get('displayOrder')?.updateValueAndValidity();
         this.loading = false;
       },
       error: (err) => {
@@ -103,16 +129,30 @@ export class ProjectPanelTypesComponent implements OnInit {
     }
   }
 
+  /**
+   * Calculate the next available display order (max order + 1)
+   */
+  private getNextDisplayOrder(): number {
+    if (this.allPanelTypes.length === 0) {
+      return 0;
+    }
+    const maxOrder = Math.max(...this.allPanelTypes.map(pt => pt.displayOrder || 0));
+    return maxOrder + 1;
+  }
+
   openCreateModal(): void {
     this.error = ''; // Clear any previous errors
     this.editingPanelType = null;
+    const nextOrder = this.getNextDisplayOrder();
     this.panelTypeForm.reset({
       panelTypeName: '',
       panelTypeCode: '',
       description: '',
-      displayOrder: this.panelTypes.length,
+      displayOrder: nextOrder,
       isActive: true
     });
+    // Re-apply validator after reset
+    this.panelTypeForm.get('displayOrder')?.setValidators([Validators.min(0), this.uniqueDisplayOrderValidator.bind(this)]);
     this.showModal = true;
   }
 
@@ -126,6 +166,9 @@ export class ProjectPanelTypesComponent implements OnInit {
       displayOrder: panelType.displayOrder,
       isActive: panelType.isActive
     });
+    // Re-apply validator after patch
+    this.panelTypeForm.get('displayOrder')?.setValidators([Validators.min(0), this.uniqueDisplayOrderValidator.bind(this)]);
+    this.panelTypeForm.get('displayOrder')?.updateValueAndValidity();
     this.showModal = true;
   }
 

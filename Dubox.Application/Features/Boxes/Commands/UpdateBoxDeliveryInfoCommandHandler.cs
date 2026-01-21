@@ -64,18 +64,6 @@ public class UpdateBoxDeliveryInfoCommandHandler : IRequestHandler<UpdateBoxDeli
             }
         }
 
-        if (request.Slab.HasValue && request.Slab != box.Slab)
-        {
-            RecordChange("Slab", box.Slab, request.Slab);
-            box.Slab = request.Slab;
-        }
-
-        if (request.Soffit.HasValue && request.Soffit != box.Soffit)
-        {
-            RecordChange("Soffit", box.Soffit, request.Soffit);
-            box.Soffit = request.Soffit;
-        }
-
         // Update pod delivery fields - only update if explicitly provided (not null)
         if (request.PodDeliver.HasValue && request.PodDeliver != box.PodDeliver)
         {

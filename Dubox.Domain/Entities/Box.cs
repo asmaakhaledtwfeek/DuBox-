@@ -94,8 +94,6 @@ public class Box
     [MaxLength(50)]
     public string? Position { get; set; } = string.Empty;
     public DateTime? DeletedDated { get; set; }
-    public bool? Slab { get; set; }
-    public bool? Soffit { get; set; }
     public bool? PodDeliver { get; set; }
     public string? PodName { get; set; }
     public string? PodType { get; set; }

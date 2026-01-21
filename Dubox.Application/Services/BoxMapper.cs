@@ -101,7 +101,8 @@ namespace Dubox.Application.Services
                     SecondApprovalDate = p.SecondApprovalDate,
                     SecondApprovalNotes = p.SecondApprovalNotes,
                     CreatedDate = p.CreatedDate,
-                    ModifiedDate = p.ModifiedDate
+                    ModifiedDate = p.ModifiedDate,
+                    Notes = p.Notes
                 }).ToList() ?? new List<BoxPanelDto>();
 
                 return new BoxDto
@@ -147,8 +148,6 @@ namespace Dubox.Application.Services
                     Row = box.Row,
                     Position = box.Position,
                     BoxPanels = boxPanels,
-                    Slab = box.Slab,
-                    Soffit = box.Soffit,
                     PodDeliver = box.PodDeliver,
                     PodName = box.PodName,
                     PodType = box.PodType, 

@@ -306,8 +306,6 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   
   // Concrete Panel Delivery and Pod Delivery
   boxPanels: BoxPanel[] = [];
-  slabChecked = false;
-  soffitChecked = false;
   podDeliverChecked = false;
   readonly PanelStatus = PanelStatus;
   podName: string = '';
@@ -487,10 +485,6 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     // Initialize panels from box.boxPanels
     this.boxPanels = box.boxPanels ? [...box.boxPanels] : [];
     
-    // Initialize slab and soffit (these are still boolean properties on Box)
-    this.slabChecked = box.slab ?? false;
-    this.soffitChecked = box.soffit ?? false;
-    
     // Initialize pod delivery
     this.podDeliverChecked = box.podDeliver ?? false;
     this.podName = box.podName ?? '';
@@ -586,6 +580,31 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     return 'status-text-default';
   }
 
+  /**
+   * Get rejection reason for a panel from either first or second approval notes
+   */
+  getPanelRejectionReason(panel: BoxPanel): string | null {
+    // Check if second approval was rejected
+    if (panel.secondApprovalStatus === 'Rejected' && panel.secondApprovalNotes) {
+      return panel.secondApprovalNotes;
+    }
+    
+    // Check if first approval was rejected
+    if (panel.firstApprovalStatus === 'Rejected' && panel.firstApprovalNotes) {
+      return panel.firstApprovalNotes;
+    }
+    
+    return null;
+  }
+
+  /**
+   * Check if a panel has been rejected (either first or second approval)
+   */
+  isPanelRejected(panel: BoxPanel): boolean {
+    return (panel.firstApprovalStatus === 'Rejected' && !!panel.firstApprovalNotes) ||
+           (panel.secondApprovalStatus === 'Rejected' && !!panel.secondApprovalNotes);
+  }
+
   togglePanelStatus(panel: BoxPanel, newStatus: PanelStatus): void {
     if (!this.box) return;
     
@@ -606,24 +625,6 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     });
   }
 
-  toggleSlabOrSoffit(key: 'slab' | 'soffit', event: Event): void {
-    const checkbox = event.target as HTMLInputElement;
-    const isChecked = checkbox.checked;
-    
-    // Update local state
-    if (key === 'slab') {
-      this.slabChecked = isChecked;
-    } else {
-      this.soffitChecked = isChecked;
-    }
-    
-    // Prepare update payload
-    const deliveryInfo: any = {};
-    deliveryInfo[key] = isChecked;
-    
-    // Update backend
-    this.updateDeliveryInfo(deliveryInfo);
-  }
 
   /**
    * Check if pod delivery data has changed

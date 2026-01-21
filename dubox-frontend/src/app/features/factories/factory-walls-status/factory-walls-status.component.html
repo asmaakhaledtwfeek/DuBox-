@@ -33,7 +33,7 @@
             Back
           </button>
           <div class="header-info">
-            <h1>Panels, Slab & Soffit Status</h1>
+            <h1>Panels Status</h1>
             <div class="factory-name">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
@@ -147,7 +147,7 @@
           <path d="M3 9h18M9 21V9"/>
         </svg>
         <h3>Select a Project</h3>
-        <p>Choose a project from the dropdown above to view its panels, slab and soffit status.</p>
+        <p>Choose a project from the dropdown above to view its panels status.</p>
       </div>
 
       <!-- Statistics Cards Grid -->
@@ -197,35 +197,11 @@
           </div>
         </div>
 
-        <!-- Combined Slab, Soffit, and POD Delivery Card -->
+        <!-- POD Delivery Card -->
         <div class="stat-card combined-delivery-stat">
           <div class="stat-content">
             <div class="stat-label">Delivery Status</div>
             <div class="delivery-items">
-              <div class="delivery-item">
-                <div class="delivery-header">
-                  <span class="delivery-name">Slab</span>
-                  <span class="delivery-count">{{ getCompletionStats().slabComplete }}/{{ getCompletionStats().total }}</span>
-                </div>
-                <div class="progress-bar">
-                  <div class="progress-fill" 
-                       [style.width.%]="getCompletionPercentage(getCompletionStats().slabComplete)"
-                       [style.backgroundColor]="getCompletionStats().slabComplete === getCompletionStats().total ? '#10b981' : '#e2e8f0'"></div>
-                </div>
-              </div>
-              
-              <div class="delivery-item">
-                <div class="delivery-header">
-                  <span class="delivery-name">Soffit</span>
-                  <span class="delivery-count">{{ getCompletionStats().soffitComplete }}/{{ getCompletionStats().total }}</span>
-                </div>
-                <div class="progress-bar">
-                  <div class="progress-fill" 
-                       [style.width.%]="getCompletionPercentage(getCompletionStats().soffitComplete)"
-                       [style.backgroundColor]="getCompletionStats().soffitComplete === getCompletionStats().total ? '#10b981' : '#e2e8f0'"></div>
-                </div>
-              </div>
-              
               <div class="delivery-item pod-item">
                 <div class="delivery-header">
                   <span class="delivery-name">POD Delivery</span>
@@ -287,8 +263,6 @@
                 <th *ngFor="let panelType of getPanelTypeColumns()">
                   {{ panelType.panelTypeName }}
                 </th>
-                <th>Slab</th>
-                <th>Soffit</th>
                 <th>POD Deliver</th>
                 <th>POD Name</th>
                 <th>POD Type</th>
@@ -335,32 +309,6 @@
                       </div>
                     </ng-template>
                   </div>
-                </td>
-                <td [class.status-finished]="box.slab" [class.status-not-finished]="!box.slab">
-                  <span class="status-icon" *ngIf="box.slab">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                  </span>
-                  <span class="status-icon" *ngIf="!box.slab">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                      <line x1="18" y1="6" x2="6" y2="18"/>
-                      <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                  </span>
-                </td>
-                <td [class.status-finished]="box.soffit" [class.status-not-finished]="!box.soffit">
-                  <span class="status-icon" *ngIf="box.soffit">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                  </span>
-                  <span class="status-icon" *ngIf="!box.soffit">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                      <line x1="18" y1="6" x2="6" y2="18"/>
-                      <line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                  </span>
                 </td>
                 <td [class.status-finished]="box.podDeliver" [class.status-not-finished]="!box.podDeliver">
                   <span class="status-icon" *ngIf="box.podDeliver">

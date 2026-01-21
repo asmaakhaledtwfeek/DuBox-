@@ -260,44 +260,8 @@
                   </div>
                 </div>
                 
-                <!-- Slab -->
-                <div class="delivery-item">
-                  <label class="checkbox-label" [class.checked]="slabChecked">
-                    <input 
-                      type="checkbox" 
-                      [checked]="slabChecked"
-                      disabled
-                      class="checkbox-input">
-                    <span class="checkbox-custom"></span>
-                    <span class="checkbox-text">Slab</span>
-                    <span class="check-icon" *ngIf="slabChecked">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                    </span>
-                  </label>
-                </div>
-                
-                <!-- Soffit -->
-                <div class="delivery-item">
-                  <label class="checkbox-label" [class.checked]="soffitChecked">
-                    <input 
-                      type="checkbox" 
-                      [checked]="soffitChecked"
-                      disabled
-                      class="checkbox-input">
-                    <span class="checkbox-custom"></span>
-                    <span class="checkbox-text">Soffit</span>
-                    <span class="check-icon" *ngIf="soffitChecked">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                    </span>
-                  </label>
-                </div>
-                
                 <!-- Empty state -->
-                <div class="delivery-item empty-state" *ngIf="boxPanels.length === 0 && !slabChecked && !soffitChecked">
+                <div class="delivery-item empty-state" *ngIf="boxPanels.length === 0">
                   <span class="empty-message">No panels configured for this box</span>
                 </div>
               </div>

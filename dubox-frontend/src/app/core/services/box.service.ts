@@ -119,8 +119,6 @@ export class BoxService {
       wall2: backendBox.wall2,
       wall3: backendBox.wall3,
       wall4: backendBox.wall4,
-      slab: backendBox.slab,
-      soffit: backendBox.soffit,
       podDeliver: backendBox.podDeliver,
       podName: backendBox.podName,
       podType: backendBox.podType,
@@ -381,8 +379,6 @@ export class BoxService {
     wall2?: boolean;
     wall3?: boolean;
     wall4?: boolean;
-    slab?: boolean;
-    soffit?: boolean;
     podDeliver?: boolean;
     podName?: string;
     podType?: string;

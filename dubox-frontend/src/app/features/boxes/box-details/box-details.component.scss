@@ -783,8 +783,10 @@
 
   /* Chart Card Styles */
   .chart-card {
-    grid-column: 1 / -1;
     padding: var(--spacing-lg, 20px);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 
     .card-title {
       display: flex;
@@ -802,6 +804,7 @@
       display: flex;
       flex-direction: column;
       gap: var(--spacing-xl, 24px);
+      flex: 1;
     }
 
     /* Visual Chart Section */
@@ -1059,7 +1062,13 @@
     height: 100%;
     display: flex;
     flex-direction: column;
-    margin-bottom: 24px;
+    margin-bottom: 24px; // Default margin
+    
+    // Remove margin-bottom when inside activity-delivery-layout
+    .activity-delivery-layout & {
+      margin-bottom: 0;
+    }
+    
     .card-title {
       font-size: 18px;
       font-weight: 600;
@@ -9704,6 +9713,7 @@
     border: 1px solid #e2e8f0;
     padding: 28px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    margin-bottom: 0; // Remove default margin when in flex layout
 
     .card-title {
       font-size: 17px;
@@ -9832,26 +9842,65 @@
 // ============= Activity Progress and Delivery Side by Side Layout ============= //
 .activity-delivery-layout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr; // Two columns: left (Activity Progress) and right (Delivery cards)
   gap: 24px;
   margin-bottom: 24px;
-  align-items: start;
+  align-items: stretch; // Make all cards stretch to equal height
 
   .chart-card {
     margin-bottom: 0;
     height: 100%;
-    grid-column: auto; // Override the full-width grid-column from parent
+    display: flex;
+    flex-direction: column;
+    grid-column: 1; // Left column
+    min-height: 0; // Allow flex items to shrink
+  }
+
+  .delivery-info-wrapper {
+    display: flex;
+    flex-direction: column; // Stack Concrete Panel and Pod Delivery vertically
+    gap: 24px;
+    height: 100%;
+    grid-column: 2; // Right column
+    min-height: 0; // Allow flex container to shrink
+    align-items: stretch; // Ensure children stretch to fill
   }
 
   .delivery-card {
     margin-bottom: 0;
-    height: 100%;
+    flex: 1; // Each delivery card takes equal space
     display: flex;
     flex-direction: column;
+    min-height: 0; // Allow flex items to shrink below content size
 
     .delivery-grid {
       flex: 1;
     }
+  }
+}
+
+// Progress and Schedule Cards - Side by Side Layout
+.progress-schedule-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr; // Two equal columns
+  gap: 24px;
+  margin-bottom: 24px;
+  align-items: stretch; // Make cards equal height
+
+  .info-card {
+    margin-bottom: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .progress-card,
+  .schedule-card {
+    flex: 1;
+  }
+
+  @media (max-width: 992px) {
+    grid-template-columns: 1fr; // Stack vertically on smaller screens
   }
 }
 
@@ -9888,7 +9937,19 @@
 
 @media (max-width: 1200px) {
   .activity-delivery-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; // Stack vertically on smaller screens
+    align-items: stretch;
+    
+    .chart-card {
+      grid-column: 1;
+    }
+    
+    .delivery-info-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      grid-column: 1;
+    }
   }
 
   .pod-delivery-full-card .pod-delivery-container {
@@ -9909,10 +9970,12 @@
 
 // ============= Enhanced Delivery Info Section Design ============= //
 .delivery-info-wrapper {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 28px;
-  margin-bottom: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 0;
+  height: 100%;
+  min-height: 0; // Allow flex container to shrink
 
   .delivery-card {
     background: white;
@@ -9921,6 +9984,10 @@
     padding: 32px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06);
     transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    flex: 1; // Each card takes equal space in the flex container
+    min-height: 0; // Allow flex items to shrink below content size
 
     &:hover {
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.08);
@@ -10087,6 +10154,7 @@
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 12px;
+      flex: 1;
     }
 
     .delivery-item {
@@ -10215,6 +10283,88 @@
             }
           }
         }
+        
+        // Rejection Reason Styles
+        .rejection-reason {
+          margin-top: 12px;
+          padding-top: 12px;
+          border-top: 1px solid rgba(239, 68, 68, 0.2);
+          
+          .rejection-reason-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-bottom: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #991b1b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            
+            svg {
+              width: 14px;
+              height: 14px;
+              flex-shrink: 0;
+            }
+          }
+          
+          .rejection-reason-text {
+            font-size: 13px;
+            color: #7f1d1d;
+            line-height: 1.5;
+            padding: 8px 12px;
+            background: rgba(254, 226, 226, 0.5);
+            border-left: 3px solid #ef4444;
+            border-radius: 4px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+          }
+        }
+        
+        // Mobile responsive styles for rejection reason
+        @media (max-width: 768px) {
+          .rejection-reason {
+            margin-top: 10px;
+            padding-top: 10px;
+            
+            .rejection-reason-label {
+              font-size: 10px;
+              margin-bottom: 5px;
+              
+              svg {
+                width: 12px;
+                height: 12px;
+              }
+            }
+            
+            .rejection-reason-text {
+              font-size: 12px;
+              padding: 6px 10px;
+            }
+          }
+        }
+        
+        @media (max-width: 480px) {
+          .rejection-reason {
+            margin-top: 8px;
+            padding-top: 8px;
+            
+            .rejection-reason-label {
+              font-size: 10px;
+              
+              svg {
+                width: 11px;
+                height: 11px;
+              }
+            }
+            
+            .rejection-reason-text {
+              font-size: 11px;
+              padding: 6px 8px;
+              line-height: 1.4;
+            }
+          }
+        }
       }
       
       &.empty-state {
@@ -10232,10 +10382,77 @@
 
   // Pod Delivery Specific Styles
   .pod-delivery-card {
+    overflow: hidden;
+    
+    .card-title-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+      
+      .card-title {
+        font-size: 19px;
+        font-weight: 500;
+        color: #1e293b;
+        margin: 0;
+        letter-spacing: -0.3px;
+      }
+    }
+
+    .pod-deliver-wrapper {
+      display: flex;
+      align-items: flex-start;
+      
+      .pod-deliver-checkbox {
+        margin: 0;
+        padding: 2px 2px;
+        width: auto;
+        min-width: auto;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 300;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        transition: all 0.2s ease;
+        box-sizing: border-box;
+        
+        &:hover {
+          background: #f1f5f9;
+          border-color: #cbd5e1;
+        }
+        
+        &.checked {
+          background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+          border-color: #10b981;
+          
+          .checkbox-text {
+            color: #047857;
+          }
+        }
+        
+        .checkbox-custom {
+          width: 14px;
+          height: 14px;
+          min-width: 14px;
+        }
+        
+        .check-icon {
+          width: 10px;
+          height: 10px;
+        }
+      }
+    }
+
     .pod-delivery-container {
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 15px;
+      margin-top: 0;
+      flex: 1;
+      min-height: 0;
     }
   }
 
@@ -10344,75 +10561,86 @@
   .pod-details {
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding: 24px;
-    background: linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 100%);
-    border-radius: 12px;
-    border: 2px dashed var(--amana-teal);
+    gap: 12px;
+    padding: 14px;
+    background: linear-gradient(135deg, rgba(236, 253, 245, 0.4) 0%, rgba(209, 250, 229, 0.3) 100%);
+    border-radius: 8px;
+    border: 2px dashed rgba(16, 185, 129, 0.3);
     margin-top: 8px;
     animation: slideDown 0.3s ease-out;
+    box-sizing: border-box;
 
     .pod-details-header {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding-bottom: 16px;
-      border-bottom: 2px solid #99f6e4;
-      margin-bottom: 8px;
+      gap: 6px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(16, 185, 129, 0.2);
+      margin-bottom: 4px;
 
       svg {
         color: var(--amana-teal);
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
       }
 
       span {
-        font-size: 14px;
+        font-size: 11px;
         font-weight: 700;
-        color: #0f766e;
+        color: #047857;
         text-transform: uppercase;
-        letter-spacing: 0.8px;
+        letter-spacing: 0.5px;
       }
     }
 
     .form-row {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 20px;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
     }
 
     .form-group {
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 5px;
+      min-width: 0;
 
       label {
         display: flex;
         align-items: center;
-        gap: 8px;
-        font-size: 13px;
+        gap: 4px;
+        font-size: 10px;
         font-weight: 700;
-        color: #0f766e;
+        color: #047857;
         text-transform: uppercase;
-        letter-spacing: 0.6px;
+        letter-spacing: 0.3px;
 
         svg {
           color: var(--amana-teal);
+          width: 12px;
+          height: 12px;
+          flex-shrink: 0;
         }
       }
 
       .form-input {
-        padding: 12px 16px;
-        border: 2px solid #5eead4;
-        border-radius: 10px;
-        font-size: 15px;
+        width: 100%;
+        padding: 7px 10px;
+        border: 1px solid #d1fae5;
+        border-radius: 6px;
+        font-size: 13px;
         color: #1e293b;
         background: white;
         transition: all 0.25s ease;
         font-weight: 500;
+        box-sizing: border-box;
+        min-width: 0;
 
         &:focus {
           outline: none;
           border-color: var(--amana-teal);
-          box-shadow: 0 0 0 4px rgba(0, 163, 163, 0.15);
+          box-shadow: 0 0 0 2px rgba(0, 163, 163, 0.1);
           transform: translateY(-1px);
         }
 
@@ -10430,6 +10658,7 @@
         &::placeholder {
           color: #94a3b8;
           font-weight: 400;
+          font-size: 12px;
         }
       }
     }
@@ -10438,20 +10667,20 @@
     .pod-actions {
       display: flex;
       justify-content: flex-end;
-      margin-top: 20px;
-      padding-top: 20px;
-      border-top: 2px solid #99f6e4;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #99f6e4;
 
       .save-pod-btn {
         display: flex;
         align-items: center;
-        gap: 10px;
-        padding: 12px 24px;
+        gap: 8px;
+        padding: 8px 18px;
         background: linear-gradient(135deg, #cbd5e1 0%, #94a3b8 100%);
         color: #64748b;
         border: none;
-        border-radius: 10px;
-        font-size: 15px;
+        border-radius: 8px;
+        font-size: 13px;
         font-weight: 600;
         cursor: not-allowed;
         transition: all 0.3s ease;
@@ -10460,6 +10689,8 @@
 
         svg {
           flex-shrink: 0;
+          width: 16px;
+          height: 16px;
         }
 
         &.has-changes:not(:disabled) {
@@ -10531,8 +10762,17 @@
 }
 
 @media (max-width: 768px) {
+  .activity-delivery-layout {
+    .delivery-info-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+  }
+
   .delivery-info-wrapper {
-    grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 20px;
 
     .delivery-card {

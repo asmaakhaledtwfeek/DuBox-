@@ -66,8 +66,7 @@ public class ScanPanelBarcodeCommandHandler : IRequestHandler<ScanPanelBarcodeCo
         // Handle second scan: when panel has FirstApprovalApproved status, create second scan opportunity
         else if (panel.PanelStatus == PanelStatusEnum.FirstApprovalApproved)
         {
-            // If second approval was rejected, set it to Pending for approval/rejection
-            // Note: We already checked above that SecondApprovalStatus is not "Pending"
+            
             bool wasRejected = panel.SecondApprovalStatus == "Rejected";
             if (wasRejected || string.IsNullOrEmpty(panel.SecondApprovalStatus))
             {
@@ -113,7 +112,7 @@ public class ScanPanelBarcodeCommandHandler : IRequestHandler<ScanPanelBarcodeCo
 
         panel.ModifiedDate = scanTime;
         panel.ModifiedBy = currentUserId;
-
+        panel.Notes = request.Notes;
         _unitOfWork.Repository<BoxPanel>().Update(panel);
         await _unitOfWork.CompleteAsync(cancellationToken);
 

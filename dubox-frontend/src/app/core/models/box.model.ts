@@ -481,23 +481,10 @@ export interface BoxPanel {
 }
 
 export enum PanelStatus {
-  NotStarted = 1,
-  Manufacturing = 2,
-  ReadyForDispatch = 3,
-  InTransit = 4,              // YELLOW - On the way to factory
-  ArrivedFactory = 5,         // GREEN - Arrived at factory
-  FirstApprovalPending = 6,
-  FirstApprovalApproved = 7,
-  FirstApprovalRejected = 8,
-  SecondApprovalPending = 9,
-  SecondApprovalApproved = 10, // GREEN with checkmark - Ready for installation
-  SecondApprovalRejected = 11,
-  Installed = 12,             // PURPLE - Panel installed
-  Rejected = 13,              // GRAY - Panel rejected
-  
-  // Legacy support
-  Yellow = InTransit,
-  Green = ArrivedFactory
+  NotStarted = 1,              // GRAY - Not started
+  FirstApprovalApproved = 2,   // YELLOW - First approval approved
+  SecondApprovalApproved = 3,  // GREEN - Second approval approved
+  SecondApprovalRejected = 4   // RED - Second approval rejected
 }
 
 export interface PanelType {

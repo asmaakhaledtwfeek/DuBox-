@@ -313,6 +313,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   podName: string = '';
   podType: string = '';
   updatingDeliveryInfo = false;
+  showLegend = false;
   
   // Track original pod delivery values to detect changes
   private originalPodDeliver = false;
@@ -502,27 +503,91 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.hasPodDeliveryChanges = false;
   }
 
-  getPanelStatusLabel(status: PanelStatus): string {
-    switch (status) {
+  private normalizePanelStatus(status: unknown): PanelStatus | null {
+    if (status === null || status === undefined) {
+      return null;
+    }
+
+    // Already a number (or numeric string)
+    if (typeof status === 'number') {
+      return status as PanelStatus;
+    }
+    if (typeof status === 'string') {
+      const trimmed = status.trim();
+      const asNumber = Number(trimmed);
+      if (!Number.isNaN(asNumber)) {
+        return asNumber as PanelStatus;
+      }
+
+      // Backend may send enum name strings
+      const key = trimmed.replace(/\s+/g, '').toLowerCase();
+      const map: Record<string, PanelStatus> = {
+        notstarted: PanelStatus.NotStarted,
+        firstapprovalapproved: PanelStatus.FirstApprovalApproved,
+        secondapprovalapproved: PanelStatus.SecondApprovalApproved,
+        secondapprovalrejected: PanelStatus.SecondApprovalRejected
+      };
+
+      return map[key] ?? null;
+    }
+
+    return null;
+  }
+
+  getPanelStatusLabel(status: unknown): string {
+    const normalized = this.normalizePanelStatus(status);
+    if (normalized === null) {
+      return 'Unknown';
+    }
+
+    switch (normalized) {
       case PanelStatus.NotStarted:
         return 'Not Started';
-      case PanelStatus.Yellow:
-        return 'Yellow';
-      case PanelStatus.Green:
-        return 'Green';
+      case PanelStatus.FirstApprovalApproved:
+        return 'First Approval Approved';
+      case PanelStatus.SecondApprovalApproved:
+        return 'Second Approval Approved';
+      case PanelStatus.SecondApprovalRejected:
+        return 'Second Approval Rejected';
       default:
         return 'Unknown';
     }
   }
 
+  /**
+   * Check if panel status matches (handles both number and enum comparisons)
+   */
+  isPanelStatus(panelStatus: unknown, status: PanelStatus): boolean {
+    const normalized = this.normalizePanelStatus(panelStatus);
+    return normalized !== null && normalized === status;
+  }
+
+  /**
+   * Toggle legend visibility
+   */
+  toggleLegend(): void {
+    this.showLegend = !this.showLegend;
+  }
+
+  /**
+   * Get CSS class for panel status text based on status
+   */
+  getPanelStatusTextClass(status: unknown): string {
+    const statusNum = this.normalizePanelStatus(status);
+    if (statusNum === null) {
+      return 'status-text-default';
+    }
+    
+    if (statusNum === PanelStatus.NotStarted) return 'status-text-not-started'; // Gray
+    if (statusNum === PanelStatus.FirstApprovalApproved) return 'status-text-first-approval-approved'; // Yellow
+    if (statusNum === PanelStatus.SecondApprovalApproved) return 'status-text-second-approval-approved'; // Green
+    if (statusNum === PanelStatus.SecondApprovalRejected) return 'status-text-second-approval-rejected'; // Red
+    
+    return 'status-text-default';
+  }
+
   togglePanelStatus(panel: BoxPanel, newStatus: PanelStatus): void {
     if (!this.box) return;
-    
-    // Update local state immediately for better UX
-    const panelIndex = this.boxPanels.findIndex(p => p.boxPanelId === panel.boxPanelId);
-    if (panelIndex !== -1) {
-      this.boxPanels[panelIndex] = { ...this.boxPanels[panelIndex], panelStatus: newStatus };
-    }
     
     // Update backend
     this.updatingDeliveryInfo = true;
@@ -536,10 +601,6 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('❌ Error updating panel status:', err);
         this.updatingDeliveryInfo = false;
-        // Revert local state on error
-        if (panelIndex !== -1) {
-          this.boxPanels[panelIndex] = panel;
-        }
         alert('Failed to update panel status. Please try again.');
       }
     });
@@ -620,8 +681,8 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     
     this.boxService.updateBoxDeliveryInfo(this.boxId, deliveryInfo).subscribe({
       next: (updatedBox) => {
-        this.box = updatedBox;
-        this.initializeDeliveryInfo(updatedBox);
+        // Reload box to get all updated data including panels
+        this.loadBox();
         this.updatingDeliveryInfo = false;
         console.log('✅ Delivery info updated successfully');
         
@@ -634,10 +695,6 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       error: (err) => {
         console.error('❌ Error updating delivery info:', err);
         this.updatingDeliveryInfo = false;
-        // Revert changes on error
-        if (this.box) {
-          this.initializeDeliveryInfo(this.box);
-        }
         alert('Failed to update delivery information. Please try again.');
       }
     });

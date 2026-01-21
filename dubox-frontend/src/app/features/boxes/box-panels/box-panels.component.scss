@@ -6,26 +6,112 @@
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.barcode-display {
-  display: inline-block;
-  background: #f3f4f6;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-family: 'Courier New', monospace;
-  font-size: 13px;
-  color: #1f2937;
-  border: 1px solid #d1d5db;
-  cursor: pointer;
+.barcode-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 200px;
+  max-width: 300px;
+
+  @media (max-width: 768px) {
+    min-width: 150px;
+    max-width: 250px;
+  }
+}
+
+.barcode-image-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 8px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   transition: all 0.2s;
+  width: 100%;
+  overflow: hidden;
 
   &:hover {
-    background: #e5e7eb;
-    border-color: #10b981;
-    transform: scale(1.02);
+    border-color: #3b82f6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.barcode-image {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  image-rendering: crisp-edges;
+}
+
+.barcode-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+}
+
+.btn-download-barcode {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  flex: 1;
+  justify-content: center;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  &:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
   }
 
   &:active {
-    transform: scale(0.98);
+    transform: translateY(0);
+  }
+}
+
+.btn-copy-barcode {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 32px;
+  height: 32px;
+
+  svg {
+    width: 14px;
+    height: 14px;
+  }
+
+  &:hover {
+    background: #e5e7eb;
+    border-color: #9ca3af;
+    color: #1f2937;
+  }
+
+  &:active {
+    transform: scale(0.95);
   }
 }
 
@@ -57,6 +143,44 @@
   .header-actions {
     display: flex;
     gap: 12px;
+
+    .btn-download-all {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+      white-space: nowrap;
+
+      &:hover:not(:disabled) {
+        background: #2563eb;
+        box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+        transform: translateY(-1px);
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        background: #9ca3af;
+      }
+
+      svg {
+        width: 18px;
+        height: 18px;
+      }
+    }
 
     .btn-scan {
       display: flex;

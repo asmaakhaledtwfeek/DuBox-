@@ -1100,12 +1100,34 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // Validate projectId is a valid GUID format
+    const guidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!guidPattern.test(this.projectId)) {
+      this.panelsImportErrorMessage = 'Invalid project ID format. Please refresh the page and try again.';
+      return;
+    }
+
     this.boxPanelsExcelDownloading = true;
     this.panelsImportErrorMessage = '';
     this.panelsImportSuccessMessage = '';
 
     this.projectService.downloadBoxPanelsExcel(this.projectId).subscribe({
       next: (blob) => {
+        // Check if the blob is actually an error response (small size or wrong content type)
+        if (blob.size < 100) {
+          // Likely an error response, try to parse it
+          blob.text().then(text => {
+            try {
+              const errorJson = JSON.parse(text);
+              this.panelsImportErrorMessage = errorJson.message || errorJson.title || 'Failed to generate Excel file.';
+            } catch (e) {
+              this.panelsImportErrorMessage = 'Failed to generate Excel file. The project may not have any box panels.';
+            }
+            this.boxPanelsExcelDownloading = false;
+          });
+          return;
+        }
+
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -1122,17 +1144,63 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
         console.error('❌ Error downloading box panels Excel:', error);
         this.boxPanelsExcelDownloading = false;
         
-        if (error.error instanceof Blob) {
+        let errorMessage = 'Unable to download Excel file.';
+        
+        // Handle error response (could be from downloadWithResponse)
+        if (error.body instanceof Blob) {
+          try {
+            const errorText = await error.body.text();
+            const errorJson = JSON.parse(errorText);
+            errorMessage = errorJson.message || errorJson.title || errorJson.errors?.[0] || errorMessage;
+          } catch (e) {
+            // If parsing fails, use status-based message
+            if (error.status === 400) {
+              errorMessage = 'Bad request. The project may not exist or may not have any box panels.';
+            } else if (error.status === 404) {
+              errorMessage = 'Project not found.';
+            } else if (error.status === 401) {
+              errorMessage = 'Unauthorized. Please log in again.';
+            } else if (error.status === 500) {
+              errorMessage = 'Server error. Please try again later.';
+            }
+          }
+        } else if (error.error instanceof Blob) {
           try {
             const errorText = await error.error.text();
             const errorJson = JSON.parse(errorText);
-            this.panelsImportErrorMessage = errorJson.message || errorJson.title || 'Unable to download Excel file.';
+            errorMessage = errorJson.message || errorJson.title || errorJson.errors?.[0] || errorMessage;
           } catch (e) {
-            this.panelsImportErrorMessage = 'Unable to download Excel file.';
+            // If parsing fails, check error status
+            if (error.status === 400) {
+              errorMessage = 'Bad request. The project may not exist or may not have any box panels.';
+            } else if (error.status === 404) {
+              errorMessage = 'Project not found.';
+            } else if (error.status === 401) {
+              errorMessage = 'Unauthorized. Please log in again.';
+            } else if (error.status === 500) {
+              errorMessage = 'Server error. Please try again later.';
+            }
           }
-        } else {
-          this.panelsImportErrorMessage = error?.error?.message || error?.message || 'Unable to download Excel file.';
+        } else if (error.error) {
+          // Try to extract error message from various possible formats
+          errorMessage = error.error.message || 
+                       error.error.title || 
+                       error.error.errors?.[0] || 
+                       (typeof error.error === 'string' ? error.error : errorMessage);
+        } else if (error.status === 400) {
+          errorMessage = 'Bad request. The project may not exist or may not have any box panels.';
+        } else if (error.status === 404) {
+          errorMessage = 'Project not found.';
+        } else if (error.status === 401) {
+          errorMessage = 'Unauthorized. Please log in again.';
+        } else if (error.status === 500) {
+          errorMessage = 'Server error. Please try again later.';
         }
+        
+        this.panelsImportErrorMessage = errorMessage;
+        setTimeout(() => {
+          this.panelsImportErrorMessage = '';
+        }, 5000);
       }
     });
   }

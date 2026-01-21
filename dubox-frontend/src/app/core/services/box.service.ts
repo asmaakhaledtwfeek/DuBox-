@@ -143,8 +143,50 @@ export class BoxService {
       boxPanelId: panel.boxPanelId || panel.BoxPanelId,
       boxId: panel.boxId || panel.BoxId,
       projectId: panel.projectId || panel.ProjectId,
+      panelTypeId: panel.panelTypeId || panel.PanelTypeId,
+      // Panel Type Name and Code - map from backend TypeName and TypeCode
+      typeName: panel.typeName || panel.TypeName,
+      typeCode: panel.typeCode || panel.TypeCode,
       panelName: panel.panelName || panel.PanelName,
       panelStatus: panel.panelStatus || panel.PanelStatus || 1, // Default to NotStarted (1)
+      
+      // Barcode & QR
+      barcode: panel.barcode || panel.Barcode || '',
+      qrCodeUrl: panel.qrCodeUrl || panel.QRCodeUrl,
+      
+      // Manufacturing
+      manufacturerName: panel.manufacturerName || panel.ManufacturerName,
+      manufacturedDate: this.parseDate(panel.manufacturedDate || panel.ManufacturedDate),
+      
+      // Delivery & Tracking
+      dispatchedDate: this.parseDate(panel.dispatchedDate || panel.DispatchedDate),
+      estimatedArrivalDate: this.parseDate(panel.estimatedArrivalDate || panel.EstimatedArrivalDate),
+      actualArrivalDate: this.parseDate(panel.actualArrivalDate || panel.ActualArrivalDate),
+      deliveryNoteNumber: panel.deliveryNoteNumber || panel.DeliveryNoteNumber,
+      deliveryNoteUrl: panel.deliveryNoteUrl || panel.DeliveryNoteUrl,
+      
+      // First Approval
+      firstApprovalStatus: panel.firstApprovalStatus || panel.FirstApprovalStatus,
+      firstApprovalBy: panel.firstApprovalBy || panel.FirstApprovalBy,
+      firstApprovalDate: this.parseDate(panel.firstApprovalDate || panel.FirstApprovalDate),
+      firstApprovalNotes: panel.firstApprovalNotes || panel.FirstApprovalNotes,
+      
+      // Second Approval
+      secondApprovalStatus: panel.secondApprovalStatus || panel.SecondApprovalStatus,
+      secondApprovalBy: panel.secondApprovalBy || panel.SecondApprovalBy,
+      secondApprovalDate: this.parseDate(panel.secondApprovalDate || panel.SecondApprovalDate),
+      secondApprovalNotes: panel.secondApprovalNotes || panel.SecondApprovalNotes,
+      
+      // Location
+      currentLocationStatus: panel.currentLocationStatus || panel.CurrentLocationStatus,
+      scannedAtFactory: this.parseDate(panel.scannedAtFactory || panel.ScannedAtFactory),
+      installedDate: this.parseDate(panel.installedDate || panel.InstalledDate),
+      
+      // Physical Info
+      weight: panel.weight || panel.Weight,
+      dimensions: panel.dimensions || panel.Dimensions,
+      notes: panel.notes || panel.Notes,
+      
       createdDate: this.parseDate(panel.createdDate || panel.CreatedDate) || new Date(),
       modifiedDate: this.parseDate(panel.modifiedDate || panel.ModifiedDate)
     } as BoxPanel));

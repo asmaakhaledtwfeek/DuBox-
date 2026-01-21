@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { Observable, throwError } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { ApiService } from './api.service';
 import { Project, ProjectStats, ProjectStatus } from '../models/project.model';
 import { ProjectConfiguration } from '../models/project-configuration.model';
@@ -223,7 +223,32 @@ export class ProjectService {
    * Download box panels Excel file for a project
    */
   downloadBoxPanelsExcel(projectId: string): Observable<Blob> {
-    return this.apiService.download(`${this.endpoint}/${projectId}/box-panels/excel`);
+    // Use downloadWithResponse to get full response including status code and headers
+    return this.apiService.downloadWithResponse(`${this.endpoint}/${projectId}/box-panels/excel`).pipe(
+      map(response => {
+        // Check if response is an error (status code >= 400)
+        if (response.status >= 400) {
+          // Check content type - if it's JSON, it's an error response
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            // This is an error response, throw it so error handler can parse it
+            const error: any = new Error('Download failed');
+            error.status = response.status;
+            error.body = response.body;
+            throw error;
+          }
+        }
+        return response.body;
+      }),
+      catchError(error => {
+        // If it's already an error with body, pass it through
+        if (error.body) {
+          return throwError(() => error);
+        }
+        // Otherwise, re-throw the original error
+        return throwError(() => error);
+      })
+    );
   }
 
   /**

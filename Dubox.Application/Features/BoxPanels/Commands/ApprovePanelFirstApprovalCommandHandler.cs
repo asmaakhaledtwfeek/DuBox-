@@ -56,11 +56,10 @@ public class ApprovePanelFirstApprovalCommandHandler : IRequestHandler<ApprovePa
             panel.PanelStatus = PanelStatusEnum.FirstApprovalApproved;
             // Auto-set to second approval pending
             panel.SecondApprovalStatus = "Pending";
-            panel.PanelStatus = PanelStatusEnum.SecondApprovalPending;
+           
         }
         else
         {
-            panel.PanelStatus = PanelStatusEnum.FirstApprovalRejected;
             panel.CurrentLocationStatus = "Rejected";
         }
 

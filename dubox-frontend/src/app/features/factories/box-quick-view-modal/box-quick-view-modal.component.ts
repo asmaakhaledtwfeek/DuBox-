@@ -4,7 +4,7 @@ import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { BoxService } from '../../../core/services/box.service';
-import { Box, BoxActivity } from '../../../core/models/box.model';
+import { Box, BoxActivity, BoxPanel, PanelStatus } from '../../../core/models/box.model';
 
 @Component({
   selector: 'app-box-quick-view-modal',
@@ -22,15 +22,14 @@ export class BoxQuickViewModalComponent implements OnInit, OnDestroy {
   loading = true;
   error = '';
   
-  // Concrete Panel Delivery
-  concreteWalls: Array<{key: string, label: string, checked: boolean}> = [
-    {key: 'wall1', label: 'Wall 01', checked: false},
-    {key: 'wall2', label: 'Wall 02', checked: false},
-    {key: 'wall3', label: 'Wall 03', checked: false},
-    {key: 'wall4', label: 'Wall 04', checked: false},
-    {key: 'slab', label: 'Slab', checked: false},
-    {key: 'soffit', label: 'Soffit', checked: false}
-  ];
+  // Panel status handling
+  readonly PanelStatus = PanelStatus;
+  boxPanels: BoxPanel[] = [];
+  showLegend = false;
+  
+  // Slab and Soffit (these remain as checkboxes)
+  slabChecked = false;
+  soffitChecked = false;
   
   // Pod Delivery
   podDeliverChecked = false;
@@ -100,18 +99,106 @@ export class BoxQuickViewModalComponent implements OnInit, OnDestroy {
   }
 
   private initializeDeliveryInfo(box: Box): void {
-    // Initialize concrete walls
-    this.concreteWalls[0].checked = box.wall1 ?? false;
-    this.concreteWalls[1].checked = box.wall2 ?? false;
-    this.concreteWalls[2].checked = box.wall3 ?? false;
-    this.concreteWalls[3].checked = box.wall4 ?? false;
-    this.concreteWalls[4].checked = box.slab ?? false;
-    this.concreteWalls[5].checked = box.soffit ?? false;
+    // Initialize box panels (for walls/panels with statuses)
+    this.boxPanels = box.boxPanels || [];
+    
+    // Initialize slab and soffit (these remain as simple checkboxes)
+    this.slabChecked = box.slab ?? false;
+    this.soffitChecked = box.soffit ?? false;
     
     // Initialize pod delivery
     this.podDeliverChecked = box.podDeliver ?? false;
     this.podName = box.podName ?? '';
     this.podType = box.podType ?? '';
+  }
+
+  /**
+   * Normalize panel status to handle both number and enum comparisons
+   */
+  private normalizePanelStatus(status: unknown): PanelStatus | null {
+    if (status === null || status === undefined) {
+      return null;
+    }
+
+    // Already a number (or numeric string)
+    if (typeof status === 'number') {
+      return status as PanelStatus;
+    }
+    if (typeof status === 'string') {
+      const trimmed = status.trim();
+      const asNumber = Number(trimmed);
+      if (!Number.isNaN(asNumber)) {
+        return asNumber as PanelStatus;
+      }
+
+      // Backend may send enum name strings
+      const key = trimmed.replace(/\s+/g, '').toLowerCase();
+      const map: Record<string, PanelStatus> = {
+        notstarted: PanelStatus.NotStarted,
+        firstapprovalapproved: PanelStatus.FirstApprovalApproved,
+        secondapprovalapproved: PanelStatus.SecondApprovalApproved,
+        secondapprovalrejected: PanelStatus.SecondApprovalRejected
+      };
+
+      return map[key] ?? null;
+    }
+
+    return null;
+  }
+
+  /**
+   * Get panel status label
+   */
+  getPanelStatusLabel(status: unknown): string {
+    const normalized = this.normalizePanelStatus(status);
+    if (normalized === null) {
+      return 'Unknown';
+    }
+
+    switch (normalized) {
+      case PanelStatus.NotStarted:
+        return 'Not Started';
+      case PanelStatus.FirstApprovalApproved:
+        return 'First Approval Approved';
+      case PanelStatus.SecondApprovalApproved:
+        return 'Second Approval Approved';
+      case PanelStatus.SecondApprovalRejected:
+        return 'Second Approval Rejected';
+      default:
+        return 'Unknown';
+    }
+  }
+
+  /**
+   * Check if panel status matches (handles both number and enum comparisons)
+   */
+  isPanelStatus(panelStatus: unknown, status: PanelStatus): boolean {
+    const normalized = this.normalizePanelStatus(panelStatus);
+    return normalized !== null && normalized === status;
+  }
+
+  /**
+   * Get CSS class for panel status text based on status
+   */
+  getPanelStatusTextClass(status: unknown): string {
+    const statusNum = this.normalizePanelStatus(status);
+    if (statusNum === null) {
+      return 'status-text-default';
+    }
+    
+    if (statusNum === PanelStatus.NotStarted) return 'status-text-not-started'; // Gray
+    if (statusNum === PanelStatus.FirstApprovalApproved) return 'status-text-first-approval-approved'; // Yellow
+    if (statusNum === PanelStatus.SecondApprovalApproved) return 'status-text-second-approval-approved'; // Green
+    if (statusNum === PanelStatus.SecondApprovalRejected) return 'status-text-second-approval-rejected'; // Red
+    
+    return 'status-text-default';
+  }
+
+  /**
+   * Toggle legend visibility
+   */
+  toggleLegend(): void {
+    this.showLegend = !this.showLegend;
   }
 
   // Activity chart methods

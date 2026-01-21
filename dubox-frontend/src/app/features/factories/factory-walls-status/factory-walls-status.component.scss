@@ -222,29 +222,42 @@
 
 // Filters Section
 .filters-section {
-  margin-bottom: 20px;
-  background: white;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  padding: 20px 28px;
+  margin-bottom: 24px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 16px;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  padding: 24px 32px;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--amana-teal) 0%, #16858f 100%);
+  }
 
   @media (max-width: 768px) {
-    padding: 16px;
-    margin-bottom: 16px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 12px;
   }
 }
 
 .filters-with-kpis {
   display: flex;
   align-items: flex-end;
-  gap: 16px;
+  gap: 20px;
   flex-wrap: wrap;
 
   @media (max-width: 1200px) {
     flex-direction: column;
     align-items: stretch;
-    gap: 16px;
+    gap: 20px;
   }
 }
 
@@ -378,42 +391,51 @@
 .filter-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   flex-shrink: 0;
-  max-width: 300px;
+  min-width: 220px;
+  flex: 1;
+  max-width: 280px;
 
   @media (max-width: 1200px) {
     width: 100%;
     max-width: 100%;
+    min-width: auto;
   }
 
   .filter-label {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 0.75rem;
+    gap: 8px;
+    font-size: 0.8rem;
     font-weight: 700;
     color: #475569;
     white-space: nowrap;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.5px;
+    padding-bottom: 4px;
+    border-bottom: 2px solid #e2e8f0;
 
     svg {
       color: var(--amana-teal);
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
     }
   }
 
   .filter-select {
-    min-width: 240px;
-    padding: 12px 16px;
-    border: 2px solid #e2e8f0;
-    border-radius: 10px;
+    min-width: 100%;
+    padding: 14px 18px;
+    border: 2px solid #cbd5e1;
+    border-radius: 12px;
     background: white;
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: #1e293b;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 
     @media (max-width: 1200px) {
       width: 100%;
@@ -422,7 +444,8 @@
 
     &:hover {
       border-color: var(--amana-teal);
-      background: #f8fafc;
+      box-shadow: 0 4px 6px -1px rgba(27, 154, 170, 0.1);
+      transform: translateY(-1px);
     }
 
     &:focus {
@@ -430,42 +453,50 @@
       border-color: var(--amana-teal);
       box-shadow: 0 0 0 3px rgba(27, 154, 170, 0.1);
     }
+
+    option {
+      padding: 12px;
+      font-weight: 500;
+    }
   }
 }
 
 .btn-clear-filters {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px 18px;
-  background: #f8f9fa;
-  border: 2px solid #e2e8f0;
-  border-radius: 10px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: #64748b;
+  gap: 8px;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border: 2px solid #fca5a5;
+  border-radius: 12px;
+  color: #991b1b;
+  font-size: 0.9rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   white-space: nowrap;
-  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 
   @media (max-width: 1200px) {
-    margin-left: 0;
     width: 100%;
-  }
-
-  svg {
-    width: 16px;
-    height: 16px;
+    justify-content: center;
   }
 
   &:hover {
-    background: #ef4444;
+    background: linear-gradient(135deg, #fecaca 0%, #fca5a5 100%);
     border-color: #ef4444;
-    color: white;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.2);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
   }
 }
 
@@ -574,6 +605,150 @@
         color: #475569;
         white-space: nowrap;
       }
+
+      .status-summary {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 12px;
+        width: 100%;
+
+        .status-summary-row {
+          display: flex;
+          gap: 12px;
+          justify-content: space-between;
+
+          .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+            padding: 6px 10px;
+            border-radius: 6px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s ease;
+
+            &:hover {
+              transform: translateY(-1px);
+              box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            }
+
+            .status-dot {
+              width: 8px;
+              height: 8px;
+              border-radius: 50%;
+              flex-shrink: 0;
+            }
+
+            .status-label {
+              font-size: 0.75rem;
+              font-weight: 500;
+              color: #64748b;
+              flex: 1;
+            }
+
+            .status-count {
+              font-size: 0.875rem;
+              font-weight: 700;
+              color: #1e293b;
+            }
+
+            &.status-green {
+              background: rgba(16, 185, 129, 0.1);
+              border-color: rgba(16, 185, 129, 0.2);
+
+              .status-dot {
+                background: #10b981;
+              }
+
+              .status-label {
+                color: #059669;
+              }
+
+              .status-count {
+                color: #065f46;
+              }
+            }
+
+            &.status-yellow {
+              background: rgba(251, 191, 36, 0.1);
+              border-color: rgba(251, 191, 36, 0.2);
+
+              .status-dot {
+                background: #fbbf24;
+              }
+
+              .status-label {
+                color: #d97706;
+              }
+
+              .status-count {
+                color: #92400e;
+              }
+            }
+
+            &.status-red {
+              background: rgba(239, 68, 68, 0.1);
+              border-color: rgba(239, 68, 68, 0.2);
+
+              .status-dot {
+                background: #ef4444;
+              }
+
+              .status-label {
+                color: #dc2626;
+              }
+
+              .status-count {
+                color: #991b1b;
+              }
+            }
+
+            &.status-gray {
+              background: rgba(148, 163, 184, 0.1);
+              border-color: rgba(148, 163, 184, 0.2);
+
+              .status-dot {
+                background: #94a3b8;
+              }
+
+              .status-label {
+                color: #64748b;
+              }
+
+              .status-count {
+                color: #475569;
+              }
+            }
+          }
+        }
+
+        .status-total {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 12px;
+          margin-top: 4px;
+          background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+          border-radius: 6px;
+          border: 1px solid #cbd5e1;
+
+          .total-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+
+          .total-count {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1e293b;
+          }
+        }
+      }
     }
   }
 
@@ -581,25 +756,83 @@
     border-color: rgba(16, 185, 129, 0.3);
   }
 
-  &.wall-stat,
-  &.slab-stat,
-  &.soffit-stat {
+  &.wall-stat {
     flex-direction: column;
     align-items: stretch;
   }
 
-  &.pod-stat {
+  &.combined-delivery-stat {
     flex-direction: column;
     align-items: stretch;
-    border-color: #c084fc;
-    background: linear-gradient(135deg, #faf5ff 0%, #ffffff 100%);
+    grid-column: span 1;
 
     .stat-label {
-      color: #7c3aed;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 16px;
+      text-align: center;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e2e8f0;
     }
 
-    .progress-fill {
-      background: linear-gradient(90deg, #c084fc 0%, #a855f7 100%);
+    .delivery-items {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+
+      .delivery-item {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        .delivery-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+
+          .delivery-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #475569;
+          }
+
+          .delivery-count {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #1e293b;
+          }
+        }
+
+        .progress-bar {
+          height: 10px;
+          background: #e2e8f0;
+          border-radius: 5px;
+          overflow: hidden;
+
+          .progress-fill {
+            height: 100%;
+            transition: width 0.3s ease, background-color 0.3s ease;
+            border-radius: 5px;
+          }
+        }
+
+        &.pod-item {
+          padding-top: 12px;
+          border-top: 2px solid #e2e8f0;
+          margin-top: 4px;
+
+          .delivery-name {
+            color: #7c3aed;
+          }
+
+          .progress-bar {
+            .progress-fill {
+              background: linear-gradient(90deg, #c084fc 0%, #a855f7 100%);
+            }
+          }
+        }
+      }
     }
   }
 }
@@ -641,6 +874,12 @@
     }
   }
 
+  .table-header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
   .table-info {
     display: flex;
     align-items: center;
@@ -651,6 +890,67 @@
 
     svg {
       color: var(--amana-teal);
+    }
+  }
+
+  .btn-export-excel {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: white;
+    color: #1e293b;
+    border: 2px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+
+    svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+      stroke-width: 2;
+    }
+
+    &:hover {
+      background: #f8fafc;
+      border-color: var(--amana-teal);
+      color: var(--amana-teal);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+    }
+
+    &:active {
+      transform: translateY(0);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    &:focus {
+      outline: none;
+      border-color: var(--amana-teal);
+      box-shadow: 0 0 0 3px rgba(27, 154, 170, 0.1);
+    }
+
+    @media (max-width: 768px) {
+      padding: 8px 16px;
+      font-size: 13px;
+      gap: 6px;
+
+      svg {
+        width: 16px;
+        height: 16px;
+      }
+    }
+  }
+
+  @media (max-width: 768px) {
+    .table-header-right {
+      width: 100%;
+      justify-content: space-between;
+      flex-wrap: wrap;
     }
   }
 }
@@ -794,11 +1094,67 @@
             gap: 4px;
           }
 
+          .panel-name-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            width: 100%;
+          }
+
           .panel-name {
             display: block;
             color: inherit;
             font-size: 0.85rem;
+            font-weight: 600;
             line-height: 1.2;
+          }
+
+          .panel-status-text {
+            font-size: 0.7rem;
+            font-weight: 500;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: inline-block;
+            width: fit-content;
+            line-height: 1.3;
+            text-align: center;
+            
+            // Status text colors matching the background colors
+            // NotStarted = Gray
+            &.status-text-not-started {
+              color: #64748b;
+              background: rgba(241, 245, 249, 0.8);
+            }
+            
+            // FirstApprovalApproved = Yellow
+            &.status-text-first-approval-approved {
+              color: #d97706;
+              background: rgba(254, 243, 199, 0.8);
+            }
+            
+            // SecondApprovalApproved = Green
+            &.status-text-second-approval-approved {
+              color: #065f46;
+              background: rgba(209, 250, 229, 0.8);
+            }
+            
+            // SecondApprovalRejected = Red
+            &.status-text-second-approval-rejected {
+              color: #991b1b;
+              background: rgba(254, 226, 226, 0.8);
+            }
+            
+            &.status-text-not-have {
+              color: #64748b;
+              background: rgba(248, 250, 252, 0.8);
+              font-style: italic;
+            }
+            
+            &.status-text-default {
+              color: #64748b;
+              background: rgba(248, 250, 252, 0.8);
+            }
           }
 
           .panel-status-icon {
@@ -810,22 +1166,32 @@
           }
         }
 
-        // Panel status colors - matching legend exactly
-        &.panel-green {
-          background: #d1fae5 !important; // Light green background matching legend
-          color: #059669 !important; // Darker green text matching legend
-          border-left: 3px solid #10b981 !important;
+        // Panel status colors - matching new enum
+        // NotStarted = Gray
+        &.panel-not-started {
+          background: #f1f5f9 !important; // Light gray background
+          color: #64748b !important; // Gray text
+          border-left: 3px solid #94a3b8 !important;
         }
 
+        // FirstApprovalApproved = Yellow
         &.panel-yellow {
-          background: #fef3c7 !important; // Light yellow background matching legend
-          color: #d97706 !important; // Orange-brownish text matching legend
+          background: #fef3c7 !important; // Light yellow background
+          color: #d97706 !important; // Orange-brownish text
           border-left: 3px solid #fbbf24 !important;
         }
 
-        &.panel-not-started {
-          background: #fee2e2 !important; // Light red background matching legend
-          color: #dc2626 !important; // Darker red text matching legend
+        // SecondApprovalApproved = Green
+        &.panel-green {
+          background: #d1fae5 !important; // Light green background
+          color: #059669 !important; // Darker green text
+          border-left: 3px solid #10b981 !important;
+        }
+
+        // SecondApprovalRejected = Red
+        &.panel-red {
+          background: #fee2e2 !important; // Light red background
+          color: #dc2626 !important; // Darker red text
           border-left: 3px solid #ef4444 !important;
         }
 
@@ -1000,21 +1366,31 @@
       border-radius: 4px;
       border-left: 3px solid;
 
-      &.panel-green {
-        background: #d1fae5; // Light green background matching legend
-        color: #059669; // Darker green text matching legend
-        border-left-color: #10b981;
+      // NotStarted = Gray
+      &.panel-not-started {
+        background: #f1f5f9; // Light gray background
+        color: #64748b; // Gray text
+        border-left-color: #94a3b8;
       }
 
+      // FirstApprovalApproved = Yellow
       &.panel-yellow {
-        background: #fef3c7; // Light yellow background matching legend
-        color: #d97706; // Orange-brownish text matching legend
+        background: #fef3c7; // Light yellow background
+        color: #d97706; // Orange-brownish text
         border-left-color: #fbbf24;
       }
 
-      &.panel-not-started {
-        background: #fee2e2; // Light red background matching legend
-        color: #dc2626; // Darker red text matching legend
+      // SecondApprovalApproved = Green
+      &.panel-green {
+        background: #d1fae5; // Light green background
+        color: #059669; // Darker green text
+        border-left-color: #10b981;
+      }
+
+      // SecondApprovalRejected = Red
+      &.panel-red {
+        background: #fee2e2; // Light red background
+        color: #dc2626; // Darker red text
         border-left-color: #ef4444;
       }
 

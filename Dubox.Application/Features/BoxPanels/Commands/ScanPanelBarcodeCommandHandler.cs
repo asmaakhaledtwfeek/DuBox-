@@ -39,8 +39,59 @@ public class ScanPanelBarcodeCommandHandler : IRequestHandler<ScanPanelBarcodeCo
         if (panel.Box.Status == BoxStatusEnum.Dispatched)
             return Result.Failure<BoxPanelDto>("Cannot scan panel. Box is dispatched and read-only.");
 
+        // Check if panel status is Second Approval Approved - cannot scan again
+        if (panel.PanelStatus == PanelStatusEnum.SecondApprovalApproved)
+            return Result.Failure<BoxPanelDto>("Cannot scan panel. Panel has already been approved with Second Approval and cannot be scanned again.");
+
+        // Check if second approval is pending - cannot scan again until approved or rejected
+        if (panel.PanelStatus == PanelStatusEnum.FirstApprovalApproved && panel.SecondApprovalStatus == "Pending")
+            return Result.Failure<BoxPanelDto>("Cannot scan panel. Second approval is pending. Please approve or reject the second approval before scanning again.");
+
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
         var scanTime = DateTime.UtcNow;
+
+        // Check if this is the first scan (NotStarted status) - automatically approve first approval
+        bool isFirstScan = panel.PanelStatus == PanelStatusEnum.NotStarted;
+        
+        if (isFirstScan)
+        {
+            // Automatically approve first approval on first scan
+            panel.FirstApprovalStatus = "Approved";
+            panel.FirstApprovalBy = currentUserId;
+            panel.FirstApprovalDate = scanTime;
+            panel.FirstApprovalNotes = $"Automatically approved on first scan at {scanTime:yyyy-MM-dd HH:mm:ss} UTC";
+            panel.PanelStatus = PanelStatusEnum.FirstApprovalApproved;
+            panel.SecondApprovalStatus = "Pending";
+        }
+        // Handle second scan: when panel has FirstApprovalApproved status, create second scan opportunity
+        else if (panel.PanelStatus == PanelStatusEnum.FirstApprovalApproved)
+        {
+            // If second approval was rejected, set it to Pending for approval/rejection
+            // Note: We already checked above that SecondApprovalStatus is not "Pending"
+            bool wasRejected = panel.SecondApprovalStatus == "Rejected";
+            if (wasRejected || string.IsNullOrEmpty(panel.SecondApprovalStatus))
+            {
+                panel.SecondApprovalStatus = "Pending";
+                // Clear previous rejection data to allow fresh second approval
+                if (wasRejected)
+                {
+                    panel.SecondApprovalDate = null;
+                    panel.SecondApprovalBy = null;
+                    panel.SecondApprovalNotes = null;
+                }
+            }
+        }
+        // Handle re-scanning after second approval rejection: allow scanning again
+        else if (panel.PanelStatus == PanelStatusEnum.SecondApprovalRejected)
+        {
+            // Reset second approval to Pending to allow re-scanning and new approval/rejection
+            panel.SecondApprovalStatus = "Pending";
+            panel.SecondApprovalDate = null;
+            panel.SecondApprovalBy = null;
+            panel.SecondApprovalNotes = null;
+            // Keep status as FirstApprovalApproved to allow second scan workflow
+            panel.PanelStatus = PanelStatusEnum.FirstApprovalApproved;
+        }
 
         // Create scan log
         var scanLog = new PanelScanLog
@@ -58,38 +109,7 @@ public class ScanPanelBarcodeCommandHandler : IRequestHandler<ScanPanelBarcodeCo
 
         await _dbContext.PanelScanLogs.AddAsync(scanLog, cancellationToken);
 
-        // Update panel status based on scan type
-        switch (request.ScanType.ToLower())
-        {
-            case "dispatch":
-                panel.PanelStatus = PanelStatusEnum.InTransit;
-                panel.DispatchedDate = scanTime;
-                panel.CurrentLocationStatus = "InTransit";
-                break;
-
-            case "sitearrival":
-                panel.PanelStatus = PanelStatusEnum.ArrivedFactory;
-                panel.ActualArrivalDate = scanTime;
-                panel.ScannedAtFactory = scanTime;
-                panel.CurrentLocationStatus = "ArrivedSite";
-                // Auto-approve on scan (First Approval)
-                panel.PanelStatus = PanelStatusEnum.FirstApprovalApproved;
-                panel.FirstApprovalStatus = "Approved";
-                panel.FirstApprovalBy = currentUserId;
-                panel.FirstApprovalDate = scanTime;
-                panel.FirstApprovalNotes = "Auto-approved via barcode scan";
-                break;
-
-            case "installation":
-                panel.PanelStatus = PanelStatusEnum.Installed;
-                panel.InstalledDate = scanTime;
-                panel.CurrentLocationStatus = "Installed";
-                break;
-
-            case "inspection":
-                // Inspection scan doesn't change status, just logs the event
-                break;
-        }
+       
 
         panel.ModifiedDate = scanTime;
         panel.ModifiedBy = currentUserId;

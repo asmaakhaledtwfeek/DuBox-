@@ -51,9 +51,10 @@
         </div>
       </div>
 
-      <!-- Filters Section with Inline KPI Cards -->
+      <!-- Project Selection + Filters Section with Inline KPI Cards -->
       <div class="filters-section">
         <div class="filters-with-kpis">
+          <!-- Project Selection (Schedule-style behaviour) -->
           <div class="filter-group">
             <label for="projectFilter" class="filter-label">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -62,8 +63,12 @@
               </svg>
               Project:
             </label>
-            <select id="projectFilter" [(ngModel)]="selectedProjectId" (change)="onProjectChange()" class="filter-select">
-              <option value="">All Projects</option>
+            <select 
+              id="projectFilter" 
+              [(ngModel)]="selectedProjectId" 
+              (ngModelChange)="onProjectSelect()" 
+              class="filter-select">
+              <option value="">Select a project...</option>
               <option *ngFor="let project of projects" [value]="project.id">{{ project.name }}</option>
             </select>
           </div>
@@ -98,21 +103,7 @@
             </select>
           </div>
 
-          <div class="filter-group">
-            <label for="zoneFilter" class="filter-label">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
-              </svg>
-              Zone:
-            </label>
-            <select id="zoneFilter" [(ngModel)]="selectedZone" (change)="applyFilters()" class="filter-select">
-              <option value="">All Zones</option>
-              <option *ngFor="let zone of availableZones" [value]="zone">{{ zone }}</option>
-            </select>
-          </div>
-
-          <button class="btn-clear-filters" (click)="clearFilters()" *ngIf="selectedProjectId || selectedBuildingNumber || selectedFloor || selectedZone">
+          <button class="btn-clear-filters" (click)="clearFilters()" *ngIf="selectedProjectId || selectedBuildingNumber || selectedFloor">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <line x1="18" y1="6" x2="6" y2="18"/>
               <line x1="6" y1="6" x2="18" y2="18"/>
@@ -120,7 +111,7 @@
             Clear Filters
           </button>
 
-          <div class="inline-kpi-cards" *ngIf="filteredBoxes.length > 0">
+          <div class="inline-kpi-cards" *ngIf="selectedProjectId && filteredBoxes.length > 0">
             <div class="inline-kpi-card total-kpi">
               <div class="kpi-icon">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -149,60 +140,103 @@
         </div>
       </div>
 
-      <!-- Statistics Cards Grid -->
-      <div class="stats-grid" *ngIf="filteredBoxes.length > 0">
+      <!-- No Project Selected State -->
+      <div *ngIf="!selectedProjectId && !loading && !error" class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <path d="M3 9h18M9 21V9"/>
+        </svg>
+        <h3>Select a Project</h3>
+        <p>Choose a project from the dropdown above to view its panels, slab and soffit status.</p>
+      </div>
 
-        <!-- Dynamic Panel Stats -->
-        <div class="stat-card wall-stat" *ngFor="let panelName of getUniquePanelNames()">
+      <!-- Statistics Cards Grid -->
+      <div class="stats-grid" *ngIf="selectedProjectId && filteredBoxes.length > 0">
+
+        <!-- Dynamic Panel Stats (per Panel Type) -->
+        <div class="stat-card wall-stat" *ngFor="let panelType of getPanelTypeColumns()">
           <div class="stat-content">
-            <div class="stat-label">{{ panelName }}</div>
+            <div class="stat-label">{{ panelType.panelTypeName }}</div>
             <div class="stat-progress">
               <div class="progress-bar">
                 <div class="progress-fill" 
-                     [style.width.%]="getCompletionPercentage(getCompletionStats().panelStats.get(panelName)?.green || 0)"
+                     [style.width.%]="getCompletionPercentage(getCompletionStats().panelStats.get(panelType.panelTypeName)?.green || 0)"
                      [style.backgroundColor]="'#10b981'"></div>
               </div>
-              <span class="progress-text">
-                Green: {{ getCompletionStats().panelStats.get(panelName)?.green || 0 }} / 
-                Yellow: {{ getCompletionStats().panelStats.get(panelName)?.yellow || 0 }} / 
-                Total: {{ getCompletionStats().panelStats.get(panelName)?.total || 0 }}
-              </span>
+              <div class="status-summary">
+                <div class="status-summary-row">
+                  <div class="status-item status-green">
+                    <span class="status-dot"></span>
+                    <span class="status-label">Green</span>
+                    <span class="status-count">{{ getCompletionStats().panelStats.get(panelType.panelTypeName)?.green || 0 }}</span>
+                  </div>
+                  <div class="status-item status-yellow">
+                    <span class="status-dot"></span>
+                    <span class="status-label">Yellow</span>
+                    <span class="status-count">{{ getCompletionStats().panelStats.get(panelType.panelTypeName)?.yellow || 0 }}</span>
+                  </div>
+                </div>
+                <div class="status-summary-row">
+                  <div class="status-item status-red">
+                    <span class="status-dot"></span>
+                    <span class="status-label">Red</span>
+                    <span class="status-count">{{ getCompletionStats().panelStats.get(panelType.panelTypeName)?.red || 0 }}</span>
+                  </div>
+                  <div class="status-item status-gray">
+                    <span class="status-dot"></span>
+                    <span class="status-label">Gray</span>
+                    <span class="status-count">{{ getCompletionStats().panelStats.get(panelType.panelTypeName)?.gray || 0 }}</span>
+                  </div>
+                </div>
+                <div class="status-total">
+                  <span class="total-label">Total:</span>
+                  <span class="total-count">{{ getCompletionStats().panelStats.get(panelType.panelTypeName)?.total || 0 }}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="stat-card slab-stat">
+        <!-- Combined Slab, Soffit, and POD Delivery Card -->
+        <div class="stat-card combined-delivery-stat">
           <div class="stat-content">
-            <div class="stat-label">Slab</div>
-            <div class="stat-progress">
-              <div class="progress-bar">
-                <div class="progress-fill" [style.width.%]="getCompletionPercentage(getCompletionStats().slabComplete)"></div>
+            <div class="stat-label">Delivery Status</div>
+            <div class="delivery-items">
+              <div class="delivery-item">
+                <div class="delivery-header">
+                  <span class="delivery-name">Slab</span>
+                  <span class="delivery-count">{{ getCompletionStats().slabComplete }}/{{ getCompletionStats().total }}</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" 
+                       [style.width.%]="getCompletionPercentage(getCompletionStats().slabComplete)"
+                       [style.backgroundColor]="getCompletionStats().slabComplete === getCompletionStats().total ? '#10b981' : '#e2e8f0'"></div>
+                </div>
               </div>
-              <span class="progress-text">{{ getCompletionStats().slabComplete }}/{{ getCompletionStats().total }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="stat-card soffit-stat">
-          <div class="stat-content">
-            <div class="stat-label">Soffit</div>
-            <div class="stat-progress">
-              <div class="progress-bar">
-                <div class="progress-fill" [style.width.%]="getCompletionPercentage(getCompletionStats().soffitComplete)"></div>
+              
+              <div class="delivery-item">
+                <div class="delivery-header">
+                  <span class="delivery-name">Soffit</span>
+                  <span class="delivery-count">{{ getCompletionStats().soffitComplete }}/{{ getCompletionStats().total }}</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" 
+                       [style.width.%]="getCompletionPercentage(getCompletionStats().soffitComplete)"
+                       [style.backgroundColor]="getCompletionStats().soffitComplete === getCompletionStats().total ? '#10b981' : '#e2e8f0'"></div>
+                </div>
               </div>
-              <span class="progress-text">{{ getCompletionStats().soffitComplete }}/{{ getCompletionStats().total }}</span>
-            </div>
-          </div>
-        </div>
-
-        <div class="stat-card pod-stat">
-          <div class="stat-content">
-            <div class="stat-label">POD Delivery</div>
-            <div class="stat-progress">
-              <div class="progress-bar">
-                <div class="progress-fill" [style.width.%]="getCompletionPercentage(getCompletionStats().podDeliverComplete)"></div>
+              
+              <div class="delivery-item pod-item">
+                <div class="delivery-header">
+                  <span class="delivery-name">POD Delivery</span>
+                  <span class="delivery-count">{{ getCompletionStats().podDeliverComplete }}/{{ getCompletionStats().total }}</span>
+                </div>
+                <div class="progress-bar">
+                  <div class="progress-fill" 
+                       [style.width.%]="getCompletionPercentage(getCompletionStats().podDeliverComplete)"
+                       [style.backgroundColor]="getCompletionStats().podDeliverComplete === getCompletionStats().total ? '#c084fc' : '#e2e8f0'"></div>
+                </div>
               </div>
-              <span class="progress-text">{{ getCompletionStats().podDeliverComplete }}/{{ getCompletionStats().total }}</span>
             </div>
           </div>
         </div>
@@ -219,24 +253,40 @@
             </svg>
             Detailed Status Table
           </h3>
-          <div class="table-info">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="16" x2="12" y2="12"/>
-              <line x1="12" y1="8" x2="12.01" y2="8"/>
-            </svg>
-            <span>{{ filteredBoxes.length }} box(es)</span>
+          <div class="table-header-right">
+            <div class="table-info">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <line x1="12" y1="8" x2="12.01" y2="8"/>
+              </svg>
+              <span>{{ filteredBoxes.length }} box(es)</span>
+            </div>
+            <button 
+              class="btn-export-excel" 
+              (click)="exportToExcel()"
+              *ngIf="selectedProjectId && filteredBoxes.length > 0"
+              title="Export to Excel">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              Export to Excel
+            </button>
           </div>
         </div>
 
-        <div class="table-wrapper" *ngIf="filteredBoxes.length > 0">
+        <div class="table-wrapper" *ngIf="selectedProjectId && filteredBoxes.length > 0">
           <table class="walls-table">
             <thead>
               <tr>
                 <th class="sticky-col">Box Tag / Box Number / Serial Number</th>
                 <th>Building</th>
                 <th>Floor</th>
-                <th *ngFor="let panelName of getUniquePanelNames()">{{ panelName }}</th>
+                <th *ngFor="let panelType of getPanelTypeColumns()">
+                  {{ panelType.panelTypeName }}
+                </th>
                 <th>Slab</th>
                 <th>Soffit</th>
                 <th>POD Deliver</th>
@@ -260,32 +310,30 @@
                   <span *ngIf="!box.floor" class="no-data">-</span>
                 </td>
                 <!-- Dynamic Panel Columns -->
-                <td *ngFor="let panelName of getUniquePanelNames()" 
+                <td *ngFor="let panelType of getPanelTypeColumns()" 
                     [class.panel-cell]="true"
-                    [class.panel-green]="getPanelStatus(box, panelName) === PanelStatus.Green"
-                    [class.panel-yellow]="getPanelStatus(box, panelName) === PanelStatus.Yellow"
-                    [class.panel-not-started]="getPanelStatus(box, panelName) === PanelStatus.NotStarted"
-                    [class.panel-not-have]="getPanelStatus(box, panelName) === null">
+                    [class.panel-green]="getAggregatedPanelStatus(box, panelType) === PanelStatus.SecondApprovalApproved"
+                    [class.panel-yellow]="getAggregatedPanelStatus(box, panelType) === PanelStatus.FirstApprovalApproved"
+                    [class.panel-red]="getAggregatedPanelStatus(box, panelType) === PanelStatus.SecondApprovalRejected"
+                    [class.panel-not-started]="getAggregatedPanelStatus(box, panelType) === PanelStatus.NotStarted"
+                    [class.panel-not-have]="getPanelsForPanelType(box, panelType).length === 0">
                   <div class="panel-content">
-                    <span class="panel-name">{{ panelName }}</span>
-                    <span class="panel-status-icon" *ngIf="getPanelStatus(box, panelName) === PanelStatus.Green">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                    </span>
-                    <span class="panel-status-icon" *ngIf="getPanelStatus(box, panelName) === PanelStatus.Yellow">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="12" y1="8" x2="12" y2="12"/>
-                        <line x1="12" y1="16" x2="12.01" y2="16"/>
-                      </svg>
-                    </span>
-                    <span class="panel-status-icon" *ngIf="getPanelStatus(box, panelName) === PanelStatus.NotStarted">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                        <line x1="18" y1="6" x2="6" y2="18"/>
-                        <line x1="6" y1="6" x2="18" y2="18"/>
-                      </svg>
-                    </span>
+                    <div *ngIf="getPanelsForPanelType(box, panelType).length > 0; else noPanelTemplate">
+                      <div class="panel-name-section" *ngFor="let panel of getPanelsForPanelType(box, panelType)">
+                        <span class="panel-name">{{ panel.panelName }}</span>
+                        <span class="panel-status-text" [ngClass]="getPanelStatusTextClass(box, panel.typeName || panel.panelName)">
+                          {{ getPanelStatusLabel(box, panel.typeName || panel.panelName) }}
+                        </span>
+                      </div>
+                    </div>
+                    <ng-template #noPanelTemplate>
+                      <div class="panel-name-section">
+                        <span class="panel-name">{{ panelType.panelTypeName }}</span>
+                        <span class="panel-status-text status-text-not-have">
+                          Not Have This Panel
+                        </span>
+                      </div>
+                    </ng-template>
                   </div>
                 </td>
                 <td [class.status-finished]="box.slab" [class.status-not-finished]="!box.slab">
@@ -340,31 +388,35 @@
           </table>
         </div>
 
-        <!-- Empty State -->
-        <div class="empty-state" *ngIf="filteredBoxes.length === 0">
+        <!-- Empty State when a project is selected but no boxes are available -->
+        <div class="empty-state" *ngIf="selectedProjectId && filteredBoxes.length === 0 && !loading">
           <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <rect x="3" y="3" width="18" height="18" rx="2"/>
             <line x1="3" y1="9" x2="21" y2="9"/>
             <line x1="9" y1="21" x2="9" y2="9"/>
           </svg>
           <h3>No Boxes Available</h3>
-          <p>There are no boxes with position data in this factory.</p>
+          <p>There are no boxes with position data for the selected project in this factory.</p>
           <button class="btn-primary" (click)="goBack()">Back to Layout</button>
         </div>
 
         <!-- Legend -->
-        <div class="table-legend" *ngIf="filteredBoxes.length > 0">
-          <div class="legend-item">
-            <span class="legend-panel-cell panel-green">Green</span>
-            <span>Completed (Green)</span>
-          </div>
-          <div class="legend-item">
-            <span class="legend-panel-cell panel-yellow">Yellow</span>
-            <span>In Progress (Yellow)</span>
-          </div>
+        <div class="table-legend" *ngIf="selectedProjectId && filteredBoxes.length > 0">
           <div class="legend-item">
             <span class="legend-panel-cell panel-not-started">Not Started</span>
-            <span>Not Started (Red)</span>
+            <span>Not Started (Gray)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-panel-cell panel-yellow">First Approval Approved</span>
+            <span>First Approval Approved (Yellow)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-panel-cell panel-green">Second Approval Approved</span>
+            <span>Second Approval Approved (Green)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-panel-cell panel-red">Second Approval Rejected</span>
+            <span>Second Approval Rejected (Red)</span>
           </div>
           <div class="legend-item">
             <span class="legend-panel-cell panel-not-have">P-001</span>

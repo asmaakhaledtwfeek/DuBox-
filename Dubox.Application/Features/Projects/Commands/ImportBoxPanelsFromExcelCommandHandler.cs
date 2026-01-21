@@ -110,10 +110,27 @@ public class ImportBoxPanelsFromExcelCommandHandler : IRequestHandler<ImportBoxP
                 .Where(p => p.ProjectId == request.ProjectId)
                 .ToListAsync(cancellationToken);
 
-            // Group existing panels by box ID
-            var existingPanelsByBoxId = existingPanels
-                .GroupBy(p => p.BoxId)
-                .ToDictionary(g => g.Key, g => g.ToList());
+            // Create a dictionary to match existing panels by BoxId + PanelTypeId
+            // Key: (BoxId, PanelTypeId), Value: BoxPanel
+            var existingPanelsByKey = existingPanels
+                .Where(p => p.PanelTypeId.HasValue)
+                .GroupBy(p => new { p.BoxId, PanelTypeId = p.PanelTypeId!.Value })
+                .ToDictionary(
+                    g => (g.Key.BoxId, g.Key.PanelTypeId),
+                    g => g.First() // If multiple panels exist for same BoxId+PanelTypeId, take first
+                );
+
+            // Also handle panels without PanelTypeId (nullable) - match by BoxId + PanelName
+            var existingPanelsWithoutType = existingPanels
+                .Where(p => !p.PanelTypeId.HasValue)
+                .GroupBy(p => new { p.BoxId, p.PanelName })
+                .ToDictionary(
+                    g => (g.Key.BoxId, g.Key.PanelName),
+                    g => g.First()
+                );
+
+            // Track panels that have been processed to avoid duplicates
+            var processedPanelKeys = new HashSet<(Guid BoxId, Guid? PanelTypeId, string PanelName)>();
 
             // Process each data row
             for (int row = 2; row <= worksheet.Dimension.End.Row; row++)
@@ -157,28 +174,106 @@ public class ImportBoxPanelsFromExcelCommandHandler : IRequestHandler<ImportBoxP
                         continue; 
                     }
 
-                    // Delete existing panels for this box
-                    if (existingPanelsByBoxId.ContainsKey(box.BoxId))
+                    // Process each panel for this box
+                    var panelIndex = 0;
+                    foreach (var data in panelData)
                     {
-                        var panelsToDelete = existingPanelsByBoxId[box.BoxId];
-                        _dbContext.BoxPanels.RemoveRange(panelsToDelete);
+                        panelIndex++;
+                        var panelKey = (box.BoxId, data.PanelTypeId, data.PanelName);
+
+                        // Skip if we've already processed this exact panel in this import
+                        if (processedPanelKeys.Contains(panelKey))
+                        {
+                            continue;
+                        }
+                        processedPanelKeys.Add(panelKey);
+
+                        BoxPanel? existingPanel = null;
+
+                        // Try to find existing panel by BoxId + PanelTypeId (preferred matching)
+                        if (data.PanelTypeId.HasValue)
+                        {
+                            var key = (box.BoxId, data.PanelTypeId.Value);
+                            if (existingPanelsByKey.TryGetValue(key, out var foundPanel))
+                            {
+                                existingPanel = foundPanel;
+                            }
+                        }
+                        else
+                        {
+                            // For panels without PanelTypeId, match by BoxId + PanelName
+                            var key = (box.BoxId, data.PanelName);
+                            if (existingPanelsWithoutType.TryGetValue(key, out var foundPanel))
+                            {
+                                existingPanel = foundPanel;
+                            }
+                        }
+
+                        if (existingPanel != null)
+                        {
+                            // Update existing panel - preserve ID and all other fields, only update PanelName
+                            // Also ensure PanelTypeId is set if it wasn't before
+                            var panelNameChanged = existingPanel.PanelName != data.PanelName;
+                            var panelTypeChanged = existingPanel.PanelTypeId != data.PanelTypeId;
+
+                            if (panelNameChanged || panelTypeChanged)
+                            {
+                                existingPanel.PanelName = data.PanelName;
+                                if (data.PanelTypeId.HasValue)
+                                {
+                                    existingPanel.PanelTypeId = data.PanelTypeId;
+                                }
+                                existingPanel.ModifiedDate = DateTime.UtcNow;
+                                
+                                _dbContext.BoxPanels.Update(existingPanel);
+                                successCount++;
+                            }
+                            else
+                            {
+                                // Panel already exists with same data, no update needed
+                                successCount++;
+                            }
+                        }
+                        else
+                        {
+                            // Create new panel record
+                            // Generate barcode - find the highest index for this box to avoid conflicts
+                            var existingPanelsForBox = existingPanels
+                                .Where(p => p.BoxId == box.BoxId && !string.IsNullOrEmpty(p.Barcode))
+                                .ToList();
+                            
+                            int maxIndex = 0;
+                            foreach (var panel in existingPanelsForBox)
+                            {
+                                if (!string.IsNullOrEmpty(panel.Barcode))
+                                {
+                                    // Extract index from barcode format: PANEL-{ProjectCode}-{SerialNumber}-{Index}
+                                    var parts = panel.Barcode.Split('-');
+                                    if (parts.Length >= 4 && int.TryParse(parts[parts.Length - 1], out int index))
+                                    {
+                                        maxIndex = Math.Max(maxIndex, index);
+                                    }
+                                }
+                            }
+                            
+                            var barcode = $"PANEL-{project.ProjectCode}-{box.SerialNumber}-{(maxIndex + 1):D3}";
+                            
+                            var newPanel = new BoxPanel
+                            {
+                                BoxId = box.BoxId,
+                                ProjectId = request.ProjectId,
+                                PanelName = data.PanelName,
+                                PanelTypeId = data.PanelTypeId,
+                                PanelStatus = Domain.Enums.PanelStatusEnum.NotStarted,
+                                Barcode = barcode,
+                                CreatedDate = DateTime.UtcNow,
+                                ModifiedDate = DateTime.UtcNow
+                            };
+
+                            await _dbContext.BoxPanels.AddAsync(newPanel, cancellationToken);
+                            successCount++;
+                        }
                     }
-
-                    // Create new panel records with auto-generated barcodes
-                    var newPanels = panelData.Select((data, index) => new BoxPanel
-                    {
-                        BoxId = box.BoxId,
-                        ProjectId = request.ProjectId,
-                        PanelName = data.PanelName,
-                        PanelTypeId = data.PanelTypeId,
-                        PanelStatus = Domain.Enums.PanelStatusEnum.Manufacturing,
-                        Barcode = $"PANEL-{project.ProjectCode}-{box.SerialNumber}-{(index + 1):D3}", // ProjectCode-SerialNumber-PanelIndex
-                        CreatedDate = DateTime.UtcNow,
-                        ModifiedDate = DateTime.UtcNow
-                    }).ToList();
-
-                    await _dbContext.BoxPanels.AddRangeAsync(newPanels, cancellationToken);
-                    successCount++;
                 }
                 catch (Exception ex)
                 {

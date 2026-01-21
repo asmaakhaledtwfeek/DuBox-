@@ -201,25 +201,104 @@
                     <rect x="3" y="14" width="7" height="7" rx="1"/>
                   </svg>
                 </div>
-                <h3 class="card-title">Concrete Panel Delivery</h3>
+                <div class="card-title-section">
+                  <h3 class="card-title">Concrete Panel Delivery</h3>
+                  <!-- Status Legend -->
+                  <div class="panel-status-legend" *ngIf="boxPanels.length > 0">
+                    <button class="legend-toggle" (click)="toggleLegend()" [attr.aria-expanded]="showLegend">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                      </svg>
+                      Status Legend
+                    </button>
+                    <div class="legend-content" *ngIf="showLegend">
+                      <div class="legend-item">
+                        <div class="legend-color panel-status-not-started"></div>
+                        <span>Not Started (Gray)</span>
+                      </div>
+                      <div class="legend-item">
+                        <div class="legend-color panel-status-first-approval-approved"></div>
+                        <span>First Approval Approved (Yellow)</span>
+                      </div>
+                      <div class="legend-item">
+                        <div class="legend-color panel-status-second-approval-approved"></div>
+                        <span>Second Approval Approved (Green)</span>
+                      </div>
+                      <div class="legend-item">
+                        <div class="legend-color panel-status-second-approval-rejected"></div>
+                        <span>Second Approval Rejected (Red)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
               
               <div class="delivery-grid concrete-grid">
-                <div class="delivery-item" *ngFor="let wall of concreteWalls">
-                  <label class="checkbox-label" [class.checked]="wall.checked">
+                <!-- Dynamic Panels -->
+                <div class="delivery-item panel-item" 
+                     *ngFor="let panel of boxPanels"
+                     [class.panel-status-not-started]="isPanelStatus(panel.panelStatus, PanelStatus.NotStarted)"
+                     [class.panel-status-first-approval-approved]="isPanelStatus(panel.panelStatus, PanelStatus.FirstApprovalApproved)"
+                     [class.panel-status-second-approval-approved]="isPanelStatus(panel.panelStatus, PanelStatus.SecondApprovalApproved)"
+                     [class.panel-status-second-approval-rejected]="isPanelStatus(panel.panelStatus, PanelStatus.SecondApprovalRejected)">
+                  <div class="panel-status-controls">
+                    <div class="panel-name-section">
+                      <span class="panel-name">{{ panel.panelName }}</span>
+                      <span class="panel-status-text" [ngClass]="getPanelStatusTextClass(panel.panelStatus)">
+                        {{ getPanelStatusLabel(panel.panelStatus) }}
+                      </span>
+                    </div>
+                    <div class="panel-status-indicator"
+                         [class.status-not-started]="panel.panelStatus === PanelStatus.NotStarted"
+                         [class.status-yellow]="panel.panelStatus === PanelStatus.FirstApprovalApproved"
+                         [class.status-green]="panel.panelStatus === PanelStatus.SecondApprovalApproved"
+                         [class.status-red]="panel.panelStatus === PanelStatus.SecondApprovalRejected"
+                         [title]="getPanelStatusLabel(panel.panelStatus)">
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Slab -->
+                <div class="delivery-item">
+                  <label class="checkbox-label" [class.checked]="slabChecked">
                     <input 
                       type="checkbox" 
-                      [checked]="wall.checked"
+                      [checked]="slabChecked"
                       disabled
                       class="checkbox-input">
                     <span class="checkbox-custom"></span>
-                    <span class="checkbox-text">{{ wall.label }}</span>
-                    <span class="check-icon" *ngIf="wall.checked">
+                    <span class="checkbox-text">Slab</span>
+                    <span class="check-icon" *ngIf="slabChecked">
                       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                         <polyline points="20 6 9 17 4 12"/>
                       </svg>
                     </span>
                   </label>
+                </div>
+                
+                <!-- Soffit -->
+                <div class="delivery-item">
+                  <label class="checkbox-label" [class.checked]="soffitChecked">
+                    <input 
+                      type="checkbox" 
+                      [checked]="soffitChecked"
+                      disabled
+                      class="checkbox-input">
+                    <span class="checkbox-custom"></span>
+                    <span class="checkbox-text">Soffit</span>
+                    <span class="check-icon" *ngIf="soffitChecked">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </span>
+                  </label>
+                </div>
+                
+                <!-- Empty state -->
+                <div class="delivery-item empty-state" *ngIf="boxPanels.length === 0 && !slabChecked && !soffitChecked">
+                  <span class="empty-message">No panels configured for this box</span>
                 </div>
               </div>
             </div>

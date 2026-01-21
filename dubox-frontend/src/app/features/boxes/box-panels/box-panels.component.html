@@ -5,6 +5,19 @@
       <p class="helper-text">Review and approve panels for this box</p>
     </div>
     <div class="header-actions">
+      <button 
+        class="btn btn-download-all" 
+        (click)="downloadAllBarcodes()" 
+        [disabled]="downloadingAll || !hasBarcodesToDownload()"
+        title="Download all barcodes in one PDF file">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span *ngIf="!downloadingAll">Download All Barcodes</span>
+        <span *ngIf="downloadingAll">Downloading...</span>
+      </button>
       <button class="btn btn-scan" (click)="openBarcodeScanner('SiteArrival')" title="Scan barcode to approve arrival at site">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <rect x="3" y="3" width="18" height="18" rx="2"/>
@@ -53,10 +66,39 @@
             <strong>{{ panel.panelName }}</strong>
           </td>
           <td>
-            <code class="barcode-display" *ngIf="panel.barcode" title="Click to copy" (click)="copyBarcode(panel.barcode)">
-              {{ panel.barcode }}
-            </code>
-            <span class="no-barcode" *ngIf="!panel.barcode">—</span>
+            <div class="barcode-container" *ngIf="panel.barcode && getBarcodeImage(panel)">
+              <div class="barcode-image-wrapper">
+                <img 
+                  [src]="getBarcodeImage(panel)!" 
+                  [alt]="'Barcode: ' + panel.barcode"
+                  class="barcode-image"
+                  (error)="handleImageError($event)"
+                  loading="lazy">
+              </div>
+              <div class="barcode-actions">
+                <button 
+                  class="btn-download-barcode"
+                  (click)="downloadBarcode(panel)"
+                  title="Download barcode image">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  Download
+                </button>
+                <button 
+                  class="btn-copy-barcode"
+                  (click)="copyBarcode(panel.barcode)"
+                  title="Copy barcode text">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <span class="no-barcode" *ngIf="!panel.barcode || !getBarcodeImage(panel)">—</span>
           </td>
           <td>
             <span class="panel-type-badge" *ngIf="panel.typeName">

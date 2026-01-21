@@ -1063,6 +1063,7 @@
     display: flex;
     flex-direction: column;
     margin-bottom: 24px; // Default margin
+    overflow: hidden; // Prevent content from overflowing card boundaries
     
     // Remove margin-bottom when inside activity-delivery-layout
     .activity-delivery-layout & {
@@ -9864,6 +9865,7 @@
     grid-column: 2; // Right column
     min-height: 0; // Allow flex container to shrink
     align-items: stretch; // Ensure children stretch to fill
+    overflow: hidden; // Prevent wrapper from causing overflow issues
   }
 
   .delivery-card {
@@ -9872,9 +9874,40 @@
     display: flex;
     flex-direction: column;
     min-height: 0; // Allow flex items to shrink below content size
+    overflow: hidden; // Prevent content from overflowing card boundaries
 
     .delivery-grid {
       flex: 1;
+      overflow: hidden; // Prevent grid content from overflowing
+      min-height: 0;
+    }
+  }
+  
+  // Ensure concrete panel card content doesn't overflow
+  .concrete-panel-card {
+    overflow: hidden;
+    
+    .concrete-grid {
+      overflow: hidden;
+      min-height: 0;
+      
+      .delivery-item {
+        overflow: hidden;
+        
+        .rejection-reason {
+          overflow: hidden;
+          word-wrap: break-word;
+          word-break: break-word;
+          
+          .rejection-reason-text {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+          }
+        }
+      }
     }
   }
 }
@@ -10453,6 +10486,282 @@
       margin-top: 0;
       flex: 1;
       min-height: 0;
+    }
+  }
+
+  // ============= Pod Delivery Card V2 - Redesigned ============= //
+  .pod-delivery-card-v2 {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    transition: all 0.3s ease;
+
+    &:hover {
+      border-color: #d1d5db;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .pod-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .pod-title-area {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .pod-icon-badge {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--amana-teal) 0%, #0d9488 100%);
+      border-radius: 10px;
+      color: white;
+      box-shadow: 0 2px 8px rgba(0, 163, 163, 0.25);
+    }
+
+    .pod-card-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1e293b;
+      margin: 0;
+      letter-spacing: -0.2px;
+    }
+
+    // Toggle Switch Styles
+    .pod-toggle {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+
+      input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .toggle-track {
+        position: relative;
+        width: 44px;
+        height: 24px;
+        background: #e2e8f0;
+        border-radius: 12px;
+        transition: all 0.25s ease;
+      }
+
+      .toggle-thumb {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        transition: all 0.25s ease;
+      }
+
+      .toggle-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #64748b;
+        min-width: 60px;
+        transition: color 0.25s ease;
+      }
+
+      &.active {
+        .toggle-track {
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .toggle-thumb {
+          left: 22px;
+        }
+
+        .toggle-label {
+          color: #059669;
+        }
+      }
+
+      &.disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+
+      &:not(.disabled):hover .toggle-track {
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+      }
+    }
+
+    // Form Content Area
+    .pod-form-content {
+      padding: 20px;
+      max-height: 200px;
+      opacity: 1;
+      transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+
+      &.collapsed {
+        max-height: 0;
+        padding: 0 20px;
+        opacity: 0;
+      }
+    }
+
+    .pod-form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .pod-field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .pod-field-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+
+      svg {
+        color: #94a3b8;
+      }
+    }
+
+    .pod-input-wrapper {
+      position: relative;
+    }
+
+    .pod-input {
+      width: 100%;
+      padding: 12px 14px;
+      font-size: 14px;
+      color: #1e293b;
+      background: #f8fafc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      transition: all 0.2s ease;
+      box-sizing: border-box;
+
+      &::placeholder {
+        color: #94a3b8;
+      }
+
+      &:focus {
+        outline: none;
+        background: white;
+        border-color: var(--amana-teal);
+        box-shadow: 0 0 0 3px rgba(0, 163, 163, 0.1);
+      }
+
+      &:disabled {
+        background: #f1f5f9;
+        color: #94a3b8;
+        cursor: not-allowed;
+      }
+    }
+
+    // Save Button Area (outside collapsible content)
+    .pod-save-area {
+      padding: 0 20px 16px 20px;
+      display: flex;
+      justify-content: flex-end;
+      opacity: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: all 0.25s ease;
+      pointer-events: none;
+
+      &.visible {
+        opacity: 1;
+        max-height: 60px;
+        padding-top: 16px;
+        pointer-events: auto;
+      }
+    }
+
+    .pod-save-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 10px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      color: white;
+      background: linear-gradient(135deg, var(--amana-teal) 0%, #0d9488 100%);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(0, 163, 163, 0.25);
+
+      .btn-content {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      &:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 163, 163, 0.35);
+      }
+
+      &:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .spinner {
+        animation: spin 1s linear infinite;
+      }
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  }
+
+  // Responsive styles for Pod Delivery V2
+  @media (max-width: 640px) {
+    .pod-delivery-card-v2 {
+      .pod-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+
+      .pod-form-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .pod-toggle .toggle-label {
+        display: none;
+      }
     }
   }
 

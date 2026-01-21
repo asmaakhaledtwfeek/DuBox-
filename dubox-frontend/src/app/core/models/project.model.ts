@@ -6,6 +6,9 @@ export interface Project {
   clientName?: string;
   description?: string;
   bimLink?: string;
+  contractorImageUrl?: string;
+  subContractorImageUrl?: string;
+  clientImageUrl?: string;
   categoryId?: number;
   categoryName?: string;
   startDate?: Date;

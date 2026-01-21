@@ -43,12 +43,17 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
 
             if (wir is null)
                 return Result.Failure<WIRCheckpointDto>("WIRCheckpoint not found.");
+            var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId)
+              ? parsedUserId
+              : Guid.Empty;
 
-            // Verify user has access to the project this WIR checkpoint belongs to
-            var canAccessProject = await _visibilityService.CanAccessProjectAsync(wir.Box.ProjectId, cancellationToken);
-            if (!canAccessProject)
-                return Result.Failure<WIRCheckpointDto>("Access denied. You do not have permission to review this WIR checkpoint.");
+            if (!wir.InspectorId.HasValue || wir.InspectorId.Value == Guid.Empty)
+                return Result.Failure<WIRCheckpointDto>("Inspector is not assigned to this checkpoint. Please assign an inspector first.");
 
+            if (currentUserId == Guid.Empty || wir.InspectorId.Value != currentUserId)
+                return Result.Failure<WIRCheckpointDto>("Access denied. Only the assigned inspector can review this checkpoint.");
+
+            
             var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(wir.Box.ProjectId, "review WIR checkpoint", cancellationToken);
             if (!projectStatusValidation.IsSuccess)
                 return Result.Failure<WIRCheckpointDto>(projectStatusValidation.Error!);
@@ -57,17 +62,6 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             if (!boxStatusValidation.IsSuccess)
                 return Result.Failure<WIRCheckpointDto>(boxStatusValidation.Error!);
            
-            var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId)
-                ? parsedUserId
-                : Guid.Empty;
-
-            // Only the assigned inspector can review this checkpoint
-            if (!wir.InspectorId.HasValue || wir.InspectorId.Value == Guid.Empty)
-                return Result.Failure<WIRCheckpointDto>("Inspector is not assigned to this checkpoint. Please assign an inspector first.");
-
-            if (currentUserId == Guid.Empty || wir.InspectorId.Value != currentUserId)
-                return Result.Failure<WIRCheckpointDto>("Access denied. Only the assigned inspector can review this checkpoint.");
-
             var invalidIds = request.Items
                 .Select(i => i.ChecklistItemId)
                 .Except(wir.ChecklistItems.Select(c => c.ChecklistItemId))

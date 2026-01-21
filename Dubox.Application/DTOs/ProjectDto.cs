@@ -22,6 +22,9 @@ public record ProjectDto
     public decimal? ProjectValue { get; init; }
     public string? Description { get; init; }
     public string? BimLink { get; init; }
+    public string? ContractorImageUrl { get; init; }
+    public string? SubContractorImageUrl { get; init; }
+    public string? ClientImageUrl { get; init; }
     public int TotalBoxes { get; init; }
     public decimal ProgressPercentage { get; init; }
     public bool IsActive { get; init; }

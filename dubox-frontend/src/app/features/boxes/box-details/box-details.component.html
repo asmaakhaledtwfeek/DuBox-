@@ -505,30 +505,21 @@
                        [class.panel-status-second-approval-rejected]="isPanelStatus(panel.panelStatus, PanelStatus.SecondApprovalRejected)">
                     <div class="panel-status-controls">
                       <div class="panel-name-section">
-                        <span class="panel-name">{{ panel.panelName }}</span>
-                        <span class="panel-status-text" [ngClass]="getPanelStatusTextClass(panel.panelStatus)">
-                          {{ getPanelStatusLabel(panel.panelStatus) }}
-                        </span>
+                        <span class="panel-name">{{ panel.panelName }} </span>
+                        
                       </div>
-                      <div class="panel-status-indicator"
+                      <!-- <div class="panel-status-indicator"
                            [class.status-not-started]="panel.panelStatus === PanelStatus.NotStarted"
                            [class.status-yellow]="panel.panelStatus === PanelStatus.FirstApprovalApproved"
                            [class.status-green]="panel.panelStatus === PanelStatus.SecondApprovalApproved"
                            [class.status-red]="panel.panelStatus === PanelStatus.SecondApprovalRejected"
                            [title]="getPanelStatusLabel(panel.panelStatus)">
-                      </div>
+                      </div> -->
                     </div>
                     <!-- Rejection Reason -->
                     <div class="rejection-reason" 
                          *ngIf="isPanelRejected(panel) && getPanelRejectionReason(panel)">
-                      <div class="rejection-reason-label">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <circle cx="12" cy="12" r="10"/>
-                          <line x1="12" y1="8" x2="12" y2="12"/>
-                          <line x1="12" y1="16" x2="12.01" y2="16"/>
-                        </svg>
-                        <span>Rejection Reason:</span>
-                      </div>
+                     
                       <div class="rejection-reason-text">{{ getPanelRejectionReason(panel) }}</div>
                     </div>
                   </div>
@@ -540,113 +531,104 @@
                 </div>
               </div>
 
-              <!-- Pod Delivery Card - Separate Card -->
-              <div class="info-card delivery-card pod-delivery-card">
-                <div class="card-header-with-icon">
-                  <div class="icon-wrapper pod-icon">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                      <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                      <line x1="12" y1="22.08" x2="12" y2="12"/>
-                    </svg>
+              <!-- Pod Delivery Card - Redesigned -->
+              <div class="info-card delivery-card pod-delivery-card-v2">
+                <!-- Card Header -->
+                <div class="pod-card-header">
+                  <div class="pod-title-area">
+                    <div class="pod-icon-badge">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                        <line x1="12" y1="22.08" x2="12" y2="12"/>
+                      </svg>
+                    </div>
+                    <h3 class="pod-card-title">Pod Delivery</h3>
                   </div>
-                  <div class="card-title-section">
-                    <h3 class="card-title">Pod Delivery</h3>
-                    <!-- Pod Deliver Checkbox aligned with Status Legend button -->
-                    <div class="pod-deliver-wrapper">
-                      <label class="checkbox-label pod-deliver-checkbox" [class.checked]="podDeliverChecked">
+                  
+                  <!-- Toggle Switch -->
+                  <label class="pod-toggle" [class.active]="podDeliverChecked" [class.disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed">
                     <input 
                       type="checkbox" 
                       [(ngModel)]="podDeliverChecked"
                       (change)="togglePodDeliver($event)"
-                      [disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed"
-                      class="checkbox-input">
-                    <span class="checkbox-custom"></span>
-                    <span class="checkbox-text">Pod Deliver</span>
-                    <span class="check-icon" *ngIf="podDeliverChecked">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
+                      [disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed">
+                    <span class="toggle-track">
+                      <span class="toggle-thumb"></span>
                     </span>
+                    <span class="toggle-label">{{ podDeliverChecked ? 'Enabled' : 'Disabled' }}</span>
                   </label>
-                    </div>
-                  </div>
                 </div>
-                
-                <div class="pod-delivery-container">
-                  <div class="pod-details" >
-                    <div class="pod-details-header">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                        <polyline points="14 2 14 8 20 8"/>
-                        <line x1="12" y1="18" x2="12" y2="12"/>
-                        <line x1="9" y1="15" x2="15" y2="15"/>
-                      </svg>
-                      <span>Pod Information</span>
-                    </div>
-                    <div class="form-row">
-                      <div class="form-group">
-                        <label for="podType">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-                            <circle cx="8.5" cy="7" r="4"/>
-                          </svg>
-                          Pod Type
-                        </label>
+
+                <!-- Pod Form Content (collapsible when disabled) -->
+                <div class="pod-form-content" >
+                  <div class="pod-form-grid">
+                    <!-- Pod Type Field -->
+                    <div class="pod-field">
+                      <label class="pod-field-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="3" y="3" width="7" height="7"/>
+                          <rect x="14" y="3" width="7" height="7"/>
+                          <rect x="14" y="14" width="7" height="7"/>
+                          <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                        Pod Type
+                      </label>
+                      <div class="pod-input-wrapper">
                         <input 
                           type="text" 
                           id="podType"
                           [(ngModel)]="podType"
                           (ngModelChange)="onPodDataChange()"
-                          [disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed"
-                          class="form-input"
-                          placeholder="Enter pod type">
+                          [disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed || !podDeliverChecked"
+                          class="pod-input"
+                          placeholder="e.g., Bathroom, Kitchen">
                       </div>
-                      <div class="form-group">
-                        <label for="podName">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                            <circle cx="12" cy="7" r="4"/>
-                          </svg>
-                          Pod Name
-                        </label>
+                    </div>
+
+                    <!-- Pod Name Field -->
+                    <div class="pod-field">
+                      <label class="pod-field-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                        </svg>
+                        Pod Name
+                      </label>
+                      <div class="pod-input-wrapper">
                         <input 
                           type="text" 
                           id="podName"
                           [(ngModel)]="podName"
                           (ngModelChange)="onPodDataChange()"
-                          [disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed"
-                          class="form-input"
-                          placeholder="Enter pod name">
+                          [disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed || !podDeliverChecked"
+                          class="pod-input"
+                          placeholder="e.g., POD-A1, POD-B2">
                       </div>
                     </div>
-                    
-                    <!-- Save Button -->
-                    <div class="pod-actions">
-                      <button 
-                        type="button"
-                        class="save-pod-btn"
-                        [class.has-changes]="hasPodDeliveryChanges"
-                        [disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed || !hasPodDeliveryChanges || updatingDeliveryInfo"
-                        (click)="savePodDeliveryInfo()">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" *ngIf="!updatingDeliveryInfo">
-                          <polyline points="20 6 9 17 4 12"/>
-                        </svg>
-                        <svg class="spinner" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" *ngIf="updatingDeliveryInfo">
-                          <line x1="12" y1="2" x2="12" y2="6"/>
-                          <line x1="12" y1="18" x2="12" y2="22"/>
-                          <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
-                          <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
-                          <line x1="2" y1="12" x2="6" y2="12"/>
-                          <line x1="18" y1="12" x2="22" y2="12"/>
-                          <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
-                          <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
-                        </svg>
-                        <span *ngIf="!updatingDeliveryInfo">Save Pod Information</span>
-                        <span *ngIf="updatingDeliveryInfo">Saving...</span>
-                      </button>
-                    </div>
                   </div>
+                </div>
+
+                <!-- Save Action (outside collapsible area - always visible when there are changes) -->
+                <div class="pod-save-area" [class.visible]="hasPodDeliveryChanges">
+                  <button 
+                    type="button"
+                    class="pod-save-btn"
+                    [disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed || !hasPodDeliveryChanges || updatingDeliveryInfo"
+                    (click)="savePodDeliveryInfo()">
+                    <span class="btn-content" *ngIf="!updatingDeliveryInfo">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      Save Changes
+                    </span>
+                    <span class="btn-content" *ngIf="updatingDeliveryInfo">
+                      <svg class="spinner" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                      </svg>
+                      Saving...
+                    </span>
+                  </button>
                 </div>
               </div>
             </div>

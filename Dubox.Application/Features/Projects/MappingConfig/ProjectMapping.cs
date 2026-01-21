@@ -14,7 +14,10 @@ namespace Dubox.Application.Features.Projects.MappingConfig
                 .Map(dest => dest.PlannedEndDate, src => src.PlannedEndDate)
                 .Map(dest => dest.ActualEndDate, src => src.ActualEndDate)
                 .Map(dest => dest.CompressionStartDate, src => src.CompressionStartDate)
-                .Map(dest => dest.BimLink, src => src.BimLink);
+                .Map(dest => dest.BimLink, src => src.BimLink)
+                .Map(dest => dest.ContractorImageUrl, src => src.ContractorImageUrl)
+                .Map(dest => dest.SubContractorImageUrl, src => src.SubContractorImageUrl)
+                .Map(dest => dest.ClientImageUrl, src => src.ClientImageUrl);
         }
     }
 }

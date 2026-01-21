@@ -220,13 +220,14 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
       this.cdr.detectChanges(); // Force view update to show video element
 
       // Try multiple camera configurations as fallback
+      // Use lower resolution for faster barcode detection (640x480 is sufficient for scanning)
       const constraints = [
-        // Try 1: Back camera with ideal resolution
+        // Try 1: Back camera with optimized resolution for scanning (faster processing)
         {
           video: {
             facingMode: 'environment',
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
+            width: { ideal: 640, max: 1280 },
+            height: { ideal: 480, max: 720 }
           }
         },
         // Try 2: Back camera with default resolution
@@ -235,11 +236,11 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
             facingMode: 'environment'
           }
         },
-        // Try 3: Any camera with ideal resolution
+        // Try 3: Any camera with optimized resolution
         {
           video: {
-            width: { ideal: 1280 },
-            height: { ideal: 720 }
+            width: { ideal: 640, max: 1280 },
+            height: { ideal: 480, max: 720 }
           }
         },
         // Try 4: Any camera with default settings
@@ -358,10 +359,11 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
           }
           
           // Wait a moment for video to stabilize, then start scanning
+          // Reduced delay for faster startup
           setTimeout(() => {
             console.log('Starting barcode scanning after video stabilization...');
             this.startScanning();
-          }, 500);
+          }, 200);
           video.removeEventListener('loadedmetadata', onLoadedMetadata);
         })
         .catch((playError) => {
@@ -524,25 +526,28 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
             }
           }
           
-          // Fallback: Use canvas to image approach
+          // Fallback: Use canvas to image approach (optimized for speed)
           if (!barcodeText) {
             try {
               const canvas = this.canvasElement?.nativeElement;
               if (canvas && canvas.getContext) {
-                const context = canvas.getContext('2d');
+                const context = canvas.getContext('2d', { willReadFrequently: true });
                 if (context) {
-                  // Draw video frame to canvas
-                  canvas.width = video.videoWidth;
-                  canvas.height = video.videoHeight;
+                  // Use smaller canvas size for faster processing (scale down if video is large)
+                  const scaleFactor = video.videoWidth > 640 ? 0.5 : 1;
+                  canvas.width = Math.floor(video.videoWidth * scaleFactor);
+                  canvas.height = Math.floor(video.videoHeight * scaleFactor);
+                  
+                  // Draw video frame to canvas (scaled down for faster processing)
                   context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-                  // Convert canvas to image element for ZXing
+                  // Convert canvas to image element for ZXing (optimized for speed)
                   const image = new Image();
                   image.crossOrigin = 'anonymous';
                   
-                  // Use promise to handle image loading
+                  // Use promise to handle image loading with shorter timeout
                   const imageLoadPromise = new Promise<void>((resolve) => {
-                    const timeout = setTimeout(() => resolve(), 150);
+                    const timeout = setTimeout(() => resolve(), 50); // Reduced from 150ms for faster processing
                     
                     image.onload = () => {
                       clearTimeout(timeout);
@@ -555,7 +560,8 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
                     };
                   });
                   
-                  image.src = canvas.toDataURL('image/png');
+                  // Use lower quality PNG for faster conversion (0.8 instead of default 0.92)
+                  image.src = canvas.toDataURL('image/png', 0.8);
                   await imageLoadPromise;
                   
                   // Only decode if image loaded successfully
@@ -592,7 +598,9 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
       }
     };
 
-    this.scanInterval = setInterval(async () => {
+    // Use optimized interval for faster detection
+    // Reduced from 200ms to 100ms for faster barcode detection
+    this.scanInterval = window.setInterval(async () => {
       if (!this.cameraActive) {
         return;
       }
@@ -604,7 +612,7 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
         if (barcodeText) {
           console.log('🎯 Processing barcode:', barcodeText);
           // Clear interval first to stop scanning
-          if (this.scanInterval) {
+          if (this.scanInterval !== null) {
             clearInterval(this.scanInterval);
             this.scanInterval = null;
           }
@@ -616,7 +624,7 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
       } catch (err) {
         console.error('Scanning error:', err);
       }
-    }, 200); // Check every 200ms for faster detection
+    }, 100); // Check every 100ms for faster detection (reduced from 200ms)
     
     console.log('✅ Barcode scanning interval started');
   }

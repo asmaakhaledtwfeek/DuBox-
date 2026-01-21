@@ -44,6 +44,9 @@ export class ProjectService {
       location: backendProject.location || backendProject.Location || '',
       clientName: clientName,
       description: backendProject.description || backendProject.Description,
+      contractorImageUrl: backendProject.contractorImageUrl || backendProject.ContractorImageUrl,
+      subContractorImageUrl: backendProject.subContractorImageUrl || backendProject.SubContractorImageUrl,
+      clientImageUrl: backendProject.clientImageUrl || backendProject.ClientImageUrl,
       startDate: startDateValue ? new Date(startDateValue) : undefined,
       endDate: endDateValue ? new Date(endDateValue) : undefined,
       plannedStartDate: plannedStartValue ? new Date(plannedStartValue) : undefined,
@@ -258,5 +261,29 @@ export class ProjectService {
     const formData = new FormData();
     formData.append('file', file);
     return this.apiService.postFormData<any>(`${this.endpoint}/${projectId}/box-panels/import-excel`, formData);
+  }
+
+  /**
+   * Upload project images (Contractor, Sub-contractor, Client)
+   */
+  uploadProjectImages(
+    projectId: string,
+    contractorImage?: File | null,
+    subContractorImage?: File | null,
+    clientImage?: File | null
+  ): Observable<any> {
+    const formData = new FormData();
+    
+    if (contractorImage) {
+      formData.append('contractorImage', contractorImage);
+    }
+    if (subContractorImage) {
+      formData.append('subContractorImage', subContractorImage);
+    }
+    if (clientImage) {
+      formData.append('clientImage', clientImage);
+    }
+    
+    return this.apiService.postFormData<any>(`${this.endpoint}/${projectId}/upload-images`, formData);
   }
 }

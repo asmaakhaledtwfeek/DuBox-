@@ -21,6 +21,7 @@ import {
 } from '../../../core/models/project-configuration.model';
 import { forkJoin } from 'rxjs';
 import { toTitleCase, toUpperCase } from '../../../core/utils/text-transform.util';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-create-project',
@@ -42,6 +43,10 @@ export class CreateProjectComponent implements OnInit {
   loadingCategories = false;
   minStartDate: string = '';
   maxStartDate: string = '';
+  
+  // Step management for create flow
+  currentStep: number = 1;
+  createdProjectId: string | null = null;
   
   locations = [
     { value: 1, label: 'KSA' },
@@ -69,6 +74,17 @@ export class CreateProjectComponent implements OnInit {
   newZone = '';
   newBoxFunction = '';
 
+  // Logo uploads
+  contractorImage: File | null = null;
+  contractorImagePreview: string | null = null;
+  contractorImageUrl: string | null = null; // Existing logo URL from server
+  subContractorImage: File | null = null;
+  subContractorImagePreview: string | null = null;
+  subContractorImageUrl: string | null = null; // Existing logo URL from server
+  clientImage: File | null = null;
+  clientImagePreview: string | null = null;
+  clientImageUrl: string | null = null; // Existing logo URL from server
+
   constructor(
     private fb: FormBuilder,
     @Inject(ProjectService) private projectService: ProjectService,
@@ -84,6 +100,14 @@ export class CreateProjectComponent implements OnInit {
     this.initForm();
     this.loadProjectManagers();
     this.detectModeAndLoadProject();
+    
+    // Check if we're in step 2 (from query param or state)
+    const step = this.route.snapshot.queryParamMap.get('step');
+    const projectId = this.route.snapshot.queryParamMap.get('projectId');
+    if (step === '2' && projectId && !this.isEdit) {
+      this.currentStep = 2;
+      this.createdProjectId = projectId;
+    }
   }
 
   private loadProjectManagers(): void {
@@ -231,6 +255,7 @@ export class CreateProjectComponent implements OnInit {
       next: (project) => {
         this.originalProject = project;
         this.patchForm(project);
+        this.loadProjectImages(project);
         this.loadProjectConfiguration(id);
         this.initializing = false;
         this.projectForm.enable();
@@ -247,6 +272,83 @@ export class CreateProjectComponent implements OnInit {
         console.error('❌ Error loading project for edit:', err);
       }
     });
+  }
+
+  private loadProjectImages(project: Project): void {
+    // Load existing logo URLs from the project
+    // Handle empty strings as null and ensure URLs are absolute
+    this.contractorImageUrl = this.normalizeImageUrl(project.contractorImageUrl);
+    this.subContractorImageUrl = this.normalizeImageUrl(project.subContractorImageUrl);
+    this.clientImageUrl = this.normalizeImageUrl(project.clientImageUrl);
+    
+    console.log('🖼️ Loaded project logos:', {
+      contractorImageUrl: this.contractorImageUrl,
+      subContractorImageUrl: this.subContractorImageUrl,
+      clientImageUrl: this.clientImageUrl,
+      originalProject: {
+        contractorImageUrl: project.contractorImageUrl,
+        subContractorImageUrl: project.subContractorImageUrl,
+        clientImageUrl: project.clientImageUrl
+      }
+    });
+  }
+
+  /**
+   * Format logo URL - same logic as progress updates
+   * Handles relative URLs, absolute URLs, and empty values
+   * Matches the pattern used in box-details.component.ts for progress update images
+   */
+  private normalizeImageUrl(url: string | null | undefined): string | null {
+    if (!url || url.trim() === '') {
+      return null;
+    }
+
+    const trimmedUrl = url.trim();
+    
+    // If it's a relative URL starting with /api/ or just /, convert to absolute URL
+    // Use window.location.origin (not environment.apiUrl) to avoid double /api/
+    if (trimmedUrl.startsWith('/api/') || (trimmedUrl.startsWith('/') && !trimmedUrl.startsWith('http'))) {
+      const baseUrl = `${window.location.protocol}//${window.location.host}`;
+      const fullUrl = `${baseUrl}${trimmedUrl}`;
+      console.log('🔗 Formatting relative URL:', trimmedUrl, '→', fullUrl);
+      return fullUrl;
+    }
+    
+    // If it's already an absolute URL (starts with http:// or https://), return as-is
+    if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+      console.log('🔗 Using absolute URL:', trimmedUrl);
+      return trimmedUrl;
+    }
+    
+    // For any other URL format, return as is (might be a blob URL or other valid URL)
+    console.log('🔗 Using URL as-is:', trimmedUrl);
+    return trimmedUrl;
+  }
+
+  /**
+   * Handle logo load error
+   */
+  onImageError(imageType: 'contractor' | 'subContractor' | 'client'): void {
+    console.error(`❌ Failed to load ${imageType} logo`);
+    // Clear the failed logo URL
+    if (imageType === 'contractor') {
+      this.contractorImageUrl = null;
+    } else if (imageType === 'subContractor') {
+      this.subContractorImageUrl = null;
+    } else if (imageType === 'client') {
+      this.clientImageUrl = null;
+    }
+    this.toastService.error(`Failed to load ${imageType} logo. The logo may have been deleted or moved.`);
+  }
+
+  /**
+   * Trigger file input click
+   */
+  triggerFileInput(inputId: string): void {
+    const input = document.getElementById(inputId) as HTMLInputElement;
+    if (input) {
+      input.click();
+    }
   }
 
   private loadProjectConfiguration(id: string): void {
@@ -331,6 +433,13 @@ export class CreateProjectComponent implements OnInit {
   }
 
   onSubmit(): void {
+    // Handle step 2 (image upload)
+    if (this.currentStep === 2 && !this.isEdit) {
+      this.uploadImagesStep2();
+      return;
+    }
+
+    // Step 1: Validate and create project
     if (this.initializing || this.projectForm.invalid) {
       this.markFormGroupTouched(this.projectForm);
       
@@ -358,6 +467,7 @@ export class CreateProjectComponent implements OnInit {
     let projectData: any;
 
     if (!this.isEdit) {
+      // Step 1: Create project (without images)
       projectData = {
         projectCode: formValue.projectCode,
         projectName: formValue.projectName,
@@ -371,26 +481,55 @@ export class CreateProjectComponent implements OnInit {
         description: formValue.description || undefined,
         bimLink: formValue.bimLink || undefined
       };
+      
+      // Create project and move to step 2
+      this.projectService.createProject(projectData).subscribe({
+        next: (project: any) => {
+          const projectId = project.id || project.projectId || project.ProjectId;
+
+          if (!projectId) {
+            console.error('⚠️ WARNING: Created project has no ID!');
+            this.loading = false;
+            this.error = 'Project created but has no ID. Please contact support.';
+            return;
+          }
+
+          // Save configuration if any exists
+          if (this.hasConfiguration()) {
+            this.saveConfigurationAndMoveToStep2(projectId);
+          } else {
+            // Move to step 2
+            this.loading = false;
+            this.createdProjectId = projectId;
+            this.currentStep = 2;
+            this.successMessage = 'Project created successfully! Now you can optionally add images.';
+            this.router.navigate([], {
+              relativeTo: this.route,
+              queryParams: { step: '2', projectId: projectId },
+              queryParamsHandling: 'merge'
+            });
+          }
+        },
+        error: (err) => {
+          this.loading = false;
+          const errorMessage = err.error?.message || err.message || 'Failed to create project. Please try again.';
+          this.error = errorMessage;
+          this.toastService.error(errorMessage);
+          console.error('❌ Error creating project:', err);
+        }
+      });
     } else {
+      // Edit mode - keep existing behavior
       projectData = {};
       const compare = (newVal: any, oldVal: any) => newVal !== oldVal && !(newVal === undefined && oldVal === undefined);
 
       if (this.originalProject) {
-        // Note: projectCode and location cannot be updated - they are read-only in edit mode
-        // if (compare(formValue.projectCode, this.originalProject.code)) {
-        //   projectData.projectCode = formValue.projectCode;
-        // }
         if (compare(formValue.projectName, this.originalProject.name)) {
           projectData.projectName = formValue.projectName;
         }
         if (compare(formValue.clientName, this.originalProject.clientName)) {
           projectData.clientName = formValue.clientName || undefined;
         }
-        // Note: location cannot be updated - it is read-only in edit mode
-        // if (compare(formValue.location, this.originalProject.location)) {
-        //   projectData.location = formValue.location || 1;
-        // }
-       
         if (compare(formValue.description, this.originalProject.description)) {
           projectData.description = formValue.description || undefined;
         }
@@ -427,47 +566,129 @@ export class CreateProjectComponent implements OnInit {
       if (this.projectId) {
         projectData.projectId = this.projectId;
       }
+
+      // Edit mode - upload images if any are selected
+      this.projectService.updateProject(this.projectId!, projectData).subscribe({
+        next: (project: any) => {
+          const projectId = project.id || project.projectId || project.ProjectId || this.projectId;
+
+          if (!projectId) {
+            console.error('⚠️ WARNING: Updated project has no ID!');
+            this.loading = false;
+            this.error = 'Project updated but has no ID. Please contact support.';
+            return;
+          }
+
+          // Upload images if any are selected
+          if (this.hasImagesToUpload()) {
+            this.uploadImages(projectId);
+          } else if (this.hasConfiguration()) {
+            this.saveConfiguration(projectId);
+          } else {
+            this.loading = false;
+            this.successMessage = 'Project updated successfully!';
+            console.log('✅ Project updated:', project);
+            
+            setTimeout(() => {
+              this.router.navigate(['/projects', projectId, 'dashboard']);
+            }, 1200);
+          }
+        },
+        error: (err) => {
+          this.loading = false;
+          const errorMessage = err.error?.message || err.message || 'Failed to update project. Please try again.';
+          this.error = errorMessage;
+          this.toastService.error(errorMessage);
+          console.error('❌ Error updating project:', err);
+        }
+      });
+    }
+  }
+  
+  private saveConfigurationAndMoveToStep2(projectId: string): void {
+    const configuration: ProjectConfiguration = {
+      projectId: projectId,
+      buildings: this.buildings,
+      levels: this.levels,
+      boxTypes: this.boxTypes,
+      zones: this.zones,
+      boxFunctions: this.boxFunctions
+    };
+
+    this.projectService.saveProjectConfiguration(projectId, configuration).subscribe({
+      next: () => {
+        this.loading = false;
+        this.createdProjectId = projectId;
+        this.currentStep = 2;
+        this.successMessage = 'Project created successfully! Now you can optionally add logos.';
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { step: '2', projectId: projectId },
+          queryParamsHandling: 'merge'
+        });
+      },
+      error: (err) => {
+        // Even if configuration save fails, move to step 2
+        console.error('❌ Error saving configuration:', err);
+        this.loading = false;
+        this.createdProjectId = projectId;
+        this.currentStep = 2;
+        this.successMessage = 'Project created successfully! (Configuration save had issues)';
+        this.toastService.error('Project created but configuration save failed: ' + (err.error?.message || err.message));
+        this.router.navigate([], {
+          relativeTo: this.route,
+          queryParams: { step: '2', projectId: projectId },
+          queryParamsHandling: 'merge'
+        });
+      }
+    });
+  }
+  
+  private uploadImagesStep2(): void {
+    if (!this.createdProjectId) {
+      this.error = 'Project ID is missing. Please go back and try again.';
+      return;
     }
 
-    console.log('🚀 Submitting project data:', projectData);
+    if (!this.hasImagesToUpload()) {
+      // Skip images and go to dashboard
+      this.router.navigate(['/projects', this.createdProjectId, 'dashboard']);
+      return;
+    }
 
-    const request$ = this.isEdit && this.projectId
-      ? this.projectService.updateProject(this.projectId, projectData)
-      : this.projectService.createProject(projectData);
+    this.loading = true;
+    this.error = '';
+    this.successMessage = '';
 
-    request$.subscribe({
-      next: (project: any) => {
-        const projectId = project.id || project.projectId || project.ProjectId || this.projectId;
-
-        if (!projectId) {
-          console.error('⚠️ WARNING: Saved project has no ID!');
-          console.error('📦 Full project object:', JSON.stringify(project, null, 2));
-          this.loading = false;
-          this.error = 'Project saved but has no ID. Please contact support.';
-          return;
-        }
-
-        // Save configuration if any configuration items exist
-        if (this.hasConfiguration()) {
-          this.saveConfiguration(projectId);
-        } else {
-          this.loading = false;
-          this.successMessage = this.isEdit ? 'Project updated successfully!' : 'Project created successfully!';
-          console.log('✅ Project saved:', project);
-          
-          setTimeout(() => {
-            this.router.navigate(['/projects', projectId, 'dashboard']);
-          }, 1200);
-        }
+    this.projectService.uploadProjectImages(
+      this.createdProjectId,
+      this.contractorImage,
+      this.subContractorImage,
+      this.clientImage
+    ).subscribe({
+      next: () => {
+        this.loading = false;
+        this.successMessage = 'Project logos uploaded successfully!';
+        this.toastService.success('Project and logos created successfully!');
+        
+        setTimeout(() => {
+          this.router.navigate(['/projects', this.createdProjectId, 'dashboard']);
+        }, 1200);
       },
       error: (err) => {
         this.loading = false;
-        const errorMessage = err.error?.message || err.message || `Failed to ${this.isEdit ? 'update' : 'create'} project. Please try again.`;
+        const errorMessage = err.error?.message || err.message || 'Failed to upload logos.';
         this.error = errorMessage;
         this.toastService.error(errorMessage);
-        console.error('❌ Error saving project:', err);
+        console.error('❌ Error uploading logos:', err);
       }
     });
+  }
+  
+  skipImages(): void {
+    if (this.createdProjectId) {
+      this.router.navigate(['/projects', this.createdProjectId, 'dashboard']);
+    }
   }
 
   private hasConfiguration(): boolean {
@@ -476,6 +697,54 @@ export class CreateProjectComponent implements OnInit {
            this.boxTypes.length > 0 || 
            this.zones.length > 0 || 
            this.boxFunctions.length > 0;
+  }
+
+  private hasImagesToUpload(): boolean {
+    return this.contractorImage !== null || 
+           this.subContractorImage !== null || 
+           this.clientImage !== null;
+  }
+
+  private uploadImages(projectId: string): void {
+    this.projectService.uploadProjectImages(
+      projectId,
+      this.contractorImage,
+      this.subContractorImage,
+      this.clientImage
+    ).subscribe({
+      next: () => {
+        console.log('✅ Project images uploaded successfully');
+        
+        // After images are uploaded, save configuration if exists
+        if (this.hasConfiguration()) {
+          this.saveConfiguration(projectId);
+        } else {
+          this.loading = false;
+          this.successMessage = this.isEdit ? 'Project updated successfully!' : 'Project created successfully!';
+          
+          setTimeout(() => {
+            this.router.navigate(['/projects', projectId, 'dashboard']);
+          }, 1200);
+        }
+      },
+      error: (err) => {
+        console.error('❌ Error uploading images:', err);
+        // Continue with configuration save even if image upload fails
+        // Show warning but don't block the flow
+        this.toastService.error('Project saved but image upload failed: ' + (err.error?.message || err.message));
+        
+        if (this.hasConfiguration()) {
+          this.saveConfiguration(projectId);
+        } else {
+          this.loading = false;
+          this.successMessage = 'Project saved (with image upload errors)';
+          
+          setTimeout(() => {
+            this.router.navigate(['/projects', projectId, 'dashboard']);
+          }, 1200);
+        }
+      }
+    });
   }
 
   private saveConfiguration(projectId: string): void {
@@ -1073,6 +1342,131 @@ export class CreateProjectComponent implements OnInit {
     if (this.newBoxSubTypes[typeIndex]) {
       this.newBoxSubTypes[typeIndex] = toUpperCase(this.newBoxSubTypes[typeIndex]);
     }
+  }
+
+  // Logo Upload Methods
+  
+  /**
+   * Handle contractor logo selection
+   */
+  onContractorImageSelect(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        this.toastService.error('Please select a valid logo file');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        this.toastService.error('Logo size must be less than 5MB');
+        return;
+      }
+      
+      this.contractorImage = file;
+      this.contractorImageUrl = null; // Clear existing URL when new logo is selected
+      
+      // Generate preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.contractorImagePreview = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+  
+  /**
+   * Remove contractor logo
+   */
+  removeContractorImage(): void {
+    this.contractorImage = null;
+    this.contractorImagePreview = null;
+    this.contractorImageUrl = null; // Also clear existing URL when removing
+  }
+  
+  /**
+   * Handle sub-contractor logo selection
+   */
+  onSubContractorImageSelect(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        this.toastService.error('Please select a valid logo file');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        this.toastService.error('Logo size must be less than 5MB');
+        return;
+      }
+      
+      this.subContractorImage = file;
+      this.subContractorImageUrl = null; // Clear existing URL when new logo is selected
+      
+      // Generate preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.subContractorImagePreview = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+  
+  /**
+   * Remove sub-contractor logo
+   */
+  removeSubContractorImage(): void {
+    this.subContractorImage = null;
+    this.subContractorImagePreview = null;
+    this.subContractorImageUrl = null; // Also clear existing URL when removing
+  }
+  
+  /**
+   * Handle client logo selection
+   */
+  onClientImageSelect(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        this.toastService.error('Please select a valid logo file');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        this.toastService.error('Logo size must be less than 5MB');
+        return;
+      }
+      
+      this.clientImage = file;
+      this.clientImageUrl = null; // Clear existing URL when new logo is selected
+      
+      // Generate preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        this.clientImagePreview = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+  
+  /**
+   * Remove client logo
+   */
+  removeClientImage(): void {
+    this.clientImage = null;
+    this.clientImagePreview = null;
+    this.clientImageUrl = null; // Also clear existing URL when removing
   }
   
 }

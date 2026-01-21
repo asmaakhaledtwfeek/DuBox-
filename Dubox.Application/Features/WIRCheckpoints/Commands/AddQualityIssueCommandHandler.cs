@@ -43,9 +43,13 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
 
             if (wir is null)
                 return Result.Failure<WIRCheckpointDto>("WIRCheckpoint not found.");
+            var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId)
+             ? parsedUserId
+             : Guid.Empty;
 
+          
             var canAccessProject = await _visibilityService.CanAccessProjectAsync(wir.Box.ProjectId, cancellationToken);
-            if (!canAccessProject)
+            if (!canAccessProject && (wir.InspectorId !=null &&  wir.InspectorId != currentUserId))
                 return Result.Failure<WIRCheckpointDto>("Access denied. You do not have permission to add quality issues to this WIR checkpoint.");
            
             var projectStatusValidation = await _visibilityService.GetProjectStatusChecksAsync(wir.Box.ProjectId, "add quality issues", cancellationToken);
@@ -55,10 +59,7 @@ namespace Dubox.Application.Features.WIRCheckpoints.Commands
             var boxStatusValidation = await _visibilityService.GetBoxStatusChecksAsync(wir.Box.BoxId, "add quality issues", cancellationToken);
             if (!boxStatusValidation.IsSuccess)
                 return Result.Failure<WIRCheckpointDto>(boxStatusValidation.Error!);
-            var currentUserId = Guid.TryParse(_currentUserService.UserId, out var parsedUserId)
-                ? parsedUserId
-                : Guid.Empty;
-
+           
             var reportedBy = string.Empty;
             if (currentUserId != Guid.Empty)
             {

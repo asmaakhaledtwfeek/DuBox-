@@ -1,4 +1,4 @@
-﻿using Dubox.Domain.Enums;
+using Dubox.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -44,6 +44,16 @@ public class Project
 
     [MaxLength(500)]
     public string? BimLink { get; set; }
+
+    // Project Images
+    [MaxLength(500)]
+    public string? ContractorImageUrl { get; set; }
+    
+    [MaxLength(500)]
+    public string? SubContractorImageUrl { get; set; }
+    
+    [MaxLength(500)]
+    public string? ClientImageUrl { get; set; }
 
     public int TotalBoxes { get; set; }
     public decimal ProgressPercentage { get; set; } = 0;

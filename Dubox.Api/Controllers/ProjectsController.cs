@@ -146,5 +146,63 @@ public class ProjectsController : ControllerBase
 
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+
+    [HttpPost("{projectId}/upload-images")]
+    [RequestSizeLimit(15_728_640)] // 15 MB (5MB per image * 3)
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> UploadProjectImages(
+        Guid projectId,
+        [FromForm] UploadProjectImagesRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (projectId == Guid.Empty)
+            return BadRequest("Project ID is required");
+
+        // Validate that at least one image is provided
+        if (request.ContractorImage == null && request.SubContractorImage == null && request.ClientImage == null)
+            return BadRequest("At least one image must be provided");
+
+        // Validate file types
+        var validExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp",".jfif" };
+        
+        if (request.ContractorImage != null)
+        {
+            var ext = Path.GetExtension(request.ContractorImage.FileName).ToLowerInvariant();
+            if (!validExtensions.Contains(ext))
+                return BadRequest("Contractor image must be a valid image file (jpg, jpeg, png, gif, webp)");
+        }
+
+        if (request.SubContractorImage != null)
+        {
+            var ext = Path.GetExtension(request.SubContractorImage.FileName).ToLowerInvariant();
+            if (!validExtensions.Contains(ext))
+                return BadRequest("Sub-contractor image must be a valid image file (jpg, jpeg, png, gif, webp)");
+        }
+
+        if (request.ClientImage != null)
+        {
+            var ext = Path.GetExtension(request.ClientImage.FileName).ToLowerInvariant();
+            if (!validExtensions.Contains(ext))
+                return BadRequest("Client image must be a valid image file (jpg, jpeg, png, gif, webp)");
+        }
+
+        var command = new UploadProjectImagesCommand(
+            projectId,
+            request.ContractorImage,
+            request.SubContractorImage,
+            request.ClientImage
+        );
+
+        var result = await _mediator.Send(command, cancellationToken);
+
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+}
+
+public class UploadProjectImagesRequest
+{
+    public IFormFile? ContractorImage { get; set; }
+    public IFormFile? SubContractorImage { get; set; }
+    public IFormFile? ClientImage { get; set; }
 }
 

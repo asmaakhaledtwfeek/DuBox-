@@ -243,7 +243,7 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Generate a barcode image from barcode text
+   * Generate a barcode image from barcode text (for display)
    */
   generateBarcodeImage(barcodeText: string): string | null {
     if (!barcodeText) {
@@ -259,7 +259,7 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
       // Create a canvas element
       const canvas = document.createElement('canvas');
       
-      // Generate barcode using Code128 format
+      // Generate barcode using Code128 format (smaller for display)
       JsBarcode(canvas, barcodeText, {
         format: 'CODE128',
         width: 2,
@@ -285,6 +285,65 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
+   * Generate a high-resolution barcode image suitable for scanning from mobile devices
+   * This creates a large, sharp barcode that occupies most of the image area
+   */
+  generateHighResolutionBarcode(barcodeText: string): string | null {
+    if (!barcodeText) {
+      return null;
+    }
+
+    try {
+      // Create a high-resolution canvas
+      // Use a large canvas size for high-quality output (1200px width for good scanning)
+      const targetWidth = 1200;
+      const targetHeight = 400;
+      const scaleFactor = 2; // 2x scale for retina/high-DPI displays for extra sharpness
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth * scaleFactor;
+      canvas.height = targetHeight * scaleFactor;
+      
+      // Get 2D context
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        console.error('Failed to get canvas context');
+        return null;
+      }
+      
+      // Scale the context for high DPI rendering
+      ctx.scale(scaleFactor, scaleFactor);
+      
+      // Set high-quality rendering hints
+      ctx.imageSmoothingEnabled = false; // Crisp edges for barcodes (no anti-aliasing)
+      
+      // Generate barcode with large dimensions suitable for scanning
+      // The barcode will be rendered at targetWidth x targetHeight, then scaled up 2x for sharpness
+      // Width: 5 pixels per module for better scanning (increased from 2)
+      // Height: 250px for good visibility (increased from 60)
+      JsBarcode(canvas, barcodeText, {
+        format: 'CODE128',
+        width: 5, // Increased from 2 for better scanning
+        height: 250, // Increased from 60 for better visibility
+        displayValue: true,
+        fontSize: 32, // Larger font for readability
+        margin: 20, // Adequate margin
+        background: '#ffffff',
+        lineColor: '#000000'
+      });
+
+      // Convert to high-quality PNG without compression
+      // PNG is lossless, but we specify quality: 1.0 for clarity
+      const dataUrl = canvas.toDataURL('image/png', 1.0);
+      
+      return dataUrl;
+    } catch (error) {
+      console.error('Error generating high-resolution barcode:', error);
+      return null;
+    }
+  }
+
+  /**
    * Get barcode image URL for a panel
    */
   getBarcodeImage(panel: BoxPanel): string | null {
@@ -295,14 +354,15 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Download barcode image
+   * Download barcode image (high-resolution version for scanning)
    */
   downloadBarcode(panel: BoxPanel): void {
     if (!panel.barcode) {
       return;
     }
 
-    const barcodeImage = this.getBarcodeImage(panel);
+    // Generate high-resolution barcode for download
+    const barcodeImage = this.generateHighResolutionBarcode(panel.barcode);
     if (!barcodeImage) {
       this.error = 'Failed to generate barcode image';
       setTimeout(() => {
@@ -371,7 +431,8 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
       // Add each barcode as a new page in the PDF
       for (const panel of panelsWithBarcodes) {
         try {
-          const barcodeImage = this.getBarcodeImage(panel);
+          // Use high-resolution barcode for PDF generation
+          const barcodeImage = this.generateHighResolutionBarcode(panel.barcode!);
           if (barcodeImage) {
             // Add new page for each barcode (except the first one)
             if (!isFirstPage) {
@@ -433,7 +494,7 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Add a barcode to the current PDF page
+   * Add a barcode to the current PDF page (high-resolution, large size for scanning)
    */
   private async addBarcodeToPDF(pdf: jsPDF, panel: BoxPanel, barcodeImageDataUrl: string): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -445,25 +506,38 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
           // Calculate dimensions to fit barcode nicely on the page
           const pageWidth = 210; // A4 width in mm
           const pageHeight = 297; // A4 height in mm
-          const margin = 20; // margin in mm
-          const textSpace = 30; // space reserved for text above barcode
+          const margin = 15; // Reduced margin to maximize barcode size
+          const textSpace = 25; // space reserved for text above barcode
           
           // Calculate available space (accounting for text space)
           const availableWidth = pageWidth - (margin * 2);
           const availableHeight = pageHeight - (margin * 2) - textSpace;
           
-          // Calculate scaling to fit the barcode
+          // Calculate scaling to fit the barcode - prioritize large size for scanning
           const imgWidth = img.width;
           const imgHeight = img.height;
           const imgAspectRatio = imgWidth / imgHeight;
           
-          let finalWidth = availableWidth;
-          let finalHeight = availableWidth / imgAspectRatio;
+          // Start with maximum width to ensure barcode is large and scannable
+          let finalWidth = availableWidth * 0.95; // Use 95% of available width for maximum size
+          let finalHeight = finalWidth / imgAspectRatio;
           
-          // If height exceeds available space, scale down
+          // If height exceeds available space, scale down but keep it large
           if (finalHeight > availableHeight) {
-            finalHeight = availableHeight;
-            finalWidth = availableHeight * imgAspectRatio;
+            finalHeight = availableHeight * 0.95; // Use 95% of available height
+            finalWidth = finalHeight * imgAspectRatio;
+          }
+          
+          // Ensure minimum size for scannability (at least 150mm wide)
+          const minWidth = 150;
+          if (finalWidth < minWidth && availableWidth >= minWidth) {
+            finalWidth = Math.min(minWidth, availableWidth * 0.95);
+            finalHeight = finalWidth / imgAspectRatio;
+            // If this makes it too tall, adjust
+            if (finalHeight > availableHeight) {
+              finalHeight = availableHeight * 0.95;
+              finalWidth = finalHeight * imgAspectRatio;
+            }
           }
           
           // Center the barcode horizontally and position it below the text
@@ -471,18 +545,19 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
           const barcodeY = margin + textSpace + (availableHeight - finalHeight) / 2;
           
           // Add panel information text above the barcode
-          pdf.setFontSize(14);
+          pdf.setFontSize(16);
           pdf.setFont('helvetica', 'bold');
           pdf.text(panel.panelName || 'Panel', pageWidth / 2, margin + 10, { align: 'center' });
           
           if (panel.barcode) {
-            pdf.setFontSize(10);
+            pdf.setFontSize(12);
             pdf.setFont('helvetica', 'normal');
-            pdf.text(`Barcode: ${panel.barcode}`, pageWidth / 2, margin + 18, { align: 'center' });
+            pdf.text(`Barcode: ${panel.barcode}`, pageWidth / 2, margin + 20, { align: 'center' });
           }
           
-          // Add the barcode image
-          pdf.addImage(barcodeImageDataUrl, 'PNG', x, barcodeY, finalWidth, finalHeight);
+          // Add the barcode image with high quality
+          // Use 'FAST' compression mode for better quality (though PNG is lossless)
+          pdf.addImage(barcodeImageDataUrl, 'PNG', x, barcodeY, finalWidth, finalHeight, undefined, 'FAST');
           
           resolve();
         } catch (error) {

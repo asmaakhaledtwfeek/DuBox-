@@ -16,7 +16,7 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="breadcrumb-separator">
           <polyline points="9 18 15 12 9 6"/>
         </svg>
-        <span class="breadcrumb-item active">{{ isEdit ? 'Edit Project' : 'Create Project' }}</span>
+        <span class="breadcrumb-item active">{{ isEdit ? 'Edit Project' : (currentStep === 1 ? 'Create Project' : 'Add Logos') }}</span>
       </nav>
 
       <!-- Page Header -->
@@ -34,10 +34,23 @@
             </svg>
           </div>
           <div>
-            <h1 class="page-title">{{ isEdit ? 'Edit Project' : 'Create New Project' }}</h1>
-            <p class="page-subtitle">{{ isEdit ? 'Update project information and settings' : 'Add a new construction project to the system' }}</p>
+            <h1 class="page-title">{{ isEdit ? 'Edit Project' : (currentStep === 1 ? 'Create New Project' : 'Add Project Logos') }}</h1>
+            <p class="page-subtitle">{{ isEdit ? 'Update project information and settings' : (currentStep === 1 ? 'Add a new construction project to the system' : 'Optionally upload logos for Contractor, Sub-contractor, and Client') }}</p>
           </div>
         </div>
+      </div>
+
+      <!-- Step Indicator (only for create flow, not edit) -->
+      <div *ngIf="!isEdit" class="step-indicator">
+        <div class="step-item" [class.active]="currentStep === 1" [class.completed]="currentStep === 2">
+          <div class="step-number">1</div>
+          <div class="step-label">Project Details</div>
+        </div>
+        <div class="step-connector" [class.completed]="currentStep === 2"></div>
+          <div class="step-item" [class.active]="currentStep === 2">
+            <div class="step-number">2</div>
+            <div class="step-label">Logos (Optional)</div>
+          </div>
       </div>
 
       <!-- Alerts -->
@@ -68,6 +81,9 @@
       <!-- Form Container -->
       <div class="form-container">
         <form [formGroup]="projectForm" (ngSubmit)="onSubmit()">
+          
+          <!-- Step 1: Project Details (or Edit Mode) -->
+          <div *ngIf="currentStep === 1 || isEdit">
           
           <!-- Basic Information Section -->
           <div class="form-section">
@@ -476,8 +492,8 @@
             </div>
           </div>
 
-          <!-- Project Configuration Section -->
-          <div class="form-section config-section">
+          <!-- Project Configuration Section (only in step 1 or edit mode) -->
+          <div class="form-section config-section" *ngIf="currentStep === 1 || isEdit">
             <div class="section-header">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M12 2L2 7l10 5 10-5-10-5z"/>
@@ -688,25 +704,241 @@
             </div>
           </div>
 
+          </div>
+          <!-- End Step 1 / Edit Mode -->
+
+          <!-- Project Logos Section (only in edit mode or step 2) -->
+          <div class="form-section logos-section" *ngIf="isEdit || currentStep === 2">
+            <div class="section-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                <circle cx="8.5" cy="8.5" r="1.5"/>
+                <polyline points="21 15 16 10 5 21"/>
+              </svg>
+              <div>
+                <h3 class="section-title">Project Logos</h3>
+                <p class="section-description">{{ isEdit ? 'Upload logos for Contractor, Sub-contractor, and Client' : 'Optionally upload logos for Contractor, Sub-contractor, and Client' }}</p>
+              </div>
+            </div>
+
+            <div class="logos-grid">
+              <!-- Contractor Logo -->
+              <div class="logo-upload-card">
+                <label for="contractorImage" class="logo-label">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <span>Contractor Logo</span>
+                </label>
+                
+                <div class="logo-upload-container">
+                  <div class="logo-preview" *ngIf="contractorImagePreview || contractorImageUrl">
+                    <img 
+                      [src]="contractorImagePreview || contractorImageUrl" 
+                      alt="Contractor Logo"
+                      (error)="onImageError('contractor')"
+                      onerror="this.style.display='none'"
+                    />
+                    <div class="logo-overlay">
+                      <button type="button" class="btn-change-logo" (click)="triggerFileInput('contractorImage')" title="Change logo">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        Change
+                      </button>
+                      <button type="button" class="btn-remove-logo" (click)="removeContractorImage()" title="Remove logo">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <line x1="18" y1="6" x2="6" y2="18"/>
+                          <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <label *ngIf="!contractorImagePreview && !contractorImageUrl" class="logo-upload-area" for="contractorImage">
+                    <div class="upload-icon-wrapper">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                    </div>
+                    <span class="upload-text">Click to upload logo</span>
+                    <small class="upload-hint">PNG, JPG up to 5MB</small>
+                  </label>
+                  
+                  <input
+                    id="contractorImage"
+                    type="file"
+                    accept="image/*"
+                    class="file-input"
+                    (change)="onContractorImageSelect($event)"
+                  />
+                </div>
+              </div>
+
+              <!-- Sub-contractor Logo -->
+              <div class="logo-upload-card">
+                <label for="subContractorImage" class="logo-label">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                  </svg>
+                  <span>Sub-contractor Logo</span>
+                </label>
+                
+                <div class="logo-upload-container">
+                  <div class="logo-preview" *ngIf="subContractorImagePreview || subContractorImageUrl">
+                    <img 
+                      [src]="subContractorImagePreview || subContractorImageUrl" 
+                      alt="Sub-contractor Logo"
+                      (error)="onImageError('subContractor')"
+                      onerror="this.style.display='none'"
+                    />
+                    <div class="logo-overlay">
+                      <button type="button" class="btn-change-logo" (click)="triggerFileInput('subContractorImage')" title="Change logo">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        Change
+                      </button>
+                      <button type="button" class="btn-remove-logo" (click)="removeSubContractorImage()" title="Remove logo">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <line x1="18" y1="6" x2="6" y2="18"/>
+                          <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <label *ngIf="!subContractorImagePreview && !subContractorImageUrl" class="logo-upload-area" for="subContractorImage">
+                    <div class="upload-icon-wrapper">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                    </div>
+                    <span class="upload-text">Click to upload logo</span>
+                    <small class="upload-hint">PNG, JPG up to 5MB</small>
+                  </label>
+                  
+                  <input
+                    id="subContractorImage"
+                    type="file"
+                    accept="image/*"
+                    class="file-input"
+                    (change)="onSubContractorImageSelect($event)"
+                  />
+                </div>
+              </div>
+
+              <!-- Client Logo -->
+              <div class="logo-upload-card">
+                <label for="clientImage" class="logo-label">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  <span>Client Logo</span>
+                </label>
+                
+                <div class="logo-upload-container">
+                  <div class="logo-preview" *ngIf="clientImagePreview || clientImageUrl">
+                    <img 
+                      [src]="clientImagePreview || clientImageUrl" 
+                      alt="Client Logo"
+                      (error)="onImageError('client')"
+                      onerror="this.style.display='none'"
+                    />
+                    <div class="logo-overlay">
+                      <button type="button" class="btn-change-logo" (click)="triggerFileInput('clientImage')" title="Change logo">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        Change
+                      </button>
+                      <button type="button" class="btn-remove-logo" (click)="removeClientImage()" title="Remove logo">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <line x1="18" y1="6" x2="6" y2="18"/>
+                          <line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <label *ngIf="!clientImagePreview && !clientImageUrl" class="logo-upload-area" for="clientImage">
+                    <div class="upload-icon-wrapper">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                      </svg>
+                    </div>
+                    <span class="upload-text">Click to upload logo</span>
+                    <small class="upload-hint">PNG, JPG up to 5MB</small>
+                  </label>
+                  
+                  <input
+                    id="clientImage"
+                    type="file"
+                    accept="image/*"
+                    class="file-input"
+                    (change)="onClientImageSelect($event)"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
           <!-- Form Actions -->
           <div class="form-actions">
-            <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="loading || initializing">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="18" y1="6" x2="6" y2="18"/>
-                <line x1="6" y1="6" x2="18" y2="18"/>
-              </svg>
-              Cancel
-            </button>
-            <button type="submit" class="btn btn-primary" [disabled]="loading || initializing">
-              <span class="spinner" *ngIf="loading"></span>
-              <svg *ngIf="!loading" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-                <polyline points="17 21 17 13 7 13 7 21"/>
-                <polyline points="7 3 7 8 15 8"/>
-              </svg>
-              <span *ngIf="!loading">{{ isEdit ? 'Save Changes' : 'Create Project' }}</span>
-              <span *ngIf="loading">{{ isEdit ? 'Saving...' : 'Creating...' }}</span>
-            </button>
+            <!-- Step 1 Actions -->
+            <ng-container *ngIf="currentStep === 1 || isEdit">
+              <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="loading || initializing">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"/>
+                  <line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+                Cancel
+              </button>
+              <button type="submit" class="btn btn-primary" [disabled]="loading || initializing">
+                <span class="spinner" *ngIf="loading"></span>
+                <svg *ngIf="!loading" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                  <polyline points="17 21 17 13 7 13 7 21"/>
+                  <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                <span *ngIf="!loading">{{ isEdit ? 'Save Changes' : 'Create Project' }}</span>
+                <span *ngIf="loading">{{ isEdit ? 'Saving...' : 'Creating...' }}</span>
+              </button>
+            </ng-container>
+
+            <!-- Step 2 Actions (create flow only) -->
+            <ng-container *ngIf="currentStep === 2 && !isEdit">
+              <button type="button" class="btn btn-secondary" (click)="skipImages()" [disabled]="loading">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+                Skip & Continue
+              </button>
+              <button type="submit" class="btn btn-primary" [disabled]="loading">
+                <span class="spinner" *ngIf="loading"></span>
+                <svg *ngIf="!loading" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                  <polyline points="17 21 17 13 7 13 7 21"/>
+                  <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                <span *ngIf="!loading">Upload Logos</span>
+                <span *ngIf="loading">Uploading...</span>
+              </button>
+            </ng-container>
           </div>
         </form>
       </div>

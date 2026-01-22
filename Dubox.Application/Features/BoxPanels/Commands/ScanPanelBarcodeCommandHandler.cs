@@ -30,7 +30,7 @@ public class ScanPanelBarcodeCommandHandler : IRequestHandler<ScanPanelBarcodeCo
         // Find panel by barcode
         var panel = await _dbContext.BoxPanels
             .Include(p => p.Box)
-            .FirstOrDefaultAsync(p => p.Barcode == request.Barcode, cancellationToken);
+            .FirstOrDefaultAsync(p => p.QRCode == request.Barcode, cancellationToken);
 
         if (panel == null)
             return Result.Failure<BoxPanelDto>($"Panel with barcode '{request.Barcode}' not found");

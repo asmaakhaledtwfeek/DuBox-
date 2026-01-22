@@ -89,7 +89,7 @@ namespace Dubox.Application.Services
                     TypeCode = p.PanelType?.PanelTypeCode,
                     PanelName = p.PanelName,
                     PanelStatus = p.PanelStatus,
-                    Barcode = p.Barcode,
+                    Barcode = p.QRCode,
                     // First Approval
                     FirstApprovalStatus = p.FirstApprovalStatus,
                     FirstApprovalBy = p.FirstApprovalBy,

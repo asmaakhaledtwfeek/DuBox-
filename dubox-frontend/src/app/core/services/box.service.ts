@@ -148,8 +148,8 @@ export class BoxService {
       panelName: panel.panelName || panel.PanelName,
       panelStatus: panel.panelStatus || panel.PanelStatus || 1, // Default to NotStarted (1)
       
-      // Barcode & QR
-      barcode: panel.barcode || panel.Barcode || '',
+      // QR Code
+      qrCode: panel.barcode || panel.Barcode || panel.qrCode || panel.QRCode || '',  // Map backend barcode to frontend qrCode
       qrCodeUrl: panel.qrCodeUrl || panel.QRCodeUrl,
       
       // Manufacturing

@@ -1202,10 +1202,6 @@ namespace Dubox.Infrastructure.Migrations
                     b.Property<DateTime?>("ActualArrivalDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Barcode")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<Guid>("BoxId")
                         .HasColumnType("uniqueidentifier");
 
@@ -1285,6 +1281,10 @@ namespace Dubox.Infrastructure.Migrations
 
                     b.Property<Guid>("ProjectId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("QRCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("QRCodeUrl")
                         .HasMaxLength(500)

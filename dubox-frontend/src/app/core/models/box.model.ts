@@ -437,8 +437,8 @@ export interface BoxPanel {
   panelName: string;
   panelStatus: PanelStatus;
   
-  // Barcode & QR
-  barcode: string;  // Auto-generated barcode
+  // QR Code
+  qrCode: string;  // Auto-generated QR code (previously barcode)
   qrCodeUrl?: string;
   
   // Manufacturing
@@ -500,7 +500,7 @@ export interface PanelType {
 export interface PanelScanLog {
   scanLogId: string;
   boxPanelId: string;
-  barcode: string;
+  qrCode: string;  // QR code (previously barcode)
   scanType: string; // Dispatch, SiteArrival, Installation, Inspection
   scanLocation?: string;
   scannedBy?: string;

@@ -166,29 +166,21 @@ public class ImportBoxPanelsFromExcelCommandHandler : IRequestHandler<ImportBoxP
                         }
                     }
 
-                    // If no panels provided, skip this row
                     if (!panelData.Any())
-                    {
                         continue; 
-                    }
 
-                    // Process each panel for this box
                     var panelIndex = 0;
                     foreach (var data in panelData)
                     {
                         panelIndex++;
                         var panelKey = (box.BoxId, data.PanelTypeId, data.PanelName);
 
-                        // Skip if we've already processed this exact panel in this import
                         if (processedPanelKeys.Contains(panelKey))
-                        {
                             continue;
-                        }
                         processedPanelKeys.Add(panelKey);
 
                         BoxPanel? existingPanel = null;
 
-                        // Try to find existing panel by BoxId + PanelTypeId (preferred matching)
                         if (data.PanelTypeId.HasValue)
                         {
                             var key = (box.BoxId, data.PanelTypeId.Value);
@@ -199,7 +191,6 @@ public class ImportBoxPanelsFromExcelCommandHandler : IRequestHandler<ImportBoxP
                         }
                         else
                         {
-                            // For panels without PanelTypeId, match by BoxId + PanelName
                             var key = (box.BoxId, data.PanelName);
                             if (existingPanelsWithoutType.TryGetValue(key, out var foundPanel))
                             {
@@ -209,8 +200,6 @@ public class ImportBoxPanelsFromExcelCommandHandler : IRequestHandler<ImportBoxP
 
                         if (existingPanel != null)
                         {
-                            // Update existing panel - preserve ID and all other fields, only update PanelName
-                            // Also ensure PanelTypeId is set if it wasn't before
                             var panelNameChanged = existingPanel.PanelName != data.PanelName;
                             var panelTypeChanged = existingPanel.PanelTypeId != data.PanelTypeId;
 
@@ -227,26 +216,20 @@ public class ImportBoxPanelsFromExcelCommandHandler : IRequestHandler<ImportBoxP
                                 successCount++;
                             }
                             else
-                            {
-                                // Panel already exists with same data, no update needed
                                 successCount++;
-                            }
                         }
                         else
                         {
-                            // Create new panel record
-                            // Generate barcode - find the highest index for this box to avoid conflicts
                             var existingPanelsForBox = existingPanels
-                                .Where(p => p.BoxId == box.BoxId && !string.IsNullOrEmpty(p.Barcode))
+                                .Where(p => p.BoxId == box.BoxId && !string.IsNullOrEmpty(p.QRCode))
                                 .ToList();
                             
                             int maxIndex = 0;
                             foreach (var panel in existingPanelsForBox)
                             {
-                                if (!string.IsNullOrEmpty(panel.Barcode))
+                                if (!string.IsNullOrEmpty(panel.QRCode))
                                 {
-                                    // Extract index from barcode format: PANEL-{ProjectCode}-{SerialNumber}-{Index}
-                                    var parts = panel.Barcode.Split('-');
+                                    var parts = panel.QRCode.Split('-');
                                     if (parts.Length >= 4 && int.TryParse(parts[parts.Length - 1], out int index))
                                     {
                                         maxIndex = Math.Max(maxIndex, index);
@@ -254,7 +237,7 @@ public class ImportBoxPanelsFromExcelCommandHandler : IRequestHandler<ImportBoxP
                                 }
                             }
                             
-                            var barcode = $"PANEL-{project.ProjectCode}-{box.SerialNumber}-{(maxIndex + 1):D3}";
+                            var qrCode = $"PANEL-{project.ProjectCode}-{box.SerialNumber}-{data.PanelName}";
                             
                             var newPanel = new BoxPanel
                             {
@@ -263,7 +246,7 @@ public class ImportBoxPanelsFromExcelCommandHandler : IRequestHandler<ImportBoxP
                                 PanelName = data.PanelName,
                                 PanelTypeId = data.PanelTypeId,
                                 PanelStatus = Domain.Enums.PanelStatusEnum.NotStarted,
-                                Barcode = barcode,
+                                QRCode = qrCode,
                                 CreatedDate = DateTime.UtcNow,
                                 ModifiedDate = DateTime.UtcNow
                             };

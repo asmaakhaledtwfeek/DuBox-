@@ -5,11 +5,13 @@ import { PanelService } from '../../../core/services/panel.service';
 import { BrowserMultiFormatReader, NotFoundException } from '@zxing/library';
 
 export interface ScanResult {
-  barcode: string;
+  qrCode: string;  // QR code value (previously barcode)
   scanType: 'SiteArrival' | 'Installation';
   success: boolean;
   panelName?: string;
   message: string;
+  // Backward compatibility
+  barcode?: string;  // @deprecated Use qrCode instead
 }
 
 @Component({
@@ -27,7 +29,15 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
   @ViewChild('videoElement') videoElement!: ElementRef<HTMLVideoElement>;
   @ViewChild('canvasElement') canvasElement!: ElementRef<HTMLCanvasElement>;
 
-  manualBarcode = '';
+  manualQRCode = '';  // QR code input (previously manualBarcode)
+  
+  // Backward compatibility
+  get manualBarcode(): string {
+    return this.manualQRCode;
+  }
+  set manualBarcode(value: string) {
+    this.manualQRCode = value;
+  }
   scanning = false;
   error = '';
   successMessage = '';
@@ -38,11 +48,9 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
   isCameraMode = false;
   cameraActive = false;
   stream: MediaStream | null = null;
-  barcodeDetector: any = null;
   zxingReader: BrowserMultiFormatReader | null = null;
   scanInterval: any = null;
   cameraSupported = false;
-  useZXing = false; // Flag to use ZXing instead of BarcodeDetector
 
   private streamReady = false;
 
@@ -62,8 +70,8 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
   }
 
   ngOnInit(): void {
-    // Check if BarcodeDetector API is available
-    this.initializeBarcodeDetector();
+    // Initialize ZXing library for QR code scanning
+    this.initializeQRCodeDetector();
   }
 
   ngOnDestroy(): void {
@@ -75,24 +83,19 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
     this.cameraSupported = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
   }
 
-  async initializeBarcodeDetector(): Promise<void> {
-    // Check if BarcodeDetector API is available (Chrome/Edge)
-    if ('BarcodeDetector' in window) {
-      try {
-        this.barcodeDetector = new (window as any).BarcodeDetector({
-          formats: ['qr_code', 'ean_13', 'code_128', 'ean_8', 'data_matrix']
-        });
-        this.useZXing = false;
-        console.log('Using native BarcodeDetector API');
-      } catch (e) {
-        console.warn('BarcodeDetector initialization failed:', e);
-        this.useZXing = true;
-      }
-    } else {
-      // Fallback to ZXing for browsers without BarcodeDetector
-      console.log('BarcodeDetector not available, using ZXing library');
-      this.useZXing = true;
+  async initializeQRCodeDetector(): Promise<void> {
+    // Always use ZXing library for all browsers (Chrome, Edge, Firefox, Safari, etc.)
+    // ZXing supports QR codes and multiple barcode formats
+    // Configure to prioritize QR code scanning
+    console.log('Initializing ZXing library for QR code scanning (all browsers)');
+    try {
+      // BrowserMultiFormatReader supports QR codes by default
+      // QR codes are automatically detected along with other formats
       this.zxingReader = new BrowserMultiFormatReader();
+      console.log('✅ ZXing library initialized successfully for QR code scanning');
+    } catch (error: any) {
+      console.error('❌ Failed to initialize ZXing library:', error);
+      this.error = 'Failed to initialize QR code scanner. Please refresh the page.';
     }
   }
 
@@ -110,22 +113,31 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
     }
   }
 
-  async scanManualBarcode(): Promise<void> {
-    if (!this.manualBarcode.trim()) {
-      this.error = 'Please enter a barcode';
+  async scanManualQRCode(): Promise<void> {
+    if (!this.manualQRCode.trim()) {
+      this.error = 'Please enter a QR code';
       return;
     }
 
-    await this.processBarcode(this.manualBarcode.trim());
+    await this.processQRCode(this.manualQRCode.trim());
   }
 
-  async processBarcode(barcode: string): Promise<void> {
+  /**
+   * Scan manual barcode (backward compatibility)
+   * @deprecated Use scanManualQRCode instead
+   */
+  async scanManualBarcode(): Promise<void> {
+    await this.scanManualQRCode();
+  }
+
+  async processQRCode(qrCode: string): Promise<void> {
     this.scanning = true;
     this.error = '';
     this.successMessage = '';
 
+    // Backend API expects 'barcode' field, but contains QR code data
     const command = {
-      barcode: barcode,
+      barcode: qrCode,
       scanType: this.scanType,
       latitude: this.latitude ?? undefined,
       longitude: this.longitude ?? undefined
@@ -139,7 +151,8 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
         this.successMessage = `Panel scanned successfully! Status updated.`;
         
         const scanResult: ScanResult = {
-          barcode: barcode,
+          qrCode: qrCode,
+          barcode: qrCode,  // Backward compatibility
           scanType: this.scanType,
           success: true,
           panelName: result?.panelName,
@@ -156,10 +169,11 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
       },
       error: (err: any) => {
         this.scanning = false;
-        this.error = err?.error?.message || err?.message || 'Failed to scan barcode. Panel not found.';
+        this.error = err?.error?.message || err?.message || 'Failed to scan QR code. Panel not found.';
         
         const scanResult: ScanResult = {
-          barcode: barcode,
+          qrCode: qrCode,
+          barcode: qrCode,  // Backward compatibility
           scanType: this.scanType,
           success: false,
           message: this.error
@@ -168,6 +182,14 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
         this.scanComplete.emit(scanResult);
       }
     });
+  }
+
+  /**
+   * Process barcode (backward compatibility)
+   * @deprecated Use processQRCode instead
+   */
+  async processBarcode(barcode: string): Promise<void> {
+    await this.processQRCode(barcode);
   }
 
   getScanTypeLabel(): string {
@@ -184,16 +206,16 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
   getScanTypeDescription(): string {
     switch (this.scanType) {
       case 'SiteArrival':
-        return 'Scan panel barcode to mark as arrived at site and approve';
+        return 'Scan panel QR code to mark as arrived at site and approve';
       case 'Installation':
-        return 'Scan panel barcode to mark as installed on site';
+        return 'Scan panel QR code to mark as installed on site';
       default:
-        return 'Scan panel barcode';
+        return 'Scan panel QR code';
     }
   }
 
   clearInput(): void {
-    this.manualBarcode = '';
+    this.manualQRCode = '';
     this.error = '';
     this.successMessage = '';
   }
@@ -353,15 +375,15 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
           this.cameraActive = true;
           this.cdr.detectChanges(); // Force view update
           
-          // Clear any previous error about barcode detection
-          if (this.error && (this.error.includes('Automatic barcode scanning') || this.error.includes('not supported'))) {
+          // Clear any previous error about QR code detection
+          if (this.error && (this.error.includes('Automatic QR code scanning') || this.error.includes('not supported'))) {
             this.error = '';
           }
           
           // Wait a moment for video to stabilize, then start scanning
           // Reduced delay for faster startup
           setTimeout(() => {
-            console.log('Starting barcode scanning after video stabilization...');
+            console.log('Starting QR code scanning after video stabilization...');
             this.startScanning();
           }, 200);
           video.removeEventListener('loadedmetadata', onLoadedMetadata);
@@ -431,11 +453,16 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
   }
 
   startScanning(): void {
-    if (!this.barcodeDetector && !this.zxingReader) {
-      // No barcode detection available
-      console.warn('No barcode detection method available');
-      this.error = 'Automatic barcode scanning is not available. Please use manual entry.';
-      return;
+    if (!this.zxingReader) {
+      // ZXing library not initialized - try to reinitialize
+      console.warn('ZXing library not initialized, attempting to reinitialize...');
+      this.initializeQRCodeDetector();
+      
+      // If still not available after reinitialization, show error
+      if (!this.zxingReader) {
+        this.error = 'Automatic QR code scanning is not available. Please use manual entry.';
+        return;
+      }
     }
 
     // Clear any existing interval
@@ -443,10 +470,9 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
       clearInterval(this.scanInterval);
     }
 
-    console.log('Starting barcode scanning...', {
-      barcodeDetector: !!this.barcodeDetector,
+    console.log('Starting QR code scanning with ZXing library (all browsers)...', {
       zxingReader: !!this.zxingReader,
-      useZXing: this.useZXing
+      browser: this.getBrowserInfo()
     });
 
     let isProcessing = false; // Prevent concurrent processing
@@ -485,113 +511,101 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
           });
         }
 
-        let barcodeText: string | null = null;
+        let qrCodeText: string | null = null;
 
-        // Method 1: Use native BarcodeDetector API (Chrome/Edge)
-        if (this.barcodeDetector && !this.useZXing) {
-          try {
-            // Use BarcodeDetector directly on video element (like user's example)
-            const barcodes = await this.barcodeDetector.detect(video);
-            
-            if (barcodes && barcodes.length > 0) {
-              const barcode = barcodes[0];
-              if (barcode.rawValue) {
-                barcodeText = barcode.rawValue;
-                console.log('✅ Barcode detected (BarcodeDetector):', barcodeText);
-                return barcodeText;
-              }
-            }
-          } catch (err: any) {
-            // Only log non-expected errors
-            if (!(err instanceof Error && (err.name === 'NotFoundError' || err.name === 'NotReadableError'))) {
-              console.warn('BarcodeDetector detection error:', err);
-            }
+        // Always use ZXing library for QR code detection in all browsers
+        // ZXing works across Chrome, Edge, Firefox, Safari, and other modern browsers
+        // ZXing automatically detects QR codes along with other formats
+        if (!this.zxingReader) {
+          console.warn('ZXing reader not available, attempting to reinitialize...');
+          await this.initializeQRCodeDetector();
+          if (!this.zxingReader) {
+            return null;
           }
         }
 
-        // Method 2: Use ZXing library (fallback for all browsers)
-        if (!barcodeText && this.zxingReader && this.useZXing) {
-          // Try decoding directly from video element (fastest)
-          try {
-            const result = await this.zxingReader.decode(video);
-            if (result && result.getText()) {
-              barcodeText = result.getText();
-              console.log('✅ Barcode detected (ZXing from video):', barcodeText);
-              return barcodeText;
-            }
-          } catch (videoErr: any) {
-            // NotFoundException is expected when no barcode found - try canvas approach
-            if (!(videoErr instanceof NotFoundException)) {
-              console.warn('ZXing video decode error, trying canvas approach:', videoErr);
-            }
+        // Method 1: Try decoding directly from video element (fastest, works in all browsers)
+        // ZXing automatically detects QR codes
+        try {
+          const result = await this.zxingReader.decode(video);
+          if (result && result.getText()) {
+            qrCodeText = result.getText();
+            console.log('✅ QR code detected (ZXing from video - all browsers):', qrCodeText);
+            return qrCodeText;
           }
-          
-          // Fallback: Use canvas to image approach (optimized for speed)
-          if (!barcodeText) {
-            try {
-              const canvas = this.canvasElement?.nativeElement;
-              if (canvas && canvas.getContext) {
-                const context = canvas.getContext('2d', { willReadFrequently: true });
-                if (context) {
-                  // Use smaller canvas size for faster processing (scale down if video is large)
-                  const scaleFactor = video.videoWidth > 640 ? 0.5 : 1;
-                  canvas.width = Math.floor(video.videoWidth * scaleFactor);
-                  canvas.height = Math.floor(video.videoHeight * scaleFactor);
-                  
-                  // Draw video frame to canvas (scaled down for faster processing)
-                  context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        } catch (videoErr: any) {
+          // NotFoundException is expected when no QR code found - try canvas approach
+          if (!(videoErr instanceof NotFoundException)) {
+            console.warn('ZXing video decode error, trying canvas approach:', videoErr);
+          }
+        }
+        
+        // Method 2: Fallback - Use canvas to image approach (works in all browsers)
+        // This is a cross-browser compatible fallback for ZXing QR code detection
+        if (!qrCodeText) {
+          try {
+            const canvas = this.canvasElement?.nativeElement;
+            if (canvas && canvas.getContext) {
+              const context = canvas.getContext('2d', { willReadFrequently: true });
+              if (context) {
+                // Use smaller canvas size for faster processing (scale down if video is large)
+                const scaleFactor = video.videoWidth > 640 ? 0.5 : 1;
+                canvas.width = Math.floor(video.videoWidth * scaleFactor);
+                canvas.height = Math.floor(video.videoHeight * scaleFactor);
+                
+                // Draw video frame to canvas (scaled down for faster processing)
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-                  // Convert canvas to image element for ZXing (optimized for speed)
-                  const image = new Image();
-                  image.crossOrigin = 'anonymous';
+                // Convert canvas to image element for ZXing (cross-browser compatible)
+                const image = new Image();
+                image.crossOrigin = 'anonymous';
+                
+                // Use promise to handle image loading with shorter timeout
+                const imageLoadPromise = new Promise<void>((resolve) => {
+                  const timeout = setTimeout(() => resolve(), 50); // Reduced from 150ms for faster processing
                   
-                  // Use promise to handle image loading with shorter timeout
-                  const imageLoadPromise = new Promise<void>((resolve) => {
-                    const timeout = setTimeout(() => resolve(), 50); // Reduced from 150ms for faster processing
-                    
-                    image.onload = () => {
-                      clearTimeout(timeout);
-                      resolve();
-                    };
-                    
-                    image.onerror = () => {
-                      clearTimeout(timeout);
-                      resolve();
-                    };
-                  });
+                  image.onload = () => {
+                    clearTimeout(timeout);
+                    resolve();
+                  };
                   
-                  // Use lower quality PNG for faster conversion (0.8 instead of default 0.92)
-                  image.src = canvas.toDataURL('image/png', 0.8);
-                  await imageLoadPromise;
-                  
-                  // Only decode if image loaded successfully
-                  if (image.complete && image.naturalWidth > 0) {
-                    try {
-                      const result = this.zxingReader!.decode(image);
-                      if (result && result.getText()) {
-                        barcodeText = result.getText();
-                        console.log('✅ Barcode detected (ZXing from image):', barcodeText);
-                        return barcodeText;
-                      }
-                    } catch (imageErr: any) {
-                      // NotFoundException is normal when no barcode found - don't log
-                      if (!(imageErr instanceof NotFoundException)) {
-                        console.warn('ZXing image decode error:', imageErr);
-                      }
+                  image.onerror = () => {
+                    clearTimeout(timeout);
+                    resolve();
+                  };
+                });
+                
+                // Use lower quality PNG for faster conversion (0.8 instead of default 0.92)
+                image.src = canvas.toDataURL('image/png', 0.8);
+                await imageLoadPromise;
+                
+                // Only decode if image loaded successfully
+                if (image.complete && image.naturalWidth > 0) {
+                  try {
+                    const result = this.zxingReader!.decode(image);
+                    if (result && result.getText()) {
+                      qrCodeText = result.getText();
+                      console.log('✅ QR code detected (ZXing from image - all browsers):', qrCodeText);
+                      return qrCodeText;
+                    }
+                  } catch (imageErr: any) {
+                    // NotFoundException is normal when no QR code found - don't log
+                    if (!(imageErr instanceof NotFoundException)) {
+                      console.warn('ZXing image decode error:', imageErr);
                     }
                   }
                 }
               }
-            } catch (canvasErr: any) {
-              // Only log non-NotFoundException errors
-              if (!(canvasErr instanceof NotFoundException)) {
-                console.warn('ZXing canvas detection error:', canvasErr);
-              }
+            }
+          } catch (canvasErr: any) {
+            // Only log non-NotFoundException errors
+            if (!(canvasErr instanceof NotFoundException)) {
+              console.warn('ZXing canvas detection error:', canvasErr);
             }
           }
         }
 
-        return barcodeText;
+        return qrCodeText;
       } finally {
         // Always reset processing flag, even if an error occurs
         isProcessing = false;
@@ -606,27 +620,27 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
       }
 
       try {
-        const barcodeText = await performScan();
+        const qrCodeText = await performScan();
         
-        // Process detected barcode
-        if (barcodeText) {
-          console.log('🎯 Processing barcode:', barcodeText);
+        // Process detected QR code
+        if (qrCodeText) {
+          console.log('🎯 Processing QR code:', qrCodeText);
           // Clear interval first to stop scanning
           if (this.scanInterval !== null) {
             clearInterval(this.scanInterval);
             this.scanInterval = null;
           }
-          // Stop camera and process barcode
+          // Stop camera and process QR code
           this.stopCamera();
-          this.manualBarcode = barcodeText;
-          await this.processBarcode(barcodeText);
+          this.manualQRCode = qrCodeText;
+          await this.processQRCode(qrCodeText);
         }
       } catch (err) {
         console.error('Scanning error:', err);
       }
     }, 100); // Check every 100ms for faster detection (reduced from 200ms)
     
-    console.log('✅ Barcode scanning interval started');
+    console.log('✅ QR code scanning interval started');
   }
 
   closeScanner(): void {
@@ -635,10 +649,30 @@ export class BarcodeScannerComponent implements OnInit, OnDestroy, AfterViewChec
   }
 
   /**
-   * Check if barcode detection is available (either BarcodeDetector or ZXing)
+   * Check if QR code detection is available (ZXing library)
+   * ZXing works in all modern browsers: Chrome, Edge, Firefox, Safari, etc.
+   * ZXing automatically detects QR codes along with other formats
    */
   isBarcodeDetectionAvailable(): boolean {
-    return !!(this.barcodeDetector || this.zxingReader);
+    return !!this.zxingReader;
+  }
+
+  /**
+   * Get browser information for debugging
+   */
+  private getBrowserInfo(): string {
+    const ua = navigator.userAgent;
+    if (ua.includes('Chrome') && !ua.includes('Edg')) {
+      return 'Chrome';
+    } else if (ua.includes('Edg')) {
+      return 'Edge';
+    } else if (ua.includes('Firefox')) {
+      return 'Firefox';
+    } else if (ua.includes('Safari') && !ua.includes('Chrome')) {
+      return 'Safari';
+    } else {
+      return 'Unknown';
+    }
   }
 }
 

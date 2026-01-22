@@ -1,10 +1,10 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnDestroy, OnChanges, SimpleChanges, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BoxPanel, PanelStatus } from '../../../core/models/box.model';
 import { PanelService } from '../../../core/services/panel.service';
 import { BarcodeScannerComponent, ScanResult } from '../barcode-scanner/barcode-scanner.component';
-import JsBarcode from 'jsbarcode';
+import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
 
 @Component({
@@ -35,31 +35,38 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
   scanType: 'SiteArrival' | 'Installation' = 'SiteArrival';
   lastScanResult: string = '';
 
-  // Barcode image cache
-  barcodeImageCache: Map<string, string> = new Map();
+  // QR code image cache
+  qrCodeImageCache: Map<string, string> = new Map();
 
-  // Download all barcodes
+  // Download all QR codes
   downloadingAll = false;
 
   PanelStatus = PanelStatus;
 
-  constructor(private panelService: PanelService) {}
+  constructor(
+    private panelService: PanelService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
-    // Generate barcode images for all panels
-    this.generateBarcodeImages();
+    // Generate QR code images for all panels
+    this.generateQRCodeImages().then(() => {
+      this.cdr.detectChanges();
+    });
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    // Regenerate barcode images when panels change
+    // Regenerate QR code images when panels change
     if (changes['panels'] && this.panels && this.panels.length > 0) {
-      this.generateBarcodeImages();
+      this.generateQRCodeImages().then(() => {
+        this.cdr.detectChanges();
+      });
     }
   }
 
   ngOnDestroy(): void {
-    // Clean up barcode image cache
-    this.barcodeImageCache.clear();
+    // Clean up QR code image cache
+    this.qrCodeImageCache.clear();
   }
 
   loadPanels(): void {
@@ -171,16 +178,24 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
     return status;
   }
 
-  copyBarcode(barcode: string): void {
-    navigator.clipboard.writeText(barcode).then(() => {
-      this.lastScanResult = `✅ Barcode copied: ${barcode}`;
+  copyQRCode(qrCode: string): void {
+    navigator.clipboard.writeText(qrCode).then(() => {
+      this.lastScanResult = `✅ QR Code copied: ${qrCode}`;
       setTimeout(() => {
         this.lastScanResult = '';
       }, 3000);
     }).catch(err => {
-      console.error('Failed to copy barcode:', err);
-      this.error = 'Failed to copy barcode to clipboard';
+      console.error('Failed to copy QR code:', err);
+      this.error = 'Failed to copy QR code to clipboard';
     });
+  }
+
+  /**
+   * Copy barcode (backward compatibility)
+   * @deprecated Use copyQRCode instead
+   */
+  copyBarcode(qrCode: string): void {
+    this.copyQRCode(qrCode);
   }
 
   getStatusDisplayName(status: PanelStatus): string {
@@ -232,160 +247,153 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Generate barcode images for all panels
+   * Generate QR code images for all panels
    */
-  generateBarcodeImages(): void {
-    this.panels.forEach(panel => {
-      if (panel.barcode && !this.barcodeImageCache.has(panel.barcode)) {
-        this.generateBarcodeImage(panel.barcode);
-      }
-    });
+  async generateQRCodeImages(): Promise<void> {
+    const promises = this.panels
+      .filter(panel => panel.qrCode && !this.qrCodeImageCache.has(panel.qrCode))
+      .map(panel => this.generateQRCodeImage(panel.qrCode!));
+    
+    await Promise.all(promises);
   }
 
   /**
-   * Generate a barcode image from barcode text (for display)
+   * Generate a QR code image from QR code text (for display)
    */
-  generateBarcodeImage(barcodeText: string): string | null {
-    if (!barcodeText) {
+  async generateQRCodeImage(qrCodeText: string): Promise<string | null> {
+    if (!qrCodeText) {
       return null;
     }
 
     // Check cache first
-    if (this.barcodeImageCache.has(barcodeText)) {
-      return this.barcodeImageCache.get(barcodeText) || null;
+    if (this.qrCodeImageCache.has(qrCodeText)) {
+      return this.qrCodeImageCache.get(qrCodeText) || null;
     }
 
     try {
-      // Create a canvas element
-      const canvas = document.createElement('canvas');
-      
-      // Generate barcode using Code128 format (smaller for display)
-      JsBarcode(canvas, barcodeText, {
-        format: 'CODE128',
-        width: 2,
-        height: 60,
-        displayValue: true,
-        fontSize: 14,
-        margin: 10,
-        background: '#ffffff',
-        lineColor: '#000000'
+      // Generate QR code as data URL
+      const dataUrl = await QRCode.toDataURL(qrCodeText, {
+        errorCorrectionLevel: 'M',
+        type: 'image/png',
+        width: 200,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
       });
-
-      // Convert canvas to data URL
-      const dataUrl = canvas.toDataURL('image/png');
       
       // Cache the result
-      this.barcodeImageCache.set(barcodeText, dataUrl);
+      this.qrCodeImageCache.set(qrCodeText, dataUrl);
       
       return dataUrl;
     } catch (error) {
-      console.error('Error generating barcode:', error);
+      console.error('Error generating QR code:', error);
       return null;
     }
   }
 
   /**
-   * Generate a high-resolution barcode image suitable for scanning from mobile devices
-   * This creates a large, sharp barcode that occupies most of the image area
+   * Generate a high-resolution QR code image suitable for scanning from mobile devices
+   * This creates a large, sharp QR code that occupies most of the image area
    */
-  generateHighResolutionBarcode(barcodeText: string): string | null {
-    if (!barcodeText) {
+  async generateHighResolutionQRCode(qrCodeText: string): Promise<string | null> {
+    if (!qrCodeText) {
       return null;
     }
 
     try {
-      // Create a high-resolution canvas
-      // Use a large canvas size for high-quality output (1200px width for good scanning)
-      const targetWidth = 1200;
-      const targetHeight = 400;
-      const scaleFactor = 2; // 2x scale for retina/high-DPI displays for extra sharpness
-      
-      const canvas = document.createElement('canvas');
-      canvas.width = targetWidth * scaleFactor;
-      canvas.height = targetHeight * scaleFactor;
-      
-      // Get 2D context
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        console.error('Failed to get canvas context');
-        return null;
-      }
-      
-      // Scale the context for high DPI rendering
-      ctx.scale(scaleFactor, scaleFactor);
-      
-      // Set high-quality rendering hints
-      ctx.imageSmoothingEnabled = false; // Crisp edges for barcodes (no anti-aliasing)
-      
-      // Generate barcode with large dimensions suitable for scanning
-      // The barcode will be rendered at targetWidth x targetHeight, then scaled up 2x for sharpness
-      // Width: 5 pixels per module for better scanning (increased from 2)
-      // Height: 250px for good visibility (increased from 60)
-      JsBarcode(canvas, barcodeText, {
-        format: 'CODE128',
-        width: 5, // Increased from 2 for better scanning
-        height: 250, // Increased from 60 for better visibility
-        displayValue: true,
-        fontSize: 32, // Larger font for readability
-        margin: 20, // Adequate margin
-        background: '#ffffff',
-        lineColor: '#000000'
+      // Generate high-resolution QR code for printing/scanning
+      // Use larger size (1200px) for high-quality output
+      const dataUrl = await QRCode.toDataURL(qrCodeText, {
+        errorCorrectionLevel: 'H', // High error correction for better scanning
+        type: 'image/png',
+        width: 1200,
+        margin: 4,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
       });
-
-      // Convert to high-quality PNG without compression
-      // PNG is lossless, but we specify quality: 1.0 for clarity
-      const dataUrl = canvas.toDataURL('image/png', 1.0);
       
       return dataUrl;
     } catch (error) {
-      console.error('Error generating high-resolution barcode:', error);
+      console.error('Error generating high-resolution QR code:', error);
       return null;
     }
   }
 
   /**
-   * Get barcode image URL for a panel
+   * Get QR code image URL for a panel
+   */
+  getQRCodeImage(panel: BoxPanel): string | null {
+    if (!panel.qrCode) {
+      return null;
+    }
+    // Return from cache if available, otherwise trigger async generation
+    if (this.qrCodeImageCache.has(panel.qrCode)) {
+      return this.qrCodeImageCache.get(panel.qrCode) || null;
+    }
+    // Trigger async generation (will update cache when complete)
+    this.generateQRCodeImage(panel.qrCode).then(() => {
+      this.cdr.detectChanges();
+    }).catch(err => {
+      console.error('Error generating QR code:', err);
+    });
+    return null;
+  }
+
+  /**
+   * Get barcode image URL for a panel (backward compatibility)
+   * @deprecated Use getQRCodeImage instead
    */
   getBarcodeImage(panel: BoxPanel): string | null {
-    if (!panel.barcode) {
-      return null;
-    }
-    return this.generateBarcodeImage(panel.barcode);
+    return this.getQRCodeImage(panel);
   }
 
   /**
-   * Download barcode image (high-resolution version for scanning)
+   * Download QR code image (high-resolution version for scanning)
    */
-  downloadBarcode(panel: BoxPanel): void {
-    if (!panel.barcode) {
-      return;
-    }
-
-    // Generate high-resolution barcode for download
-    const barcodeImage = this.generateHighResolutionBarcode(panel.barcode);
-    if (!barcodeImage) {
-      this.error = 'Failed to generate barcode image';
-      setTimeout(() => {
-        this.error = '';
-      }, 3000);
+  async downloadQRCode(panel: BoxPanel): Promise<void> {
+    if (!panel.qrCode) {
       return;
     }
 
     try {
+      // Generate high-resolution QR code for download
+      const qrCodeImage = await this.generateHighResolutionQRCode(panel.qrCode);
+      if (!qrCodeImage) {
+        this.error = 'Failed to generate QR code image';
+        setTimeout(() => {
+          this.error = '';
+        }, 3000);
+        return;
+      }
+
       // Create a temporary anchor element
       const link = document.createElement('a');
-      link.href = barcodeImage;
-      link.download = `barcode-${panel.panelName}-${panel.barcode}.png`;
+      link.href = qrCodeImage;
+      link.download = `qrcode-${panel.panelName}-${panel.qrCode}.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
     } catch (error) {
-      console.error('Error downloading barcode:', error);
-      this.error = 'Failed to download barcode image';
+      console.error('Error downloading QR code:', error);
+      this.error = 'Failed to download QR code image';
       setTimeout(() => {
         this.error = '';
       }, 3000);
     }
+  }
+
+  /**
+   * Download barcode image (backward compatibility)
+   * @deprecated Use downloadQRCode instead
+   */
+  downloadBarcode(panel: BoxPanel): void {
+    this.downloadQRCode(panel).catch(err => {
+      console.error('Error downloading QR code:', err);
+    });
   }
 
   /**
@@ -399,14 +407,14 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Download all barcode images in a single PDF file (one barcode per page)
+   * Download all QR code images in a single PDF file (one QR code per page)
    */
-  async downloadAllBarcodes(): Promise<void> {
-    // Filter panels that have barcodes
-    const panelsWithBarcodes = this.panels.filter(panel => panel.barcode);
+  async downloadAllQRCodes(): Promise<void> {
+    // Filter panels that have QR codes
+    const panelsWithQRCodes = this.panels.filter(panel => panel.qrCode);
     
-    if (panelsWithBarcodes.length === 0) {
-      this.error = 'No panels with barcodes found to download';
+    if (panelsWithQRCodes.length === 0) {
+      this.error = 'No panels with QR codes found to download';
       setTimeout(() => {
         this.error = '';
       }, 3000);
@@ -428,33 +436,33 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
       let failCount = 0;
       let isFirstPage = true;
 
-      // Add each barcode as a new page in the PDF
-      for (const panel of panelsWithBarcodes) {
+      // Add each QR code as a new page in the PDF
+      for (const panel of panelsWithQRCodes) {
         try {
-          // Use high-resolution barcode for PDF generation
-          const barcodeImage = this.generateHighResolutionBarcode(panel.barcode!);
-          if (barcodeImage) {
-            // Add new page for each barcode (except the first one)
+          // Use high-resolution QR code for PDF generation
+          const qrCodeImage = await this.generateHighResolutionQRCode(panel.qrCode!);
+          if (qrCodeImage) {
+            // Add new page for each QR code (except the first one)
             if (!isFirstPage) {
               pdf.addPage();
             }
             isFirstPage = false;
 
-            // Add barcode to the current page
-            await this.addBarcodeToPDF(pdf, panel, barcodeImage);
+            // Add QR code to the current page
+            await this.addQRCodeToPDF(pdf, panel, qrCodeImage);
             successCount++;
           } else {
             failCount++;
-            console.warn(`Failed to generate barcode for panel: ${panel.panelName}`);
+            console.warn(`Failed to generate QR code for panel: ${panel.panelName}`);
           }
         } catch (err) {
           failCount++;
-          console.error(`Error processing barcode for panel ${panel.panelName}:`, err);
+          console.error(`Error processing QR code for panel ${panel.panelName}:`, err);
         }
       }
 
       if (successCount === 0) {
-        this.error = 'Failed to generate any barcode images';
+        this.error = 'Failed to generate any QR code images';
         this.downloadingAll = false;
         setTimeout(() => {
           this.error = '';
@@ -468,7 +476,7 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
       // Create download link
       const link = document.createElement('a');
       link.href = URL.createObjectURL(pdfBlob);
-      link.download = `all-barcodes-box-${this.boxId}.pdf`;
+      link.download = `all-qrcodes-box-${this.boxId}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -477,7 +485,7 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
       URL.revokeObjectURL(link.href);
 
       // Show success message
-      this.lastScanResult = `✅ Successfully downloaded ${successCount} barcode${successCount !== 1 ? 's' : ''} in PDF${failCount > 0 ? ` (${failCount} failed)` : ''}`;
+      this.lastScanResult = `✅ Successfully downloaded ${successCount} QR code${successCount !== 1 ? 's' : ''} in PDF${failCount > 0 ? ` (${failCount} failed)` : ''}`;
       setTimeout(() => {
         this.lastScanResult = '';
       }, 5000);
@@ -494,92 +502,107 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
-   * Add a barcode to the current PDF page (high-resolution, large size for scanning)
+   * Download all barcodes (backward compatibility)
+   * @deprecated Use downloadAllQRCodes instead
    */
-  private async addBarcodeToPDF(pdf: jsPDF, panel: BoxPanel, barcodeImageDataUrl: string): Promise<void> {
+  downloadAllBarcodes(): void {
+    this.downloadAllQRCodes().catch(err => {
+      console.error('Error downloading QR codes:', err);
+    });
+  }
+
+  /**
+   * Add a QR code to the current PDF page (high-resolution, large size for scanning)
+   */
+  private async addQRCodeToPDF(pdf: jsPDF, panel: BoxPanel, qrCodeImageDataUrl: string): Promise<void> {
     return new Promise((resolve, reject) => {
       // Convert data URL to image
       const img = new Image();
       
       img.onload = () => {
         try {
-          // Calculate dimensions to fit barcode nicely on the page
+          // Calculate dimensions to fit QR code nicely on the page
           const pageWidth = 210; // A4 width in mm
           const pageHeight = 297; // A4 height in mm
-          const margin = 15; // Reduced margin to maximize barcode size
-          const textSpace = 25; // space reserved for text above barcode
+          const margin = 15; // Reduced margin to maximize QR code size
+          const textSpace = 25; // space reserved for text above QR code
           
           // Calculate available space (accounting for text space)
           const availableWidth = pageWidth - (margin * 2);
           const availableHeight = pageHeight - (margin * 2) - textSpace;
           
-          // Calculate scaling to fit the barcode - prioritize large size for scanning
+          // Calculate scaling to fit the QR code - prioritize large size for scanning
           const imgWidth = img.width;
           const imgHeight = img.height;
           const imgAspectRatio = imgWidth / imgHeight;
           
-          // Start with maximum width to ensure barcode is large and scannable
-          let finalWidth = availableWidth * 0.95; // Use 95% of available width for maximum size
-          let finalHeight = finalWidth / imgAspectRatio;
+          // QR codes are square, so use the smaller dimension
+          const maxSize = Math.min(availableWidth, availableHeight) * 0.95;
+          let finalWidth = maxSize;
+          let finalHeight = maxSize;
           
-          // If height exceeds available space, scale down but keep it large
-          if (finalHeight > availableHeight) {
-            finalHeight = availableHeight * 0.95; // Use 95% of available height
+          // If aspect ratio is not 1:1, adjust accordingly
+          if (imgAspectRatio > 1) {
+            finalHeight = finalWidth / imgAspectRatio;
+          } else if (imgAspectRatio < 1) {
             finalWidth = finalHeight * imgAspectRatio;
           }
           
-          // Ensure minimum size for scannability (at least 150mm wide)
-          const minWidth = 150;
-          if (finalWidth < minWidth && availableWidth >= minWidth) {
-            finalWidth = Math.min(minWidth, availableWidth * 0.95);
-            finalHeight = finalWidth / imgAspectRatio;
-            // If this makes it too tall, adjust
-            if (finalHeight > availableHeight) {
-              finalHeight = availableHeight * 0.95;
-              finalWidth = finalHeight * imgAspectRatio;
-            }
+          // Ensure minimum size for scannability (at least 100mm)
+          const minSize = 100;
+          if (finalWidth < minSize && availableWidth >= minSize) {
+            finalWidth = Math.min(minSize, availableWidth * 0.95);
+            finalHeight = finalWidth;
           }
           
-          // Center the barcode horizontally and position it below the text
+          // Center the QR code horizontally and position it below the text
           const x = (pageWidth - finalWidth) / 2;
-          const barcodeY = margin + textSpace + (availableHeight - finalHeight) / 2;
+          const qrCodeY = margin + textSpace + (availableHeight - finalHeight) / 2;
           
-          // Add panel information text above the barcode
+          // Add panel information text above the QR code
           pdf.setFontSize(16);
           pdf.setFont('helvetica', 'bold');
           pdf.text(panel.panelName || 'Panel', pageWidth / 2, margin + 10, { align: 'center' });
           
-          if (panel.barcode) {
+          if (panel.qrCode) {
             pdf.setFontSize(12);
             pdf.setFont('helvetica', 'normal');
-            pdf.text(`Barcode: ${panel.barcode}`, pageWidth / 2, margin + 20, { align: 'center' });
+            pdf.text(`QR Code: ${panel.qrCode}`, pageWidth / 2, margin + 20, { align: 'center' });
           }
           
-          // Add the barcode image with high quality
+          // Add the QR code image with high quality
           // Use 'FAST' compression mode for better quality (though PNG is lossless)
-          pdf.addImage(barcodeImageDataUrl, 'PNG', x, barcodeY, finalWidth, finalHeight, undefined, 'FAST');
+          pdf.addImage(qrCodeImageDataUrl, 'PNG', x, qrCodeY, finalWidth, finalHeight, undefined, 'FAST');
           
           resolve();
         } catch (error) {
-          console.error('Error adding barcode to PDF:', error);
+          console.error('Error adding QR code to PDF:', error);
           reject(error);
         }
       };
       
       img.onerror = () => {
-        console.error('Error loading barcode image');
-        reject(new Error('Failed to load barcode image'));
+        console.error('Error loading QR code image');
+        reject(new Error('Failed to load QR code image'));
       };
       
-      img.src = barcodeImageDataUrl;
+      img.src = qrCodeImageDataUrl;
     });
   }
 
   /**
-   * Check if there are any panels with barcodes to download
+   * Check if there are any panels with QR codes to download
+   */
+  hasQRCodesToDownload(): boolean {
+    return this.panels.some(panel => panel.qrCode);
+  }
+
+  /**
+   * Check if there are any panels with barcodes to download (backward compatibility)
+   * @deprecated Use hasQRCodesToDownload instead
    */
   hasBarcodesToDownload(): boolean {
-    return this.panels.some(panel => panel.barcode);
+    return this.hasQRCodesToDownload();
   }
 }
 

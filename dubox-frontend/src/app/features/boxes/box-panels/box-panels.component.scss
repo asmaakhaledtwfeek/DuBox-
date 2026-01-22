@@ -51,7 +51,7 @@
 
 .barcode-image {
   max-width: 100%;
-  height: auto;
+  height: 20px;
   display: block;
   image-rendering: crisp-edges;
 }
@@ -95,7 +95,7 @@
   }
 }
 
-.btn-copy-barcode {
+.btn-copy-qrcode {
   display: flex;
   align-items: center;
   justify-content: center;

@@ -5,7 +5,7 @@ import { environment } from '../../../environments/environment';
 import { BoxPanel, PanelStatus } from '../models/box.model';
 
 export interface ScanPanelRequest {
-  barcode: string;
+  barcode: string;  // Backend API expects 'barcode' field, but contains QR code data
   scanType: string; // Dispatch, FactoryArrival, Installation, Inspection
   scanLocation?: string;
   latitude?: number;

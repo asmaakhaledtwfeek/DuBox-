@@ -16,8 +16,6 @@ public class BoxPanel
     
     [Required]
     public Guid ProjectId { get; set; }
-
-    // Panel Type (for dynamic panel configuration)
     public Guid? PanelTypeId { get; set; }
 
     [Required]
@@ -29,7 +27,7 @@ public class BoxPanel
 
     // Identification & Tracking
     [MaxLength(100)]
-    public string? Barcode { get; set; }
+    public string? QRCode { get; set; }
 
     [MaxLength(500)]
     public string? QRCodeUrl { get; set; }

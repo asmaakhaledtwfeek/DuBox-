@@ -938,18 +938,44 @@
   position: absolute;
   top: 12px;
   right: 12px;
-  padding: 4px 10px;
-  background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(249, 115, 22, 0.15) 100%);
-  color: #f97316;
-  border: 1px solid rgba(249, 115, 22, 0.2);
-  border-radius: 8px;
+  padding: 6px 12px;
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 10px;
   font-size: 10px;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 1px 3px rgba(249, 115, 22, 0.1);
+  letter-spacing: 0.8px;
+  box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
   z-index: 10;
   white-space: nowrap;
+  transition: all 0.3s ease;
+}
+
+// Special styling for panel types card
+.panel-types-card {
+  .config-badge {
+    animation: badgePulse 2s ease-in-out infinite;
+  }
+
+  &:hover {
+    .config-badge {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: rgba(245, 158, 11, 0.4);
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+    }
+  }
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.85;
+  }
 }
 
 .card {

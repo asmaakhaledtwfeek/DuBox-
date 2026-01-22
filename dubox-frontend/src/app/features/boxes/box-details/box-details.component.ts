@@ -1439,19 +1439,19 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     });
   }
 
-  exportWIRToPDF(checkpoint: WIRCheckpoint): void {
+  async exportWIRToPDF(checkpoint: WIRCheckpoint): Promise<void> {
     // Export as PDF via print dialog
-    this.wirExportService.exportWIRToPrintDialog(checkpoint, this.box, null);
+    await this.wirExportService.exportWIRToPrintDialog(checkpoint, this.box, this.project);
   }
 
   async downloadWIRAsPDF(checkpoint: WIRCheckpoint): Promise<void> {
     // Direct PDF download with DuBox logo watermark (no print dialog)
-    await this.wirExportService.downloadWIRAsPDF(checkpoint, this.box, null);
+    await this.wirExportService.downloadWIRAsPDF(checkpoint, this.box, this.project);
   }
 
-  downloadWIRAsHTML(checkpoint: WIRCheckpoint): void {
+  async downloadWIRAsHTML(checkpoint: WIRCheckpoint): Promise<void> {
     // Download as HTML file (legacy support)
-    this.wirExportService.downloadWIRAsHTML(checkpoint, this.box, null);
+    await this.wirExportService.downloadWIRAsHTML(checkpoint, this.box, this.project);
   }
 
   loadQualityIssues(): void {

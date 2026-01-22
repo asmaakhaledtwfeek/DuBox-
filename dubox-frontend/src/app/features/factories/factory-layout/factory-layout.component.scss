@@ -265,6 +265,48 @@
   }
 }
 
+// View Walls Status Button - now in filters section
+.filters-container {
+  .btn-view-walls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: var(--amana-teal);
+    border: none;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    margin-left: auto;
+
+    @media (max-width: 768px) {
+      width: 100%;
+      margin-left: 0;
+      margin-top: 8px;
+      justify-content: center;
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    &:hover {
+      background: #16858f;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(27, 154, 170, 0.3);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -447,6 +489,11 @@
   border: 1px solid #e2e8f0;
   margin-bottom: 20px;
 
+  // Tablet mode - improved padding
+  @media (min-width: 769px) and (max-width: 1024px) {
+    padding: 18px 20px;
+  }
+
   @media (max-width: 768px) {
     padding: 16px;
     margin-bottom: 16px;
@@ -465,6 +512,11 @@
     align-items: center;
     gap: 8px;
 
+    @media (min-width: 769px) and (max-width: 1024px) {
+      font-size: 12.5px;
+      margin-bottom: 14px;
+    }
+
     @media (max-width: 768px) {
       font-size: 12px;
       margin-bottom: 12px;
@@ -474,39 +526,34 @@
 
   .flow-indicators-horizontal {
     display: flex;
-    flex-wrap: nowrap; // Prevent wrapping - keep everything on same row
+    flex-wrap: wrap; // Allow wrapping by default to handle constrained viewports (e.g., when console is open)
     gap: 12px 20px;
     justify-content: flex-start;
     align-items: center;
-    overflow-x: auto; // Allow horizontal scrolling if needed on very small screens
+    overflow-x: visible; // No horizontal scroll when wrapping
     min-width: 0; // Allow flex items to shrink below their content size
+    -webkit-overflow-scrolling: touch; // Smooth scrolling on iOS/iPad
 
-    @media (max-width: 1024px) {
-      gap: 8px 12px; // Reduce gap on tablets
+    // Large screens with plenty of space - can use single row if desired
+    // But still allow wrapping if space becomes constrained
+    @media (min-width: 1400px) {
+      // On very large screens, try to keep single row but allow wrap if needed
+      flex-wrap: wrap;
+    }
+
+    // Tablet mode (iPad) - allow wrapping for better visibility
+    @media (min-width: 769px) and (max-width: 1024px) {
+      flex-wrap: wrap; // Allow wrapping on tablets
+      gap: 12px 16px; // Better spacing for wrapped items
+      overflow-x: visible; // No horizontal scroll needed when wrapping
+      justify-content: flex-start;
+      align-items: stretch; // Allow items to have consistent height
     }
 
     @media (max-width: 768px) {
-      gap: 6px 10px; // Even smaller gap on mobile
-      flex-wrap: wrap; // Allow wrapping on mobile only
-    }
-
-    // View Walls Status button inside flow indicators
-    .btn-view-walls {
-      flex: 0 0 auto; // Don't shrink the button
-      align-self: center;
-      white-space: nowrap; // Prevent button text from wrapping
-      
-      @media (max-width: 1024px) {
-        padding: 8px 14px; // Reduce padding on tablets
-        font-size: 0.85rem; // Slightly smaller font
-      }
-      
-      @media (max-width: 768px) {
-        width: 100%;
-        margin-top: 8px;
-        padding: 10px 18px; // Restore full padding on mobile when wrapped
-        font-size: 0.9rem;
-      }
+      gap: 8px 12px; // Smaller gap on mobile
+      flex-wrap: wrap; // Allow wrapping on mobile
+      overflow-x: visible;
     }
 
     .flow-item {
@@ -519,17 +566,31 @@
       border: 1.5px solid #e2e8f0;
       transition: all 0.2s ease;
       flex: 0 1 auto; // Allow shrinking but don't grow
-      min-width: 0; // Allow shrinking below content size
-      // Allow text to wrap to 2 lines
+      min-width: 120px; // Minimum width to prevent items from getting too small when wrapping
+      max-width: fit-content; // Allow natural width based on content
 
-      @media (max-width: 1024px) {
-        padding: 8px 12px; // Reduce padding on tablets
-        gap: 8px;
+      // Large screens - ensure items don't get too small when wrapping (e.g., when console is open)
+      @media (min-width: 1025px) {
+        min-width: 130px; // Slightly larger minimum for large screens
+        flex: 0 1 auto; // Natural sizing, can wrap when needed
+      }
+
+      // Tablet mode - improved sizing for better touch targets and visibility
+      @media (min-width: 769px) and (max-width: 1024px) {
+        padding: 12px 18px; // Larger padding for better touch targets
+        gap: 12px;
+        min-width: 140px; // Minimum width to show full labels
+        flex: 0 1 calc(50% - 8px); // Take up to 50% width (2 columns) with gap
+        max-width: calc(50% - 8px); // Prevent items from getting too wide
+        min-height: 48px; // Minimum touch target size for tablets
       }
 
       @media (max-width: 768px) {
-        padding: 8px 10px; // Even smaller padding on mobile
-        gap: 6px;
+        padding: 8px 12px;
+        gap: 8px;
+        min-width: auto;
+        flex: 0 1 auto;
+        max-width: none;
       }
 
       // Clickable state
@@ -593,6 +654,12 @@
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
         border: 2px solid rgba(255, 255, 255, 0.5);
 
+        // Tablet mode - slightly larger for better visibility
+        @media (min-width: 769px) and (max-width: 1024px) {
+          width: 32px;
+          height: 32px;
+        }
+
         @media (max-width: 768px) {
           width: 22px;
           height: 22px;
@@ -638,7 +705,7 @@
         color: #475569;
         line-height: 1.4;
         display: -webkit-box;
-        -webkit-line-clamp: 2; // Limit to 2 lines
+        -webkit-line-clamp: 2; // Limit to 2 lines to keep items compact
         -webkit-box-orient: vertical;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -646,14 +713,28 @@
         word-break: normal; // Break at word boundaries only
         overflow-wrap: break-word; // Break long words only when necessary, at word boundaries
 
-        @media (max-width: 1024px) {
-          font-size: 12px; // Slightly smaller font on tablets
-          line-height: 1.3;
+        // Large screens - with minimum width set, items should show text properly when wrapping
+        @media (min-width: 1025px) {
+          // Keep line-clamp but items will have enough width (min-width: 130px) to show text
+          font-size: 13px;
+        }
+
+        // Tablet mode - show full text without truncation
+        @media (min-width: 769px) and (max-width: 1024px) {
+          font-size: 13px; // Keep readable size
+          line-height: 1.4;
+          display: block; // Remove line clamp to show full text
+          -webkit-line-clamp: none;
+          overflow: visible; // Show full text
+          white-space: normal; // Allow wrapping
+          text-overflow: clip; // Don't truncate
         }
 
         @media (max-width: 768px) {
-          font-size: 11px; // Even smaller on mobile
+          font-size: 11px;
           line-height: 1.3;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
         }
       }
     }
@@ -1452,43 +1533,6 @@ $header-height: clamp(45px, 5vw, 65px);
 
 // Matrix uses fixed dimensions with clamp() for responsive sizing
 // No breakpoint overrides needed - scrolling handles overflow
-
-// View Walls Button
-.btn-view-walls {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  background: var(--amana-teal);
-  border: none;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  white-space: nowrap;
-
-  @media (max-width: 768px) {
-    width: 100%;
-    justify-content: center;
-  }
-
-  svg {
-    width: 16px;
-    height: 16px;
-  }
-
-  &:hover {
-    background: #16858f;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(27, 154, 170, 0.3);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-}
 
 .walls-modal-container {
   background: white;

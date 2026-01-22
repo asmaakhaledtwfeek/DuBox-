@@ -40,7 +40,10 @@ export class WirExportService {
    */
   async downloadWIRAsPDF(checkpoint: WIRCheckpoint, box?: Box | null, project?: Project | null): Promise<void> {
     const projectInfo = this.buildProjectInfo(checkpoint, box, project);
-    const content = this.generateWIRPrintContent(checkpoint, box, projectInfo);
+    
+    // Convert image URLs to base64 before generating content (including application logo)
+    const logoData = await this.loadLogosAsBase64(project);
+    const content = this.generateWIRPrintContent(checkpoint, box, projectInfo, project, logoData);
     const styles = this.getWIRPrintStyles();
     const fileName = `${checkpoint.wirNumber}_${checkpoint.wirName || 'Inspection_Checklist'}`.replace(/\s+/g, '_');
     
@@ -67,7 +70,13 @@ export class WirExportService {
     document.body.appendChild(container);
 
     try {
-      // Wait for content to render
+      // Wait for content to render and images to load
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Wait for all images to load (with longer timeout for SVG)
+      await this.waitForImagesToLoad(contentDiv);
+      
+      // Additional wait to ensure SVG images are fully rendered
       await new Promise(resolve => setTimeout(resolve, 200));
 
       // Check if content div has actual content
@@ -126,9 +135,12 @@ export class WirExportService {
   /**
    * Export WIR to PDF via Print Dialog (Alternative method)
    */
-  exportWIRToPrintDialog(checkpoint: WIRCheckpoint, box?: Box | null, project?: Project | null): void {
+  async exportWIRToPrintDialog(checkpoint: WIRCheckpoint, box?: Box | null, project?: Project | null): Promise<void> {
     const projectInfo = this.buildProjectInfo(checkpoint, box, project);
-    const content = this.generateWIRPrintContent(checkpoint, box, projectInfo);
+    
+    // Convert image URLs to base64 before generating content
+    const logoData = await this.loadLogosAsBase64(project);
+    const content = this.generateWIRPrintContent(checkpoint, box, projectInfo, project, logoData);
     const styles = this.getWIRPrintStyles();
     const fileName = `${checkpoint.wirNumber}_${checkpoint.wirName || 'Inspection_Checklist'}`.replace(/\s+/g, '_');
     
@@ -164,9 +176,12 @@ export class WirExportService {
   /**
    * Download WIR checkpoint as HTML file (legacy method)
    */
-  downloadWIRAsHTML(checkpoint: WIRCheckpoint, box?: Box | null, project?: Project | null): void {
+  async downloadWIRAsHTML(checkpoint: WIRCheckpoint, box?: Box | null, project?: Project | null): Promise<void> {
     const projectInfo = this.buildProjectInfo(checkpoint, box, project);
-    const content = this.generateWIRPrintContent(checkpoint, box, projectInfo);
+    
+    // Convert image URLs to base64 before generating content
+    const logoData = await this.loadLogosAsBase64(project);
+    const content = this.generateWIRPrintContent(checkpoint, box, projectInfo, project, logoData);
     const styles = this.getWIRPrintStyles();
     const fileName = `${checkpoint.wirNumber}_${checkpoint.wirName || 'Inspection_Checklist'}`.replace(/\s+/g, '_');
     
@@ -196,7 +211,7 @@ export class WirExportService {
   /**
    * Generate WIR print content HTML
    */
-  generateWIRPrintContent(checkpoint: WIRCheckpoint, box?: Box | null, projectInfo?: ProjectInfo): string {
+  generateWIRPrintContent(checkpoint: WIRCheckpoint, box?: Box | null, projectInfo?: ProjectInfo, project?: Project | null, logoData?: { contractor?: string; client?: string; application?: string }): string {
     const items = checkpoint.checklistItems || [];
     const groupedChecklists = this.groupItemsByChecklist(items);
     const referenceDocuments = this.extractReferenceDocuments(items);
@@ -216,7 +231,9 @@ export class WirExportService {
         projectInfo!, 
         box, 
         referenceDocuments,
-        validPageIndex > 0 // Add page break for subsequent pages (only if we have valid pages)
+        validPageIndex > 0, // Add page break for subsequent pages (only if we have valid pages)
+        project,
+        logoData
       );
       
       // Double-check the page has content before adding
@@ -307,7 +324,9 @@ export class WirExportService {
     projectInfo: ProjectInfo,
     box?: Box | null,
     referenceDocuments?: string,
-    addPageBreak: boolean = false
+    addPageBreak: boolean = false,
+    project?: Project | null,
+    logoData?: { contractor?: string; client?: string; application?: string }
   ): string {
     // Filter out sections that have no items
     const sectionsWithItems = checklist.sections.filter(section => section.items.length > 0);
@@ -338,15 +357,9 @@ export class WirExportService {
       <div class="form-header-border">
         <!-- Company Logos Row -->
         <div class="company-logos-row">
-          <div class="logo-box logo-amaala">
-            <span class="logo-text">AMAALA</span>
-          </div>
-          <div class="logo-box logo-parsons">
-            <span class="logo-text">PARSONS</span>
-          </div>
-          <div class="logo-box logo-amana">
-            <span class="logo-text">AMANA</span>
-          </div>
+          ${this.generateContractorLogoSection(project, logoData)}
+          ${this.generateClientLogoSection(project, logoData)}
+          ${this.generateApplicationAndContractorLogoSection(project, logoData)}
         </div>
         
         <!-- Gray Title Bar with Checklist Name -->
@@ -543,31 +556,258 @@ export class WirExportService {
   }
 
   /**
-   * Get DuBox logo SVG for watermark
+   * Generate Contractor Logo Section (Section 1 - AMAALA)
+   */
+  private generateContractorLogoSection(project?: Project | null, logoData?: { contractor?: string; client?: string }): string {
+    // Prefer base64 data if available, otherwise use URL
+    const logoSource = logoData?.contractor || project?.contractorImageUrl;
+    
+    if (logoSource && logoSource.trim() !== '') {
+      return `
+          <div class="logo-box logo-amaala">
+            <div class="logo-container">
+              <img src="${this.escapeHtml(logoSource)}" alt="Contractor Logo" class="logo-image" style="object-fit: contain; width: 100%; height: 100%; display: block; background: transparent;" onerror="this.style.display='none';" />
+            </div>
+            <span class="logo-text" style="display: none;">AMAALA</span>
+          </div>`;
+    }
+    
+    // Fallback to original text
+    return `
+          <div class="logo-box logo-amaala">
+            <span class="logo-text">AMAALA</span>
+          </div>`;
+  }
+
+  /**
+   * Generate Client Logo Section (Section 2 - PARSONS)
+   */
+  private generateClientLogoSection(project?: Project | null, logoData?: { contractor?: string; client?: string }): string {
+    // Prefer base64 data if available, otherwise use URL
+    const logoSource = logoData?.client || project?.clientImageUrl;
+    
+    if (logoSource && logoSource.trim() !== '') {
+      return `
+          <div class="logo-box logo-parsons">
+            <div class="logo-container">
+              <img src="${this.escapeHtml(logoSource)}" alt="Client Logo" class="logo-image" style="object-fit: contain; width: 100%; height: 100%; display: block; background: transparent;" onerror="this.style.display='none';" />
+            </div>
+            <span class="logo-text" style="display: none;">PARSONS</span>
+          </div>`;
+    }
+    
+    // Fallback to original text
+    return `
+          <div class="logo-box logo-parsons">
+            <span class="logo-text">PARSONS</span>
+          </div>`;
+  }
+
+  /**
+   * Generate Application and Contractor Logo Section (Section 3 - AMANA)
+   * Contains: Application Logo (DuBox) and Contractor Logo
+   */
+  private generateApplicationAndContractorLogoSection(project?: Project | null, logoData?: { contractor?: string; client?: string; application?: string }): string {
+    // Prefer base64 data if available, otherwise use URL
+    const contractorLogoSource = logoData?.contractor || project?.contractorImageUrl;
+    const hasContractorLogo = contractorLogoSource && contractorLogoSource.trim() !== '';
+    
+    // Application Logo (DuBox logo) - use inline SVG for better PDF rendering
+    const applicationLogo = `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background: transparent;">${this.getDuBoxLogoSVG()}</div>`;
+    
+    // Contractor Logo (if available) - with error handling fallback
+    const contractorLogo = hasContractorLogo 
+      ? `<img src="${this.escapeHtml(contractorLogoSource)}" alt="Contractor Logo" class="logo-image logo-contractor" style="object-fit: contain; width: 100%; height: 100%; display: block; background: transparent;" onerror="this.style.display='none';" />`
+      : '';
+    
+    // If we have both logos, display them stacked vertically
+    if (hasContractorLogo) {
+      return `
+          <div class="logo-box logo-amana logo-dual">
+            <div class="logo-app-container">
+              ${applicationLogo}
+            </div>
+            <div class="logo-contractor-container">
+              ${contractorLogo}
+            </div>
+          </div>`;
+    }
+    
+    // If only application logo, show it with fallback text
+    return `
+          <div class="logo-box logo-amana">
+            <div class="logo-app-container">
+              ${applicationLogo}
+            </div>
+            <span class="logo-text logo-fallback">AMANA</span>
+          </div>`;
+  }
+
+  /**
+   * Load project logos as base64 for PDF generation
+   * This ensures images are embedded in the PDF and don't rely on external URLs
+   */
+  private async loadLogosAsBase64(project?: Project | null): Promise<{ contractor?: string; client?: string; application?: string }> {
+    const logoData: { contractor?: string; client?: string; application?: string } = {};
+    
+    // Load application logo (DuBox logo from assets)
+    try {
+      const appLogoUrl = this.getApplicationLogoUrl();
+      console.log('Loading application logo from:', appLogoUrl);
+      logoData.application = await this.imageUrlToBase64(appLogoUrl);
+      console.log('Application logo loaded successfully, length:', logoData.application?.length);
+    } catch (error) {
+      console.warn('Failed to load application logo:', error);
+      // Fallback to SVG if image fails (undefined means use SVG fallback)
+      logoData.application = undefined;
+    }
+    
+    if (!project) {
+      return logoData;
+    }
+    
+    // Load contractor logo
+    if (project.contractorImageUrl && project.contractorImageUrl.trim() !== '') {
+      try {
+        logoData.contractor = await this.imageUrlToBase64(project.contractorImageUrl);
+      } catch (error) {
+        console.warn('Failed to load contractor logo:', error);
+        // Keep original URL as fallback
+        logoData.contractor = project.contractorImageUrl;
+      }
+    }
+    
+    // Load client logo
+    if (project.clientImageUrl && project.clientImageUrl.trim() !== '') {
+      try {
+        logoData.client = await this.imageUrlToBase64(project.clientImageUrl);
+      } catch (error) {
+        console.warn('Failed to load client logo:', error);
+        // Keep original URL as fallback
+        logoData.client = project.clientImageUrl;
+      }
+    }
+    
+    return logoData;
+  }
+
+  /**
+   * Get the application logo URL (DuBox logo from assets)
+   */
+  private getApplicationLogoUrl(): string {
+    // Convert relative assets path to absolute URL
+    // Use the same path as in the header component
+    const baseUrl = window.location.origin;
+    const baseHref = document.querySelector('base')?.getAttribute('href') || '/';
+    return `${baseUrl}${baseHref}assets/images/dubox-logo-dark.svg`;
+  }
+
+  /**
+   * Convert image URL to base64 data URL
+   */
+  private async imageUrlToBase64(url: string): Promise<string> {
+    // If already a data URL, return as is
+    if (url.startsWith('data:')) {
+      return url;
+    }
+    
+    try {
+      console.log('Fetching image from URL:', url);
+      const response = await fetch(url, { 
+        mode: 'cors',
+        credentials: 'include', // Include cookies for authenticated requests
+        cache: 'no-cache' // Ensure fresh fetch
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status} ${response.statusText}`);
+      }
+      
+      const blob = await response.blob();
+      console.log('Image blob received, type:', blob.type, 'size:', blob.size);
+      
+      return new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64String = reader.result as string;
+          console.log('Image converted to base64, length:', base64String.length);
+          resolve(base64String);
+        };
+        reader.onerror = (error) => {
+          console.error('FileReader error:', error);
+          reject(error);
+        };
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Error converting image to base64:', error);
+      // Return original URL as fallback
+      return url;
+    }
+  }
+
+  /**
+   * Wait for all images in the container to load
+   */
+  private async waitForImagesToLoad(container: HTMLElement): Promise<void> {
+    const images = container.querySelectorAll('img');
+    if (images.length === 0) {
+      return;
+    }
+    
+    const imagePromises = Array.from(images).map((img) => {
+      return new Promise<void>((resolve) => {
+        if (img.complete && img.naturalHeight !== 0) {
+          // Image already loaded
+          resolve();
+        } else {
+          // Wait for image to load or fail
+          const onLoad = () => {
+            img.removeEventListener('load', onLoad);
+            img.removeEventListener('error', onError);
+            resolve();
+          };
+          const onError = () => {
+            img.removeEventListener('load', onLoad);
+            img.removeEventListener('error', onError);
+            // Still resolve even if image fails (fallback will show)
+            resolve();
+          };
+          img.addEventListener('load', onLoad);
+          img.addEventListener('error', onError);
+          
+          // Timeout after 5 seconds
+          setTimeout(() => {
+            img.removeEventListener('load', onLoad);
+            img.removeEventListener('error', onError);
+            resolve();
+          }, 5000);
+        }
+      });
+    });
+    
+    await Promise.all(imagePromises);
+  }
+
+  /**
+   * Get DuBox logo SVG matching the header exactly
+   * Optimized for PDF rendering with proper viewBox and no hardcoded dimensions
    */
   private getDuBoxLogoSVG(): string {
-    return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 412.52 100">
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 50" width="100%" height="100%" preserveAspectRatio="xMidYMid meet" style="object-fit: contain; width: 100%; height: 100%; display: block; background: transparent;">
       <defs>
         <style>
           .logo-yellow{fill:#ffcb1b;}
-          .logo-dark{fill:#333;}
-          .logo-text{fill:#666;}
+          .logo-dark{fill:#2d3748;}
+          .logo-gray{fill:#718096;}
         </style>
       </defs>
-      <!-- D -->
-      <path class="logo-dark" d="M79.89,9.72h37.49v25.54l-11.44,11.23h-26.04V9.72ZM69.98,0v56.2h40.6l16.7-16.38V0h-57.3Z"/>
-      <!-- U -->
-      <polygon class="logo-dark" points="187.72 0 187.72 46.49 150.23 46.49 150.23 0 140.32 0 140.32 56.21 197.62 56.21 197.62 0 187.72 0"/>
-      <!-- B -->
-      <path class="logo-dark" d="M220.57,9.72h37.49v13.53h-19.84v9.71h19.84v13.53h-37.49V9.72ZM210.66,56.2h57.3V0h-57.3v56.2Z"/>
-      <!-- O -->
-      <path class="logo-dark" d="M290.91,9.72h37.49v36.77h-37.49V9.72ZM281,56.2h57.3V0h-57.3v56.2Z"/>
-      <!-- X -->
-      <polygon class="logo-dark" points="399.43 0 380.73 20.82 362.03 0 348.94 0 374.14 28.15 348.93 56.2 362.19 56.2 380.73 35.51 399.26 56.2 412.52 56.2 387.31 28.15 412.52 0 399.43 0"/>
-      <!-- Yellow Box -->
-      <polygon class="logo-yellow" points="0 0 0 56.54 40.1 56.54 56.59 40.05 56.59 0 0 0"/>
-      <!-- Company Text -->
-      <text x="206" y="75" text-anchor="middle" font-size="14" font-weight="600" class="logo-text" font-family="QA, sans-serif">INDUSTRIAL PRECAST PRODUCTS</text>
+      <!-- Yellow Box Icon (left side) -->
+      <rect class="logo-yellow" x="0" y="5" width="15" height="30" rx="1"/>
+      <!-- DUBOX Text -->
+      <text x="20" y="25" font-family="Arial, sans-serif" font-size="24" font-weight="700" class="logo-dark">DUBOX</text>
+      <!-- AN AMANA. COMPANY Text (subtitle) -->
+      <text x="20" y="40" font-family="Arial, sans-serif" font-size="8" font-weight="400" class="logo-gray" letter-spacing="0.5">AN AMANA. COMPANY</text>
     </svg>`;
   }
 
@@ -650,32 +890,26 @@ export class WirExportService {
         display: grid;
         grid-template-columns: 1fr 1fr 1fr;
         border-bottom: 2px solid #000;
+        min-height: 60px;
+        max-height: 60px;
       }
       
       .logo-box {
-        padding: 20px 15px;
         display: flex;
-        align-items: center;
+        flex-direction: column;
         justify-content: center;
-        min-height: 70px;
+        align-items: center;
+        padding: 5px;
+        min-height: 60px;
+        max-height: 60px;
         border-right: 2px solid #000;
-        background: #fff;
+        background: transparent;
+        position: relative;
+        overflow: hidden;
       }
       
       .logo-box:last-child {
         border-right: none;
-      }
-      
-      .logo-box.logo-amaala {
-        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-      }
-      
-      .logo-box.logo-parsons {
-        background: linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%);
-      }
-      
-      .logo-box.logo-amana {
-        background: linear-gradient(135deg, #fff3e0 0%, #ffffff 100%);
       }
       
       .logo-text {
@@ -694,6 +928,124 @@ export class WirExportService {
       .logo-box.logo-amana .logo-text {
         color: #c41230;
         font-weight: 900;
+      }
+      
+      /* Logo Container - Fixed height wrapper */
+      .logo-container {
+        height: 40px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+      }
+      
+      /* Logo Image Styling */
+      .logo-image {
+        object-fit: contain;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      
+      /* Dual Logo Container (Section 3) - Vertical Stack */
+      .logo-box.logo-dual {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 5px;
+        gap: 4px;
+        background: transparent;
+      }
+      
+      /* Application Logo Container (Top in Section 3) */
+      .logo-app-container {
+        height: 28px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+      }
+      
+      .logo-app-container svg {
+        object-fit: contain;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      
+      .logo-app-container .logo-app {
+        object-fit: contain;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      
+      .logo-app-container img.logo-app {
+        object-fit: contain;
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+      
+      .logo-app-container div {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+      }
+      
+      /* Contractor Logo Container (Bottom in Section 3) */
+      .logo-contractor-container {
+        height: 22px;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: transparent;
+      }
+      
+      .logo-contractor-container .logo-image,
+      .logo-contractor {
+        object-fit: contain;
+        width: 100%;
+        height: 100%;
+      }
+      
+      .logo-fallback {
+        position: absolute;
+        bottom: 6px;
+        font-size: 11px;
+        opacity: 0.6;
+        z-index: 1;
+      }
+      
+      /* Single logo box (non-dual) styling */
+      .logo-box:not(.logo-dual) .logo-container {
+        height: 40px;
+      }
+      
+      .logo-box:not(.logo-dual) .logo-image {
+        object-fit: contain;
+        width: 100%;
+        height: 100%;
+      }
+      
+      /* Single logo box (non-dual) application logo */
+      .logo-box:not(.logo-dual) .logo-app-container {
+        height: 40px;
+        background: transparent;
+      }
+      
+      .logo-box:not(.logo-dual) .logo-app-container img.logo-app,
+      .logo-box:not(.logo-dual) .logo-app-container svg {
+        object-fit: contain;
+        width: 100%;
+        height: 100%;
       }
       
       /* Title Bar */

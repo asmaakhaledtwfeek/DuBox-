@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormGroup, FormArray, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Location } from '@angular/common';
 import { WIRService } from '../../../core/services/wir.service';
 import { WIRCheckpoint, AddChecklistItemsRequest, PredefinedChecklistItemWithChecklistDto } from '../../../core/models/wir.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
@@ -52,12 +53,16 @@ export class AddChecklistItemsComponent implements OnInit {
   // Collapsible state - single open index for accordion behavior
   openChecklistIndex: number | null = 0; // First one open by default
   openSectionIndexMap: { [checklistIndex: number]: number | null } = {};
+  
+  // Track if user came from quality/inspector route
+  private isQualityRoute = false;
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private fb: FormBuilder,
-    private wirService: WIRService
+    private wirService: WIRService,
+    private location: Location
   ) {}
 
   ngOnInit(): void {
@@ -65,6 +70,12 @@ export class AddChecklistItemsComponent implements OnInit {
     this.boxId = this.route.snapshot.params['boxId'];
     this.activityId = this.route.snapshot.params['activityId'];
     this.wirId = this.route.snapshot.params['wirId'];
+    
+    // Detect if user came from quality/inspector route
+    const fromParam = this.route.snapshot.queryParams['from'];
+    this.isQualityRoute = fromParam === 'quality';
+    
+    console.log('Add Checklist Items - from param:', fromParam, 'isQualityRoute:', this.isQualityRoute);
     
     this.initForm();
     this.loadWIRCheckpoint();
@@ -379,8 +390,11 @@ export class AddChecklistItemsComponent implements OnInit {
         }, 0);
 
         // Navigate back to qa-qc-checklist page, Step 2 (add-items)
+        const basePath = this.isQualityRoute ? '/quality/projects' : '/projects';
+        console.log('onSubmit - isQualityRoute:', this.isQualityRoute, 'basePath:', basePath);
+        
         this.router.navigate([
-          '/projects',
+          basePath,
           this.projectId,
           'boxes',
           this.boxId,
@@ -410,16 +424,23 @@ export class AddChecklistItemsComponent implements OnInit {
   }
 
   goBack(): void {
-    // Navigate back to the qa-qc-checklist page
+    // Navigate back to the qa-qc-checklist page, Step 2 (add-items)
+    const basePath = this.isQualityRoute ? '/quality/projects' : '/projects';
+    console.log('goBack - isQualityRoute:', this.isQualityRoute, 'basePath:', basePath);
+    
     this.router.navigate([
-      '/projects',
+      basePath,
       this.projectId,
       'boxes',
       this.boxId,
       'activities',
       this.activityId,
       'qa-qc'
-    ]);
+    ], { 
+      queryParams: { 
+        step: 'add-items'
+      }
+    });
   }
 
   private markFormGroupTouched(formGroup: FormGroup): void {

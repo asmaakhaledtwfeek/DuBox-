@@ -1313,6 +1313,10 @@ console.log(expectedWirCode);
       return;
     }
 
+    // Detect if we're on the quality route by checking the current URL
+    const isQualityRoute = this.router.url.includes('/quality/');
+    console.log('openAddPredefinedItemsModal - Current URL:', this.router.url, 'isQualityRoute:', isQualityRoute);
+    
     // Construct the route to the add-checklist-items page
     const route = [
       '/projects',
@@ -1326,7 +1330,13 @@ console.log(expectedWirCode);
       'add-checklist-items'
     ];
 
-    this.router.navigate(route);
+    // Pass query parameter to indicate if coming from quality route
+    const queryParams = isQualityRoute ? { from: 'quality' } : {};
+    console.log('Navigating to add-checklist-items with queryParams:', queryParams);
+    
+    this.router.navigate(route, { 
+      queryParams 
+    });
   }
 
   closeAddPredefinedItemsModal(): void {

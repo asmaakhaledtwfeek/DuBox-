@@ -9846,7 +9846,7 @@
   grid-template-columns: 1fr 1fr; // Two columns: left (Activity Progress) and right (Delivery cards)
   gap: 24px;
   margin-bottom: 24px;
-  align-items: stretch; // Make all cards stretch to equal height
+  align-items: start; // Align items to start to allow natural height
 
   .chart-card {
     margin-bottom: 0;
@@ -9854,61 +9854,59 @@
     display: flex;
     flex-direction: column;
     grid-column: 1; // Left column
-    min-height: 0; // Allow flex items to shrink
   }
 
   .delivery-info-wrapper {
     display: flex;
     flex-direction: column; // Stack Concrete Panel and Pod Delivery vertically
     gap: 24px;
-    height: 100%;
     grid-column: 2; // Right column
-    min-height: 0; // Allow flex container to shrink
-    align-items: stretch; // Ensure children stretch to fill
-    overflow: hidden; // Prevent wrapper from causing overflow issues
+    align-items: stretch; // Ensure children stretch to fill width
   }
 
   .delivery-card {
     margin-bottom: 0;
-    flex: 1; // Each delivery card takes equal space
     display: flex;
     flex-direction: column;
-    min-height: 0; // Allow flex items to shrink below content size
-    overflow: hidden; // Prevent content from overflowing card boundaries
+    flex: 0 0 auto; // Don't grow or shrink, use natural content size
+    overflow: visible; // Allow content to be fully visible
 
     .delivery-grid {
-      flex: 1;
-      overflow: hidden; // Prevent grid content from overflowing
-      min-height: 0;
+      overflow: visible; // Show all content
     }
   }
   
-  // Ensure concrete panel card content doesn't overflow
+  // Ensure concrete panel card content is fully visible
   .concrete-panel-card {
-    overflow: hidden;
+    overflow: visible;
     
     .concrete-grid {
-      overflow: hidden;
-      min-height: 0;
+      overflow: visible;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 12px;
+      padding: 16px;
       
       .delivery-item {
-        overflow: hidden;
+        overflow: visible;
         
         .rejection-reason {
-          overflow: hidden;
           word-wrap: break-word;
           word-break: break-word;
+          overflow: visible;
           
           .rejection-reason-text {
-            overflow: hidden;
-            text-overflow: ellipsis;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
+            display: block;
+            overflow: visible;
           }
         }
       }
     }
+  }
+
+  // Pod delivery card should have equal or smaller height than concrete panel
+  .pod-delivery-card-v2 {
+    overflow: visible;
   }
 }
 
@@ -10494,7 +10492,7 @@
     background: #ffffff;
     border-radius: 16px;
     border: 1px solid #e5e7eb;
-    overflow: hidden;
+    overflow: visible; // Allow content to be fully visible
     transition: all 0.3s ease;
 
     &:hover {
@@ -10606,16 +10604,17 @@
 
     // Form Content Area
     .pod-form-content {
-      padding: 20px;
-      max-height: 200px;
+      padding: 15px;
+      max-height: none; // Allow content to expand to its natural height
       opacity: 1;
       transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-      overflow: hidden;
+      overflow: visible; // Show all content
 
       &.collapsed {
         max-height: 0;
         padding: 0 20px;
         opacity: 0;
+        overflow: hidden;
       }
     }
 
@@ -10652,7 +10651,7 @@
 
     .pod-input {
       width: 100%;
-      padding: 12px 14px;
+      padding: 10px 10px;
       font-size: 14px;
       color: #1e293b;
       background: #f8fafc;
@@ -10693,7 +10692,7 @@
       &.visible {
         opacity: 1;
         max-height: 60px;
-        padding-top: 16px;
+        padding-top: 10px;
         pointer-events: auto;
       }
     }
@@ -10702,8 +10701,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 8px;
-      padding: 10px 20px;
+      gap: 5px;
+      padding: 15px 20px;
       font-size: 13px;
       font-weight: 600;
       color: white;

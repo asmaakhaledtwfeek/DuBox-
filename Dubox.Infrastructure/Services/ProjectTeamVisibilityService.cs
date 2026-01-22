@@ -16,6 +16,7 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
     private  string SystemAdminRole = SystemRoleEnum.SystemAdmin.ToString();
     private  string ProjectManagerRole = SystemRoleEnum.ProjectManager.ToString();
     private  string ViewerRole = SystemRoleEnum.Viewer.ToString();
+    private  string QCInspectorRole = SystemRoleEnum.QCInspector.ToString();
 
     public ProjectTeamVisibilityService(
         ICurrentUserService currentUserService,
@@ -59,14 +60,35 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
             return pmAccessibleProjects;
         }
 
-        var ownProjects = await _context.Projects
+        var isQCInspector = await _userRoleService.UserHasRoleAsync(userId, QCInspectorRole, cancellationToken);
+        if (isQCInspector)
+        { 
+           var inspectorProjects = await GetInspectorProjectsForUserAsync(userId, cancellationToken);
+            
+            var ownProjects = await _context.Projects
+                .Where(p => p.CreatedBy == userId)
+                .Select(p => p.ProjectId)
+                .ToListAsync(cancellationToken);
+
+            var teamCreatorProjects = await GetAllTeamCreatorProjectsForUserAsync(userId, cancellationToken);
+
+            var allQCInspectorProjects = ownProjects
+                .Union(inspectorProjects)
+                .Union(teamCreatorProjects)
+                .Distinct()
+                .ToList();
+
+            return allQCInspectorProjects;
+        }
+
+        var userOwnProjects = await _context.Projects
             .Where(p => p.CreatedBy == userId)
             .Select(p => p.ProjectId)
             .ToListAsync(cancellationToken);
 
-        var teamCreatorProjects = await GetAllTeamCreatorProjectsForUserAsync(userId, cancellationToken);
+        var userTeamCreatorProjects = await GetAllTeamCreatorProjectsForUserAsync(userId, cancellationToken);
 
-        var allAccessibleProjects = ownProjects.Union(teamCreatorProjects).Distinct().ToList();
+        var allAccessibleProjects = userOwnProjects.Union(userTeamCreatorProjects).Distinct().ToList();
 
         return allAccessibleProjects;
     }
@@ -123,6 +145,18 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
         var projectIds = await _context.Projects
             .Where(p => p.CreatedBy.HasValue && systemAdminIds.Contains(p.CreatedBy.Value))
             .Select(p => p.ProjectId)
+            .ToListAsync(cancellationToken);
+
+        return projectIds;
+    }
+    
+    private async Task<List<Guid>> GetInspectorProjectsForUserAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        // Find all projects where the user is assigned as an inspector in any checkpoints
+        var projectIds = await _context.WIRCheckpoints
+            .Where(wc => wc.InspectorId.HasValue && wc.InspectorId.Value == userId)
+            .Select(wc => wc.Box.ProjectId)
+            .Distinct()
             .ToListAsync(cancellationToken);
 
         return projectIds;

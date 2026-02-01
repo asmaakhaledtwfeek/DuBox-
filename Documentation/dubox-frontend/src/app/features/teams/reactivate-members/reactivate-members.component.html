@@ -1,0 +1,173 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="page-content">
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading inactive members...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error && !loading && !team" class="error-state">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 8v4M12 16h.01"/>
+      </svg>
+      <p>{{ error }}</p>
+      <button class="btn btn-secondary" (click)="onCancel()">Back to Crew</button>
+    </div>
+
+    <!-- Page Content -->
+    <div *ngIf="!loading && team" class="form-container">
+      <!-- Page Header -->
+      <div class="page-header">
+        <button class="btn-back" (click)="onCancel()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+          Back to Crew
+        </button>
+        <div class="header-content">
+          <div class="header-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 4v6h6"/>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="page-title">Reactivate Inactive Members</h1>
+            <p class="page-subtitle">{{ team.teamName }} ({{ team.teamCode }}) • {{ team.departmentName }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success Message -->
+      <div *ngIf="successMessage" class="success-message">
+        <div class="alert-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+        </div>
+        <div class="alert-content">
+          <div class="alert-title">Success!</div>
+          <div class="alert-message">{{ successMessage }}</div>
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div *ngIf="error && !loading" class="error-message">
+        <div class="alert-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <div class="alert-content">
+          <div class="alert-title">Error</div>
+          <div class="alert-message">{{ error }}</div>
+        </div>
+      </div>
+
+      <!-- Info Badge -->
+      <div *ngIf="inactiveTeamMembers && inactiveTeamMembers.members.length > 0" class="info-badge">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 16v-4M12 8h.01"/>
+        </svg>
+        <span>These members can be reactivated to rejoin the crew</span>
+      </div>
+
+      <!-- Inactive Members Section -->
+      <div class="members-section">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Inactive Members</h2>
+            <p class="section-description">
+              {{ inactiveTeamMembers?.members?.length || 0 }} 
+              {{ (inactiveTeamMembers?.members?.length === 1) ? 'inactive member' : 'inactive members' }} 
+              found
+            </p>
+          </div>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!loading && (!inactiveTeamMembers || inactiveTeamMembers.members.length === 0)" class="empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          <h3>No Inactive Members</h3>
+          <p>All members in this crew are currently active.</p>
+        </div>
+
+        <!-- Inactive Members List -->
+        <div *ngIf="!loading && inactiveTeamMembers && inactiveTeamMembers.members.length > 0" class="members-grid">
+          <div *ngFor="let member of inactiveTeamMembers.members" class="member-card inactive-member">
+            <div class="member-header">
+              <div class="member-avatar">
+                <span class="avatar-initials">{{ getUserInitials(member.employeeName || member.fullName || member.email) }}</span>
+              </div>
+              <div class="member-name">{{ member.employeeName || member.fullName || member.email }}</div>
+            </div>
+            <div class="member-details">
+              <div class="detail-item" *ngIf="member.email">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+                <span>{{ member.email }}</span>
+              </div>
+              <div class="detail-item" *ngIf="member.employeeCode">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <span>{{ member.employeeCode }}</span>
+              </div>
+            </div>
+            <div class="member-actions">
+              <button 
+                class="btn btn-primary btn-sm" 
+                (click)="reactivateMember(member)"
+                [disabled]="reactivatingMember"
+              >
+                <svg *ngIf="!reactivatingMember || reactivatingMemberId !== member.teamMemberId" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 4v6h6"/>
+                  <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+                </svg>
+                <div *ngIf="reactivatingMember && reactivatingMemberId === member.teamMemberId" class="spinner-small"></div>
+                <span *ngIf="reactivatingMember && reactivatingMemberId === member.teamMemberId">Reactivating...</span>
+                <span *ngIf="!reactivatingMember || reactivatingMemberId !== member.teamMemberId">Reactivate</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Actions -->
+      <div class="form-actions">
+        <button 
+          type="button" 
+          class="btn btn-secondary" 
+          (click)="onCancel()"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/>
+            <line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+

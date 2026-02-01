@@ -1,0 +1,767 @@
+/* DuBox Color Palette - Based on AMANA Brand Colors */
+:root {
+  /* AMANA Rainbow Gradient Colors - Extracted from Logo Stripe */
+  --amana-red-1: #e63946;      /* Start of red */
+  --amana-red-2: #dc3545;
+  --amana-orange: #ff6b35;     /* Red-Yellow transition */
+  --amana-yellow-1: #ffa500;   /* Yellow-orange */
+  --amana-yellow: #ffc107;     /* Pure yellow */
+  --amana-yellow-green: #9bc53d; /* Yellow-Green transition */
+  --amana-green-1: #52b788;    /* Light green */
+  --amana-green: #2d6a4f;      /* Pure green */
+  --amana-teal: #1b9aaa;       /* Green-Blue transition */
+  --amana-blue-1: #4ea8de;     /* Light blue */
+  --amana-blue: #1976d2;       /* Pure blue */
+  --amana-indigo: #5e60ce;     /* Blue-Purple transition */
+  --amana-purple-1: #7209b7;   /* Light purple */
+  --amana-purple: #5a189a;     /* Deep purple */
+  
+  /* Darker versions for UI elements */
+  --amana-red-dark: #c1121f;
+  --amana-orange-dark: #d45d1e;
+  --amana-yellow-dark: #e6ac00;
+  --amana-green-dark: #1b4332;
+  --amana-blue-dark: #0d47a1;
+  --amana-purple-dark: #3c096c;
+
+  /* Primary Colors - Use gradient colors for variety */
+  --primary-color: #2d6a4f;    /* Green from gradient */
+  --primary-light: #52b788;
+  --primary-dark: #1b4332;
+  --primary-gradient: linear-gradient(135deg, #2d6a4f 0%, #52b788 50%, #1b9aaa 100%);
+
+  /* Secondary Colors - Blue from gradient */
+  --secondary-color: #1976d2;
+  --secondary-light: #4ea8de;
+  --secondary-dark: #0d47a1;
+  
+  /* Accent Colors for variety */
+  --accent-orange: #ff6b35;
+  --accent-teal: #1b9aaa;
+  --accent-purple: #5e60ce;
+
+  /* Neutral Colors */
+  --white: #ffffff;
+  --black: #000000;
+  --gray-50: #f9fafb;
+  --gray-100: #f3f4f6;
+  --gray-200: #e5e7eb;
+  --gray-300: #d1d5db;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --gray-600: #4b5563;
+  --gray-700: #374151;
+  --gray-800: #1f2937;
+  --gray-900: #111827;
+
+  /* Status Colors - Using AMANA Gradient Colors */
+  --success-color: #2d6a4f;    /* Green from gradient */
+  --success-light: #52b788;
+  --success-dark: #1b4332;
+  
+  --warning-color: #ffa500;    /* Yellow-orange from gradient */
+  --warning-light: #ffc107;
+  --warning-dark: #e6ac00;
+  
+  --error-color: #dc3545;      /* Red from gradient */
+  --error-light: #e63946;
+  --error-dark: #c1121f;
+  
+  --info-color: #1976d2;       /* Blue from gradient */
+  --info-light: #4ea8de;
+  --info-dark: #0d47a1;
+
+  /* Typography */
+  --font-family: 'QA', sans-serif;
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.25rem;    /* 20px */
+  --font-size-2xl: 1.5rem;    /* 24px */
+  --font-size-3xl: 1.875rem;  /* 30px */
+  --font-size-4xl: 2.25rem;   /* 36px */
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;   /* 4px */
+  --spacing-sm: 0.5rem;    /* 8px */
+  --spacing-md: 1rem;      /* 16px */
+  --spacing-lg: 1.5rem;    /* 24px */
+  --spacing-xl: 2rem;      /* 32px */
+  --spacing-2xl: 3rem;     /* 48px */
+  --spacing-3xl: 4rem;     /* 64px */
+
+  /* Border Radius */
+  --radius-sm: 0.25rem;    /* 4px */
+  --radius-md: 0.5rem;     /* 8px */
+  --radius-lg: 0.75rem;    /* 12px */
+  --radius-xl: 1rem;       /* 16px */
+  --radius-2xl: 1.5rem;    /* 24px */
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  /* Transitions */
+  --transition-fast: 150ms ease-in-out;
+  --transition-base: 300ms ease-in-out;
+  --transition-slow: 500ms ease-in-out;
+
+  /* Layout */
+  --header-height: 64px;
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 80px;
+}
+
+/* Global Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--gray-900);
+  background-color: var(--gray-50);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--gray-900);
+  margin-bottom: var(--spacing-md);
+}
+
+h1 { font-size: var(--font-size-4xl); }
+h2 { font-size: var(--font-size-3xl); }
+h3 { font-size: var(--font-size-2xl); }
+h4 { font-size: var(--font-size-xl); }
+h5 { font-size: var(--font-size-lg); }
+h6 { font-size: var(--font-size-base); }
+
+p {
+  margin-bottom: var(--spacing-md);
+}
+
+a {
+  color: var(--amana-blue);
+  text-decoration: none;
+  transition: color var(--transition-fast);
+}
+
+a:hover {
+  color: var(--amana-teal);
+  text-decoration: underline;
+}
+
+/* Utility Classes */
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--spacing-md);
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.gap-sm { gap: var(--spacing-sm); }
+.gap-md { gap: var(--spacing-md); }
+.gap-lg { gap: var(--spacing-lg); }
+
+.text-center { text-align: center; }
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+
+.font-bold { font-weight: 700; }
+.font-semibold { font-weight: 600; }
+.font-medium { font-weight: 500; }
+
+/* Card Styles */
+.card {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-lg);
+  transition: box-shadow var(--transition-base);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-lg);
+}
+
+/* Gradient-bordered cards */
+.card-gradient-border {
+  position: relative;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-lg);
+    padding: 2px;
+    background: linear-gradient(135deg, 
+      var(--amana-red-1), 
+      var(--amana-orange), 
+      var(--amana-yellow), 
+      var(--amana-green), 
+      var(--amana-teal), 
+      var(--amana-blue), 
+      var(--amana-purple));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+  }
+}
+
+.card-gradient-top {
+  border-top: 3px solid transparent;
+  background: 
+    linear-gradient(var(--white), var(--white)) padding-box,
+    linear-gradient(90deg, 
+      var(--amana-red-1) 0%, 
+      var(--amana-orange) 20%, 
+      var(--amana-yellow) 40%, 
+      var(--amana-green) 60%, 
+      var(--amana-blue) 80%, 
+      var(--amana-purple) 100%) border-box;
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: var(--shadow-md);
+}
+
+/* Button Styles */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-lg);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  color: var(--white);
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-secondary {
+  background: var(--secondary-color);
+  color: var(--white);
+}
+
+.btn-secondary:hover {
+  background: var(--secondary-dark);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+}
+
+.btn-outline:hover {
+  background: var(--primary-color);
+  color: var(--white);
+}
+
+/* Additional colorful button variants using gradient colors */
+.btn-teal {
+  background: linear-gradient(135deg, var(--amana-teal) 0%, var(--amana-blue-1) 100%);
+  color: var(--white);
+}
+
+.btn-teal:hover {
+  background: linear-gradient(135deg, var(--amana-blue-1) 0%, var(--amana-indigo) 100%);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-orange {
+  background: linear-gradient(135deg, var(--amana-orange) 0%, var(--amana-yellow-1) 100%);
+  color: var(--white);
+}
+
+.btn-orange:hover {
+  background: linear-gradient(135deg, var(--amana-yellow-1) 0%, var(--amana-orange) 100%);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-purple {
+  background: linear-gradient(135deg, var(--amana-purple) 0%, var(--amana-indigo) 100%);
+  color: var(--white);
+}
+
+.btn-purple:hover {
+  background: linear-gradient(135deg, var(--amana-indigo) 0%, var(--amana-purple-1) 100%);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-gradient-rainbow {
+  background: linear-gradient(90deg, 
+    var(--amana-red-1) 0%, 
+    var(--amana-orange) 20%,
+    var(--amana-yellow) 40%, 
+    var(--amana-green) 60%, 
+    var(--amana-blue) 80%, 
+    var(--amana-purple) 100%);
+  color: var(--white);
+  font-weight: 600;
+}
+
+.btn-gradient-rainbow:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Status Badge Styles */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  border-radius: var(--radius-full);
+}
+
+.badge-success {
+  background: var(--success-light);
+  color: var(--success-dark);
+}
+
+.badge-warning {
+  background: var(--warning-light);
+  color: var(--warning-dark);
+}
+
+.badge-neutral {
+  background: var(--gray-200);
+  color: var(--gray-700);
+}
+
+.badge-error {
+  background: var(--error-light);
+  color: var(--error-dark);
+}
+
+.badge-danger {
+  background: var(--error-light);
+  color: var(--error-dark);
+}
+
+.badge-info {
+  background: var(--info-light);
+  color: var(--info-dark);
+}
+
+.badge-teal {
+  background: rgba(27, 154, 170, 0.15);
+  color: var(--amana-teal);
+}
+
+.badge-orange {
+  background: rgba(255, 107, 53, 0.15);
+  color: var(--amana-orange-dark);
+}
+
+.badge-purple {
+  background: rgba(114, 9, 183, 0.15);
+  color: var(--amana-purple);
+}
+
+.badge-indigo {
+  background: rgba(94, 96, 206, 0.15);
+  color: var(--amana-indigo);
+}
+
+/* Loading Spinner - Rainbow */
+.spinner {
+  border: 3px solid var(--gray-200);
+  border-top: 3px solid var(--amana-red-1);
+  border-right: 3px solid var(--amana-yellow);
+  border-bottom: 3px solid var(--amana-green);
+  border-left: 3px solid var(--amana-blue);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Alternative gradient spinner */
+.spinner-gradient {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--amana-red-1) 0deg,
+    var(--amana-orange) 45deg,
+    var(--amana-yellow) 90deg,
+    var(--amana-green) 135deg,
+    var(--amana-teal) 180deg,
+    var(--amana-blue) 225deg,
+    var(--amana-indigo) 270deg,
+    var(--amana-purple) 315deg,
+    var(--amana-red-1) 360deg
+  );
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 0);
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 0);
+  animation: spin 1.5s linear infinite;
+}
+
+/* Form Styles */
+.form-group {
+  margin-bottom: var(--spacing-lg);
+}
+
+.form-label {
+  display: block;
+  margin-bottom: var(--spacing-sm);
+  font-weight: 500;
+  color: var(--gray-700);
+}
+
+.form-control {
+  width: 100%;
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-size: var(--font-size-base);
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius-md);
+  transition: border-color var(--transition-fast);
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: var(--amana-teal);
+  box-shadow: 0 0 0 3px rgba(27, 154, 170, 0.15);
+}
+
+.form-error {
+  color: var(--error-color);
+  font-size: var(--font-size-sm);
+  margin-top: var(--spacing-xs);
+}
+
+/* Table Styles */
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  background: var(--gray-50);
+  padding: var(--spacing-md);
+  text-align: left;
+  font-weight: 600;
+  color: var(--gray-700);
+  border-bottom: 2px solid var(--gray-200);
+}
+
+.table td {
+  padding: var(--spacing-md);
+  border-bottom: 1px solid var(--gray-200);
+}
+
+.table tr:hover {
+  background: var(--gray-50);
+}
+
+/* AMANA Gradient Color Utilities */
+/* Text Colors - Full Gradient Spectrum */
+.text-red { color: var(--amana-red-1); }
+.text-orange { color: var(--amana-orange); }
+.text-yellow { color: var(--amana-yellow); }
+.text-yellow-green { color: var(--amana-yellow-green); }
+.text-green { color: var(--amana-green); }
+.text-teal { color: var(--amana-teal); }
+.text-blue { color: var(--amana-blue); }
+.text-indigo { color: var(--amana-indigo); }
+.text-purple { color: var(--amana-purple); }
+
+/* Background Colors - Full Gradient Spectrum */
+.bg-red { background-color: var(--amana-red-1); }
+.bg-orange { background-color: var(--amana-orange); }
+.bg-yellow { background-color: var(--amana-yellow); }
+.bg-yellow-green { background-color: var(--amana-yellow-green); }
+.bg-green { background-color: var(--amana-green); }
+.bg-teal { background-color: var(--amana-teal); }
+.bg-blue { background-color: var(--amana-blue); }
+.bg-indigo { background-color: var(--amana-indigo); }
+.bg-purple { background-color: var(--amana-purple); }
+
+/* Border Colors */
+.border-red { border-color: var(--amana-red-1); }
+.border-orange { border-color: var(--amana-orange); }
+.border-green { border-color: var(--amana-green); }
+.border-teal { border-color: var(--amana-teal); }
+.border-blue { border-color: var(--amana-blue); }
+.border-purple { border-color: var(--amana-purple); }
+
+/* AMANA Rainbow Gradients */
+.amana-rainbow-gradient {
+  background: linear-gradient(90deg, 
+    var(--amana-red-1) 0%, 
+    var(--amana-orange) 12%,
+    var(--amana-yellow) 25%, 
+    var(--amana-yellow-green) 37%,
+    var(--amana-green) 50%, 
+    var(--amana-teal) 62%,
+    var(--amana-blue) 75%, 
+    var(--amana-indigo) 87%,
+    var(--amana-purple) 100%);
+}
+
+.amana-rainbow-gradient-vertical {
+  background: linear-gradient(180deg, 
+    var(--amana-red-1) 0%, 
+    var(--amana-orange) 12%,
+    var(--amana-yellow) 25%, 
+    var(--amana-yellow-green) 37%,
+    var(--amana-green) 50%, 
+    var(--amana-teal) 62%,
+    var(--amana-blue) 75%, 
+    var(--amana-indigo) 87%,
+    var(--amana-purple) 100%);
+}
+
+/* Gradient variants for different UI sections */
+.gradient-warm {
+  background: linear-gradient(135deg, var(--amana-red-1) 0%, var(--amana-orange) 50%, var(--amana-yellow) 100%);
+}
+
+.gradient-cool {
+  background: linear-gradient(135deg, var(--amana-teal) 0%, var(--amana-blue) 50%, var(--amana-purple) 100%);
+}
+
+.gradient-nature {
+  background: linear-gradient(135deg, var(--amana-yellow-green) 0%, var(--amana-green) 50%, var(--amana-teal) 100%);
+}
+
+.gradient-sunset {
+  background: linear-gradient(135deg, var(--amana-orange) 0%, var(--amana-red-1) 50%, var(--amana-purple) 100%);
+}
+
+/* Responsive Design - Mobile Scaling */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 0;
+    
+    /* Scale down font sizes by ~10-15% */
+    --font-size-xs: 0.7rem;      /* 11.2px */
+    --font-size-sm: 0.8rem;      /* 12.8px */
+    --font-size-base: 0.9rem;    /* 14.4px */
+    --font-size-lg: 1rem;        /* 16px */
+    --font-size-xl: 1.1rem;      /* 17.6px */
+    --font-size-2xl: 1.3rem;     /* 20.8px */
+    --font-size-3xl: 1.6rem;     /* 25.6px */
+    --font-size-4xl: 2rem;       /* 32px */
+    
+    /* Scale down spacing by ~15-20% */
+    --spacing-xs: 0.2rem;        /* 3.2px */
+    --spacing-sm: 0.4rem;        /* 6.4px */
+    --spacing-md: 0.8rem;        /* 12.8px */
+    --spacing-lg: 1.2rem;        /* 19.2px */
+    --spacing-xl: 1.6rem;        /* 25.6px */
+    --spacing-2xl: 2.4rem;       /* 38.4px */
+    --spacing-3xl: 3.2rem;        /* 51.2px */
+    
+    /* Scale down border radius slightly */
+    --radius-sm: 0.2rem;         /* 3.2px */
+    --radius-md: 0.4rem;         /* 6.4px */
+    --radius-lg: 0.6rem;         /* 9.6px */
+    --radius-xl: 0.8rem;         /* 12.8px */
+    --radius-2xl: 1.2rem;        /* 19.2px */
+    
+    /* Scale down header height */
+    --header-height: 56px;
+  }
+
+  /* Base font size scaling */
+  body {
+    font-size: var(--font-size-base);
+  }
+
+  /* Scale down typography */
+  h1 { font-size: var(--font-size-3xl); }
+  h2 { font-size: var(--font-size-2xl); }
+  h3 { font-size: var(--font-size-xl); }
+  h4 { font-size: var(--font-size-lg); }
+  h5 { font-size: var(--font-size-base); }
+  h6 { font-size: var(--font-size-sm); }
+
+  /* Scale down container padding */
+  .container {
+    padding: 0 var(--spacing-sm);
+  }
+
+  /* Scale down card padding */
+  .card {
+    padding: var(--spacing-md);
+  }
+
+  .card-gradient-border,
+  .card-gradient-top {
+    padding: var(--spacing-md);
+  }
+
+  /* Scale down button padding and font */
+  .btn {
+    padding: calc(var(--spacing-xs) * 0.9) calc(var(--spacing-md) * 0.9);
+    font-size: var(--font-size-sm);
+    gap: var(--spacing-xs);
+  }
+
+  /* Scale down badge */
+  .badge {
+    padding: calc(var(--spacing-xs) * 0.8) calc(var(--spacing-sm) * 0.9);
+    font-size: var(--font-size-xs);
+  }
+
+  /* Scale down form elements */
+  .form-group {
+    margin-bottom: var(--spacing-md);
+  }
+
+  .form-label {
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-xs);
+  }
+
+  .form-control {
+    padding: calc(var(--spacing-xs) * 0.9) var(--spacing-sm);
+    font-size: var(--font-size-base);
+  }
+
+  /* Scale down table */
+  .table th,
+  .table td {
+    padding: var(--spacing-sm);
+    font-size: var(--font-size-sm);
+  }
+
+  /* Scale down spinner */
+  .spinner,
+  .spinner-gradient {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+/* Small Mobile - Additional scaling for very small screens */
+@media (max-width: 480px) {
+  :root {
+    /* Further scale down for very small screens */
+    --font-size-xs: 0.65rem;     /* 10.4px */
+    --font-size-sm: 0.75rem;     /* 12px */
+    --font-size-base: 0.85rem;   /* 13.6px */
+    --font-size-lg: 0.95rem;     /* 15.2px */
+    --font-size-xl: 1rem;        /* 16px */
+    --font-size-2xl: 1.2rem;     /* 19.2px */
+    --font-size-3xl: 1.4rem;     /* 22.4px */
+    --font-size-4xl: 1.8rem;     /* 28.8px */
+    
+    /* Further reduce spacing */
+    --spacing-xs: 0.15rem;       /* 2.4px */
+    --spacing-sm: 0.35rem;       /* 5.6px */
+    --spacing-md: 0.7rem;        /* 11.2px */
+    --spacing-lg: 1rem;          /* 16px */
+    --spacing-xl: 1.4rem;        /* 22.4px */
+    --spacing-2xl: 2rem;         /* 32px */
+    --spacing-3xl: 2.8rem;       /* 44.8px */
+  }
+
+  body {
+    font-size: var(--font-size-base);
+  }
+
+  h1 { font-size: var(--font-size-2xl); }
+  h2 { font-size: var(--font-size-xl); }
+  h3 { font-size: var(--font-size-lg); }
+  h4 { font-size: var(--font-size-base); }
+  h5 { font-size: var(--font-size-sm); }
+  h6 { font-size: var(--font-size-xs); }
+
+  .card {
+    padding: var(--spacing-sm);
+  }
+
+  .btn {
+    padding: calc(var(--spacing-xs) * 0.8) calc(var(--spacing-sm) * 0.9);
+    font-size: var(--font-size-xs);
+  }
+}
+
+/* Scrollbar Styles - Gradient */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--gray-100);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--amana-teal) 0%, var(--amana-blue) 50%, var(--amana-indigo) 100%);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--amana-blue) 0%, var(--amana-indigo) 50%, var(--amana-purple) 100%);
+}

@@ -1,0 +1,268 @@
+# Combined Azure Pipeline for DuBox (Frontend + Backend)
+# This pipeline builds and deploys both applications
+
+trigger:
+  branches:
+    include:
+      - main
+      - master
+      - develop
+
+pool:
+  vmImage: 'windows-latest'
+
+variables:
+  buildConfiguration: 'Release'
+  dotnetSdkVersion: '10.0.x'
+  nodeVersion: '20.x'
+
+stages:
+# ============================================
+# STAGE 1: BUILD BACKEND
+# ============================================
+- stage: BuildBackend
+  displayName: 'Build Backend API'
+  jobs:
+  - job: BuildBackendJob
+    displayName: 'Build .NET API'
+    steps:
+    
+    - task: UseDotNet@2
+      displayName: 'Install .NET SDK'
+      inputs:
+        version: $(dotnetSdkVersion)
+        includePreviewVersions: true
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore NuGet Packages'
+      inputs:
+        command: 'restore'
+        projects: '**/*.csproj'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Build Backend Solution'
+      inputs:
+        command: 'build'
+        projects: 'Dubox.Api/Dubox.Api.csproj'
+        arguments: '--configuration $(buildConfiguration) --no-restore'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Run Backend Tests'
+      inputs:
+        command: 'test'
+        projects: '**/*Tests.csproj'
+        arguments: '--configuration $(buildConfiguration) --no-build'
+      continueOnError: true
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Publish Backend API'
+      inputs:
+        command: 'publish'
+        publishWebProjects: false
+        projects: 'Dubox.Api/Dubox.Api.csproj'
+        arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/backend'
+        zipAfterPublish: true
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Backend Artifacts'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/backend'
+        ArtifactName: 'backend-drop'
+
+# ============================================
+# STAGE 2: BUILD FRONTEND
+# ============================================
+- stage: BuildFrontend
+  displayName: 'Build Frontend App'
+  dependsOn: [] # Run in parallel with backend
+  jobs:
+  - job: BuildFrontendJob
+    displayName: 'Build Angular App'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    
+    - task: NodeTool@0
+      displayName: 'Install Node.js'
+      inputs:
+        versionSpec: $(nodeVersion)
+    
+    - task: Npm@1
+      displayName: 'npm ci'
+      inputs:
+        command: 'ci'
+        workingDir: 'dubox-frontend'
+    
+    - task: Npm@1
+      displayName: 'Run Frontend Tests'
+      inputs:
+        command: 'custom'
+        workingDir: 'dubox-frontend'
+        customCommand: 'run test -- --watch=false --browsers=ChromeHeadless'
+      continueOnError: true
+    
+    - script: |
+        cd dubox-frontend
+        npm run build -- --configuration=production
+      displayName: 'Build Angular App'
+    
+    - task: CopyFiles@2
+      displayName: 'Copy Frontend Files'
+      inputs:
+        SourceFolder: 'dubox-frontend/dist/dubox-frontend/browser'
+        Contents: '**'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)/frontend'
+    
+    - script: |
+        cat > $(Build.ArtifactStagingDirectory)/frontend/web.config << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+          <system.webServer>
+            <rewrite>
+              <rules>
+                <rule name="Angular Routes" stopProcessing="true">
+                  <match url=".*" />
+                  <conditions logicalGrouping="MatchAll">
+                    <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+                    <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
+                  </conditions>
+                  <action type="Rewrite" url="/" />
+                </rule>
+              </rules>
+            </rewrite>
+          </system.webServer>
+        </configuration>
+        EOF
+      displayName: 'Create web.config'
+    
+    - task: ArchiveFiles@2
+      displayName: 'Archive Frontend Files'
+      inputs:
+        rootFolderOrFile: '$(Build.ArtifactStagingDirectory)/frontend'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/frontend.zip'
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Frontend Artifacts'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/frontend.zip'
+        ArtifactName: 'frontend-drop'
+
+# ============================================
+# STAGE 3: DEPLOY BACKEND
+# ============================================
+- stage: DeployBackend
+  displayName: 'Deploy Backend to Azure'
+  dependsOn: BuildBackend
+  condition: succeeded()
+  jobs:
+  - deployment: DeployBackendJob
+    displayName: 'Deploy API to App Service'
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@1
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'backend-drop'
+              downloadPath: '$(System.ArtifactsDirectory)'
+          
+          - task: AzureRmWebAppDeployment@4
+            displayName: 'Deploy Backend API'
+            inputs:
+              ConnectionType: 'AzureRM'
+              azureSubscription: '$(AZURE_SUBSCRIPTION_NAME)'
+              appType: 'webApp'
+              WebAppName: '$(BACKEND_APP_SERVICE_NAME)'
+              packageForLinux: '$(System.ArtifactsDirectory)/backend-drop/**/*.zip'
+          
+          - task: AzureAppServiceSettings@1
+            displayName: 'Configure Backend Settings'
+            inputs:
+              azureSubscription: '$(AZURE_SUBSCRIPTION_NAME)'
+              appName: '$(BACKEND_APP_SERVICE_NAME)'
+              resourceGroupName: '$(AZURE_RESOURCE_GROUP)'
+              appSettings: |
+                [
+                  {
+                    "name": "ASPNETCORE_ENVIRONMENT",
+                    "value": "Production"
+                  },
+                  {
+                    "name": "ConnectionStrings__Database",
+                    "value": "$(SQL_CONNECTION_STRING)"
+                  },
+                  {
+                    "name": "Jwt__SecretKey",
+                    "value": "$(JWT_SECRET_KEY)"
+                  },
+                  {
+                    "name": "Jwt__Issuer",
+                    "value": "$(JWT_ISSUER)"
+                  },
+                  {
+                    "name": "Jwt__Audience",
+                    "value": "$(JWT_AUDIENCE)"
+                  },
+                  {
+                    "name": "PublicAppSettings__PublicAppUrl",
+                    "value": "$(FRONTEND_URL)"
+                  }
+                ]
+
+# ============================================
+# STAGE 4: DEPLOY FRONTEND
+# ============================================
+- stage: DeployFrontend
+  displayName: 'Deploy Frontend to Azure'
+  dependsOn: BuildFrontend
+  condition: succeeded()
+  jobs:
+  - deployment: DeployFrontendJob
+    displayName: 'Deploy Frontend to App Service'
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@1
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'frontend-drop'
+              downloadPath: '$(System.ArtifactsDirectory)'
+          
+          - task: AzureRmWebAppDeployment@4
+            displayName: 'Deploy Frontend App'
+            inputs:
+              ConnectionType: 'AzureRM'
+              azureSubscription: '$(AZURE_SUBSCRIPTION_NAME)'
+              appType: 'webApp'
+              WebAppName: '$(FRONTEND_APP_SERVICE_NAME)'
+              packageForLinux: '$(System.ArtifactsDirectory)/frontend-drop/frontend.zip'
+          
+          - task: AzureAppServiceSettings@1
+            displayName: 'Configure Frontend Settings'
+            inputs:
+              azureSubscription: '$(AZURE_SUBSCRIPTION_NAME)'
+              appName: '$(FRONTEND_APP_SERVICE_NAME)'
+              resourceGroupName: '$(AZURE_RESOURCE_GROUP)'
+              appSettings: |
+                [
+                  {
+                    "name": "WEBSITE_NODE_DEFAULT_VERSION",
+                    "value": "20-lts"
+                  },
+                  {
+                    "name": "API_BASE_URL",
+                    "value": "$(BACKEND_URL)"
+                  }
+                ]
+
+
+
+

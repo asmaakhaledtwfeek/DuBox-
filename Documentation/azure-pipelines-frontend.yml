@@ -1,0 +1,167 @@
+# Azure Pipeline for DuBox Frontend (Angular Application)
+# This pipeline builds and deploys the Angular app to Azure App Service
+
+trigger:
+  branches:
+    include:
+      - main
+      - master
+      - develop
+  paths:
+    include:
+      - dubox-frontend/**
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+- group: DuBox-Variables  # Link to variable group for Azure resources and secrets
+- name: workingDirectory
+  value: '$(System.DefaultWorkingDirectory)/dubox-frontend'
+- name: nodeVersion
+  value: '20.x'
+- name: buildConfiguration
+  value: 'production'
+
+stages:
+- stage: Build
+  displayName: 'Build Frontend'
+  jobs:
+  - job: BuildJob
+    displayName: 'Build Angular App'
+    steps:
+    
+    - task: NodeTool@0
+      displayName: 'Install Node.js'
+      inputs:
+        versionSpec: $(nodeVersion)
+    
+    - task: Npm@1
+      displayName: 'Install Dependencies'
+      inputs:
+        command: 'ci'
+        workingDir: '$(workingDirectory)'
+    
+    - task: Npm@1
+      displayName: 'Run Tests'
+      inputs:
+        command: 'custom'
+        workingDir: '$(workingDirectory)'
+        customCommand: 'run test -- --watch=false --browsers=ChromeHeadless --code-coverage'
+      continueOnError: true
+    
+    - script: |
+        cd $(workingDirectory)
+        npm run build -- --configuration=$(buildConfiguration)
+      displayName: 'Build Angular App'
+    
+    - task: CopyFiles@2
+      displayName: 'Copy Files to Staging'
+      inputs:
+        SourceFolder: '$(workingDirectory)/dist/dubox-frontend/browser'
+        Contents: '**'
+        TargetFolder: '$(Build.ArtifactStagingDirectory)/frontend'
+        CleanTargetFolder: true
+    
+    # Create web.config for Azure App Service
+    - task: FileTransform@1
+      displayName: 'Create web.config'
+      inputs:
+        folderPath: '$(Build.ArtifactStagingDirectory)/frontend'
+        fileType: 'xml'
+        targetFiles: 'web.config'
+    
+    - script: |
+        cat > $(Build.ArtifactStagingDirectory)/frontend/web.config << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <configuration>
+          <system.webServer>
+            <rewrite>
+              <rules>
+                <rule name="Angular Routes" stopProcessing="true">
+                  <match url=".*" />
+                  <conditions logicalGrouping="MatchAll">
+                    <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+                    <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
+                  </conditions>
+                  <action type="Rewrite" url="/" />
+                </rule>
+              </rules>
+            </rewrite>
+            <staticContent>
+              <mimeMap fileExtension=".json" mimeType="application/json" />
+              <mimeMap fileExtension=".woff" mimeType="application/font-woff" />
+              <mimeMap fileExtension=".woff2" mimeType="application/font-woff2" />
+            </staticContent>
+          </system.webServer>
+        </configuration>
+        EOF
+      displayName: 'Generate web.config'
+    
+    - task: ArchiveFiles@2
+      displayName: 'Archive Frontend Files'
+      inputs:
+        rootFolderOrFile: '$(Build.ArtifactStagingDirectory)/frontend'
+        includeRootFolder: false
+        archiveType: 'zip'
+        archiveFile: '$(Build.ArtifactStagingDirectory)/frontend.zip'
+        replaceExistingArchive: true
+    
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifacts'
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)/frontend.zip'
+        ArtifactName: 'frontend-drop'
+        publishLocation: 'Container'
+
+- stage: Deploy
+  displayName: 'Deploy to Azure'
+  dependsOn: Build
+  condition: succeeded()
+  jobs:
+  - deployment: DeployFrontend
+    displayName: 'Deploy Frontend to App Service'
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: DownloadBuildArtifacts@1
+            displayName: 'Download Artifacts'
+            inputs:
+              buildType: 'current'
+              downloadType: 'single'
+              artifactName: 'frontend-drop'
+              downloadPath: '$(System.ArtifactsDirectory)'
+          
+          - task: AzureWebApp@1
+            displayName: 'Deploy to Azure App Service'
+            inputs:
+              azureSubscription: '$(AZURE_SUBSCRIPTION_NAME)'
+              appType: 'webAppLinux'
+              appName: '$(FRONTEND_APP_SERVICE_NAME)'
+              package: '$(System.ArtifactsDirectory)/frontend-drop/frontend.zip'
+          
+          - task: AzureAppServiceSettings@1
+            displayName: 'Configure App Settings'
+            inputs:
+              azureSubscription: '$(AZURE_SUBSCRIPTION_NAME)'
+              appName: '$(FRONTEND_APP_SERVICE_NAME)'
+              resourceGroupName: '$(AZURE_RESOURCE_GROUP)'
+              appSettings: |
+                [
+                  {
+                    "name": "WEBSITE_NODE_DEFAULT_VERSION",
+                    "value": "20-lts",
+                    "slotSetting": false
+                  },
+                  {
+                    "name": "API_BASE_URL",
+                    "value": "$(BACKEND_URL)",
+                    "slotSetting": false
+                  }
+                ]
+
+
+
+

@@ -1,0 +1,338 @@
+<div class="create-material-page">
+  <app-header></app-header>
+  <div class="page-container">
+    <app-sidebar></app-sidebar>
+    
+    <main class="main-content">
+      <!-- Breadcrumb -->
+      <nav class="breadcrumb">
+        <a routerLink="/materials" class="breadcrumb-item">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+            <polyline points="9 22 9 12 15 12 15 22"/>
+          </svg>
+          Materials
+        </a>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="breadcrumb-separator">
+          <polyline points="9 18 15 12 9 6"/>
+        </svg>
+        <span class="breadcrumb-item active">Create Material</span>
+      </nav>
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div class="header-content">
+          <div class="header-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="16"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+          </div>
+          <div>
+            <h1 class="page-title">Create New Material</h1>
+            <p class="page-subtitle">Add a new material to your inventory system</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form Container -->
+      <div class="form-container">
+        <form [formGroup]="materialForm" (ngSubmit)="onSubmit()">
+          <!-- Success Message -->
+          <div *ngIf="successMessage" class="alert alert-success">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            {{ successMessage }}
+          </div>
+
+          <!-- Error Message -->
+          <div *ngIf="error" class="alert alert-error">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 8v4M12 16h.01"/>
+            </svg>
+            {{ error }}
+          </div>
+
+          <!-- Basic Information Section -->
+          <div class="form-section">
+            <div class="section-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+              </svg>
+              <div>
+                <h3 class="section-title">Basic Information</h3>
+                <p class="section-description">Material identification and classification</p>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <!-- Material Code -->
+              <div class="form-group">
+                <label for="materialCode">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 7V5c0-1.1.9-2 2-2h2"/>
+                    <path d="M17 3h2c1.1 0 2 .9 2 2v2"/>
+                    <path d="M21 17v2c0 1.1-.9 2-2 2h-2"/>
+                    <path d="M7 21H5c-1.1 0-2-.9-2-2v-2"/>
+                    <rect x="7" y="7" width="10" height="10" rx="1"/>
+                  </svg>
+                  Material Code <span class="required">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="materialCode"
+                  formControlName="materialCode"
+                  class="form-control"
+                  placeholder="e.g., MAT-1024"
+                  [class.invalid]="materialForm.get('materialCode')?.invalid && materialForm.get('materialCode')?.touched"
+                />
+                <div *ngIf="materialForm.get('materialCode')?.invalid && materialForm.get('materialCode')?.touched" class="error-text">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  Material code is required
+                </div>
+              </div>
+
+              <!-- Material Name -->
+              <div class="form-group">
+                <label for="materialName">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                  </svg>
+                  Material Name <span class="required">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  id="materialName"
+                  formControlName="materialName"
+                  class="form-control"
+                  placeholder="e.g., Concrete Blocks"
+                  [class.invalid]="materialForm.get('materialName')?.invalid && materialForm.get('materialName')?.touched"
+                />
+                <div *ngIf="materialForm.get('materialName')?.invalid && materialForm.get('materialName')?.touched" class="error-text">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  Material name is required
+                </div>
+              </div>
+
+              <!-- Category -->
+              <div class="form-group">
+                <label for="materialCategory">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"/>
+                    <rect x="14" y="3" width="7" height="7"/>
+                    <rect x="14" y="14" width="7" height="7"/>
+                    <rect x="3" y="14" width="7" height="7"/>
+                  </svg>
+                  Category
+                </label>
+                <select 
+                  id="materialCategory"
+                  formControlName="materialCategory"
+                  class="form-control"
+                >
+                  <option value="">Select Category</option>
+                  <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
+                </select>
+              </div>
+
+              <!-- Unit -->
+              <div class="form-group">
+                <label for="unit">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                    <line x1="12" y1="22.08" x2="12" y2="12"/>
+                  </svg>
+                  Unit
+                </label>
+                <select 
+                  id="unit"
+                  formControlName="unit"
+                  class="form-control"
+                >
+                  <option value="">Select Unit</option>
+                  <option *ngFor="let unit of units" [value]="unit">{{ unit }}</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pricing & Inventory Section -->
+          <div class="form-section">
+            <div class="section-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="1" x2="12" y2="23"/>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+              <div>
+                <h3 class="section-title">Pricing & Inventory</h3>
+                <p class="section-description">Cost and stock management settings</p>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <!-- Unit Cost -->
+              <div class="form-group">
+                <label for="unitCost">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/>
+                    <path d="M12 18V6"/>
+                  </svg>
+                  Unit Cost
+                </label>
+                <div class="input-with-prefix">
+                  <span class="input-prefix">$</span>
+                  <input 
+                    type="number" 
+                    id="unitCost"
+                    formControlName="unitCost"
+                    class="form-control with-prefix"
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              <!-- Current Stock -->
+              <div class="form-group">
+                <label for="currentStock">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                    <polyline points="7.5 4.21 12 6.81 16.5 4.21"/>
+                    <polyline points="7.5 19.79 7.5 14.6 3 12"/>
+                    <polyline points="21 12 16.5 14.6 16.5 19.79"/>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                    <line x1="12" y1="22.08" x2="12" y2="12"/>
+                  </svg>
+                  Current Stock
+                </label>
+                <input 
+                  type="number" 
+                  id="currentStock"
+                  formControlName="currentStock"
+                  class="form-control"
+                  placeholder="0"
+                  step="0.01"
+                  min="0"
+                />
+              </div>
+
+              <!-- Minimum Stock -->
+              <div class="form-group">
+                <label for="minimumStock">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                  </svg>
+                  Minimum Stock
+                </label>
+                <input 
+                  type="number" 
+                  id="minimumStock"
+                  formControlName="minimumStock"
+                  class="form-control"
+                  placeholder="0"
+                  step="0.01"
+                  min="0"
+                />
+              </div>
+
+              <!-- Reorder Level -->
+              <div class="form-group">
+                <label for="reorderLevel">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+                    <polyline points="17 6 23 6 23 12"/>
+                  </svg>
+                  Reorder Level
+                </label>
+                <input 
+                  type="number" 
+                  id="reorderLevel"
+                  formControlName="reorderLevel"
+                  class="form-control"
+                  placeholder="0"
+                  step="0.01"
+                  min="0"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Supplier Information Section -->
+          <div class="form-section">
+            <div class="section-header">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              <div>
+                <h3 class="section-title">Supplier Information</h3>
+                <p class="section-description">Details about the material supplier</p>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <!-- Supplier Name -->
+              <div class="form-group full-width">
+                <label for="supplierName">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                  </svg>
+                  Supplier Name
+                </label>
+                <input 
+                  type="text" 
+                  id="supplierName"
+                  formControlName="supplierName"
+                  class="form-control"
+                  placeholder="e.g., Al-Nahda Steel Supplies"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" (click)="onCancel()" [disabled]="loading">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+              Cancel
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="loading || materialForm.invalid">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="16"/>
+                <line x1="8" y1="12" x2="16" y2="12"/>
+              </svg>
+              <span *ngIf="loading">Creating...</span>
+              <span *ngIf="!loading">Create Material</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </main>
+  </div>
+</div>
+
+

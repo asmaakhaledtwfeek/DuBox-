@@ -1,0 +1,287 @@
+<div class="box-panels-section">
+  <div class="section-header">
+    <div>
+      <h3>Panel Approvals</h3>
+      <p class="helper-text">Review and approve panels for this box</p>
+    </div>
+    <div class="header-actions">
+      <button 
+        class="btn btn-download-all" 
+        (click)="downloadAllApprovalQRCodes()" 
+        [disabled]="downloadingAll || !hasQRCodesToDownload()"
+        title="Download all approval QR codes for mobile scanning">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        <span *ngIf="!downloadingAll">Download All QR Codes</span>
+        <span *ngIf="downloadingAll">Downloading...</span>
+      </button>
+      <button class="btn btn-scan" (click)="openBarcodeScanner('SiteArrival')" title="Scan QR code to approve arrival at site">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <rect x="7" y="7" width="10" height="10"/>
+          <path d="M7 7h10v10H7z"/>
+        </svg>
+        Scan QR Code
+      </button>
+    </div>
+  </div>
+
+  <!-- Scan Result Message -->
+  <div class="scan-result-message" *ngIf="lastScanResult">
+    {{ lastScanResult }}
+  </div>
+
+  <!-- Loading State -->
+  <div class="loading-container" *ngIf="loading">
+    <div class="spinner"></div>
+    <p>Loading panels...</p>
+  </div>
+
+  <!-- Error State -->
+  <div class="error-message" *ngIf="error && !loading">
+    {{ error }}
+  </div>
+
+  <!-- Panels Table -->
+  <div class="panels-table" *ngIf="!loading && panels.length > 0">
+    <table>
+      <thead>
+        <tr>
+          <th>Panel Name</th>
+          <th>QRCode</th>
+          <th>Panel Type</th>
+          <th>Status</th>
+          <th class="approval-header">
+            <div class="header-main">First Approval</div>
+            <div class="header-sub">Per-cast Location</div>
+          </th>
+          <th class="approval-header">
+            <div class="header-main">Second Approval</div>
+            <div class="header-sub">Dubox Delivery</div>
+          </th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let panel of panels">
+          <td>
+            <strong>{{ panel.panelName }}</strong>
+          </td>
+          <td>
+            <div class="barcode-container" *ngIf="panel.qrCode && getQRCodeImage(panel)">
+              <div class="barcode-image-wrapper">
+                <img 
+                  [src]="getQRCodeImage(panel)!" 
+                  [alt]="'QR Code: ' + panel.qrCode"
+                  class="barcode-image"
+                  (error)="handleImageError($event)"
+                  loading="lazy">
+              </div>
+              <div class="barcode-actions">
+                <button 
+                  class="btn-download-barcode"
+                  (click)="downloadApprovalQRCode(panel)"
+                  title="Download Approval QR code for mobile scanning">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                  </svg>
+                  Download QR
+                </button>
+                <button 
+                  class="btn-copy-qrcode"
+                  (click)="copyQRCode(panel.qrCode)"
+                  title="Copy QR code text">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <span class="no-barcode" *ngIf="!panel.qrCode || !getQRCodeImage(panel)">—</span>
+          </td>
+          <td>
+            <span class="panel-type-badge" *ngIf="panel.typeName">
+              {{ panel.typeCode }} - {{ panel.typeName }}
+            </span>
+            <span class="panel-type-badge gray" *ngIf="!panel.typeName">
+              No Type
+            </span>
+          </td>
+          <td>
+            <span class="status-badge" [ngClass]="getPanelStatusClass(panel.panelStatus)">
+              {{ getStatusDisplayName(panel.panelStatus) }}
+            </span>
+          </td>
+          <td>
+            <div class="approval-status" *ngIf="panel.firstApprovalDate">
+              <span [ngClass]="panel.firstApprovalStatus === 'Approved' ? 'approved' : 'rejected'">
+                {{ panel.firstApprovalStatus }}
+              </span>
+              <small>{{ panel.firstApprovalDate | date: 'short' }}</small>
+              <small *ngIf="panel.firstApprovalNotes">{{ panel.firstApprovalNotes }}</small>
+            </div>
+            <span *ngIf="!panel.firstApprovalDate" class="pending-badge">Pending</span>
+          </td>
+          <td>
+            <div class="approval-status" *ngIf="panel.secondApprovalDate">
+              <span [ngClass]="panel.secondApprovalStatus === 'Approved' ? 'approved' : 'rejected'">
+                {{ panel.secondApprovalStatus }}
+              </span>
+              <small>{{ panel.secondApprovalDate | date: 'short' }}</small>
+              <small *ngIf="panel.secondApprovalNotes">{{ panel.secondApprovalNotes }}</small>
+            </div>
+            <span *ngIf="!panel.secondApprovalDate" class="pending-badge">Pending</span>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <!-- Workflow Status Update (Pre-cast Location) -->
+              <button 
+                class="btn btn-sm btn-workflow"
+                (click)="openWorkflowModal(panel)"
+                title="Update panel workflow status at pre-cast location">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2v6m0 0L9 5m3 3 3-3M2 12h6m0 0L5 9m3 3-3 3m14-3h6m0 0-3-3m3 3-3 3M12 16v6m0 0-3-3m3 3 3-3"/>
+                </svg>
+                Workflow
+              </button>
+
+              <!-- First Approval -->
+              <button 
+                class="btn btn-sm btn-success"
+                [disabled]="!canApproveFirst(panel)"
+                (click)="openApprovalModal(panel, 'first', 'approve')"
+                [title]="canApproveFirst(panel) ? 'First Approval - Approve' : 'Complete all 4 stages first'">
+                ✓ 1st
+              </button>
+              <button 
+                class="btn btn-sm btn-danger"
+                [disabled]="!canApproveFirst(panel)"
+                (click)="openApprovalModal(panel, 'first', 'reject')"
+                [title]="canApproveFirst(panel) ? 'First Approval - Reject' : 'Complete all 4 stages first'">
+                ✗ 1st
+              </button>
+
+              <!-- Second Approval -->
+              <button 
+                class="btn btn-sm btn-success"
+                [disabled]="!canApproveSecond(panel)"
+                (click)="openApprovalModal(panel, 'second', 'approve')"
+                [title]="canApproveSecond(panel) ? 'Second Approval - Approve' : 'First approval must be completed'">
+                ✓ 2nd
+              </button>
+              <button 
+                class="btn btn-sm btn-danger"
+                [disabled]="!canApproveSecond(panel)"
+                (click)="openApprovalModal(panel, 'second', 'reject')"
+                [title]="canApproveSecond(panel) ? 'Second Approval - Reject' : 'First approval must be completed'">
+                ✗ 2nd
+              </button>
+
+              <!-- ONE QR Code for both approvals -->
+              <button 
+                class="btn btn-sm btn-qr"
+                (click)="downloadApprovalQRCode(panel)"
+                title="Download QR Code for Mobile Approval (Auto-detects 1st or 2nd)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <rect x="7" y="7" width="3" height="3"/>
+                  <rect x="14" y="7" width="3" height="3"/>
+                  <rect x="7" y="14" width="3" height="3"/>
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!loading && panels.length === 0">
+    <p>No panels found for this box.</p>
+    <p class="helper-text">Panels are added via the Excel import on the Project Dashboard.</p>
+  </div>
+
+  <!-- Approval Modal -->
+  <div class="modal-overlay" *ngIf="showApprovalModal" (click)="closeApprovalModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>
+          {{ approvalType === 'first' ? 'First' : 'Second' }} Approval - 
+          {{ approvalAction === 'approve' ? 'Approve' : 'Reject' }}
+        </h3>
+        <button class="close-btn" (click)="closeApprovalModal()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="panel-info" *ngIf="selectedPanel">
+          <p><strong>Panel:</strong> {{ selectedPanel.panelName }}</p>
+          <p><strong>Type:</strong> {{ selectedPanel.typeName || 'No Type' }}</p>
+          <p><strong>Current Status:</strong> {{ getStatusDisplayName(selectedPanel.panelStatus) }}</p>
+        </div>
+
+        <div class="form-group">
+          <label for="approvalNotes">Notes (Optional)</label>
+          <textarea 
+            id="approvalNotes"
+            [(ngModel)]="approvalNotes"
+            rows="4"
+            placeholder="Add notes about this approval decision..."
+            [disabled]="submitting">
+          </textarea>
+        </div>
+
+        <div class="error-message" *ngIf="error">
+          {{ error }}
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button 
+          class="btn btn-secondary" 
+          (click)="closeApprovalModal()"
+          [disabled]="submitting">
+          Cancel
+        </button>
+        <button 
+          class="btn"
+          [ngClass]="approvalAction === 'approve' ? 'btn-success' : 'btn-danger'"
+          (click)="submitApproval()"
+          [disabled]="submitting">
+          <span *ngIf="!submitting">
+            {{ approvalAction === 'approve' ? 'Approve' : 'Reject' }}
+          </span>
+          <span *ngIf="submitting" class="spinner-inline">
+            <span class="spinner small"></span>
+            Processing...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barcode Scanner Modal -->
+  <app-barcode-scanner
+    *ngIf="showBarcodeScanner"
+    [projectId]="projectId"
+    [scanType]="scanType"
+    (scanComplete)="handleScanComplete($event)"
+    (close)="closeBarcodeScanner()">
+  </app-barcode-scanner>
+
+  <!-- Panel Workflow Modal -->
+  <app-panel-workflow-modal
+    *ngIf="showWorkflowModal"
+    [panel]="selectedPanel"
+    [isOpen]="showWorkflowModal"
+    (closeModal)="closeWorkflowModal()"
+    (workflowUpdated)="onWorkflowUpdated()">
+  </app-panel-workflow-modal>
+</div>
+

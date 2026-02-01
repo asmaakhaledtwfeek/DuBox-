@@ -1,0 +1,1347 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="page-content">
+    <div class="page-header">
+      <div>
+        <p class="eyebrow">Admin Workspace</p>
+        <h1>User Management</h1>
+        <p>Manage every account, role, and group across the platform.</p>
+      </div>
+      <div class="header-actions">
+        <button *ngIf="canViewAuditLogs" class="btn btn-ghost" [routerLink]="['/admin/audit-logs']">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          View Audit Logs
+        </button>
+       
+      </div>
+    </div>
+
+    <div *ngIf="alertMessage" class="page-alert" [class.success]="alertType === 'success'" [class.error]="alertType === 'error'">
+      {{ alertMessage }}
+    </div>
+
+    <section class="summary-grid">
+      <article class="summary-card">
+        <span>Total Users</span>
+        <strong>{{ totalUsers }}</strong>
+        <small>{{ activeUsers }} active right now</small>
+      </article>
+      <article class="summary-card tone-success">
+        <span>Active Users</span>
+        <strong>{{ activeUsers }}</strong>
+        <small>{{ totalUsers - activeUsers }} inactive</small>
+      </article>
+      <article class="summary-card tone-info">
+        <span>Groups</span>
+        <strong>{{ totalGroups }}</strong>
+        <small>Collaboration units</small>
+      </article>
+      <article class="summary-card tone-warning">
+        <span>Roles</span>
+        <strong>{{ totalRoles }}</strong>
+        <small>Permission bundles</small>
+      </article>
+    </section>
+
+    <nav class="tabs" role="tablist">
+      <button
+        *ngFor="let tab of tabs"
+        class="tab"
+        [class.active]="activeTab === tab.id"
+        (click)="setTab(tab.id)"
+        type="button"
+        role="tab"
+      >
+        {{ tab.label }}
+      </button>
+    </nav>
+
+    <!-- Users Panel -->
+    <section *ngIf="activeTab === 'users'" class="panel">
+      <form class="filter-row" [formGroup]="filterForm">
+        <div class="field">
+          <label for="userSearch">Search</label>
+          <input id="userSearch" type="text" placeholder="Name, email, department" formControlName="search" />
+        </div>
+        <div class="field">
+          <label for="userStatus">Status</label>
+          <select id="userStatus" formControlName="status">
+            <option value="all">All statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="userRole">Role</label>
+          <select id="userRole" formControlName="role">
+            <option value="all">All roles</option>
+            <option *ngFor="let role of roles" [value]="role.roleId">{{ role.roleName }}</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="userGroup">Group</label>
+          <select id="userGroup" formControlName="group">
+            <option value="all">All groups</option>
+            <option *ngFor="let group of groups" [value]="group.groupId">{{ group.groupName }}</option>
+          </select>
+        </div>
+        <div class="filter-actions">
+          <button type="button" class="btn btn-secondary" (click)="filterForm.reset({ search: '', status: 'all', role: 'all', group: 'all' })">
+            Reset
+          </button>
+        </div>
+      </form>
+
+      <div class="panel-toolbar">
+        <div>
+          <h3>Users</h3>
+          <p *ngIf="!usersError">Showing {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, totalCount) }} of {{ totalCount }} users</p>
+          <p *ngIf="usersError" class="text-error">{{ usersError }}</p>
+        </div>
+        <div class="toolbar-actions">
+          <button class="btn btn-add-user" (click)="openUserModal('create')">
+            <svg class="btn-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+              <circle cx="9" cy="7" r="4"></circle>
+              <line x1="19" y1="8" x2="19" y2="14"></line>
+              <line x1="22" y1="11" x2="16" y2="11"></line>
+            </svg>
+            <span class="btn-text">Add User</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="table-state" *ngIf="isLoadingUsers">
+        <p>Loading users...</p>
+      </div>
+
+      <div class="table-wrapper" *ngIf="!isLoadingUsers">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Department</th>
+              <th>Status</th>
+              <th>Last Activity</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let user of filteredUsers; trackBy: trackById">
+              <td>
+                <div class="user-cell">
+                  <div class="avatar">{{ (user.fullName || user.email) | slice:0:2 | uppercase }}</div>
+                  <div>
+                    <strong>{{ user.fullName || '—' }}</strong>
+                    <span>{{ user.email }}</span>
+                  </div>
+                </div>
+              </td>
+              <td>{{ getDepartmentName(user.departmentId) }}</td>
+              <td>
+                <span class="status-chip" [class.active]="user.isActive" [class.inactive]="!user.isActive">
+                  {{ user.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td>{{ user.lastLoginDate ? (user.lastLoginDate | date : 'medium') : 'Never' }}</td>
+              <td class="actions">
+                <button class="icon-btn"
+                        type="button"
+                        [routerLink]="['/admin/users', user.userId]"
+                        title="View user details">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                  </svg>
+                </button>
+                <button *ngIf="canViewAuditLogs"
+                        class="icon-btn"
+                        type="button"
+                        (click)="openAuditLogsModal(user)"
+                        title="View audit logs">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10 9 9 9 8 9"></polyline>
+                  </svg>
+                </button>
+                <button class="icon-btn danger"
+                        type="button"
+                        (click)="requestUserDeletion(user)"
+                        *ngIf="canDeleteUser"
+                        title="Delete user">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                    <path d="M10 11v6"></path>
+                    <path d="M14 11v6"></path>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="!filteredUsers.length && !isLoadingUsers">
+              <td colspan="5" class="empty-row">No users match your filters.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination Controls -->
+      <div class="pagination-container" *ngIf="!isLoadingUsers && !usersError && totalPages > 0">
+        <div class="pagination-info">
+          <span>Showing {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, totalCount) }} of {{ totalCount }} users</span>
+          <div class="page-size-selector">
+            <label for="pageSize">Items per page:</label>
+            <select id="pageSize" [(ngModel)]="pageSize" (change)="changePageSize(pageSize)" class="page-size-select">
+              <option [value]="25">25</option>
+              <option [value]="50">50</option>
+              <option [value]="100">100</option>
+            </select>
+          </div>
+        </div>
+        <div class="pagination-controls">
+          <button 
+            class="pagination-btn" 
+            [disabled]="currentPage === 1"
+            (click)="goToPage(1)"
+            title="First page"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="11 17 6 12 11 7"/>
+              <polyline points="18 17 13 12 18 7"/>
+            </svg>
+          </button>
+          <button 
+            class="pagination-btn" 
+            [disabled]="currentPage === 1"
+            (click)="goToPage(currentPage - 1)"
+            title="Previous page"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
+          <div class="page-numbers">
+            <button 
+              *ngFor="let page of getPageNumbers()"
+              class="page-number"
+              [class.active]="page === currentPage"
+              (click)="goToPage(page)"
+            >
+              {{ page }}
+            </button>
+          </div>
+          <button 
+            class="pagination-btn" 
+            [disabled]="currentPage === totalPages"
+            (click)="goToPage(currentPage + 1)"
+            title="Next page"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+          <button 
+            class="pagination-btn" 
+            [disabled]="currentPage === totalPages"
+            (click)="goToPage(totalPages)"
+            title="Last page"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="13 17 18 12 13 7"/>
+              <polyline points="6 17 11 12 6 7"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Groups Panel -->
+    <section *ngIf="activeTab === 'groups'" class="panel">
+      <form class="filter-row" [formGroup]="groupFilterForm">
+        <div class="field">
+          <label for="groupSearch">Search</label>
+          <input id="groupSearch" type="text" placeholder="Group name or description" formControlName="search" />
+        </div>
+        <div class="field">
+          <label for="groupStatus">Status</label>
+          <select id="groupStatus" formControlName="status">
+            <option value="all">All statuses</option>
+            <option value="Active">Active</option>
+            <option value="Archived">Archived</option>
+          </select>
+        </div>
+        <div class="filter-actions">
+          <button type="button" class="btn btn-secondary" (click)="groupFilterForm.reset({ search: '', status: 'all' })">
+            Reset
+          </button>
+        </div>
+      </form>
+
+      <div class="panel-toolbar">
+        <div>
+          <h3>Groups</h3>
+          <p *ngIf="!groupsError">{{ filteredGroups.length }} collaboration groups.</p>
+          <p *ngIf="groupsError" class="text-error">{{ groupsError }}</p>
+        </div>
+        <div class="toolbar-actions">
+          <button 
+            *ngIf="canCreateGroup" 
+            class="btn btn-new-group" 
+            (click)="openGroupModal('create')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="btn-icon">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              <line x1="12" y1="8" x2="12" y2="14"/>
+              <line x1="9" y1="11" x2="15" y2="11"/>
+            </svg>
+            <span class="btn-text">New Group</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="table-state" *ngIf="isLoadingGroups">
+        <p>Loading groups...</p>
+      </div>
+
+      <div class="table-wrapper" *ngIf="!isLoadingGroups">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Group</th>
+              <th>Created</th>
+              <th>Roles</th>
+              <th>Members</th>
+              <th>Status</th>
+              <th class="col-actions" *ngIf="canEditGroup || canDeleteGroup" >Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let group of filteredGroups; trackBy: trackById">
+              <td>
+                <strong>{{ group.groupName }}</strong>
+                <p>{{ group.description || '—' }}</p>
+              </td>
+              <td>{{ group.createdDate | date : 'mediumDate' }}</td>
+              <td>
+                <div class="chip-stack">
+                  <span class="chip" *ngFor="let role of group.roles">
+                    {{ role.roleName }}
+                  </span>
+                </div>
+              </td>
+              <td>
+                <strong>{{ getGroupMembershipCount(group.groupId) }}</strong>
+                <p>linked users</p>
+              </td>
+              <td>
+                <span class="status-chip" [class.active]="group.isActive" [class.inactive]="!group.isActive">
+                  {{ group.isActive ? 'Active' : 'Archived' }}
+                </span>
+              </td>
+              <td class="actions">
+                <button 
+                  *ngIf="canEditGroup" 
+                  class="icon-btn" 
+                  (click)="openGroupRolesModal(group)" 
+                  title="Assign roles">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                </button>
+                <button 
+                  *ngIf="canEditGroup" 
+                  class="icon-btn" 
+                  (click)="openGroupModal('edit', group)" 
+                  title="Edit group">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"></path>
+                    <path d="M14.06 4.94l3.75 3.75"></path>
+                  </svg>
+                </button>
+                <button 
+                  *ngIf="canDeleteGroup" 
+                  class="icon-btn danger" 
+                  (click)="requestGroupDeletion(group)" 
+                  title="Delete group">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                    <path d="M10 11v6"></path>
+                    <path d="M14 11v6"></path>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="!filteredGroups.length && !isLoadingGroups">
+              <td colspan="6" class="empty-row">No groups found.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Roles Panel -->
+    <section *ngIf="activeTab === 'roles'" class="panel">
+      <form class="filter-row" [formGroup]="roleFilterForm">
+        <div class="field">
+          <label for="roleSearch">Search</label>
+          <input id="roleSearch" type="text" placeholder="Role name or description" formControlName="search" />
+        </div>
+        <div class="field">
+          <label for="roleStatus">Status</label>
+          <select id="roleStatus" formControlName="status">
+            <option value="all">All statuses</option>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+        <div class="filter-actions">
+          <button type="button" class="btn btn-secondary" (click)="roleFilterForm.reset({ search: '', status: 'all' })">
+            Reset
+          </button>
+        </div>
+      </form>
+
+      <div class="panel-toolbar">
+        <div>
+          <h3>Roles</h3>
+          <p *ngIf="!rolesError">{{ filteredRoles.length }} permission bundles.</p>
+          <p *ngIf="rolesError" class="text-error">{{ rolesError }}</p>
+        </div>
+        <div class="toolbar-actions">
+          <button 
+            *ngIf="canCreateRole" 
+            class="btn btn-create-role" 
+            (click)="openRoleModal('create')">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="btn-icon">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="16"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+            <span class="btn-text">Create Role</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="table-state" *ngIf="isLoadingRoles">
+        <p>Loading roles...</p>
+      </div>
+
+      <div class="table-wrapper" *ngIf="!isLoadingRoles">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Role</th>
+              <th>Description</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Assigned</th>
+              <th class="col-actions"  *ngIf="canEditRole || canDeleteRole" >Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let role of filteredRoles; trackBy: trackById">
+              <td><strong>{{ role.roleName }}</strong></td>
+              <td>{{ role.description || '—' }}</td>
+              <td>
+                <span class="status-chip" [class.active]="role.isActive" [class.inactive]="!role.isActive">
+                  {{ role.isActive ? 'Active' : 'Inactive' }}
+                </span>
+              </td>
+              <td>{{ role.createdDate | date : 'mediumDate' }}</td>
+              <td>
+                <div class="assigned-counts">
+                  <span class="count-item">
+                    <strong>{{ countUsersWithRole(role.roleId) }}</strong>
+                    <span>users</span>
+                  </span>
+                  <span class="count-item">
+                    <strong>{{ countGroupsWithRole(role.roleId) }}</strong>
+                    <span>groups</span>
+                  </span>
+                </div>
+              </td>
+              <td class="actions">
+                <button 
+                  *ngIf="canEditRole" 
+                  class="icon-btn" 
+                  (click)="openRoleModal('edit', role)" 
+                  title="Edit role">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"></path>
+                    <path d="M14.06 4.94l3.75 3.75"></path>
+                  </svg>
+                </button>
+                <button 
+                  *ngIf="canDeleteRole" 
+                  class="icon-btn danger" 
+                  (click)="requestRoleDeletion(role)" 
+                  title="Delete role">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+                    <path d="M10 11v6"></path>
+                    <path d="M14 11v6"></path>
+                  </svg>
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="!filteredRoles.length && !isLoadingRoles">
+              <td colspan="6" class="empty-row">No roles available.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Permissions Panel -->
+    <section *ngIf="activeTab === 'permissions'" class="panel">
+      <div class="panel-toolbar">
+        <div>
+          <h3>Permission Matrix</h3>
+          <p *ngIf="!permissionsError">Configure permissions for each role across all modules.</p>
+          <p *ngIf="permissionsError" class="text-error">{{ permissionsError }}</p>
+        </div>
+        <div class="toolbar-actions">
+          <button class="btn btn-secondary" (click)="loadPermissions()" [disabled]="isLoadingPermissions">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <div class="table-state" *ngIf="isLoadingPermissions">
+        <p>Loading permissions...</p>
+      </div>
+
+      <div class="permissions-content" *ngIf="!isLoadingPermissions">
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 45%;">Role</th>
+                <th style="width: 25%; text-align: center;">Permissions</th>
+                <th style="width: 30%; text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let role of roles; trackBy: trackById">
+                <td>
+                  <div class="role-cell">
+                    <strong>{{ role.roleName }}</strong>
+                    <span>{{ role.description || 'No description' }}</span>
+                  </div>
+                </td>
+                <td style="text-align: center;">
+                  <span class="permission-badge" 
+                        [class.high]="getRolePermissionCount(role.roleId) > 50" 
+                        [class.medium]="getRolePermissionCount(role.roleId) > 20 && getRolePermissionCount(role.roleId) <= 50" 
+                        [class.low]="getRolePermissionCount(role.roleId) <= 20">
+                    {{ getRolePermissionCount(role.roleId) }} permissions
+                  </span>
+                </td>
+                <td style="text-align: right;">
+                  <button 
+                    *ngIf="canManagePermissions" 
+                    class="btn btn-secondary" 
+                    (click)="openPermissionMatrixModal(role)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"></path>
+                      <path d="M14.06 4.94l3.75 3.75"></path>
+                    </svg>
+                    Edit Permissions
+                  </button>
+                  <span *ngIf="!canManagePermissions" class="text-muted">View only</span>
+                </td>
+              </tr>
+              <tr *ngIf="roles.length === 0">
+                <td colspan="3" class="empty-row">No roles available. Create roles in the Roles tab first.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Permission Categories Legend -->
+        <div class="permission-categories" *ngIf="permissionGroups.length > 0">
+          <h4>Available Permission Categories</h4>
+          <div class="categories-grid">
+            <div class="category-card" *ngFor="let group of permissionGroups">
+              <div class="category-header">
+                <span class="category-name">{{ group.module }}</span>
+                <span class="category-badge">{{ group.permissions.length }}</span>
+              </div>
+              <div class="category-permissions">
+                <span class="permission-tag" *ngFor="let perm of group.permissions">
+                  {{ perm.action }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- User Modal -->
+<div class="modal-backdrop" *ngIf="userModalOpen">
+  <div class="modal-card large">
+    <div class="modal-header">
+      <div>
+        <h3>{{ modalMode === 'create' ? 'Create user' : 'Edit user' }}</h3>
+        <p>Define profile, access level, and membership.</p>
+      </div>
+      <button class="icon-button" (click)="userModalOpen = false">&times;</button>
+    </div>
+
+    <form [formGroup]="userForm" (ngSubmit)="saveUser()" class="modal-body">
+      <div class="form-content">
+        <div class="form-row">
+          <div class="form-field" [class.has-error]="userForm.get('fullName')?.invalid && (userForm.get('fullName')?.touched || userForm.get('fullName')?.dirty)">
+            <label for="user-fullname">
+              <span class="label-text">Full name <sup class="required">*</sup></span>
+            </label>
+            <div class="input-wrapper">
+              <input 
+                id="user-fullname"
+                type="text" 
+                formControlName="fullName" 
+                placeholder="e.g., Layla Al-Farsi"
+                [class.invalid]="userForm.get('fullName')?.invalid && (userForm.get('fullName')?.touched || userForm.get('fullName')?.dirty)"
+              />
+              <svg *ngIf="userForm.get('fullName')?.invalid && (userForm.get('fullName')?.touched || userForm.get('fullName')?.dirty)" 
+                   class="error-icon" 
+                   xmlns="http://www.w3.org/2000/svg" 
+                   width="18" 
+                   height="18" 
+                   viewBox="0 0 24 24" 
+                   fill="none" 
+                   stroke="currentColor" 
+                   stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+            <div class="error-message" *ngIf="userForm.get('fullName')?.hasError('required') && (userForm.get('fullName')?.touched || userForm.get('fullName')?.dirty)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>Full name is required</span>
+            </div>
+            <div class="error-message" *ngIf="userForm.get('fullName')?.hasError('backend') && (userForm.get('fullName')?.touched || userForm.get('fullName')?.dirty)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>{{ userForm.get('fullName')?.getError('backend') }}</span>
+            </div>
+          </div>
+
+          <div class="form-field" [class.has-error]="userForm.get('email')?.invalid && (userForm.get('email')?.touched || userForm.get('email')?.dirty)">
+            <label for="user-email">
+              <span class="label-text">Email address <sup class="required">*</sup></span>
+            </label>
+            <div class="input-wrapper">
+              <input 
+                id="user-email"
+                type="email" 
+                formControlName="email" 
+                placeholder="name@dubox.com"
+                [disabled]="modalMode === 'edit'"
+                [class.invalid]="userForm.get('email')?.invalid && (userForm.get('email')?.touched || userForm.get('email')?.dirty)"
+              />
+              <svg *ngIf="userForm.get('email')?.invalid && (userForm.get('email')?.touched || userForm.get('email')?.dirty)" 
+                   class="error-icon" 
+                   xmlns="http://www.w3.org/2000/svg" 
+                   width="18" 
+                   height="18" 
+                   viewBox="0 0 24 24" 
+                   fill="none" 
+                   stroke="currentColor" 
+                   stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+            </div>
+            <div class="error-message" *ngIf="userForm.get('email')?.hasError('required') && (userForm.get('email')?.touched || userForm.get('email')?.dirty)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>Email address is required</span>
+            </div>
+            <div class="error-message" *ngIf="userForm.get('email')?.hasError('email') && (userForm.get('email')?.touched || userForm.get('email')?.dirty)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>Please enter a valid email address</span>
+            </div>
+            <div class="error-message" *ngIf="userForm.get('email')?.hasError('backend') && (userForm.get('email')?.touched || userForm.get('email')?.dirty)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="8" x2="12" y2="12"></line>
+                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+              </svg>
+              <span>{{ userForm.get('email')?.getError('backend') }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-field" [class.has-error]="userForm.get('departmentId')?.invalid && (userForm.get('departmentId')?.touched || userForm.get('departmentId')?.dirty)">
+          <label for="user-department">
+            <span class="label-text">Department <sup class="required">*</sup></span>
+            <span class="label-hint">Select the user's department</span>
+          </label>
+          <div class="input-wrapper">
+            <select 
+              id="user-department"
+              formControlName="departmentId"
+              [class.invalid]="userForm.get('departmentId')?.invalid && (userForm.get('departmentId')?.touched || userForm.get('departmentId')?.dirty)"
+            >
+              <option value="">Select department</option>
+              <option *ngFor="let dept of departments" [value]="dept.departmentId">{{ dept.departmentName }}</option>
+            </select>
+            <svg *ngIf="userForm.get('departmentId')?.invalid && (userForm.get('departmentId')?.touched || userForm.get('departmentId')?.dirty)" 
+                 class="error-icon" 
+                 xmlns="http://www.w3.org/2000/svg" 
+                 width="18" 
+                 height="18" 
+                 viewBox="0 0 24 24" 
+                 fill="none" 
+                 stroke="currentColor" 
+                 stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <div class="error-message" *ngIf="userForm.get('departmentId')?.hasError('required') && (userForm.get('departmentId')?.touched || userForm.get('departmentId')?.dirty)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>Department is required</span>
+          </div>
+          <div class="error-message" *ngIf="userForm.get('departmentId')?.hasError('backend') && (userForm.get('departmentId')?.touched || userForm.get('departmentId')?.dirty)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>{{ userForm.get('departmentId')?.getError('backend') }}</span>
+          </div>
+        </div>
+
+        <div *ngIf="modalMode === 'create'" class="form-field password-field" [class.has-error]="passwordControl?.invalid && (passwordControl?.touched || passwordControl?.dirty)">
+          <label for="user-password">
+            <span class="label-text">Temporary password <sup class="required">*</sup></span>
+            <span class="label-hint">Must be 8-50 characters with uppercase, lowercase, and numbers</span>
+          </label>
+          <div class="input-wrapper">
+            <input
+              id="user-password"
+              [type]="showTempPassword ? 'text' : 'password'"
+              formControlName="password"
+              placeholder="Enter a secure password"
+              [class.invalid]="passwordControl?.invalid && (passwordControl?.touched || passwordControl?.dirty)"
+            />
+            <button
+              type="button"
+              class="toggle-visibility"
+              (click)="toggleTempPasswordVisibility()"
+              [attr.aria-pressed]="showTempPassword"
+              aria-label="Toggle password visibility"
+              tabindex="-1"
+            >
+              <svg *ngIf="!showTempPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg *ngIf="showTempPassword" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a21.77 21.77 0 015.06-6.88"></path>
+                <path d="M22 5l-5.66 5.66"></path>
+                <path d="M1 1l22 22"></path>
+              </svg>
+            </button>
+            <svg *ngIf="passwordControl?.invalid && (passwordControl?.touched || passwordControl?.dirty)" 
+                 class="error-icon" 
+                 xmlns="http://www.w3.org/2000/svg" 
+                 width="18" 
+                 height="18" 
+                 viewBox="0 0 24 24" 
+                 fill="none" 
+                 stroke="currentColor" 
+                 stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <div class="error-message" *ngIf="passwordControl?.hasError('required') && (passwordControl?.touched || passwordControl?.dirty)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>Password is required</span>
+          </div>
+          <div class="error-message" *ngIf="passwordControl?.hasError('minlength') && (passwordControl?.touched || passwordControl?.dirty)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>Password must be at least 8 characters</span>
+          </div>
+          <div class="error-message" *ngIf="passwordControl?.hasError('maxlength') && (passwordControl?.touched || passwordControl?.dirty)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>Password must not exceed 50 characters</span>
+          </div>
+          <div class="error-message" *ngIf="passwordControl?.hasError('pattern') && (passwordControl?.touched || passwordControl?.dirty)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>Include uppercase, lowercase, and numeric characters</span>
+          </div>
+          <div class="error-message" *ngIf="passwordControl?.hasError('backend') && (passwordControl?.touched || passwordControl?.dirty)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>{{ passwordControl?.getError('backend') }}</span>
+          </div>
+        </div>
+
+        <div class="form-field switch-field">
+          <label for="user-active" class="checkbox-label">
+            <input 
+              id="user-active"
+              type="checkbox" 
+              formControlName="isActive"
+              class="custom-checkbox"
+            />
+            <span class="checkbox-custom"></span>
+            <span class="checkbox-text">Active immediately</span>
+          </label>
+          <span class="label-hint">User will be able to log in immediately after creation</span>
+        </div>
+
+        <input type="hidden" formControlName="userId" />
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" type="button" (click)="userModalOpen = false">
+          Cancel
+        </button>
+        <button class="btn btn-primary" type="submit" [disabled]="savingUser || userForm.invalid">
+          <svg *ngIf="!savingUser" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 6L9 17l-5-5"></path>
+          </svg>
+          <span *ngIf="!savingUser">Save user</span>
+          <span *ngIf="savingUser" class="loading-spinner"></span>
+          <span *ngIf="savingUser">Saving...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Group Modal -->
+<div class="modal-backdrop" *ngIf="groupModalOpen">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div>
+        <h3>{{ modalMode === 'create' ? 'New group' : 'Edit group' }}</h3>
+        <p>Bundle users and roles for consistent access.</p>
+      </div>
+      <button class="icon-button" (click)="groupModalOpen = false">&times;</button>
+    </div>
+
+    <form [formGroup]="groupForm" (ngSubmit)="saveGroup()" class="modal-body">
+      <div class="form-content">
+        <div class="form-field" [class.has-error]="groupForm.get('name')?.invalid && (groupForm.get('name')?.touched || groupForm.get('name')?.dirty)">
+          <label for="group-name">
+            <span class="label-text">Group name <sup class="required">*</sup></span>
+          </label>
+          <div class="input-wrapper">
+            <input 
+              id="group-name"
+              type="text" 
+              formControlName="name" 
+              placeholder="e.g., QA Leads, Engineering Team"
+              [class.invalid]="groupForm.get('name')?.invalid && (groupForm.get('name')?.touched || groupForm.get('name')?.dirty)"
+            />
+            <svg *ngIf="groupForm.get('name')?.invalid && (groupForm.get('name')?.touched || groupForm.get('name')?.dirty)" 
+                 class="error-icon" 
+                 xmlns="http://www.w3.org/2000/svg" 
+                 width="18" 
+                 height="18" 
+                 viewBox="0 0 24 24" 
+                 fill="none" 
+                 stroke="currentColor" 
+                 stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <div class="error-message" *ngIf="groupForm.get('name')?.hasError('required') && (groupForm.get('name')?.touched || groupForm.get('name')?.dirty)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>Group name is required</span>
+          </div>
+          <div class="error-message" *ngIf="groupForm.get('name')?.hasError('backend') && (groupForm.get('name')?.touched || groupForm.get('name')?.dirty)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>{{ groupForm.get('name')?.getError('backend') }}</span>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="group-description">
+            <span class="label-text">Description</span>
+            <span class="label-hint">Optional - Add a brief description of the group's purpose</span>
+          </label>
+          <div class="input-wrapper">
+            <textarea 
+              id="group-description"
+              rows="4" 
+              formControlName="description" 
+              placeholder="Describe the group's purpose, scope, or responsibilities..."
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="form-field" *ngIf="modalMode === 'edit'">
+          <label for="group-status">
+            <span class="label-text">Status</span>
+          </label>
+          <div class="input-wrapper">
+            <select id="group-status" formControlName="status">
+              <option value="Active">Active</option>
+              <option value="Archived">Archived</option>
+            </select>
+          </div>
+        </div>
+
+        <input type="hidden" formControlName="groupId" />
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" type="button" (click)="groupModalOpen = false">
+          Cancel
+        </button>
+        <button class="btn btn-primary" type="submit" [disabled]="savingGroup || groupForm.invalid">
+          <svg *ngIf="!savingGroup" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 6L9 17l-5-5"></path>
+          </svg>
+          <span *ngIf="!savingGroup">Save group</span>
+          <span *ngIf="savingGroup" class="loading-spinner"></span>
+          <span *ngIf="savingGroup">Saving...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Group Roles Modal -->
+<div class="modal-backdrop" *ngIf="groupRolesModalOpen" (click)="closeGroupRolesModal()">
+  <div class="modal-card" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <div class="header-content">
+        <div class="header-icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+            <circle cx="9" cy="7" r="4"></circle>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+          </svg>
+        </div>
+        <div>
+          <h3>Assign Roles to Group</h3>
+          <p class="header-subtitle">
+            <span class="group-name-badge">{{ selectedGroupForRoles?.groupName || 'this group' }}</span>
+            <span class="selection-count" *ngIf="groupRoleSelection.length > 0">
+              {{ groupRoleSelection.length }} {{ groupRoleSelection.length === 1 ? 'role' : 'roles' }} selected
+            </span>
+          </p>
+        </div>
+      </div>
+      <button class="icon-button" (click)="closeGroupRolesModal()" title="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <!-- Search Bar -->
+      <div class="search-section" *ngIf="roles.length > 5">
+        <div class="search-wrapper">
+          <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+          <input 
+            type="text" 
+            class="search-input" 
+            placeholder="Search roles..." 
+            [(ngModel)]="groupRoleSearchTerm"
+            (input)="filterGroupRoles()"
+          />
+          <button 
+            *ngIf="groupRoleSearchTerm" 
+            class="clear-search" 
+            (click)="clearGroupRoleSearch()"
+            title="Clear search">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Roles List -->
+      <div class="roles-list-container">
+        <div class="roles-list" *ngIf="filteredGroupRoles.length > 0; else noRolesFound">
+          <label class="role-option" 
+                 *ngFor="let role of filteredGroupRoles"
+                 [class.selected]="groupRoleSelection.includes(role.roleId)">
+            <div class="role-checkbox-wrapper">
+              <input 
+                type="checkbox"
+                class="role-checkbox"
+                [checked]="groupRoleSelection.includes(role.roleId)"
+                [disabled]="savingGroupRoles"
+                (change)="onGroupRoleToggle(role.roleId, $any($event.target).checked)" />
+              <span class="checkbox-indicator"></span>
+            </div>
+            <div class="role-content">
+              <div class="role-header">
+                <strong class="role-name">{{ role.roleName }}</strong>
+                <span class="role-badge" *ngIf="groupRoleSelection.includes(role.roleId)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M20 6L9 17l-5-5"></path>
+                  </svg>
+                  Selected
+                </span>
+              </div>
+              <small class="role-description">{{ role.description || 'No description provided' }}</small>
+            </div>
+          </label>
+        </div>
+        
+        <ng-template #noRolesFound>
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <p *ngIf="groupRoleSearchTerm">No roles found matching "{{ groupRoleSearchTerm }}"</p>
+            <p *ngIf="!groupRoleSearchTerm">No roles available</p>
+          </div>
+        </ng-template>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <div class="footer-info" *ngIf="groupRoleSelection.length > 0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        <span>{{ groupRoleSelection.length }} {{ groupRoleSelection.length === 1 ? 'role' : 'roles' }} will be assigned</span>
+      </div>
+      <div class="footer-actions">
+        <button class="btn btn-secondary" (click)="closeGroupRolesModal()" [disabled]="savingGroupRoles">
+          Cancel
+        </button>
+        <button class="btn btn-primary" (click)="applyGroupRoleSelection()" [disabled]="savingGroupRoles">
+          <svg *ngIf="!savingGroupRoles" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 6L9 17l-5-5"></path>
+          </svg>
+          <span *ngIf="!savingGroupRoles">Save Changes</span>
+          <span *ngIf="savingGroupRoles" class="loading-spinner"></span>
+          <span *ngIf="savingGroupRoles">Saving...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Role Modal -->
+<div class="modal-backdrop" *ngIf="roleModalOpen">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div>
+        <h3>{{ modalMode === 'create' ? 'Create role' : 'Edit role' }}</h3>
+        <p>Bundle permissions that can be assigned to users or groups.</p>
+      </div>
+      <button class="icon-button" (click)="roleModalOpen = false">&times;</button>
+    </div>
+
+    <form [formGroup]="roleForm" (ngSubmit)="saveRole()" class="modal-body">
+      <div class="form-content">
+        <div class="form-field" [class.has-error]="roleForm.get('name')?.invalid && (roleForm.get('name')?.touched || roleForm.get('name')?.dirty)">
+          <label for="role-name">
+            <span class="label-text">Role name <sup class="required">*</sup></span>
+          </label>
+          <div class="input-wrapper">
+            <input 
+              id="role-name"
+              type="text" 
+              formControlName="name" 
+              placeholder="e.g., QA Inspector, Site Engineer"
+              [class.invalid]="roleForm.get('name')?.invalid && (roleForm.get('name')?.touched || roleForm.get('name')?.dirty)"
+            />
+            <svg *ngIf="roleForm.get('name')?.invalid && (roleForm.get('name')?.touched || roleForm.get('name')?.dirty)" 
+                 class="error-icon" 
+                 xmlns="http://www.w3.org/2000/svg" 
+                 width="18" 
+                 height="18" 
+                 viewBox="0 0 24 24" 
+                 fill="none" 
+                 stroke="currentColor" 
+                 stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <div class="error-message" *ngIf="roleForm.get('name')?.hasError('required') && (roleForm.get('name')?.touched || roleForm.get('name')?.dirty)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>Role name is required</span>
+          </div>
+          <div class="error-message" *ngIf="roleForm.get('name')?.hasError('minlength') && (roleForm.get('name')?.touched || roleForm.get('name')?.dirty)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>Role name must be at least 2 characters</span>
+          </div>
+          <div class="error-message" *ngIf="roleForm.get('name')?.hasError('maxlength') && (roleForm.get('name')?.touched || roleForm.get('name')?.dirty)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>Role name must not exceed 100 characters</span>
+          </div>
+          <div class="error-message" *ngIf="roleForm.get('name')?.hasError('backend') && (roleForm.get('name')?.touched || roleForm.get('name')?.dirty)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>{{ roleForm.get('name')?.getError('backend') }}</span>
+          </div>
+        </div>
+
+        <div class="form-field" [class.has-error]="roleForm.get('description')?.invalid && (roleForm.get('description')?.touched || roleForm.get('description')?.dirty)">
+          <label for="role-description">
+            <span class="label-text">Description</span>
+            <span class="label-hint">Optional: Explain the purpose and scope of this role</span>
+          </label>
+          <div class="input-wrapper">
+            <textarea 
+              id="role-description"
+              rows="4" 
+              formControlName="description" 
+              placeholder="Purpose of this role"
+              [class.invalid]="roleForm.get('description')?.invalid && (roleForm.get('description')?.touched || roleForm.get('description')?.dirty)"
+            ></textarea>
+            <svg *ngIf="roleForm.get('description')?.invalid && (roleForm.get('description')?.touched || roleForm.get('description')?.dirty)" 
+                 class="error-icon" 
+                 xmlns="http://www.w3.org/2000/svg" 
+                 width="18" 
+                 height="18" 
+                 viewBox="0 0 24 24" 
+                 fill="none" 
+                 stroke="currentColor" 
+                 stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <div class="error-message" *ngIf="roleForm.get('description')?.hasError('maxlength') && (roleForm.get('description')?.touched || roleForm.get('description')?.dirty)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>Description must not exceed 500 characters</span>
+          </div>
+          <div class="error-message" *ngIf="roleForm.get('description')?.hasError('backend') && (roleForm.get('description')?.touched || roleForm.get('description')?.dirty)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>{{ roleForm.get('description')?.getError('backend') }}</span>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label for="role-status">
+            <span class="label-text">Status</span>
+            <span class="label-hint">Active roles can be assigned to users and groups</span>
+          </label>
+          <div class="input-wrapper">
+            <select 
+              id="role-status"
+              formControlName="isActive"
+              [class.invalid]="roleForm.get('isActive')?.invalid && (roleForm.get('isActive')?.touched || roleForm.get('isActive')?.dirty)"
+            >
+              <option [ngValue]="true">Active</option>
+              <option [ngValue]="false">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <input type="hidden" formControlName="roleId" />
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" type="button" (click)="roleModalOpen = false">Cancel</button>
+        <button class="btn btn-primary" type="submit" [disabled]="savingRole || roleForm.invalid">
+          <svg *ngIf="!savingRole" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 6L9 17l-5-5"></path>
+          </svg>
+          <span *ngIf="!savingRole">Save role</span>
+          <span *ngIf="savingRole" class="loading-spinner"></span>
+          <span *ngIf="savingRole">Saving...</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Permission Matrix Modal -->
+<div class="modal-backdrop" *ngIf="permissionMatrixModalOpen">
+  <div class="modal-card xlarge">
+    <div class="modal-header">
+      <div>
+        <h3>Edit Permissions: {{ selectedRoleForPermissions?.roleName }}</h3>
+        <p>Select the permissions to grant to this role.</p>
+      </div>
+      <button class="icon-button" (click)="closePermissionMatrixModal()">&times;</button>
+    </div>
+
+    <div class="modal-body permission-matrix-body">
+      <div class="permission-groups">
+        <div class="permission-group" *ngFor="let group of permissionGroups">
+          <div class="group-header">
+            <label class="checkbox-label group-toggle">
+              <input 
+                type="checkbox" 
+                [checked]="areAllPermissionsInGroupSelected(group)"
+                [indeterminate]="areSomePermissionsInGroupSelected(group)"
+                (change)="toggleAllPermissionsInGroup(group, $any($event.target).checked)"
+                class="custom-checkbox"
+              />
+              <span class="checkbox-custom"></span>
+              <span class="group-name">{{ group.module }}</span>
+              <span class="group-category">{{ group.category }}</span>
+            </label>
+          </div>
+          <div class="permission-list">
+            <label class="checkbox-label permission-item" *ngFor="let perm of group.permissions">
+              <input 
+                type="checkbox" 
+                [checked]="isPermissionSelected(perm.permissionId)"
+                (change)="togglePermission(perm.permissionId)"
+                class="custom-checkbox"
+              />
+              <span class="checkbox-custom"></span>
+              <div class="permission-info">
+                <span class="permission-name">{{ perm.displayName || perm.action }}</span>
+                <span class="permission-description">{{ perm.description }}</span>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <span class="selected-count">{{ selectedPermissionIds.size }} permissions selected</span>
+      <button class="btn btn-secondary" type="button" (click)="closePermissionMatrixModal()">Cancel</button>
+      <button class="btn btn-primary" type="button" (click)="saveRolePermissions()" [disabled]="savingPermissions">
+        <svg *ngIf="!savingPermissions" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 6L9 17l-5-5"></path>
+        </svg>
+        <span *ngIf="!savingPermissions">Save Permissions</span>
+        <span *ngIf="savingPermissions" class="loading-spinner"></span>
+        <span *ngIf="savingPermissions">Saving...</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div class="modal-backdrop" *ngIf="confirmation.open">
+  <div class="modal-card confirm">
+    <div class="modal-header">
+      <div>
+        <h3>{{ confirmation.title }}</h3>
+        <p>{{ confirmation.message }}</p>
+      </div>
+      <button class="icon-button" (click)="closeConfirmation()">&times;</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" type="button" (click)="closeConfirmation()">Cancel</button>
+      <button class="btn btn-danger" type="button" (click)="confirmAction()">{{ confirmation.confirmLabel }}</button>
+    </div>
+  </div>
+</div>
+
+

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://aka.ms/vs/debugger-managed-favorites-schema",
+  "types": {
+    "Dubox.Application.DTOs.GroupedWIRCheckpointDto": {
+      "favorites": [
+        "BoxId",
+        "ProjectId"
+      ]
+    },
+    "Dubox.Application.DTOs.WIRCheckpointDto": {
+      "favorites": [
+        "BoxId",
+        "ProjectId"
+      ]
+    }
+  }
+}

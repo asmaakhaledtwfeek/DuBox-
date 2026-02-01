@@ -1,0 +1,70 @@
+﻿using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Dubox.Domain.Entities
+{
+    [Table("Materials")]
+    [Index(nameof(MaterialCode), IsUnique = true)]
+    public class Material
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public Guid MaterialId { get; set; }
+
+        [Required]
+        [MaxLength(50)]
+        public string MaterialCode { get; set; } = string.Empty;
+
+        [Required]
+        [MaxLength(200)]
+        public string MaterialName { get; set; } = string.Empty;
+
+        [MaxLength(100)]
+        public string? MaterialCategory { get; set; } // Precast, MEP, Finishing, etc.
+
+        [MaxLength(50)]
+        public string? Unit { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? UnitCost { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? CurrentStock { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? AllocatedStock { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? MinimumStock { get; set; }
+
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? ReorderLevel { get; set; }
+
+        [MaxLength(200)]
+        public string? SupplierName { get; set; }
+
+        // Project association - optional (null means global material available to all projects)
+        [ForeignKey(nameof(Project))]
+        public Guid? ProjectId { get; set; }
+
+        public bool IsActive { get; set; } = true;
+
+        // Navigation properties
+        public virtual Project? Project { get; set; }
+        public virtual ICollection<ActivityMaterial> ActivityMaterials { get; set; } = new List<ActivityMaterial>();
+        public virtual ICollection<BoxMaterial> BoxMaterials { get; set; } = new List<BoxMaterial>();
+        public virtual ICollection<MaterialTransaction> Transactions { get; set; } = new List<MaterialTransaction>();
+
+        // Calculated properties
+        [NotMapped]
+        public bool IsLowStock => CurrentStock.HasValue &&
+                                  MinimumStock.HasValue &&
+                                  CurrentStock <= MinimumStock;
+
+        [NotMapped]
+        public bool NeedsReorder => CurrentStock.HasValue &&
+                                    ReorderLevel.HasValue &&
+                                    CurrentStock <= ReorderLevel;
+    }
+}

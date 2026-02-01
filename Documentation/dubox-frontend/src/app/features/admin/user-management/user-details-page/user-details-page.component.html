@@ -1,0 +1,348 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="details-page">
+  <div class="page-content" *ngIf="!loadingUser && user; else loadingState">
+    <div class="page-header">
+      <button class="btn btn-ghost" type="button" (click)="goBack()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
+        Back to users
+      </button>
+      <div class="title-block">
+        <p class="eyebrow">Admin • Users</p>
+        <h1>{{ user?.fullName || 'User Details' }}</h1>
+        <p class="email">{{ user?.email }}</p>
+      </div>
+      <div class="header-actions"></div>
+
+  <div class="modal-backdrop" *ngIf="rolesModalOpen">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3>Manage Roles</h3>
+          <p>Select direct roles for this user.</p>
+        </div>
+        <button class="icon-button" (click)="closeRolesModal()">&times;</button>
+      </div>
+      <div class="modal-body list-body">
+        <!-- Error Message Display -->
+        <div class="error-alert" *ngIf="roleError">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>{{ roleError }}</span>
+        </div>
+
+        <!-- Info Message -->
+        <div class="info-alert" *ngIf="roleSelection.length === 0">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            <line x1="12" y1="12" x2="12" y2="8"></line>
+          </svg>
+          <span>Note: Viewer role cannot be assigned with other roles. Select either Viewer only, or other roles without Viewer.</span>
+        </div>
+
+        <label class="option-row" 
+               *ngFor="let role of roles"
+               [class.disabled]="isRoleDisabled(role.roleId) && !roleSelection.includes(role.roleId)">
+          <input type="checkbox"
+                 [checked]="roleSelection.includes(role.roleId)"
+                 [disabled]="isRoleDisabled(role.roleId) || saving"
+                 (change)="onRoleToggle(role.roleId, $any($event.target).checked)" />
+          <span>
+            <strong>{{ role.roleName }}</strong>
+            <small>{{ role.description || 'No description provided' }}</small>
+            <small class="disabled-hint" *ngIf="isRoleDisabled(role.roleId) && !roleSelection.includes(role.roleId)">
+              (Cannot select with current role combination)
+            </small>
+          </span>
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="closeRolesModal()" [disabled]="saving">Cancel</button>
+        <button class="btn btn-primary" (click)="applyRoleSelection()" [disabled]="saving">
+          <span *ngIf="!saving">Save</span>
+          <span *ngIf="saving">Saving...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" *ngIf="groupsModalOpen">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h3>Manage Groups</h3>
+          <p>Select which groups this user belongs to.</p>
+        </div>
+        <button class="icon-button" (click)="closeGroupsModal()">&times;</button>
+      </div>
+      <div class="modal-body list-body">
+        <!-- Error Message Display -->
+        <div class="error-alert" *ngIf="groupError">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>{{ groupError }}</span>
+        </div>
+
+        <!-- Warning for Viewer Role Users -->
+        <div class="error-alert" *ngIf="userHasViewerRole" style="background: #fffbeb; border-color: #fde68a; color: #92400e;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+          </svg>
+          <span>Users with the Viewer role cannot be assigned to groups.</span>
+        </div>
+
+        <label class="option-row" *ngFor="let group of groups" [class.disabled]="userHasViewerRole">
+          <input type="checkbox"
+                 [checked]="groupSelection.includes(group.groupId)"
+                 [disabled]="userHasViewerRole || saving"
+                 (change)="onGroupToggle(group.groupId, $any($event.target).checked)" />
+          <span>
+            <strong>{{ group.groupName }}</strong>
+            <small>{{ group.description || '—' }}</small>
+          </span>
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" (click)="closeGroupsModal()">Cancel</button>
+        <button class="btn btn-primary" (click)="applyGroupSelection()" [disabled]="saving">
+          <span *ngIf="!saving">Save</span>
+          <span *ngIf="saving">Saving...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+    </div>
+
+    <section class="summary-grid">
+      <article class="summary-card">
+        <span>Status</span>
+        <strong [class.active]="user?.isActive">{{ user?.isActive ? 'Active' : 'Inactive' }}</strong>
+        <small>User can sign in to DuBox</small>
+      </article>
+      <article class="summary-card">
+        <span>Department</span>
+        <strong>{{ user?.department || '—' }}</strong>
+        <small>Reporting structure</small>
+      </article>
+      <article class="summary-card">
+        <span>Created</span>
+        <strong>{{ user?.createdDate | date: 'mediumDate' }}</strong>
+        <small>Invitation accepted</small>
+      </article>
+      <article class="summary-card">
+        <span>Last login</span>
+        <strong>{{ user?.lastLoginDate ? (user?.lastLoginDate | date:'mediumDate') : 'Never' }}</strong>
+        <small>Last activity</small>
+      </article>
+    </section>
+
+    <!-- User Information Card -->
+    <section class="card info-card full-width">
+      <div class="card-header">
+        <h2>User Information</h2>
+        <p>Update profile information and account status.</p>
+      </div>
+
+      <form [formGroup]="userForm" class="info-form">
+        <!-- Core Fields: Full Name, Email, Department -->
+        <div class="core-fields">
+          <label>
+            <span>Full name <sup>*</sup></span>
+            <input type="text" formControlName="fullName" placeholder="Full name" />
+          </label>
+
+          <label>
+            <span>Email</span>
+            <input type="text" formControlName="email" [disabled]="true" />
+          </label>
+
+          <label>
+            <span>Department <sup>*</sup></span>
+            <select formControlName="departmentId">
+              <option value="">Select department</option>
+              <option *ngFor="let dept of departments" [value]="dept.departmentId">{{ dept.departmentName }}</option>
+            </select>
+          </label>
+        </div>
+
+        <!-- User is Active Toggle -->
+        <div class="status-section">
+          <label class="switch-field">
+            <input type="checkbox" formControlName="isActive" />
+            <span>User is active</span>
+          </label>
+        </div>
+
+        <!-- Save Changes Button -->
+        <div class="save-section">
+          <button class="btn btn-primary" type="button" (click)="onSave()" [disabled]="saving">
+            <svg *ngIf="!saving" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+              <polyline points="17 21 17 13 7 13 7 21"/>
+              <polyline points="7 3 7 8 15 8"/>
+            </svg>
+            <svg *ngIf="saving" class="spinner" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="2" x2="12" y2="6"/>
+              <line x1="12" y1="18" x2="12" y2="22"/>
+              <line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/>
+              <line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/>
+              <line x1="2" y1="12" x2="6" y2="12"/>
+              <line x1="18" y1="12" x2="22" y2="12"/>
+              <line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/>
+              <line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+            </svg>
+            <span *ngIf="!saving">Save Changes</span>
+            <span *ngIf="saving">Saving…</span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Assign Roles Card -->
+    <section class="card assignment-card full-width" *ngIf="canAssignRoles">
+      <div class="card-header">
+        <div class="header-content">
+          <div>
+            <h2>Assign roles</h2>
+            <p>Direct roles immediately grant permissions.</p>
+          </div>
+          <button type="button" class="btn btn-manage" (click)="openRolesModal()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Manage
+          </button>
+        </div>
+      </div>
+      <div class="card-content">
+        <div class="readonly-display">
+          <span class="display-value" *ngIf="selectedRoleNames !== 'No roles assigned'">{{ selectedRoleNames }}</span>
+          <span class="empty-value" *ngIf="selectedRoleNames === 'No roles assigned'">{{ selectedRoleNames }}</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Assign Groups Card -->
+    <section class="card assignment-card full-width" *ngIf="canAssignGroups">
+      
+      <div class="card-header">
+        <div class="header-content">
+          <div>
+            <h2>Assign groups</h2>
+            <p>Groups include bundled roles.</p>
+          </div>
+          <button type="button" class="btn btn-manage" (click)="openGroupsModal()" *ngIf="!userHasViewerRole">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+            Manage
+          </button>
+        </div>
+      </div>
+      <div class="error-alert" *ngIf="userHasViewerRole" style="background: #fffbeb; border-color: #fde68a; color: #92400e;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+        </svg>
+        <span>Users with the Viewer role cannot be assigned to groups.</span>
+      </div>
+      <div class="card-content">
+        <div class="readonly-display">
+          <span class="display-value" *ngIf="selectedGroupNames !== 'No groups assigned'">{{ selectedGroupNames }}</span>
+          <span class="empty-value" *ngIf="selectedGroupNames === 'No groups assigned'">{{ selectedGroupNames }}</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="card access-card full-width">
+        <div class="card-header">
+          <h2>Access overview</h2>
+          <p>Everything this user can do in the platform.</p>
+        </div>
+
+        <div class="roles-panels">
+          <article class="role-panel">
+            <div class="panel-head">
+              <h4>Direct roles</h4>
+              <span>{{ (user?.directRoleSummaries?.length || user?.directRoles?.length || 0) }}</span>
+            </div>
+            <div class="pill-column" *ngIf="user?.directRoleSummaries?.length; else fallbackDirectRoles">
+              <div class="role-pill" *ngFor="let role of user?.directRoleSummaries">
+                <strong>{{ role.roleName || 'Role' }}</strong>
+                <p>{{ role.description || 'No description provided.' }}</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="role-panel">
+          <div class="panel-head">
+            <h4>All roles</h4>
+            <span>{{ userAllRoleSummaries.length }}</span>
+            </div>
+          <div class="pill-column" *ngIf="userAllRoleSummaries.length; else noAllRoles">
+            <div class="role-pill" *ngFor="let role of userAllRoleSummaries">
+              <strong>{{ role.roleName || 'Role' }}</strong>
+              <p>{{ role.description || 'No description provided.' }}</p>
+            </div>
+            </div>
+          </article>
+        </div>
+
+        <ng-template #noDirectRoles>
+          <p class="empty-text">No direct roles assigned.</p>
+        </ng-template>
+
+        <ng-template #fallbackDirectRoles>
+          <div class="chip-row" *ngIf="user?.directRoles?.length; else noDirectRoles">
+            <span class="chip" *ngFor="let role of user?.directRoles">{{ role }}</span>
+          </div>
+        </ng-template>
+
+        <ng-template #noAllRoles>
+          <p class="empty-text">No roles available.</p>
+        </ng-template>
+
+        <div class="group-section">
+          <h3>Group memberships</h3>
+          <div class="group-grid" *ngIf="user?.groups?.length; else noGroups">
+            <article class="group-card" *ngFor="let membership of user?.groups">
+              <header>
+                <div>
+                  <strong>{{ membership.groupName || 'Untitled group' }}</strong>
+                </div>
+                <span class="badge">{{ getGroupRoles(membership.groupId).length }} roles</span>
+              </header>
+              <div class="chip-row">
+                <span class="chip tiny" *ngFor="let role of getGroupRoles(membership.groupId)">{{ role }}</span>
+                <span class="empty-text" *ngIf="!getGroupRoles(membership.groupId).length">No roles inherited.</span>
+              </div>
+            </article>
+          </div>
+          <ng-template #noGroups>
+            <p class="empty-text">This user is not assigned to any groups yet.</p>
+          </ng-template>
+        </div>
+    </section>
+  </div>
+
+  <ng-template #loadingState>
+    <div class="loading-state">
+      <p>Loading user details…</p>
+    </div>
+  </ng-template>
+</div>
+
+
+
+

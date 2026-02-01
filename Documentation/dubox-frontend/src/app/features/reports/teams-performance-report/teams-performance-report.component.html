@@ -1,0 +1,429 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="teams-performance-report-container">
+  <div class="content-wrapper">
+    <div class="report-header">
+      <div class="header-title-section">
+        <a [routerLink]="['/reports']" class="back-link" title="Back to Reports">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span>Reports</span>
+        </a>
+        <h1>Teams Performance Report</h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn-export btn-export-excel" (click)="exportToExcel()" [disabled]="loading || !reportData || reportData.items.length === 0" title="Export to Excel">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+          </svg>
+          <span>Export Excel</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Summary KPIs Section -->
+    <div class="summary-section" *ngIf="summary">
+      <h2 class="section-title">Summary KPIs</h2>
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-icon blue">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ summary.totalTeams | number }}</div>
+            <div class="kpi-label">Total Teams</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon green">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ summary.totalTeamMembers | number }}</div>
+            <div class="kpi-label">Total Team Members</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon purple">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ summary.totalAssignedActivities | number }}</div>
+            <div class="kpi-label">Total Assigned Activities</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon green">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ summary.completedActivities | number }}</div>
+            <div class="kpi-label">Completed Activities</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon orange">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ summary.inProgressActivities | number }}</div>
+            <div class="kpi-label">In-Progress Activities</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon red">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ summary.delayedActivities | number }}</div>
+            <div class="kpi-label">Delayed Activities</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon teal">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ formatProgress(summary.averageTeamProgress) }}</div>
+            <div class="kpi-label">Average Team Progress</div>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-icon yellow">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ summary.teamWorkloadIndicator | number: '1.1-1' }}</div>
+            <div class="kpi-label">Workload Indicator (per team)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="filters-section">
+      <div class="filters-header" (click)="filtersCollapsed = !filtersCollapsed">
+        <h2>Filters</h2>
+        <span class="collapse-icon">{{ filtersCollapsed ? '▼' : '▲' }}</span>
+      </div>
+      
+      <div class="filters-content" [class.collapsed]="filtersCollapsed">
+        <div class="filter-row">
+          <div class="filter-group">
+            <label>Project</label>
+            <select [(ngModel)]="selectedProjectId" (change)="onFilterChange()">
+              <option value="">All Projects</option>
+              <option *ngFor="let project of projects" [value]="project.id">{{ project.name }} ({{ project.code }})</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>Team</label>
+            <select [(ngModel)]="selectedTeamId" (change)="onFilterChange()">
+              <option value="">All Teams</option>
+              <option *ngFor="let team of teams" [value]="team.teamId">{{ team.teamName }}</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>Activity Status</label>
+            <select [(ngModel)]="selectedStatus" (change)="onFilterChange()">
+              <option [value]="null">All Statuses</option>
+              <option *ngFor="let status of statusOptions" [value]="status.value">{{ status.label }}</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label>Search</label>
+            <input 
+              type="text" 
+              [(ngModel)]="searchTerm" 
+              (input)="onSearchChange()"
+              placeholder="Search team name..."
+            />
+          </div>
+        </div>
+
+        <div class="filter-actions">
+          <button class="btn-reset" (click)="onResetFilters()">Reset Filters</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Error Message -->
+    <div class="error-message" *ngIf="error">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span>{{ error }}</span>
+    </div>
+
+    <!-- Teams Performance Table -->
+    <div class="table-section">
+      <div class="table-header">
+        <h2>Teams Performance</h2>
+        <div class="table-info" *ngIf="reportData">
+          Showing {{ (currentPage - 1) * pageSize + 1 }} - {{ Math.min(currentPage * pageSize, totalCount) }} of {{ totalCount | number }} teams
+        </div>
+      </div>
+
+      <div class="table-wrapper" *ngIf="!loading && reportData">
+        <table class="teams-performance-table">
+          <thead>
+            <tr>
+              <th>Team Code</th>
+              <th>Team Name</th>
+              <th>Members Count</th>
+              <th>Total Assigned</th>
+              <th>Completed</th>
+              <th>In-Progress</th>
+              <th>Pending</th>
+              <th>Delayed</th>
+              <th>Avg. Progress</th>
+              <th>Workload Level</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let team of reportData.items" class="team-row" (click)="viewTeamActivities(team)">
+              <td class="team-code">
+                <span>{{ team.teamCode }}</span>
+              </td>
+              <td class="team-name">
+                <span>{{ team.teamName }}</span>
+              </td>
+              <td class="text-center">
+                <span class="metric-value">{{ team.membersCount }}</span>
+              </td>
+              <td class="text-center">
+                <span class="metric-value metric-total">{{ team.totalAssignedActivities }}</span>
+              </td>
+              <td class="text-center completed">
+                <span class="status-badge status-completed">
+                  <span class="status-icon">✓</span>
+                  <span class="status-value">{{ team.completed }}</span>
+                </span>
+              </td>
+              <td class="text-center in-progress">
+                <span class="status-badge status-in-progress">
+                  <span class="status-icon">⟳</span>
+                  <span class="status-value">{{ team.inProgress }}</span>
+                </span>
+              </td>
+              <td class="text-center pending">
+                <span class="status-badge status-pending">
+                  <span class="status-icon">○</span>
+                  <span class="status-value">{{ team.pending }}</span>
+                </span>
+              </td>
+              <td class="text-center delayed">
+                <span class="status-badge status-delayed">
+                  <span class="status-icon">⚠</span>
+                  <span class="status-value">{{ team.delayed }}</span>
+                </span>
+              </td>
+              <td class="progress-cell">
+                <div class="progress-bar-container">
+                  <div class="progress-bar" [style.width.%]="team.averageTeamProgress"></div>
+                  <span class="progress-text">{{ formatProgress(team.averageTeamProgress) }}</span>
+                </div>
+              </td>
+              <td class="text-center">
+                <span class="workload-badge" [ngClass]="getWorkloadClass(team.workloadLevel)">
+                  {{ team.workloadLevel }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="empty-state" *ngIf="reportData.items.length === 0">
+          <p>No teams found matching the selected filters.</p>
+        </div>
+      </div>
+
+      <div class="loading-state" *ngIf="loading">
+        <div class="spinner"></div>
+        <p>Loading teams performance data...</p>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="pagination-section" *ngIf="reportData && totalCount > 0">
+      <div class="pagination-info">
+        <span class="pagination-text">
+          Showing <strong>{{ (currentPage - 1) * pageSize + 1 }}</strong> - 
+          <strong>{{ Math.min(currentPage * pageSize, totalCount) }}</strong> of 
+          <strong>{{ totalCount | number }}</strong> teams
+        </span>
+        <span class="page-info" *ngIf="totalPages > 1">
+          (Page {{ currentPage }} of {{ totalPages }})
+        </span>
+      </div>
+      
+      <div class="pagination-controls-wrapper" *ngIf="totalPages > 1">
+        <div class="pagination-controls">
+          <button 
+            class="btn-pagination btn-first" 
+            (click)="onPageChange(1)" 
+            [disabled]="currentPage === 1"
+            title="First page">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="11 17 6 12 11 7"/>
+              <polyline points="18 17 13 12 18 7"/>
+            </svg>
+          </button>
+          <button 
+            class="btn-pagination btn-prev" 
+            (click)="onPageChange(currentPage - 1)" 
+            [disabled]="currentPage === 1"
+            title="Previous page">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"/>
+            </svg>
+          </button>
+          
+          <div class="page-numbers">
+            <button 
+              *ngFor="let page of getPageNumbers()" 
+              class="btn-page" 
+              [class.active]="page !== '...' && page === currentPage"
+              (click)="onPageChangePage(page)"
+              [disabled]="page === '...'">
+              {{ page }}
+            </button>
+          </div>
+
+          <button 
+            class="btn-pagination btn-next" 
+            (click)="onPageChange(currentPage + 1)" 
+            [disabled]="currentPage === totalPages"
+            title="Next page">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+          <button 
+            class="btn-pagination btn-last" 
+            (click)="onPageChange(totalPages)" 
+            [disabled]="currentPage === totalPages"
+            title="Last page">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="13 17 18 12 13 7"/>
+              <polyline points="6 17 11 12 6 7"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="page-size-selector">
+        <label>Items per page:</label>
+        <select [(ngModel)]="pageSize" (change)="currentPage = 1; loadReportData()">
+          <option [value]="10">10</option>
+          <option [value]="25">25</option>
+          <option [value]="50">50</option>
+          <option [value]="100">100</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Team Activities Modal -->
+<div class="modal-overlay" *ngIf="showActivitiesModal" (click)="closeActivitiesModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Team Activities - {{ selectedTeam?.teamName }}</h2>
+      <button class="btn-close-modal" (click)="closeActivitiesModal()" title="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="loading-state" *ngIf="loadingActivities">
+        <div class="spinner"></div>
+        <p>Loading activities...</p>
+      </div>
+
+      <div *ngIf="!loadingActivities && teamActivities">
+        <div class="activities-summary" *ngIf="teamActivities.activities.length > 0">
+          <p class="summary-text">Total Activities: <strong>{{ teamActivities.totalCount }}</strong></p>
+        </div>
+
+        <div class="activities-table-wrapper" *ngIf="teamActivities.activities.length > 0">
+          <table class="activities-table">
+            <thead>
+              <tr>
+                <th>Activity Name</th>
+                <th>Box Tag</th>
+                <th>Project</th>
+                <th>Status</th>
+                <th>Progress</th>
+                <th>Planned Start</th>
+                <th>Planned End</th>
+                <th>Actual Start</th>
+                <th>Actual End</th>
+                <th>Duration</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let activity of teamActivities.activities" class="activity-row" (click)="navigateToActivityDetails(activity)">
+                <td class="activity-name">{{ activity.activityName }}</td>
+                <td class="box-tag">{{ activity.boxTag }}</td>
+                <td class="project-name">{{ activity.projectName }}</td>
+                <td>
+                  <span class="status-badge" [ngClass]="getStatusClass(activity.status)">
+                    {{ getStatusLabel(activity.status) }}
+                  </span>
+                </td>
+                <td class="progress-cell">
+                  <div class="progress-bar-container">
+                    <div class="progress-bar" [style.width.%]="activity.progressPercentage"></div>
+                    <span class="progress-text">{{ formatProgress(activity.progressPercentage) }}</span>
+                  </div>
+                </td>
+                <td class="date-cell">{{ formatDate(activity.plannedStartDate) }}</td>
+                <td class="date-cell">{{ formatDate(activity.plannedEndDate) }}</td>
+                <td class="date-cell">{{ formatDate(activity.actualStartDate) }}</td>
+                <td class="date-cell">{{ formatDate(activity.actualEndDate) }}</td>
+                <td class="duration-cell">{{ activity.duration ? activity.duration + ' days' : 'N/A' }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="empty-state" *ngIf="teamActivities.activities.length === 0">
+          <p>No activities found for this team.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

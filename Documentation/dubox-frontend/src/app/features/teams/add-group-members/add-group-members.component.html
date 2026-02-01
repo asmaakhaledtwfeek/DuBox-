@@ -1,0 +1,232 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="page-content">
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-state">
+      <div class="spinner"></div>
+      <p>Loading...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error && !loading && !teamGroup" class="error-state">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 8v4M12 16h.01"/>
+      </svg>
+      <p>{{ error }}</p>
+      <button class="btn btn-secondary" (click)="goBack()">Go Back</button>
+    </div>
+
+    <!-- Main Content -->
+    <div *ngIf="teamGroup && !loading" class="add-members-content">
+      <!-- Page Header -->
+      <div class="page-header">
+        <button class="btn-back" (click)="goBack()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="19" y1="12" x2="5" y2="12"/>
+            <polyline points="12 19 5 12 12 5"/>
+          </svg>
+          Back to Group Details
+        </button>
+
+        <div class="title-section">
+          <h1 class="page-title">Mange Group Members</h1>
+          <p class="page-subtitle">
+            Select crew members to add to <strong>{{ teamGroup.groupTag }}</strong>
+          </p>
+        </div>
+      </div>
+
+      <!-- Search Section -->
+      <div class="search-section">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="M21 21l-4.35-4.35"/>
+          </svg>
+          <input 
+            type="text" 
+            class="search-input" 
+            placeholder="Search by name, employee code, or email..."
+            [(ngModel)]="searchTerm"
+            (input)="onSearch()"
+          />
+          <button 
+            *ngIf="searchTerm" 
+            class="clear-search"
+            (click)="clearSearch()"
+            type="button"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        
+        <div class="search-actions">
+          <div class="search-results-info" *ngIf="!loadingMembers">
+            <span>{{ filteredMembers.length }} {{ filteredMembers.length === 1 ? 'member' : 'members' }} available</span>
+            <span *ngIf="selectedMemberIds.size > 0" class="selected-count">
+              • {{ selectedMemberIds.size }} selected
+            </span>
+          </div>
+          <div class="bulk-actions" *ngIf="filteredMembers.length > 0">
+            <button class="btn-link" (click)="selectAll()" type="button">Select All</button>
+            <span class="separator">|</span>
+            <button class="btn-link" (click)="deselectAll()" type="button">Deselect All</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loading Members -->
+      <div *ngIf="loadingMembers" class="loading-members">
+        <div class="spinner-small"></div>
+        <span>Loading team members...</span>
+      </div>
+
+      <!-- Members List -->
+      <div *ngIf="!loadingMembers && filteredMembers.length > 0" class="members-list-container">
+        <div class="members-grid">
+          <div 
+            *ngFor="let member of filteredMembers" 
+            class="member-card"
+            [class.selected]="isSelected(member.teamMemberId)"
+            (click)="toggleMemberSelection(member.teamMemberId)"
+          >
+            <div class="member-checkbox">
+              <input 
+                type="checkbox" 
+                [id]="'member-' + member.teamMemberId"
+                [checked]="isSelected(member.teamMemberId)"
+                (change)="toggleMemberSelection(member.teamMemberId)"
+                (click)="$event.stopPropagation()"
+              />
+              <span class="checkbox-custom">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </span>
+            </div>
+            
+            <div class="member-content">
+              <div class="member-avatar">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </div>
+              
+              <div class="member-info">
+                <div class="member-name">
+                  {{ member.employeeName || member.fullName || member.email }}
+                  <span *ngIf="isGroupLeader(member.teamMemberId)" class="leader-badge-inline">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    Leader
+                  </span>
+                </div>
+                <div class="member-meta">
+                  <span *ngIf="member.employeeCode" class="employee-code">{{ member.employeeCode }}</span>
+                  <span *ngIf="member.employeeCode && member.email" class="separator">•</span>
+                  <span class="email">{{ member.email }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="selection-indicator">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty State -->
+      <div *ngIf="!loadingMembers && filteredMembers.length === 0 && availableMembers.length === 0" class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        <h3>No Available Members</h3>
+        <p>All team members are already assigned to groups</p>
+        <button class="btn btn-secondary" (click)="goBack()">Go Back</button>
+      </div>
+
+      <!-- No Search Results -->
+      <div *ngIf="!loadingMembers && filteredMembers.length === 0 && availableMembers.length > 0" class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <circle cx="11" cy="11" r="8"/>
+          <path d="M21 21l-4.35-4.35"/>
+        </svg>
+        <h3>No Members Found</h3>
+        <p>Try adjusting your search terms</p>
+        <button class="btn btn-secondary" (click)="clearSearch()">Clear Search</button>
+      </div>
+
+      <!-- Error/Success Messages -->
+      <div *ngIf="error && teamGroup" class="alert alert-error">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M12 8v4M12 16h.01"/>
+        </svg>
+        {{ error }}
+      </div>
+
+      <div *ngIf="success" class="alert alert-success">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        {{ success }}
+      </div>
+
+      <!-- Fixed Action Bar -->
+      <div class="action-bar" *ngIf="filteredMembers.length > 0 || selectedMemberIds.size > 0">
+        <div class="action-bar-content">
+          <div class="selected-info">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+              <circle cx="9" cy="7" r="4"/>
+              <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+              <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            <span *ngIf="selectedMemberIds.size === 0">No members selected</span>
+            <span *ngIf="selectedMemberIds.size > 0">{{ selectedMemberIds.size }} {{ selectedMemberIds.size === 1 ? 'member' : 'members' }} selected</span>
+          </div>
+          <div class="action-buttons">
+            <button class="btn btn-secondary" (click)="goBack()" [disabled]="submitting">
+              Cancel
+            </button>
+            <button 
+              class="btn btn-primary" 
+              (click)="onAddMembers()" 
+              [disabled]="selectedMemberIds.size === 0 || submitting || loadingMembers"
+            >
+              <span *ngIf="!submitting">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="8.5" cy="7" r="4"/>
+                  <line x1="20" y1="8" x2="20" y2="14"/>
+                  <line x1="23" y1="11" x2="17" y2="11"/>
+                </svg>
+                 Save Changes
+              </span>
+              <span *ngIf="submitting" class="loading-text">
+                <div class="spinner-small"></div>
+                Saving...
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

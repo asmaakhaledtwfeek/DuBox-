@@ -4596,11 +4596,41 @@ console.log(expectedWirCode);
   }
 
   get isCurrentUserAssignedInspector(): boolean {
+    // System Admins can always review/edit checkpoints
+    if (this.authService.isSystemAdmin()) {
+      return true;
+    }
+    
     const currentUser: any = this.authService.getCurrentUser();
     const currentUserId: string | undefined = (currentUser?.userId || currentUser?.id)?.toString?.();
     const inspectorId: string | undefined = this.wirCheckpoint?.inspectorId?.toString?.();
     if (!currentUserId || !inspectorId) return false;
     return currentUserId.toLowerCase() === inspectorId.toLowerCase();
+  }
+
+  /**
+   * Check if current user is the assigned inspector (without admin override)
+   */
+  isAssignedInspectorForCheckpoint(): boolean {
+    const currentUser: any = this.authService.getCurrentUser();
+    const currentUserId: string | undefined = (currentUser?.userId || currentUser?.id)?.toString?.();
+    const inspectorId: string | undefined = this.wirCheckpoint?.inspectorId?.toString?.();
+    if (!currentUserId || !inspectorId) return false;
+    return currentUserId.toLowerCase() === inspectorId.toLowerCase();
+  }
+
+  /**
+   * Check if current user is a System Admin
+   */
+  isSystemAdmin(): boolean {
+    return this.authService.isSystemAdmin();
+  }
+
+  /**
+   * Get the name of the assigned inspector
+   */
+  getInspectorName(): string {
+    return this.wirCheckpoint?.inspectorName || 'Unknown';
   }
 
   get displayChecklistItems(): WIRCheckpointChecklistItem[] {

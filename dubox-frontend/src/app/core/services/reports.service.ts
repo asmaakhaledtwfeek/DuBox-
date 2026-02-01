@@ -674,5 +674,77 @@ export class ReportsService {
       totalCount: data.totalCount ?? data.TotalCount ?? 0
     };
   }
+
+  /**
+   * Get panel approvals report with filtering
+   */
+  getPanelApprovalsReport(params?: {
+    projectId?: string;
+    factoryId?: string;
+    panelType?: string;
+    approvalStatus?: string;
+    search?: string;
+  }): Observable<any> {
+    const queryParams: any = {};
+    
+    if (params?.projectId) queryParams.projectId = params.projectId;
+    if (params?.factoryId) queryParams.factoryId = params.factoryId;
+    if (params?.panelType) queryParams.panelType = params.panelType;
+    if (params?.approvalStatus) queryParams.approvalStatus = params.approvalStatus;
+    if (params?.search) queryParams.search = params.search;
+
+    return this.apiService.get<any>(`${this.endpoint}/panel-approvals/panels`, queryParams).pipe(
+      map(response => this.transformPanelApprovalsReport(response))
+    );
+  }
+
+  /**
+   * Transform backend panel approvals report response to frontend model
+   */
+  private transformPanelApprovalsReport(backendData: any): any {
+    const data = backendData.data || backendData.Data || backendData;
+    
+    return {
+      panels: (data.panels || data.Panels || []).map((item: any) => ({
+        panelId: item.panelId || item.PanelId || '',
+        panelName: item.panelName || item.PanelName || '',
+        panelType: item.panelType || item.PanelType || '',
+        boxCode: item.boxCode || item.BoxCode || '',
+        boxName: item.boxName || item.BoxName || '',
+        projectId: item.projectId || item.ProjectId || '',
+        projectName: item.projectName || item.ProjectName || '',
+        projectNumber: item.projectNumber || item.ProjectNumber || '',
+        firstApprovalDate: item.firstApprovalDate ? new Date(item.firstApprovalDate) : null,
+        secondApprovalDate: item.secondApprovalDate ? new Date(item.secondApprovalDate) : null,
+        secondApprovalBy: item.secondApprovalBy || item.SecondApprovalBy,
+        status: item.status || item.Status || 'Pending'
+      })),
+      groupedByPanelType: (data.groupedByPanelType || data.GroupedByPanelType || []).map((item: any) => ({
+        panelType: item.panelType || item.PanelType || '',
+        panelTypeId: item.panelTypeId || item.PanelTypeId,
+        totalPanels: item.totalPanels ?? item.TotalPanels ?? 0,
+        firstApprovalCount: item.firstApprovalCount ?? item.FirstApprovalCount ?? 0,
+        secondApprovalCount: item.secondApprovalCount ?? item.SecondApprovalCount ?? 0,
+        pendingFirstApproval: item.pendingFirstApproval ?? item.PendingFirstApproval ?? 0,
+        pendingSecondApproval: item.pendingSecondApproval ?? item.PendingSecondApproval ?? 0,
+        boxesUsingThisType: item.boxesUsingThisType ?? item.BoxesUsingThisType ?? 0,
+        firstApprovalPercentage: item.firstApprovalPercentage ?? item.FirstApprovalPercentage ?? 0,
+        secondApprovalPercentage: item.secondApprovalPercentage ?? item.SecondApprovalPercentage ?? 0,
+        projectNames: item.projectNames || item.ProjectNames || []
+      })),
+      summary: {
+        totalPanels: data.summary?.totalPanels ?? data.summary?.TotalPanels ?? data.Summary?.TotalPanels ?? 0,
+        firstApprovalCount: data.summary?.firstApprovalCount ?? data.summary?.FirstApprovalCount ?? data.Summary?.FirstApprovalCount ?? 0,
+        secondApprovalCount: data.summary?.secondApprovalCount ?? data.summary?.SecondApprovalCount ?? data.Summary?.SecondApprovalCount ?? 0,
+        pendingFirstApproval: data.summary?.pendingFirstApproval ?? data.summary?.PendingFirstApproval ?? data.Summary?.PendingFirstApproval ?? 0,
+        pendingSecondApproval: data.summary?.pendingSecondApproval ?? data.summary?.PendingSecondApproval ?? data.Summary?.PendingSecondApproval ?? 0,
+        totalBoxes: data.summary?.totalBoxes ?? data.summary?.TotalBoxes ?? data.Summary?.TotalBoxes ?? 0,
+        totalPanelTypes: data.summary?.totalPanelTypes ?? data.summary?.TotalPanelTypes ?? data.Summary?.TotalPanelTypes ?? 0,
+        firstApprovalPercentage: data.summary?.firstApprovalPercentage ?? data.summary?.FirstApprovalPercentage ?? data.Summary?.FirstApprovalPercentage ?? 0,
+        secondApprovalPercentage: data.summary?.secondApprovalPercentage ?? data.summary?.SecondApprovalPercentage ?? data.Summary?.SecondApprovalPercentage ?? 0
+      }
+    };
+  }
 }
+
 

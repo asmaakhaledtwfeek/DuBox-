@@ -14,6 +14,7 @@ public record MaterialDto
     public decimal? MinimumStock { get; init; }
     public decimal? ReorderLevel { get; init; }
     public string? SupplierName { get; init; }
+    public Guid? ProjectId { get; init; }
     public bool IsActive { get; init; }
     public bool IsLowStock { get; init; }
     public bool NeedsReorder { get; init; }
@@ -30,6 +31,7 @@ public record CreateMaterialDto
     public decimal? MinimumStock { get; init; }
     public decimal? ReorderLevel { get; init; }
     public string? SupplierName { get; init; }
+    public Guid? ProjectId { get; init; }
 }
 
 public record UpdateMaterialDto

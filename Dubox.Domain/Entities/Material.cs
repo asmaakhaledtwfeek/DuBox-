@@ -44,9 +44,14 @@ namespace Dubox.Domain.Entities
         [MaxLength(200)]
         public string? SupplierName { get; set; }
 
+        // Project association - optional (null means global material available to all projects)
+        [ForeignKey(nameof(Project))]
+        public Guid? ProjectId { get; set; }
+
         public bool IsActive { get; set; } = true;
 
         // Navigation properties
+        public virtual Project? Project { get; set; }
         public virtual ICollection<ActivityMaterial> ActivityMaterials { get; set; } = new List<ActivityMaterial>();
         public virtual ICollection<BoxMaterial> BoxMaterials { get; set; } = new List<BoxMaterial>();
         public virtual ICollection<MaterialTransaction> Transactions { get; set; } = new List<MaterialTransaction>();

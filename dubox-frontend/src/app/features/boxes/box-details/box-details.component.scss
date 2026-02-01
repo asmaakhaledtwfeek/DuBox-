@@ -64,6 +64,7 @@
   margin: 0;
   width: 100%;
   overflow-x: hidden;
+  box-sizing: border-box;
 
   // Tablet mode - adjusted padding
   @media (min-width: 769px) and (max-width: 1024px) {
@@ -281,12 +282,16 @@
     }
 
     .action-btn {
-      padding: 8px 16px;
+      min-width: 44px;
+      min-height: 44px;
+      padding: 10px 16px;
       font-size: 13px;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
 
       svg {
-        width: 16px;
-        height: 16px;
+        width: 18px;
+        height: 18px;
       }
 
       span {
@@ -410,6 +415,7 @@
 // Tabs
 .tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 0;
   border-bottom: 2px solid var(--border-color);
   margin-bottom: 32px;
@@ -613,6 +619,9 @@
     grid-template-columns: 1fr 400px;
     gap: var(--spacing-xl, 24px);
     margin-bottom: var(--spacing-xl, 24px);
+    max-width: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
 
     @media (max-width: 1200px) {
       grid-template-columns: 1fr;
@@ -625,10 +634,14 @@
 
   .left-column {
     min-width: 0;
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
   .right-column {
     min-width: 0;
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
   /* Compact Card Styles */
@@ -1882,6 +1895,561 @@
 
   .photo-gallery {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+
+  // Reduce gaps and padding on mobile
+  .page-content {
+    padding: 8px 12px !important;
+  }
+
+  .breadcrumb {
+    margin-bottom: 8px !important;
+    font-size: 12px !important;
+
+    .breadcrumb-item {
+      font-size: 12px !important;
+    }
+  }
+
+  .page-header {
+    margin-bottom: 12px !important;
+    padding: 12px 16px !important;
+
+    .header-content {
+      gap: 12px !important;
+      position: relative !important;
+    }
+
+    .box-info {
+      gap: 8px !important;
+      width: 100% !important;
+      padding-right: 110px !important;
+
+      .box-name {
+        font-size: 24px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        margin: 0 !important;
+        
+        .box-number {
+          font-size: 14px !important;
+        }
+      }
+
+      .box-id {
+        font-size: 12px !important;
+        padding: 4px 8px !important;
+      }
+
+      .status-badge {
+        font-size: 11px !important;
+        padding: 4px 10px !important;
+      }
+    }
+
+    .header-actions {
+      display: none !important;
+
+      .action-btn {
+        flex: none !important;
+        min-width: 44px !important;
+        width: 44px !important;
+        height: 44px !important;
+        padding: 10px !important;
+        font-size: 0 !important;
+        border-radius: 10px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        touch-action: manipulation !important;
+        -webkit-tap-highlight-color: transparent !important;
+
+        svg {
+          width: 20px !important;
+          height: 20px !important;
+          margin: 0 !important;
+        }
+
+        span {
+          display: none !important;
+        }
+
+        // Increase touch area without changing visual size
+        &::after {
+          content: '';
+          position: absolute;
+          top: -4px;
+          right: -4px;
+          bottom: -4px;
+          left: -4px;
+        }
+      }
+    }
+  }
+
+  // Move tabs closer
+  .tabs {
+    margin-bottom: 12px !important;
+    padding: 0 !important;
+    gap: 4px !important;
+
+    .tab {
+      padding: 8px 12px !important;
+      font-size: 12px !important;
+    }
+  }
+
+  // Reduce card spacing
+  .info-card {
+    padding: 12px !important;
+    margin-bottom: 12px !important;
+    border-radius: 10px !important;
+
+    .card-title {
+      font-size: 14px !important;
+      margin-bottom: 10px !important;
+    }
+
+    // Position badges in one line
+    .info-item {
+      .value {
+        .position-badge {
+          display: inline-block !important;
+          padding: 4px 8px !important;
+          margin-right: 6px !important;
+          margin-bottom: 4px !important;
+          font-size: 11px !important;
+          border-radius: 6px !important;
+          white-space: nowrap !important;
+        }
+      }
+
+      .label {
+        font-size: 11px !important;
+      }
+
+      .value {
+        font-size: 13px !important;
+      }
+    }
+  }
+
+  // Compact serial QR card
+  .serial-qr-card {
+    padding: 10px !important;
+
+    .serial-number-section-compact {
+      margin-bottom: 10px !important;
+      padding-bottom: 10px !important;
+
+      .serial-label {
+        font-size: 10px !important;
+        margin-bottom: 4px !important;
+      }
+
+      .serial-value-container-compact {
+        gap: 6px !important;
+
+        .serial-value-compact {
+          font-size: 13px !important;
+          padding: 4px 8px !important;
+        }
+
+        .btn-copy-compact {
+          padding: 5px 8px !important;
+          font-size: 10px !important;
+
+          svg {
+            width: 12px !important;
+            height: 12px !important;
+          }
+        }
+      }
+    }
+
+    .qr-code-section-compact {
+      .qr-label-compact {
+        font-size: 10px !important;
+        margin-bottom: 6px !important;
+      }
+
+      .qr-container-compact {
+        gap: 8px !important;
+
+        .qr-image-wrapper-compact {
+          padding: 6px !important;
+
+          .qr-code-image-compact {
+            width: 90px !important;
+            height: 90px !important;
+          }
+        }
+
+        .btn-download-compact {
+          padding: 6px 10px !important;
+          font-size: 10px !important;
+
+          svg {
+            width: 11px !important;
+            height: 11px !important;
+          }
+        }
+      }
+    }
+  }
+
+  // Reduce gap in content grid
+  .content-grid {
+    gap: 12px !important;
+    margin-bottom: 12px !important;
+  }
+
+  // Compact activity stats and chart
+  .activities-card,
+  .chart-card {
+    padding: 10px !important;
+
+    .card-title {
+      font-size: 14px !important;
+      margin-bottom: 8px !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+
+      svg {
+        width: 16px !important;
+        height: 16px !important;
+      }
+    }
+
+    .chart-container {
+      gap: 10px !important;
+    }
+
+    .visual-chart-section {
+      padding: 10px !important;
+    }
+
+    // Minimize donut chart to 50%
+    .donut-chart-wrapper {
+      flex-direction: column !important;
+      gap: 12px !important;
+      align-items: center !important;
+
+      .donut-chart {
+        width: 110px !important;
+        height: 110px !important;
+
+        .chart-center-value {
+          font-size: 24px !important;
+        }
+
+        .chart-center-label {
+          font-size: 10px !important;
+        }
+      }
+
+      // Legend in 2 columns
+      .chart-legend {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+        width: 100% !important;
+
+        .legend-item {
+          padding: 6px 10px !important;
+          min-width: 0 !important;
+          border-radius: 8px !important;
+
+          .legend-color {
+            width: 12px !important;
+            height: 12px !important;
+          }
+
+          .legend-text {
+            font-size: 10px !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+          }
+        }
+      }
+    }
+
+    .activity-stats {
+      gap: 6px !important;
+      display: grid !important;
+      grid-template-columns: repeat(2, 1fr) !important;
+
+      .stat-item {
+        padding: 8px !important;
+        border-radius: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+
+        .stat-icon {
+          width: 32px !important;
+          height: 32px !important;
+          flex-shrink: 0 !important;
+
+          svg {
+            width: 14px !important;
+            height: 14px !important;
+          }
+        }
+
+        .stat-content {
+          .stat-value {
+            font-size: 18px !important;
+            line-height: 1 !important;
+            margin-bottom: 2px !important;
+          }
+
+          .stat-label {
+            font-size: 9px !important;
+            line-height: 1 !important;
+          }
+        }
+      }
+    }
+  }
+
+  // Compact all other cards
+  .compact-card {
+    padding: 10px !important;
+  }
+
+  .delivery-card,
+  .progress-card,
+  .details-card {
+    padding: 10px !important;
+    margin-bottom: 12px !important;
+
+    .card-title {
+      font-size: 14px !important;
+      margin-bottom: 8px !important;
+    }
+
+    .info-item {
+      .label {
+        font-size: 11px !important;
+      }
+
+      .value {
+        font-size: 13px !important;
+      }
+    }
+  }
+
+  // Concrete Panel Delivery Card
+  .concrete-panel-card {
+    padding: 10px !important;
+
+    .card-header-with-icon {
+      margin-bottom: 10px !important;
+
+      .icon-wrapper {
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 8px !important;
+
+        svg {
+          width: 18px !important;
+          height: 18px !important;
+        }
+      }
+
+      .card-title-section {
+        .card-title {
+          font-size: 14px !important;
+          margin-bottom: 6px !important;
+        }
+
+        .panel-status-legend {
+          .legend-toggle {
+            font-size: 10px !important;
+            padding: 4px 8px !important;
+
+            svg {
+              width: 12px !important;
+              height: 12px !important;
+            }
+          }
+
+          .legend-content {
+            padding: 8px !important;
+            font-size: 10px !important;
+
+            .legend-item {
+              padding: 4px 6px !important;
+              font-size: 9px !important;
+            }
+          }
+        }
+      }
+    }
+
+    .delivery-panels-container {
+      gap: 8px !important;
+
+      .delivery-item {
+        padding: 8px !important;
+        border-radius: 8px !important;
+        font-size: 13px !important;
+      }
+
+      .empty-state {
+        padding: 12px !important;
+
+        .empty-message {
+          font-size: 11px !important;
+        }
+      }
+    }
+  }
+
+  // Pod Delivery Card
+  .pod-delivery-card-v2 {
+    padding: 10px !important;
+
+    .pod-card-header {
+      margin-bottom: 10px !important;
+
+      .pod-title-area {
+        gap: 8px !important;
+
+        .pod-icon-badge {
+          width: 36px !important;
+          height: 36px !important;
+          border-radius: 8px !important;
+
+          svg {
+            width: 16px !important;
+            height: 16px !important;
+          }
+        }
+
+        .pod-card-title {
+          font-size: 14px !important;
+        }
+      }
+
+      .pod-toggle {
+        .toggle-track {
+          width: 44px !important;
+          height: 24px !important;
+
+          &::before {
+            width: 18px !important;
+            height: 18px !important;
+          }
+        }
+      }
+    }
+
+    .pod-fields-section {
+      gap: 8px !important;
+
+      .pod-field-group {
+        .pod-field-label {
+          font-size: 10px !important;
+          margin-bottom: 4px !important;
+
+          svg {
+            width: 12px !important;
+            height: 12px !important;
+          }
+        }
+
+        .pod-field-input {
+          padding: 8px 10px !important;
+          font-size: 12px !important;
+          border-radius: 8px !important;
+        }
+      }
+    }
+  }
+
+  // Delivery info wrapper
+  .delivery-info-wrapper {
+    gap: 12px !important;
+  }
+
+  // Progress and Schedule side by side
+  .progress-schedule-layout {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+    margin-bottom: 12px !important;
+
+    .progress-card,
+    .schedule-card {
+      padding: 10px !important;
+      margin-bottom: 0 !important;
+
+      .card-title {
+        font-size: 13px !important;
+        margin-bottom: 8px !important;
+        font-weight: 600 !important;
+      }
+
+      .progress-container {
+        .progress-header {
+          display: flex !important;
+          justify-content: space-between !important;
+          align-items: center !important;
+          margin-bottom: 6px !important;
+
+          .progress-label {
+            font-size: 11px !important;
+            color: #64748b !important;
+          }
+
+          .progress-value {
+            font-size: 16px !important;
+            font-weight: 700 !important;
+            color: var(--amana-teal) !important;
+          }
+        }
+
+        .progress-bar {
+          height: 6px !important;
+          background: #e2e8f0 !important;
+          border-radius: 10px !important;
+          overflow: hidden !important;
+
+          .progress-fill {
+            height: 100% !important;
+            background: linear-gradient(90deg, var(--amana-teal) 0%, var(--amana-blue) 100%) !important;
+            border-radius: 10px !important;
+            transition: width 0.3s ease !important;
+          }
+        }
+      }
+
+      .info-grid {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 8px !important;
+
+        .info-item {
+          .label {
+            font-size: 10px !important;
+            color: #64748b !important;
+            display: block !important;
+            margin-bottom: 2px !important;
+          }
+
+          .value {
+            font-size: 12px !important;
+            color: #1e293b !important;
+            font-weight: 500 !important;
+          }
+        }
+      }
+    }
   }
 }
 
@@ -4967,6 +5535,89 @@
 
 // Activities Tab
 .activities-tab {
+  // Panel Approval Warning Banner
+  .panel-approval-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    background: linear-gradient(135deg, #fff3cd 0%, #ffe8a1 100%);
+    border: 2px solid #ffc107;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.15);
+    animation: slideDown 0.3s ease-out;
+
+    .warning-icon {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      background: #fff;
+      border-radius: 50%;
+      box-shadow: 0 2px 8px rgba(255, 193, 7, 0.2);
+
+      svg {
+        color: #f59e0b;
+        stroke-width: 2.5;
+      }
+    }
+
+    .warning-content {
+      flex: 1;
+
+      .warning-title {
+        font-size: 16px;
+        font-weight: 600;
+        color: #92400e;
+        margin: 0 0 8px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .warning-message {
+        font-size: 14px;
+        color: #78350f;
+        margin: 0;
+        line-height: 1.6;
+
+        strong {
+          font-weight: 600;
+          color: #92400e;
+        }
+      }
+    }
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 12px;
+      padding: 16px;
+
+      .warning-icon {
+        width: 36px;
+        height: 36px;
+
+        svg {
+          width: 18px;
+          height: 18px;
+        }
+      }
+
+      .warning-content {
+        .warning-title {
+          font-size: 15px;
+        }
+
+        .warning-message {
+          font-size: 13px;
+        }
+      }
+    }
+  }
+
   .activities-list {
     display: flex;
     flex-direction: column;
@@ -7884,39 +8535,265 @@
 @media (max-width: 768px) {
   .page-container {
     margin-left: 0;
-    padding: 80px 20px 20px;
+    padding: 1px 20px 20px;
   }
 
-  .page-header {
-    flex-direction: column;
-
-    .header-right {
-      width: 100%;
-      
-      .btn {
-        flex: 1;
-        justify-content: center;
-      }
-    }
-  }
-
-  .tabs {
+  .breadcrumb {
+    margin-bottom: 16px;
+    gap: 6px;
+    font-size: 13px;
     overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
     -webkit-overflow-scrolling: touch;
-    gap: 0;
-    margin-bottom: 24px;
     scrollbar-width: none;
     -ms-overflow-style: none;
 
     &::-webkit-scrollbar {
       display: none;
     }
+
+    .breadcrumb-item {
+      font-size: 13px;
+      gap: 4px;
+
+      svg {
+        width: 12px;
+        height: 12px;
+      }
+    }
+
+    .breadcrumb-separator {
+      font-size: 12px;
+    }
+  }
+
+  .page-header {
+    padding: 16px 20px !important;
+    margin-bottom: 20px !important;
+
+    .header-content {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 16px;
+    }
+
+    .box-info {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+
+      .box-name {
+        font-size: 20px !important;
+        white-space: normal;
+        word-break: break-word;
+        line-height: 1.3;
+
+        .box-number {
+          font-size: 18px;
+          display: block;
+          margin-left: 0;
+          margin-top: 4px;
+        }
+      }
+
+      .box-id {
+        font-size: 13px;
+        padding: 5px 10px;
+      }
+
+      .status-badge {
+        font-size: 12px;
+        padding: 5px 12px;
+      }
+    }
+
+    .header-actions {
+      width: 100%;
+      justify-content: stretch;
+      gap: 8px;
+      
+      .action-btn {
+        flex: 1;
+        min-width: 0;
+        justify-content: center;
+        padding: 12px 16px;
+        font-size: 13px;
+
+        svg {
+          width: 16px;
+          height: 16px;
+        }
+
+        span {
+          font-size: 13px;
+        }
+      }
+    }
+  }
+
+  .tabs {
+    overflow-x: visible;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 24px;
     
     .tab {
       white-space: nowrap;
       padding: 12px 16px;
       font-size: 13px;
-      min-width: fit-content;
+      flex: 0 1 auto;
+      
+      // Hide specific tabs on mobile
+      &:nth-child(3), // Stage Checkpoints
+      &:nth-child(5), // Logs
+      &:nth-child(8), // All Attachments
+      &:nth-child(9) { // Progress History
+        display: none !important;
+      }
+    }
+  }
+
+  // Quality Issues - Mobile responsive
+  .quality-card-header {
+    padding: 14px !important;
+    
+    .quality-header-content {
+      flex-direction: column !important;
+      gap: 10px !important;
+      align-items: flex-start !important;
+      
+      .quality-title-section {
+        width: 100% !important;
+        
+        h2, .card-title {
+          font-size: 16px !important;
+          margin-bottom: 6px !important;
+        }
+        
+        .card-subtitle {
+          font-size: 12px !important;
+        }
+      }
+      
+      .quality-card-actions {
+        width: 100% !important;
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+        
+        .quality-count-badge {
+          grid-column: 1 / -1 !important;
+          width: 100% !important;
+          justify-content: center !important;
+          padding: 6px 12px !important;
+          font-size: 11px !important;
+          
+          svg {
+            width: 12px !important;
+            height: 12px !important;
+          }
+        }
+        
+        .quality-action-btn {
+          width: 100% !important;
+          min-width: 0 !important;
+          justify-content: center !important;
+          padding: 8px 10px !important;
+          font-size: 11px !important;
+          white-space: nowrap !important;
+          box-sizing: border-box !important;
+          
+          svg {
+            width: 14px !important;
+            height: 14px !important;
+            flex-shrink: 0 !important;
+          }
+        }
+      }
+    }
+  }
+  
+  // Quality Issues Table Wrapper
+  .quality-table-wrapper {
+    margin-top: 12px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+  
+  // Quality Issues Table - Mobile responsive
+  .designer-table.quality-issues-table {
+    font-size: 10px !important;
+    
+    thead th {
+      padding: 6px 4px !important;
+      font-size: 9px !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.3px !important;
+      line-height: 1.2 !important;
+    }
+    
+    tbody td {
+      padding: 6px 4px !important;
+      font-size: 10px !important;
+      line-height: 1.3 !important;
+      
+      &.col-seq {
+        padding: 6px 3px !important;
+        
+        .seq-badge {
+          width: 24px !important;
+          height: 24px !important;
+          font-size: 10px !important;
+        }
+      }
+      
+      &.col-issue-number {
+        padding: 6px 3px !important;
+        
+        .issue-number {
+          font-size: 10px !important;
+          padding: 2px 6px !important;
+        }
+      }
+      
+      &.col-stage .stage-badge {
+        font-size: 9px !important;
+        padding: 2px 6px !important;
+      }
+      
+      &.col-type .type-badge {
+        font-size: 9px !important;
+        padding: 2px 6px !important;
+      }
+      
+      &.col-severity .severity-badge {
+        font-size: 9px !important;
+        padding: 2px 6px !important;
+      }
+      
+      &.col-status .status-badge {
+        font-size: 9px !important;
+        padding: 2px 6px !important;
+      }
+      
+      &.col-actions {
+        padding: 6px 2px !important;
+        
+        .action-stack {
+          gap: 2px !important;
+          
+          .action-btn {
+            width: 28px !important;
+            height: 28px !important;
+            
+            svg {
+              width: 12px !important;
+              height: 12px !important;
+            }
+          }
+        }
+      }
     }
   }
 
@@ -8033,14 +8910,331 @@
       justify-content: center;
     }
   }
+
+  // Info Cards - Mobile responsive
+  .info-card {
+    padding: 16px !important;
+    margin-bottom: 16px !important;
+    border-radius: 10px !important;
+
+    .card-title {
+      font-size: 16px !important;
+      margin-bottom: 16px !important;
+    }
+
+    .info-grid {
+      gap: 16px !important;
+    }
+
+    .info-item {
+      .label {
+        font-size: 12px !important;
+      }
+
+      .value {
+        font-size: 14px !important;
+        word-break: break-word;
+
+        .position-badge {
+          font-size: 12px !important;
+          padding: 3px 10px !important;
+        }
+      }
+    }
+
+    &.serial-qr-card {
+      .serial-number-section {
+        margin-bottom: 24px !important;
+        padding-bottom: 16px !important;
+
+        .serial-value {
+          font-size: 20px !important;
+        }
+      }
+
+      .qr-code-section {
+        canvas, img {
+          max-width: 200px !important;
+          height: auto !important;
+        }
+      }
+    }
+  }
+
+  // Overview section mobile
+  .overview-grid,
+  .activity-delivery-layout {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
+  }
+
+  // Tables - Make them scrollable
+  .table-wrapper,
+  .designer-table-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    margin: 0 -16px !important;
+    padding: 0 16px !important;
+  }
+
+  table {
+    min-width: 600px !important;
+  }
+
+  // Form fields
+  .form-group {
+    margin-bottom: 16px !important;
+
+    label {
+      font-size: 13px !important;
+    }
+
+    input,
+    select,
+    textarea {
+      font-size: 14px !important;
+      padding: 10px 12px !important;
+    }
+  }
+
+  // Modal adjustments
+  .modal-content {
+    width: 95% !important;
+    max-width: 95% !important;
+    margin: 20px auto !important;
+    padding: 20px !important;
+
+    .modal-header {
+      padding: 16px !important;
+
+      h3 {
+        font-size: 18px !important;
+      }
+    }
+
+    .modal-body {
+      padding: 16px !important;
+    }
+
+    .modal-footer {
+      padding: 16px !important;
+      flex-direction: column !important;
+      gap: 8px !important;
+
+      .btn {
+        width: 100% !important;
+        justify-content: center !important;
+      }
+    }
+  }
 }
 
 // Extra small screens
 @media (max-width: 480px) {
+  .page-container {
+    padding: 1px 12px 16px;
+  }
+
+  .breadcrumb {
+    margin-bottom: 12px;
+    gap: 4px;
+    font-size: 12px;
+
+    .breadcrumb-item {
+      font-size: 12px;
+      gap: 3px;
+
+      svg {
+        width: 11px;
+        height: 11px;
+      }
+    }
+
+    .breadcrumb-separator {
+      font-size: 11px;
+    }
+  }
+
+  .page-header {
+    padding: 12px 16px !important;
+    margin-bottom: 16px !important;
+
+    .box-info {
+      .box-name {
+        font-size: 18px !important;
+
+        .box-number {
+          font-size: 16px;
+        }
+      }
+
+      .box-id {
+        font-size: 12px;
+        padding: 4px 8px;
+      }
+
+      .status-badge {
+        font-size: 11px;
+        padding: 4px 10px;
+      }
+    }
+
+    .header-actions {
+      flex-direction: column;
+      gap: 8px;
+      
+      .action-btn {
+        width: 100%;
+        padding: 12px;
+        font-size: 13px;
+        justify-content: center;
+
+        svg {
+          width: 16px;
+          height: 16px;
+        }
+
+        span {
+          display: inline;
+        }
+      }
+    }
+  }
+
   .tabs {
     .tab {
       padding: 10px 12px;
       font-size: 12px;
+    }
+  }
+
+  // Quality Issues - Extra compact for small screens
+  .quality-card-header {
+    padding: 10px !important;
+    
+    .quality-header-content {
+      gap: 8px !important;
+      
+      .quality-title-section {
+        h2, .card-title {
+          font-size: 14px !important;
+          margin-bottom: 4px !important;
+        }
+        
+        .card-subtitle {
+          font-size: 11px !important;
+        }
+      }
+      
+      .quality-card-actions {
+        gap: 6px !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        
+        .quality-count-badge {
+          grid-column: 1 / -1 !important;
+          padding: 5px 10px !important;
+          font-size: 10px !important;
+          
+          svg {
+            width: 11px !important;
+            height: 11px !important;
+          }
+        }
+        
+        .quality-action-btn {
+          width: 100% !important;
+          min-width: 0 !important;
+          padding: 7px 8px !important;
+          font-size: 10px !important;
+          white-space: nowrap !important;
+          box-sizing: border-box !important;
+          
+          svg {
+            width: 12px !important;
+            height: 12px !important;
+            flex-shrink: 0 !important;
+          }
+        }
+      }
+    }
+  }
+  
+  // Quality Issues Table Wrapper - Extra compact
+  .quality-table-wrapper {
+    margin-top: 8px !important;
+  }
+  
+  // Quality Issues Table - Extra compact
+  .designer-table.quality-issues-table {
+    font-size: 9px !important;
+    
+    thead th {
+      padding: 5px 3px !important;
+      font-size: 8px !important;
+      line-height: 1.1 !important;
+    }
+    
+    tbody td {
+      padding: 5px 3px !important;
+      font-size: 9px !important;
+      line-height: 1.2 !important;
+      
+      &.col-seq {
+        padding: 5px 2px !important;
+        
+        .seq-badge {
+          width: 22px !important;
+          height: 22px !important;
+          font-size: 9px !important;
+        }
+      }
+      
+      &.col-issue-number {
+        padding: 5px 2px !important;
+        
+        .issue-number {
+          font-size: 9px !important;
+          padding: 2px 5px !important;
+        }
+      }
+      
+      &.col-stage .stage-badge {
+        font-size: 8px !important;
+        padding: 2px 5px !important;
+      }
+      
+      &.col-type .type-badge {
+        font-size: 8px !important;
+        padding: 2px 5px !important;
+      }
+      
+      &.col-severity .severity-badge {
+        font-size: 8px !important;
+        padding: 2px 5px !important;
+      }
+      
+      &.col-status .status-badge {
+        font-size: 8px !important;
+        padding: 2px 5px !important;
+      }
+      
+      &.col-actions {
+        padding: 5px 2px !important;
+        
+        .action-stack {
+          gap: 2px !important;
+          
+          .action-btn {
+            width: 26px !important;
+            height: 26px !important;
+            
+            svg {
+              width: 11px !important;
+              height: 11px !important;
+            }
+          }
+        }
+      }
     }
   }
 
@@ -8207,74 +9401,81 @@
       margin-bottom: 20px;
 
       .drawing-sub-nav {
-        order: 1;
-        padding: 5px;
-        border-radius: 10px;
-        gap: 8px;
+        order: 2;
+        padding: 4px;
+        border-radius: 8px;
+        gap: 6px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
 
         .sub-tab-btn {
-          padding: 10px 12px;
-          font-size: 12px;
-          border-radius: 8px;
-          gap: 6px;
+          padding: 8px 10px;
+          font-size: 11px;
+          border-radius: 6px;
+          gap: 5px;
           flex-wrap: nowrap;
           white-space: nowrap;
 
           svg {
-            width: 14px;
-            height: 14px;
+            width: 13px;
+            height: 13px;
             flex-shrink: 0;
           }
 
           .count-badge {
-            min-width: 20px;
-            height: 20px;
-            padding: 0 5px;
-            font-size: 10px;
-            border-radius: 10px;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 4px;
+            font-size: 9px;
+            border-radius: 8px;
             flex-shrink: 0;
           }
         }
       }
 
       .btn-upload-drawing {
-        order: 2;
+        order: 1;
         width: 100%;
         justify-content: center;
-        padding: 12px 16px;
-        font-size: 13px;
-        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 12px;
+        border-radius: 8px;
 
         svg {
-          width: 16px;
-          height: 16px;
+          width: 15px;
+          height: 15px;
         }
       }
     }
 
     .section-header {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 12px;
-      padding: 12px 14px;
-      margin-bottom: 20px;
-      border-radius: 12px;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      margin-bottom: 16px;
+      border-radius: 10px;
 
       .section-title {
-        font-size: 16px;
-        gap: 10px;
+        font-size: 14px;
+        gap: 8px;
+        flex: 1;
+        min-width: 0;
 
         svg {
-          width: 20px;
-          height: 20px;
+          width: 18px;
+          height: 18px;
+          flex-shrink: 0;
         }
       }
 
       .section-count {
-        align-self: flex-end;
-        font-size: 12px;
-        padding: 6px 12px;
-        border-radius: 10px;
+        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 8px;
+        flex-shrink: 0;
+        white-space: nowrap;
       }
     }
 
@@ -8341,57 +9542,76 @@
       margin-bottom: 16px;
 
       .drawing-sub-nav {
-        padding: 4px;
-        gap: 6px;
+        padding: 3px;
+        gap: 4px;
+        order: 2;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
 
         .sub-tab-btn {
-          padding: 8px 10px;
-          font-size: 11px;
-          gap: 5px;
+          padding: 6px 8px;
+          font-size: 10px;
+          gap: 4px;
+          border-radius: 6px;
 
           svg {
-            width: 13px;
-            height: 13px;
+            width: 12px;
+            height: 12px;
           }
 
           .count-badge {
-            min-width: 18px;
-            height: 18px;
-            padding: 0 4px;
-            font-size: 9px;
+            min-width: 16px;
+            height: 16px;
+            padding: 0 3px;
+            font-size: 8px;
+            border-radius: 6px;
           }
         }
       }
 
       .btn-upload-drawing {
-        padding: 10px 14px;
-        font-size: 12px;
+        padding: 8px 12px;
+        font-size: 11px;
+        border-radius: 8px;
+        order: 1;
+        width: 100%;
 
         svg {
-          width: 15px;
-          height: 15px;
+          width: 14px;
+          height: 14px;
         }
       }
     }
 
     .section-header {
-      padding: 10px 12px;
-      margin-bottom: 16px;
-      gap: 10px;
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      margin-bottom: 12px;
+      gap: 8px;
+      border-radius: 8px;
 
       .section-title {
-        font-size: 15px;
-        gap: 8px;
+        font-size: 13px;
+        gap: 6px;
+        flex: 1;
+        min-width: 0;
+        line-height: 1.3;
 
         svg {
-          width: 18px;
-          height: 18px;
+          width: 16px;
+          height: 16px;
+          flex-shrink: 0;
         }
       }
 
       .section-count {
-        font-size: 11px;
-        padding: 5px 10px;
+        font-size: 10px;
+        padding: 3px 8px;
+        border-radius: 6px;
+        flex-shrink: 0;
+        white-space: nowrap;
       }
     }
 
@@ -9869,35 +11089,46 @@
     display: flex;
     flex-direction: column;
     flex: 0 0 auto; // Don't grow or shrink, use natural content size
-    overflow: visible; // Allow content to be fully visible
+    overflow: hidden; // Contain content within card
+    max-width: 100%;
+    box-sizing: border-box;
 
     .delivery-grid {
-      overflow: visible; // Show all content
+      overflow: hidden; // Contain all content
+      max-width: 100%;
+      box-sizing: border-box;
     }
   }
   
-  // Ensure concrete panel card content is fully visible
+  // Ensure concrete panel card content is properly contained
   .concrete-panel-card {
-    overflow: visible;
+    overflow: hidden;
+    max-width: 100%;
+    box-sizing: border-box;
     
     .concrete-grid {
-      overflow: visible;
+      overflow: hidden;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
       gap: 12px;
       padding: 16px;
+      max-width: 100%;
+      box-sizing: border-box;
       
       .delivery-item {
-        overflow: visible;
+        overflow: hidden;
+        box-sizing: border-box;
+        min-width: 0;
         
         .rejection-reason {
           word-wrap: break-word;
           word-break: break-word;
-          overflow: visible;
+          overflow: hidden;
           
           .rejection-reason-text {
             display: block;
-            overflow: visible;
+            overflow: hidden;
+            word-wrap: break-word;
           }
         }
       }
@@ -9906,7 +11137,9 @@
 
   // Pod delivery card should have equal or smaller height than concrete panel
   .pod-delivery-card-v2 {
-    overflow: visible;
+    overflow: hidden;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 }
 
@@ -10007,6 +11240,9 @@
   margin-bottom: 0;
   height: 100%;
   min-height: 0; // Allow flex container to shrink
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 
   .delivery-card {
     background: white;
@@ -10019,6 +11255,9 @@
     flex-direction: column;
     flex: 1; // Each card takes equal space in the flex container
     min-height: 0; // Allow flex items to shrink below content size
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
 
     &:hover {
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.08);
@@ -10183,13 +11422,19 @@
 
     .delivery-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
       gap: 12px;
       flex: 1;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
     }
 
     .delivery-item {
       position: relative;
+      min-width: 0;
+      box-sizing: border-box;
+      overflow: hidden;
       
       &.panel-item {
         padding: 14px 16px;
@@ -10197,6 +11442,12 @@
         background: #f8fafc;
         border: 2px solid #e2e8f0;
         transition: all 0.3s ease;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
         
         // Status-based background colors - only 4 statuses now
         // NotStarted = Gray
@@ -10227,7 +11478,7 @@
         .panel-status-controls {
           display: flex;
           align-items: center;
-          justify-content: space-between;
+          justify-content: center;
           gap: 12px;
           
           .panel-name-section {
@@ -10236,6 +11487,8 @@
             gap: 4px;
             flex: 1;
             min-width: 0;
+            text-align: center;
+            align-items: center;
           }
           
           .panel-name {
@@ -10243,6 +11496,8 @@
             color: var(--text-primary);
             font-size: 14px;
             line-height: 1.3;
+            text-align: center;
+            width: 100%;
           }
           
           .panel-status-text {
@@ -10320,10 +11575,12 @@
           margin-top: 12px;
           padding-top: 12px;
           border-top: 1px solid rgba(239, 68, 68, 0.2);
+          text-align: center;
           
           .rejection-reason-label {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
             margin-bottom: 6px;
             font-size: 11px;
@@ -10349,6 +11606,7 @@
             border-radius: 4px;
             word-wrap: break-word;
             white-space: pre-wrap;
+            text-align: center;
           }
         }
         
@@ -10622,12 +11880,17 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 16px;
+      max-width: 100%;
+      box-sizing: border-box;
+      overflow: hidden;
     }
 
     .pod-field {
       display: flex;
       flex-direction: column;
       gap: 8px;
+      min-width: 0;
+      box-sizing: border-box;
     }
 
     .pod-field-label {
@@ -10749,13 +12012,16 @@
   @media (max-width: 640px) {
     .pod-delivery-card-v2 {
       .pod-card-header {
-        flex-direction: column;
-        align-items: flex-start;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-between;
         gap: 12px;
+        padding: 14px 16px;
       }
 
       .pod-form-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
       }
 
       .pod-toggle .toggle-label {
@@ -11088,20 +12354,33 @@
 
       .card-header-with-icon {
         margin-bottom: 20px;
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
 
         .icon-wrapper {
           width: 38px;
           height: 38px;
+          flex-shrink: 0;
+        }
+
+        .card-title-section {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
         }
 
         .card-title {
           font-size: 17px;
+          margin: 0;
+          line-height: 1.3;
         }
       }
     }
 
     .concrete-panel-card .delivery-grid {
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(2, 1fr);
     }
 
     .pod-details {
@@ -11113,6 +12392,21 @@
       }
     }
   }
+
+  // Pod Delivery responsive for tablets/mobile
+  .pod-delivery-card-v2 {
+    .pod-card-header {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .pod-form-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+  }
 }
 
 @media (max-width: 480px) {
@@ -11122,6 +12416,41 @@
       font-size: 14px;
     }
 
+    .delivery-card {
+      .card-header-with-icon {
+        gap: 10px;
+
+        .icon-wrapper {
+          width: 34px;
+          height: 34px;
+
+          svg {
+            width: 18px;
+            height: 18px;
+          }
+        }
+
+        .card-title {
+          font-size: 15px;
+        }
+
+        .legend-toggle {
+          font-size: 11px;
+          padding: 5px 10px;
+
+          svg {
+            width: 12px;
+            height: 12px;
+          }
+        }
+      }
+    }
+
+    .concrete-panel-card .delivery-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
     .pod-details {
       padding: 16px;
 
@@ -11129,6 +12458,184 @@
         font-size: 12px;
       }
     }
+  }
+
+  // Pod Delivery responsive for small mobile
+  .pod-delivery-card-v2 {
+    .pod-card-header {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      gap: 8px;
+    }
+
+    .pod-icon-badge {
+      width: 32px;
+      height: 32px;
+
+      svg {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    .pod-card-title {
+      font-size: 14px;
+    }
+
+    .pod-form-grid {
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .pod-field-label {
+      font-size: 10px;
+    }
+
+    .pod-input {
+      padding: 8px;
+      font-size: 13px;
+    }
+  }
+
+  // WIR Section - Extra compact for small screens
+  .status-summary-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+
+    .summary-card {
+      padding: 10px !important;
+      gap: 8px !important;
+
+      .summary-icon {
+        width: 32px !important;
+        height: 32px !important;
+
+        svg {
+          width: 16px !important;
+          height: 16px !important;
+        }
+      }
+
+      .summary-content {
+        .summary-value {
+          font-size: 18px !important;
+        }
+
+        .summary-label {
+          font-size: 9px !important;
+        }
+      }
+    }
+  }
+
+  // Checkpoint Cards - 2 per line on small mobile
+  .wir-checkpoints-list {
+    display: grid !important;
+    grid-template-columns: repeat(1, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .wir-checkpoint-card {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+
+    .checkpoint-header {
+      padding: 10px !important;
+
+      .checkpoint-number {
+        font-size: 13px !important;
+      }
+
+      .checkpoint-title {
+        font-size: 11px !important;
+      }
+
+      .checkpoint-description {
+        font-size: 9px !important;
+        -webkit-line-clamp: 1 !important;
+        -webkit-box-orient: vertical !important;
+        line-clamp: 1 !important;
+      }
+    }
+
+    .checkpoint-body {
+      padding: 8px 10px !important;
+    }
+
+    .checkpoint-meta {
+      display: grid !important;
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 6px !important;
+
+      .meta-item {
+        padding: 5px 6px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+
+        svg {
+          width: 12px !important;
+          height: 12px !important;
+          stroke-width: 2 !important;
+          display: block !important;
+          flex-shrink: 0 !important;
+          margin: 0 !important;
+        }
+
+        .meta-label {
+          font-size: 8px !important;
+        }
+
+        .meta-value {
+          font-size: 10px !important;
+        }
+      }
+    }
+
+    .checkpoint-actions {
+      padding: 8px 10px !important;
+      gap: 4px !important;
+      justify-content: space-between !important;
+      flex-wrap: nowrap !important;
+
+      .action-btn {
+        flex: 0 0 auto !important;
+        width: 40px !important;
+        height: 40px !important;
+        min-width: 40px !important;
+        padding: 8px !important;
+        font-size: 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+
+        svg {
+          width: 18px !important;
+          height: 18px !important;
+          stroke-width: 2 !important;
+          display: block !important;
+          margin: auto !important;
+          flex-shrink: 0 !important;
+          pointer-events: none !important;
+        }
+
+        span {
+          display: none !important;
+        }
+      }
+    }
+  }
+
+  // Ensure all buttons remain touch-friendly on small screens
+  .action-btn,
+  .icon-button {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
   }
 }
 
@@ -11140,4 +12647,225 @@
       padding: 12px;
     }
   }
+
+  // WIR Section Mobile Optimization
+  .status-summary-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+
+    .summary-card {
+      padding: 14px !important;
+      gap: 12px !important;
+
+      .summary-icon {
+        width: 36px !important;
+        height: 36px !important;
+        border-radius: 8px !important;
+
+        svg {
+          width: 18px !important;
+          height: 18px !important;
+        }
+      }
+
+      .summary-content {
+        .summary-value {
+          font-size: 22px !important;
+          font-weight: 700 !important;
+        }
+
+        .summary-label {
+          font-size: 10px !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.5px !important;
+        }
+      }
+    }
+  }
+
+  // Checkpoint Cards - 2 per line on mobile
+  .wir-checkpoints-list {
+    display: grid !important;
+    grid-template-columns: repeat(1, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  .wir-checkpoint-card {
+    border-radius: 12px !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+
+    .checkpoint-header {
+      padding: 12px !important;
+      
+      .checkpoint-id-section {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+      }
+
+      .checkpoint-number {
+        font-size: 14px !important;
+        font-weight: 700 !important;
+      }
+
+      .checkpoint-version {
+        font-size: 9px !important;
+        padding: 2px 6px !important;
+      }
+
+      .checkpoint-title {
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        line-height: 1.3 !important;
+        margin: 0 !important;
+      }
+
+      .checkpoint-description {
+        font-size: 10px !important;
+        line-height: 1.3 !important;
+        margin: 4px 0 0 0 !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+        line-clamp: 2 !important;
+      }
+    }
+
+    .checkpoint-body {
+      padding: 10px 12px !important;
+      gap: 8px !important;
+    }
+
+    .checkpoint-meta {
+      display: grid !important;
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 8px !important;
+
+      .meta-item {
+        padding: 6px 8px !important;
+        border-radius: 6px !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+
+        svg {
+          width: 14px !important;
+          height: 14px !important;
+          stroke-width: 2 !important;
+          display: block !important;
+          flex-shrink: 0 !important;
+          margin: 0 !important;
+        }
+
+        .meta-label {
+          font-size: 9px !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.3px !important;
+        }
+
+        .meta-value {
+          font-size: 11px !important;
+          font-weight: 600 !important;
+        }
+      }
+    }
+
+    .checkpoint-actions {
+      padding: 10px 12px !important;
+      gap: 6px !important;
+      flex-wrap: nowrap !important;
+      justify-content: space-between !important;
+
+      .action-btn {
+        flex: 0 0 auto !important;
+        min-width: 44px !important;
+        width: 44px !important;
+        height: 44px !important;
+        padding: 10px !important;
+        font-size: 0 !important;
+        border-radius: 10px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+
+        svg {
+          width: 20px !important;
+          height: 20px !important;
+          stroke-width: 2 !important;
+          display: block !important;
+          margin: auto !important;
+          flex-shrink: 0 !important;
+          pointer-events: none !important;
+        }
+
+        span {
+          display: none !important;
+        }
+      }
+    }
+
+    // Status badges in cards
+    .status-badge-checkpoint {
+      font-size: 10px !important;
+      padding: 4px 8px !important;
+      border-radius: 6px !important;
+    }
+  }
+
+  // Header description
+  .header-description {
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+    padding: 10px !important;
+  }
+
+  // Global mobile button fix - ensure all action buttons are touch-friendly
+  .action-btn,
+  .icon-button,
+  .btn-icon-refresh,
+  .col-actions .action-btn {
+    min-width: 44px !important;
+    min-height: 44px !important;
+    width: auto !important;
+    height: auto !important;
+    padding: 10px !important;
+    touch-action: manipulation !important;
+    -webkit-tap-highlight-color: transparent !important;
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+
+    &:not(.no-expand)::after {
+      content: '';
+      position: absolute;
+      top: -6px;
+      right: -6px;
+      bottom: -6px;
+      left: -6px;
+      z-index: -1;
+    }
+
+    svg {
+      width: 20px !important;
+      height: 20px !important;
+      stroke-width: 2 !important;
+      display: block !important;
+      margin: 0 auto !important;
+      flex-shrink: 0 !important;
+      pointer-events: none !important;
+    }
+  }
+
+  // Specifically for icon-only buttons
+  .action-btn:not(:has(span:not(:empty))),
+  .icon-button {
+    width: 44px !important;
+    height: 44px !important;
+  }
 }
+

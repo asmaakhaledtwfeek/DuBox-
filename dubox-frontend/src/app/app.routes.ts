@@ -16,6 +16,10 @@ export const routes: Routes = [
     loadComponent: () => import('./features/public/public-box-view/public-box-view.component').then(m => m.PublicBoxViewComponent)
   },
   {
+    path: 'public-approve',
+    loadComponent: () => import('./features/public-approve/public-approve.component').then(m => m.PublicApproveComponent)
+  },
+  {
     path: 'login',
     loadComponent: () => import('./features/auth/login/login.component').then(m => m.LoginComponent)
   },
@@ -380,6 +384,11 @@ export const routes: Routes = [
     path: 'reports/teams-performance',
     canActivate: [authGuard],
     loadComponent: () => import('./features/reports/teams-performance-report/teams-performance-report.component').then(m => m.TeamsPerformanceReportComponent)
+  },
+  {
+    path: 'reports/panel-approvals',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/reports/panel-approvals-report/panel-approvals-report.component').then(m => m.PanelApprovalsReportComponent)
   },
   {
     path: 'unauthorized',

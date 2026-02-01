@@ -36,6 +36,7 @@ public static class Bootstrap
         services.AddScoped<IUserRolePermissionService, UserRolePermissionService>();
         services.AddScoped<IBlobStorageService, BlobStorageService>();
         services.AddScoped<INotificationHubService, NotificationHubService>();
+        services.AddScoped<INotificationService, NotificationService>();
 
         return services;
     }

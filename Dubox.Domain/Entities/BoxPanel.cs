@@ -49,6 +49,32 @@ public class BoxPanel
     [MaxLength(500)]
     public string? DeliveryNoteUrl { get; set; }
 
+    // Pre-cast Location Stage Progress
+    public PanelStageEnum CurrentStage { get; set; } = PanelStageEnum.NotStarted;
+
+    // Stage completion tracking
+    public bool MoldPreparationComplete { get; set; } = false;
+    public DateTime? MoldPreparationDate { get; set; }
+
+    public bool ReinforcementSetupComplete { get; set; } = false;
+    public DateTime? ReinforcementSetupDate { get; set; }
+
+    public bool ConcreteCastingComplete { get; set; } = false;
+    public DateTime? ConcreteCastingDate { get; set; }
+
+    public bool CuringAndDemoldingComplete { get; set; } = false;
+    public DateTime? CuringAndDemoldingDate { get; set; }
+
+    [MaxLength(50)]
+    public string? WorkflowStatus { get; set; } // InProgress, OnHold, Completed
+
+    public DateTime? WorkflowStatusDate { get; set; }
+    public Guid? WorkflowStatusBy { get; set; }
+    public string? WorkflowStatusNotes { get; set; }
+
+    // Quality Issue reference (when rejected or on hold)
+    public Guid? QualityIssueId { get; set; }
+
     // First Approval (Quality Check)
     [MaxLength(50)]
     public string? FirstApprovalStatus { get; set; } // Pending, Approved, Rejected

@@ -167,7 +167,7 @@ export class FactoryWallsStatusComponent implements OnInit, OnDestroy {
       next: (boxes: Box[]) => {
         // Keep only boxes that belong to this factory and have position data
         const boxesInFactory = boxes.filter(
-          box => box.factoryId === this.factoryId && (box.bay || box.row || box.position)
+          box => box.factoryId === this.factoryId 
         );
 
         this.boxes = boxesInFactory;

@@ -48,6 +48,26 @@
         font-size: 14px;
         border: 1px solid #333;
         white-space: nowrap;
+        vertical-align: middle;
+        
+        // Left align specific columns
+        &:nth-child(2), // Team
+        &:nth-child(3), // Activity
+        &:nth-child(4) { // Assigned to
+          text-align: left;
+        }
+        
+        // Center align specific columns
+        &:nth-child(1), // ID
+        &:nth-child(5), // Status
+        &:nth-child(6), // Duration
+        &:nth-child(7), // Actual Duration
+        &:nth-child(8), // Actual Start
+        &:nth-child(9), // Progress
+        &:nth-child(10), // Actual Finish
+        &:last-child { // Actions
+          text-align: center;
+        }
       }
     }
   }
@@ -85,6 +105,7 @@
         padding: 10px 8px;
         border: 1px solid #ddd;
         vertical-align: middle;
+        text-align: center;
 
         &.text-center {
           text-align: center;
@@ -93,12 +114,14 @@
         &.team-cell {
           font-weight: 600;
           color: #555;
+          text-align: left;
         }
 
         &.activity-name {
           font-weight: 500;
           color: #333;
           min-width: 180px;
+          text-align: left;
 
           strong {
             color: #000;
@@ -110,15 +133,37 @@
           color: #555;
           font-weight: 500;
           min-width: 150px;
+          text-align: left;
         }
 
         &.actions-cell {
           padding: 8px;
           white-space: nowrap;
+          text-align: center;
         }
         
         &.wir-actions-cell {
           padding: 6px 8px;
+          text-align: center;
+        }
+        
+        // Left align specific columns by position
+        &:nth-child(2), // Team
+        &:nth-child(3), // Activity
+        &:nth-child(4) { // Assigned to
+          text-align: left;
+        }
+        
+        // Center align specific columns by position
+        &:nth-child(1), // ID
+        &:nth-child(5), // Status
+        &:nth-child(6), // Duration
+        &:nth-child(7), // Actual Duration
+        &:nth-child(8), // Actual Start
+        &:nth-child(9), // Progress
+        &:nth-child(10), // Actual Finish
+        &:last-child { // Actions
+          text-align: center;
         }
       }
     }
@@ -400,6 +445,7 @@
 .wir-status-position-cell {
   padding: 8px;
   vertical-align: middle;
+  text-align: center;
 }
 
 .wir-location-info {
@@ -409,6 +455,7 @@
   font-size: 11px;
   color: #64748b;
   justify-content: center;
+  text-align: center;
 }
 
 .wir-no-location {
@@ -440,15 +487,27 @@
   background: transparent !important;
 }
 
-.wir-code-cell strong {
-  display: inline-block;
-  padding: 4px 12px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, var(--amana-green) 0%, var(--amana-teal) 100%);
-  color: var(--white);
-  font-size: 13px;
-  font-weight: 700;
-  box-shadow: 0 2px 6px rgba(27, 154, 170, 0.25);
+.wir-activity-cell {
+  text-align: left;
+}
+
+.wir-team-cell {
+  text-align: left;
+}
+
+.wir-code-cell {
+  text-align: center;
+  
+  strong {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--amana-green) 0%, var(--amana-teal) 100%);
+    color: var(--white);
+    font-size: 13px;
+    font-weight: 700;
+    box-shadow: 0 2px 6px rgba(27, 154, 170, 0.25);
+  }
 }
 
 .wir-progress-label {
@@ -586,32 +645,261 @@
 
 // Responsive
 @media (max-width: 1024px) {
+  .process-flow-table-container {
+    padding: 18px;
+  }
+  
   .process-flow-table {
-    font-size: 12px;
+    font-size: 11px;
 
     thead th {
       padding: 10px 6px;
-      font-size: 12px;
+      font-size: 11px;
     }
 
     tbody td {
       padding: 8px 6px;
+      font-size: 11px;
     }
+  }
+  
+  .status-badge {
+    padding: 3px 8px;
+    font-size: 10px;
+  }
+  
+  .wir-status-card {
+    padding: 4px 12px;
+    font-size: 11px;
+  }
+  
+  .btn-update-progress,
+  .btn-view-details {
+    padding: 5px 9px;
+    font-size: 11px;
+    
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+  
+  .btn-wir-action {
+    padding: 4px 9px;
+    font-size: 10px;
   }
 }
 
 @media (max-width: 768px) {
+  .process-flow-table-container {
+    padding: 14px;
+  }
+  
+  .table-title {
+    font-size: 1.1rem;
+    padding: 10px;
+    margin: -14px -14px 14px -14px;
+  }
+  
   .table-wrapper {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
 
   .process-flow-table {
-    min-width: 900px;
+    min-width: auto;
+    font-size: 10px;
+    
+    thead {
+      th {
+        padding: 8px 4px;
+        font-size: 9px;
+        white-space: nowrap;
+        vertical-align: middle;
+        
+        // Maintain alignment on mobile
+        &:nth-child(2), // Team
+        &:nth-child(3), // Activity
+        &:nth-child(4) { // Assigned to
+          text-align: left;
+        }
+        
+        &:nth-child(1), // ID
+        &:nth-child(5), // Status
+        &:nth-child(6), // Duration
+        &:nth-child(7), // Actual Duration
+        &:nth-child(8), // Actual Start
+        &:nth-child(9), // Progress
+        &:nth-child(10), // Actual Finish
+        &:last-child { // Actions
+          text-align: center;
+        }
+      }
+    }
+    
+    tbody {
+      tr {
+        &.wir-checkpoint {
+          td {
+            padding: 6px 4px;
+          }
+        }
+        
+        td {
+          padding: 6px 4px;
+          font-size: 10px;
+          
+          &.activity-name {
+            min-width: 120px;
+            font-size: 10px;
+            text-align: left;
+          }
+          
+          &.assigned-to {
+            min-width: 100px;
+            font-size: 10px;
+            text-align: left;
+          }
+          
+          &.team-cell {
+            text-align: left;
+          }
+          
+          &.actions-cell,
+          &.wir-actions-cell {
+            padding: 4px 3px;
+            text-align: center;
+          }
+          
+          // Maintain alignment on mobile
+          &:nth-child(2), // Team
+          &:nth-child(3), // Activity
+          &:nth-child(4) { // Assigned to
+            text-align: left;
+          }
+          
+          &:nth-child(1), // ID
+          &:nth-child(5), // Status
+          &:nth-child(6), // Duration
+          &:nth-child(7), // Actual Duration
+          &:nth-child(8), // Actual Start
+          &:nth-child(9), // Progress
+          &:nth-child(10), // Actual Finish
+          &:last-child { // Actions
+            text-align: center;
+          }
+        }
+      }
+    }
   }
 
   .wir-status-card {
-    width: 100%;
+    padding: 3px 10px;
+    font-size: 9px;
+    letter-spacing: 0.3px;
+  }
+  
+  .stage-label {
+    font-size: 10px;
+  }
+  
+  .wir-location-info {
+    font-size: 9px;
+    gap: 4px;
+  }
+  
+  .wir-location-item {
+    padding: 2px 6px;
+    font-size: 9px;
+    
+    strong {
+      font-size: 8px;
+    }
+  }
+  
+  .wir-code-cell strong {
+    padding: 3px 10px;
+    font-size: 11px;
+  }
+  
+  .wir-progress-label {
+    font-size: 11px;
+  }
+  
+  .status-badge {
+    padding: 3px 8px;
+    font-size: 9px;
+  }
+  
+  .progress-badge {
+    padding: 3px 6px;
+    font-size: 10px;
+  }
+  
+  .btn-update-progress,
+  .btn-view-details {
+    padding: 4px 8px;
+    font-size: 10px;
+    margin-right: 4px;
+    
+    svg {
+      width: 13px;
+      height: 13px;
+    }
+  }
+  
+  .wir-actions-group {
+    gap: 4px;
+  }
+  
+  .btn-wir-action {
+    padding: 4px 8px;
+    font-size: 9px;
+    gap: 3px;
+    
+    svg {
+      width: 12px;
+      height: 12px;
+    }
+  }
+  
+  .version-badge {
+    padding: 3px 10px;
+    font-size: 10px;
+    gap: 4px;
+  }
+  
+  .checkpoint-status-badge {
+    padding: 3px 10px;
+    font-size: 9px;
+  }
+  
+  .checkpoint-date-info {
+    .inspection-date {
+      font-size: 9px;
+    }
+  }
+  
+  .btn-checkpoint-view,
+  .btn-checkpoint-download {
+    padding: 4px 8px;
+    font-size: 9px;
+    gap: 3px;
+    
+    svg {
+      width: 12px;
+      height: 12px;
+    }
+  }
+  
+  .wir-hint {
+    font-size: 9px;
+  }
+  
+  .placeholder-note,
+  .wir-placeholder-note {
+    font-size: 9px;
+    margin-top: 4px;
   }
 }
 
@@ -692,6 +980,8 @@
 }
 
 .checkpoint-inspector {
+  text-align: center;
+  
   .inspector-name {
     font-weight: 500;
     color: #555;
@@ -699,6 +989,8 @@
 }
 
 .checkpoint-status {
+  text-align: center;
+  
   .checkpoint-status-badge {
     display: inline-block;
     padding: 4px 12px;
@@ -735,6 +1027,7 @@
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  text-align: center;
 
   .inspection-date {
     font-weight: 500;
@@ -744,6 +1037,8 @@
 }
 
 .checkpoint-actions {
+  text-align: center;
+  
   .btn-checkpoint-view {
     display: inline-flex;
     align-items: center;
@@ -779,11 +1074,13 @@
     font-size: 11px;
     color: #999;
     font-style: italic;
+    text-align: center;
   }
 
   .readonly-actions {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
   }
 
   .btn-checkpoint-download {
@@ -815,6 +1112,229 @@
     &:active {
       transform: translateY(0);
     }
+  }
+}
+
+// Extra small screens - Ultra compact
+@media (max-width: 480px) {
+  .process-flow-table-container {
+    padding: 10px;
+  }
+  
+  .table-title {
+    font-size: 1rem;
+    padding: 8px;
+    margin: -10px -10px 10px -10px;
+  }
+  
+  .process-flow-table {
+    font-size: 9px;
+    
+    thead {
+      th {
+        padding: 6px 3px;
+        font-size: 8px;
+        letter-spacing: 0.02em;
+        vertical-align: middle;
+        
+        // Maintain alignment on extra small screens
+        &:nth-child(2), // Team
+        &:nth-child(3), // Activity
+        &:nth-child(4) { // Assigned to
+          text-align: left;
+        }
+        
+        &:nth-child(1), // ID
+        &:nth-child(5), // Status
+        &:nth-child(6), // Duration
+        &:nth-child(7), // Actual Duration
+        &:nth-child(8), // Actual Start
+        &:nth-child(9), // Progress
+        &:nth-child(10), // Actual Finish
+        &:last-child { // Actions
+          text-align: center;
+        }
+      }
+    }
+    
+    tbody {
+      tr {
+        &.wir-checkpoint {
+          td {
+            padding: 5px 3px;
+          }
+        }
+        
+        td {
+          padding: 5px 3px;
+          font-size: 9px;
+          line-height: 1.3;
+          
+          &.activity-name {
+            min-width: 100px;
+            font-size: 9px;
+            text-align: left;
+            
+            strong {
+              font-size: 9px;
+            }
+          }
+          
+          &.assigned-to {
+            min-width: 80px;
+            font-size: 9px;
+            text-align: left;
+          }
+          
+          &.team-cell {
+            font-size: 9px;
+            text-align: left;
+          }
+          
+          &.actions-cell,
+          &.wir-actions-cell {
+            padding: 3px 2px;
+            text-align: center;
+          }
+          
+          // Maintain alignment on extra small screens
+          &:nth-child(2), // Team
+          &:nth-child(3), // Activity
+          &:nth-child(4) { // Assigned to
+            text-align: left;
+          }
+          
+          &:nth-child(1), // ID
+          &:nth-child(5), // Status
+          &:nth-child(6), // Duration
+          &:nth-child(7), // Actual Duration
+          &:nth-child(8), // Actual Start
+          &:nth-child(9), // Progress
+          &:nth-child(10), // Actual Finish
+          &:last-child { // Actions
+            text-align: center;
+          }
+        }
+      }
+    }
+  }
+
+  .wir-status-card {
+    padding: 2px 8px;
+    font-size: 8px;
+    letter-spacing: 0.2px;
+  }
+  
+  .stage-label {
+    font-size: 9px;
+  }
+  
+  .wir-location-info {
+    font-size: 8px;
+    gap: 3px;
+  }
+  
+  .wir-location-item {
+    padding: 1px 5px;
+    font-size: 8px;
+    
+    strong {
+      font-size: 7px;
+    }
+  }
+  
+  .wir-code-cell strong {
+    padding: 2px 8px;
+    font-size: 10px;
+  }
+  
+  .wir-progress-label {
+    font-size: 10px;
+  }
+  
+  .status-badge {
+    padding: 2px 6px;
+    font-size: 8px;
+    letter-spacing: 0.2px;
+  }
+  
+  .progress-badge {
+    padding: 2px 5px;
+    font-size: 9px;
+  }
+  
+  .btn-update-progress,
+  .btn-view-details {
+    padding: 3px 6px;
+    font-size: 9px;
+    margin-right: 3px;
+    
+    svg {
+      width: 11px;
+      height: 11px;
+    }
+  }
+  
+  .wir-actions-group {
+    gap: 3px;
+  }
+  
+  .btn-wir-action {
+    padding: 3px 6px;
+    font-size: 8px;
+    gap: 2px;
+    
+    svg {
+      width: 10px;
+      height: 10px;
+    }
+  }
+  
+  .version-badge {
+    padding: 2px 8px;
+    font-size: 9px;
+    gap: 3px;
+  }
+  
+  .checkpoint-status-badge {
+    padding: 2px 8px;
+    font-size: 8px;
+    letter-spacing: 0.3px;
+  }
+  
+  .checkpoint-date-info {
+    gap: 1px;
+    
+    .inspection-date {
+      font-size: 8px;
+    }
+  }
+  
+  .btn-checkpoint-view,
+  .btn-checkpoint-download {
+    padding: 3px 6px;
+    font-size: 8px;
+    gap: 2px;
+    
+    svg {
+      width: 10px;
+      height: 10px;
+    }
+  }
+  
+  .wir-hint {
+    font-size: 8px;
+    margin-top: 3px;
+  }
+  
+  .placeholder-note,
+  .wir-placeholder-note {
+    font-size: 8px;
+    margin-top: 3px;
+  }
+  
+  .readonly-label {
+    font-size: 8px;
   }
 }
 

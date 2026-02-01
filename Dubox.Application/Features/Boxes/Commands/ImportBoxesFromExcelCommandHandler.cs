@@ -114,6 +114,13 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
             // Dictionary to track BoxNumber generation per type/subtype combination
             var boxNumberCounters = new Dictionary<string, int>();
 
+            // Get the last sequential number once before the loop to avoid duplicates
+            var lastSeq = await _dbContext.Boxes
+                .Where(b => b.ProjectId == request.ProjectId)
+                .MaxAsync(b => (int?)b.SequentialNumber, cancellationToken) ?? 0;
+            
+            var yearOfProject = project.CreatedDate.Year.ToString().Substring(2, 2);
+
             for (int i = 0; i < importedDtos.Count; i++)
             {
                 var boxDto = importedDtos[i];
@@ -309,11 +316,9 @@ public class ImportBoxesFromExcelCommandHandler : IRequestHandler<ImportBoxesFro
                     if (!string.IsNullOrWhiteSpace(boxDto.Zone))
                         parsedZone = boxDto.Zone;
 
-                    var lastSeq = _unitOfWork.Repository<Box>().Get()
-                    .Where(b => b.ProjectId == request.ProjectId)
-                    .Max(b => (int?)b.SequentialNumber) ?? 0;
-                   var SequentialNumber = lastSeq + 1;
-                    var yearOfProject = project.CreatedDate.Year.ToString().Substring(2, 2);
+                    // Increment the sequential number for this box
+                    lastSeq++;
+                    var SequentialNumber = lastSeq;
                     var serialNumber = _serialNumberService.GenerateSerialNumber("X", lastSeq, yearOfProject);
                     
                     var boxNumberKey = $"{request.ProjectId}_{boxTypeId}_{boxSubTypeId ?? 0}";

@@ -10,7 +10,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const token = authService.getToken();
 
   // Public endpoints that don't require authentication
-  const publicEndpoints = ['/auth/login', '/auth/register', '/Department'];
+  const publicEndpoints = [
+    '/auth/login', 
+    '/auth/register', 
+    '/Department',
+    '/boxes/panels/public-approve'
+  ];
   const isPublicEndpoint = publicEndpoints.some(endpoint => req.url.includes(endpoint));
 
   // Clone the request and add authorization header if token exists

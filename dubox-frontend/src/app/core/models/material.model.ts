@@ -9,6 +9,7 @@ export interface Material {
   minimumStock?: number;
   reorderLevel?: number;
   supplierName?: string;
+  projectId?: string; // Project ID for project-specific materials
   isActive: boolean;
   isLowStock: boolean;
   needsReorder: boolean;
@@ -24,6 +25,7 @@ export interface CreateMaterial {
   minimumStock?: number;
   reorderLevel?: number;
   supplierName?: string;
+  projectId?: string;
 }
 
 export interface UpdateMaterial {

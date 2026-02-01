@@ -3,53 +3,115 @@
 
 <div class="page-container">
   <div class="page-content">
-    <!-- Loading State -->
-    <div class="loading-container" *ngIf="loading">
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="header-left">
+        <h1 class="page-title">Materials Dashboard</h1>
+        <p class="page-subtitle">Manage materials by project with inventory tracking</p>
+      </div>
+      <div class="header-right">
+        <button class="btn-primary" (click)="createMaterial()" [disabled]="!selectedProject">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Create Material
+        </button>
+      </div>
+    </div>
+
+    <!-- Project Selection Section -->
+    <div class="project-selection-section">
+      <div class="selection-header">
+        <div class="selection-controls">
+          <div class="form-group">
+            <label for="projectSelect">Project Name</label>
+            <select 
+              id="projectSelect" 
+              [(ngModel)]="selectedProject" 
+              (ngModelChange)="onProjectSelect($event)"
+              class="filter-select project-select">
+              <option [ngValue]="null">Select a project...</option>
+              <option *ngFor="let project of projects" [ngValue]="project">
+                {{ project.name }}
+              </option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label for="projectCodeSelect">Project Number</label>
+            <select 
+              id="projectCodeSelect" 
+              [(ngModel)]="selectedProject" 
+              (ngModelChange)="onProjectSelect($event)"
+              class="filter-select project-select">
+              <option [ngValue]="null">Select a project number...</option>
+              <option *ngFor="let project of projects" [ngValue]="project">
+                {{ project.code }}
+              </option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Project Details -->
+      <div *ngIf="selectedProject" class="project-details-card">
+        <h3>Project Details</h3>
+        <div class="project-info-grid">
+          <div class="info-item">
+            <span class="info-label">Project:</span>
+            <span class="info-value">{{ selectedProject.name }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Code:</span>
+            <span class="info-value">{{ selectedProject.code }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Client:</span>
+            <span class="info-value">{{ selectedProject.clientName || 'N/A' }}</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Status:</span>
+            <span class="status-badge" [class]="selectedProject.status?.toLowerCase()">
+              {{ selectedProject.status }}
+            </span>
+          </div>
+          <div class="info-item" *ngIf="materials.length > 0">
+            <span class="info-label">Total Materials:</span>
+            <span class="info-value">{{ materials.length }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- No Project Selected State -->
+    <div *ngIf="!selectedProject" class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20 7h-4M4 7h4m0 0V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-6 0h6m-6 0v10m6-10v10"/>
+      </svg>
+      <h3>Select a Project</h3>
+      <p>Choose a project from the dropdown above to view and manage its materials</p>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="selectedProject && loading" class="loading-state">
       <div class="spinner"></div>
       <p>Loading materials...</p>
     </div>
 
-    <!-- Error State -->
-    <div class="error-container" *ngIf="error && !loading">
-      <p class="error-message">{{ error }}</p>
-      <button class="btn btn-primary" (click)="loadMaterials()">Retry</button>
+    <!-- Error -->
+    <div *ngIf="selectedProject && error && !loading" class="error-state">
+      <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="12" y1="8" x2="12" y2="12"/>
+        <line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+      <h3>{{ error }}</h3>
+      <button class="btn-primary" (click)="loadMaterials()">Retry</button>
     </div>
 
-    <!-- Dashboard Content -->
-    <div *ngIf="!loading && !error">
-      <!-- Dashboard Header -->
-      <div class="dashboard-header">
-        <div class="header-info">
-          <h1 class="dashboard-title">Materials Dashboard</h1>
-          <div class="dashboard-meta">
-            <span class="meta-item">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 7h-4M4 7h4m0 0V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-6 0h6m-6 0v10m6-10v10"/>
-              </svg>
-              {{ stats.total }} Total Materials
-            </span>
-            <span class="meta-item">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 12l2 2 4-4M21 12c-1 0-3-1-3-3s2-3 3-3 3 1 3 3-2 3-3 3M3 12c1 0 3-1 3-3s-2-3-3-3-3 1-3 3 2 3 3 3"/>
-              </svg>
-              {{ stats.active }} Active
-            </span>
-          </div>
-        </div>
-        <div class="header-actions">
-          <button 
-            *ngIf="canCreate"
-            class="btn btn-primary"
-            (click)="createMaterial()"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M12 5v14M5 12h14"/>
-            </svg>
-            Create Material
-          </button>
-        </div>
-      </div>
-
+    <!-- Materials Content -->
+    <div *ngIf="selectedProject && !loading && !error">
       <!-- KPI Cards -->
       <div class="kpi-grid">
         <div class="kpi-card">
@@ -142,86 +204,88 @@
       </div>
 
       <!-- Materials Table -->
-      <div class="materials-table-card card">
+      <div *ngIf="materials.length === 0" class="empty-state">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M20 7h-4M4 7h4m0 0V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-6 0h6m-6 0v10m6-10v10"/>
+        </svg>
+        <h2>No Materials Yet</h2>
+        <p>Create your first material for this project</p>
+        <button class="btn-primary" (click)="createMaterial()">Create Material</button>
+      </div>
+
+      <div *ngIf="materials.length > 0" class="materials-table-card card">
         <h2 class="card-title">Materials List</h2>
         <div class="table-container">
           <table class="materials-table">
-          <thead>
-            <tr>
-              <th>Code</th>
-              <th>Name</th>
-              <th>Category</th>
-              <th>Unit</th>
-              <th>Current Stock</th>
-              <th>Min Stock</th>
-              <th>Reorder Level</th>
-              <th>Status</th>
-              <th>Supplier</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let material of filteredMaterials" [class.inactive]="!material.isActive">
-              <td class="code-cell">
-                <strong>{{ material.materialCode }}</strong>
-              </td>
-              <td class="name-cell">{{ material.materialName }}</td>
-              <td>{{ material.materialCategory || '-' }}</td>
-              <td>{{ material.unit || '-' }}</td>
-              <td class="stock-cell">
-                <span [class]="getStockStatusClass(material)">
-                  {{ material.currentStock ?? 0 }}
-                </span>
-              </td>
-              <td>{{ material.minimumStock ?? '-' }}</td>
-              <td>{{ material.reorderLevel ?? '-' }}</td>
-              <td>
-                <span class="status-badge" [class]="getStockStatusClass(material)">
-                  {{ getStockStatusText(material) }}
-                </span>
-              </td>
-              <td>{{ material.supplierName || '-' }}</td>
-              <td class="actions-cell">
-                <button 
-                  class="btn-icon"
-                  (click)="viewDetails(material.materialId)"
-                  title="View Details"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                    <circle cx="12" cy="12" r="3"/>
-                  </svg>
-                </button>
-                <button 
-                  *ngIf="canEdit"
-                  class="btn-icon"
-                  (click)="editMaterial(material.materialId)"
-                  title="Edit"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-                  </svg>
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Category</th>
+                <th>Unit</th>
+                <th>Current Stock</th>
+                <th>Min Stock</th>
+                <th>Reorder Level</th>
+                <th>Status</th>
+                <th>Supplier</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let material of filteredMaterials" [class.inactive]="!material.isActive">
+                <td class="code-cell">
+                  <strong>{{ material.materialCode }}</strong>
+                </td>
+                <td class="name-cell">{{ material.materialName }}</td>
+                <td>{{ material.materialCategory || '-' }}</td>
+                <td>{{ material.unit || '-' }}</td>
+                <td class="stock-cell">
+                  <span [class]="getStockStatusClass(material)">
+                    {{ material.currentStock ?? 0 }}
+                  </span>
+                </td>
+                <td>{{ material.minimumStock ?? '-' }}</td>
+                <td>{{ material.reorderLevel ?? '-' }}</td>
+                <td>
+                  <span class="status-badge" [class]="getStockStatusClass(material)">
+                    {{ getStockStatusText(material) }}
+                  </span>
+                </td>
+                <td>{{ material.supplierName || '-' }}</td>
+                <td class="actions-cell">
+                  <button 
+                    class="btn-icon"
+                    (click)="viewDetails(material.materialId)"
+                    title="View Details"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                      <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                  </button>
+                  <button 
+                    *ngIf="canEdit"
+                    class="btn-icon"
+                    (click)="editMaterial(material.materialId)"
+                    title="Edit"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
-          <!-- Empty State -->
-          <div *ngIf="filteredMaterials.length === 0" class="empty-state">
+          <!-- Empty State for Filtered Results -->
+          <div *ngIf="filteredMaterials.length === 0 && materials.length > 0" class="empty-state">
             <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
               <path d="M20 7h-4M4 7h4m0 0V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m-6 0h6m-6 0v10m6-10v10"/>
             </svg>
             <h3>No Materials Found</h3>
-            <p>{{ materials.length === 0 ? 'Create your first material to get started.' : 'No materials match your filters.' }}</p>
-            <button 
-              *ngIf="canCreate && materials.length === 0"
-              class="btn btn-primary"
-              (click)="createMaterial()"
-            >
-              Create Material
-            </button>
+            <p>No materials match your filters.</p>
           </div>
         </div>
       </div>
@@ -229,3 +293,89 @@
   </div>
 </div>
 
+<!-- Create Material Modal -->
+<div *ngIf="showCreateForm" class="modal-overlay" (click)="closeCreateForm()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Create Material</h2>
+      <button class="btn-close" (click)="closeCreateForm()" [disabled]="creatingMaterial">×</button>
+    </div>
+    <div class="modal-body">
+      <!-- Error Message -->
+      <div *ngIf="createMaterialError" class="error-message" style="background-color: #fee; border: 1px solid #fcc; color: #c33; padding: 12px; border-radius: 6px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/>
+          <line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        <span>{{ createMaterialError }}</span>
+      </div>
+
+      <div class="form-group">
+        <label>Material Code *</label>
+        <input type="text" [(ngModel)]="newMaterial.materialCode" placeholder="Enter material code" [disabled]="creatingMaterial" />
+      </div>
+      <div class="form-group">
+        <label>Material Name *</label>
+        <input type="text" [(ngModel)]="newMaterial.materialName" placeholder="Enter material name" [disabled]="creatingMaterial" />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Category</label>
+          <input type="text" [(ngModel)]="newMaterial.materialCategory" placeholder="e.g., Precast, MEP" [disabled]="creatingMaterial" />
+        </div>
+        <div class="form-group">
+          <label>Unit</label>
+          <input type="text" [(ngModel)]="newMaterial.unit" placeholder="e.g., m3, kg, pcs" [disabled]="creatingMaterial" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Unit Cost</label>
+          <input type="number" [(ngModel)]="newMaterial.unitCost" placeholder="0.00" min="0" step="0.01" [disabled]="creatingMaterial" />
+        </div>
+        <div class="form-group">
+          <label>Current Stock</label>
+          <input type="number" [(ngModel)]="newMaterial.currentStock" placeholder="0" min="0" step="1" [disabled]="creatingMaterial" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Minimum Stock</label>
+          <input type="number" [(ngModel)]="newMaterial.minimumStock" placeholder="0" min="0" step="1" [disabled]="creatingMaterial" />
+        </div>
+        <div class="form-group">
+          <label>Reorder Level</label>
+          <input type="number" [(ngModel)]="newMaterial.reorderLevel" placeholder="0" min="0" step="1" [disabled]="creatingMaterial" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Supplier Name</label>
+        <input type="text" [(ngModel)]="newMaterial.supplierName" placeholder="Enter supplier name" [disabled]="creatingMaterial" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeCreateForm()" [disabled]="creatingMaterial">Cancel</button>
+      <button class="btn-primary" (click)="saveMaterial()" [disabled]="creatingMaterial">
+        <span *ngIf="creatingMaterial">Creating...</span>
+        <span *ngIf="!creatingMaterial">Create Material</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Success Modal -->
+<div *ngIf="showSuccessModal" class="modal-overlay" (click)="closeSuccessModal()">
+  <div class="modal-content success-modal" (click)="$event.stopPropagation()" style="max-width: 400px;">
+    <div class="modal-body" style="text-align: center; padding: 32px;">
+      <div style="width: 64px; height: 64px; background-color: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="3">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <h2 style="margin: 0 0 12px; color: #16a34a; font-size: 24px;">Success!</h2>
+      <p style="color: #64748b; margin: 0 0 24px; font-size: 16px;">{{ successMessage }}</p>
+      <button class="btn-primary" (click)="closeSuccessModal()" style="width: 100%; padding: 12px;">OK</button>
+    </div>
+  </div>
+</div>

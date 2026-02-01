@@ -22,6 +22,15 @@ export class MaterialService {
   }
 
   /**
+   * Get materials by project ID
+   */
+  getMaterialsByProject(projectId: string): Observable<Material[]> {
+    return this.apiService.get<Material[]>(`${this.endpoint}/project/${projectId}`).pipe(
+      map(materials => materials.map(m => this.transformMaterial(m)))
+    );
+  }
+
+  /**
    * Get low stock materials
    */
   getLowStockMaterials(): Observable<Material[]> {
@@ -110,6 +119,7 @@ export class MaterialService {
       minimumStock: backendMaterial.minimumStock,
       reorderLevel: backendMaterial.reorderLevel,
       supplierName: backendMaterial.supplierName,
+      projectId: backendMaterial.projectId,
       isActive: backendMaterial.isActive !== undefined ? backendMaterial.isActive : true,
       isLowStock: backendMaterial.isLowStock || false,
       needsReorder: backendMaterial.needsReorder || false

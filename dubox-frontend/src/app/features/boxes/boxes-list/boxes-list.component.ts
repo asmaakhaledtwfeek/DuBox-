@@ -59,6 +59,16 @@ export class BoxesListComponent implements OnInit, OnDestroy {
   availableFloors: string[] = [];
   availableZones: string[] = [];
   
+  // Counts for each filter option
+  boxTypeCounts: Map<string, number> = new Map();
+  subTypeCounts: Map<string, number> = new Map();
+  buildingCounts: Map<string, number> = new Map();
+  floorCounts: Map<string, number> = new Map();
+  zoneCounts: Map<string, number> = new Map();
+  
+  // Store all boxes for cascading filter calculations
+  allProjectBoxes: Box[] = [];
+  
   // Filters for boxes list page
   selectedBoxSubTypeFilter: string = '';
   selectedBoxBuildingFilter: string = '';
@@ -70,6 +80,12 @@ export class BoxesListComponent implements OnInit, OnDestroy {
   availableBoxBuildings: string[] = [];
   availableBoxFloors: string[] = [];
   availableBoxZones: string[] = [];
+  
+  // Counts for boxes list page filters
+  boxSubTypeCounts: Map<string, number> = new Map();
+  boxBuildingCounts: Map<string, number> = new Map();
+  boxFloorCounts: Map<string, number> = new Map();
+  boxZoneCounts: Map<string, number> = new Map();
   
   private subscriptions: Subscription[] = [];
 
@@ -86,10 +102,20 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     const boxType = this.route.snapshot.queryParams['boxType'];
     const boxSubType = this.route.snapshot.queryParams['boxSubType'];
     const status = this.route.snapshot.queryParams['status'];
+    const building = this.route.snapshot.queryParams['building'];
+    const floor = this.route.snapshot.queryParams['floor'];
     
     // Set status filter if provided in query params
     if (status && Object.values(BoxStatus).includes(status as BoxStatus)) {
       this.selectedStatus = status as BoxStatus;
+    }
+    
+    // Set building/floor filters if provided in query params
+    if (building) {
+      this.selectedFilterBuilding = building;
+    }
+    if (floor) {
+      this.selectedFilterFloor = floor;
     }
     
     // Check permissions immediately
@@ -186,11 +212,19 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     this.showBoxTypes = true;
     this.selectedBoxType = null;
     
-    this.boxService.getBoxTypeStatsByProject(this.projectId).subscribe({
-      next: (response) => {
-        this.boxTypes = response.boxTypeStats || [];
+    // Load both box types and boxes in parallel for faster loading
+    forkJoin({
+      boxTypes: this.boxService.getBoxTypeStatsByProject(this.projectId),
+      boxes: this.boxService.getBoxesByProject(this.projectId)
+    }).subscribe({
+      next: (result) => {
+        this.boxTypes = result.boxTypes.boxTypeStats || [];
         this.filteredBoxTypes = [...this.boxTypes];
-        this.loadFilterOptions();
+        
+        // Store all boxes and calculate filter options immediately
+        this.allProjectBoxes = result.boxes;
+        this.recalculateFilterCounts(result.boxes);
+        
         this.applyBoxTypeFilters();
         this.loading = false;
       },
@@ -203,42 +237,116 @@ export class BoxesListComponent implements OnInit, OnDestroy {
   }
   
   /**
-   * Load all boxes for the project to extract unique filter values
+   * Recalculate filter counts with proper one-way cascading (parent → child only)
+   * - Box Type filters SubTypes (not reverse)
+   * - Building filters Floors (not reverse)
+   * - Floor filters Zones (not reverse)
    */
-  private loadFilterOptions(): void {
-    this.boxService.getBoxesByProject(this.projectId).subscribe({
-      next: (boxes) => {
-        // Extract unique box types
-        this.availableBoxTypes = [...new Set(boxes.map(box => {
-          const parts = (box.code || '').split('-');
-          return parts.length >= 4 ? parts[3] : '';
-        }).filter(type => type !== ''))].sort();
-        
-        // Extract unique subtypes
-        this.availableSubTypes = [...new Set(boxes.map(box => {
-          const parts = (box.code || '').split('-');
-          return parts.length >= 5 ? parts[4] : '';
-        }).filter(subtype => subtype !== ''))].sort();
-        
-        // Extract unique buildings
-        this.availableBuildings = [...new Set(boxes.map(box => box.buildingNumber).filter((b): b is string => !!b))].sort();
-        
-        // Extract unique floors
-        this.availableFloors = [...new Set(boxes.map(box => box.floor).filter((f): f is string => !!f))].sort();
-        
-        // Extract unique zones
-        this.availableZones = [...new Set(boxes.map(box => box.zone).filter((z): z is string => !!z))].sort();
-        
-        console.log('📊 Filter options loaded:', {
-          boxTypes: this.availableBoxTypes,
-          subTypes: this.availableSubTypes,
-          buildings: this.availableBuildings,
-          floors: this.availableFloors,
-          zones: this.availableZones
-        });
-      },
-      error: (err) => {
-        console.error('Error loading filter options:', err);
+  private recalculateFilterCounts(boxes: Box[]): void {
+    // Clear existing counts
+    this.boxTypeCounts.clear();
+    this.subTypeCounts.clear();
+    this.buildingCounts.clear();
+    this.floorCounts.clear();
+    this.zoneCounts.clear();
+    
+    // Extract box types and count them
+    const boxTypeMap = new Map<string, number>();
+    const subTypeMap = new Map<string, number>();
+    const buildingMap = new Map<string, number>();
+    const floorMap = new Map<string, number>();
+    const zoneMap = new Map<string, number>();
+    
+    // Always count from ALL boxes for parent filters
+    this.allProjectBoxes.forEach(box => {
+      const parts = (box.code || '').split('-');
+      
+      // Always show all box types
+      if (parts.length >= 4 && parts[3]) {
+        const boxType = parts[3];
+        boxTypeMap.set(boxType, (boxTypeMap.get(boxType) || 0) + 1);
+      }
+      
+      // Always show all buildings
+      if (box.buildingNumber) {
+        buildingMap.set(box.buildingNumber, (buildingMap.get(box.buildingNumber) || 0) + 1);
+      }
+    });
+    
+    // For child filters, use the filtered boxes for cascading
+    // SubTypes: filtered by Box Type only
+    let subTypeFilteredBoxes = this.allProjectBoxes;
+    if (this.selectedFilterBoxType) {
+      subTypeFilteredBoxes = this.allProjectBoxes.filter(box => {
+        const parts = (box.code || '').split('-');
+        const boxType = parts.length >= 4 ? parts[3] : '';
+        return boxType === this.selectedFilterBoxType;
+      });
+    }
+    
+    subTypeFilteredBoxes.forEach(box => {
+      const parts = (box.code || '').split('-');
+      if (parts.length >= 5 && parts[4]) {
+        const subType = parts[4];
+        subTypeMap.set(subType, (subTypeMap.get(subType) || 0) + 1);
+      }
+    });
+    
+    // Floors: filtered by Building only
+    let floorFilteredBoxes = this.allProjectBoxes;
+    if (this.selectedFilterBuilding) {
+      floorFilteredBoxes = this.allProjectBoxes.filter(box => 
+        box.buildingNumber === this.selectedFilterBuilding
+      );
+      }
+      
+    floorFilteredBoxes.forEach(box => {
+      if (box.floor) {
+        floorMap.set(box.floor, (floorMap.get(box.floor) || 0) + 1);
+      }
+    });
+      
+    // Zones: filtered by Building and Floor
+    let zoneFilteredBoxes = this.allProjectBoxes;
+    if (this.selectedFilterBuilding) {
+      zoneFilteredBoxes = zoneFilteredBoxes.filter(box => 
+        box.buildingNumber === this.selectedFilterBuilding
+      );
+    }
+    if (this.selectedFilterFloor) {
+      zoneFilteredBoxes = zoneFilteredBoxes.filter(box => 
+        box.floor === this.selectedFilterFloor
+      );
+    }
+    
+    zoneFilteredBoxes.forEach(box => {
+      if (box.zone) {
+        zoneMap.set(box.zone, (zoneMap.get(box.zone) || 0) + 1);
+      }
+    });
+    
+    // Only show options that exist in the filtered data (count > 0)
+    this.availableBoxTypes = Array.from(boxTypeMap.keys()).filter(k => boxTypeMap.get(k)! > 0).sort();
+    this.availableSubTypes = Array.from(subTypeMap.keys()).filter(k => subTypeMap.get(k)! > 0).sort();
+    this.availableBuildings = Array.from(buildingMap.keys()).filter(k => buildingMap.get(k)! > 0).sort();
+    this.availableFloors = Array.from(floorMap.keys()).filter(k => floorMap.get(k)! > 0).sort();
+    this.availableZones = Array.from(zoneMap.keys()).filter(k => zoneMap.get(k)! > 0).sort();
+    
+    // Store counts
+    this.boxTypeCounts = boxTypeMap;
+    this.subTypeCounts = subTypeMap;
+    this.buildingCounts = buildingMap;
+    this.floorCounts = floorMap;
+    this.zoneCounts = zoneMap;
+    
+    console.log('📊 Filter counts recalculated (one-way cascading):', {
+      totalBoxes: this.allProjectBoxes.length,
+      counts: {
+        boxTypeCounts: Array.from(this.boxTypeCounts.entries()),
+        subTypeCounts: Array.from(this.subTypeCounts.entries()),
+        buildingCounts: Array.from(this.buildingCounts.entries()),
+        floorCounts: Array.from(this.floorCounts.entries()),
+        zoneCounts: Array.from(this.zoneCounts.entries())
       }
     });
   }
@@ -341,26 +449,98 @@ export class BoxesListComponent implements OnInit, OnDestroy {
    * Load filter options from boxes list
    */
   private loadBoxFilterOptions(boxes: Box[]): void {
-    // Extract unique subtypes
-    this.availableBoxSubTypes = [...new Set(boxes.map(box => {
+    // Recalculate counts for boxes list page filters
+    this.recalculateBoxFilterCounts(boxes);
+  }
+  
+  /**
+   * Recalculate box filter counts with proper one-way cascading (boxes list page)
+   * - SubType shows all within current box type
+   * - Building filters Floors (not reverse)
+   * - Floor filters Zones (not reverse)
+   */
+  private recalculateBoxFilterCounts(boxes: Box[]): void {
+    // Clear existing counts
+    this.boxSubTypeCounts.clear();
+    this.boxBuildingCounts.clear();
+    this.boxFloorCounts.clear();
+    this.boxZoneCounts.clear();
+    
+    // Count maps for boxes list page
+    const subTypeMap = new Map<string, number>();
+    const buildingMap = new Map<string, number>();
+    const floorMap = new Map<string, number>();
+    const zoneMap = new Map<string, number>();
+    
+    // Always count from ALL boxes for parent filters (SubType, Building)
+    this.boxes.forEach(box => {
       const parts = (box.code || '').split('-');
-      return parts.length >= 5 ? parts[4] : '';
-    }).filter(subtype => subtype !== ''))].sort();
+      
+      // Always show all subtypes
+      if (parts.length >= 5 && parts[4]) {
+        const subType = parts[4];
+        subTypeMap.set(subType, (subTypeMap.get(subType) || 0) + 1);
+      }
+      
+      // Always show all buildings
+      if (box.buildingNumber) {
+        buildingMap.set(box.buildingNumber, (buildingMap.get(box.buildingNumber) || 0) + 1);
+      }
+    });
+      
+    // Floors: filtered by Building only
+    let floorFilteredBoxes = this.boxes;
+    if (this.selectedBoxBuildingFilter) {
+      floorFilteredBoxes = this.boxes.filter(box => 
+        box.buildingNumber === this.selectedBoxBuildingFilter
+      );
+    }
     
-    // Extract unique buildings
-    this.availableBoxBuildings = [...new Set(boxes.map(box => box.buildingNumber).filter((b): b is string => !!b))].sort();
+    floorFilteredBoxes.forEach(box => {
+      if (box.floor) {
+        floorMap.set(box.floor, (floorMap.get(box.floor) || 0) + 1);
+      }
+    });
+      
+    // Zones: filtered by Building and Floor
+    let zoneFilteredBoxes = this.boxes;
+    if (this.selectedBoxBuildingFilter) {
+      zoneFilteredBoxes = zoneFilteredBoxes.filter(box => 
+        box.buildingNumber === this.selectedBoxBuildingFilter
+      );
+    }
+    if (this.selectedBoxFloorFilter) {
+      zoneFilteredBoxes = zoneFilteredBoxes.filter(box => 
+        box.floor === this.selectedBoxFloorFilter
+      );
+    }
     
-    // Extract unique floors
-    this.availableBoxFloors = [...new Set(boxes.map(box => box.floor).filter((f): f is string => !!f))].sort();
+    zoneFilteredBoxes.forEach(box => {
+      if (box.zone) {
+        zoneMap.set(box.zone, (zoneMap.get(box.zone) || 0) + 1);
+      }
+    });
     
-    // Extract unique zones
-    this.availableBoxZones = [...new Set(boxes.map(box => box.zone).filter((z): z is string => !!z))].sort();
+    // Only show options that exist in the filtered data (count > 0)
+    this.availableBoxSubTypes = Array.from(subTypeMap.keys()).filter(k => subTypeMap.get(k)! > 0).sort();
+    this.availableBoxBuildings = Array.from(buildingMap.keys()).filter(k => buildingMap.get(k)! > 0).sort();
+    this.availableBoxFloors = Array.from(floorMap.keys()).filter(k => floorMap.get(k)! > 0).sort();
+    this.availableBoxZones = Array.from(zoneMap.keys()).filter(k => zoneMap.get(k)! > 0).sort();
     
-    console.log('📊 Box filter options loaded:', {
-      subTypes: this.availableBoxSubTypes,
-      buildings: this.availableBoxBuildings,
-      floors: this.availableBoxFloors,
-      zones: this.availableBoxZones
+    // Store counts
+    this.boxSubTypeCounts = subTypeMap;
+    this.boxBuildingCounts = buildingMap;
+    this.boxFloorCounts = floorMap;
+    this.boxZoneCounts = zoneMap;
+    
+    console.log('📊 Box filter counts recalculated (one-way cascading):', {
+      totalBoxes: this.boxes.length,
+      counts: {
+        boxSubTypeCounts: Array.from(this.boxSubTypeCounts.entries()),
+        boxBuildingCounts: Array.from(this.boxBuildingCounts.entries()),
+        boxFloorCounts: Array.from(this.boxFloorCounts.entries()),
+        boxZoneCounts: Array.from(this.boxZoneCounts.entries())
+      }
     });
   }
 
@@ -425,10 +605,12 @@ export class BoxesListComponent implements OnInit, OnDestroy {
 
   applyFilters(): void {
     let filtered = [...this.boxes];
+    let countsSource = [...this.boxes]; // Track boxes for count calculation
 
     // Apply status filter
     if (this.selectedStatus !== 'All') {
       filtered = filtered.filter(box => box.status === this.selectedStatus);
+      countsSource = countsSource.filter(box => box.status === this.selectedStatus);
     }
 
     // Apply subtype filter
@@ -438,21 +620,36 @@ export class BoxesListComponent implements OnInit, OnDestroy {
         const boxSubType = parts.length >= 5 ? parts[4] : '';
         return boxSubType === this.selectedBoxSubTypeFilter;
       });
+      countsSource = countsSource.filter(box => {
+        const parts = (box.code || '').split('-');
+        const boxSubType = parts.length >= 5 ? parts[4] : '';
+        return boxSubType === this.selectedBoxSubTypeFilter;
+      });
     }
 
     // Apply building filter
     if (this.selectedBoxBuildingFilter) {
       filtered = filtered.filter(box => box.buildingNumber === this.selectedBoxBuildingFilter);
+      countsSource = countsSource.filter(box => box.buildingNumber === this.selectedBoxBuildingFilter);
     }
 
     // Apply floor filter
     if (this.selectedBoxFloorFilter) {
       filtered = filtered.filter(box => box.floor === this.selectedBoxFloorFilter);
+      countsSource = countsSource.filter(box => box.floor === this.selectedBoxFloorFilter);
     }
 
     // Apply zone filter
     if (this.selectedBoxZoneFilter) {
       filtered = filtered.filter(box => box.zone === this.selectedBoxZoneFilter);
+      countsSource = countsSource.filter(box => box.zone === this.selectedBoxZoneFilter);
+    }
+
+    // Recalculate counts based on filtered boxes (cascading effect)
+    // Only recalculate if we have filters applied (excluding search and status)
+    if (this.selectedBoxSubTypeFilter || this.selectedBoxBuildingFilter || 
+        this.selectedBoxFloorFilter || this.selectedBoxZoneFilter) {
+      this.recalculateBoxFilterCounts(countsSource);
     }
 
     // Apply search filter (includes box properties and activity properties)
@@ -515,6 +712,12 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     this.selectedBoxZoneFilter = '';
     this.searchControl.setValue('');
     this.selectedStatus = BoxStatus.InProgress;
+    
+    // Recalculate counts from all boxes when filters are cleared
+    if (this.boxes.length > 0) {
+      this.recalculateBoxFilterCounts(this.boxes);
+    }
+    
     this.applyFilters();
   }
   
@@ -537,73 +740,158 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     
     let filtered = [...this.boxTypes];
     
-    // Apply search filter
-    if (searchTerm) {
-      filtered = filtered.filter(boxType => 
-        boxType.boxType?.toLowerCase().includes(searchTerm)
-      );
-    }
+    // Start with all boxes for cascading filter calculation
+    let filteredBoxes = [...this.allProjectBoxes];
     
     // Apply box type filter
     if (this.selectedFilterBoxType) {
       filtered = filtered.filter(boxType => 
         boxType.boxType === this.selectedFilterBoxType
       );
+      
+      // Filter boxes by selected box type
+      filteredBoxes = filteredBoxes.filter(box => {
+        const parts = (box.code || '').split('-');
+        const boxType = parts.length >= 4 ? parts[3] : '';
+        return boxType === this.selectedFilterBoxType;
+      });
     }
     
-    // Apply subtype filter - filter box types that have the selected subtype
+    // Apply subtype filter - filter within the selected box type only
     if (this.selectedFilterSubType) {
+      // Filter boxes by selected subtype
+      filteredBoxes = filteredBoxes.filter(box => {
+        const parts = (box.code || '').split('-');
+        const subType = parts.length >= 5 ? parts[4] : '';
+        return subType === this.selectedFilterSubType;
+      });
+      
+      // Don't filter out box types - subtype filter works within the selected box type
+      // Only filter box types if no box type is selected
+      if (!this.selectedFilterBoxType) {
+        filtered = filtered.filter(boxType => 
+          boxType.subTypes?.some(st => 
+            st.subTypeAbbreviation === this.selectedFilterSubType || 
+            st.subTypeName === this.selectedFilterSubType
+          )
+        );
+      }
+    }
+    
+    // Apply building filter
+    if (this.selectedFilterBuilding) {
+      filteredBoxes = filteredBoxes.filter(box => 
+        box.buildingNumber === this.selectedFilterBuilding
+      );
+    }
+    
+    // Apply floor filter
+    if (this.selectedFilterFloor) {
+      filteredBoxes = filteredBoxes.filter(box => 
+        box.floor === this.selectedFilterFloor
+      );
+    }
+    
+    // Apply zone filter
+    if (this.selectedFilterZone) {
+      filteredBoxes = filteredBoxes.filter(box => 
+        box.zone === this.selectedFilterZone
+      );
+    }
+    
+    // Recalculate counts with proper one-way cascading (uses this.allProjectBoxes internally)
+    this.recalculateFilterCounts(this.allProjectBoxes);
+    
+    // Update card counts based on filtered boxes
+    this.updateBoxTypeCardCounts(filtered, filteredBoxes);
+    
+    // Apply search filter to box types (after recalculating counts)
+    if (searchTerm) {
       filtered = filtered.filter(boxType => 
-        boxType.subTypes?.some(st => 
-          st.subTypeAbbreviation === this.selectedFilterSubType || 
-          st.subTypeName === this.selectedFilterSubType
-        )
+        boxType.boxType?.toLowerCase().includes(searchTerm)
+      );
+    }
+    
+    // Filter box types based on location filters
+    if (this.selectedFilterBuilding || this.selectedFilterFloor || this.selectedFilterZone) {
+      // Get unique box types from filtered boxes
+      const validBoxTypes = new Set(
+        filteredBoxes.map(box => {
+          const parts = (box.code || '').split('-');
+          return parts.length >= 4 ? parts[3] : '';
+        }).filter(type => type !== '')
+      );
+      
+      filtered = filtered.filter(boxType => 
+        validBoxTypes.has(boxType.boxType)
       );
     }
     
     this.filteredBoxTypes = filtered;
-    
-    // If building, floor, or zone filters are selected, we need to filter based on actual boxes
-    if (this.selectedFilterBuilding || this.selectedFilterFloor || this.selectedFilterZone) {
-      this.applyBoxLocationFilters();
-    }
   }
   
   /**
-   * Apply location-based filters (building, floor, zone) to box types
-   * This requires checking actual boxes to see which types exist in the filtered locations
+   * Update box type card counts based on filtered boxes
    */
-  private applyBoxLocationFilters(): void {
-    this.boxService.getBoxesByProject(this.projectId).subscribe({
-      next: (boxes) => {
-        // Filter boxes by location criteria
-        let filteredBoxes = boxes;
+  private updateBoxTypeCardCounts(boxTypes: BoxTypeStat[], filteredBoxes: Box[]): void {
+    // Create maps to count boxes by type and subtype from filtered boxes
+    const boxTypeCountMap = new Map<string, number>();
+    const subTypeCountMap = new Map<string, Map<string, number>>();
+    // Map to count drawings per subtype
+    const drawingCountMap = new Map<string, Map<string, number>>();
+    
+    filteredBoxes.forEach(box => {
+      const parts = (box.code || '').split('-');
+      const boxType = parts.length >= 4 ? parts[3] : '';
+      const subType = parts.length >= 5 ? parts[4] : '';
+      
+      if (boxType) {
+        // Count total boxes per box type
+        boxTypeCountMap.set(boxType, (boxTypeCountMap.get(boxType) || 0) + 1);
         
-        if (this.selectedFilterBuilding) {
-          filteredBoxes = filteredBoxes.filter(box => box.buildingNumber === this.selectedFilterBuilding);
+        // Count boxes per subtype within each box type
+        if (subType) {
+          if (!subTypeCountMap.has(boxType)) {
+            subTypeCountMap.set(boxType, new Map<string, number>());
+          }
+          const subTypeMap = subTypeCountMap.get(boxType)!;
+          subTypeMap.set(subType, (subTypeMap.get(subType) || 0) + 1);
+          
+          // Count drawings per subtype
+          const drawingCount = box.drawingsCount || 0;
+          if (!drawingCountMap.has(boxType)) {
+            drawingCountMap.set(boxType, new Map<string, number>());
+          }
+          const drawingMap = drawingCountMap.get(boxType)!;
+          drawingMap.set(subType, (drawingMap.get(subType) || 0) + drawingCount);
         }
-        
-        if (this.selectedFilterFloor) {
-          filteredBoxes = filteredBoxes.filter(box => box.floor === this.selectedFilterFloor);
-        }
-        
-        if (this.selectedFilterZone) {
-          filteredBoxes = filteredBoxes.filter(box => box.zone === this.selectedFilterZone);
-        }
-        
-        // Extract unique box types from filtered boxes
-        const boxTypesInLocation = new Set(filteredBoxes.map(box => {
-          const parts = (box.code || '').split('-');
-          return parts.length >= 4 ? parts[3] : '';
-        }).filter(type => type !== ''));
-        
-        // Filter box type stats to only include types that exist in the filtered location
-        this.filteredBoxTypes = this.filteredBoxTypes.filter(boxType => 
-          boxTypesInLocation.has(boxType.boxType)
-        );
-      },
-      error: (err) => {
-        console.error('Error applying location filters:', err);
+      }
+    });
+    
+    // Update each box type card with filtered counts
+    boxTypes.forEach(boxType => {
+      const filteredCount = boxTypeCountMap.get(boxType.boxType) || 0;
+      boxType.boxCount = filteredCount;
+      
+      // Update subtype counts
+      if (boxType.subTypes && boxType.subTypes.length > 0) {
+        const subTypeMap = subTypeCountMap.get(boxType.boxType);
+        const drawingMap = drawingCountMap.get(boxType.boxType);
+        boxType.subTypes.forEach(subType => {
+          const subTypeName = subType.subTypeAbbreviation || subType.subTypeName;
+          const subTypeFilteredCount = subTypeMap?.get(subTypeName) || 0;
+          subType.boxCount = subTypeFilteredCount;
+          
+          // Set drawing count for the subtype
+          subType.drawingsCount = drawingMap?.get(subTypeName) || 0;
+          
+          // Recalculate progress percentage if needed
+          if (filteredCount > 0) {
+            subType.progress = (subTypeFilteredCount / filteredCount) * 100;
+          } else {
+            subType.progress = 0;
+          }
+        });
       }
     });
   }
@@ -618,6 +906,11 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     this.selectedFilterFloor = '';
     this.selectedFilterZone = '';
     this.boxTypeSearchControl.setValue('');
+    
+    // Recalculate counts from all boxes when filters are cleared
+    if (this.allProjectBoxes.length > 0) {
+      this.recalculateFilterCounts(this.allProjectBoxes);
+    }
     this.applyBoxTypeFilters();
   }
   
@@ -631,7 +924,9 @@ export class BoxesListComponent implements OnInit, OnDestroy {
       this.selectedFilterBuilding ||
       this.selectedFilterFloor ||
       this.selectedFilterZone ||
-      this.boxTypeSearchControl.value
+      this.selectedStatus ||
+      this.boxTypeSearchControl.value ||
+      this.searchControl.value
     );
   }
 
@@ -743,6 +1038,102 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     
     // Return 0 as default if no count is available
     return 0;
+  }
+  
+  /**
+   * Get formatted display text for filter option with count
+   */
+  getFilterOptionDisplay(value: string, count: number | undefined): string {
+    if (count !== undefined && count > 0) {
+      return `${value} (${count})`;
+    }
+    return value;
+  }
+  
+  /**
+   * Get filtered subtypes for a box type card based on applied filters
+   */
+  getFilteredSubTypes(boxType: BoxTypeStat): any[] {
+    if (!boxType.subTypes || boxType.subTypes.length === 0) {
+      return [];
+    }
+    
+    // If no filters are applied, show all subtypes
+    if (!this.hasActiveFilters()) {
+      return boxType.subTypes;
+    }
+    
+    // Filter subtypes based on applied filters
+    return boxType.subTypes.filter(subType => {
+      const subTypeAbbr = subType.subTypeAbbreviation || subType.subTypeName;
+      
+      // If a specific sub type filter is selected, only show that sub type
+      if (this.selectedFilterSubType && subTypeAbbr !== this.selectedFilterSubType) {
+        return false;
+      }
+      
+      // Check if this subtype exists in the filtered boxes
+      const hasMatchingBoxes = this.allProjectBoxes.some(box => {
+        const parts = (box.code || '').split('-');
+        const boxTypeFromCode = parts.length >= 4 ? parts[3] : '';
+        const subTypeFromCode = parts.length >= 5 ? parts[4] : '';
+        
+        // Must match the box type
+        if (boxTypeFromCode !== boxType.boxType) {
+          return false;
+        }
+        
+        // Must match the subtype
+        if (subTypeFromCode !== subTypeAbbr) {
+          return false;
+        }
+        
+        // Apply location filters
+        if (this.selectedFilterBuilding && box.buildingNumber !== this.selectedFilterBuilding) {
+          return false;
+        }
+        
+        if (this.selectedFilterFloor && box.floor !== this.selectedFilterFloor) {
+          return false;
+        }
+        
+        if (this.selectedFilterZone && box.zone !== this.selectedFilterZone) {
+          return false;
+        }
+        
+        return true;
+      });
+      
+      return hasMatchingBoxes;
+    });
+  }
+  
+  /**
+   * Get count for a specific filter value
+   */
+  getFilterCount(filterType: 'boxType' | 'subType' | 'building' | 'floor' | 'zone' | 'boxSubType' | 'boxBuilding' | 'boxFloor' | 'boxZone', value: string): number {
+    switch (filterType) {
+      case 'boxType':
+        return this.boxTypeCounts.get(value) || 0;
+      case 'subType':
+        return this.subTypeCounts.get(value) || 0;
+      case 'building':
+        return this.buildingCounts.get(value) || 0;
+      case 'floor':
+        return this.floorCounts.get(value) || 0;
+      case 'zone':
+        return this.zoneCounts.get(value) || 0;
+      case 'boxSubType':
+        return this.boxSubTypeCounts.get(value) || 0;
+      case 'boxBuilding':
+        return this.boxBuildingCounts.get(value) || 0;
+      case 'boxFloor':
+        return this.boxFloorCounts.get(value) || 0;
+      case 'boxZone':
+        return this.boxZoneCounts.get(value) || 0;
+      default:
+        return 0;
+    }
   }
 
   getStatusClass(status: BoxStatus): string {

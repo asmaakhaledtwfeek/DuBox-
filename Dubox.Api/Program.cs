@@ -77,6 +77,9 @@ builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "DuBox API", Version = "v1" });
 
+    // Add custom operation filter for file uploads
+    c.OperationFilter<FileUploadOperationFilter>();
+
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",

@@ -609,7 +609,7 @@
               type="button" 
               class="btn btn-secondary btn-sm"
               (click)="handleStepClick('review')"
-              [disabled]="!canNavigateToStep('review')|| !canSubmitReview()"
+              [disabled]="!canNavigateToStep('review')"
             >
               Review
             </button>
@@ -717,13 +717,31 @@
     <!-- Step 3: Review Checklist -->
     <form [formGroup]="checklistForm" *ngIf="currentStep === 'review' && wirCheckpoint && !loading && !error" class="review-form">
       <!-- Warning message for non-assigned inspectors -->
-      <div *ngIf="!isCurrentUserAssignedInspector" class="alert alert-warning" style="margin-bottom: 24px; padding: 16px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; color: #856404;">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px; vertical-align: middle;">
+      <!-- Warning for non-assigned inspectors (but admins can still edit) -->
+      <div *ngIf="!isAssignedInspectorForCheckpoint()" class="alert" 
+           [ngClass]="isSystemAdmin() ? 'alert-info' : 'alert-warning'" 
+           style="margin-bottom: 24px; padding: 16px; border-radius: 8px;"
+           [ngStyle]="{
+             'background': isSystemAdmin() ? '#d1ecf1' : '#fff3cd',
+             'border': isSystemAdmin() ? '1px solid #bee5eb' : '1px solid #ffc107',
+             'color': isSystemAdmin() ? '#0c5460' : '#856404'
+           }">
+        <svg *ngIf="!isSystemAdmin()" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px; vertical-align: middle;">
           <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
           <line x1="12" y1="9" x2="12" y2="13"/>
           <line x1="12" y1="17" x2="12.01" y2="17"/>
         </svg>
-        <strong>Read-only mode:</strong> Only the assigned inspector can review this checkpoint. You can view all details but cannot submit changes or review checklist items.
+        <svg *ngIf="isSystemAdmin()" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px; vertical-align: middle;">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="16" x2="12" y2="12"/>
+          <line x1="12" y1="8" x2="12.01" y2="8"/>
+        </svg>
+        <span *ngIf="!isSystemAdmin()">
+          <strong>Read-only mode:</strong> Only the assigned inspector can review this checkpoint. You can view all details but cannot submit changes or review checklist items.
+        </span>
+        <span *ngIf="isSystemAdmin()">
+          <strong>Admin Override:</strong> You are not the assigned inspector , but as a System Admin you have full access to review and modify this checkpoint.
+        </span>
       </div>
       <div class="review-layout">
         <div class="review-main">
@@ -1082,7 +1100,7 @@
                               type="button" 
                               class="btn btn-primary btn-sm btn-review" 
                               (click)="openItemReviewModal(itemData.index)"
-                              [disabled]="!isCurrentUserAssignedInspector || isChecklistLocked || !canSubmitReview()"
+                              [disabled]="!isCurrentUserAssignedInspector || isChecklistLocked"
                               [title]="!isCurrentUserAssignedInspector ? 'Only the assigned inspector can review items' : getReviewButtonTitle(itemData.control.value.status, isChecklistLocked)"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">

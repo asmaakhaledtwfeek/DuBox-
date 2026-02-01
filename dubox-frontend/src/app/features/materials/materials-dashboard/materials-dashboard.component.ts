@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormControl, ReactiveFormsModule, FormsModule } from '@angular/forms';
@@ -6,9 +6,13 @@ import { debounceTime, distinctUntilChanged, skip } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { MaterialService } from '../../../core/services/material.service';
 import { PermissionService } from '../../../core/services/permission.service';
-import { Material } from '../../../core/models/material.model';
+import { ProjectService } from '../../../core/services/project.service';
+import { Material, CreateMaterial } from '../../../core/models/material.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
+
+// Import the Project model instead of defining a new interface
+import { Project } from '../../../core/models/project.model';
 
 @Component({
   selector: 'app-materials-dashboard',
@@ -20,10 +24,15 @@ import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.com
 export class MaterialsDashboardComponent implements OnInit, OnDestroy {
   materials: Material[] = [];
   filteredMaterials: Material[] = [];
-  loading = true;
+  loading = false;
   error = '';
   canCreate = false;
   canEdit = false;
+  
+  // Project Selection
+  projects: Project[] = [];
+  selectedProject: Project | null = null;
+  projectsLoading = false;
   
   searchControl = new FormControl('');
   selectedCategory: string = 'All';
@@ -37,12 +46,34 @@ export class MaterialsDashboardComponent implements OnInit, OnDestroy {
     active: 0
   };
   
+  // Create Material Modal
+  showCreateForm = false;
+  createMaterialError = '';
+  creatingMaterial = false;
+  newMaterial: CreateMaterial = {
+    materialCode: '',
+    materialName: '',
+    materialCategory: '',
+    unit: '',
+    unitCost: 0,
+    currentStock: 0,
+    minimumStock: 0,
+    reorderLevel: 0,
+    supplierName: '',
+    projectId: ''
+  };
+
+  // Success Modal
+  showSuccessModal = false;
+  successMessage = '';
+  
   private subscriptions: Subscription[] = [];
 
   constructor(
     private router: Router,
     private materialService: MaterialService,
-    private permissionService: PermissionService
+    private permissionService: PermissionService,
+    private projectService: ProjectService
   ) {}
 
   ngOnInit(): void {
@@ -59,7 +90,7 @@ export class MaterialsDashboardComponent implements OnInit, OnDestroy {
         })
     );
     
-    this.loadMaterials();
+    this.loadProjects();
     this.setupSearch();
   }
   
@@ -84,11 +115,43 @@ export class MaterialsDashboardComponent implements OnInit, OnDestroy {
       });
   }
 
+  loadProjects(): void {
+    this.projectsLoading = true;
+    
+    this.projectService.getProjects().subscribe({
+      next: (projects) => {
+        this.projects = projects;
+        this.projectsLoading = false;
+        console.log('✅ Loaded projects:', projects);
+      },
+      error: (err) => {
+        console.error('Error loading projects:', err);
+        this.projectsLoading = false;
+      }
+    });
+  }
+
+  onProjectSelect(project: Project | null): void {
+    this.selectedProject = project;
+    if (this.selectedProject) {
+      this.loadMaterials();
+    } else {
+      this.materials = [];
+      this.filteredMaterials = [];
+    }
+  }
+
   loadMaterials(): void {
+    if (!this.selectedProject) {
+      this.materials = [];
+      return;
+    }
+
     this.loading = true;
     this.error = '';
     
-    this.materialService.getMaterials().subscribe({
+    // Load materials filtered by project using backend endpoint
+    this.materialService.getMaterialsByProject(this.selectedProject.id).subscribe({
       next: (materials) => {
         this.materials = materials;
         this.extractCategories();
@@ -159,7 +222,60 @@ export class MaterialsDashboardComponent implements OnInit, OnDestroy {
   }
 
   createMaterial(): void {
-    this.router.navigate(['/materials/create']);
+    if (!this.selectedProject) {
+      return;
+    }
+    
+    this.showCreateForm = true;
+    this.createMaterialError = '';
+    this.newMaterial = {
+      materialCode: '',
+      materialName: '',
+      materialCategory: '',
+      unit: '',
+      unitCost: 0,
+      currentStock: 0,
+      minimumStock: 0,
+      reorderLevel: 0,
+      supplierName: '',
+      projectId: this.selectedProject.id
+    };
+  }
+
+  closeCreateForm(): void {
+    this.showCreateForm = false;
+    this.createMaterialError = '';
+  }
+
+  saveMaterial(): void {
+    if (!this.newMaterial.materialCode || !this.newMaterial.materialName) {
+      this.createMaterialError = 'Please fill in all required fields';
+      return;
+    }
+
+    this.createMaterialError = '';
+    this.creatingMaterial = true;
+
+    this.materialService.createMaterial(this.newMaterial).subscribe({
+      next: (response) => {
+        this.creatingMaterial = false;
+        this.closeCreateForm();
+        this.successMessage = 'Material created successfully!';
+        this.showSuccessModal = true;
+        this.loadMaterials();
+      },
+      error: (err) => {
+        this.creatingMaterial = false;
+        const errorMessage = err.error?.error?.message || err.error?.message || err.message || 'Unknown error occurred';
+        this.createMaterialError = `Failed to create material: ${errorMessage}`;
+        console.error('Error creating material:', err);
+      }
+    });
+  }
+
+  closeSuccessModal(): void {
+    this.showSuccessModal = false;
+    this.successMessage = '';
   }
 
   viewDetails(materialId: string): void {
@@ -180,6 +296,11 @@ export class MaterialsDashboardComponent implements OnInit, OnDestroy {
     if (material.needsReorder) return 'Critical';
     if (material.isLowStock) return 'Low';
     return 'OK';
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event): void {
+    // Can be used for dropdown interactions if needed
   }
 }
 

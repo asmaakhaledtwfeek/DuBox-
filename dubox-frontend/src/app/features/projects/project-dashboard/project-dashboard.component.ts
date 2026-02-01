@@ -93,6 +93,13 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
   qualityIssuesCount = 0;
   panelTypesCount = 0;
   
+  // Building and Floor breakdown
+  buildingFloorBreakdown: { 
+    building: string; 
+    totalBoxes: number; 
+    floors: { floor: string; boxCount: number; }[] 
+  }[] = [];
+  
   private subscriptions: Subscription[] = [];
 
   constructor(
@@ -243,6 +250,9 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
         });
 
         this.dashboardData = counts;
+
+        // Calculate building and floor breakdown
+        this.calculateBuildingFloorBreakdown(boxes);
 
         if (this.project) {
           const earliestActualStart = boxes
@@ -439,6 +449,59 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
         console.error('❌ Error loading panel types:', err);
         this.panelTypesCount = 0;
       }
+    });
+  }
+
+  /**
+   * Calculate building and floor breakdown from boxes
+   */
+  private calculateBuildingFloorBreakdown(boxes: Box[]): void {
+    // Create a map to group boxes by building and floor
+    const buildingMap = new Map<string, Map<string, number>>();
+
+    boxes.forEach(box => {
+      const building = box.buildingNumber || 'No Building';
+      const floor = box.floor || 'No Floor';
+
+      if (!buildingMap.has(building)) {
+        buildingMap.set(building, new Map<string, number>());
+      }
+
+      const floorMap = buildingMap.get(building)!;
+      floorMap.set(floor, (floorMap.get(floor) || 0) + 1);
+    });
+
+    // Convert map to array structure
+    this.buildingFloorBreakdown = Array.from(buildingMap.entries())
+      .map(([building, floorMap]) => {
+        const floors = Array.from(floorMap.entries())
+          .map(([floor, boxCount]) => ({ floor, boxCount }))
+          .sort((a, b) => a.floor.localeCompare(b.floor));
+
+        const totalBoxes = floors.reduce((sum, f) => sum + f.boxCount, 0);
+
+        return { building, totalBoxes, floors };
+      })
+      .sort((a, b) => a.building.localeCompare(b.building));
+
+    console.log('🏢 Building/Floor breakdown calculated:', this.buildingFloorBreakdown);
+  }
+
+  /**
+   * Navigate to boxes list filtered by building
+   */
+  viewBoxesByBuilding(building: string): void {
+    this.router.navigate(['/projects', this.projectId, 'boxes'], {
+      queryParams: { building: building }
+    });
+  }
+
+  /**
+   * Navigate to boxes list filtered by building and floor
+   */
+  viewBoxesByBuildingAndFloor(building: string, floor: string): void {
+    this.router.navigate(['/projects', this.projectId, 'boxes'], {
+      queryParams: { building: building, floor: floor }
     });
   }
 

@@ -4963,4 +4963,34 @@ downloadFileDrawing(drawing: any): void {
     // SubType is at position 4 (index 4)
     return parts.length >= 5 ? parts[4] : '';
   }
+
+  /**
+   * Check if all panels in the box have second approval
+   * @returns true if all panels have secondApprovalStatus === 'Approved'
+   */
+  areAllPanelsSecondApproved(): boolean {
+    // If no panels, consider it approved (no blocking condition)
+    if (!this.boxPanels || this.boxPanels.length === 0) {
+      return true;
+    }
+    
+    // Check if all panels have second approval
+    return this.boxPanels.every(panel => 
+      panel.secondApprovalStatus?.toLowerCase() === 'approved'
+    );
+  }
+
+  /**
+   * Get count of panels that need second approval
+   * @returns count of panels without second approval
+   */
+  getPanelsNeedingSecondApproval(): number {
+    if (!this.boxPanels || this.boxPanels.length === 0) {
+      return 0;
+    }
+    
+    return this.boxPanels.filter(panel => 
+      panel.secondApprovalStatus?.toLowerCase() !== 'approved'
+    ).length;
+  }
 }

@@ -154,7 +154,9 @@
       <div class="stats-grid" *ngIf="selectedProjectId && filteredBoxes.length > 0">
 
         <!-- Dynamic Panel Stats (per Panel Type) -->
-        <div class="stat-card wall-stat" *ngFor="let panelType of getPanelTypeColumns()">
+        <ng-container *ngFor="let panelType of getPanelTypeColumns()">
+          <div class="stat-card wall-stat" 
+               *ngIf="(getCompletionStats().panelStats.get(panelType.panelTypeName)?.total || 0) > 0">
           <div class="stat-content">
             <div class="stat-label">{{ panelType.panelTypeName }}</div>
             <div class="stat-progress">
@@ -196,6 +198,7 @@
             </div>
           </div>
         </div>
+        </ng-container>
 
         <!-- POD Delivery Card -->
         <div class="stat-card combined-delivery-stat">

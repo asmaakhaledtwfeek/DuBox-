@@ -25,6 +25,13 @@ public class MaterialsController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
+    [HttpGet("project/{projectId}")]
+    public async Task<IActionResult> GetMaterialsByProject(Guid projectId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetMaterialsByProjectQuery(projectId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
     [HttpGet("low-stock")]
     public async Task<IActionResult> GetLowStockMaterials(CancellationToken cancellationToken)
     {

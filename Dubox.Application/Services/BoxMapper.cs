@@ -90,6 +90,14 @@ namespace Dubox.Application.Services
                     PanelName = p.PanelName,
                     PanelStatus = p.PanelStatus,
                     Barcode = p.QRCode,
+                    // Workflow fields
+                    WorkflowStatus = p.WorkflowStatus,
+                    QualityIssueId = p.QualityIssueId,
+                    // Stage completion flags
+                    MoldPreparationComplete = p.MoldPreparationComplete,
+                    ReinforcementSetupComplete = p.ReinforcementSetupComplete,
+                    ConcreteCastingComplete = p.ConcreteCastingComplete,
+                    CuringAndDemoldingComplete = p.CuringAndDemoldingComplete,
                     // First Approval
                     FirstApprovalStatus = p.FirstApprovalStatus,
                     FirstApprovalBy = p.FirstApprovalBy,

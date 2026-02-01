@@ -1,3 +1,4 @@
+using Dubox.Application.DTOs;
 using Dubox.Application.Features.Boxes.Commands;
 using Dubox.Application.Features.Boxes.Queries;
 using Dubox.Application.Features.BoxPanels.Commands;
@@ -217,6 +218,43 @@ public class BoxesController : ControllerBase
 
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+
+    /// <summary>
+    /// Import panels to existing boxes from Excel file
+    /// This endpoint finds existing boxes by floor and type, then adds panels to them
+    /// - Parses box numbers (removes MGMT prefix, extracts level and type)
+    /// - Finds existing box with matching floor and type
+    /// - Parses panel numbers (splits into prefix and sequence number)
+    /// - Adds panels to the found box
+    /// Example: Box "MGMT-GF-B4" with panels "IW-250-1", "IW-250-2"
+    /// </summary>
+    [HttpPost("import-excel-with-panels")]
+    [RequestSizeLimit(10_485_760)] // 10 MB
+    [Consumes("multipart/form-data")]
+    [ProducesResponseType(typeof(BoxWithPanelsImportResultDto), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> ImportFromExcelWithPanels(
+        [FromQuery] Guid projectId, 
+        [FromForm] IFormFile file, 
+        CancellationToken cancellationToken)
+    {
+        if (projectId == Guid.Empty)
+            return BadRequest("ProjectId is required and must be a valid GUID");
+
+        if (file == null || file.Length == 0)
+            return BadRequest("No file uploaded");
+
+        using var stream = file.OpenReadStream();
+        using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream, cancellationToken);
+        memoryStream.Position = 0;
+        
+        var command = new ImportBoxesWithPanelsFromExcelCommand(projectId, memoryStream, file.FileName);
+        var result = await _mediator.Send(command, cancellationToken);
+
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+    
     [HttpGet("generate-qrcode/{boxId}")]
     public async Task<IActionResult> GenerateBoxQRCode(Guid boxId, CancellationToken cancellationToken)
     {
@@ -309,6 +347,35 @@ public class BoxesController : ControllerBase
         if (boxPanelId != command.BoxPanelId)
             return BadRequest("Panel ID mismatch");
 
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    // Panel Workflow Status Update (Pre-cast Location Stage)
+    [HttpPost("panels/{boxPanelId}/workflow-status")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdatePanelWorkflowStatus(
+        Guid boxPanelId,
+        [FromBody] UpdatePanelWorkflowStatusCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        if (boxPanelId != command.BoxPanelId)
+            return BadRequest("Panel ID mismatch");
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    // Public Panel Approval - No Authentication Required
+    [HttpPost("panels/public-approve")]
+    [AllowAnonymous]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> PublicApprovePanel(
+        [FromBody] PublicApprovePanelCommand command,
+        CancellationToken cancellationToken = default)
+    {
         var result = await _mediator.Send(command, cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }

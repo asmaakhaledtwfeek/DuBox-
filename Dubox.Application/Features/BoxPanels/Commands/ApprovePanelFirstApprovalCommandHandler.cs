@@ -1,4 +1,5 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
@@ -38,6 +39,20 @@ public class ApprovePanelFirstApprovalCommandHandler : IRequestHandler<ApprovePa
         if (panel.Box.Status == BoxStatusEnum.Dispatched)
             return Result.Failure<BoxPanelDto>("Cannot approve panel. Box is dispatched and read-only.");
 
+        // Check if workflow is completed before allowing approval
+        if (panel.WorkflowStatus != "Completed" && panel.PanelStatus != PanelStatusEnum.Completed)
+            return Result.Failure<BoxPanelDto>("Panel must complete workflow (status: Completed) before first approval.");
+
+        // Check if there's an open quality issue
+        if (panel.QualityIssueId.HasValue)
+        {
+            var issue = await _unitOfWork.Repository<QualityIssue>().GetByIdAsync(panel.QualityIssueId.Value, cancellationToken);
+            if (issue != null && issue.Status != QualityIssueStatusEnum.Resolved && issue.Status != QualityIssueStatusEnum.Closed)
+            {
+                return Result.Failure<BoxPanelDto>($"Cannot approve panel. Quality issue {issue.IssueNumber} must be resolved first. Issue must be resolved by the creator or admin.");
+            }
+        }
+
         // Validate approval status
         if (request.ApprovalStatus != "Approved" && request.ApprovalStatus != "Rejected")
             return Result.Failure<BoxPanelDto>("Invalid approval status. Must be 'Approved' or 'Rejected'");
@@ -54,13 +69,50 @@ public class ApprovePanelFirstApprovalCommandHandler : IRequestHandler<ApprovePa
         if (request.ApprovalStatus == "Approved")
         {
             panel.PanelStatus = PanelStatusEnum.FirstApprovalApproved;
+            panel.FirstApprovalStatus = "Approved";
             // Auto-set to second approval pending
             panel.SecondApprovalStatus = "Pending";
            
         }
         else
         {
+            panel.PanelStatus = PanelStatusEnum.Rejected;
+            panel.FirstApprovalStatus = "Rejected";
             panel.CurrentLocationStatus = "Rejected";
+            panel.WorkflowStatus = "Rejected"; // Send back to workflow
+            
+            // Automatically create quality issue for rejected panel
+            var user = await _unitOfWork.Repository<User>().GetByIdAsync(currentUserId, cancellationToken);
+            var reportedBy = user?.FullName ?? "System";
+            
+            // Generate issue number
+            var issueCountInProject = _unitOfWork.Repository<QualityIssue>()
+                .GetWithSpec(new GetQualityIssuesSpecification()).Data
+                .Count(qi => qi.Box.ProjectId == panel.ProjectId);
+            var issueNumber = (issueCountInProject + 1).ToString("D5");
+            
+            var description = $"Panel '{panel.PanelName}' rejected at First Approval (Pre-cast Location). {request.Notes}";
+            
+            var newIssue = new QualityIssue
+            {
+                IssueNumber = issueNumber,
+                BoxId = panel.BoxId,
+                IssueType = IssueTypeEnum.Defect,
+                Severity = SeverityEnum.Major,
+                IssueDescription = description,
+                Status = QualityIssueStatusEnum.Open,
+                IssueDate = approvalTime,
+                ReportedBy = reportedBy,
+                CreatedBy = currentUserId,
+                AssignedToMemberId = currentUserId, // Assign to creator for resolution
+                CreatedDate = approvalTime
+            };
+            
+            await _unitOfWork.Repository<QualityIssue>().AddAsync(newIssue, cancellationToken);
+            await _unitOfWork.CompleteAsync(cancellationToken); // Save to get IssueId
+            
+            // Link issue to panel
+            panel.QualityIssueId = newIssue.IssueId;
         }
 
         panel.ModifiedDate = approvalTime;

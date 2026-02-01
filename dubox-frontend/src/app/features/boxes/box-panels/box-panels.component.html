@@ -7,9 +7,9 @@
     <div class="header-actions">
       <button 
         class="btn btn-download-all" 
-        (click)="downloadAllQRCodes()" 
+        (click)="downloadAllApprovalQRCodes()" 
         [disabled]="downloadingAll || !hasQRCodesToDownload()"
-        title="Download all QR codes in one PDF file">
+        title="Download all approval QR codes for mobile scanning">
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
           <polyline points="7 10 12 15 17 10"></polyline>
@@ -83,14 +83,14 @@
               <div class="barcode-actions">
                 <button 
                   class="btn-download-barcode"
-                  (click)="downloadQRCode(panel)"
-                  title="Download QR code image">
+                  (click)="downloadApprovalQRCode(panel)"
+                  title="Download Approval QR code for mobile scanning">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                     <polyline points="7 10 12 15 17 10"></polyline>
                     <line x1="12" y1="15" x2="12" y2="3"></line>
                   </svg>
-                  Download
+                  Download QR
                 </button>
                 <button 
                   class="btn-copy-qrcode"
@@ -140,36 +140,60 @@
           </td>
           <td>
             <div class="action-buttons">
+              <!-- Workflow Status Update (Pre-cast Location) -->
+              <button 
+                class="btn btn-sm btn-workflow"
+                (click)="openWorkflowModal(panel)"
+                title="Update panel workflow status at pre-cast location">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 2v6m0 0L9 5m3 3 3-3M2 12h6m0 0L5 9m3 3-3 3m14-3h6m0 0-3-3m3 3-3 3M12 16v6m0 0-3-3m3 3 3-3"/>
+                </svg>
+                Workflow
+              </button>
+
               <!-- First Approval -->
               <button 
                 class="btn btn-sm btn-success"
-                *ngIf="canApproveFirst(panel)"
+                [disabled]="!canApproveFirst(panel)"
                 (click)="openApprovalModal(panel, 'first', 'approve')"
-                title="First Approval - Approve">
+                [title]="canApproveFirst(panel) ? 'First Approval - Approve' : 'Complete all 4 stages first'">
                 ✓ 1st
               </button>
               <button 
                 class="btn btn-sm btn-danger"
-                *ngIf="canApproveFirst(panel)"
+                [disabled]="!canApproveFirst(panel)"
                 (click)="openApprovalModal(panel, 'first', 'reject')"
-                title="First Approval - Reject">
+                [title]="canApproveFirst(panel) ? 'First Approval - Reject' : 'Complete all 4 stages first'">
                 ✗ 1st
               </button>
 
               <!-- Second Approval -->
               <button 
                 class="btn btn-sm btn-success"
-                *ngIf="canApproveSecond(panel)"
+                [disabled]="!canApproveSecond(panel)"
                 (click)="openApprovalModal(panel, 'second', 'approve')"
-                title="Second Approval - Approve">
+                [title]="canApproveSecond(panel) ? 'Second Approval - Approve' : 'First approval must be completed'">
                 ✓ 2nd
               </button>
               <button 
                 class="btn btn-sm btn-danger"
-                *ngIf="canApproveSecond(panel)"
+                [disabled]="!canApproveSecond(panel)"
                 (click)="openApprovalModal(panel, 'second', 'reject')"
-                title="Second Approval - Reject">
+                [title]="canApproveSecond(panel) ? 'Second Approval - Reject' : 'First approval must be completed'">
                 ✗ 2nd
+              </button>
+
+              <!-- ONE QR Code for both approvals -->
+              <button 
+                class="btn btn-sm btn-qr"
+                (click)="downloadApprovalQRCode(panel)"
+                title="Download QR Code for Mobile Approval (Auto-detects 1st or 2nd)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <rect x="7" y="7" width="3" height="3"/>
+                  <rect x="14" y="7" width="3" height="3"/>
+                  <rect x="7" y="14" width="3" height="3"/>
+                </svg>
               </button>
             </div>
           </td>
@@ -250,5 +274,14 @@
     (scanComplete)="handleScanComplete($event)"
     (close)="closeBarcodeScanner()">
   </app-barcode-scanner>
+
+  <!-- Panel Workflow Modal -->
+  <app-panel-workflow-modal
+    *ngIf="showWorkflowModal"
+    [panel]="selectedPanel"
+    [isOpen]="showWorkflowModal"
+    (closeModal)="closeWorkflowModal()"
+    (workflowUpdated)="onWorkflowUpdated()">
+  </app-panel-workflow-modal>
 </div>
 

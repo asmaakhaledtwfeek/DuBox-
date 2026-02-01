@@ -13,6 +13,7 @@ public record CreateMaterialCommand(
     decimal? CurrentStock,
     decimal? MinimumStock,
     decimal? ReorderLevel,
-    string? SupplierName
+    string? SupplierName,
+    Guid? ProjectId
 ) : IRequest<Result<MaterialDto>>;
 

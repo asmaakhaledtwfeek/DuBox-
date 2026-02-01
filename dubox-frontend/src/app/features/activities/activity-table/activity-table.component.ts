@@ -40,6 +40,8 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   @Input() isProjectOnHold: boolean = false; // Track if project is on hold
   @Input() isProjectArchived: boolean = false; // Track if project is archived
   @Input() isProjectClosed: boolean = false; // Track if project is closed
+  @Input() allPanelsSecondApproved: boolean = true; // Check if all panels have second approval
+  @Input() panelsNeedingApproval: number = 0; // Count of panels needing second approval
   @Output() boxDataChanged = new EventEmitter<void>();
   @Output() activityCountChanged = new EventEmitter<number>();
 
@@ -386,6 +388,18 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     // Block if activity is completed/delayed and next WIR has position disabled
+    // Check if all panels have second approval
+    if (!this.allPanelsSecondApproved) {
+      const count = this.panelsNeedingApproval;
+      document.dispatchEvent(new CustomEvent('app-toast', {
+        detail: { 
+          message: `Cannot update progress. ${count} panel${count !== 1 ? 's' : ''} require${count === 1 ? 's' : ''} second approval.`,
+          type: 'error' 
+        }
+      }));
+      return;
+    }
+
     if (this.shouldDisableUpdateProgress(activity)) {
       document.dispatchEvent(new CustomEvent('app-toast', {
         detail: { 
@@ -1097,6 +1111,11 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
       return false;
     }
 
+    // Disable if not all panels have second approval
+    if (!this.allPanelsSecondApproved) {
+      return true;
+    }
+
     // Disable if activity is on hold
     if (activity.status === ActivityProgressStatus.OnHold) {
       return true;
@@ -1129,6 +1148,12 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   getUpdateProgressButtonTitle(activity: BoxActivityDetail): string {
     if (!activity) {
       return 'Update Progress';
+    }
+
+    // Check if all panels have second approval
+    if (!this.allPanelsSecondApproved) {
+      const count = this.panelsNeedingApproval;
+      return `Update Progress disabled: ${count} panel${count !== 1 ? 's' : ''} require${count === 1 ? 's' : ''} second approval`;
     }
 
     // Check if activity is on hold

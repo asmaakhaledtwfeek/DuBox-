@@ -50,6 +50,15 @@ public record BoxPanelDto
     public string? Dimensions { get; init; }
     public string? Notes { get; init; }
     
+    // Pre-cast Location Workflow
+    public int CurrentStage { get; init; }
+    public bool MoldPreparationComplete { get; init; }
+    public bool ReinforcementSetupComplete { get; init; }
+    public bool ConcreteCastingComplete { get; init; }
+    public bool CuringAndDemoldingComplete { get; init; }
+    public string? WorkflowStatus { get; init; }
+    public Guid? QualityIssueId { get; init; }
+    
     public DateTime CreatedDate { get; init; }
     public DateTime? ModifiedDate { get; init; }
 }

@@ -4,13 +4,15 @@ import { FormsModule } from '@angular/forms';
 import { BoxPanel, PanelStatus } from '../../../core/models/box.model';
 import { PanelService } from '../../../core/services/panel.service';
 import { BarcodeScannerComponent, ScanResult } from '../barcode-scanner/barcode-scanner.component';
+import { PanelWorkflowModalComponent } from '../panel-workflow-modal/panel-workflow-modal.component';
 import QRCode from 'qrcode';
 import { jsPDF } from 'jspdf';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-box-panels',
   standalone: true,
-  imports: [CommonModule, FormsModule, BarcodeScannerComponent],
+  imports: [CommonModule, FormsModule, BarcodeScannerComponent, PanelWorkflowModalComponent],
   templateUrl: './box-panels.component.html',
   styleUrl: './box-panels.component.scss'
 })
@@ -29,6 +31,9 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
   approvalAction: 'approve' | 'reject' = 'approve';
   approvalNotes = '';
   submitting = false;
+
+  // Workflow modal
+  showWorkflowModal = false;
 
   // Barcode Scanner
   showBarcodeScanner = false;
@@ -78,8 +83,20 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
     switch (status) {
       case PanelStatus.NotStarted:
         return 'status-not-started';
+      case PanelStatus.InProgress:
+        return 'status-in-progress';
+      case PanelStatus.Completed:
+        return 'status-completed';
+      case PanelStatus.OnHold:
+        return 'status-on-hold';
+      case PanelStatus.Rejected:
+        return 'status-rejected';
+      case PanelStatus.FirstApprovalPending:
+        return 'status-first-approval-pending';
       case PanelStatus.FirstApprovalApproved:
         return 'status-first-approval-approved';
+      case PanelStatus.SecondApprovalPending:
+        return 'status-second-approval-pending';
       case PanelStatus.SecondApprovalApproved:
         return 'status-second-approval-approved';
       case PanelStatus.SecondApprovalRejected:
@@ -87,6 +104,32 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
       default:
         return 'status-default';
     }
+  }
+
+  openWorkflowModal(panel: BoxPanel): void {
+    console.log('📋 Opening workflow modal for panel:', panel.panelName);
+    console.log('📊 Panel stage completion status:', {
+      moldPreparationComplete: panel.moldPreparationComplete,
+      reinforcementSetupComplete: panel.reinforcementSetupComplete,
+      concreteCastingComplete: panel.concreteCastingComplete,
+      curingAndDemoldingComplete: panel.curingAndDemoldingComplete,
+      currentStage: panel.currentStage,
+      workflowStatus: panel.workflowStatus
+    });
+    
+    this.selectedPanel = panel;
+    this.showWorkflowModal = true;
+  }
+
+  closeWorkflowModal(): void {
+    this.showWorkflowModal = false;
+    this.selectedPanel = null;
+  }
+
+  onWorkflowUpdated(): void {
+    this.showWorkflowModal = false;
+    this.selectedPanel = null;
+    this.loadPanels();
   }
 
   openApprovalModal(panel: BoxPanel, type: 'first' | 'second', action: 'approve' | 'reject'): void {
@@ -135,27 +178,32 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   canApproveFirst(panel: BoxPanel): boolean {
-    const status = this.normalizeStatus(panel.panelStatus);
+    // Can approve first ONLY if:
+    // 1. WorkflowStatus is "Completed" (all 4 stages done) AND
+    // 2. First approval has not been done yet
+    const workflowCompleted = panel.workflowStatus === 'Completed';
+    const firstApprovalNotDone = !panel.firstApprovalStatus || panel.firstApprovalStatus === "Pending";
+    
     console.log(`🔍 canApproveFirst for ${panel.panelName}:`, { 
-      rawStatus: panel.panelStatus, 
-      normalizedStatus: status,
-      canApprove: status === PanelStatus.NotStarted
+      workflowStatus: panel.workflowStatus,
+      firstApprovalStatus: panel.firstApprovalStatus,
+      workflowCompleted,
+      firstApprovalNotDone,
+      canApprove: workflowCompleted && firstApprovalNotDone
     });
-    // Can approve first if status is NotStarted
-    return status === PanelStatus.NotStarted;
+    
+    return workflowCompleted && firstApprovalNotDone;
   }
 
   canApproveSecond(panel: BoxPanel): boolean {
-    const status = this.normalizeStatus(panel.panelStatus);
-    // Can approve second if:
-    // 1. Panel status is FirstApprovalApproved AND
+    // Can approve second ONLY if:
+    // 1. First approval has been approved AND
     // 2. Second approval status is Pending (either not set, or explicitly "Pending")
-    const isFirstApprovalApproved = status === PanelStatus.FirstApprovalApproved;
+    const isFirstApprovalApproved = panel.firstApprovalStatus === 'Approved';
     const isSecondApprovalPending = !panel.secondApprovalStatus || panel.secondApprovalStatus === "Pending";
     
     console.log(`🔍 canApproveSecond for ${panel.panelName}:`, { 
-      rawStatus: panel.panelStatus, 
-      normalizedStatus: status,
+      firstApprovalStatus: panel.firstApprovalStatus,
       secondApprovalStatus: panel.secondApprovalStatus,
       isFirstApprovalApproved,
       isSecondApprovalPending,
@@ -502,6 +550,103 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
+   * Download all approval QR codes (with public URLs) in a single PDF file
+   */
+  async downloadAllApprovalQRCodes(): Promise<void> {
+    // Filter panels that need approval
+    const panelsNeedingApproval = this.panels.filter(panel => 
+      this.canApproveFirst(panel) || this.canApproveSecond(panel)
+    );
+    
+    if (panelsNeedingApproval.length === 0) {
+      this.error = 'No panels requiring approval found';
+      setTimeout(() => {
+        this.error = '';
+      }, 3000);
+      return;
+    }
+
+    this.downloadingAll = true;
+    this.error = '';
+
+    try {
+      // Create a single PDF document
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      let successCount = 0;
+      let failCount = 0;
+      let isFirstPage = true;
+
+      // Add approval QR codes for each panel
+      for (const panel of panelsNeedingApproval) {
+        try {
+          // Generate ONE approval QR code (backend auto-determines which approval)
+          const qrCodeImage = await this.generateApprovalQRCode(panel);
+          if (qrCodeImage) {
+            // Add new page for each QR code (except the first one)
+            if (!isFirstPage) {
+              pdf.addPage();
+            }
+            isFirstPage = false;
+
+            // Add approval QR code to the current page
+            await this.addApprovalQRCodeToPDF(pdf, panel, qrCodeImage);
+            successCount++;
+          } else {
+            failCount++;
+            console.warn(`Failed to generate approval QR code for panel: ${panel.panelName}`);
+          }
+        } catch (err) {
+          failCount++;
+          console.error(`Error processing approval QR code for panel ${panel.panelName}:`, err);
+        }
+      }
+
+      if (successCount === 0) {
+        this.error = 'Failed to generate any approval QR codes';
+        this.downloadingAll = false;
+        setTimeout(() => {
+          this.error = '';
+        }, 3000);
+        return;
+      }
+
+      // Generate PDF blob and download
+      const pdfBlob = pdf.output('blob');
+      
+      // Create download link
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(pdfBlob);
+      link.download = `approval-qrcodes-box-${this.boxId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up the object URL
+      URL.revokeObjectURL(link.href);
+
+      // Show success message
+      this.lastScanResult = `✅ Successfully downloaded ${successCount} approval QR code${successCount !== 1 ? 's' : ''} in PDF${failCount > 0 ? ` (${failCount} failed)` : ''}`;
+      setTimeout(() => {
+        this.lastScanResult = '';
+      }, 5000);
+
+    } catch (error) {
+      console.error('Error creating PDF file:', error);
+      this.error = 'Failed to create PDF file. Please try again.';
+      setTimeout(() => {
+        this.error = '';
+      }, 5000);
+    } finally {
+      this.downloadingAll = false;
+    }
+  }
+
+  /**
    * Download all barcodes (backward compatibility)
    * @deprecated Use downloadAllQRCodes instead
    */
@@ -591,6 +736,93 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   /**
+   * Add an approval QR code to the current PDF page
+   */
+  private async addApprovalQRCodeToPDF(pdf: jsPDF, panel: BoxPanel, qrCodeImageDataUrl: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      // Convert data URL to image
+      const img = new Image();
+      
+      img.onload = () => {
+        try {
+          // Calculate dimensions to fit QR code nicely on the page
+          const pageWidth = 210; // A4 width in mm
+          const pageHeight = 297; // A4 height in mm
+          const margin = 15; // Reduced margin to maximize QR code size
+          const textSpace = 40; // space reserved for text above QR code
+          
+          // Calculate available space (accounting for text space)
+          const availableWidth = pageWidth - (margin * 2);
+          const availableHeight = pageHeight - (margin * 2) - textSpace;
+          
+          // Calculate scaling to fit the QR code - prioritize large size for scanning
+          const imgWidth = img.width;
+          const imgHeight = img.height;
+          const imgAspectRatio = imgWidth / imgHeight;
+          
+          // QR codes are square, so use the smaller dimension
+          const maxSize = Math.min(availableWidth, availableHeight) * 0.95;
+          let finalWidth = maxSize;
+          let finalHeight = maxSize;
+          
+          // If aspect ratio is not 1:1, adjust accordingly
+          if (imgAspectRatio > 1) {
+            finalHeight = finalWidth / imgAspectRatio;
+          } else if (imgAspectRatio < 1) {
+            finalWidth = finalHeight * imgAspectRatio;
+          }
+          
+          // Ensure minimum size for scannability (at least 100mm)
+          const minSize = 100;
+          if (finalWidth < minSize && availableWidth >= minSize) {
+            finalWidth = Math.min(minSize, availableWidth * 0.95);
+            finalHeight = finalWidth;
+          }
+          
+          // Center the QR code horizontally and position it below the text
+          const x = (pageWidth - finalWidth) / 2;
+          const qrCodeY = margin + textSpace + (availableHeight - finalHeight) / 2;
+          
+          // Add panel information text above the QR code
+          pdf.setFontSize(18);
+          pdf.setFont('helvetica', 'bold');
+          pdf.text(panel.panelName || 'Panel', pageWidth / 2, margin + 10, { align: 'center' });
+          
+          pdf.setFontSize(14);
+          pdf.setFont('helvetica', 'bold');
+          pdf.setTextColor(16, 185, 129); // Green
+          pdf.text('Panel Approval - Mobile Scan', pageWidth / 2, margin + 22, { align: 'center' });
+          
+          pdf.setTextColor(0, 0, 0); // Reset to black
+          pdf.setFontSize(11);
+          pdf.setFont('helvetica', 'normal');
+          pdf.text('Scan with phone camera to approve (1st or 2nd)', pageWidth / 2, margin + 32, { align: 'center' });
+          
+          // Add the QR code image with high quality
+          pdf.addImage(qrCodeImageDataUrl, 'PNG', x, qrCodeY, finalWidth, finalHeight, undefined, 'FAST');
+          
+          // Add footer text
+          pdf.setFontSize(10);
+          pdf.setTextColor(100, 100, 100);
+          pdf.text('No login required - System auto-detects approval type - Location captured automatically', pageWidth / 2, pageHeight - 10, { align: 'center' });
+          
+          resolve();
+        } catch (error) {
+          console.error('Error adding approval QR code to PDF:', error);
+          reject(error);
+        }
+      };
+      
+      img.onerror = () => {
+        console.error('Error loading approval QR code image');
+        reject(new Error('Failed to load approval QR code image'));
+      };
+      
+      img.src = qrCodeImageDataUrl;
+    });
+  }
+
+  /**
    * Check if there are any panels with QR codes to download
    */
   hasQRCodesToDownload(): boolean {
@@ -603,6 +835,90 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
    */
   hasBarcodesToDownload(): boolean {
     return this.hasQRCodesToDownload();
+  }
+
+  /**
+   * Generate approval token for panel
+   * Must match the token generation in backend
+   */
+  async generateApprovalToken(boxPanelId: string, qrCode: string): Promise<string> {
+    const data = `${boxPanelId}|${qrCode}|DUBOX_PANEL_APPROVAL`;
+    const encoder = new TextEncoder();
+    const dataBuffer = encoder.encode(data);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashBase64 = btoa(String.fromCharCode(...hashArray));
+    return hashBase64.substring(0, 16); // Take first 16 chars for brevity
+  }
+
+  /**
+   * Generate ONE public approval URL (auto-detects first or second approval on backend)
+   */
+  async getApprovalUrl(panel: BoxPanel): Promise<string> {
+    if (!panel.qrCode) return '';
+    const token = await this.generateApprovalToken(panel.boxPanelId, panel.qrCode);
+    const baseUrl = window.location.origin;
+    // No "type" parameter - backend auto-determines based on panel status
+    return `${baseUrl}/public-approve?panelId=${panel.boxPanelId}&token=${token}`;
+  }
+
+  /**
+   * Generate ONE QR code with approval URL embedded (works for both first and second approval)
+   * The backend automatically determines which approval to perform based on panel status
+   */
+  async generateApprovalQRCode(panel: BoxPanel): Promise<string | null> {
+    try {
+      const approvalUrl = await this.getApprovalUrl(panel);
+      
+      if (!approvalUrl) return null;
+
+      // Generate QR code from approval URL (high resolution for scanning)
+      const dataUrl = await QRCode.toDataURL(approvalUrl, {
+        errorCorrectionLevel: 'H',
+        type: 'image/png',
+        width: 1200,
+        margin: 4,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+      
+      return dataUrl;
+    } catch (error) {
+      console.error('Error generating approval QR code:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Download ONE approval QR code for scanning from mobile (auto-detects first or second approval)
+   */
+  async downloadApprovalQRCode(panel: BoxPanel): Promise<void> {
+    try {
+      const qrCodeImage = await this.generateApprovalQRCode(panel);
+      if (!qrCodeImage) {
+        this.error = 'Failed to generate approval QR code';
+        setTimeout(() => {
+          this.error = '';
+        }, 3000);
+        return;
+      }
+
+      // Create a temporary anchor element
+      const link = document.createElement('a');
+      link.href = qrCodeImage;
+      link.download = `approval-qr-${panel.panelName}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error downloading approval QR code:', error);
+      this.error = 'Failed to download approval QR code';
+      setTimeout(() => {
+        this.error = '';
+      }, 3000);
+    }
   }
 }
 

@@ -194,6 +194,102 @@ public record PaginatedBoxSummaryReportResponseDto
     public BoxSummaryReportAggregationsDto Aggregations { get; init; } = new();
 }
 
+/// <summary>
+/// DTO for Panel Approval Report - shows panels with their second approval status
+/// </summary>
+public record PanelApprovalReportDto
+{
+    public Guid PanelId { get; init; }
+    public string PanelName { get; init; } = string.Empty;
+    public string PanelType { get; init; } = string.Empty;
+    public string BoxCode { get; init; } = string.Empty;
+    public string BoxName { get; init; } = string.Empty;
+    public Guid ProjectId { get; init; }
+    public string ProjectName { get; init; } = string.Empty;
+    public string ProjectNumber { get; init; } = string.Empty;
+    public DateTime? FirstApprovalDate { get; init; }
+    public DateTime? SecondApprovalDate { get; init; }
+    public string? SecondApprovalBy { get; init; }
+    public string Status { get; init; } = string.Empty;
+}
+
+/// <summary>
+/// DTO for Panel Approval Report Response with summary statistics
+/// </summary>
+public record PanelApprovalReportResponseDto
+{
+    public List<PanelApprovalReportDto> Panels { get; init; } = new();
+    public List<PanelTypeGroupedReportDto> GroupedByPanelType { get; init; } = new();
+    public PanelApprovalReportSummaryDto Summary { get; init; } = new();
+}
+
+/// <summary>
+/// DTO for Panel Type Grouped Report - shows panels grouped by panel type
+/// </summary>
+public record PanelTypeGroupedReportDto
+{
+    public string PanelType { get; init; } = string.Empty;
+    public Guid? PanelTypeId { get; init; }
+    public int TotalPanels { get; init; }
+    public int FirstApprovalCount { get; init; }
+    public int SecondApprovalCount { get; init; }
+    public int RejectedCount { get; init; }
+    public int PendingFirstApproval { get; init; }
+    public int PendingSecondApproval { get; init; }
+    public int BoxesUsingThisType { get; init; }
+    public decimal FirstApprovalPercentage { get; init; }
+    public decimal SecondApprovalPercentage { get; init; }
+    public List<string> ProjectNames { get; init; } = new();
+}
+
+/// <summary>
+/// DTO for Panel Approval Report Summary - statistics for the filtered report
+/// </summary>
+public record PanelApprovalReportSummaryDto
+{
+    public int TotalPanels { get; init; }
+    public int FirstApprovalCount { get; init; }
+    public int SecondApprovalCount { get; init; }
+    public int PendingFirstApproval { get; init; }
+    public int PendingSecondApproval { get; init; }
+    public int TotalBoxes { get; init; }
+    public int TotalPanelTypes { get; init; }
+    public decimal FirstApprovalPercentage { get; init; }
+    public decimal SecondApprovalPercentage { get; init; }
+}
+
+/// <summary>
+/// DTO for Box Panel Approval Report - shows boxes and their panel approval progress
+/// </summary>
+public record BoxPanelApprovalReportDto
+{
+    public Guid BoxId { get; init; }
+    public string BoxCode { get; init; } = string.Empty;
+    public string BoxName { get; init; } = string.Empty;
+    public Guid ProjectId { get; init; }
+    public string ProjectName { get; init; } = string.Empty;
+    public string ProjectNumber { get; init; } = string.Empty;
+    public int TotalPanels { get; init; }
+    public int ApprovedPanels { get; init; }
+    public decimal ApprovalPercentage { get; init; }
+    public bool AllPanelsApproved { get; init; }
+}
+
+/// <summary>
+/// DTO for Project Panel Type Approval Report - shows approval status grouped by project and panel type
+/// </summary>
+public record ProjectPanelTypeApprovalReportDto
+{
+    public Guid ProjectId { get; init; }
+    public string ProjectName { get; init; } = string.Empty;
+    public string ProjectNumber { get; init; } = string.Empty;
+    public string PanelType { get; init; } = string.Empty;
+    public int TotalPanels { get; init; }
+    public int ApprovedPanels { get; init; }
+    public int PendingPanels { get; init; }
+    public decimal ApprovalPercentage { get; init; }
+}
+
 
 
 

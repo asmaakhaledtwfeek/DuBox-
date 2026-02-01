@@ -19,6 +19,14 @@ export interface ApprovePanelRequest {
   notes?: string;
 }
 
+export interface UpdatePanelWorkflowRequest {
+  boxPanelId: string;
+  workflowStatus: string; // InProgress, Completed, PutOnHold
+  currentStage?: number; // PanelStageEnum: 1=MoldPrep, 2=Reinforcement, 3=Casting, 4=Curing
+  notes?: string;
+  assignedToTeamId?: string; // QC Team for PutOnHold issues
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -45,5 +53,16 @@ export class PanelService {
   approvePanelSecondApproval(request: ApprovePanelRequest): Observable<any> {
     return this.http.post(`${this.apiUrl}/panels/${request.boxPanelId}/second-approval`, request);
   }
-}
 
+  getPanelByBarcode(barcode: string): Observable<BoxPanel> {
+    return this.http.get<BoxPanel>(`${this.apiUrl}/panels/barcode/${barcode}`);
+  }
+
+  getPanelsByBoxId(boxId: string): Observable<BoxPanel[]> {
+    return this.http.get<BoxPanel[]>(`${this.apiUrl}/${boxId}/panels`);
+  }
+
+  updatePanelWorkflowStatus(request: UpdatePanelWorkflowRequest): Observable<any> {
+    return this.http.post(`${this.apiUrl}/panels/${request.boxPanelId}/workflow-status`, request);
+  }
+}

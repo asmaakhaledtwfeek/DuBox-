@@ -1134,3 +1134,19 @@
   }
 }
 
+// Power BI iframe styling
+.powerbi-iframe {
+  width: calc(100% - 40px);
+  height: calc(100vh - var(--header-height, 64px) - 40px);
+  margin: 20px;
+  border: none;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+
+  @media (max-width: 768px) {
+    width: calc(100% - 20px);
+    margin: 10px;
+    height: calc(100vh - var(--header-height, 64px) - 20px);
+  }
+}
+

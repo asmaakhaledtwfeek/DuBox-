@@ -1011,6 +1011,124 @@
   }
 }
 
+// Building & Floor Breakdown
+.breakdown-card {
+  .card-title {
+    svg {
+      color: var(--amana-teal);
+    }
+  }
+}
+
+.breakdown-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.building-item {
+  background: #f8fafc;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: rgba(27, 154, 170, 0.3);
+    box-shadow: 0 4px 12px rgba(27, 154, 170, 0.1);
+  }
+}
+
+.building-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: white;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(27, 154, 170, 0.05);
+  }
+
+  .building-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    svg {
+      color: var(--amana-teal);
+      flex-shrink: 0;
+    }
+
+    .building-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #0f172a;
+    }
+  }
+
+  .building-count {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--amana-teal);
+    padding: 4px 12px;
+    background: rgba(27, 154, 170, 0.1);
+    border-radius: 20px;
+  }
+}
+
+.floors-list {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.floor-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(27, 154, 170, 0.05);
+    border-color: var(--amana-teal);
+    transform: translateX(4px);
+  }
+
+  .floor-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    svg {
+      color: #64748b;
+      flex-shrink: 0;
+    }
+
+    .floor-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #334155;
+    }
+  }
+
+  .floor-count {
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+  }
+}
+
 .card-title {
   font-size: 24px;
   font-weight: 700;
@@ -2076,17 +2194,18 @@
     margin-left: 0;
 
     &::before {
-      height: 200px;
+      height: 150px;
     }
   }
 
   .page-content {
-    padding: 20px;
+    padding: 12px;
   }
 
   .dashboard-header {
     flex-direction: column;
-    padding: 24px;
+    padding: 20px 16px;
+    margin-bottom: 20px;
 
     &::after {
       display: none;
@@ -2094,54 +2213,143 @@
 
     .title-section {
       .page-title {
-        font-size: 24px;
+        font-size: 18px;
+      }
+
+      .badge {
+        padding: 4px 10px;
+        font-size: 10px;
       }
     }
   }
 
   .header-right {
     width: 100%;
+    gap: 8px;
 
     .btn {
-      flex: 1;
-      min-width: auto;
+      flex: 1 1 calc(50% - 4px);
+      min-width: 0;
+      max-width: calc(50% - 4px);
+      padding: 8px 10px;
+      font-size: 11px;
+      border-radius: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+
+      svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+      }
     }
   }
 
   .project-meta {
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
     width: 100%;
 
     .meta-item {
       width: 100%;
       justify-content: flex-start;
+      padding: 6px 10px;
+      font-size: 11px;
+
+      svg {
+        width: 12px;
+        height: 12px;
+      }
     }
   }
 
   .kpi-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
   }
 
   .kpi-card {
-    padding: 20px;
+    padding: 10px 12px;
+    gap: 10px;
+    flex-direction: column;
+    text-align: center;
+
+    .kpi-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      margin: 0 auto;
+
+      svg {
+        width: 16px;
+        height: 16px;
+      }
+    }
 
     .kpi-value {
-      font-size: 32px;
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .kpi-label {
+      font-size: 10px;
+    }
+
+    &.clickable-card::after {
+      display: none;
     }
   }
 
   .card {
-    padding: 24px;
+    padding: 14px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+  }
+
+  .card-title {
+    font-size: 15px;
+    margin-bottom: 10px;
+
+    &::before {
+      width: 4px;
+      height: 18px;
+    }
+  }
+
+  // Stats inside cards
+  .stat {
+    padding: 8px 10px;
+    border-radius: 8px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+
+    &::before {
+      width: 6px;
+      height: 6px;
+    }
   }
 
   .stat-value {
-    font-size: 28px;
+    font-size: 20px;
+  }
+
+  // Progress bars
+  .progress-bar-large {
+    height: 14px;
+    border-radius: 8px;
+    margin-top: 8px;
   }
 
   .actions-grid {
     grid-template-columns: 1fr;
+  }
+
+  // Hide Excel import section on mobile
+  .excel-import {
+    display: none !important;
   }
 
   .excel-import .excel-header {
@@ -2153,7 +2361,7 @@
   }
 
   .upload-zone {
-    padding: 32px 20px;
+    padding: 24px 16px;
   }
 }
 
@@ -2187,11 +2395,33 @@
 // Tablet (768px - 1024px)
 @media (max-width: 1024px) and (min-width: 769px) {
   .page-content {
-    padding: 32px;
+    padding: 24px;
+  }
+
+  .dashboard-header {
+    padding: 24px;
   }
 
   .kpi-grid, .stats-grid {
     grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  .kpi-card {
+    padding: 16px;
+
+    .kpi-icon {
+      width: 50px;
+      height: 50px;
+    }
+
+    .kpi-value {
+      font-size: 28px;
+    }
+
+    .kpi-label {
+      font-size: 12px;
+    }
   }
 }
 
@@ -2203,14 +2433,15 @@
   }
 
   .page-content {
-    padding: 16px;
+    padding: 12px;
   }
 
-  // Dashboard Header
+  // Dashboard Header - Minimized
   .dashboard-header, .project-header {
     flex-direction: column;
-    gap: 16px;
-    margin-bottom: 32px;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 20px 16px;
 
     .header-left, .project-info {
       text-align: center;
@@ -2220,10 +2451,32 @@
     .project-title-section, .title-section {
       align-items: center;
       flex-direction: column;
+      gap: 8px;
 
-      h1 {
-        font-size: 24px;
+      .page-title {
+        font-size: 18px !important;
         text-align: center;
+      }
+
+      .badge {
+        padding: 4px 10px;
+        font-size: 10px;
+        border-radius: 8px;
+      }
+    }
+
+    .project-meta {
+      gap: 8px;
+
+      .meta-item {
+        padding: 6px 10px;
+        font-size: 11px;
+        border-radius: 8px;
+
+        svg {
+          width: 12px;
+          height: 12px;
+        }
       }
     }
 
@@ -2231,63 +2484,165 @@
       width: 100%;
       justify-content: center;
       flex-wrap: wrap;
+      gap: 8px;
 
       .btn {
-        flex: 1;
-        min-width: 140px;
-        padding: 14px 20px;
-        font-size: 16px;
+        flex: 1 1 calc(50% - 4px);
+        min-width: 0;
+        max-width: calc(50% - 4px);
+        padding: 8px 10px;
+        font-size: 11px;
+        border-radius: 8px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+
+        svg {
+          width: 14px;
+          height: 14px;
+          flex-shrink: 0;
+        }
+
+        span {
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+      }
+
+      // Make single button full width if it's the only one
+      .btn:only-child {
+        flex: 1 1 100%;
+        max-width: 100%;
       }
     }
   }
 
-  // Stats/KPI Grid - Stack Vertically
+  // Stats/KPI Grid - 2 cards per row
   .kpi-grid, .stats-grid, .summary-cards {
-    grid-template-columns: 1fr;
-    gap: 16px;
-    margin-bottom: 32px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
   }
 
   .kpi-card, .stat-card {
-    padding: 16px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    gap: 10px;
+    flex-direction: column;
+    text-align: center;
+
+    &::before {
+      height: 3px;
+    }
+
+    &.clickable-card::after {
+      display: none; // Hide arrow indicator on small cards
+    }
 
     .kpi-icon, .stat-icon {
-      width: 48px;
-      height: 48px;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      margin: 0 auto;
+
+      &::after {
+        border-radius: 10px;
+        inset: -1px;
+        filter: blur(6px);
+      }
 
       svg {
-        width: 20px;
-        height: 20px;
+        width: 16px;
+        height: 16px;
       }
     }
 
+    .kpi-content, .stat-content {
+      gap: 4px;
+    }
+
     .kpi-value, .stat-value {
-      font-size: 24px;
+      font-size: 22px;
+      line-height: 1;
     }
 
     .kpi-label, .stat-label {
-      font-size: 14px;
+      font-size: 10px;
+      letter-spacing: 0.02em;
     }
+  }
+
+  .config-badge {
+    padding: 2px 6px;
+    font-size: 7px;
+    top: 6px;
+    right: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  // Cards - Minimized
+  .card {
+    padding: 14px;
+    border-radius: 10px;
+    margin-bottom: 12px;
+  }
+
+  .card-title {
+    font-size: 15px;
+    margin-bottom: 10px;
+
+    &::before {
+      width: 4px;
+      height: 18px;
+    }
+  }
+
+  // Stats inside cards
+  .stat {
+    padding: 8px 10px;
+    border-radius: 8px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+
+    &::before {
+      width: 6px;
+      height: 6px;
+    }
+  }
+
+  .stat-value {
+    font-size: 20px;
+  }
+
+  // Progress bars
+  .progress-bar-large {
+    height: 14px;
+    border-radius: 8px;
+    margin-top: 8px;
   }
 
   // Filters
   .filters-section, .filter-container {
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
 
     .search-box, .filter-control {
       width: 100%;
       min-width: 100%;
 
       input, select {
-        font-size: 16px;
-        padding: 12px 14px;
+        font-size: 14px;
+        padding: 8px 10px;
         width: 100%;
       }
     }
 
     .btn {
       width: 100%;
+      padding: 8px 12px;
+      font-size: 12px;
     }
   }
 
@@ -2381,31 +2736,85 @@
   }
 
   // Modal
-  .modal-content {
+  .modal-content, .modal-container {
     max-width: 100%;
     max-height: 100vh;
     border-radius: 0;
     margin: 0;
 
     .modal-header {
-      padding: 16px;
+      padding: 12px;
 
       h2, h3 {
-        font-size: 18px;
+        font-size: 16px;
+      }
+
+      .header-icon {
+        width: 36px;
+        height: 36px;
+
+        svg {
+          width: 18px;
+          height: 18px;
+        }
+      }
+
+      .modal-subtitle {
+        font-size: 12px;
       }
     }
 
     .modal-body {
       padding: 16px;
       max-height: calc(100vh - 80px);
+
+      label {
+        font-size: 12px;
+        margin-bottom: 8px;
+      }
+
+      .form-control {
+        padding: 10px 12px;
+        font-size: 14px;
+      }
     }
 
-    .modal-footer {
-      padding: 16px;
+    .modal-footer, .modal-actions {
+      padding: 12px;
       flex-direction: column;
+      gap: 8px;
 
       .btn {
         width: 100%;
+        padding: 8px 16px;
+        font-size: 13px;
+        min-width: auto;
+      }
+    }
+  }
+
+  // Project status modal specific
+  .project-status-modal {
+    .modal-header {
+      padding: 16px;
+    }
+
+    .modal-body {
+      padding: 16px;
+
+      .status-transition {
+        padding: 12px;
+        gap: 12px;
+        margin-bottom: 16px;
+
+        .status-badge {
+          padding: 6px 10px;
+          font-size: 11px;
+        }
+
+        .status-label {
+          font-size: 10px;
+        }
       }
     }
   }
@@ -2437,21 +2846,118 @@
 // Small Mobile (max-width: 480px)
 @media (max-width: 480px) {
   .page-content {
-    padding: 12px;
+    padding: 8px;
   }
 
-  .dashboard-header h1, .project-header h1 {
-    font-size: 20px !important;
+  .dashboard-header, .project-header {
+    padding: 14px 10px;
+    margin-bottom: 12px;
+
+    .title-section .page-title, h1 {
+      font-size: 15px !important;
+    }
+
+    .badge {
+      padding: 3px 7px;
+      font-size: 8px;
+    }
+
+    .header-right .btn {
+      padding: 6px 8px;
+      font-size: 10px;
+      gap: 4px;
+
+      svg {
+        width: 12px;
+        height: 12px;
+      }
+    }
   }
 
   .kpi-card, .stat-card {
+    padding: 8px 10px;
+    gap: 8px;
+    flex-direction: column;
+    text-align: center;
+
+    .kpi-icon, .stat-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      margin: 0 auto;
+
+      svg {
+        width: 14px;
+        height: 14px;
+      }
+    }
+
     .kpi-value, .stat-value {
       font-size: 20px;
+    }
+
+    .kpi-label, .stat-label {
+      font-size: 9px;
+    }
+
+    &.clickable-card::after {
+      display: none;
     }
   }
 
   .mobile-card {
-    padding: 12px;
+    padding: 10px;
+  }
+
+  .card {
+    padding: 10px 12px;
+    border-radius: 8px;
+  }
+
+  .card-title {
+    font-size: 13px;
+    margin-bottom: 8px;
+
+    &::before {
+      width: 3px;
+      height: 14px;
+    }
+  }
+
+  .stat {
+    padding: 6px 8px;
+  }
+
+  .stat-label {
+    font-size: 10px;
+
+    &::before {
+      width: 5px;
+      height: 5px;
+    }
+  }
+
+  .stat-value {
+    font-size: 18px;
+  }
+
+  .progress-bar-large {
+    height: 12px;
+  }
+
+  .meta-item {
+    font-size: 10px;
+    padding: 5px 8px;
+
+    svg {
+      width: 10px;
+      height: 10px;
+    }
+  }
+
+  .config-badge {
+    padding: 2px 5px;
+    font-size: 6px;
   }
 }
 

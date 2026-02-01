@@ -1,4 +1,5 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
@@ -64,6 +65,38 @@ public class ApprovePanelSecondApprovalCommandHandler : IRequestHandler<ApproveP
         {
             panel.PanelStatus = PanelStatusEnum.SecondApprovalRejected;
             panel.CurrentLocationStatus = "Rejected";
+            
+            // Automatically create quality issue for rejected panel
+            var user = await _unitOfWork.Repository<User>().GetByIdAsync(currentUserId, cancellationToken);
+            var reportedBy = user?.FullName ?? "System";
+            
+            // Generate issue number
+            var issueCountInProject = _unitOfWork.Repository<QualityIssue>()
+                .GetWithSpec(new GetQualityIssuesSpecification()).Data
+                .Count(qi => qi.Box.ProjectId == panel.ProjectId);
+            var issueNumber = (issueCountInProject + 1).ToString("D5");
+            
+            var description = $"Panel '{panel.PanelName}' rejected at Second Approval (Dubox Delivery). {request.Notes}";
+            
+            var newIssue = new QualityIssue
+            {
+                IssueNumber = issueNumber,
+                BoxId = panel.BoxId,
+                IssueType = IssueTypeEnum.Defect,
+                Severity = SeverityEnum.Critical,
+                IssueDescription = description,
+                Status = QualityIssueStatusEnum.Open,
+                IssueDate = approvalTime,
+                ReportedBy = reportedBy,
+                CreatedBy = currentUserId,
+                CreatedDate = approvalTime
+            };
+            
+            await _unitOfWork.Repository<QualityIssue>().AddAsync(newIssue, cancellationToken);
+            await _unitOfWork.CompleteAsync(cancellationToken); // Save to get IssueId
+            
+            // Link issue to panel
+            panel.QualityIssueId = newIssue.IssueId;
         }
 
         panel.ModifiedDate = approvalTime;

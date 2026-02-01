@@ -1,0 +1,293 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="page-content">
+    <!-- Breadcrumb -->
+    <nav class="breadcrumb">
+      <a routerLink="/projects" class="breadcrumb-item">Projects</a>
+      <span class="breadcrumb-separator">/</span>
+      <span class="breadcrumb-item active">Project Configuration</span>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <h1 class="page-title">Project Configuration</h1>
+      <p class="page-subtitle">Define buildings, levels, box types, zones, and functions for this project</p>
+    </div>
+
+    <!-- Alerts -->
+    <div *ngIf="successMessage" class="alert alert-success">
+      {{ successMessage }}
+    </div>
+
+    <div *ngIf="error" class="alert alert-error">
+      {{ error }}
+    </div>
+
+    <div *ngIf="loading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading configuration...</p>
+    </div>
+
+    <!-- Configuration Form -->
+    <div class="configuration-container" *ngIf="!loading">
+      
+      <!-- Buildings Section -->
+      <div class="config-section">
+        <div class="section-header">
+          <h2>Building Numbers</h2>
+          <p>Add building numbers one at a time or multiple comma-separated values (press Enter or click Add)</p>
+        </div>
+        <div class="add-item-row">
+          <input 
+            type="text" 
+            [(ngModel)]="newBuilding" 
+            placeholder="e.g., B01, B02, B03" 
+            class="input-field"
+            (keydown.enter)="$event.preventDefault(); addBuilding()"
+          />
+          <button type="button" class="btn-add" (click)="addBuilding()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add
+          </button>
+        </div>
+        <div class="items-list">
+          <div class="item-chip" *ngFor="let building of buildings; let i = index">
+            <span>{{ building.buildingCode }}</span>
+            <button type="button" class="btn-remove" (click)="removeBuilding(i)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <div class="empty-state" *ngIf="buildings.length === 0">
+            No buildings added yet
+          </div>
+        </div>
+      </div>
+
+      <!-- Levels/Floors Section -->
+      <div class="config-section">
+        <div class="section-header">
+          <h2>Building Levels/Floors</h2>
+          <p>Add floor levels one at a time or multiple comma-separated values (press Enter or click Add)</p>
+        </div>
+        <div class="add-item-row">
+          <input 
+            type="text" 
+            [(ngModel)]="newLevel" 
+            placeholder="e.g., GF, 1F, 2F, 3F" 
+            class="input-field"
+            (keydown.enter)="$event.preventDefault(); addLevel()"
+          />
+          <button type="button" class="btn-add" (click)="addLevel()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add
+          </button>
+        </div>
+        <div class="items-list">
+          <div class="item-chip" *ngFor="let level of levels; let i = index">
+            <span>{{ level.levelCode }}</span>
+            <button type="button" class="btn-remove" (click)="removeLevel(i)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <div class="empty-state" *ngIf="levels.length === 0">
+            No levels added yet
+          </div>
+        </div>
+      </div>
+
+      <!-- Box Types Section -->
+      <div class="config-section">
+        <div class="section-header">
+          <h2>Box Types</h2>
+          <p>Add box types one at a time or multiple comma-separated values (press Enter or click Add)</p>
+        </div>
+        <div class="add-item-row">
+          <input 
+            type="text" 
+            [(ngModel)]="newBoxType" 
+            placeholder="e.g., S1, S2, S3, S4" 
+            class="input-field"
+            (keydown.enter)="$event.preventDefault(); addBoxType()"
+          />
+          <button type="button" class="btn-add" (click)="addBoxType()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add
+          </button>
+        </div>
+        <div class="items-list-expanded">
+          <div class="item-card" *ngFor="let type of boxTypes; let i = index">
+            <div class="item-card-header">
+              <span class="item-name">{{ type.typeName }}</span>
+              <div class="item-actions">
+                <label class="checkbox-label">
+                  <input 
+                    type="checkbox" 
+                    [checked]="type.hasSubTypes" 
+                    (change)="toggleHasSubTypes(i)"
+                  />
+                  <span>Has Sub-Types</span>
+                </label>
+                <button type="button" class="btn-remove-card" (click)="removeBoxType(i)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <!-- Sub-types section -->
+            <div class="subtypes-section" *ngIf="type.hasSubTypes">
+              <div class="add-subitem-row">
+                <input 
+                  type="text" 
+                  [(ngModel)]="newBoxSubType" 
+                  placeholder="e.g., Type A, Type B, Type C" 
+                  class="input-field-sm"
+                  (keydown.enter)="$event.preventDefault(); addSubType(i)"
+                  (focus)="selectedTypeForSubType = i"
+                />
+                <button 
+                  type="button" 
+                  class="btn-add-sm" 
+                  (click)="addSubType(i)"
+                  [disabled]="selectedTypeForSubType !== i || !newBoxSubType.trim()"
+                >
+                  Add Sub-Type
+                </button>
+              </div>
+              <div class="subitems-list">
+                <div class="subitem-chip" *ngFor="let subType of type.subTypes; let j = index">
+                  <span>{{ subType.subTypeName }}</span>
+                  <button type="button" class="btn-remove-sub" (click)="removeSubType(i, j)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="18" y1="6" x2="6" y2="18"/>
+                      <line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </div>
+                <div class="empty-state-sm" *ngIf="!type.subTypes || type.subTypes.length === 0">
+                  No sub-types added
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="empty-state" *ngIf="boxTypes.length === 0">
+            No box types added yet
+          </div>
+        </div>
+      </div>
+
+      <!-- Zones Section -->
+      <div class="config-section">
+        <div class="section-header">
+          <h2>Zones</h2>
+          <p>Add zones one at a time or multiple comma-separated values (press Enter or click Add)</p>
+        </div>
+        <div class="add-item-row">
+          <input 
+            type="text" 
+            [(ngModel)]="newZone" 
+            placeholder="e.g., Zone A, Zone B, Zone C" 
+            class="input-field"
+            (keydown.enter)="$event.preventDefault(); addZone()"
+          />
+          <button type="button" class="btn-add" (click)="addZone()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add
+          </button>
+        </div>
+        <div class="items-list">
+          <div class="item-chip" *ngFor="let zone of zones; let i = index">
+            <span>{{ zone.zoneCode }}</span>
+            <button type="button" class="btn-remove" (click)="removeZone(i)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <div class="empty-state" *ngIf="zones.length === 0">
+            No zones added yet
+          </div>
+        </div>
+      </div>
+
+      <!-- Box Functions Section -->
+      <div class="config-section">
+        <div class="section-header">
+          <h2>Box Functions</h2>
+          <p>Add functions one at a time or multiple comma-separated values (press Enter or click Add)</p>
+        </div>
+        <div class="add-item-row">
+          <input 
+            type="text" 
+            [(ngModel)]="newBoxFunction" 
+            placeholder="e.g., Storage, Distribution, Assembly" 
+            class="input-field"
+            (keydown.enter)="$event.preventDefault(); addBoxFunction()"
+          />
+          <button type="button" class="btn-add" (click)="addBoxFunction()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Add
+          </button>
+        </div>
+        <div class="items-list">
+          <div class="item-chip" *ngFor="let func of boxFunctions; let i = index">
+            <span>{{ func.functionName }}</span>
+            <button type="button" class="btn-remove" (click)="removeBoxFunction(i)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <div class="empty-state" *ngIf="boxFunctions.length === 0">
+            No functions added yet
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="skipConfiguration()" [disabled]="saving">
+          Skip for Now
+        </button>
+        <div class="action-group">
+          <button type="button" class="btn btn-outline" (click)="cancel()" [disabled]="saving">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-primary" (click)="saveConfiguration()" [disabled]="saving">
+            <span class="spinner" *ngIf="saving"></span>
+            <span *ngIf="!saving">Save Configuration</span>
+            <span *ngIf="saving">Saving...</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

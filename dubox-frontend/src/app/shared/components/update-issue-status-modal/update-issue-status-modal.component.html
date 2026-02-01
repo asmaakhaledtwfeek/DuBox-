@@ -1,0 +1,166 @@
+<div *ngIf="isOpen" class="modal-backdrop" (click)="onBackdropClick($event)">
+  <div class="modal-dialog modal-dialog-scrollable modal-xl">
+    <div class="modal-content">
+      <!-- Header -->
+      <div class="modal-header">
+        <div class="header-content">
+          <h2 class="modal-title">
+            <i class="bi bi-arrow-repeat"></i>
+            Update Issue Status
+          </h2>
+          <p class="issue-info" *ngIf="issue">
+            Issue #{{ issue.issueNumber }}
+            <span class="current-status" [ngClass]="getStatusClass(issue.status)">
+              {{ getStatusLabel(issue.status) }}
+            </span>
+          </p>
+        </div>
+        <button type="button" class="btn-close" (click)="onClose()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body">
+        <!-- Status Update Form -->
+        <div class="update-form-section">
+          <h3 class="section-title">
+            <i class="bi bi-pencil-square"></i>
+            Status Update
+          </h3>
+
+          <!-- Status Selection -->
+          <div class="form-group">
+            <label class="form-label required">New Status</label>
+            <div class="status-options">
+              <div
+                *ngFor="let status of statuses"
+                class="status-option"
+                [class.selected]="selectedStatus === status.value"
+                (click)="selectedStatus = status.value"
+              >
+                <div class="status-icon" [ngClass]="status.class">
+                  <i class="bi bi-{{ status.icon }}"></i>
+                </div>
+                <span class="status-label">{{ status.label }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Resolution Description (for Resolved/Closed) -->
+          <div class="form-group" *ngIf="requiresResolution()">
+            <label class="form-label required">Resolution Description</label>
+            <textarea
+              [(ngModel)]="resolutionDescription"
+              class="form-control"
+              rows="4"
+              placeholder="Describe how the issue was resolved..."
+              [class.is-invalid]="requiresResolution() && !resolutionDescription.trim()"
+            ></textarea>
+            <div class="invalid-feedback" *ngIf="requiresResolution() && !resolutionDescription.trim()">
+              Resolution description is required when marking an issue as resolved or closed.
+            </div>
+          </div>
+
+          <!-- Comment -->
+          <div class="form-group">
+            <label class="form-label">
+              Add Comment (Optional)
+              <span class="label-hint">Add context about this status change</span>
+            </label>
+            <textarea
+              [(ngModel)]="comment"
+              class="form-control"
+              rows="3"
+              placeholder="Add a comment about this status update..."
+            ></textarea>
+          </div>
+
+          <!-- File Upload -->
+          <div class="form-group">
+            <label class="form-label">
+              Attach Images (Optional)
+              <span class="label-hint">Support for JPEG, PNG, GIF</span>
+            </label>
+            <div class="file-upload-area">
+              <input
+                type="file"
+                id="fileInput"
+                multiple
+                accept="image/*"
+                (change)="onFileSelected($event)"
+                hidden
+              />
+              <label for="fileInput" class="upload-button">
+                <i class="bi bi-cloud-upload"></i>
+                Choose Images
+              </label>
+
+              <!-- Selected Files -->
+              <div *ngIf="selectedFiles.length > 0" class="selected-files">
+                <div *ngFor="let file of selectedFiles; let i = index" class="file-item">
+                  <i class="bi bi-image"></i>
+                  <span class="file-name">{{ file.name }}</span>
+                  <span class="file-size">{{ (file.size / 1024).toFixed(1) }} KB</span>
+                  <button type="button" class="btn-remove" (click)="removeFile(i)">
+                    <i class="bi bi-x"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comments Section -->
+        <div class="comments-section">
+          <div class="section-header">
+            <h3 class="section-title">
+              <i class="bi bi-chat-left-text"></i>
+              Discussion & Comments
+            </h3>
+            <button class="btn-toggle" (click)="toggleComments()">
+              <i class="bi" [ngClass]="showComments ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+              {{ showComments ? 'Hide' : 'Show' }}
+            </button>
+          </div>
+
+          <div *ngIf="showComments && issue" class="comments-wrapper">
+            <app-issue-comments
+              [issueId]="issue.issueId"
+              [issueNumber]="issue.issueNumber"
+              [issueTitle]="issue.issueDescription || ''"
+            ></app-issue-comments>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="onClose()"
+          [disabled]="isSubmitting"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="updateStatus()"
+          [disabled]="!isValid() || isSubmitting"
+        >
+          <span *ngIf="!isSubmitting">
+            <i class="bi bi-check2"></i>
+            Update Status
+          </span>
+          <span *ngIf="isSubmitting">
+            <span class="spinner-border spinner-border-sm me-2"></span>
+            Updating...
+          </span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+

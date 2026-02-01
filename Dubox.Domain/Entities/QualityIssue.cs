@@ -1,0 +1,85 @@
+using Dubox.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Dubox.Domain.Entities
+{
+    [Table("QualityIssues")]
+    [Index(nameof(BoxId))]
+    [Index(nameof(Status))]
+    public class QualityIssue
+    {
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public Guid IssueId { get; set; }
+
+        [Required]
+        [ForeignKey(nameof(Box))]
+        public Guid BoxId { get; set; }
+
+        [Required]
+        [MaxLength(20)]
+        public string IssueNumber { get; set; } = string.Empty; // Auto-generated: 00001, 00002, etc.
+
+        [ForeignKey(nameof(WIRCheckpoint))]
+        public Guid? WIRId { get; set; }
+
+        public DateTime IssueDate { get; set; } = DateTime.UtcNow;
+
+
+        public IssueTypeEnum? IssueType { get; set; } // Defect, Non-Conformance, Observation
+
+
+        public SeverityEnum? Severity { get; set; } // Critical, Major, Minor
+
+        public string? IssueDescription { get; set; }
+
+        [MaxLength(200)]
+        public string? ReportedBy { get; set; }
+
+        [ForeignKey(nameof(AssignedToTeam))]
+        public Guid? AssignedToTeamId { get; set; }
+
+        [ForeignKey(nameof(AssignedToMember))]
+        public Guid? AssignedToMemberId { get; set; }
+
+        [ForeignKey(nameof(CCUser))]
+        public Guid? CCUserId { get; set; }
+        
+        public DateTime? DueDate { get; set; }
+
+        public QualityIssueStatusEnum Status { get; set; } = QualityIssueStatusEnum.Open; // Open, In Progress, Resolved, Closed
+
+        public NCRTypeEnum NCR { get; set; } = NCRTypeEnum.Internal;
+
+        public DateTime? ResolutionDate { get; set; }
+
+        public string? ResolutionDescription { get; set; }
+
+        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+
+        public Guid? CreatedBy { get; set; }
+        public Guid? UpdatedBy { get; set; }
+        // Navigation properties
+        public virtual Box Box { get; set; } = null!;
+        public virtual Team? AssignedToTeam { get; set; }
+        public virtual TeamMember? AssignedToMember { get; set; }
+        public virtual User? CCUser { get; set; }
+        public virtual WIRCheckpoint? WIRCheckpoint { get; set; }
+
+        public List<QualityIssueImage> Images { get; set; } = new();
+
+        public virtual ICollection<IssueComment> Comments { get; set; } = new List<IssueComment>();
+
+        // Calculated properties
+        [NotMapped]
+        public bool IsOverdue => DueDate.HasValue &&
+                                 Status != QualityIssueStatusEnum.Resolved &&
+                                 Status != QualityIssueStatusEnum.Closed &&
+                                 DueDate < DateTime.Today;
+
+        [NotMapped]
+        public int OverdueDays => IsOverdue ? (DateTime.Today - DueDate!.Value).Days : 0;
+    }
+}

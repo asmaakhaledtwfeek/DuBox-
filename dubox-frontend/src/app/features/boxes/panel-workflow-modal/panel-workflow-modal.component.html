@@ -1,0 +1,160 @@
+<div *ngIf="isOpen" class="modal-overlay" (click)="close()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>Update Panel Workflow Status</h2>
+      <button class="close-button" (click)="close()" aria-label="Close">&times;</button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Panel Info -->
+      <div class="panel-info-card">
+        <h3>{{ panel?.panelName }}</h3>
+        
+        <!-- Status Transition Display -->
+        <div class="status-transition">
+          <div class="status-item">
+            <span class="label">Previous Status:</span>
+            <span [class]="'status-badge ' + getStatusBadgeClass(previousStatus)">
+              {{ getStatusDisplayName(previousStatus) }}
+            </span>
+          </div>
+          
+          <div class="status-arrow" *ngIf="selectedStatus && selectedStatus !== previousStatus">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </div>
+          
+          <div class="status-item" *ngIf="selectedStatus && selectedStatus !== previousStatus">
+            <span class="label">New Status:</span>
+            <span [class]="'status-badge status-badge-new ' + getStatusBadgeClass(selectedStatus)">
+              {{ getStatusDisplayName(selectedStatus) }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="progress-row">
+          <span class="label">Stages Complete:</span>
+          <span class="progress-value">{{ getCompletedStagesCount() }} / 4</span>
+        </div>
+        <div class="issue-row" *ngIf="hasLinkedIssue">
+          <span class="label">⚠️ Linked Quality Issue:</span>
+          <span class="issue-id">{{ panel?.qualityIssueId }}</span>
+        </div>
+      </div>
+
+      <!-- Success/Error Messages -->
+      <div *ngIf="successMessage" class="alert alert-success">
+        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+        </svg>
+        {{ successMessage }}
+      </div>
+
+      <div *ngIf="error" class="alert alert-error">
+        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+        </svg>
+        {{ error }}
+      </div>
+
+      <!-- Workflow Form -->
+      <form [formGroup]="workflowForm" (ngSubmit)="onSubmit()">
+        <!-- Workflow Status -->
+        <div class="form-group">
+          <label for="workflowStatus" class="form-label">Workflow Status <span class="required">*</span></label>
+          <select 
+            id="workflowStatus" 
+            formControlName="workflowStatus" 
+            class="form-select"
+            [class.is-invalid]="workflowForm.get('workflowStatus')?.invalid && workflowForm.get('workflowStatus')?.touched">
+            <option value="">Select status...</option>
+            <option *ngFor="let status of workflowStatuses" [value]="status.value">
+              {{ status.label }}
+            </option>
+          </select>
+          <div class="status-info" *ngIf="workflowForm.get('workflowStatus')?.value">
+            <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+            </svg>
+            {{ getStatusInfo(workflowForm.get('workflowStatus')?.value) }}
+          </div>
+        </div>
+
+        <!-- Current Stage Selection -->
+        <div class="form-group" *ngIf="workflowForm.get('workflowStatus')?.value === 'InProgress'">
+          <label for="currentStage" class="form-label">Current Stage</label>
+          <div class="stages-container">
+            <div *ngFor="let stageInfo of panelStages" 
+                 class="stage-item"
+                 [class.active]="workflowForm.get('currentStage')?.value === stageInfo.stage"
+                 [class.completed]="isStageComplete(stageInfo.stage)"
+                 (click)="workflowForm.patchValue({currentStage: stageInfo.stage})">
+              <div class="stage-number">{{ stageInfo.emoji }}</div>
+              <div class="stage-content">
+                <div class="stage-label">{{ stageInfo.label }}</div>
+                <div class="stage-description">{{ stageInfo.description }}</div>
+              </div>
+              <div class="stage-check" *ngIf="isStageComplete(stageInfo.stage)">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stage Progress Visualization -->
+        <div class="stage-progress-bar" *ngIf="panel">
+          <div class="progress-track">
+            <div class="progress-fill" [style.width.%]="(getCompletedStagesCount() / 4) * 100"></div>
+          </div>
+          <div class="progress-label">{{ getCompletedStagesCount() }} of 4 stages complete</div>
+        </div>
+
+        <!-- Notes -->
+        <div class="form-group">
+          <label for="notes" class="form-label">Notes <span class="required">*</span></label>
+          <textarea 
+            id="notes" 
+            formControlName="notes" 
+            rows="4"
+            placeholder="Describe the status update, any issues found, or actions taken..."
+            class="form-textarea"
+            [class.is-invalid]="workflowForm.get('notes')?.invalid && workflowForm.get('notes')?.touched">
+          </textarea>
+          <small class="form-text">Required for all status updates. Minimum {{ notesMinLength }} characters.</small>
+          <div *ngIf="workflowForm.get('notes')?.invalid && workflowForm.get('notes')?.touched" class="invalid-feedback">
+            <span *ngIf="workflowForm.get('notes')?.errors?.['required']">Notes are required.</span>
+            <span *ngIf="workflowForm.get('notes')?.errors?.['minlength']">Notes must be at least {{ notesMinLength }} characters (current: {{ workflowForm.get('notes')?.value?.length || 0 }}).</span>
+          </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="modal-footer">
+          <button 
+            type="button" 
+            class="btn btn-secondary" 
+            (click)="close()"
+            [disabled]="processing">
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            class="btn btn-primary"
+            [disabled]="workflowForm.invalid || processing">
+            <span *ngIf="!processing">Update Status</span>
+            <span *ngIf="processing">
+              <svg class="spinner" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Updating...
+            </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+

@@ -1,0 +1,279 @@
+<div class="inspection-form-container">
+  
+  <!-- Form Header with Logos -->
+  <div class="form-header">
+    <div class="logos-row">
+      <div class="logo-placeholder">PARSONS</div>
+      <div class="logo-placeholder">AMAALA</div>
+      <div class="logo-placeholder">AMANA</div>
+      <div class="logo-placeholder">DUBOX</div>
+    </div>
+    
+    <div class="form-title">
+      <h1>{{ wir.wirName }}</h1>
+      <div class="form-code">{{ wir.wirNumber }}</div>
+    </div>
+  </div>
+
+  <!-- Project Information Table -->
+  <div class="project-info-section">
+    <table class="info-table">
+      <tr>
+        <td class="label">Project:</td>
+        <td class="value">{{ projectInfo.project }}</td>
+        <td class="label">Insp. No.:</td>
+        <td class="value">{{ wir.wirNumber }}</td>
+      </tr>
+      <tr>
+        <td class="label">Client:</td>
+        <td class="value">{{ projectInfo.client }}</td>
+        <td class="label">Date:</td>
+        <td class="value">{{ inspectionDate || (wir.inspectionDate | date) || '_____' }}</td>
+      </tr>
+      <tr>
+        <td class="label">Consultant:</td>
+        <td class="value">{{ projectInfo.consultant }}</td>
+        <td class="label">Location:</td>
+        <td class="value">{{ location || 'Dubox Factory' }}</td>
+      </tr>
+      <tr>
+        <td class="label">Contractor:</td>
+        <td class="value">{{ projectInfo.contractor }}</td>
+        <td class="label">Element/Box:</td>
+        <td class="value">{{ boxNumber || '_____' }}</td>
+      </tr>
+      <tr>
+        <td class="label">Sub-Contractor:</td>
+        <td class="value" colspan="3">{{ projectInfo.subContractor }}</td>
+      </tr>
+    </table>
+  </div>
+
+  <!-- Reference Documents -->
+  <div class="reference-section">
+    <strong>Reference Documents (Specifications, Drawings, others…):</strong>
+    <div class="reference-text">{{ referenceDocuments || 'As per approved drawings and specifications' }}</div>
+  </div>
+
+  <!-- Activity/Item -->
+  <div class="activity-section">
+    <strong>Activity/Item:</strong> {{ wir.wirDescription || wir.wirName }}
+  </div>
+
+  <!-- Checklist Sections -->
+  <div class="checklist-sections-form">
+    <div *ngFor="let section of wir.sections; let sectionIndex = index" class="section-block">
+      
+      <!-- Section Header -->
+      <div class="section-title-bar">
+        <h2>{{ section.sectionLetter }}. {{ section.sectionName }}</h2>
+      </div>
+
+      <!-- Checklist Items Table -->
+      <table class="checklist-items-table">
+        <thead>
+          <tr>
+            <th class="col-sr">Sr.#</th>
+            <th class="col-desc">Description / Acceptance Criteria</th>
+            <th class="col-ref">Reference</th>
+            <th class="col-check">Y</th>
+            <th class="col-check">N</th>
+            <th class="col-check">N/A</th>
+            <th class="col-remarks">Remarks (if Any)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of section.items" [class.row-checked]="item.status !== 'Pending'">
+            <td class="col-sr">{{ item.itemNumber }}</td>
+            <td class="col-desc">{{ item.description }}</td>
+            <td class="col-ref">{{ item.referenceDocument || '-' }}</td>
+            <td class="col-check">
+              <div class="checkbox-cell">
+                <input type="radio" 
+                       [id]="'y-' + item.checklistItemId"
+                       [name]="'status-' + item.checklistItemId"
+                       [value]="'Pass'"
+                       [(ngModel)]="item.status"
+                       [disabled]="readonly">
+                <label [for]="'y-' + item.checklistItemId" class="check-mark">
+                  <span *ngIf="item.status === 'Pass'">✓</span>
+                </label>
+              </div>
+            </td>
+            <td class="col-check">
+              <div class="checkbox-cell">
+                <input type="radio" 
+                       [id]="'n-' + item.checklistItemId"
+                       [name]="'status-' + item.checklistItemId"
+                       [value]="'Fail'"
+                       [(ngModel)]="item.status"
+                       [disabled]="readonly">
+                <label [for]="'n-' + item.checklistItemId" class="check-mark">
+                  <span *ngIf="item.status === 'Fail'">✗</span>
+                </label>
+              </div>
+            </td>
+            <td class="col-check">
+              <div class="checkbox-cell">
+                <input type="radio" 
+                       [id]="'na-' + item.checklistItemId"
+                       [name]="'status-' + item.checklistItemId"
+                       [value]="'Pending'"
+                       [(ngModel)]="item.status"
+                       [disabled]="readonly">
+                <label [for]="'na-' + item.checklistItemId" class="check-mark">
+                  <span *ngIf="item.status === 'Pending'">-</span>
+                </label>
+              </div>
+            </td>
+            <td class="col-remarks">
+              <input type="text" 
+                     class="remarks-field"
+                     [(ngModel)]="item.remarks"
+                     [disabled]="readonly"
+                     [placeholder]="readonly ? '' : 'Enter remarks...'">
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Comments Section -->
+  <div class="comments-section">
+    <div class="section-title-bar">
+      <h2>Comments:</h2>
+    </div>
+    <div class="comments-box">
+      <textarea [(ngModel)]="wir.comments" 
+                [disabled]="readonly"
+                rows="3"
+                placeholder="General comments about the inspection..."></textarea>
+    </div>
+  </div>
+
+  <!-- Signature Section -->
+  <div class="signature-section">
+    <div class="section-title-bar">
+      <h2>Checked by:</h2>
+    </div>
+    
+    <div class="signature-grid">
+      <!-- Civil Works / Sub Contractor -->
+      <div class="signature-block">
+        <div class="block-title">Civil Works / Sub Contractor</div>
+        <div class="signature-fields">
+          <div class="field-row">
+            <label>Name:</label>
+            <input type="text" [disabled]="readonly" class="signature-input">
+          </div>
+          <div class="field-row">
+            <label>Position:</label>
+            <input type="text" [disabled]="readonly" class="signature-input">
+          </div>
+          <div class="field-row">
+            <label>Signature:</label>
+            <div class="signature-box"></div>
+          </div>
+          <div class="field-row">
+            <label>Date:</label>
+            <input type="date" [disabled]="readonly" class="signature-input">
+          </div>
+        </div>
+      </div>
+
+      <!-- QC Engineer -->
+      <div class="signature-block">
+        <div class="block-title">QC / QA Engineer</div>
+        <div class="signature-fields">
+          <div class="field-row">
+            <label>Name:</label>
+            <input type="text" 
+                   [value]="wir.inspectorName || ''"
+                   [disabled]="readonly" 
+                   class="signature-input">
+          </div>
+          <div class="field-row">
+            <label>Position:</label>
+            <input type="text" 
+                   [value]="wir.inspectorRole || ''"
+                   [disabled]="readonly" 
+                   class="signature-input">
+          </div>
+          <div class="field-row">
+            <label>Signature:</label>
+            <div class="signature-box"></div>
+          </div>
+          <div class="field-row">
+            <label>Date:</label>
+            <input type="date" 
+                   [value]="wir.inspectionDate || ''"
+                   [disabled]="readonly" 
+                   class="signature-input">
+          </div>
+        </div>
+      </div>
+
+      <!-- Consultant (Optional) -->
+      <div class="signature-block optional">
+        <div class="block-title">Consultant (Optional)</div>
+        <div class="signature-fields">
+          <div class="field-row">
+            <label>Name:</label>
+            <input type="text" [disabled]="readonly" class="signature-input">
+          </div>
+          <div class="field-row">
+            <label>Position:</label>
+            <input type="text" [disabled]="readonly" class="signature-input">
+          </div>
+          <div class="field-row">
+            <label>Signature:</label>
+            <div class="signature-box"></div>
+          </div>
+          <div class="field-row">
+            <label>Date:</label>
+            <input type="date" [disabled]="readonly" class="signature-input">
+          </div>
+        </div>
+      </div>
+
+      <!-- Client (Optional) -->
+      <div class="signature-block optional">
+        <div class="block-title">Client (Optional)</div>
+        <div class="signature-fields">
+          <div class="field-row">
+            <label>Name:</label>
+            <input type="text" [disabled]="readonly" class="signature-input">
+          </div>
+          <div class="field-row">
+            <label>Position:</label>
+            <input type="text" [disabled]="readonly" class="signature-input">
+          </div>
+          <div class="field-row">
+            <label>Signature:</label>
+            <div class="signature-box"></div>
+          </div>
+          <div class="field-row">
+            <label>Date:</label>
+            <input type="date" [disabled]="readonly" class="signature-input">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action Buttons (Print/Export) -->
+  <div class="form-actions" *ngIf="!readonly">
+    <button class="btn-print" (click)="printForm()" title="Print or save as PDF via browser print dialog">
+      <i class="fa fa-print"></i> Print Form
+    </button>
+    <button class="btn-export" (click)="exportToPDF()" title="Export directly to PDF">
+      <i class="fa fa-file-pdf"></i> Export to PDF
+    </button>
+  </div>
+
+  <!-- Status Badge -->
+  <div class="status-watermark" [attr.data-status]="wir.status">
+    {{ wir.status }}
+  </div>
+</div>

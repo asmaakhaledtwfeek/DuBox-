@@ -1,0 +1,17 @@
+# Files to ignore/never commit with real values
+SECRETS_TEMPLATE.txt
+*.secrets
+*.secret
+*secret*.txt
+.env.production
+.env.local
+*.pfx
+*.p12
+
+# Local configuration
+appsettings.Development.json
+appsettings.Local.json
+
+
+
+

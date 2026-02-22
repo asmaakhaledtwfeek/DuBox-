@@ -1,10 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
-import { FormControl, FormGroup, ReactiveFormsModule, FormsModule, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
+import { FormControl, FormGroup, FormArray, ReactiveFormsModule, FormsModule, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, skip } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
-import { FactoryService, Factory, CreateFactoryRequest, ProjectLocation } from '../../../core/services/factory.service';
+import { FactoryService, Factory, CreateFactoryRequest, CreateFactorySectionRequest, ProjectLocation, FactorySectionType } from '../../../core/services/factory.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
@@ -69,6 +69,7 @@ export class FactoriesManagementComponent implements OnInit, OnDestroy {
   searchControl = new FormControl('');
   showCreateModal = false;
   creating = false;
+  useSections = false; // Toggle between legacy and section-based layout
 
   stats = {
     total: 0,
@@ -86,11 +87,13 @@ export class FactoriesManagementComponent implements OnInit, OnDestroy {
     minRow: new FormControl<number | null>(null, [Validators.required, Validators.min(1)]),
     maxRow: new FormControl<number | null>(null, [Validators.required, Validators.min(1)]),
     minBay: new FormControl<string | null>(null, [Validators.required, Validators.maxLength(1), singleLetterValidator()]),
-    maxBay: new FormControl<string | null>(null, [Validators.required, Validators.maxLength(1), singleLetterValidator()])
+    maxBay: new FormControl<string | null>(null, [Validators.required, Validators.maxLength(1), singleLetterValidator()]),
+    sections: new FormArray<FormGroup>([])
   }, { validators: [minMaxRowValidator(), minMaxBayValidator()] });
 
-  // Expose ProjectLocation enum to template
+  // Expose enums to template
   readonly ProjectLocation = ProjectLocation;
+  readonly FactorySectionType = FactorySectionType;
   
   // Location options for dropdown
   locationOptions = [
@@ -228,40 +231,131 @@ export class FactoriesManagementComponent implements OnInit, OnDestroy {
     this.filteredFactories = filtered;
   }
 
+  get sectionsFormArray(): FormArray {
+    return this.factoryForm.get('sections') as FormArray;
+  }
+
   openCreateModal(): void {
     this.showCreateModal = true;
+    this.useSections = false;
     this.factoryForm.reset({
       location: ProjectLocation.UAE
     });
+    this.sectionsFormArray.clear();
   }
 
   closeCreateModal(): void {
     this.showCreateModal = false;
+    this.useSections = false;
     this.factoryForm.reset({
       location: ProjectLocation.UAE
     });
+    this.sectionsFormArray.clear();
+  }
+
+  toggleSectionMode(): void {
+    this.useSections = !this.useSections;
+    if (this.useSections) {
+      // Initialize with 2 default sections: Assembly and Finishing
+      this.sectionsFormArray.clear();
+      this.addSection(FactorySectionType.Assembly, 'Assembly Section');
+      this.addSection(FactorySectionType.Finishing, 'Finishing Section');
+      
+      // Make legacy fields not required when using sections
+      this.factoryForm.get('minRow')?.clearValidators();
+      this.factoryForm.get('maxRow')?.clearValidators();
+      this.factoryForm.get('minBay')?.clearValidators();
+      this.factoryForm.get('maxBay')?.clearValidators();
+      this.factoryForm.get('minRow')?.updateValueAndValidity();
+      this.factoryForm.get('maxRow')?.updateValueAndValidity();
+      this.factoryForm.get('minBay')?.updateValueAndValidity();
+      this.factoryForm.get('maxBay')?.updateValueAndValidity();
+    } else {
+      // Clear sections
+      this.sectionsFormArray.clear();
+      
+      // Restore legacy field validators
+      this.factoryForm.get('minRow')?.setValidators([Validators.required, Validators.min(1)]);
+      this.factoryForm.get('maxRow')?.setValidators([Validators.required, Validators.min(1)]);
+      this.factoryForm.get('minBay')?.setValidators([Validators.required, Validators.maxLength(1), singleLetterValidator()]);
+      this.factoryForm.get('maxBay')?.setValidators([Validators.required, Validators.maxLength(1), singleLetterValidator()]);
+      this.factoryForm.get('minRow')?.updateValueAndValidity();
+      this.factoryForm.get('maxRow')?.updateValueAndValidity();
+      this.factoryForm.get('minBay')?.updateValueAndValidity();
+      this.factoryForm.get('maxBay')?.updateValueAndValidity();
+    }
+  }
+
+  createSectionFormGroup(sectionType: FactorySectionType, sectionName: string): FormGroup {
+    return new FormGroup({
+      sectionType: new FormControl(sectionType, [Validators.required]),
+      sectionName: new FormControl(sectionName, [Validators.required, Validators.maxLength(100)]),
+      minRow: new FormControl<number | null>(1, [Validators.required, Validators.min(1)]),
+      maxRow: new FormControl<number | null>(10, [Validators.required, Validators.min(1)]),
+      minBay: new FormControl<string>('A', [Validators.required, Validators.maxLength(1), singleLetterValidator()]),
+      maxBay: new FormControl<string>('Z', [Validators.required, Validators.maxLength(1), singleLetterValidator()])
+    }, { validators: [minMaxRowValidator(), minMaxBayValidator()] });
+  }
+
+  addSection(sectionType: FactorySectionType, sectionName: string): void {
+    const sectionGroup = this.createSectionFormGroup(sectionType, sectionName);
+    this.sectionsFormArray.push(sectionGroup);
+  }
+
+  removeSection(index: number): void {
+    this.sectionsFormArray.removeAt(index);
+  }
+
+  getSectionTypeName(type: FactorySectionType): string {
+    return type === FactorySectionType.Assembly ? 'Assembly' : 'Finishing';
   }
 
   onCreateFactory(): void {
     if (this.factoryForm.invalid) {
       // Mark all fields as touched to show validation errors
       Object.keys(this.factoryForm.controls).forEach(key => {
-        this.factoryForm.get(key)?.markAsTouched();
+        const control = this.factoryForm.get(key);
+        if (control instanceof FormArray) {
+          control.controls.forEach(section => {
+            Object.keys((section as FormGroup).controls).forEach(sectionKey => {
+              (section as FormGroup).get(sectionKey)?.markAsTouched();
+            });
+          });
+        } else {
+          control?.markAsTouched();
+        }
       });
       return;
     }
 
     this.creating = true;
+    
     const request: CreateFactoryRequest = {
       factoryCode: this.factoryForm.value.factoryCode || '',
       factoryName: this.factoryForm.value.factoryName || '',
       location: this.factoryForm.value.location || ProjectLocation.UAE,
       capacity: this.factoryForm.value.capacity || undefined,
-      minRow: this.factoryForm.value.minRow!,
-      maxRow: this.factoryForm.value.maxRow!,
-      minBay: this.factoryForm.value.minBay!,
-      maxBay: this.factoryForm.value.maxBay!
+      minRow: this.useSections ? 1 : (this.factoryForm.value.minRow || 1),
+      maxRow: this.useSections ? 1 : (this.factoryForm.value.maxRow || 1),
+      minBay: this.useSections ? 'A' : (this.factoryForm.value.minBay || 'A'),
+      maxBay: this.useSections ? 'A' : (this.factoryForm.value.maxBay || 'A'),
+      sections: undefined
     };
+
+    // Add sections if using section mode
+    if (this.useSections && this.sectionsFormArray.length > 0) {
+      request.sections = this.sectionsFormArray.controls.map(control => {
+        const value = control.value;
+        return {
+          sectionType: value.sectionType,
+          sectionName: value.sectionName,
+          minRow: value.minRow,
+          maxRow: value.maxRow,
+          minBay: value.minBay,
+          maxBay: value.maxBay
+        } as CreateFactorySectionRequest;
+      });
+    }
 
     this.factoryService.createFactory(request).subscribe({
       next: () => {

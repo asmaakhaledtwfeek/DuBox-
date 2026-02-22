@@ -3,6 +3,7 @@ using Dubox.Domain.Enums;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Dubox.Infrastructure.Services;
 
@@ -12,22 +13,29 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
     private readonly IDbContext _context;
     private readonly IUserRoleService _userRoleService;
     IPermissionService _permissionService;
+    private readonly IMemoryCache _cache;
+    
     // Role names as constants
     private  string SystemAdminRole = SystemRoleEnum.SystemAdmin.ToString();
     private  string ProjectManagerRole = SystemRoleEnum.ProjectManager.ToString();
     private  string ViewerRole = SystemRoleEnum.Viewer.ToString();
     private  string QCInspectorRole = SystemRoleEnum.QCInspector.ToString();
+    
+    // Cache duration
+    private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(5);
 
     public ProjectTeamVisibilityService(
         ICurrentUserService currentUserService,
         IDbContext context,
         IUserRoleService userRoleService ,
-        IPermissionService permissionService)
+        IPermissionService permissionService,
+        IMemoryCache cache)
     {
         _currentUserService = currentUserService;
         _context = context;
         _userRoleService = userRoleService;
         _permissionService = permissionService;
+        _cache = cache;
 
     }
     public async Task<List<Guid>?> GetAccessibleProjectIdsAsync(CancellationToken cancellationToken = default)
@@ -38,59 +46,79 @@ public class ProjectTeamVisibilityService : IProjectTeamVisibilityService
         if (!Guid.TryParse(_currentUserService.UserId, out var userId))
             return new List<Guid>();
 
+        // Check cache first
+        var cacheKey = $"accessible_projects_{userId}";
+        if (_cache.TryGetValue(cacheKey, out List<Guid>? cachedProjects))
+        {
+            return cachedProjects;
+        }
+
         var isSystemAdmin = await _userRoleService.UserHasRoleAsync(userId, SystemAdminRole, cancellationToken);
         var isViewer = await _userRoleService.UserHasRoleAsync(userId, ViewerRole, cancellationToken);
 
+        List<Guid>? result;
+
         if (isSystemAdmin || isViewer)
         {
-            return null; // null means access to ALL projects
+            result = null; // null means access to ALL projects
         }
-
-        var isProjectManager = await _userRoleService.UserHasRoleAsync(userId, ProjectManagerRole, cancellationToken);
-        if (isProjectManager)
+        else
         {
-            var pmOwnProjects = await _context.Projects
-                .Where(p => p.CreatedBy == userId || p.ProjectMangerId==userId)
-                .Select(p => p.ProjectId)
-                .ToListAsync(cancellationToken);
+            var isProjectManager = await _userRoleService.UserHasRoleAsync(userId, ProjectManagerRole, cancellationToken);
+            if (isProjectManager)
+            {
+                var pmOwnProjects = await _context.Projects
+                    .Where(p => p.CreatedBy == userId || p.ProjectMangerId==userId)
+                    .Select(p => p.ProjectId)
+                    .ToListAsync(cancellationToken);
 
-            var systemAdminProjects = await GetSystemAdminProjectsForUserAsync(userId, cancellationToken);
-            var pmAccessibleProjects = pmOwnProjects.Union(systemAdminProjects).Distinct().ToList();
+                var systemAdminProjects = await GetSystemAdminProjectsForUserAsync(userId, cancellationToken);
+                var pmAccessibleProjects = pmOwnProjects.Union(systemAdminProjects).Distinct().ToList();
 
-            return pmAccessibleProjects;
+                result = pmAccessibleProjects;
+            }
+            else
+            {
+                var isQCInspector = await _userRoleService.UserHasRoleAsync(userId, QCInspectorRole, cancellationToken);
+                if (isQCInspector)
+                { 
+                   var inspectorProjects = await GetInspectorProjectsForUserAsync(userId, cancellationToken);
+                    
+                    var ownProjects = await _context.Projects
+                        .Where(p => p.CreatedBy == userId)
+                        .Select(p => p.ProjectId)
+                        .ToListAsync(cancellationToken);
+
+                    var teamCreatorProjects = await GetAllTeamCreatorProjectsForUserAsync(userId, cancellationToken);
+
+                    var allQCInspectorProjects = ownProjects
+                        .Union(inspectorProjects)
+                        .Union(teamCreatorProjects)
+                        .Distinct()
+                        .ToList();
+
+                    result = allQCInspectorProjects;
+                }
+                else
+                {
+                    var userOwnProjects = await _context.Projects
+                        .Where(p => p.CreatedBy == userId)
+                        .Select(p => p.ProjectId)
+                        .ToListAsync(cancellationToken);
+
+                    var userTeamCreatorProjects = await GetAllTeamCreatorProjectsForUserAsync(userId, cancellationToken);
+
+                    var allAccessibleProjects = userOwnProjects.Union(userTeamCreatorProjects).Distinct().ToList();
+
+                    result = allAccessibleProjects;
+                }
+            }
         }
 
-        var isQCInspector = await _userRoleService.UserHasRoleAsync(userId, QCInspectorRole, cancellationToken);
-        if (isQCInspector)
-        { 
-           var inspectorProjects = await GetInspectorProjectsForUserAsync(userId, cancellationToken);
-            
-            var ownProjects = await _context.Projects
-                .Where(p => p.CreatedBy == userId)
-                .Select(p => p.ProjectId)
-                .ToListAsync(cancellationToken);
-
-            var teamCreatorProjects = await GetAllTeamCreatorProjectsForUserAsync(userId, cancellationToken);
-
-            var allQCInspectorProjects = ownProjects
-                .Union(inspectorProjects)
-                .Union(teamCreatorProjects)
-                .Distinct()
-                .ToList();
-
-            return allQCInspectorProjects;
-        }
-
-        var userOwnProjects = await _context.Projects
-            .Where(p => p.CreatedBy == userId)
-            .Select(p => p.ProjectId)
-            .ToListAsync(cancellationToken);
-
-        var userTeamCreatorProjects = await GetAllTeamCreatorProjectsForUserAsync(userId, cancellationToken);
-
-        var allAccessibleProjects = userOwnProjects.Union(userTeamCreatorProjects).Distinct().ToList();
-
-        return allAccessibleProjects;
+        // Cache the result for 5 minutes
+        _cache.Set(cacheKey, result, CacheDuration);
+        
+        return result;
     }
     private async Task<List<Guid>> GetAllTeamCreatorProjectsForUserAsync(Guid userId, CancellationToken cancellationToken)
     {

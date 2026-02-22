@@ -12,6 +12,7 @@ namespace Dubox.Application.Specifications
         {
             AddInclude(nameof(QualityIssue.Box));
             AddInclude($"{nameof(QualityIssue.Box)}.{nameof(Box.Project)}");
+            AddInclude(nameof(QualityIssue.Project));
             AddInclude(nameof(QualityIssue.AssignedToMember));
             AddInclude($"{nameof(QualityIssue.AssignedToMember)}.{nameof(TeamMember.User)}");
 
@@ -57,6 +58,22 @@ namespace Dubox.Application.Specifications
 
             if (query.IssueType.HasValue)
                 AddCriteria(q => q.IssueType == query.IssueType.Value);
+
+            if (!string.IsNullOrWhiteSpace(query.IssueNumber))
+                AddCriteria(q => q.IssueNumber.Contains(query.IssueNumber.Trim()));
+
+            if (!string.IsNullOrWhiteSpace(query.BoxTag))
+                AddCriteria(q => q.Box != null && q.Box.BoxTag == query.BoxTag.Trim());
+
+            if (!string.IsNullOrWhiteSpace(query.ProjectCode))
+                AddCriteria(q =>
+                    (q.Box != null && q.Box.Project != null && q.Box.Project.ProjectCode == query.ProjectCode.Trim()) ||
+                    (q.Project != null && q.Project.ProjectCode == query.ProjectCode.Trim()));
+
+            if (!string.IsNullOrWhiteSpace(query.AssignedUser) && Guid.TryParse(query.AssignedUser, out var assignedUserId))
+                AddCriteria(q => (q.AssignedToMember != null && q.AssignedToMember.UserId == assignedUserId) ||
+                                 q.AssignedToMemberId == assignedUserId ||
+                                 q.AssignedUserId == assignedUserId);
         }
     }
 

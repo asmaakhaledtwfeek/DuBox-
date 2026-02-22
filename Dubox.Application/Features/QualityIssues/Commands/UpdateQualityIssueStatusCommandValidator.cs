@@ -32,8 +32,6 @@ namespace Dubox.Application.Features.QualityIssues.Commands
                     .WithMessage("Resolution description should only be added when resolving or closing an issue.");
             });
 
-            RuleFor(x => x.Comment)
-                .MustBeMeaningfulTextWhenProvided();
         }
     }
 

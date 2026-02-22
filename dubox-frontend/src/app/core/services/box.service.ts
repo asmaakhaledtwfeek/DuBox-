@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, throwError, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { ApiService, PaginatedResponse } from './api.service';
-import { Box, BoxActivity, BoxDrawing, BoxDrawingDto, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview, BoxTypeStatsByProject, BoxDrawingsResponse, BoxDrawingImage, BoxAllAttachmentsResponse, BoxType, BoxSubType, BoxSummary, BoxPanel } from '../models/box.model';
+import { Box, BoxActivity, BoxDrawing, BoxDrawingDto, BoxImportResult, BoxLog, BoxFilters, ChecklistItem, ImportedBoxPreview, BoxTypeStatsByProject, BoxDrawingsResponse, BoxDrawingImage, BoxAllAttachmentsResponse, BoxType, BoxSubType, BoxSummary, BoxPanel, getBoxStatusNumber, PaginatedBoxesResponse } from '../models/box.model';
 
 @Injectable({
   providedIn: 'root'
@@ -112,6 +112,7 @@ export class BoxService {
       factoryId: backendBox.factoryId || backendBox.FactoryId,
       factoryCode: backendBox.factoryCode || backendBox.FactoryCode,
       factoryName: backendBox.factoryName || backendBox.FactoryName,
+      factorySectionId: backendBox.sectionId || backendBox.SectionId || backendBox.factorySectionId,
       bay: backendBox.bay || backendBox.Bay,
       row: backendBox.row || backendBox.Row,
       position: backendBox.position || backendBox.Position,
@@ -176,12 +177,15 @@ export class BoxService {
       secondApprovalDate: this.parseDate(panel.secondApprovalDate || panel.SecondApprovalDate),
       secondApprovalNotes: panel.secondApprovalNotes || panel.SecondApprovalNotes,
       
-      // Pre-cast Location Workflow
+      // Pre-cast Location Workflow (7 stages)
       workflowStatus: panel.workflowStatus || panel.WorkflowStatus,
       currentStage: panel.currentStage ?? panel.CurrentStage ?? 0,
       moldPreparationComplete: panel.moldPreparationComplete ?? panel.MoldPreparationComplete ?? false,
+      initialComplete: panel.initialComplete ?? panel.InitialComplete ?? false,
+      mepInsertsInstallationComplete: panel.mepInsertsInstallationComplete ?? panel.MEPInsertsInstallationComplete ?? false,
       reinforcementSetupComplete: panel.reinforcementSetupComplete ?? panel.ReinforcementSetupComplete ?? false,
       concreteCastingComplete: panel.concreteCastingComplete ?? panel.ConcreteCastingComplete ?? false,
+      surfaceFinishingComplete: panel.surfaceFinishingComplete ?? panel.SurfaceFinishingComplete ?? false,
       curingAndDemoldingComplete: panel.curingAndDemoldingComplete ?? panel.CuringAndDemoldingComplete ?? false,
       qualityIssueId: panel.qualityIssueId || panel.QualityIssueId,
       
@@ -246,11 +250,112 @@ export class BoxService {
   }
 
   /**
-   * Get boxes by project
+   * Get boxes by project. Pass filters to let the backend filter (faster, less data).
    */
   getBoxesByProject(projectId: string, filters?: BoxFilters): Observable<Box[]> {
-    return this.apiService.get<any[]>(`${this.endpoint}/project/${projectId}`, filters).pipe(
-      map(boxes => boxes.map(b => this.transformBox(b)))
+    const params = this.buildBoxesByProjectParams(filters);
+    return this.apiService.get<any>(`${this.endpoint}/project/${projectId}`, params).pipe(
+      map(response => {
+        // Check if response has pagination structure (API service already extracted .data)
+        if (response.items !== undefined) {
+          return response.items.map((b: any) => this.transformBox(b));
+        }
+        // Handle array response (backward compatibility)
+        const boxes = Array.isArray(response) ? response : [];
+        return boxes.map((b: any) => this.transformBox(b));
+      })
+    );
+  }
+
+  /**
+   * Get boxes by project with pagination support
+   */
+  getBoxesByProjectPaginated(projectId: string, filters?: BoxFilters): Observable<PaginatedBoxesResponse> {
+    const params = this.buildBoxesByProjectParams(filters);
+    return this.apiService.get<any>(`${this.endpoint}/project/${projectId}`, params).pipe(
+      map(response => {
+        console.log('🔄 Box service received response:', response);
+        
+        // Check if response has pagination structure (API service already extracted .data)
+        if (response.items !== undefined) {
+          console.log('📦 Processing paginated response with', response.items.length, 'items');
+          
+          const transformedItems = response.items.map((b: any, index: number) => {
+            try {
+              const transformed = this.transformBox(b);
+              console.log(`✅ Transformed box ${index + 1}:`, transformed.id, transformed.code);
+              return transformed;
+            } catch (error) {
+              console.error(`❌ Failed to transform box ${index + 1}:`, error, b);
+              return null;
+            }
+          }).filter((b: any) => b !== null);
+          
+          console.log('📦 Successfully transformed', transformedItems.length, 'boxes');
+          
+          return {
+            items: transformedItems,
+            totalCount: response.totalCount || 0,
+            page: response.page || 1,
+            pageSize: response.pageSize || 50,
+            totalPages: response.totalPages || 0,
+            hasPreviousPage: response.hasPreviousPage || false,
+            hasNextPage: response.hasNextPage || false,
+            statusCounts: response.statusCounts || undefined
+          };
+        }
+        
+        // Fallback for old format (array response)
+        console.log('📦 Using fallback for array response');
+        const boxes = Array.isArray(response) ? response : [];
+        return {
+          items: boxes.map((b: any) => this.transformBox(b)),
+          totalCount: boxes.length,
+          page: 1,
+          pageSize: boxes.length,
+          totalPages: 1,
+          hasPreviousPage: false,
+          hasNextPage: false
+        };
+      })
+    );
+  }
+
+  /**
+   * Build query params for getBoxesByProject: backend expects statuses (numbers), buildingNumber, floor, zone, search, page, pageSize, countOnly.
+   */
+  private buildBoxesByProjectParams(filters?: BoxFilters): Record<string, unknown> | undefined {
+    if (!filters) return undefined;
+    const params: Record<string, unknown> = {};
+    if (filters.statuses && filters.statuses.length > 0) {
+      params['statuses'] = filters.statuses;
+    } else if (filters.status && filters.status.length > 0) {
+      params['statuses'] = filters.status.map(s => getBoxStatusNumber(s));
+    }
+    if (filters.boxType != null && filters.boxType !== '') params['boxType'] = filters.boxType;
+    if (filters.boxSubType != null && filters.boxSubType !== '') params['boxSubType'] = filters.boxSubType;
+    if (filters.buildingNumber != null && filters.buildingNumber !== '') params['buildingNumber'] = filters.buildingNumber;
+    if (filters.floor != null && filters.floor !== '') params['floor'] = filters.floor;
+    if (filters.zone != null && filters.zone !== '') params['zone'] = filters.zone;
+    if (filters.search != null && filters.search.trim() !== '') params['search'] = filters.search.trim();
+    if (filters.page != null && filters.page > 0) params['page'] = filters.page;
+    if (filters.pageSize != null && filters.pageSize > 0) params['pageSize'] = filters.pageSize;
+    if (filters.countOnly === true) params['countOnly'] = true;
+    return Object.keys(params).length === 0 ? undefined : params;
+  }
+
+  /**
+   * Get box count by project with filters (lightweight - returns only count)
+   */
+  getBoxCountByProject(projectId: string, filters?: { statuses?: number[], buildingNumber?: string, floor?: string, zone?: string }): Observable<number> {
+    const boxFilters: BoxFilters = {
+      ...filters,
+      countOnly: true,
+      page: 1,
+      pageSize: 1
+    };
+    return this.getBoxesByProjectPaginated(projectId, boxFilters).pipe(
+      map(response => response.totalCount)
     );
   }
 
@@ -353,6 +458,64 @@ export class BoxService {
    */
   deleteBox(id: string): Observable<void> {
     return this.apiService.delete<void>(`${this.endpoint}/${id}`);
+  }
+
+  /**
+   * Get box exchange history
+   */
+  getBoxExchangeHistory(boxId: string): Observable<any[]> {
+    return this.apiService.get<any>(`${this.endpoint}/${boxId}/exchange-history`).pipe(
+      map(response => {
+        const data = response?.data || response;
+        return Array.isArray(data) ? data : [];
+      }),
+      catchError(err => {
+        console.error('❌ Error fetching box exchange history:', err);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Get boxes eligible for exchange (same box type, in target building/floor)
+   */
+  getBoxesForExchange(projectId: string, boxId: string, buildingNumber?: string | null, floor?: string | null): Observable<Box[]> {
+    const params: any = { boxId };
+    if (buildingNumber) params.buildingNumber = buildingNumber;
+    if (floor) params.floor = floor;
+
+    return this.apiService.get<any>(`${this.endpoint}/project/${projectId}/boxes-for-exchange`, params).pipe(
+      map(response => {
+        const data = response?.data || response;
+        return Array.isArray(data) ? data.map((b: any) => this.transformBox(b)) : [];
+      }),
+      catchError(error => {
+        console.error('Error fetching boxes for exchange:', error);
+        return of([]);
+      })
+    );
+  }
+
+  /**
+   * Create a box exchange request
+   */
+  createBoxExchangeRequest(boxId: string, request: {
+    boxId: string;
+    newBuildingNumber?: string | null;
+    newFloor?: string | null;
+    requestReason?: string;
+    targetBoxId?: string | null;
+  }): Observable<any> {
+    return this.apiService.post<any>(`${this.endpoint}/${boxId}/exchange-request`, request).pipe(
+      map(response => {
+        const data = response?.data || response;
+        return data;
+      }),
+      catchError(err => {
+        console.error('❌ Error creating box exchange request:', err);
+        return throwError(() => err);
+      })
+    );
   }
 
   /**
@@ -779,6 +942,82 @@ export class BoxService {
    */
   getBoxTypeStatsByProject(projectId: string): Observable<BoxTypeStatsByProject> {
     return this.apiService.get<BoxTypeStatsByProject>(`${this.endpoint}/project/${projectId}/box-type-stats`);
+  }
+
+  /**
+   * Get building and floor breakdown with counts (efficient - no box data loaded)
+   */
+  getBuildingFloorBreakdown(projectId: string): Observable<{
+    projectId: string;
+    buildings: Array<{
+      building: string;
+      totalBoxes: number;
+      inProgressCount: number;
+      completedCount: number;
+      floors: Array<{
+        floor: string;
+        boxCount: number;
+        inProgressCount: number;
+        completedCount: number;
+      }>;
+    }>;
+  }> {
+    return this.apiService.get<any>(`${this.endpoint}/project/${projectId}/building-floor-breakdown`).pipe(
+      map(response => {
+        const data = response?.data || response;
+        return {
+          projectId: data.projectId || projectId,
+          buildings: (data.buildings || []).map((b: any) => ({
+            building: b.building || 'No Building',
+            totalBoxes: b.totalBoxes || 0,
+            inProgressCount: b.inProgressCount || 0,
+            completedCount: b.completedCount || 0,
+            floors: (b.floors || []).map((f: any) => ({
+              floor: f.floor || 'No Floor',
+              boxCount: f.boxCount || 0,
+              inProgressCount: f.inProgressCount || 0,
+              completedCount: f.completedCount || 0
+            }))
+          }))
+        };
+      })
+    );
+  }
+
+  /**
+   * Get box filter options with counts (efficient - no box data loaded)
+   */
+  getBoxFilterOptions(projectId: string): Observable<{
+    projectId: string;
+    subTypes: Array<{ value: string; count: number }>;
+    buildings: Array<{ value: string; count: number }>;
+    floors: Array<{ value: string; count: number }>;
+    zones: Array<{ value: string; count: number }>;
+  }> {
+    return this.apiService.get<any>(`${this.endpoint}/project/${projectId}/filter-options`).pipe(
+      map(response => {
+        const data = response?.data || response;
+        return {
+          projectId: data.projectId || projectId,
+          subTypes: (data.subTypes || []).map((s: any) => ({
+            value: s.value || '',
+            count: s.count || 0
+          })),
+          buildings: (data.buildings || []).map((b: any) => ({
+            value: b.value || '',
+            count: b.count || 0
+          })),
+          floors: (data.floors || []).map((f: any) => ({
+            value: f.value || '',
+            count: f.count || 0
+          })),
+          zones: (data.zones || []).map((z: any) => ({
+            value: z.value || '',
+            count: z.count || 0
+          }))
+        };
+      })
+    );
   }
 
   /**

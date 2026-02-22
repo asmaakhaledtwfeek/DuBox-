@@ -12,6 +12,8 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(WIRRecord.RequestedByUser));
             AddInclude($"{nameof(WIRRecord.BoxActivity)}.{nameof(WIRRecord.BoxActivity.Box)}");
             AddInclude($"{nameof(WIRRecord.BoxActivity)}.{nameof(WIRRecord.BoxActivity.ActivityMaster)}");
+            AddInclude($"{nameof(WIRRecord.BoxActivity)}.{nameof(WIRRecord.BoxActivity.ActivityTemplateActivity)}");
+
 
 
         }

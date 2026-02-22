@@ -386,6 +386,7 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
   
   loading = true;
   error = '';
+  validationErrors: { [key: string]: string } = {}; // Field-specific validation errors
   submitting = false;
   creatingCheckpoint = false;
   addingChecklistItems = false;
@@ -693,6 +694,15 @@ export class QaQcChecklistComponent implements OnInit, OnDestroy {
       inspectorId: [''], // Inspector selection
       attachmentPath: ['', [Validators.maxLength(500)]],
       comments: ['', [Validators.maxLength(1000)]]
+    });
+    
+    // Clear field-specific validation errors when user starts typing
+    this.createCheckpointForm.valueChanges.subscribe(() => {
+      Object.keys(this.createCheckpointForm.controls).forEach(field => {
+        if (this.validationErrors[field] && this.createCheckpointForm.get(field)?.dirty) {
+          delete this.validationErrors[field];
+        }
+      });
     });
 
     // Add checklist items form
@@ -1221,7 +1231,27 @@ console.log(expectedWirCode);
       },
       error: (err) => {
         this.creatingCheckpoint = false;
-        this.error = err.error?.message || err.message || 'Failed to create WIR checkpoint';
+        const errorMessage = err.error?.message || err.message || 'Failed to create WIR checkpoint';
+        
+        // Parse validation errors from backend and map to form fields
+        this.validationErrors = this.parseValidationErrors(errorMessage);
+        
+        // If no field-specific errors found, show general error
+        if (!this.hasValidationErrors()) {
+          this.error = errorMessage;
+        } else {
+          // Clear general error if we have field-specific errors
+          this.error = '';
+          // Mark fields as touched to show errors
+          Object.keys(this.validationErrors).forEach(field => {
+            const control = this.createCheckpointForm.get(field);
+            if (control) {
+              control.markAsTouched();
+              control.setErrors({ serverError: this.validationErrors[field] });
+            }
+          });
+        }
+        
         console.error('Error creating WIR checkpoint:', err);
       }
     });
@@ -3323,6 +3353,9 @@ console.log(expectedWirCode);
       case CheckpointStatus.Fail:
       case 'Fail':
         return 'Fail';
+      case CheckListItemStatus.NA:
+      case 'NA':
+        return 'N/A';
       case CheckpointStatus.Pending:
       case 'Pending':
         return 'Pending';
@@ -3341,6 +3374,9 @@ console.log(expectedWirCode);
       case CheckpointStatus.Fail:
       case 'Fail':
         return 'status-badge-fail';
+      case CheckListItemStatus.NA:
+      case 'NA':
+        return 'status-badge-na';
       case CheckpointStatus.Pending:
       case 'Pending':
         return 'status-badge-pending';
@@ -3512,13 +3548,11 @@ console.log(expectedWirCode);
     return result;
   }
 
-  private mapCheckListItemStatus(status: string): CheckpointStatus {
-    const statusMap: Record<string, CheckpointStatus> = {
-      'Pending': CheckpointStatus.Pending,
-      'Pass': CheckpointStatus.Pass,
-      'Fail': CheckpointStatus.Fail
-    };
-    return statusMap[status] || CheckpointStatus.Pending;
+  private mapCheckListItemStatus(status: string): string {
+    // Return the status as-is to preserve NA status from backend
+    // The form will handle it correctly since we support NA in the UI
+    const validStatuses = ['Pending', 'Pass', 'Fail', 'NA'];
+    return validStatuses.includes(status) ? status : 'Pending';
   }
 
   onCheckpointStatusChange(index: number, status: CheckpointStatus): void {
@@ -3816,6 +3850,43 @@ console.log(expectedWirCode);
     }
   }
 
+  /**
+   * Check if there are any validation errors
+   */
+  hasValidationErrors(): boolean {
+    return Object.keys(this.validationErrors).length > 0;
+  }
+
+  /**
+   * Parse backend validation errors and map to form fields
+   */
+  private parseValidationErrors(errorMessage: string): { [key: string]: string } {
+    const errors: { [key: string]: string } = {};
+    
+    // Pattern: Extract field name from error message
+    // Example: "WIRDescription When provided, this field must contain at least 50 meaningful characters..."
+    const fieldPatterns = [
+      { field: 'wirDescription', patterns: ['WIRDescription', 'wirDescription', 'Stage Description', 'description'] },
+      { field: 'wirName', patterns: ['WIRName', 'wirName', 'Stage Name', 'name'] },
+      { field: 'inspectorId', patterns: ['Inspector', 'inspectorId'] },
+      { field: 'comments', patterns: ['Comments', 'comments'] }
+    ];
+    
+    // Try to match field name in error message
+    for (const { field, patterns } of fieldPatterns) {
+      for (const pattern of patterns) {
+        if (errorMessage.includes(pattern)) {
+          // Extract the specific error text after the field name
+          const errorText = errorMessage.replace(new RegExp(`^.*?${pattern}\\s*`, 'i'), '').trim();
+          errors[field] = errorText || errorMessage;
+          return errors; // Return first match
+        }
+      }
+    }
+    
+    return errors;
+  }
+
   ngOnDestroy(): void {
     this.stopCamera();
     this.stopQualityIssueCamera();
@@ -4111,11 +4182,12 @@ console.log(expectedWirCode);
   }
 
 
-  private mapToCheckListItemStatus(status: CheckpointStatus): CheckListItemStatus {
+  private mapToCheckListItemStatus(status: string): CheckListItemStatus {
     const statusMap: Record<string, CheckListItemStatus> = {
       'Pending': CheckListItemStatus.Pending,
       'Pass': CheckListItemStatus.Pass,
-      'Fail': CheckListItemStatus.Fail
+      'Fail': CheckListItemStatus.Fail,
+      'NA': CheckListItemStatus.NA
     };
     return statusMap[status] || CheckListItemStatus.Pending;
   }

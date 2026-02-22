@@ -16,9 +16,6 @@ public class UpdatePanelWorkflowStatusCommandValidator : AbstractValidator<Updat
             .Must(status => status == "InProgress" || status == "Completed" || status == "PutOnHold")
             .WithMessage("Workflow status must be one of: InProgress, Completed, PutOnHold.");
 
-        RuleFor(x => x.Notes)
-            .NotEmpty().WithMessage("Notes are required for all status updates.")
-            .MinimumLength(NotesMinimumLength)
-            .WithMessage($"Notes must be at least {NotesMinimumLength} characters.");
+        
     }
 }

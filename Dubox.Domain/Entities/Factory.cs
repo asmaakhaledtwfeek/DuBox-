@@ -47,6 +47,7 @@ namespace Dubox.Domain.Entities
         public bool IsActive { get; set; } = true;
 
         // Navigation properties
+        public virtual ICollection<FactorySection> Sections { get; set; } = new List<FactorySection>();
         public virtual ICollection<FactoryLocation> FactoryLocations { get; set; } = new List<FactoryLocation>();
         public virtual ICollection<Box> Boxes { get; set; } = new List<Box>();
 

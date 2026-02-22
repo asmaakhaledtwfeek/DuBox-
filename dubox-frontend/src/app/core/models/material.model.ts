@@ -4,11 +4,13 @@ export interface Material {
   materialName: string;
   materialCategory?: string;
   unit?: string;
+  quantityPerBox?: number;
   unitCost?: number;
   currentStock?: number;
   minimumStock?: number;
   reorderLevel?: number;
   supplierName?: string;
+  defaultRequiredBeforeDays?: number;
   projectId?: string; // Project ID for project-specific materials
   isActive: boolean;
   isLowStock: boolean;
@@ -20,6 +22,7 @@ export interface CreateMaterial {
   materialName: string;
   materialCategory?: string;
   unit?: string;
+  quantityPerBox?: number;
   unitCost?: number;
   currentStock?: number;
   minimumStock?: number;
@@ -34,6 +37,7 @@ export interface UpdateMaterial {
   materialName?: string;
   materialCategory?: string;
   unit?: string;
+  quantityPerBox?: number;
   unitCost?: number;
   minimumStock?: number;
   reorderLevel?: number;

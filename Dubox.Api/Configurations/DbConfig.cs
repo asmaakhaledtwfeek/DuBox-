@@ -1,4 +1,4 @@
-﻿using Dubox.Infrastructure.ApplicationContext;
+using Dubox.Infrastructure.ApplicationContext;
 using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Api.Configurations
@@ -13,7 +13,9 @@ namespace Dubox.Api.Configurations
             services.AddDbContext<ApplicationDbContext>(
                 (sp, optionsBuilder) =>
                 {
-                    optionsBuilder.UseSqlServer(connectionString);
+                    optionsBuilder.UseSqlServer(connectionString)
+                        .EnableSensitiveDataLogging()
+                        .EnableDetailedErrors();
                 });
 
             return services;

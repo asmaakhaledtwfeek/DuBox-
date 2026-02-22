@@ -2548,6 +2548,25 @@ textarea.form-control {
   color: var(--danger-color);
   font-size: 12px;
   margin-top: 4px;
+  
+  &.server-error {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-top: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    font-size: 13px;
+    color: #991b1b;
+    font-weight: 500;
+    
+    svg {
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+  }
 }
 
 // Photo Upload (Enhanced)
@@ -4244,6 +4263,30 @@ textarea.form-control {
 
       svg {
         flex-shrink: 0;
+      }
+    }
+    
+    &.alert-warning {
+      background: #fef3c7;
+      border: 1px solid #fbbf24;
+      color: #92400e;
+      align-items: flex-start;
+      
+      svg {
+        flex-shrink: 0;
+        color: #f59e0b;
+        margin-top: 2px;
+      }
+      
+      strong {
+        display: block;
+        margin-bottom: 2px;
+        font-weight: 600;
+      }
+      
+      p {
+        margin: 0;
+        font-size: 13px;
       }
     }
   }

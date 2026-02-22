@@ -112,6 +112,7 @@ stages:
               enableCustomDeployment: true
               DeploymentType: 'webDeploy'
               RemoveAdditionalFilesFlag: true
+              AdditionalArguments: '-skip:Directory=logs -skip:Directory=App_Data'
           
           - task: AzureAppServiceSettings@1
             displayName: 'Configure App Settings'

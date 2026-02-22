@@ -23,6 +23,7 @@ public class GetFactoriesByLocationQueryHandler : IRequestHandler<GetFactoriesBy
     public async Task<Result<List<FactoryDto>>> Handle(GetFactoriesByLocationQuery request, CancellationToken cancellationToken)
     {
         var factories = await _dbContext.Factories
+            .Include(f => f.Sections)
             .Include(f => f.Boxes)
                 .ThenInclude(b => b.Project)
             .Where(f => f.Location == request.Location && f.IsActive)

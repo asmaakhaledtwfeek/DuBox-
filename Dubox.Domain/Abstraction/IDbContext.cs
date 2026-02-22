@@ -1,5 +1,6 @@
 using Dubox.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using System.Data.Common;
 
 namespace Dubox.Domain.Abstraction;
 
@@ -53,11 +54,21 @@ public interface IDbContext
     
     // Material management
     DbSet<Material> Materials { get; }
+    DbSet<ProjectMaterial> ProjectMaterials { get; }
     DbSet<BoxMaterial> BoxMaterials { get; }
     DbSet<MaterialTransaction> MaterialTransactions { get; }
     
+    // Material Templates
+    DbSet<MaterialTemplate> MaterialTemplates { get; }
+    DbSet<MaterialTemplateItem> MaterialTemplateItems { get; }
+    DbSet<ProjectMaterialTemplate> ProjectMaterialTemplates { get; }
+    DbSet<BoxTypeMaterialTemplate> BoxTypeMaterialTemplates { get; }
+    
     // Factory layout
     DbSet<Factory> Factories { get; }
+    DbSet<FactorySection> FactorySections { get; }
+    DbSet<FactorySectionPart> FactorySectionParts { get; }
+    DbSet<FreezingCell> FreezingCells { get; }
     DbSet<FactoryLocation> FactoryLocations { get; }
     DbSet<BoxLocationHistory> BoxLocationHistory { get; }
     
@@ -95,10 +106,21 @@ public interface IDbContext
     DbSet<ProjectBoxSubType> ProjectBoxSubTypes { get; }
     DbSet<ProjectZone> ProjectZones { get; }
     DbSet<ProjectBoxFunction> ProjectBoxFunctions { get; }
-    
+    DbSet<BoxTypeMaterial> BoxTypeMaterials { get; }
+    DbSet<ActivityTemplate> ActivityTemplates { get; }
+    DbSet<ActivityTemplateActivity> ActivityTemplateActivities { get; }
+    DbSet<ActivityCheckListItem> ActivityCheckListItems { get; }
+    DbSet<ActivityCheckListItemReview> ActivityCheckListItemReviews { get; }
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     
     // Allow generic access to DbSet for repository pattern
     DbSet<TEntity> Set<TEntity>() where TEntity : class;
+
+    /// <summary>
+    /// Returns the underlying ADO.NET connection so handlers can execute raw SQL
+    /// without taking a dependency on EF Core in the Application layer.
+    /// </summary>
+    DbConnection GetDbConnection();
 }
 

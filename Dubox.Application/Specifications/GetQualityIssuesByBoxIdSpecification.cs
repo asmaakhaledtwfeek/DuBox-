@@ -17,6 +17,7 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(QualityIssue.AssignedToTeam));
             AddInclude(nameof(QualityIssue.AssignedToMember));
             AddInclude($"{nameof(QualityIssue.AssignedToMember)}.{nameof(TeamMember.User)}");
+            AddInclude(nameof(QualityIssue.AssignedUser));
 
             AddInclude(nameof(QualityIssue.CCUser));
             // NOTE: Don't include Images - base64 ImageData is too large

@@ -7,11 +7,17 @@ namespace Dubox.Application.Specifications
     {
         public GetQualityIssuesByProjectIdSpecification(Guid projectId)
         {
-            AddCriteria(q => q.Box.ProjectId == projectId);
+            // Handle both box-level and project-level quality issues
+            AddCriteria(q => (q.Box != null && q.Box.ProjectId == projectId) || q.ProjectId == projectId);
+            
             // Filter out quality issues for inactive boxes or projects
-            AddCriteria(q => q.Box.IsActive);
-            AddCriteria(q => q.Box.Project.IsActive);
+            AddCriteria(q => q.Box == null || q.Box.IsActive);
+            AddCriteria(q => q.Box == null || q.Box.Project == null || q.Box.Project.IsActive);
+            AddCriteria(q => q.Project == null || q.Project.IsActive);
+            
             AddInclude(nameof(QualityIssue.Box));
+            AddInclude(nameof(QualityIssue.Project));
+
             AddInclude($"{nameof(QualityIssue.Box)}.{nameof(Box.Project)}");
             AddInclude(nameof(QualityIssue.WIRCheckpoint));
             AddInclude(nameof(QualityIssue.AssignedToTeam));
@@ -23,11 +29,15 @@ namespace Dubox.Application.Specifications
             // Image metadata is loaded separately with lightweight query
             AddOrderByDescending(q => q.IssueDate);
             
-            // Enable split query to avoid Cartesian explosion
-            EnableSplitQuery();
+            // OPTIMIZED: Removed split query for better performance with proper indexes
+            // Single query with JOIN is faster when indexes exist on BoxId and ProjectId
         }
     }
 }
+
+
+
+
 
 
 

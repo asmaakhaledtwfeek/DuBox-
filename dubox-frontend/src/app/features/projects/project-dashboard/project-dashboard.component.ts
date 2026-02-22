@@ -2,19 +2,25 @@ import { Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/co
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
-import { Subscription } from 'rxjs';
-import { skip } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { Subscription, forkJoin, of } from 'rxjs';
+import { skip, catchError } from 'rxjs/operators';
+import { environment } from '../../../../environments/environment';
 import { ProjectService } from '../../../core/services/project.service';
 import { BoxService } from '../../../core/services/box.service';
 import { WIRService } from '../../../core/services/wir.service';
 import { PermissionService } from '../../../core/services/permission.service';
 import { PanelTypeService } from '../../../core/services/panel-type.service';
+import { BoxMaterialService } from '../../../core/services/box-material.service';
+import { BoxTypeMaterialService } from '../../../core/services/box-type-material.service';
+import { MaterialTemplateService } from '../../../core/services/material-template.service';
 import { Project, ProjectStatus, getAvailableProjectStatuses, canChangeProjectStatus } from '../../../core/models/project.model';
 import { Box, BoxImportResult, BoxStatus, PanelStatus } from '../../../core/models/box.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { trigger, style, animate, transition } from '@angular/animations';
 import { DateTimeDisplayPipe } from '../../../shared/pipes/date-time-display.pipe';
+import { MaterialTemplate, ProjectMaterialTemplate, MaterialTemplateItem } from '../../../core/models/material-template.model';
 
 @Component({
   selector: 'app-project-dashboard',
@@ -95,12 +101,70 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
 
   qualityIssuesCount = 0;
   panelTypesCount = 0;
+  /** Count of all materials across all box types in this project (for Project Materials card) */
+  projectMaterialsCount = 0;
+  
+  materialStatistics = {
+    totalMaterials: 0,
+    selectedMaterials: 0,
+    materialsArrived: 0,
+    materialsPending: 0
+  };
+
+  // Weather Report - Complete Interface
+  weatherReport: {
+    reportId?: string;
+    projectId?: string;
+    projectCode?: string;
+    projectName?: string;
+    reportDate?: Date;
+    // Temperature
+    currentTemperature?: number;
+    minTemperature?: number;
+    maxTemperature?: number;
+    // Humidity
+    humidity?: number;
+    // Precipitation
+    precipitationProbability?: number;
+    precipitationAmount?: number;
+    // Wind
+    windSpeed?: number;
+    windGust?: number;
+    windDirection?: number;
+    // Pressure
+    pressure?: number;
+    // Solar Radiation
+    solarRadiation?: number;
+    // Sun and Moon
+    sunrise?: string;
+    sunset?: string;
+    moonrise?: string;
+    moonset?: string;
+    // Location
+    latitude?: number;
+    longitude?: number;
+    elevation?: number;
+    // Status
+    description?: string;
+    isFavorable?: boolean;
+    alertMessage?: string;
+    qualityIssueCreated?: boolean;
+    createdDate?: Date;
+  } | null = null;
+  weatherLoading = false;
   
   // Building and Floor breakdown
   buildingFloorBreakdown: { 
     building: string; 
-    totalBoxes: number; 
-    floors: { floor: string; boxCount: number; }[] 
+    totalBoxes: number;
+    inProgressCount: number;
+    completedCount: number;
+    floors: { 
+      floor: string; 
+      boxCount: number;
+      inProgressCount: number;
+      completedCount: number;
+    }[] 
   }[] = [];
   
   private subscriptions: Subscription[] = [];
@@ -108,11 +172,15 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
+    private http: HttpClient,
     private projectService: ProjectService,
     private boxService: BoxService,
     private wirService: WIRService,
     private permissionService: PermissionService,
-    private panelTypeService: PanelTypeService
+    private panelTypeService: PanelTypeService,
+    private boxMaterialService: BoxMaterialService,
+    private boxTypeMaterialService: BoxTypeMaterialService,
+    private materialTemplateService: MaterialTemplateService
   ) {}
 
   ngOnInit(): void {
@@ -192,6 +260,15 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
 
         // Load panel types count
         this.loadPanelTypesCount();
+        
+        // Load project materials count (all box type materials)
+        this.loadProjectMaterialsCount();
+        
+        // Load material statistics
+        this.loadMaterialStatistics();
+
+        // Load weather report
+        this.loadWeatherReport();
       },
       error: (error) => {
         this.error = 'Failed to load project';
@@ -202,88 +279,50 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
   }
 
   loadBoxesAndCalculateCounts(): void {
-    this.boxService.getBoxesByProject(this.projectId).subscribe({
-      next: (boxes) => {
-        console.log('✅ Boxes loaded:', boxes.length);
+    // Use countOnly to get status counts without loading all boxes
+    this.boxService.getBoxesByProjectPaginated(this.projectId, { 
+      countOnly: true, 
+      page: 1, 
+      pageSize: 1 
+    }).subscribe({
+      next: (response) => {
+        console.log('✅ Status counts loaded:', response.statusCounts);
         
-        // Store boxes for status modal checks
-        this.boxes = boxes;
+        const statusCounts = response.statusCounts;
         
-        // Calculate counts based on actual box statuses
-        const counts = {
-          totalBoxes: boxes.length,
-          completedBoxes: 0,
-          inProgressBoxes: 0,
-          dispatchedBoxes: 0,
-          notStarted: 0,
-          onHold: 0,
-          boxesReadyToStart: 0,
-          boxesNotReadyToStart: 0
-        };
-
-        boxes.forEach(box => {
-          const status = box.status as BoxStatus;
-          switch (status) {
-            case BoxStatus.NotStarted:
-              counts.notStarted++;
-              break;
-            case BoxStatus.ReadyToStart:
-              // ReadyToStart boxes are counted separately
-              counts.boxesReadyToStart++;
-              break;
-            case BoxStatus.InProgress:
-              counts.inProgressBoxes++;
-              break;
-            case BoxStatus.QAReview:
-              // QA Review is also considered in progress
-              counts.inProgressBoxes++;
-              break;
-            case BoxStatus.Completed:
-              counts.completedBoxes++;
-              break;
-            case BoxStatus.ReadyForDelivery:
-              // ReadyForDelivery is also considered in progress
-              counts.inProgressBoxes++;
-              break;
-            case BoxStatus.Delivered:
-              // Delivered is also considered completed
-              counts.completedBoxes++;
-              break;
-            case BoxStatus.Dispatched:
-              counts.dispatchedBoxes++;
-              break;
-            case BoxStatus.OnHold:
-              counts.onHold++;
-              break;
-          }
-
-          // Not ready to start: only boxes with NotStarted status
-          if (status === BoxStatus.NotStarted) {
-            counts.boxesNotReadyToStart++;
-          }
-        });
-
-        this.dashboardData = counts;
-
-        // Calculate building and floor breakdown
-        this.calculateBuildingFloorBreakdown(boxes);
-
-        if (this.project) {
-          const earliestActualStart = boxes
-            .map(b => b.actualStartDate)
-            .filter((date): date is Date => !!date)
-            .sort((a, b) => a.getTime() - b.getTime())[0];
-
-          if (earliestActualStart) {
-            this.project.actualStartDate = earliestActualStart;
-          } 
+        if (statusCounts) {
+          this.dashboardData = {
+            totalBoxes: response.totalCount,
+            completedBoxes: statusCounts.completed,
+            inProgressBoxes: statusCounts.inProgress,
+            dispatchedBoxes: statusCounts.dispatched,
+            notStarted: statusCounts.notStarted,
+            onHold: statusCounts.onHold,
+            boxesReadyToStart: statusCounts.readyToStart,
+            boxesNotReadyToStart: statusCounts.notStarted // NotStarted boxes are boxes not ready to start
+          };
+        } else {
+          // Fallback if statusCounts not available
+          this.dashboardData = {
+            totalBoxes: response.totalCount,
+            completedBoxes: 0,
+            inProgressBoxes: 0,
+            dispatchedBoxes: 0,
+            notStarted: 0,
+            onHold: 0,
+            boxesReadyToStart: 0,
+            boxesNotReadyToStart: 0
+          };
         }
+
         console.log('📊 Calculated box counts:', this.dashboardData);
-        console.log('📊 Project progress (from ProgressPercentage):', this.project?.progress + '%');
         this.loading = false;
+        
+        // Load building/floor breakdown using efficient endpoint
+        this.loadBuildingFloorBreakdown();
       },
       error: (err) => {
-        console.error('❌ Error loading boxes:', err);
+        console.error('❌ Error loading box counts:', err);
         // Fallback to project data if boxes can't be loaded
         if (this.project) {
           this.dashboardData = {
@@ -311,6 +350,12 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
     if (!canChangeProjectStatus(this.project.status)) {
       this.statusError = 'Archived projects cannot have their status changed. The project is locked.';
       return;
+    }
+    
+    // Load boxes if not already loaded (needed for status validation)
+    if (this.boxes.length === 0) {
+      this.loadBoxesForStatusCheck();
+      return; // Will reopen modal after boxes are loaded
     }
     
     // Get available statuses based on current status and progress
@@ -407,15 +452,14 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
 
 
   viewBoxes(): void {
-    console.log('🔍 Navigate to boxes for project:', this.projectId);
+    console.log('🔍 Navigate to box type templates for project:', this.projectId);
     if (!this.projectId) {
       console.error('❌ Cannot navigate: projectId is undefined');
-      alert('Error: Project ID is missing. Cannot view boxes.');
+      alert('Error: Project ID is missing. Cannot view box types.');
       return;
     }
-    this.router.navigate(['/projects', this.projectId, 'boxes'], {
-      queryParams: { view: 'boxes' }
-    });
+   
+    this.router.navigate(['/projects', this.projectId, 'boxes']);
   }
 
   viewBoxesByStatus(status: BoxStatus): void {
@@ -450,6 +494,16 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
     this.viewBoxesByStatus(BoxStatus.NotStarted);
   }
 
+  viewBoxTypeMaterials(): void {
+    console.log('🔍 Navigate to box type materials for project:', this.projectId);
+    if (!this.projectId) {
+      console.error('❌ Cannot navigate: projectId is undefined');
+      alert('Error: Project ID is missing. Cannot view box type materials.');
+      return;
+    }
+    this.router.navigate(['/projects', this.projectId, 'box-type-materials']);
+  }
+
   loadQualityIssuesCount(): void {
     this.wirService.getQualityIssuesByProject(this.projectId).subscribe({
       next: (issues) => {
@@ -479,38 +533,223 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Calculate building and floor breakdown from boxes
+   * Load count of all materials across all box types in the project (for Project Materials card).
    */
-  private calculateBuildingFloorBreakdown(boxes: Box[]): void {
-    // Create a map to group boxes by building and floor
-    const buildingMap = new Map<string, Map<string, number>>();
-
-    boxes.forEach(box => {
-      const building = box.buildingNumber || 'No Building';
-      const floor = box.floor || 'No Floor';
-
-      if (!buildingMap.has(building)) {
-        buildingMap.set(building, new Map<string, number>());
+  loadProjectMaterialsCount(): void {
+    this.boxTypeMaterialService.getProjectBoxTypeMaterials(this.projectId).subscribe({
+      next: (materials) => {
+        this.projectMaterialsCount = Array.isArray(materials) ? materials.length : 0;
+        console.log('✅ Project materials count loaded:', this.projectMaterialsCount);
+      },
+      error: (err) => {
+        console.error('❌ Error loading project materials count:', err);
+        this.projectMaterialsCount = 0;
       }
-
-      const floorMap = buildingMap.get(building)!;
-      floorMap.set(floor, (floorMap.get(floor) || 0) + 1);
     });
+  }
 
-    // Convert map to array structure
-    this.buildingFloorBreakdown = Array.from(buildingMap.entries())
-      .map(([building, floorMap]) => {
-        const floors = Array.from(floorMap.entries())
-          .map(([floor, boxCount]) => ({ floor, boxCount }))
-          .sort((a, b) => a.floor.localeCompare(b.floor));
+  loadMaterialStatistics(): void {
+    // Load material templates assigned to this project
+    // Count materials from templates, not individual box type materials
+    this.materialTemplateService.getProjectTemplates(this.projectId).subscribe({
+      next: (projectTemplates) => {
+        console.log('📦 Project templates loaded:', projectTemplates.length, 'templates');
+        
+        // If no templates assigned, set to zero
+        if (projectTemplates.length === 0) {
+          this.materialStatistics.selectedMaterials = 0;
+          this.materialStatistics.totalMaterials = 0;
+          this.materialStatistics.materialsArrived = 0;
+          this.materialStatistics.materialsPending = 0;
+          console.log('ℹ️ No templates assigned to project');
+          return;
+        }
+        
+        // Load all template details in parallel using forkJoin
+        const templateRequests = projectTemplates.map((assignment: ProjectMaterialTemplate) => 
+          this.materialTemplateService.getTemplateById(assignment.materialTemplateId).pipe(
+            catchError(err => {
+              console.error('❌ Error loading template:', assignment.materialTemplateId, err);
+              return of(null); // Return null for failed requests
+            })
+          )
+        );
+        
+        forkJoin<(MaterialTemplate | null)[]>(templateRequests).subscribe({
+          next: (templates: (MaterialTemplate | null)[]) => {
+            // Get all unique materials from all assigned templates
+            const allMaterialIds = new Set<string>();
+            let totalMaterialsFromTemplates = 0;
+            
+            templates.forEach((template: MaterialTemplate | null) => {
+              if (template && template.items) {
+                template.items.forEach((item: MaterialTemplateItem) => {
+                  allMaterialIds.add(item.materialId);
+                  totalMaterialsFromTemplates++;
+                });
+              }
+            });
+            
+            // Update statistics
+            this.materialStatistics.selectedMaterials = allMaterialIds.size;
+            this.materialStatistics.totalMaterials = totalMaterialsFromTemplates;
+            this.materialStatistics.materialsArrived = 0; // Not tracked at template level
+            this.materialStatistics.materialsPending = 0; // Not tracked at template level
+            
+            console.log('✅ Material statistics from templates:', {
+              templatesCount: projectTemplates.length,
+              uniqueMaterials: this.materialStatistics.selectedMaterials,
+              totalMaterialsInTemplates: this.materialStatistics.totalMaterials,
+              templatesProcessed: templates.filter((t: MaterialTemplate | null) => t !== null).length
+            });
+          },
+          error: (err) => {
+            console.error('❌ Error loading template details:', err);
+            this.materialStatistics = {
+              totalMaterials: 0,
+              selectedMaterials: 0,
+              materialsArrived: 0,
+              materialsPending: 0
+            };
+          }
+        });
+      },
+      error: (err) => {
+        console.error('❌ Error loading project templates:', err);
+        // Set to zero if templates can't be loaded
+        this.materialStatistics = {
+          totalMaterials: 0,
+          selectedMaterials: 0,
+          materialsArrived: 0,
+          materialsPending: 0
+        };
+      }
+    });
+  }
 
-        const totalBoxes = floors.reduce((sum, f) => sum + f.boxCount, 0);
+  loadWeatherReport(): void {
+    this.weatherLoading = true;
+    this.http.get<any>(`${environment.apiUrl}/projects/weather/${this.projectId}`).subscribe({
+      next: (response) => {
+        if (response?.isSuccess && response?.data) {
+          this.weatherReport = response.data;
+          console.log('✅ Weather report loaded:', this.weatherReport);
+        } else {
+          this.weatherReport = null;
+          console.log('ℹ️ No weather report available for today');
+        }
+        this.weatherLoading = false;
+      },
+      error: (err) => {
+        console.error('❌ Error loading weather report:', err);
+        this.weatherReport = null;
+        this.weatherLoading = false;
+      }
+    });
+  }
 
-        return { building, totalBoxes, floors };
-      })
-      .sort((a, b) => a.building.localeCompare(b.building));
+  getWeatherIcon(): string {
+    if (!this.weatherReport || !this.weatherReport.description) {
+      return '☀️';
+    }
+    
+    const desc = this.weatherReport.description.toLowerCase();
+    if (desc.includes('rain') || desc.includes('drizzle')) return '🌧️';
+    if (desc.includes('cloud')) return '☁️';
+    if (desc.includes('clear') || desc.includes('sun')) return '☀️';
+    if (desc.includes('storm') || desc.includes('thunder')) return '⛈️';
+    if (desc.includes('snow')) return '🌨️';
+    if (desc.includes('wind')) return '💨';
+    return '🌤️';
+  }
 
-    console.log('🏢 Building/Floor breakdown calculated:', this.buildingFloorBreakdown);
+  formatTime(dateString?: string): string {
+    if (!dateString) return 'N/A';
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+
+  getWindDirectionText(degrees: number | null | undefined): string {
+    if (degrees === null || degrees === undefined) {
+      return 'N/A';
+    }
+    
+    const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+    const index = Math.round((degrees % 360) / 22.5) % 16;
+    return directions[index];
+  }
+
+  getWeatherIconSvg(): string {
+    if (!this.weatherReport || !this.weatherReport.description) {
+      return 'clear';
+    }
+    
+    const desc = this.weatherReport.description.toLowerCase();
+    if (desc.includes('rain') || desc.includes('drizzle')) return 'rain';
+    if (desc.includes('cloud') || desc.includes('overcast')) return 'cloudy';
+    if (desc.includes('clear')) return 'clear';
+    if (desc.includes('storm') || desc.includes('thunder')) return 'storm';
+    if (desc.includes('snow')) return 'snow';
+    if (desc.includes('mist') || desc.includes('fog')) return 'mist';
+    return 'clear';
+  }
+
+  viewProjectMaterials(): void {
+    console.log('🔍 Navigate to project materials for project:', this.projectId);
+    if (!this.projectId) {
+      console.error('❌ Cannot navigate: projectId is undefined');
+      alert('Error: Project ID is missing. Cannot view materials.');
+      return;
+    }
+    this.router.navigate(['/projects', this.projectId, 'materials']);
+  }
+
+  /**
+   * Load building/floor breakdown using efficient endpoint (no box data loaded)
+   */
+  private loadBuildingFloorBreakdown(): void {
+    this.boxService.getBuildingFloorBreakdown(this.projectId).subscribe({
+      next: (response) => {
+        this.buildingFloorBreakdown = response.buildings.map(building => ({
+          building: building.building,
+          totalBoxes: building.totalBoxes,
+          inProgressCount: building.inProgressCount || 0,
+          completedCount: building.completedCount || 0,
+          floors: building.floors.map(floor => ({
+            floor: floor.floor,
+            boxCount: floor.boxCount,
+            inProgressCount: floor.inProgressCount || 0,
+            completedCount: floor.completedCount || 0
+          }))
+        }));
+        console.log('🏢 Building/Floor breakdown loaded:', this.buildingFloorBreakdown);
+      },
+      error: (err) => {
+        console.error('❌ Error loading building/floor breakdown:', err);
+        this.buildingFloorBreakdown = [];
+      }
+    });
+  }
+
+  /**
+   * Load boxes for status validation (only when needed)
+   */
+  private loadBoxesForStatusCheck(): void {
+    console.log('📦 Loading boxes for status validation...');
+    this.boxService.getBoxesByProject(this.projectId).subscribe({
+      next: (boxes) => {
+        this.boxes = boxes;
+        console.log('✅ Boxes loaded for status check:', boxes.length);
+        // Reopen modal now that boxes are loaded
+        this.openStatusModal();
+      },
+      error: (err) => {
+        console.error('❌ Error loading boxes for status check:', err);
+        // Continue with empty boxes array
+        this.boxes = [];
+        this.openStatusModal();
+      }
+    });
   }
 
   /**
@@ -549,6 +788,16 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
       return;
     }
     this.router.navigate(['/projects', this.projectId, 'panel-types']);
+  }
+
+  navigateToAIPanelExtraction(): void {
+    console.log('🤖 Navigate to AI Panel Extraction for project:', this.projectId);
+    if (!this.projectId) {
+      console.error('❌ Cannot navigate: projectId is undefined');
+      alert('Error: Project ID is missing. Cannot extract panels.');
+      return;
+    }
+    this.router.navigate(['/projects', this.projectId, 'panels', 'extract']);
   }
 
   openImportExcel(): void {
@@ -1182,6 +1431,76 @@ export class ProjectDashboardComponent implements OnInit, OnDestroy {
     const target = event.target as HTMLInputElement;
     const value = target.value;
     this.selectedCompressionDate = value ? new Date(value) : null;
+  }
+
+  /**
+   * Get normalized contractor logo URL
+   */
+  getContractorLogoUrl(): string | null {
+    return this.normalizeImageUrl(this.project?.contractorImageUrl);
+  }
+
+  /**
+   * Get normalized sub-contractor logo URL
+   */
+  getSubContractorLogoUrl(): string | null {
+    return this.normalizeImageUrl(this.project?.subContractorImageUrl);
+  }
+
+  /**
+   * Get normalized client logo URL
+   */
+  getClientLogoUrl(): string | null {
+    return this.normalizeImageUrl(this.project?.clientImageUrl);
+  }
+
+  /**
+   * Check if project has any logos
+   */
+  hasAnyLogo(): boolean {
+    return !!(this.getContractorLogoUrl() || this.getSubContractorLogoUrl() || this.getClientLogoUrl());
+  }
+
+  /**
+   * Handle logo loading error
+   */
+  onLogoError(logoType: 'contractor' | 'subContractor' | 'client'): void {
+    console.error(`❌ Failed to load ${logoType} logo`);
+    // Clear the failed logo from project object to hide it
+    if (this.project) {
+      if (logoType === 'contractor') {
+        this.project.contractorImageUrl = undefined;
+      } else if (logoType === 'subContractor') {
+        this.project.subContractorImageUrl = undefined;
+      } else if (logoType === 'client') {
+        this.project.clientImageUrl = undefined;
+      }
+    }
+  }
+
+  /**
+   * Normalize image URL - handles relative URLs, absolute URLs, and empty values
+   */
+  private normalizeImageUrl(url: string | null | undefined): string | null {
+    if (!url || url.trim() === '') {
+      return null;
+    }
+
+    const trimmedUrl = url.trim();
+    
+    // If it's a relative URL starting with /api/ or just /, convert to absolute URL
+    if (trimmedUrl.startsWith('/api/') || (trimmedUrl.startsWith('/') && !trimmedUrl.startsWith('http'))) {
+      const baseUrl = `${window.location.protocol}//${window.location.host}`;
+      return `${baseUrl}${trimmedUrl}`;
+    }
+    
+    // If it's already an absolute URL (starts with http:// or https://), return as-is
+    if (trimmedUrl.startsWith('http://') || trimmedUrl.startsWith('https://')) {
+      return trimmedUrl;
+    }
+    
+    // For any other URL format, return as is (might be a blob URL or other valid URL)
+    return trimmedUrl;
   }
 
   downloadBoxPanelsExcel(): void {

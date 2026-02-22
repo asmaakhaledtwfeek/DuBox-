@@ -16,6 +16,9 @@ public record UpdateProjectCommand(
     int? Duration,
     DateTime? ProjectedEndDate,
     Guid? ProjectMangerId,
-    decimal? ProjectValue
+    decimal? ProjectValue,
+    Guid? ActivityTemplateId,
+    Guid? MaterialTemplateId,
+    bool? AllowCompletionWithConditionalApproval
 ) : IRequest<Result<ProjectDto>>;
 

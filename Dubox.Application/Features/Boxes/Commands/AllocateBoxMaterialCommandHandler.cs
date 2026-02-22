@@ -22,77 +22,73 @@ namespace Dubox.Application.Features.Boxes.Commands
         public async Task<Result<BoxMaterialDto>> Handle(AllocateBoxMaterialCommand request, CancellationToken cancellationToken)
         {
             var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
-            const string dateFormat = "yyyy-MM-dd HH:mm:ss";
+
+            // This handler now works with ProjectMaterial for project-level material allocation
+            // Box-level material tracking is handled by BoxMaterial entity
+            var projectMaterial = _unitOfWork.Repository<ProjectMaterial>()
+                .GetEntityWithSpec(new GetProjectMaterialWithIncludesSpecification(request.BoxMaterialId));
+
+            if (projectMaterial == null)
+                return Result.Failure<BoxMaterialDto>("Project Material entry not found.");
 
             if (request.AllocatedQuantity <= 0)
                 return Result.Failure<BoxMaterialDto>("Allocated quantity must be greater than zero.");
 
-            var boxMaterial = _unitOfWork.Repository<BoxMaterial>()
-                .GetEntityWithSpec(new BoxMaterialWithIncludesSpecification(request.BoxMaterialId));
+            var material = projectMaterial.Material;
 
-            if (boxMaterial == null)
-                return Result.Failure<BoxMaterialDto>("Box Material entry not found.");
-
-
-            var material = boxMaterial.Material;
-
-            var oldAllocationBoxMaterial = boxMaterial.AllocatedQuantity ?? 0;
-            var oldAllocatedStockMaterial = material.AllocatedStock ?? 0;
+            var oldAllocation = projectMaterial.AllocatedQuantity ?? 0;
+            var oldAllocatedStock = material.AllocatedStock ?? 0;
 
             var currentStock = material.CurrentStock ?? 0;
-            var consumed = boxMaterial.ConsumedQuantity ?? 0;
+            var consumed = projectMaterial.ConsumedQuantity ?? 0;
             var newAllocation = request.AllocatedQuantity;
-            var netChangeInAllocation = newAllocation - oldAllocationBoxMaterial;
-            var availableNonAllocatedStock = currentStock - oldAllocatedStockMaterial;
+            var netChangeInAllocation = newAllocation - oldAllocation;
+            var availableNonAllocatedStock = currentStock - oldAllocatedStock;
 
             if (newAllocation < consumed)
                 return Result.Failure<BoxMaterialDto>(
-                    $"Cannot reduce allocation to {newAllocation}. The material has already been consumed by {consumed} units for this box.");
+                    $"Cannot reduce allocation to {newAllocation}. The material has already been consumed by {consumed} units.");
 
             if (netChangeInAllocation > 0 && netChangeInAllocation > availableNonAllocatedStock)
                 return Result.Failure<BoxMaterialDto>(
                     $"Cannot increase allocation by {netChangeInAllocation}. Only {availableNonAllocatedStock} stock is currently available for allocation.");
 
-            material.AllocatedStock = oldAllocatedStockMaterial + netChangeInAllocation;
+            material.AllocatedStock = oldAllocatedStock + netChangeInAllocation;
 
-            boxMaterial.AllocatedQuantity = newAllocation;
-            boxMaterial.AllocatedDate = DateTime.UtcNow;
-            var oldStatus = boxMaterial.Status;
-            if (newAllocation > consumed)
-                boxMaterial.Status = Domain.Enums.BoxMaterialStatusEnum.Allocated;
-            else if (newAllocation == consumed)
-                boxMaterial.Status = Domain.Enums.BoxMaterialStatusEnum.Consumed;
+            projectMaterial.AllocatedQuantity = newAllocation;
+            projectMaterial.AllocatedDate = DateTime.UtcNow;
 
             _unitOfWork.Repository<Material>().Update(material);
-            _unitOfWork.Repository<BoxMaterial>().Update(boxMaterial);
-            var boxMaterialLog = new AuditLog
+            _unitOfWork.Repository<ProjectMaterial>().Update(projectMaterial);
+            
+            var projectMaterialLog = new AuditLog
             {
-                TableName = nameof(BoxMaterial),
-                RecordId = boxMaterial.BoxMaterialId,
+                TableName = nameof(ProjectMaterial),
+                RecordId = projectMaterial.ProjectMaterialId,
                 Action = "AllocationUpdate",
-                OldValues = $"AllocatedQuantity: {oldAllocationBoxMaterial}, Status: {oldStatus.ToString()}",
-                NewValues = $"AllocatedQuantity: {newAllocation}, Status: {boxMaterial.Status.ToString()}",
+                OldValues = $"AllocatedQuantity: {oldAllocation}",
+                NewValues = $"AllocatedQuantity: {newAllocation}",
                 ChangedBy = currentUserId,
                 ChangedDate = DateTime.UtcNow,
-                Description = $"Material allocation changed by {netChangeInAllocation} units for Box {boxMaterial.BoxId}. New quantity: {newAllocation}."
+                Description = $"Material allocation changed by {netChangeInAllocation} units for Project {projectMaterial.ProjectId}."
             };
-            await _unitOfWork.Repository<AuditLog>().AddAsync(boxMaterialLog, cancellationToken);
+            await _unitOfWork.Repository<AuditLog>().AddAsync(projectMaterialLog, cancellationToken);
 
             var materialLog = new AuditLog
             {
                 TableName = nameof(Material),
                 RecordId = material.MaterialId,
                 Action = "StockAllocationChange",
-                OldValues = $"AllocatedStock: {oldAllocatedStockMaterial}",
+                OldValues = $"AllocatedStock: {oldAllocatedStock}",
                 NewValues = $"AllocatedStock: {material.AllocatedStock}",
                 ChangedBy = currentUserId,
                 ChangedDate = DateTime.UtcNow,
-                Description = $"Global allocated stock for Material '{material.MaterialName}' changed by {netChangeInAllocation} due to Box allocation update."
+                Description = $"Global allocated stock for Material '{material.MaterialName}' changed by {netChangeInAllocation} due to project allocation update."
             };
             await _unitOfWork.Repository<AuditLog>().AddAsync(materialLog, cancellationToken);
             await _unitOfWork.CompleteAsync(cancellationToken);
 
-            var dto = boxMaterial.Adapt<BoxMaterialDto>();
+            var dto = projectMaterial.Adapt<BoxMaterialDto>();
 
             return Result.Success(dto);
         }

@@ -463,18 +463,27 @@ export class PermissionService {
 
   // ============= Navigation Menu Items =============
 
+  private readonly NAVIGATION_MENU_STORAGE_KEY = 'navigation_menu';
   private navigationMenuCache: NavigationMenuItemDto[] | null = null;
   private navigationMenuLoading = false;
 
   /**
-   * Get navigation menu items from database (cached)
+   * Get navigation menu items from database (cached in memory and localStorage)
    * This ensures the API is called only ONCE even if sidebar component is recreated
    */
   getNavigationMenuItems(): Observable<NavigationMenuItemDto[]> {
-    // Return cached menu if available
+    // Return memory cache if available
     if (this.navigationMenuCache !== null) {
-      console.log('📋 Returning cached navigation menu items (no API call)');
+      console.log('📋 Returning cached navigation menu items from memory (no API call)');
       return of(this.navigationMenuCache);
+    }
+
+    // Try to load from localStorage
+    const storedMenu = this.loadNavigationMenuFromStorage();
+    if (storedMenu !== null) {
+      console.log('📋 Returning navigation menu items from localStorage (no API call)');
+      this.navigationMenuCache = storedMenu;
+      return of(storedMenu);
     }
 
     // Prevent multiple simultaneous API calls
@@ -498,6 +507,7 @@ export class PermissionService {
     return this.apiService.get<NavigationMenuItemDto[]>('navigation/menu').pipe(
       tap(items => {
         this.navigationMenuCache = items;
+        this.saveNavigationMenuToStorage(items); // Save to localStorage
         this.navigationMenuLoading = false;
         console.log('✅ Navigation menu cached successfully:', items.length, 'items');
       }),
@@ -511,10 +521,45 @@ export class PermissionService {
   }
 
   /**
+   * Load navigation menu from localStorage (synchronous)
+   */
+  private loadNavigationMenuFromStorage(): NavigationMenuItemDto[] | null {
+    try {
+      const storedMenu = localStorage.getItem(this.NAVIGATION_MENU_STORAGE_KEY);
+      if (storedMenu) {
+        const menu = JSON.parse(storedMenu);
+        if (Array.isArray(menu)) {
+          return menu;
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load navigation menu from storage:', err);
+    }
+    return null;
+  }
+
+  /**
+   * Save navigation menu to localStorage (synchronous)
+   */
+  private saveNavigationMenuToStorage(menu: NavigationMenuItemDto[]): void {
+    try {
+      localStorage.setItem(this.NAVIGATION_MENU_STORAGE_KEY, JSON.stringify(menu));
+    } catch (err) {
+      console.error('Failed to save navigation menu to storage:', err);
+    }
+  }
+
+  /**
    * Clear navigation menu cache (call on logout)
    */
   clearNavigationMenuCache(): void {
     this.navigationMenuCache = null;
     this.navigationMenuLoading = false;
+    // Clear from localStorage
+    try {
+      localStorage.removeItem(this.NAVIGATION_MENU_STORAGE_KEY);
+    } catch (err) {
+      console.error('Failed to clear navigation menu from storage:', err);
+    }
   }
 }

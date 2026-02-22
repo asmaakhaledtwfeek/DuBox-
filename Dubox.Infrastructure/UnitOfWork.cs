@@ -1,6 +1,7 @@
-﻿using Dubox.Domain.Abstraction;
+using Dubox.Domain.Abstraction;
 using Dubox.Infrastructure.ApplicationContext;
 using Dubox.Infrastructure.Repositories;
+using Microsoft.EntityFrameworkCore.Storage;
 using System.Collections;
 
 namespace Dubox.Infrastructure;
@@ -9,6 +10,7 @@ internal sealed class UnitOfWork : IUnitOfWork
 {
     private readonly ApplicationDbContext _context;
     private Hashtable? _repositories;
+    private IDbContextTransaction? _transaction;
 
     public UnitOfWork(ApplicationDbContext context)
     {
@@ -31,5 +33,30 @@ internal sealed class UnitOfWork : IUnitOfWork
         }
 
         return (IGenericRepository<TEntity>)_repositories[type]!;
+    }
+
+    public async Task BeginTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        _transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+    }
+
+    public async Task CommitTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        if (_transaction != null)
+        {
+            await _transaction.CommitAsync(cancellationToken);
+            await _transaction.DisposeAsync();
+            _transaction = null;
+        }
+    }
+
+    public async Task RollbackTransactionAsync(CancellationToken cancellationToken = default)
+    {
+        if (_transaction != null)
+        {
+            await _transaction.RollbackAsync(cancellationToken);
+            await _transaction.DisposeAsync();
+            _transaction = null;
+        }
     }
 }

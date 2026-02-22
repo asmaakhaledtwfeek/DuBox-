@@ -18,28 +18,24 @@
     <!-- Box Details -->
     <div *ngIf="box && !loading && !error">
       <!-- Breadcrumb -->
-      <nav class="breadcrumb">
-        <a [routerLink]="['/projects']" class="breadcrumb-item">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+      <div class="breadcrumb">
+        <button class="breadcrumb-link" [routerLink]="['/projects']">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
           </svg>
           Projects
-        </a>
+        </button>
         <span class="breadcrumb-separator">/</span>
-        <a [routerLink]="['/projects', box.projectId, 'dashboard']" class="breadcrumb-item">{{ box.projectCode || 'Project' }}</a>
+        <button class="breadcrumb-link" [routerLink]="['/projects', box.projectId, 'dashboard']">
+          {{ box.projectCode || 'Project' }}
+        </button>
         <span class="breadcrumb-separator">/</span>
-        <a class="breadcrumb-item" (click)="goBack()">Boxes</a>
-        <ng-container *ngIf="box.boxTypeName">
-          <span class="breadcrumb-separator">/</span>
-          <a [routerLink]="['/projects', box.projectId, 'boxes']" [queryParams]="{boxType: box.boxTypeName}" class="breadcrumb-item">{{ box.boxTypeName }}</a>
-        </ng-container>
-        <ng-container *ngIf="box.boxSubTypeName">
-          <span class="breadcrumb-separator">/</span>
-          <a [routerLink]="['/projects', box.projectId, 'boxes']" [queryParams]="{boxType: box.boxTypeName, boxSubType: box.boxSubTypeName}" class="breadcrumb-item">{{ box.boxSubTypeName }}</a>
-        </ng-container>
+        <button class="breadcrumb-link" (click)="goToBoxTypes()">Box Types</button>
         <span class="breadcrumb-separator">/</span>
-        <span class="breadcrumb-item active">{{ box.code }}</span>
-      </nav>
+        <button class="breadcrumb-link" (click)="goBack()">Boxes</button>
+        <span class="breadcrumb-separator">/</span>
+        <span class="breadcrumb-current">{{ box.code }}</span>
+      </div>
 
       <!-- Page Header -->
       <div class="page-header">
@@ -47,7 +43,7 @@
           <div class="box-info">
             <h1 class="box-name">
               {{ box.name || box.code }}
-              <span class="box-number" *ngIf="box.boxNumber">#{{ box.boxNumber }}</span>
+             
             </h1>
             <span class="box-id">{{ box.code }}</span>
             <span class="status-badge" [ngClass]="getStatusClass(box.status)">
@@ -107,7 +103,7 @@
           [class.active]="activeTab === 'quality-issues'"
           (click)="setActiveTab('quality-issues')"
         >
-          Quality Issues
+           Issues
         </button>
         <button 
           class="tab" 
@@ -143,6 +139,20 @@
           (click)="setActiveTab('progress-updates')"
         >
           Progress History
+        </button>
+        <button 
+          class="tab" 
+          [class.active]="activeTab === 'materials'"
+          (click)="setActiveTab('materials')"
+        >
+          Materials
+        </button>
+        <button 
+          class="tab" 
+          [class.active]="activeTab === 'exchanges'"
+          (click)="setActiveTab('exchanges')"
+        >
+          Exchanges
         </button>
        
       </div>
@@ -230,57 +240,31 @@
                   <span class="label">Current Location</span>
                   <span class="value text-muted">Not assigned</span>
                 </div>
-                <!-- Location in Factory (Layout) - factory badge + link; Bay/Row/Position shown in grid -->
+                <!-- Location in Factory (Layout) - All position values in one card -->
                 <div class="info-item info-item-full-width" *ngIf="box.factoryId">
-                  <span class="label">Location in Factory (Layout)</span>
-                  <span class="value">
-                    <span *ngIf="box.factoryName || box.factoryCode" class="position-badge">Factory: {{ box.factoryName || box.factoryCode }}</span>
-                    <a [routerLink]="['/factories', box.factoryId, 'layout']" class="position-badge view-layout-badge" title="View this box on the factory layout">
-                      View Layout
-                    </a>
+                  <span class="label">Location in Factory</span>
+                  <span class="value" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center;">
+                      <span *ngIf="box.factoryName || box.factoryCode" class="position-badge">Factory: {{ box.factoryName || box.factoryCode }}</span>
+                      <span *ngIf="box.bay" class="position-badge">Bay: {{ box.bay }}</span>
+                      <span *ngIf="box.row" class="position-badge">Row: {{ box.row }}</span>
+                      <span *ngIf="box.position" class="position-badge">Position: {{ box.position }}</span>
+                    </div>
+                    <button (click)="openFactoryLayoutModal()" class="position-badge view-layout-badge view-layout-btn" title="View factory layout in popup" style="width: fit-content;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="view-layout-btn-icon">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <line x1="3" y1="9" x2="21" y2="9"/>
+                        <line x1="9" y1="21" x2="9" y2="9"/>
+                      </svg>
+                      <span class="view-layout-btn-text">
+                        <span class="view-layout-btn-title">View Factory Layout</span>
+                        <span class="view-layout-btn-hint">click here</span>
+                      </span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="view-layout-btn-chevron">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                    </button>
                   </span>
-                  <!-- Full factory layout, current box only in its cell (scrollable) -->
-                  <div *ngIf="(box.bay || box.row) && !isLoadingFactoryLayout" class="box-details-factory-layout-mini">
-                    <div class="layout-scroll-hint" *ngIf="getBoxLocationGridLayout().columns.length > 6 || getBoxLocationGridLayout().matrix.length > 6">
-                      <span>Full layout ({{ getBoxLocationGridLayout().columns.length }} bays × {{ getBoxLocationGridLayout().matrix.length }} rows)</span>
-                    </div>
-                    <div class="mini-grid-container mini-grid-container-full">
-                      <div class="mini-grid-header">
-                        <div class="mini-corner-cell"></div>
-                        <div class="mini-col-header" *ngFor="let col of getBoxLocationGridLayout().columns">
-                          <span>{{ col }}</span>
-                        </div>
-                      </div>
-                      <div class="mini-grid-row" *ngFor="let rowCells of getBoxLocationGridLayout().matrix">
-                        <div class="mini-row-header">
-                          <span>{{ rowCells[0]?.row }}</span>
-                        </div>
-                        <div class="mini-grid-cell"
-                             *ngFor="let cell of rowCells"
-                             [class.occupied]="cell.box"
-                             [class.current-box]="cell.isCurrentBox"
-                             [class.empty]="!cell.box"
-                             [title]="cell.box ? ((cell.box.boxNumber || cell.box.code) + ' - Bay ' + cell.bay + ', Row ' + cell.row + (cell.isCurrentBox ? ' (this box)' : '')) : ('Bay ' + cell.bay + ', Row ' + cell.row)">
-                          <div *ngIf="cell.box" class="cell-content">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                              <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                              <line x1="12" y1="22.08" x2="12" y2="12"/>
-                            </svg>
-                            <span class="cell-box-tag">{{ cell.box.boxNumber || cell.box.code }}</span>
-                          </div>
-                          <div *ngIf="!cell.box" class="cell-empty"></div>
-                          <span class="cell-coord">{{ cell.column }}-{{ cell.row }}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div *ngIf="isLoadingFactoryLayout" class="factory-layout-loading-mini">
-                    <span>Loading layout...</span>
-                  </div>
-                  <div *ngIf="!box.bay && !box.row && box.factoryId && !isLoadingFactoryLayout" class="factory-layout-no-position">
-                    <span>Set Bay / Row to see box location on layout</span>
-                  </div>
                 </div>
                 <div class="info-item" *ngIf="box.description">
                   <span class="label">Description</span>
@@ -348,8 +332,10 @@
           
           <!-- Activity Progress and Delivery Info Section - Side by Side -->
           <div class="activity-delivery-layout">
-            <!-- Activity Progress Overview Card -->
-            <div class="info-card chart-card">
+            <!-- Left Column: Activity Progress + Pod Delivery -->
+            <div class="left-column-wrapper">
+              <!-- Activity Progress Overview Card -->
+              <div class="info-card chart-card">
               <h3 class="card-title">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <line x1="12" y1="20" x2="12" y2="10"/>
@@ -492,7 +478,109 @@
               </div>
             </div>
 
-            <!-- Delivery Information Section -->
+              <!-- Pod Delivery Card - Redesigned -->
+              <div class="info-card delivery-card pod-delivery-card-v2">
+                <!-- Card Header -->
+                <div class="pod-card-header">
+                  <div class="pod-title-area">
+                    <div class="pod-icon-badge">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                        <line x1="12" y1="22.08" x2="12" y2="12"/>
+                      </svg>
+                    </div>
+                    <h3 class="pod-card-title">Pod Delivery</h3>
+                  </div>
+                  
+                  <!-- Toggle Switch -->
+                  <label class="pod-toggle" [class.active]="podDeliverChecked" [class.disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed">
+                    <input 
+                      type="checkbox" 
+                      [(ngModel)]="podDeliverChecked"
+                      (change)="togglePodDeliver($event)"
+                      [disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed">
+                    <span class="toggle-track">
+                      <span class="toggle-thumb"></span>
+                    </span>
+                    <span class="toggle-label">{{ podDeliverChecked ? 'Enabled' : 'Disabled' }}</span>
+                  </label>
+                </div>
+
+                <!-- Pod Form Content (always visible, inputs disabled when toggle is off) -->
+                <div class="pod-form-content">
+                  <div class="pod-form-grid">
+                    <!-- Pod Type Field -->
+                    <div class="pod-field">
+                      <label class="pod-field-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <rect x="3" y="3" width="7" height="7"/>
+                          <rect x="14" y="3" width="7" height="7"/>
+                          <rect x="14" y="14" width="7" height="7"/>
+                          <rect x="3" y="14" width="7" height="7"/>
+                        </svg>
+                        Pod Type
+                      </label>
+                      <div class="pod-input-wrapper">
+                        <input 
+                          type="text" 
+                          id="podType"
+                          [(ngModel)]="podType"
+                          (ngModelChange)="onPodDataChange()"
+                          [disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed || !podDeliverChecked"
+                          class="pod-input"
+                          placeholder="e.g., Bathroom, Kitchen">
+                      </div>
+                    </div>
+
+                    <!-- Pod Name Field -->
+                    <div class="pod-field">
+                      <label class="pod-field-label">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                        </svg>
+                        Pod Name
+                      </label>
+                      <div class="pod-input-wrapper">
+                        <input 
+                          type="text" 
+                          id="podName"
+                          [(ngModel)]="podName"
+                          (ngModelChange)="onPodDataChange()"
+                          [disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed || !podDeliverChecked"
+                          class="pod-input"
+                          placeholder="e.g., POD-A1, POD-B2">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Save Action (outside collapsible area - always visible when there are changes) -->
+                <div class="pod-save-area" [class.visible]="hasPodDeliveryChanges">
+                  <button 
+                    type="button"
+                    class="pod-save-btn"
+                    [disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed || !hasPodDeliveryChanges || updatingDeliveryInfo"
+                    (click)="savePodDeliveryInfo()">
+                    <span class="btn-content" *ngIf="!updatingDeliveryInfo">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      Save Changes
+                    </span>
+                    <span class="btn-content" *ngIf="updatingDeliveryInfo">
+                      <svg class="spinner" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                      </svg>
+                      Saving...
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Delivery Information Section -->
             <div class="delivery-info-wrapper">
               <!-- Concrete Panel Delivery Card -->
               <div class="info-card delivery-card concrete-panel-card">
@@ -567,104 +655,49 @@
                 </div>
               </div>
 
-              <!-- Pod Delivery Card - Redesigned -->
-              <div class="info-card delivery-card pod-delivery-card-v2">
-                <!-- Card Header -->
-                <div class="pod-card-header">
-                  <div class="pod-title-area">
-                    <div class="pod-icon-badge">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                        <line x1="12" y1="22.08" x2="12" y2="12"/>
-                      </svg>
+              <!-- MEP Panel Riddance Card -->
+              <div class="info-card delivery-card mep-panel-card">
+                <div class="card-header-with-icon">
+                  <div class="icon-wrapper mep-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+                    </svg>
+                  </div>
+                  <div class="card-title-section">
+                    <h3 class="card-title">MEP Panel Readiness</h3>
+                    <!-- Status Legend (static horizontal row) -->
+                    <div class="panel-status-legend" *ngIf="boxPanels.length > 0">
+                      <div class="legend-row">
+                        <div class="legend-item">
+                          <div class="legend-color mep-panel-status-not-started"></div>
+                          <span>Not Started (Gray)</span>
+                        </div>
+                        <div class="legend-item">
+                          <div class="legend-color mep-panel-status-completed"></div>
+                          <span>Completed (Green)</span>
+                        </div>
+                      </div>
                     </div>
-                    <h3 class="pod-card-title">Pod Delivery</h3>
+                  </div>
+                </div>
+                
+                <div class="delivery-grid mep-grid">
+                  <!-- Dynamic Panels -->
+                  <div class="delivery-item panel-item" 
+                       *ngFor="let panel of boxPanels"
+                       [class.mep-panel-status-not-started]="!panel.mepInsertsInstallationComplete"
+                       [class.mep-panel-status-completed]="panel.mepInsertsInstallationComplete">
+                    <div class="panel-status-controls">
+                      <div class="panel-name-section">
+                        <span class="panel-name">{{ panel.panelName }} </span>
+                      </div>
+                    </div>
                   </div>
                   
-                  <!-- Toggle Switch -->
-                  <label class="pod-toggle" [class.active]="podDeliverChecked" [class.disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed">
-                    <input 
-                      type="checkbox" 
-                      [(ngModel)]="podDeliverChecked"
-                      (change)="togglePodDeliver($event)"
-                      [disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed">
-                    <span class="toggle-track">
-                      <span class="toggle-thumb"></span>
-                    </span>
-                    <span class="toggle-label">{{ podDeliverChecked ? 'Enabled' : 'Disabled' }}</span>
-                  </label>
-                </div>
-
-                <!-- Pod Form Content (collapsible when disabled) -->
-                <div class="pod-form-content" >
-                  <div class="pod-form-grid">
-                    <!-- Pod Type Field -->
-                    <div class="pod-field">
-                      <label class="pod-field-label">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <rect x="3" y="3" width="7" height="7"/>
-                          <rect x="14" y="3" width="7" height="7"/>
-                          <rect x="14" y="14" width="7" height="7"/>
-                          <rect x="3" y="14" width="7" height="7"/>
-                        </svg>
-                        Pod Type
-                      </label>
-                      <div class="pod-input-wrapper">
-                        <input 
-                          type="text" 
-                          id="podType"
-                          [(ngModel)]="podType"
-                          (ngModelChange)="onPodDataChange()"
-                          [disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed || !podDeliverChecked"
-                          class="pod-input"
-                          placeholder="e.g., Bathroom, Kitchen">
-                      </div>
-                    </div>
-
-                    <!-- Pod Name Field -->
-                    <div class="pod-field">
-                      <label class="pod-field-label">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-                          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
-                        </svg>
-                        Pod Name
-                      </label>
-                      <div class="pod-input-wrapper">
-                        <input 
-                          type="text" 
-                          id="podName"
-                          [(ngModel)]="podName"
-                          (ngModelChange)="onPodDataChange()"
-                          [disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed || !podDeliverChecked"
-                          class="pod-input"
-                          placeholder="e.g., POD-A1, POD-B2">
-                      </div>
-                    </div>
+                  <!-- Empty state -->
+                  <div class="delivery-item empty-state" *ngIf="boxPanels.length === 0">
+                    <span class="empty-message">No panels configured for this box</span>
                   </div>
-                </div>
-
-                <!-- Save Action (outside collapsible area - always visible when there are changes) -->
-                <div class="pod-save-area" [class.visible]="hasPodDeliveryChanges">
-                  <button 
-                    type="button"
-                    class="pod-save-btn"
-                    [disabled]="!canEdit || isProjectArchived || isProjectOnHold || isProjectClosed || !hasPodDeliveryChanges || updatingDeliveryInfo"
-                    (click)="savePodDeliveryInfo()">
-                    <span class="btn-content" *ngIf="!updatingDeliveryInfo">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <polyline points="20 6 9 17 4 12"/>
-                      </svg>
-                      Save Changes
-                    </span>
-                    <span class="btn-content" *ngIf="updatingDeliveryInfo">
-                      <svg class="spinner" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                      </svg>
-                      Saving...
-                    </span>
-                  </button>
                 </div>
               </div>
             </div>
@@ -1179,8 +1212,8 @@
           <div class="quality-card-header">
             <div class="quality-header-content">
               <div class="quality-title-section">
-                <h2 class="card-title">Quality Issues</h2>
-                <p class="card-subtitle">List of every quality issue logged for this box.</p>
+                <h2 class="card-title"> Issues</h2>
+                <p class="card-subtitle">List of every  issue logged for this box.</p>
               </div>
               <div class="quality-card-actions">
                 <span class="quality-count-badge" *ngIf="!qualityIssuesLoading && !qualityIssuesError">
@@ -1237,7 +1270,7 @@
           <div class="quality-card-body">
             <div class="quality-loading-state" *ngIf="qualityIssuesLoading">
               <div class="spinner small"></div>
-              <p>Loading quality issues...</p>
+              <p>Loading  issues...</p>
             </div>
 
             <div class="quality-error-state" *ngIf="!qualityIssuesLoading && qualityIssuesError">
@@ -1252,15 +1285,15 @@
                   <path d="m9 12 2 2 4-4"/>
                 </svg>
               </div>
-              <h3 class="empty-state-title">No Quality Issues Logged</h3>
-              <p class="empty-state-description">This box has a clean record with no quality issues reported. Quality issues will appear here once they are created and logged.</p>
+              <h3 class="empty-state-title">No  Issues Logged</h3>
+              <p class="empty-state-description">This box has a clean record with no  issues reported. Issues will appear here once they are created and logged.</p>
               <div class="empty-state-action" *ngIf="canCreateQualityIssue">
                 <button class="create-issue-btn" (click)="openCreateQualityIssueModal()">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="5" x2="12" y2="19"/>
                     <line x1="5" y1="12" x2="19" y2="12"/>
                   </svg>
-                  <span>Create Quality Issue</span>
+                  <span>Create Issue</span>
                 </button>
               </div>
               <div class="empty-state-hint" *ngIf="!canCreateQualityIssue">
@@ -1269,7 +1302,7 @@
                   <path d="M12 16v-4"/>
                   <path d="M12 8h.01"/>
                 </svg>
-                <span>Quality issues can be created by authorized team members</span>
+                <span>Issues can be created by authorized team members</span>
               </div>
             </div>
 
@@ -1293,7 +1326,10 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let issue of qualityIssues; let i = index" class="quality-issue-row">
+                  <tr *ngFor="let issue of qualityIssues; let i = index" 
+                      class="quality-issue-row" 
+                      [class.highlighted]="isIssueHighlighted(issue.issueId)"
+                      [id]="'issue-' + issue.issueId">
                     <td class="text-center seq-cell">
                       <span class="seq-number">{{ i + 1 }}</span>
                     </td>
@@ -1306,7 +1342,9 @@
                       </span>
                     </td>
                     <td class="issue-type-cell">
-                      <span class="issue-type-badge">{{ issue.issueType || '—' }}</span>
+                      <span class="issue-type-badge" [class.exchange-request]="isExchangeRequest(issue)">
+                        {{ formatIssueType(issue.issueType) }}
+                      </span>
                     </td>
                     <td class="severity-cell">
                       <span class="severity-badge" [ngClass]="'severity-' + (issue.severity ? issue.severity.toLowerCase() : 'none')">
@@ -1361,7 +1399,7 @@
                           title="Assign to Team" 
                           aria-label="Assign to Team"
                           (click)="openAssignModal(issue); $event.stopPropagation()"
-                          *ngIf="canUpdateQualityIssueStatus"
+                          *ngIf="canUpdateQualityIssueStatus && !issue.isReadOnly"
                           type="button"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1376,7 +1414,7 @@
                           title="Update status" 
                           aria-label="Update status"
                           (click)="openStatusModal(issue)"
-                          *ngIf="canUpdateQualityIssueStatus"
+                          *ngIf="canUpdateQualityIssueStatus && !issue.isReadOnly"
                           type="button"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1384,6 +1422,17 @@
                             <path d="M14.06 4.94l3.75 3.75"/>
                           </svg>
                         </button>
+                        <!-- Read-Only Indicator -->
+                        <span 
+                          class="readonly-badge" 
+                          *ngIf="issue.isReadOnly"
+                          title="This issue is read-only and will be automatically updated"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                          </svg>
+                        </span>
                       </div>
                     </td>
                   </tr>
@@ -1398,7 +1447,7 @@
           <div class="modal-header">
             <div>
               <h3>Update Issue Status</h3>
-              <p class="modal-subtitle">{{ selectedIssueForStatus?.issueType }} • {{ selectedIssueForStatus?.severity }}</p>
+              <p class="modal-subtitle">{{ formatIssueType(selectedIssueForStatus?.issueType) }} • {{ selectedIssueForStatus?.severity }}</p>
             </div>
             <button class="icon-button" (click)="closeStatusModal()" [disabled]="statusUpdateLoading">
               &times;
@@ -1645,6 +1694,7 @@
           [isOpen]="isDetailsModalOpen"
           [commentId]="selectedCommentId"
           (close)="closeIssueDetails()"
+          (statusUpdated)="onQualityIssueStatusUpdated()"
         ></app-quality-issue-details-modal>
         </div>
 
@@ -1655,7 +1705,7 @@
               <div>
                 <h3>Discussion & Comments</h3>
                 <p class="modal-subtitle" *ngIf="selectedIssueForComments">
-                  {{ selectedIssueForComments.issueType }} • {{ selectedIssueForComments.severity }} • 
+                  {{ formatIssueType(selectedIssueForComments.issueType) }} • {{ selectedIssueForComments.severity }} • 
                   Issue #{{ selectedIssueForComments.issueNumber }}
                 </p>
               </div>
@@ -1687,7 +1737,7 @@
           <div class="status-modal create-quality-issue-modal">
             <div class="modal-header">
               <div>
-                <h3>Create Quality Issue</h3>
+                <h3>Create Issue</h3>
                 <p class="modal-subtitle">{{ box && (box.name || box.code) }}</p>
               </div>
               <button class="icon-button" (click)="closeCreateQualityIssueModal()" [disabled]="createQualityIssueLoading">
@@ -1711,7 +1761,7 @@
               <label class="modal-label" for="createIssueType">Issue Type <span class="required">*</span></label>
               <select id="createIssueType" class="modal-input" [(ngModel)]="newQualityIssueForm.issueType" name="createIssueType">
                 <option *ngFor="let type of issueTypes" [value]="type">
-                  {{ type === 'NonConformance' ? 'Non-Conformance' : type }}
+                  {{ formatIssueType(type) }}
                 </option>
               </select>
 
@@ -2735,13 +2785,370 @@
           ></app-progress-updates-table>
         </div>
 
+        <!-- Materials Tab -->
+        <div *ngIf="activeTab === 'materials'" class="materials-tab">
+          <!-- Material Management Hint -->
+          <div class="material-hint-banner">
+            <div class="hint-content">
+              <div class="hint-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M12 16v-4"></path>
+                  <path d="M12 8h.01"></path>
+                </svg>
+              </div>
+              <div class="hint-text">
+                <h4>Need to Manage Material Deliveries?</h4>
+                <p>To track and manage material deliveries, mark items as delivered, and monitor material readiness status across all boxes, visit the <strong>Box Type Materials Management</strong> page.</p>
+              </div>
+            </div>
+            <button class="btn-navigate-materials" (click)="navigateToProjectMaterials()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+              Go to Materials Management
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </button>
+          </div>
+
+          <app-box-material-checklist 
+            [boxId]="boxId">
+          </app-box-material-checklist>
+        </div>
+
+        <!-- Exchanges Tab -->
+        <div *ngIf="activeTab === 'exchanges'" class="exchanges-tab">
+          <div class="exchanges-container">
+            <!-- Request New Exchange Form -->
+            <div class="exchange-request-form">
+              <h3>Request Box Exchange</h3>
+              <p class="form-description">Select new building or floor to exchange this box with another</p>
+
+              <!-- Current Values -->
+              <div class="current-values-section">
+                <h4>Current Values</h4>
+                <div class="values-grid">
+                  <div class="value-item">
+                    <label>Building</label>
+                    <div class="current-value">{{ box?.buildingNumber || 'Not assigned' }}</div>
+                  </div>
+                  <div class="value-item">
+                    <label>Level/Floor</label>
+                    <div class="current-value">{{ box?.floor || 'Not assigned' }}</div>
+                  </div>
+                  <div class="value-item">
+                    <label>Box Tag</label>
+                    <div class="current-value">{{ box?.code || 'Not assigned' }}</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Exchange Form -->
+              <div class="form-section">
+                <h4>Request New Values</h4>
+                <div class="form-inputs-row">
+                  <div class="form-group">
+                    <label for="newBuilding">New Building</label>
+                    <select 
+                      id="newBuilding" 
+                      class="form-control"
+                      [(ngModel)]="exchangeForm.newBuildingNumber"
+                      (change)="onExchangeFormChange()"
+                    >
+                      <option [ngValue]="null">-- Keep Current --</option>
+                      <option *ngFor="let building of projectBuildings" [ngValue]="building.buildingCode">
+                        {{ building.buildingName || building.buildingCode }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="newFloor">New Level/Floor</label>
+                    <select 
+                      id="newFloor" 
+                      class="form-control"
+                      [(ngModel)]="exchangeForm.newFloor"
+                      (change)="onExchangeFormChange()"
+                    >
+                      <option [ngValue]="null">-- Keep Current --</option>
+                      <option *ngFor="let level of projectLevels" [ngValue]="level.levelCode">
+                        {{ level.levelName || level.levelCode }}
+                      </option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <div class="form-group-button">
+                      <button 
+                        class="btn btn-view-boxes" 
+                        (click)="loadBoxesForExchange()"
+                        [disabled]="!hasExchangeChanges() || loadingBoxesForExchange"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <circle cx="11" cy="11" r="8"/>
+                          <path d="m21 21-4.35-4.35"/>
+                        </svg>
+                        {{ loadingBoxesForExchange ? 'Loading...' : 'View Boxes' }}
+                      </button>
+                    </div>
+                    </div>
+                 
+                </div>
+
+                <!-- Loading Boxes State -->
+                <div class="loading-boxes" *ngIf="loadingBoxesForExchange">
+                  <div class="spinner"></div>
+                  <span>Loading available boxes...</span>
+                </div>
+
+                <!-- No Boxes Found Alert -->
+                <div class="alert alert-warning" *ngIf="noBoxesFoundForExchange && !loadingBoxesForExchange">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                    <line x1="12" y1="9" x2="12" y2="13"/>
+                    <line x1="12" y1="17" x2="12.01" y2="17"/>
+                  </svg>
+                  <div>
+                    <strong>No Eligible Boxes Found</strong>
+                    <p>{{ boxesForExchangeError || 'No boxes with the same box type found in the selected building and floor.' }}</p>
+                    <p>You cannot proceed with this exchange. Please select a different building or floor.</p>
+                  </div>
+                </div>
+
+                <!-- Available Boxes Grid -->
+                <div class="boxes-selection-section" *ngIf="!loadingBoxesForExchange && !noBoxesFoundForExchange && availableBoxesForExchange.length > 0">
+                  <h5>Select Box to Exchange With <span class="required">*</span></h5>
+                  <p class="help-text">Choose a box from the selected location that has the same box type</p>
+                  
+                  <div class="boxes-grid">
+                    <div 
+                      class="box-card" 
+                      *ngFor="let availableBox of availableBoxesForExchange"
+                      [class.selected]="exchangeForm.targetBoxId === availableBox.id"
+                      (click)="exchangeForm.targetBoxId = availableBox.id"
+                    >
+                      <div class="box-card-header">
+                        <input 
+                          type="radio" 
+                          [value]="availableBox.id" 
+                          [(ngModel)]="exchangeForm.targetBoxId" 
+                          [id]="'box-' + availableBox.id"
+                          name="targetBox"
+                        />
+                        <label [for]="'box-' + availableBox.id" class="box-tag">{{ availableBox.code }}</label>
+                      </div>
+                      <div class="box-card-body">
+                        <div class="box-detail" *ngIf="availableBox.name">
+                          <span class="label">Name:</span>
+                          <span class="value">{{ availableBox.name }}</span>
+                        </div>
+                        <div class="box-detail">
+                          <span class="label">Building:</span>
+                          <span class="value">{{ availableBox.buildingNumber || 'N/A' }}</span>
+                        </div>
+                        <div class="box-detail">
+                          <span class="label">Floor:</span>
+                          <span class="value">{{ availableBox.floor || 'N/A' }}</span>
+                        </div>
+                        <div class="box-detail" *ngIf="availableBox.zone">
+                          <span class="label">Zone:</span>
+                          <span class="value">{{ availableBox.zone }}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Reason for Exchange -->
+                <div class="form-group" *ngIf="availableBoxesForExchange.length > 0 && exchangeForm.targetBoxId">
+                  <label for="requestReason">Reason for Change <span class="required">*</span></label>
+                  <textarea 
+                    id="requestReason"
+                    class="form-control"
+                    rows="3"
+                    placeholder="Please explain why this exchange is needed..."
+                    [(ngModel)]="exchangeForm.requestReason"
+                  ></textarea>
+                </div>
+
+                <!-- Success/Error Messages -->
+                <div class="alert alert-success" *ngIf="exchangeSuccess">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  {{ exchangeSuccess }}
+                </div>
+
+                <div class="alert alert-danger" *ngIf="exchangeError">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  {{ exchangeError }}
+                </div>
+
+                <!-- Submit Button -->
+                <div class="form-actions">
+                  <button 
+                    class="btn btn-primary" 
+                    (click)="submitExchangeRequest()"
+                    [disabled]="!canSubmitExchange() || exchangeLoading"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    {{ exchangeLoading ? 'Submitting...' : 'Submit Exchange Request' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Exchange History Section -->
+            <div class="exchanges-header">
+              <div class="header-content">
+                <h3>Exchange History</h3>
+                <p class="exchange-description">View previous building or level assignment changes for this box</p>
+              </div>
+            </div>
+
+            <!-- Loading State -->
+            <div class="loading-state" *ngIf="exchangeHistoryLoading">
+              <div class="spinner"></div>
+              <p>Loading exchange history...</p>
+            </div>
+
+            <!-- Error State -->
+            <div class="error-state" *ngIf="exchangeHistoryError && !exchangeHistoryLoading">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <h4>Error Loading Exchange History</h4>
+              <p>{{ exchangeHistoryError }}</p>
+              <button class="btn btn-primary" (click)="loadExchangeHistory()">Retry</button>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" *ngIf="!exchangeHistoryLoading && !exchangeHistoryError && exchangeHistory.length === 0">
+              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                <line x1="12" y1="22.08" x2="12" y2="12"/>
+              </svg>
+              <h4>No Exchange Requests</h4>
+              <p>No exchange requests have been made for this box yet. Use the form above to create your first exchange request.</p>
+            </div>
+
+            <!-- Exchange History List -->
+            <div class="exchange-history-list" *ngIf="!exchangeHistoryLoading && !exchangeHistoryError && exchangeHistory.length > 0">
+              <div class="exchange-card" *ngFor="let exchange of exchangeHistory" [class]="'status-' + getExchangeStatusClass(exchange.status)">
+                <div class="exchange-card-header">
+                  <div class="exchange-status">
+                    <span class="status-badge" [class]="'status-' + getExchangeStatusClass(exchange.status)">
+                      {{ getExchangeStatusLabel(exchange.status) }}
+                    </span>
+                    <span class="exchange-date">{{ formatDate(exchange.requestedDate) }}</span>
+                  </div>
+                  <div class="exchange-navigators">
+                    <div class="exchange-issue" *ngIf="exchange.issueNumber">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="16" x2="12" y2="12"/>
+                        <line x1="12" y1="8" x2="12.01" y2="8"/>
+                      </svg>
+                      <span class="issue-number-link" (click)="navigateToQualityIssueFromExchange(exchange.qualityIssueId); $event.stopPropagation()" title="Click to view quality issue">
+                        Issue #{{ exchange.issueNumber }}
+                      </span>
+                    </div>
+                    <div class="exchange-target-box" *ngIf="exchange.exchangedWithBoxId && exchange.exchangedWithBoxTag">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                        <polyline points="7.5 4.21 12 6.81 16.5 4.21"/>
+                        <polyline points="7.5 19.79 7.5 14.6 3 12"/>
+                        <polyline points="21 12 16.5 14.6 16.5 19.79"/>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                        <line x1="12" y1="22.08" x2="12" y2="12"/>
+                      </svg>
+                      <span class="box-tag-link" (click)="navigateToBox(exchange.exchangedWithBoxId, exchange.exchangedWithBoxProjectId); $event.stopPropagation()" [title]="'Navigate to switched box: ' + exchange.exchangedWithBoxTag">
+                        {{ exchange.exchangedWithBoxTag }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="exchange-changes">
+                  <div class="change-item" *ngIf="exchange.newBuildingNumber">
+                    <div class="change-label">Building</div>
+                    <div class="change-values">
+                      <span class="old-value">{{ exchange.oldBuildingNumber || 'None' }}</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                      <span class="new-value">{{ exchange.newBuildingNumber }}</span>
+                    </div>
+                  </div>
+                  <div class="change-item" *ngIf="exchange.newFloor">
+                    <div class="change-label">Level/Floor</div>
+                    <div class="change-values">
+                      <span class="old-value">{{ exchange.oldFloor || 'None' }}</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                      <span class="new-value">{{ exchange.newFloor }}</span>
+                    </div>
+                  </div>
+                  <div class="change-item" *ngIf="exchange.newBoxTag">
+                    <div class="change-label">Box Tag</div>
+                    <div class="change-values">
+                      <span class="old-value">{{ exchange.oldBoxTag || 'None' }}</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                      </svg>
+                      <span class="new-value">{{ exchange.newBoxTag }}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="exchange-reason" *ngIf="exchange.requestReason">
+                  <div class="reason-label">Reason:</div>
+                  <div class="reason-text">{{ exchange.requestReason }}</div>
+                </div>
+
+                <div class="exchange-footer">
+                  <div class="requested-by">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                      <circle cx="12" cy="7" r="4"/>
+                    </svg>
+                    Requested by {{ exchange.requestedByName }}
+                  </div>
+                  <div class="approved-by" *ngIf="exchange.approvedByName">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                    Applied by {{ exchange.appliedByName }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Panel Approvals Tab -->
         <div *ngIf="activeTab === 'panels'" class="panels-tab">
           <app-box-panels 
             [boxId]="boxId"
             [projectId]="projectId"
             [panels]="boxPanels"
-            (refreshRequested)="loadBox()">
+            (refreshRequested)="loadBox()"
+            (navigateToIssue)="handleNavigateToIssue($event)">
           </app-box-panels>
         </div>
 
@@ -2983,7 +3390,7 @@
                     <line x1="12" y1="8" x2="12" y2="12"/>
                     <line x1="12" y1="16" x2="12.01" y2="16"/>
                   </svg>
-                  Quality Issue Images
+                   Issue Images
                 </h3>
                 <span class="section-count">{{ boxAttachments.qualityIssueImages.length }} image(s)</span>
               </div>
@@ -3493,4 +3900,237 @@
   (closed)="closeUploadDrawingModal()"
   (uploaded)="onDrawingUploaded()"
 ></app-upload-drawing-modal>
+
+<!-- Factory Layout Modal -->
+<div class="factory-layout-modal-overlay" *ngIf="showFactoryLayoutModal" (click)="closeFactoryLayoutModal()">
+  <div class="factory-layout-modal" (click)="$event.stopPropagation()">
+    <!-- Modal Header -->
+    <div class="factory-modal-header">
+      <div class="factory-modal-title-section">
+        <h2 class="factory-modal-title">Factory Layout</h2>
+        <p class="factory-modal-subtitle" *ngIf="factory">{{ factory.factoryName || factory.factoryCode }}</p>
+      </div>
+      <button class="factory-modal-close" (click)="closeFactoryLayoutModal()" title="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="factory-modal-body">
+      <!-- Current Box Info -->
+      <div class="current-box-info" *ngIf="box">
+        <div class="current-box-badge">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+            <line x1="12" y1="22.08" x2="12" y2="12"/>
+          </svg>
+          <span>Current Box: <strong>{{ box.code }}</strong></span>
+        </div>
+        <div class="current-box-location" *ngIf="box.bay || box.row">
+          <span>Location: Bay <strong>{{ box.bay }}</strong>, Row <strong>{{ box.row }}</strong></span>
+        </div>
+      </div>
+
+      <!-- Loading Indicator -->
+      <div *ngIf="isLoadingModalLayout" class="factory-layout-loading">
+        <div class="spinner"></div>
+        <p>Loading factory layout...</p>
+      </div>
+
+      <!-- Factory Layout Grid -->
+      <div class="factory-layout-content" *ngIf="!isLoadingModalLayout && modalLayoutConfig">
+        <div class="factory-layout-two-column-modal blueprint-style-modal">
+
+          <!-- Sections Grid Container (bay letters are embedded per-section) -->
+          <div class="sections-grid-container-modal">
+            
+            <!-- TOP ROW: First two sections by DisplayOrder -->
+            <div class="section-row-container-modal top-row">
+              <!-- Left Section -->
+              <ng-container *ngIf="getModalLayoutConfiguration().leftColumn.sections.length > 0">
+                <ng-container *ngTemplateOutlet="sectionTemplateModal; context: {$implicit: getModalLayoutConfiguration().leftColumn.sections[0], type: getModalLayoutConfiguration().leftColumn.sections[0].section.sectionType === 1 ? 'assembly' : 'finishing', position: 'top'}"></ng-container>
+              </ng-container>
+              
+              <!-- Vertical Central Aisle -->
+              <div class="central-aisle-vertical-modal">
+                <span class="aisle-label-vertical-modal">CENTRAL AISLE</span>
+              </div>
+              
+              <!-- Right Section -->
+              <ng-container *ngIf="getModalLayoutConfiguration().rightColumn.sections.length > 0">
+                <ng-container *ngTemplateOutlet="sectionTemplateModal; context: {$implicit: getModalLayoutConfiguration().rightColumn.sections[0], type: getModalLayoutConfiguration().rightColumn.sections[0].section.sectionType === 1 ? 'assembly' : 'finishing', position: 'top'}"></ng-container>
+              </ng-container>
+            </div>
+            
+            <!-- CENTRAL AISLE (if both columns have 2 sections) -->
+            <div class="central-aisle-horizontal-modal" *ngIf="getModalLayoutConfiguration().leftColumn.sections.length > 1 || getModalLayoutConfiguration().rightColumn.sections.length > 1">
+              <span class="aisle-label-modal">CENTRAL AISLE</span>
+            </div>
+            
+            <!-- BOTTOM ROW: Next two sections by DisplayOrder -->
+            <div class="section-row-container-modal bottom-row">
+              <!-- Left Section -->
+              <ng-container *ngIf="getModalLayoutConfiguration().leftColumn.sections.length > 1">
+                <ng-container *ngTemplateOutlet="sectionTemplateModal; context: {$implicit: getModalLayoutConfiguration().leftColumn.sections[1], type: getModalLayoutConfiguration().leftColumn.sections[1].section.sectionType === 1 ? 'assembly' : 'finishing', position: 'bottom'}"></ng-container>
+              </ng-container>
+              
+              <!-- Vertical Central Aisle -->
+              <div class="central-aisle-vertical-modal">
+                <span class="aisle-label-vertical-modal">CENTRAL AISLE</span>
+              </div>
+              
+              <!-- Right Section -->
+              <ng-container *ngIf="getModalLayoutConfiguration().rightColumn.sections.length > 1">
+                <ng-container *ngTemplateOutlet="sectionTemplateModal; context: {$implicit: getModalLayoutConfiguration().rightColumn.sections[1], type: getModalLayoutConfiguration().rightColumn.sections[1].section.sectionType === 1 ? 'assembly' : 'finishing', position: 'bottom'}"></ng-container>
+              </ng-container>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section Template for reuse -->
+        <ng-template #sectionTemplateModal let-sectionData let-type="type" let-position="position">
+          <div class="section-grid-modal" [class.finishing-section-modal]="type === 'finishing'" [class.assembly-section-modal]="type === 'assembly'">
+            
+            <!-- Unified Row Axis Top (only for top sections) -->
+            <div class="row-axis-top-modal" *ngIf="position === 'top' && sectionData.parts && sectionData.parts.length > 0 && sectionData.parts[0]">
+              <div class="row-number-modal" *ngFor="let column of sectionData.parts[0].grid.columns" [class.frozen-col-header]="isModalSectionColumnFrozen(sectionData.parts, column)">{{ column }}</div>
+            </div>
+            
+            <!-- Section Parts Container (VERTICALLY STACKED PARTS) -->
+            <div class="section-parts-container-stacked-modal">
+              <ng-container *ngIf="sectionData.parts && sectionData.parts.length > 0">
+                <!-- Render each part vertically stacked with horizontal red dividers -->
+                <ng-container *ngFor="let partData of sectionData.parts; let partIdx = index">
+                  <div class="part-container-stacked-modal" [attr.data-part]="partData.partNumber">
+                    <!-- Dual Part Labels Container -->
+                    <div class="part-labels-dual-container-modal">
+                      <!-- Bay Letters Column — LEFT side (Finishing sections) -->
+                      <div class="part-bay-axis-modal part-bay-axis-left-modal" *ngIf="type === 'finishing'">
+                        <div class="part-bay-cell-modal" *ngFor="let bay of partData.grid.rows">{{ bay }}</div>
+                      </div>
+
+                      <!-- Part Name Label — LEFT side (Finishing sections) -->
+                      <div class="part-label-dual-modal part-label-left-modal" *ngIf="type === 'finishing'">
+                        <span>{{ partData.partName }}</span>
+                      </div>
+                      
+                      <!-- Part Grid with its specific bay range and row range -->
+                      <div class="part-grid-matrix-stacked-modal">
+                        <div class="part-row-stacked-modal" *ngFor="let rowCells of partData.grid.matrix">
+                          <div class="matrix-cell-blueprint-modal"
+                               *ngFor="let cell of rowCells"
+                               [class.has-box]="cell.box && !isModalRowFrozen(cell.partId, cell.row)"
+                               [class.empty]="!cell.box && !cell.hidden && !isModalRowFrozen(cell.partId, cell.row)"
+                               [class.hidden]="cell.hidden"
+                               [class.frozen]="isModalRowFrozen(cell.partId, cell.row)"
+                               [class.current-box-cell]="cell.isCurrentBox && !isModalRowFrozen(cell.partId, cell.row)"
+                               [ngClass]="cell.box && !isModalRowFrozen(cell.partId, cell.row) ? getBoxColorClass(cell.box) : ''"
+                               [title]="getModalCellTooltip(cell)"
+                               [attr.data-frozen]="isModalRowFrozen(cell.partId, cell.row) ? 'true' : null">
+                            
+                            <div class="location-code-blueprint-modal" *ngIf="cell.box">{{ cell.box.code }}</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Part Name Label — RIGHT side (Assembly sections) -->
+                      <div class="part-label-dual-modal part-label-right-modal" *ngIf="type === 'assembly'">
+                        <span>{{ partData.partName }}</span>
+                      </div>
+
+                      <!-- Bay Letters Column — RIGHT side (Assembly sections) -->
+                      <div class="part-bay-axis-modal part-bay-axis-right-modal" *ngIf="type === 'assembly'">
+                        <div class="part-bay-cell-modal" *ngFor="let bay of partData.grid.rows">{{ bay }}</div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Red Horizontal Divider between parts (vertically stacked) -->
+                  <div class="part-divider-stacked-modal" *ngIf="partIdx < sectionData.parts.length - 1"></div>
+                </ng-container>
+              </ng-container>
+              
+              <!-- Fallback if no parts: show full section grid -->
+              <ng-container *ngIf="!sectionData.parts || sectionData.parts.length === 0">
+                <div class="section-full-grid-stacked-modal">
+                  <div class="section-row-stacked-modal" *ngFor="let rowCells of sectionData.grid.matrix">
+                    <div class="matrix-cell-blueprint-modal"
+                         *ngFor="let cell of rowCells"
+                         [class.has-box]="cell.box && !isModalRowFrozen(cell.partId, cell.row)"
+                         [class.empty]="!cell.box && !cell.hidden && !isModalRowFrozen(cell.partId, cell.row)"
+                         [class.hidden]="cell.hidden"
+                         [class.frozen]="isModalRowFrozen(cell.partId, cell.row)"
+                         [class.current-box-cell]="cell.isCurrentBox && !isModalRowFrozen(cell.partId, cell.row)"
+                         [ngClass]="cell.box && !isModalRowFrozen(cell.partId, cell.row) ? getBoxColorClass(cell.box) : ''"
+                         [title]="getModalCellTooltip(cell)"
+                         [attr.data-frozen]="isModalRowFrozen(cell.partId, cell.row) ? 'true' : null">
+                      
+                      <div class="location-code-blueprint-modal" *ngIf="cell.box">{{ cell.box.code }}</div>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+            </div>
+            
+            <!-- Unified Row Axis Bottom (only for bottom sections) -->
+            <div class="row-axis-bottom-modal" *ngIf="position === 'bottom' && sectionData.parts && sectionData.parts.length > 0 && sectionData.parts[0]">
+              <div class="row-number-modal" *ngFor="let column of sectionData.parts[0].grid.columns" [class.frozen-col-header]="isModalSectionColumnFrozen(sectionData.parts, column)">{{ column }}</div>
+            </div>
+            
+            <!-- Fallback Row Axes for sections without parts -->
+            <ng-container *ngIf="position === 'bottom' && (!sectionData.parts || sectionData.parts.length === 0)">
+              <div class="row-axis-bottom-modal">
+                <div class="row-number-modal" *ngFor="let column of sectionData.grid.columns">{{ column }}</div>
+              </div>
+            </ng-container>
+          </div>
+        </ng-template>
+
+        <!-- Business Flow Indicators Legend -->
+        <div class="factory-modal-legend">
+          <div class="legend-item-modal">
+            <div class="legend-dot-modal wir-stage-1"></div>
+            <span>Assembly Clearance</span>
+          </div>
+          <div class="legend-item-modal">
+            <div class="legend-dot-modal wir-stage-2"></div>
+            <span>Mechanical Clearance</span>
+          </div>
+          <div class="legend-item-modal">
+            <div class="legend-dot-modal wir-stage-3"></div>
+            <span>Stage 2</span>
+          </div>
+          <div class="legend-item-modal">
+            <div class="legend-dot-modal wir-stage-4"></div>
+            <span>Electrical Clearance</span>
+          </div>
+          <div class="legend-item-modal">
+            <div class="legend-dot-modal wir-stage-5"></div>
+            <span>2nd Fix Installation</span>
+          </div>
+          <div class="legend-item-modal">
+            <div class="legend-dot-modal wir-stage-6"></div>
+            <span>3rd Fix Installation</span>
+          </div>
+          <div class="legend-item-modal">
+            <div class="legend-dot-modal wir-completed"></div>
+            <span>Completed</span>
+          </div>
+          <div class="legend-item-modal">
+            <div class="legend-dot-modal legend-empty"></div>
+            <span>Empty</span>
+          </div>
+          <div class="legend-item-modal">
+            <div class="legend-dot-modal legend-current"></div>
+            <span>Current Box</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 

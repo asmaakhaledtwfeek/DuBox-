@@ -94,6 +94,10 @@
 
 .factory-layout-container {
   animation: fadeIn 0.4s ease-out;
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 @keyframes fadeIn {
@@ -115,17 +119,22 @@
   border: 1px solid #e2e8f0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   padding: 20px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 
   @media (max-width: 768px) {
     padding: 16px;
     margin-bottom: 16px;
+    gap: 12px;
   }
 }
 
-.filters-container {
+// First Row: Filters + Action Buttons
+.filters-and-actions-container {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 12px;
   flex-wrap: wrap;
 
   @media (max-width: 768px) {
@@ -133,17 +142,40 @@
     align-items: stretch;
     gap: 12px;
   }
+  
+  // Push action buttons to the right
+  .btn-view-walls {
+    margin-left: auto;
+    
+    @media (max-width: 768px) {
+      margin-left: 0;
+    }
+  }
+}
+
+// Second Row: Clear Filters Button Only
+.clear-filters-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 8px;
+  border-top: 1px solid #f1f5f9;
+
+  @media (max-width: 768px) {
+    padding-top: 6px;
+  }
 }
 
 .filter-group {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 
   @media (max-width: 768px) {
     flex-direction: column;
     align-items: flex-start;
     gap: 6px;
+    width: 100%;
   }
 
   .filter-label {
@@ -161,7 +193,7 @@
   }
 
   .filter-select {
-    min-width: 200px;
+    min-width: 180px;
     padding: 10px 14px;
     border: 1.5px solid #e2e8f0;
     border-radius: 8px;
@@ -223,6 +255,36 @@
         font-weight: 600;
       }
 
+      option[data-color-class="wir-stage-7"] {
+        color: #ec4899; // Pink
+        font-weight: 600;
+      }
+
+      option[data-color-class="wir-stage-8"] {
+        color: #3b82f6; // Blue
+        font-weight: 600;
+      }
+
+      option[data-color-class="wir-stage-9"] {
+        color: #f43f5e; // Rose
+        font-weight: 600;
+      }
+
+      option[data-color-class="wir-stage-10"] {
+        color: #a855f7; // Purple
+        font-weight: 600;
+      }
+
+      option[data-color-class="wir-stage-11"] {
+        color: #eab308; // Amber
+        font-weight: 600;
+      }
+
+      option[data-color-class="wir-stage-12"] {
+        color: #14b8a6; // Teal
+        font-weight: 600;
+      }
+
       option[data-color-class="wir-completed"] {
         color: #059669;
         font-weight: 600;
@@ -244,10 +306,9 @@
   color: #64748b;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-left: auto;
+  white-space: nowrap;
 
   @media (max-width: 768px) {
-    margin-left: 0;
     width: 100%;
     justify-content: center;
   }
@@ -262,48 +323,48 @@
     border-color: #ef4444;
     color: white;
     transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
   }
 }
 
-// View Walls Status Button - now in filters section
-.filters-container {
-  .btn-view-walls {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 18px;
-    background: var(--amana-teal);
-    border: none;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: white;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-    margin-left: auto;
+// View Walls Status Button - now in action buttons container
+.btn-view-walls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  background: var(--amana-teal);
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
 
-    @media (max-width: 768px) {
-      width: 100%;
-      margin-left: 0;
-      margin-top: 8px;
-      justify-content: center;
-    }
+  @media (max-width: 768px) {
+    width: 100%;
+    justify-content: center;
+  }
 
-    svg {
-      width: 16px;
-      height: 16px;
-    }
+  svg {
+    width: 16px;
+    height: 16px;
+  }
 
-    &:hover {
-      background: #16858f;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(27, 154, 170, 0.3);
-    }
+  &:hover {
+    background: #16858f;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(27, 154, 170, 0.3);
+  }
 
-    &:active {
-      transform: translateY(0);
-    }
+  &:active {
+    transform: translateY(0);
   }
 }
 
@@ -684,6 +745,25 @@
         &.wir-stage-6 {
           background: linear-gradient(145deg, #a78bfa 0%, #5e60ce 100%);
         }
+        // Additional stages for dynamic detection (WIR-7 onwards)
+        &.wir-stage-7 {
+          background: linear-gradient(145deg, #f472b6 0%, #ec4899 100%); // Pink
+        }
+        &.wir-stage-8 {
+          background: linear-gradient(145deg, #60a5fa 0%, #3b82f6 100%); // Blue
+        }
+        &.wir-stage-9 {
+          background: linear-gradient(145deg, #fb7185 0%, #f43f5e 100%); // Rose
+        }
+        &.wir-stage-10 {
+          background: linear-gradient(145deg, #c084fc 0%, #a855f7 100%); // Purple
+        }
+        &.wir-stage-11 {
+          background: linear-gradient(145deg, #facc15 0%, #eab308 100%); // Amber
+        }
+        &.wir-stage-12 {
+          background: linear-gradient(145deg, #2dd4bf 0%, #14b8a6 100%); // Teal
+        }
         &.wir-completed {
           background: linear-gradient(145deg, #34d399 0%, #10b981 100%);
         }
@@ -741,43 +821,34 @@
   }
 }
 
-// Factory Grid Wrapper - Full width layout
+// Factory Grid Wrapper - Matches reference image layout
 .factory-grid-wrapper {
   width: 100%;
-  overflow-x: hidden;
+  overflow-x: auto;
+  background: #f8f9fa;
+  padding: 16px;
+  border-radius: 8px;
+  
+  // Allow horizontal scroll for wide content
+  -webkit-overflow-scrolling: touch;
 }
 
 // Warehouse Grid Container - Scrollable wrapper
-// Grid content area - contains scrollable grid and fixed legend
+// Grid content area - contains grids and legend
 .grid-content-area {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-
-  // Tablet mode - ensure proper display
-  @media (min-width: 769px) and (max-width: 1024px) {
-    width: 100%;
-    min-width: 0;
-  }
+  width: 100%;
+  display: block;
+  overflow-x: auto;
+  padding-bottom: 16px;
 }
 
 .warehouse-grid {
-  flex: 1;
-  min-width: 0;
+  width: 100%;
   animation: slideDown 0.4s ease-out;
-  overflow: hidden; // No scrolling - grid will fit to screen
-  position: relative;
-
-  // Tablet mode - make this the scroll container
-  @media (min-width: 769px) and (max-width: 1024px) {
-    overflow-x: auto; // Grid scrolls horizontally
-    overflow-y: visible;
-    -webkit-overflow-scrolling: touch; // Smooth scrolling on iOS
-    width: 100%;
-    padding: 0 12px 8px 0; // Add padding to ensure last cell and shadows are fully visible
-  }
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 16px;
+  -webkit-overflow-scrolling: touch;
 }
 
 @keyframes slideDown {
@@ -792,29 +863,17 @@
 }
 
 .matrix-container {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  display: inline-block;
 }
 
-/* Matrix Table Layout - Flexible to fit screen */
+/* Matrix Table Layout - Compact structure matching image */
 .warehouse-matrix {
-  display: flex;
-  flex-direction: column;
+  display: inline-block;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  border: 3px solid #cbd5e1;
-  position: relative;
-  overflow: visible; // Allow shadows and hover effects to be visible
-  width: 100%; // Fill available width - no scrolling
-  max-width: 100%; // Ensure it doesn't exceed container width
-
-  // Tablet mode - set minimum width to trigger parent scroll
-  @media (min-width: 769px) and (max-width: 1024px) {
-    min-width: 800px; // Minimum width triggers scroll in warehouse-grid
-    width: max-content; // Adjust to content size
-  }
+  border: 2px solid #94a3b8;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .matrix-header {
@@ -822,113 +881,64 @@
   position: sticky;
   top: 0;
   z-index: 20;
-  background: linear-gradient(135deg, #1b9aaa 0%, #178995 100%);
-  border-bottom: 3px solid #0f5761;
-  
-  // Tablet mode - ensure full width display
-  @media (min-width: 769px) and (max-width: 1024px) {
-    width: 100%;
-    min-width: 100%;
-  }
+  background: #e2e8f0;
 }
 
 .matrix-row {
   display: flex;
-  border-bottom: 2px solid #e2e8f0;
 
   &:last-child {
-    border-bottom: none;
-  }
-
-  &:nth-child(even) {
-    background: linear-gradient(90deg, #fafbfc 0%, #f8f9fa 100%);
-  }
-
-  // Tablet mode - ensure rows maintain consistent height and width
-  @media (min-width: 769px) and (max-width: 1024px) {
-    min-height: 70px;
-    width: 100%;
-    min-width: 100%;
+    .matrix-cell {
+      border-bottom: none;
+    }
+    .matrix-row-header {
+      border-bottom: none;
+    }
   }
 }
 
-// Responsive cell size variables - scales to fit available width after sidebar
-$row-header-width: clamp(50px, 4vw, 70px);
-$cell-width: clamp(90px, calc((100vw - 600px) / 10), 140px); // Account for sidebar (250px) + margins
-$cell-height: clamp(80px, calc((100vh - 350px) / 11), 115px); // Generous height
-$header-height: clamp(45px, 5vw, 65px);
+// Compact cell size variables - matching the image layout
+$row-header-width: 40px;
+$cell-width: 70px;
+$cell-height: 50px;
+$header-height: 35px;
 
 .matrix-corner-cell {
   display: flex;
   align-items: center;
   justify-content: center;
   width: $row-header-width;
-  min-width: 35px;
   height: $header-height;
-  min-height: 35px;
-  background: linear-gradient(135deg, #0e6b77 0%, #0a4f58 100%);
-  border-right: 2px solid rgba(255, 255, 255, 0.2);
-  flex-shrink: 1; // Allow shrinking
-
-  // Tablet mode - compact corner cell sizing
-  @media (min-width: 769px) and (max-width: 1024px) {
-    width: 50px;
-    min-width: 50px;
-    height: 50px;
-    min-height: 50px;
-  }
-
-  svg {
-    color: rgba(255, 255, 255, 0.7);
-    width: clamp(12px, 1.2vw, 16px);
-    height: clamp(12px, 1.2vw, 16px);
-  }
+  background: #e2e8f0;
+  border-right: 1px solid #94a3b8;
+  border-bottom: 1px solid #94a3b8;
+  flex-shrink: 0;
 }
 
 .matrix-column-header {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  flex: 1; // Take equal space
-  min-width: 60px;
+  width: $cell-width;
   height: $header-height;
-  min-height: 35px;
-  padding: clamp(4px, 0.5vw, 8px);
-  border-right: 2px solid rgba(255, 255, 255, 0.15);
-  gap: 2px;
-  flex-shrink: 1; // Allow shrinking
-
-  // Tablet mode - compact header sizing
-  @media (min-width: 769px) and (max-width: 1024px) {
-    min-width: 70px;
-    width: 80px;
-    height: 50px;
-    min-height: 50px;
-    padding: 4px;
-  }
+  padding: 4px;
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+  border-right: 2.5px solid #334155;
+  border-bottom: 2.5px solid #334155;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
 
   &:last-child {
     border-right: none;
   }
 
-  .aisle-indicator {
-    svg {
-      width: clamp(12px, 1.2vw, 16px);
-      height: clamp(12px, 1.2vw, 16px);
-      color: white;
-      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-    }
-  }
-
   .column-label {
-    font-size: clamp(8px, 1vw, 12px);
-    font-weight: 800;
-    color: white;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    white-space: nowrap;
+    font-size: 15px;
+    font-weight: 900;
+    color: #ffffff;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.5px;
   }
 }
 
@@ -937,127 +947,76 @@ $header-height: clamp(45px, 5vw, 65px);
   align-items: center;
   justify-content: center;
   width: $row-header-width;
-  min-width: 35px;
   height: $cell-height;
-  min-height: 55px;
-  background: linear-gradient(135deg, #64748b 0%, #475569 100%);
-  border-right: 2px solid #cbd5e1;
-  flex-shrink: 1; // Allow shrinking
-  position: relative;
-
-  // Tablet mode - compact row header sizing
-  @media (min-width: 769px) and (max-width: 1024px) {
-    width: 50px;
-    min-width: 50px;
-    height: 70px;
-    min-height: 70px;
-  }
-
-  &::before {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 0;
-    bottom: 0;
-    width: 2px;
-    background: linear-gradient(180deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.3));
-  }
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+  border-right: 2.5px solid #334155;
+  border-bottom: 2.5px solid #334155;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
 
   .row-number {
-    font-size: clamp(14px, 1.5vw, 20px);
+    font-size: 15px;
     font-weight: 900;
-    color: white;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    font-family: 'QA', sans-serif;
+    color: #ffffff;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.5px;
   }
 }
 
 .matrix-cell {
   position: relative;
-  // Flexible dimensions - shrinks to fit screen
-  flex: 1; // Take equal space
-  min-width: 60px;
+  width: $cell-width;
   height: $cell-height;
-  min-height: 55px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: clamp(4px, 0.5vw, 10px);
-  border-right: 2px solid #e2e8f0;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
-  flex-shrink: 1; // Allow shrinking
-  overflow: hidden; // Prevent badges from overflowing
-
-  // Tablet mode - compact cell sizing
-  @media (min-width: 769px) and (max-width: 1024px) {
-    min-width: 70px;
-    width: 80px;
-    height: 70px;
-    min-height: 70px;
-    padding: 4px;
-  }
+  padding: 4px;
+  border-right: 2px solid #64748b;
+  border-bottom: 2px solid #64748b;
+  transition: all 0.2s ease;
+  background: #ffffff;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 
   &:last-child {
     border-right: none;
   }
 
-  // Cell coordinates - top left corner (compact)
-  .cell-coordinates {
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    font-size: clamp(5px, 0.5vw, 7px);
-    font-weight: 700;
-    color: #94a3b8;
-    background: rgba(255, 255, 255, 0.9);
-    padding: 1px 2px;
-    border-radius: 2px;
-    border: 1px solid #e2e8f0;
-    letter-spacing: 0;
-    z-index: 2;
-    white-space: nowrap;
+  // Location code display - centered in cell
+  .location-code {
+    font-size: 13px;
+    font-weight: 900;
+    color: #000000;
+    text-align: center;
+    line-height: 1.3;
+    word-break: break-word;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    letter-spacing: 0.3px;
   }
 
-  // Progress badge - top right corner (always show full value)
+  // Progress badge - top right corner (smaller)
   .progress-badge {
     position: absolute;
-    top: 2px;
-    right: 2px;
-    font-size: clamp(7px, 0.7vw, 9px);
-    font-weight: 800;
+    top: 1px;
+    right: 1px;
+    font-size: 7px;
+    font-weight: 700;
     color: #1e293b;
-    background: rgba(255, 255, 255, 0.95);
-    padding: 2px 4px;
-    border-radius: 3px;
-    border: 1px solid rgba(0, 0, 0, 0.15);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
-    letter-spacing: 0;
-    z-index: 5;
-    text-align: center;
-    backdrop-filter: blur(4px);
-    white-space: nowrap;
-  }
-
-  // Collision badge - bottom right corner
-  .collision-badge {
-    position: absolute;
-    bottom: 2px;
-    right: 2px;
-    font-size: clamp(6px, 0.6vw, 8px);
-    font-weight: 800;
-    color: #fff;
-    background: #ef4444;
+    background: rgba(255, 255, 255, 0.9);
     padding: 1px 3px;
     border-radius: 2px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-    letter-spacing: 0;
-    z-index: 4;
-    min-width: 14px;
+    z-index: 5;
     text-align: center;
-    cursor: help;
     white-space: nowrap;
+    border: 1px solid rgba(0, 0, 0, 0.1);
   }
 
   // Hidden state for EMPTY filter
@@ -1066,241 +1025,159 @@ $header-height: clamp(45px, 5vw, 65px);
   }
 
   &.empty {
-    background: 
-      repeating-linear-gradient(
-        45deg,
-        rgba(226, 232, 240, 0.2),
-        rgba(226, 232, 240, 0.2) 6px,
-        rgba(241, 245, 249, 0.2) 6px,
-        rgba(241, 245, 249, 0.2) 12px
-      ),
-      linear-gradient(145deg, #f8fafc 0%, #f1f5f9 100%);
-    
-    .empty-cell-content {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-
-      svg {
-        width: clamp(18px, 2vw, 24px);
-        height: clamp(18px, 2vw, 24px);
-      }
-    }
+    background: white;
   }
 
   &.has-box {
     cursor: pointer;
     
     &:hover {
-      transform: scale(1.03);
-      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 0 0 2px var(--amana-teal);
       z-index: 10;
     }
   }
 
   &.in-progress {
-    background: 
-      linear-gradient(145deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
-    box-shadow: 
-      inset 0 2px 4px rgba(255, 255, 255, 0.4),
-      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
-      0 2px 8px rgba(251, 191, 36, 0.3);
-    border-right-color: #d97706;
-
-    .cell-content {
-      .box-icon-small svg { color: #78350f; }
-      .position-badge { background: #78350f; color: #fef3c7; }
+    background: #fbbf24;
+    border-color: #d97706;
+    
+    .location-code {
+      color: #78350f;
     }
-    .cell-coordinates { background: rgba(254, 243, 199, 0.95); color: #78350f; border-color: #d97706; }
   }
 
   &.completed {
-    background: linear-gradient(145deg, #34d399 0%, #10b981 50%, #059669 100%);
-    box-shadow: 
-      inset 0 2px 4px rgba(255, 255, 255, 0.4),
-      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
-      0 2px 8px rgba(52, 211, 153, 0.3);
-    border-right-color: #059669;
-
-    .cell-content {
-      .box-icon-small svg { color: #064e3b; }
-      .position-badge { background: #064e3b; color: #d1fae5; }
+    background: #10b981;
+    border-color: #059669;
+    
+    .location-code {
+      color: white;
     }
-    .cell-coordinates { background: rgba(209, 250, 229, 0.95); color: #064e3b; border-color: #059669; }
   }
 
-  // WIR Stage Colors - Using AMANA Palette
-  // WIR-1: Assembly Clearance - Teal (amana-teal)
+  // WIR Stage Colors - Solid colors matching image
+  // WIR-1: Assembly Clearance - Teal
   &.wir-stage-1 {
-    background: linear-gradient(145deg, #4ea8de 0%, #1b9aaa 50%, #0d7a8a 100%);
-    box-shadow: 
-      inset 0 2px 4px rgba(255, 255, 255, 0.4),
-      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
-      0 2px 8px rgba(27, 154, 170, 0.3);
-    border-right-color: #0d7a8a;
-
-    .cell-content {
-      .box-icon-small svg { color: #fff; }
-      .position-badge { background: rgba(255, 255, 255, 0.9); color: #0d7a8a; }
+    background: #4ea8de;
+    border-color: #1b9aaa;
+    
+    .location-code {
+      color: white;
     }
-    .cell-coordinates { background: rgba(255, 255, 255, 0.95); color: #0d7a8a; border-color: #1b9aaa; }
   }
 
-  // WIR-2: Mechanical Clearance - Green (amana-green)
+  // WIR-2: Mechanical Clearance - Green
   &.wir-stage-2 {
-    background: linear-gradient(145deg, #52b788 0%, #2d6a4f 50%, #1b4332 100%);
-    box-shadow: 
-      inset 0 2px 4px rgba(255, 255, 255, 0.4),
-      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
-      0 2px 8px rgba(45, 106, 79, 0.3);
-    border-right-color: #1b4332;
-
-    .cell-content {
-      .box-icon-small svg { color: #fff; }
-      .position-badge { background: rgba(255, 255, 255, 0.9); color: #1b4332; }
+    background: #52b788;
+    border-color: #2d6a4f;
+    
+    .location-code {
+      color: white;
     }
-    .cell-coordinates { background: rgba(255, 255, 255, 0.95); color: #1b4332; border-color: #2d6a4f; }
   }
 
-  // WIR-3: Electrical Clearance - Yellow-Green (amana-yellow-green)
+  // WIR-3: Electrical Clearance - Yellow-Green
   &.wir-stage-3 {
-    background: linear-gradient(145deg, #bef264 0%, #9bc53d 50%, #7a9e2e 100%);
-    box-shadow: 
-      inset 0 2px 4px rgba(255, 255, 255, 0.4),
-      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
-      0 2px 8px rgba(155, 197, 61, 0.3);
-    border-right-color: #7a9e2e;
-
-    .cell-content {
-      .box-icon-small svg { color: #3d5a0f; }
-      .position-badge { background: #3d5a0f; color: #ecfccb; }
+    background: #bef264;
+    border-color: #9bc53d;
+    
+    .location-code {
+      color: #3d5a0f;
     }
-    .cell-coordinates { background: rgba(236, 252, 203, 0.95); color: #3d5a0f; border-color: #9bc53d; }
   }
 
-  // WIR-4: 3rd Fix Installation - Yellow (amana-yellow)
+  // WIR-4: 2nd Fix Installation - Yellow
   &.wir-stage-4 {
-    background: linear-gradient(145deg, #fde047 0%, #ffc107 50%, #e6ac00 100%);
-    box-shadow: 
-      inset 0 2px 4px rgba(255, 255, 255, 0.4),
-      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
-      0 2px 8px rgba(255, 193, 7, 0.3);
-    border-right-color: #e6ac00;
-
-    .cell-content {
-      .box-icon-small svg { color: #713f12; }
-      .position-badge { background: #713f12; color: #fef9c3; }
+    background: #fde047;
+    border-color: #ffc107;
+    
+    .location-code {
+      color: #713f12;
     }
-    .cell-coordinates { background: rgba(254, 249, 195, 0.95); color: #713f12; border-color: #ffc107; }
   }
 
-  // WIR-5: 3rd Fix Installation - Orange (amana-orange)
+  // WIR-5: 3rd Fix Installation - Orange
   &.wir-stage-5 {
-    background: linear-gradient(145deg, #fb923c 0%, #ff6b35 50%, #d45d1e 100%);
-    box-shadow: 
-      inset 0 2px 4px rgba(255, 255, 255, 0.4),
-      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
-      0 2px 8px rgba(255, 107, 53, 0.3);
-    border-right-color: #d45d1e;
-
-    .cell-content {
-      .box-icon-small svg { color: #fff; }
-      .position-badge { background: rgba(255, 255, 255, 0.9); color: #9a3412; }
+    background: #fb923c;
+    border-color: #ff6b35;
+    
+    .location-code {
+      color: white;
     }
-    .cell-coordinates { background: rgba(255, 255, 255, 0.95); color: #9a3412; border-color: #ff6b35; }
   }
 
-  // WIR-6: Readiness for Dispatch - Purple (amana-purple)
+  // WIR-6: Readiness for Dispatch - Purple
   &.wir-stage-6 {
-    background: linear-gradient(145deg, #a78bfa 0%, #5e60ce 50%, #5a189a 100%);
-    box-shadow: 
-      inset 0 2px 4px rgba(255, 255, 255, 0.4),
-      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
-      0 2px 8px rgba(94, 96, 206, 0.3);
-    border-right-color: #5a189a;
-
-    .cell-content {
-      .box-icon-small svg { color: #fff; }
-      .position-badge { background: rgba(255, 255, 255, 0.9); color: #5a189a; }
+    background: #a78bfa;
+    border-color: #5e60ce;
+    
+    .location-code {
+      color: white;
     }
-    .cell-coordinates { background: rgba(255, 255, 255, 0.95); color: #5a189a; border-color: #5e60ce; }
   }
 
-  // Completed WIR Stage - Green (same as completed status)
+  // Additional Dynamic Stages (WIR-7 onwards)
+  &.wir-stage-7 {
+    background: #f472b6; // Pink
+    border-color: #ec4899;
+    
+    .location-code {
+      color: white;
+    }
+  }
+
+  &.wir-stage-8 {
+    background: #60a5fa; // Blue
+    border-color: #3b82f6;
+    
+    .location-code {
+      color: white;
+    }
+  }
+
+  &.wir-stage-9 {
+    background: #fb7185; // Rose
+    border-color: #f43f5e;
+    
+    .location-code {
+      color: white;
+    }
+  }
+
+  &.wir-stage-10 {
+    background: #c084fc; // Purple
+    border-color: #a855f7;
+    
+    .location-code {
+      color: white;
+    }
+  }
+
+  &.wir-stage-11 {
+    background: #facc15; // Amber
+    border-color: #eab308;
+    
+    .location-code {
+      color: #000000;
+    }
+  }
+
+  &.wir-stage-12 {
+    background: #2dd4bf; // Teal
+    border-color: #14b8a6;
+    
+    .location-code {
+      color: white;
+    }
+  }
+
+  // Completed WIR Stage - Green
   &.wir-completed {
-    background: linear-gradient(145deg, #34d399 0%, #10b981 50%, #059669 100%);
-    box-shadow: 
-      inset 0 2px 4px rgba(255, 255, 255, 0.4),
-      inset 0 -2px 4px rgba(0, 0, 0, 0.2),
-      0 2px 8px rgba(52, 211, 153, 0.3);
-    border-right-color: #059669;
-
-    .cell-content {
-      .box-icon-small svg { color: #064e3b; }
-      .position-badge { background: #064e3b; color: #d1fae5; }
-    }
-
-    .cell-coordinates {
-      background: rgba(209, 250, 229, 0.95);
-      color: #064e3b;
-      border-color: #059669;
-    }
-  }
-
-  .cell-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1px;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    padding: 12px 2px 14px; // Top padding for badges, bottom for box code
-
-    .box-icon-small {
-      flex-shrink: 0;
-      svg {
-        width: clamp(14px, 1.8vw, 22px);
-        height: clamp(14px, 1.8vw, 22px);
-        color: #6b7280;
-        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
-      }
-    }
-
-    .box-code-small {
-      position: absolute;
-      bottom: 2px;
-      left: 2px;
-      right: 2px;
-      font-size: clamp(5px, 0.55vw, 7px);
-      font-weight: 700;
-      text-align: center;
-      letter-spacing: 0;
-      line-height: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: calc(100% - 4px);
-      padding: 1px 2px;
-      background: rgba(0, 0, 0, 0.7);
+    background: #10b981;
+    border-color: #059669;
+    
+    .location-code {
       color: white;
-      border-radius: 2px;
-      white-space: nowrap;
-      z-index: 1;
-    }
-
-    .position-badge {
-      font-size: clamp(5px, 0.55vw, 8px);
-      font-weight: 700;
-      padding: 1px 3px;
-      border-radius: 2px;
-      background: #1f2937;
-      color: white;
-      letter-spacing: 0;
-      white-space: nowrap;
-      max-width: 90%;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
   }
 }
@@ -1309,25 +1186,27 @@ $header-height: clamp(45px, 5vw, 65px);
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 40px;
-  padding: 16px 24px;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  gap: 24px;
+  padding: 10px 16px;
+  background: white;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   border: 1px solid #e2e8f0;
-  flex-shrink: 0; // Prevent shrinking - stay fixed outside scroll
+  margin-top: 16px;
 
   .info-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 14px;
+    gap: 6px;
+    font-size: 12px;
     font-weight: 600;
-    color: #1e293b;
+    color: #475569;
 
     svg {
       color: var(--amana-teal);
       flex-shrink: 0;
+      width: 14px;
+      height: 14px;
     }
 
     &.warning {
@@ -1343,8 +1222,8 @@ $header-height: clamp(45px, 5vw, 65px);
 
   @media (max-width: 768px) {
     flex-direction: column;
-    gap: 12px;
-    padding: 16px;
+    gap: 8px;
+    padding: 12px;
   }
 }
 
@@ -1379,153 +1258,128 @@ $header-height: clamp(45px, 5vw, 65px);
 
 .grid-legend {
   background: white;
-  padding: 16px 20px;
-  border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  padding: 12px 16px;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   border: 1px solid #e2e8f0;
-  flex-shrink: 0; // Prevent legend from shrinking
+  margin-top: 16px;
 
   .legend-title {
     display: flex;
     align-items: center;
-    gap: 8px;
-    font-size: 12px;
+    gap: 6px;
+    font-size: 11px;
     font-weight: 700;
     color: #1e293b;
-    margin-bottom: 12px;
+    margin-bottom: 10px;
     text-transform: uppercase;
     letter-spacing: 0.3px;
 
     svg {
       color: var(--amana-teal);
       flex-shrink: 0;
+      width: 14px;
+      height: 14px;
     }
   }
 
   .legend-items {
     display: flex;
     flex-wrap: wrap;
-    gap: 8px 16px;
+    gap: 6px 12px;
     align-items: center;
 
     .legend-item {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 20px;
+      gap: 5px;
+      font-size: 11px;
       color: #64748b;
-      padding: 4px 10px;
+      padding: 3px 8px;
       background: #f8fafc;
-      border-radius: 6px;
+      border-radius: 4px;
       border: 1px solid #e2e8f0;
-      cursor: default;
 
       &.compact {
         gap: 4px;
-        padding: 4px 8px;
+        padding: 3px 6px;
       }
 
       .legend-box {
-        width: 30px;
-        height: 30px;
-        border-radius: 4px;
+        width: 20px;
+        height: 20px;
+        border-radius: 3px;
         border: 1px solid rgba(0, 0, 0, 0.1);
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
         flex-shrink: 0;
 
         &.in-progress-box {
-          background: linear-gradient(145deg, #fbbf24 0%, #f59e0b 100%);
+          background: #fbbf24;
         }
 
         &.completed-box {
-          background: linear-gradient(145deg, #34d399 0%, #10b981 100%);
+          background: #10b981;
         }
 
         &.empty-box {
-          background: repeating-linear-gradient(
-            45deg,
-            rgba(226, 232, 240, 0.5),
-            rgba(226, 232, 240, 0.5) 3px,
-            rgba(241, 245, 249, 0.5) 3px,
-            rgba(241, 245, 249, 0.5) 6px
-          );
+          background: white;
+          border: 1px solid #cbd5e1;
         }
 
-        // WIR Stage Legend Boxes - Using AMANA Palette
+        // WIR Stage Legend Boxes - Solid colors
         &.wir-stage-1 {
-          background: linear-gradient(145deg, #4ea8de 0%, #1b9aaa 100%);
+          background: #4ea8de;
         }
 
         &.wir-stage-2 {
-          background: linear-gradient(145deg, #52b788 0%, #2d6a4f 100%);
+          background: #52b788;
         }
 
         &.wir-stage-3 {
-          background: linear-gradient(145deg, #bef264 0%, #9bc53d 100%);
+          background: #bef264;
         }
 
         &.wir-stage-4 {
-          background: linear-gradient(145deg, #fde047 0%, #ffc107 100%);
+          background: #fde047;
         }
 
         &.wir-stage-5 {
-          background: linear-gradient(145deg, #fb923c 0%, #ff6b35 100%);
+          background: #fb923c;
         }
 
         &.wir-stage-6 {
-          background: linear-gradient(145deg, #a78bfa 0%, #5e60ce 100%);
+          background: #a78bfa;
+        }
+
+        // Additional stages for dynamic detection (WIR-7 onwards)
+        &.wir-stage-7 {
+          background: #f472b6; // Pink
+        }
+        &.wir-stage-8 {
+          background: #60a5fa; // Blue
+        }
+        &.wir-stage-9 {
+          background: #fb7185; // Rose
+        }
+        &.wir-stage-10 {
+          background: #c084fc; // Purple
+        }
+        &.wir-stage-11 {
+          background: #facc15; // Amber
+        }
+        &.wir-stage-12 {
+          background: #2dd4bf; // Teal
         }
 
         &.wir-completed {
-          background: linear-gradient(145deg, #34d399 0%, #10b981 100%);
+          background: #10b981;
         }
       }
 
-      .legend-label {
+      .legend-text {
+        font-weight: 600;
         color: #475569;
-        font-weight: 500;
-        white-space: nowrap;
-      }
-
-      .legend-percentage {
-        font-weight: 700;
-        color: #1e293b;
-        font-size: 11px;
-      }
-
-      .legend-text {
-        font-weight: 700;
-        color: #1e293b;
-        font-size: 11px;
-        white-space: nowrap;
-      }
-
-      &.compact .legend-percentage,
-      &.compact .legend-text {
-        margin-left: 0;
-      }
-    }
-  }
-
-  @media (max-width: 768px) {
-    padding: 12px 10px;
-
-    .legend-items {
-      gap: 6px 10px;
-    }
-
-    .legend-item {
-      font-size: 11px;
-      padding: 3px 8px;
-
-      .legend-box {
-        width: 16px;
-        height: 16px;
-      }
-
-      .legend-percentage,
-      .legend-text {
         font-size: 10px;
+        white-space: nowrap;
       }
     }
   }
@@ -1877,6 +1731,2658 @@ $header-height: clamp(45px, 5vw, 65px);
       background: #475569;
       transform: translateY(-1px);
     }
+  }
+}
+
+// Section Tabs Styling
+.section-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  padding: 16px;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+  .section-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: var(--gray-50);
+    border: 2px solid var(--gray-200);
+    border-radius: 12px;
+    color: var(--gray-700);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    &:hover {
+      background: var(--gray-100);
+      border-color: var(--amana-teal);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(27, 154, 170, 0.15);
+    }
+
+    &.active {
+      background: linear-gradient(135deg, var(--amana-teal) 0%, var(--amana-blue) 100%);
+      border-color: var(--amana-teal);
+      color: white;
+      box-shadow: 0 4px 12px rgba(27, 154, 170, 0.3);
+
+      svg {
+        color: white;
+      }
+    }
+
+    &.assembly {
+      &.active {
+        background: linear-gradient(135deg, rgba(27, 154, 170, 1) 0%, rgba(25, 118, 210, 1) 100%);
+      }
+
+      &:not(.active):hover {
+        border-color: rgba(27, 154, 170, 0.5);
+      }
+    }
+
+    &.finishing {
+      &.active {
+        background: linear-gradient(135deg, rgba(76, 29, 149, 1) 0%, rgba(27, 154, 170, 1) 100%);
+      }
+
+      &:not(.active):hover {
+        border-color: rgba(76, 29, 149, 0.5);
+      }
+    }
+  }
+}
+
+// Section Grid Container - Compact layout matching reference image
+.section-grid-container {
+  display: inline-block;
+  margin: 0;
+  background: white;
+  border-radius: 0;
+  overflow: visible;
+  box-shadow: none;
+
+  .warehouse-grid {
+    padding: 0;
+    margin: 0;
+    overflow: visible;
+  }
+
+  .matrix-container {
+    margin: 0;
+    padding: 0;
+    display: inline-block;
+  }
+}
+
+// Section Header - Minimal compact design
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #1b9aaa;
+  border-bottom: 1px solid #0d7a8a;
+
+  &.finishing-header {
+    background: #5e60ce;
+    border-bottom: 1px solid #4f46e5;
+  }
+
+  .section-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-icon {
+    display: none; // Hide icon for more compact design
+  }
+
+  .section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: white;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .section-info {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+
+    .info-badge {
+      padding: 2px 6px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+      font-size: 9px;
+      font-weight: 600;
+      color: white;
+      white-space: nowrap;
+    }
+  }
+}
+
+// Layout Controls - Toggle button for switching views
+.layout-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+  padding: 12px 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+
+  @media (max-width: 768px) {
+    padding: 10px 12px;
+    margin-bottom: 12px;
+    justify-content: center;
+  }
+
+  .btn-layout-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 18px;
+    background: linear-gradient(135deg, var(--amana-teal) 0%, #16858f 100%);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    @media (max-width: 768px) {
+      width: 100%;
+      justify-content: center;
+      padding: 12px 16px;
+      font-size: 0.85rem;
+    }
+
+    svg {
+      width: 18px;
+      height: 18px;
+
+      @media (max-width: 768px) {
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    &:hover {
+      background: linear-gradient(135deg, #16858f 0%, var(--amana-teal) 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(27, 154, 170, 0.3);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
+// No Sections Message
+.no-sections-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 40px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  text-align: center;
+  min-height: 400px;
+
+  svg {
+    color: #cbd5e1;
+    margin-bottom: 24px;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 12px;
+  }
+
+  p {
+    font-size: 1rem;
+    color: #64748b;
+    margin: 0 0 8px;
+    max-width: 500px;
+  }
+
+  .info-text {
+    font-size: 0.9rem;
+    color: #94a3b8;
+    font-style: italic;
+    margin-bottom: 24px;
+  }
+
+  .btn-switch-view {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    background: var(--amana-teal);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #16858f;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(27, 154, 170, 0.3);
+    }
+  }
+}
+
+// Two-Column Factory Layout - Matches reference image
+.factory-layout-two-column {
+  display: flex;
+  align-items: stretch; // Ensure columns stretch to same height
+  gap: 16px;
+  width: 100%; // Take full width
+  min-height: 600px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  overflow: visible;
+
+  // Tablet mode - Stack columns vertically
+  @media (max-width: 1024px) {
+    flex-direction: column;
+    gap: 20px;
+    padding: 16px;
+    min-height: auto;
+    width: 100%;
+  }
+
+  // Mobile mode - Optimize for smaller screens
+  @media (max-width: 768px) {
+    padding: 12px;
+    gap: 16px;
+    border-radius: 8px;
+  }
+
+  // Left Column - Assembly Sections
+  .left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: white;
+    border-radius: 8px;
+    overflow: visible;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    flex: 1; // Take equal space
+    align-self: stretch; // Stretch to match height
+  }
+
+  // Right Column - Finishing Sections
+  .right-column {
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 8px;
+    overflow: visible;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    flex: 1; // Take equal space
+    align-self: stretch; // Stretch to match height
+  }
+
+  // Assembly Column Specific
+  .assembly-column {
+    .section-grid {
+      display: flex;
+      flex-direction: column;
+      width: 100%; // Take full width of column
+      flex: 1; // Allow section to grow
+    }
+
+    .assembly-1 {
+      border-bottom: none;
+      flex: 1;
+    }
+
+    .assembly-2 {
+      border-top: none;
+      flex: 1;
+    }
+  }
+
+  // Finishing Column Specific
+  .finishing-column {
+    .section-grid {
+      display: flex;
+      flex-direction: column;
+      width: 100%; // Take full width of column
+      flex: 1; // Allow section to grow to fill available space
+    }
+  }
+}
+
+// Central Aisle Styling
+.central-aisle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  background: linear-gradient(90deg, #e2e8f0 0%, #cbd5e1 50%, #e2e8f0 100%);
+  border-top: 2px dashed #94a3b8;
+  border-bottom: 2px dashed #94a3b8;
+  position: relative;
+
+  @media (max-width: 768px) {
+    height: 20px;
+  }
+
+  .aisle-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: white;
+    padding: 2px 12px;
+    border-radius: 12px;
+    border: 1px solid #cbd5e1;
+
+    @media (max-width: 768px) {
+      font-size: 8px;
+      padding: 2px 8px;
+      letter-spacing: 0.5px;
+    }
+  }
+}
+
+// Section Header Compact (for two-column layout)
+.section-header-compact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: linear-gradient(135deg, #1b9aaa 0%, #16858f 100%);
+  border-bottom: 2px solid #0d7a8a;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    padding: 6px 10px;
+  }
+
+  .section-name {
+    font-size: 11px;
+    font-weight: 700;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+
+    @media (max-width: 768px) {
+      font-size: 10px;
+    }
+  }
+
+  .section-range {
+    font-size: 9px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+
+    @media (max-width: 768px) {
+      font-size: 8px;
+    }
+  }
+
+  &.finishing-header {
+    background: linear-gradient(135deg, #5e60ce 0%, #4f46e5 100%);
+    border-bottom: 2px solid #4338ca;
+  }
+}
+
+// Compact Matrix Variables (Assembly - Uniform)
+$compact-row-header-width: 45px;
+// TRANSPOSED: Swapped width/height for vertical bays, horizontal rows
+$compact-cell-width: 60px;  // Uniform size for alignment
+$compact-cell-height: 60px; // Uniform size for alignment
+$compact-header-height: 38px;
+
+// Compact Matrix Styling (Assembly)
+.warehouse-matrix-compact {
+  display: flex;
+  flex-direction: column;
+  background: #f8f9fa;
+  border: 2px solid #94a3b8;
+  border-radius: 0;
+  overflow: visible;
+  width: 100%; // Take full available width
+  height: 100%; // Take full available height
+  gap: 4px; // Space between rows
+  padding: 4px;
+
+  @media (max-width: 768px) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+.matrix-header-compact {
+  display: flex;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #f8f9fa;
+  width: 100%;
+  gap: 4px; // Space between header cells
+}
+
+.matrix-row-compact {
+  display: flex;
+  flex: 1; // Allow rows to grow
+  width: 100%;
+  gap: 4px; // Space between cells in row
+}
+
+.matrix-corner-cell-compact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: $compact-row-header-width;
+  min-width: $compact-row-header-width;
+  height: $compact-header-height;
+  background: #e2e8f0;
+  border: 1px solid #94a3b8;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.matrix-column-header-compact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1; // Grow to fill available space
+  min-width: $compact-cell-width;
+  height: $compact-header-height;
+  padding: 2px;
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+  border: 2.5px solid #334155;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+
+  .column-label {
+    font-size: 15px;
+    font-weight: 900;
+    color: #ffffff;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.5px;
+  }
+}
+
+.matrix-row-header-compact {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: $compact-row-header-width;
+  min-width: $compact-row-header-width;
+  height: $compact-cell-height;
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+  border: 2.5px solid #334155;
+  border-radius: 4px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+
+  .row-number {
+    font-size: 15px;
+    font-weight: 900;
+    color: #ffffff;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.5px;
+  }
+}
+
+.matrix-cell-compact {
+  position: relative;
+  flex: 1; // Grow to fill available space
+  min-width: $compact-cell-width;
+  height: $compact-cell-height;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  border: 2px solid #64748b;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  background: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+  .location-code-compact {
+    font-size: 14px;
+    font-weight: 900;
+    color: #000000;
+    text-align: center;
+    line-height: 1.3;
+    word-break: break-word;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    letter-spacing: 0.3px;
+  }
+
+  .progress-badge-compact {
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    font-size: 8px;
+    font-weight: 700;
+    color: #1e293b;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 1px 3px;
+    border-radius: 2px;
+    z-index: 5;
+    text-align: center;
+    white-space: nowrap;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  &.hidden {
+    display: none;
+  }
+
+  &.empty {
+    background: transparent;
+    border: 1px dashed #e2e8f0;
+    box-shadow: none;
+  }
+
+  &.has-box {
+    cursor: pointer;
+    
+    &:hover {
+      box-shadow: 0 0 0 2px var(--amana-teal);
+      z-index: 10;
+    }
+  }
+
+  // WIR Stage Colors
+  &.wir-stage-1 {
+    background: #4ea8de;
+    border-color: #1b9aaa;
+    
+    .location-code-compact {
+      color: white;
+    }
+  }
+
+  &.wir-stage-2 {
+    background: #52b788;
+    border-color: #2d6a4f;
+    
+    .location-code-compact {
+      color: white;
+    }
+  }
+
+  &.wir-stage-3 {
+    background: #bef264;
+    border-color: #9bc53d;
+    
+    .location-code-compact {
+      color: #3d5a0f;
+    }
+  }
+
+  &.wir-stage-4 {
+    background: #fde047;
+    border-color: #ffc107;
+    
+    .location-code-compact {
+      color: #713f12;
+    }
+  }
+
+  &.wir-stage-5 {
+    background: #fb923c;
+    border-color: #ff6b35;
+    
+    .location-code-compact {
+      color: white;
+    }
+  }
+
+  &.wir-stage-6 {
+    background: #a78bfa;
+    border-color: #5e60ce;
+    
+    .location-code-compact {
+      color: white;
+    }
+  }
+
+  // Additional Dynamic Stages (WIR-7 onwards)
+  &.wir-stage-7 {
+    background: #f472b6; // Pink
+    border-color: #ec4899;
+    
+    .location-code-compact {
+      color: white;
+    }
+  }
+
+  &.wir-stage-8 {
+    background: #60a5fa; // Blue
+    border-color: #3b82f6;
+    
+    .location-code-compact {
+      color: white;
+    }
+  }
+
+  &.wir-stage-9 {
+    background: #fb7185; // Rose
+    border-color: #f43f5e;
+    
+    .location-code-compact {
+      color: white;
+    }
+  }
+
+  &.wir-stage-10 {
+    background: #c084fc; // Purple
+    border-color: #a855f7;
+    
+    .location-code-compact {
+      color: white;
+    }
+  }
+
+  &.wir-stage-11 {
+    background: #facc15; // Amber
+    border-color: #eab308;
+    
+    .location-code-compact {
+      color: #000000;
+    }
+  }
+
+  &.wir-stage-12 {
+    background: #2dd4bf; // Teal
+    border-color: #14b8a6;
+    
+    .location-code-compact {
+      color: white;
+    }
+  }
+
+  &.wir-completed {
+    background: #10b981;
+    border-color: #059669;
+    
+    .location-code-compact {
+      color: white;
+    }
+  }
+}
+
+// Standard Matrix Variables (Finishing - Uniform)
+$standard-row-header-width: 45px;
+// TRANSPOSED: Swapped width/height for vertical bays, horizontal rows
+$standard-cell-width: 60px;  // Uniform size for alignment
+$standard-cell-height: 60px; // Uniform size for alignment
+$standard-header-height: 38px;
+
+// Standard Matrix Styling (Finishing)
+.warehouse-matrix-standard {
+  display: flex;
+  flex-direction: column;
+  background: #f8f9fa;
+  border: 2px solid #94a3b8;
+  border-radius: 0;
+  overflow: visible;
+  width: 100%; // Take full available width
+  height: 100%;
+  gap: 4px; // Space between rows
+  padding: 4px;
+
+  @media (max-width: 768px) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+.matrix-header-standard {
+  display: flex;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #f8f9fa;
+  width: 100%;
+  gap: 4px; // Space between header cells
+}
+
+.matrix-row-standard {
+  display: flex;
+  flex: 1; // Allow rows to grow
+  width: 100%;
+  gap: 4px; // Space between cells in row
+}
+
+.matrix-corner-cell-standard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: $standard-row-header-width;
+  min-width: $standard-row-header-width;
+  height: $standard-header-height;
+  background: #e2e8f0;
+  border: 1px solid #94a3b8;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.matrix-column-header-standard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1; // Grow to fill available space
+  min-width: $standard-cell-width;
+  height: $standard-header-height;
+  padding: 4px;
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+  border: 2.5px solid #334155;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+
+  .column-label {
+    font-size: 15px;
+    font-weight: 900;
+    color: #ffffff;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.5px;
+  }
+}
+
+.matrix-row-header-standard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: $standard-row-header-width;
+  min-width: $standard-row-header-width;
+  height: $standard-cell-height;
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+  border: 2.5px solid #334155;
+  border-radius: 4px;
+  flex-shrink: 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+
+  .row-number {
+    font-size: 15px;
+    font-weight: 900;
+    color: #ffffff;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.5px;
+  }
+}
+
+.matrix-cell-standard {
+  position: relative;
+  flex: 1; // Grow to fill available space
+  min-width: $standard-cell-width;
+  height: $standard-cell-height;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: 2px solid #64748b;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  background: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+
+  .location-code-standard {
+    font-size: 14px;
+    font-weight: 900;
+    color: #000000;
+    text-align: center;
+    line-height: 1.3;
+    word-break: break-word;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    letter-spacing: 0.3px;
+  }
+
+  .progress-badge-standard {
+    position: absolute;
+    top: 1px;
+    right: 1px;
+    font-size: 8px;
+    font-weight: 700;
+    color: #1e293b;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 1px 3px;
+    border-radius: 2px;
+    z-index: 5;
+    text-align: center;
+    white-space: nowrap;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  &.hidden {
+    display: none;
+  }
+
+  &.empty {
+    background: transparent;
+    border: 1px dashed #e2e8f0;
+    box-shadow: none;
+  }
+
+  &.has-box {
+    cursor: pointer;
+    
+    &:hover {
+      box-shadow: 0 0 0 2px var(--amana-teal);
+      z-index: 10;
+    }
+  }
+
+  // Conveyor Slot Styling
+  &.conveyor-slot {
+    background: repeating-linear-gradient(
+      45deg,
+      #64748b,
+      #64748b 4px,
+      #94a3b8 4px,
+      #94a3b8 8px
+    );
+    border: 2px solid #475569;
+    
+    &::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 8px;
+      height: 8px;
+      background: #1e293b;
+      border-radius: 50%;
+    }
+
+    // Conveyor slots don't show boxes
+    .location-code-standard,
+    .progress-badge-standard {
+      display: none;
+    }
+
+    &:hover {
+      box-shadow: 0 0 0 2px #475569;
+    }
+  }
+
+  // WIR Stage Colors
+  &.wir-stage-1 {
+    background: #4ea8de;
+    border-color: #1b9aaa;
+    
+    .location-code-standard {
+      color: white;
+    }
+  }
+
+  &.wir-stage-2 {
+    background: #52b788;
+    border-color: #2d6a4f;
+    
+    .location-code-standard {
+      color: white;
+    }
+  }
+
+  &.wir-stage-3 {
+    background: #bef264;
+    border-color: #9bc53d;
+    
+    .location-code-standard {
+      color: #3d5a0f;
+    }
+  }
+
+  &.wir-stage-4 {
+    background: #fde047;
+    border-color: #ffc107;
+    
+    .location-code-standard {
+      color: #713f12;
+    }
+  }
+
+  &.wir-stage-5 {
+    background: #fb923c;
+    border-color: #ff6b35;
+    
+    .location-code-standard {
+      color: white;
+    }
+  }
+
+  &.wir-stage-6 {
+    background: #a78bfa;
+    border-color: #5e60ce;
+    
+    .location-code-standard {
+      color: white;
+    }
+  }
+
+  // Additional Dynamic Stages (WIR-7 onwards)
+  &.wir-stage-7 {
+    background: #f472b6; // Pink
+    border-color: #ec4899;
+    
+    .location-code-standard {
+      color: white;
+    }
+  }
+
+  &.wir-stage-8 {
+    background: #60a5fa; // Blue
+    border-color: #3b82f6;
+    
+    .location-code-standard {
+      color: white;
+    }
+  }
+
+  &.wir-stage-9 {
+    background: #fb7185; // Rose
+    border-color: #f43f5e;
+    
+    .location-code-standard {
+      color: white;
+    }
+  }
+
+  &.wir-stage-10 {
+    background: #c084fc; // Purple
+    border-color: #a855f7;
+    
+    .location-code-standard {
+      color: white;
+    }
+  }
+
+  &.wir-stage-11 {
+    background: #facc15; // Amber
+    border-color: #eab308;
+    
+    .location-code-standard {
+      color: #000000;
+    }
+  }
+
+  &.wir-stage-12 {
+    background: #2dd4bf; // Teal
+    border-color: #14b8a6;
+    
+    .location-code-standard {
+      color: white;
+    }
+  }
+
+  &.wir-completed {
+    background: #10b981;
+    border-color: #059669;
+    
+    .location-code-standard {
+      color: white;
+    }
+  }
+}
+
+// ============================================
+// BLUEPRINT STYLE LAYOUT
+// ============================================
+
+.factory-layout-two-column.blueprint-style {
+  display: grid;
+  grid-template-columns: 1fr; // Bay axis is embedded in each section; sections fill full width
+  gap: 0;
+  width: 100%;
+  padding: 6px;
+  background: #f1f3f5;
+  border-radius: 6px;
+  min-height: calc(100vh - 320px);
+  overflow: auto;
+}
+
+// Common Y-Axis (Bays) - displayed once on the far left (FIXED HEIGHT to match grid rows)
+.common-bay-axis {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0;
+  
+  .bay-axis-top-offset {
+    width: 100%;
+    height: 22px; // Offset for row axis top (22px) only - section header removed
+    background: transparent;
+    flex-shrink: 0;
+  }
+  
+  .bay-label-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    // Each bay label should span exactly 2 rows of boxes (12 rows / 6 bays = 2 rows per bay)
+    // 2 rows × (22px cell + 1px gap) × 2 boxes per row = 46px per bay label
+    // Adjusted for perfect vertical alignment
+    flex: 1;
+    min-height: 45px;
+    background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    border: 2.5px solid #334155;
+    border-radius: 4px;
+    margin-bottom: 1px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    
+    .bay-label {
+      font-size: 16px;
+      font-weight: 900;
+      color: #ffffff;
+      text-align: center;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+      letter-spacing: 1px;
+    }
+  }
+  
+  .bay-axis-section-gap {
+    // Height calculation for unified row axes with smaller cells (section header removed):
+    // Row axis bottom of top section (22px) + Central aisle (25px) + Section grid padding (4px top)
+    // Adjusted to ensure bottom section bay letters align with grid start
+    height: 51px;
+    width: 100%;
+    background: transparent;
+    flex-shrink: 0;
+  }
+
+  .bay-axis-part-gap {
+    // Small gap between parts in the bay axis (matches the red horizontal divider between parts)
+    height: 1px;
+    width: 100%;
+    background: transparent;
+    flex-shrink: 0;
+  }
+}
+
+// Sections Grid Container - holds all sections in 2x2 layout
+.sections-grid-container {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  height: 100%;
+  flex: 1;
+  overflow: visible; // Allow part labels to extend outside section boundaries
+}
+
+// Section Row Container - holds 2 sections side by side with vertical central aisle
+.section-row-container {
+  display: grid;
+  grid-template-columns: 1fr 16px 1fr; // Left section | Vertical Aisle | Right section
+  gap: 0;
+  width: 100%;
+  flex: 1;
+  min-height: 0; // Allow flex children to shrink
+  overflow: visible; // Allow part labels to extend outside
+  padding: 0 55px; // Reserve space for bay-axis (22px) + gap + part-name label (18px) on each side
+}
+
+// Section Grid Containers (Take maximum width and expand to fill height)
+.section-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  border: 2px solid #94a3b8;
+  border-radius: 5px;
+  overflow: visible; // Allow absolutely-positioned bay letter columns to show outside the border
+  padding: 4px;
+  background: white;
+  overflow: visible; // Allow right part label to extend outside
+  
+  &.finishing-section {
+    border-left: 4px solid #5e60ce;
+  }
+  
+  &.assembly-section {
+    border-left: 4px solid #1b9aaa;
+  }
+}
+
+// Section Header - Blueprint Style (EXTRA COMPACT for no-scroll)
+.section-header-blueprint {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 6px;
+  background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%);
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  height: 26px;
+  min-height: 26px;
+  max-height: 26px;
+  flex-shrink: 0;
+  
+  .section-name {
+    font-size: 11px;
+    font-weight: 800;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+  
+  .section-range {
+    font-size: 8px;
+    font-weight: 600;
+    color: #a0aec0;
+    white-space: nowrap;
+  }
+}
+
+// Dual X-Axis - Row numbers at top and bottom (FLEXIBLE to match cell widths)
+.row-axis-top,
+.row-axis-bottom {
+  display: flex;
+  gap: 1px;
+  padding: 0;
+  width: 100%;
+  
+  .row-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1; // Match cell width by flexing
+    min-width: 18px;
+    height: 22px;
+    min-height: 22px;
+    max-height: 22px;
+    background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    border: 2.5px solid #334155;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 900;
+    color: #ffffff;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.5px;
+    
+    // Frozen column header — dark background with black border to match frozen cells
+    &.frozen-col-header {
+      background: #1e293b !important;
+      border-color: #000000 !important;
+      cursor: not-allowed;
+      flex: 1 !important;
+      min-width: 0 !important;
+      max-width: none !important;
+    }
+  }
+}
+
+// Section Parts Container - VERTICALLY STACKED (Parts displayed vertically)
+.section-parts-container-stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  width: 100%;
+  flex: 1;
+  min-height: 0; // Allow flex children to shrink
+  overflow: visible; // Allow part labels to extend outside
+}
+
+// Part Container - VERTICALLY STACKED
+.part-container-stacked {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  flex: 1;
+  min-height: 0; // Allow flex children to shrink
+  overflow: visible; // Allow part labels to extend outside
+}
+
+// Dual Part Labels Container - Horizontal layout with bay-letter columns on both sides
+.part-labels-dual-container {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  overflow: visible;
+}
+
+// Part Label - Dual (Left and Right sides) - Hollow style with white interior
+// Positioned BEYOND the bay-axis column (22px wide, 5px gap) so they don't overlap
+.part-label-dual {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+  background: white;
+  border: 2px solid #111827;
+  border-radius: 3px;
+  padding: 6px 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+  min-width: 18px;
+  max-width: 18px;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  height: 100%;
+  z-index: 3;
+  
+  span {
+    font-size: 8px;
+    font-weight: 900;
+    color: #111827;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+  
+  // Finishing section: label sits BEYOND the bay-axis on the left
+  // bay-axis occupies: right: calc(100%+5px) → spans [-27px, -5px] from section left
+  // label sits at [-48px, -30px] (3px gap after bay-axis)
+  &.part-label-left {
+    transform: rotate(180deg);
+    right: calc(100% + 30px);
+  }
+  
+  // Assembly section: label sits BEYOND the bay-axis on the right
+  // bay-axis occupies: left: calc(100%+5px) → spans [+5px, +27px] from section right
+  // label sits at [+30px, +48px]
+  &.part-label-right {
+    left: calc(100% + 30px);
+  }
+}
+
+// Per-section bay letter column — floats OUTSIDE the section border
+// Positioned absolutely relative to .part-container-stacked (position:relative)
+// Finishing → left side; Assembly → right side
+.part-bay-axis {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px; // matches the 1px grid row gap
+  width: 22px;
+  z-index: 2;
+
+  .part-bay-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-height: 18px;
+    background: linear-gradient(145deg, #334155 0%, #1e293b 100%);
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 900;
+    color: #ffffff;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+    user-select: none;
+  }
+
+  // Left side: push past section left border (2 px) + 3 px gap
+  &.part-bay-axis-left  { right: calc(100% + 5px); }
+
+  // Right side: push past section right border (2 px) + 3 px gap
+  &.part-bay-axis-right { left: calc(100% + 5px); }
+}
+
+// Responsive sizing for bay cells
+@media (max-width: 1600px) {
+  .part-bay-axis { width: 20px; }
+  .part-bay-axis .part-bay-cell { min-height: 16px; font-size: 10px; }
+}
+@media (max-width: 1400px) {
+  .part-bay-axis { width: 18px; }
+  .part-bay-axis .part-bay-cell { min-height: 14px; font-size: 9px; }
+}
+@media (max-width: 1200px) {
+  .part-bay-axis { width: 16px; }
+  .part-bay-axis .part-bay-cell { min-height: 12px; font-size: 8px; }
+}
+
+// Part Grid Matrix - VERTICALLY STACKED (Flexible Grid Layout to fill space)
+.part-grid-matrix-stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  flex: 1; // Allow grid to grow
+  
+  .part-row-stacked {
+    display: flex;
+    gap: 1px;
+    flex: 1; // Make rows expand equally
+    min-height: 18px; // Minimum height for visibility
+    
+    // Frozen rows (Rows 6 and 7) - Dead zones with minimal height
+    &.frozen-row {
+      flex: 0 0 6px; // Minimized height for frozen zones (reduced from 10px to 6px)
+      min-height: 6px;
+      max-height: 6px;
+    }
+  }
+}
+
+// Part Divider - HORIZONTAL line between parts (vertically stacked) - THINNER for compact layout
+.part-divider-stacked {
+  position: relative;
+  height: 4px;
+  min-height: 4px;
+  max-height: 4px;
+  width: 100%;
+  background: linear-gradient(90deg, 
+    #111827 0%, 
+    #111827 48%, 
+    #4b5563 48%, 
+    #4b5563 52%, 
+    #111827 52%, 
+    #111827 100%
+  );
+  background-size: 10px 100%;
+  box-shadow: 0 0 4px rgba(17, 24, 39, 0.3), inset 0 0 2px rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+  margin: 1px 0;
+  border-radius: 1px;
+  border: 1px solid #374151;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 6px;
+  
+  .part-label-stacked-center {
+    font-size: 7px;
+    font-weight: 900;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+    z-index: 15;
+    background: #111827;
+    padding: 0px 4px;
+    border-radius: 1px;
+    text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  }
+}
+
+// Section Full Grid - VERTICALLY STACKED (fallback when no parts defined)
+.section-full-grid-stacked {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  flex: 1; // Allow grid to grow
+  
+  .section-row-stacked {
+    display: flex;
+    gap: 1px;
+    flex: 1; // Make rows expand equally
+    min-height: 18px; // Minimum height for visibility
+    
+    // Frozen rows (Rows 6 and 7) - Dead zones with minimal height
+    &.frozen-row {
+      flex: 0 0 6px; // Minimized height for frozen zones (reduced from 10px to 6px)
+      min-height: 6px;
+      max-height: 6px;
+    }
+  }
+}
+
+// Blueprint Grid Cells (FLEXIBLE DIMENSIONS to fill section space)
+.matrix-cell-blueprint {
+  position: relative;
+  flex: 1; // Grow to fill available width
+  min-width: 18px; // Minimum width for visibility
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px;
+  border: 2px solid #64748b;
+  border-radius: 3px;
+  transition: all 0.15s ease;
+  background: #ffffff;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  
+  .location-code-blueprint {
+    font-size: 10px;
+    font-weight: 900;
+    color: #000000;
+    text-align: center;
+    line-height: 1.3;
+    word-break: break-word;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    letter-spacing: 0.3px;
+  }
+  
+  .progress-badge-blueprint {
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    font-size: 6px;
+    font-weight: 700;
+    color: #1e293b;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 0px 2px;
+    border-radius: 2px;
+    z-index: 5;
+    text-align: center;
+    white-space: nowrap;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+  }
+  
+  &.hidden {
+    display: none;
+  }
+  
+  &.empty {
+    background: #fafbfc;
+    border: 1px dashed #e2e8f0;
+    box-shadow: none;
+  }
+  
+  // Frozen Zone styling - Dead zones based on backend FreezingCells data
+  // Clean black border with transparent interior
+  &.frozen {
+    background: transparent !important;
+    border: 2px solid #000000 !important;
+    cursor: not-allowed !important;
+    opacity: 1;
+    position: relative;
+    flex: 1 !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    
+    .location-code-blueprint,
+    .progress-badge-blueprint {
+      display: none !important;
+    }
+    
+    &:hover {
+      box-shadow: none !important;
+      transform: none !important;
+      z-index: 1;
+    }
+  }
+  
+  &.has-box {
+    cursor: pointer;
+    border-width: 1px;
+    
+    &:hover {
+      box-shadow: 0 0 0 2px var(--amana-teal);
+      z-index: 10;
+      transform: scale(1.08);
+    }
+  }
+  
+  // WIR Stage Colors - Blueprint Style
+  &.wir-stage-1 {
+    background: #4ea8de;
+    border-color: #1b9aaa;
+    
+    .location-code-blueprint {
+      color: white;
+    }
+  }
+  
+  &.wir-stage-2 {
+    background: #52b788;
+    border-color: #2d6a4f;
+    
+    .location-code-blueprint {
+      color: white;
+    }
+  }
+  
+  &.wir-stage-3 {
+    background: #bef264;
+    border-color: #9bc53d;
+    
+    .location-code-blueprint {
+      color: #3d5a0f;
+    }
+  }
+  
+  &.wir-stage-4 {
+    background: #fde047;
+    border-color: #ffc107;
+    
+    .location-code-blueprint {
+      color: #713f12;
+    }
+  }
+  
+  &.wir-stage-5 {
+    background: #fb923c;
+    border-color: #ff6b35;
+    
+    .location-code-blueprint {
+      color: white;
+    }
+  }
+  
+  &.wir-stage-6 {
+    background: #a78bfa;
+    border-color: #5e60ce;
+    
+    .location-code-blueprint {
+      color: white;
+    }
+  }
+  
+  // Additional Dynamic Stages (WIR-7 onwards)
+  &.wir-stage-7 {
+    background: #f472b6; // Pink
+    border-color: #ec4899;
+    
+    .location-code-blueprint {
+      color: white;
+    }
+  }
+
+  &.wir-stage-8 {
+    background: #60a5fa; // Blue
+    border-color: #3b82f6;
+    
+    .location-code-blueprint {
+      color: white;
+    }
+  }
+
+  &.wir-stage-9 {
+    background: #fb7185; // Rose
+    border-color: #f43f5e;
+    
+    .location-code-blueprint {
+      color: white;
+    }
+  }
+
+  &.wir-stage-10 {
+    background: #c084fc; // Purple
+    border-color: #a855f7;
+    
+    .location-code-blueprint {
+      color: white;
+    }
+  }
+
+  &.wir-stage-11 {
+    background: #facc15; // Amber
+    border-color: #eab308;
+    
+    .location-code-blueprint {
+      color: #000000;
+    }
+  }
+
+  &.wir-stage-12 {
+    background: #2dd4bf; // Teal
+    border-color: #14b8a6;
+    
+    .location-code-blueprint {
+      color: white;
+    }
+  }
+  
+  &.wir-completed {
+    background: #10b981;
+    border-color: #059669;
+    
+    .location-code-blueprint {
+      color: white;
+    }
+  }
+}
+
+// Central Aisle - Horizontal separator between top and bottom rows (Extra Compact)
+.central-aisle-horizontal {
+  height: 25px;
+  min-height: 25px;
+  max-height: 25px;
+  width: 100%;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    #e2e8f0 10%, 
+    #cbd5e1 50%, 
+    #e2e8f0 90%, 
+    transparent 100%
+  );
+  border-top: 2px dashed #64748b;
+  border-bottom: 2px dashed #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  
+  .aisle-label {
+    font-size: 10px;
+    font-weight: 900;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: white;
+    padding: 4px 12px;
+    border-radius: 3px;
+    border: 2px solid #64748b;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  }
+}
+
+// Central Aisle - Vertical separator between Finishing and Assembly columns
+.central-aisle-vertical {
+  width: 16px;
+  min-width: 16px;
+  max-width: 16px;
+  height: 100%;
+  background: linear-gradient(0deg, 
+    transparent 0%, 
+    #e2e8f0 5%, 
+    #cbd5e1 50%, 
+    #e2e8f0 95%, 
+    transparent 100%
+  );
+  border-left: 2px dashed #64748b;
+  border-right: 2px dashed #64748b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  writing-mode: vertical-lr;
+  text-orientation: mixed;
+  
+  .aisle-label-vertical {
+    font-size: 9px;
+    font-weight: 900;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    background: white;
+    padding: 8px 3px;
+    border-radius: 3px;
+    border: 2px solid #64748b;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+    transform: rotate(180deg);
+  }
+}
+
+// Responsive Adjustments (Flexible sizing)
+@media (max-width: 1600px) {
+  .matrix-cell-blueprint {
+    min-width: 20px;
+    
+    .location-code-blueprint {
+      font-size: 10px;
+    }
+  }
+  
+  .part-row-stacked,
+  .section-row-stacked {
+    min-height: 20px;
+  }
+  
+  .common-bay-axis .bay-label-container {
+    min-height: 50px;
+  }
+  
+  .row-axis-top .row-number,
+  .row-axis-bottom .row-number {
+    min-width: 20px;
+  }
+}
+
+@media (max-width: 1400px) {
+  .factory-layout-two-column.blueprint-style {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 6px;
+  }
+  
+  .matrix-cell-blueprint {
+    min-width: 18px;
+    
+    .location-code-blueprint {
+      font-size: 10px;
+    }
+  }
+  
+  .part-row-stacked,
+  .section-row-stacked {
+    min-height: 18px;
+  }
+  
+  .common-bay-axis {
+    .bay-axis-top-offset {
+      height: 44px;
+    }
+    
+    .bay-label-container {
+      width: 30px;
+      min-height: 45px;
+      
+      .bay-label {
+        font-size: 14px;
+      }
+    }
+    
+    .bay-axis-section-gap {
+      height: 87px;
+    }
+  }
+  
+  .row-axis-top .row-number,
+  .row-axis-bottom .row-number {
+    min-width: 18px;
+    height: 16px;
+    font-size: 8px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .factory-layout-two-column.blueprint-style {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 5px;
+  }
+  
+  .section-row-container {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .matrix-cell-blueprint {
+    min-width: 16px;
+  }
+  
+  .part-row-stacked,
+  .section-row-stacked {
+    min-height: 16px;
+  }
+  
+  .common-bay-axis .bay-label-container {
+    width: 28px;
+    min-height: 40px;
+  }
+  
+  .row-axis-top .row-number,
+  .row-axis-bottom .row-number {
+    min-width: 16px;
+  }
+  
+  .central-aisle-horizontal {
+    height: 28px;
+    min-height: 28px;
+    max-height: 28px;
+    
+    .aisle-label {
+      font-size: 9px;
+      padding: 4px 10px;
+    }
+  }
+  
+  .central-aisle-vertical {
+    display: none; // Hide vertical aisle on tablets in stacked layout
+  }
+}
+
+@media (max-width: 768px) {
+  .factory-layout-two-column.blueprint-style {
+    grid-template-columns: 1fr;
+  }
+  
+  .common-bay-axis {
+    display: none; // Hide common axis on mobile
+  }
+  
+  .matrix-cell-blueprint {
+    min-width: 14px;
+    
+    .location-code-blueprint {
+      font-size: 9px;
+    }
+  }
+  
+  .part-row-stacked,
+  .section-row-stacked {
+    min-height: 14px;
+  }
+  
+  .row-axis-top .row-number,
+  .row-axis-bottom .row-number {
+    min-width: 14px;
+  }
+  
+  .central-aisle-vertical {
+    display: none; // Hide vertical aisle on mobile
+  }
+}
+
+// ============================================
+// SUMMARY SECTION
+// ============================================
+
+.summary-section {
+  margin-bottom: 20px;
+  padding: 0;
+}
+
+.summary-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 0;
+  align-items: start; // Remove equal height stretching
+
+  @media (max-width: 1200px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    
+    // Reduce max-height for mobile to save screen space
+    .summary-card .card-body:has(table thead) {
+      max-height: 180px;
+    }
+  }
+}
+
+.summary-card {
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: auto; // Let cards use natural height
+
+  .card-header {
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    flex-shrink: 0;
+
+    h3 {
+      margin: 0;
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: #1e293b;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+  }
+
+  .card-body {
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    
+    // Make card-body scrollable ONLY for tables with thead (Dispatched Boxes & Boxes by Building)
+    &:has(table thead) {
+      min-height: 180px; // Match height of Total Boxes Overview card
+      max-height: 180px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      position: relative;
+      
+      // Smooth scrolling
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      
+      // Custom scrollbar styling
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+      
+      &::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+      }
+      
+      &::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+        
+        &:hover {
+          background: #94a3b8;
+        }
+      }
+      
+      // Scroll shadow indicators
+      background:
+        // Shadow at top
+        linear-gradient(white 30%, rgba(255, 255, 255, 0)),
+        linear-gradient(rgba(255, 255, 255, 0), white 70%) 0 100%,
+        // Shadow scrolled content at top
+        radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0)),
+        // Shadow scrolled content at bottom
+        radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0)) 0 100%;
+      background-repeat: no-repeat;
+      background-color: white;
+      background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
+      background-attachment: local, local, scroll, scroll;
+    }
+  }
+
+  .empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 16px;
+    min-height: 180px; // Match card height when empty
+
+    p {
+      margin: 0;
+      font-size: 0.8125rem;
+      color: #94a3b8;
+    }
+  }
+}
+
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+
+  thead tr {
+    background: #f8fafc;
+
+    th {
+      padding: 8px 16px;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      font-size: 0.6875rem;
+      letter-spacing: 0.04em;
+      border-bottom: 1px solid #e2e8f0;
+      white-space: nowrap;
+      
+      // Sticky header for scrollable tables
+      position: sticky;
+      top: 0;
+      background: #f8fafc;
+      z-index: 10;
+      
+      // Add shadow when scrolling
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: #e2e8f0;
+      }
+    }
+  }
+
+  tbody tr {
+    border-bottom: 1px solid #f1f5f9;
+
+    &:last-child {
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    &:hover {
+      background: #f8fafc;
+    }
+
+    td {
+      padding: 10px 16px;
+    }
+  }
+
+  tfoot .total-row {
+    background: #f8fafc;
+
+    td {
+      padding: 10px 16px;
+      font-weight: 700;
+      color: #0f766e;
+      border-top: 1px solid #e2e8f0;
+      
+      // Sticky footer for scrollable tables
+      position: sticky;
+      bottom: 0;
+      background: #f8fafc;
+      z-index: 9;
+      
+      // Add shadow above footer when scrolling
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: #e2e8f0;
+      }
+    }
+  }
+
+  .label-cell {
+    text-align: left;
+    color: #334155;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  th.label-cell,
+  tfoot .label-cell {
+    display: table-cell;
+  }
+
+  .value-cell {
+    text-align: center;
+    font-weight: 600;
+    color: #1e293b;
+    font-variant-numeric: tabular-nums;
+
+    &.total {
+      font-weight: 700;
+      color: #0f766e;
+    }
+  }
+
+  th.value-cell {
+    text-align: center;
+  }
+
+  .dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .dot-assembly {
+    background: #14b8a6;
+  }
+
+  .dot-finishing {
+    background: #f97316;
+  }
+
+  .dot-empty {
+    background: #cbd5e1;
+  }
+}
+
+// Legacy total-summary (unused, kept minimal for backwards compat)
+.total-summary { display: none; }
+
+// Legacy bar-charts (unused)
+.total-summary-bars { display: none; }
+
+// Legacy modern total boxes (unused)
+.total-summary-modern { display: none; }
+
+// Legacy modern card classes (unused after redesign)
+.modern-boxes-card,
+.modern-dispatch-card,
+.modern-building-card {
+  display: none;
+}
+
+// Legacy modern card header (unused)
+.modern-card-header { display: none; }
+
+// Legacy modern card body (unused)
+.modern-card-body { display: none; }
+
+// Legacy metric items (unused)
+.metric-item { display: none; }
+
+// Legacy total badge modern (unused)
+.total-badge-modern { display: none; }
+
+// Legacy modern table & empty state (unused)
+.modern-table-container { display: none; }
+.empty-state-modern { display: none; }
+
+// Legacy responsive blocks for old modern cards (cleaned up)
+
+// Print and Export Buttons
+.btn-print,
+.btn-export-png,
+.btn-export {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+}
+
+.btn-export-png {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+  color: white;
+
+  &:hover {
+    background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.btn-print {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+  color: white;
+
+  &:hover {
+    background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.btn-export {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+
+  &:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// Export Modal
+.export-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 20px;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.export-modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 600px;
+  width: 100%;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.export-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+
+  h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e293b;
+  }
+
+  .btn-close-modal {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: #f1f5f9;
+      color: #1e293b;
+    }
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+}
+
+.export-modal-content {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+
+  .export-description {
+    margin: 0 0 20px 0;
+    color: #64748b;
+    font-size: 0.9rem;
+    line-height: 1.6;
+  }
+
+  .section-selection {
+    .section-selection-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+
+      h3 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1e293b;
+      }
+
+      .section-selection-actions {
+        display: flex;
+        gap: 8px;
+
+        .btn-select-action {
+          padding: 6px 12px;
+          border: 1px solid #cbd5e1;
+          background: white;
+          color: #475569;
+          border-radius: 6px;
+          font-size: 0.8rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+
+          &:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+          }
+
+          &:active {
+            transform: scale(0.98);
+          }
+        }
+      }
+    }
+
+    .section-checkboxes {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+
+      .section-checkbox {
+        display: flex;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 12px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+
+        &:hover {
+          background: #f9fafb;
+          border-color: #2563eb;
+        }
+
+        input[type="checkbox"] {
+          margin-top: 2px;
+          width: 18px;
+          height: 18px;
+          cursor: pointer;
+          accent-color: #2563eb;
+        }
+
+        .checkbox-label {
+          flex: 1;
+          font-size: 0.9rem;
+          color: #1e293b;
+          font-weight: 500;
+
+          .section-details {
+            display: block;
+            margin-top: 4px;
+            font-size: 0.8rem;
+            color: #64748b;
+            font-weight: 400;
+          }
+        }
+      }
+    }
+  }
+
+  .no-sections-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 32px 20px;
+    background: #f8fafc;
+    border-radius: 8px;
+    text-align: center;
+
+    svg {
+      width: 24px;
+      height: 24px;
+      color: #2563eb;
+    }
+
+    p {
+      margin: 0;
+      color: #475569;
+      font-size: 0.9rem;
+    }
+  }
+}
+
+.export-modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  justify-content: flex-end;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  .btn-cancel {
+    background: white;
+    color: #64748b;
+    border: 1px solid #cbd5e1;
+
+    &:hover {
+      background: #f8fafc;
+      border-color: #94a3b8;
+    }
+  }
+
+  .btn-execute {
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+    color: white;
+
+    &:hover {
+      background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+}
+
+// Mobile responsiveness for export modal
+@media (max-width: 768px) {
+  .export-modal {
+    max-width: 100%;
+    max-height: 90vh;
+    margin: 10px;
+  }
+
+  .export-modal-header {
+    padding: 16px 20px;
+
+    h2 {
+      font-size: 1.1rem;
+    }
+  }
+
+  .export-modal-content {
+    padding: 20px;
+  }
+
+  .export-modal-footer {
+    padding: 12px 20px;
+    flex-direction: column-reverse;
+
+    button {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  .btn-print,
+  .btn-export-png,
+  .btn-export {
+    font-size: 0.8rem;
+    padding: 8px 12px;
+
+    svg {
+      width: 14px;
+      height: 14px;
+    }
+  }
+}
+
+// ============================================
+// EXPORT MODE - Fix for html2canvas
+// ============================================
+// When exporting with html2canvas, transforms on vertical text don't render correctly.
+// In export mode, we remove all transforms and rely solely on writing-mode for vertical text.
+.layout-print-area.export-mode {
+  // Fix left part labels - remove rotation, use opposite writing-mode to achieve same visual effect
+  .part-label-dual.part-label-left {
+    transform: none !important; // Remove rotation
+    writing-mode: vertical-rl !important; // Use right-to-left to mirror the 180deg rotation effect
+    text-orientation: mixed !important;
+    transform-origin: center center !important; // Center origin to prevent layout shifts
+    width: max-content !important; // Ensure proper width for content
+    min-width: auto !important; // Override min-width constraints
+    max-width: none !important; // Allow full width
+    
+    // Adjust span content to read correctly
+    span {
+      display: inline-block !important;
+      white-space: nowrap !important; // Prevent text wrapping into single letters
+      width: max-content !important; // Ensure proper width for text
+    }
+  }
+  
+  // Fix right part labels
+  .part-label-dual.part-label-right {
+    transform-origin: center center !important; // Center origin to prevent layout shifts
+    width: max-content !important; // Ensure proper width for content
+    min-width: auto !important; // Override min-width constraints
+    max-width: none !important; // Allow full width
+    
+    span {
+      white-space: nowrap !important; // Prevent text wrapping into single letters
+      width: max-content !important; // Ensure proper width for text
+    }
+  }
+  
+  // Fix vertical aisle label - remove rotation, use opposite writing-mode
+  .central-aisle-vertical .aisle-label-vertical {
+    transform: none !important; // Remove rotation
+    writing-mode: vertical-rl !important; // Use right-to-left to mirror the 180deg rotation effect
+    text-orientation: mixed !important;
+    transform-origin: center center !important; // Center origin to prevent layout shifts
+    white-space: nowrap !important; // Prevent text wrapping into single letters
+    width: max-content !important; // Ensure proper width for content
+    min-width: auto !important; // Override min-width constraints
+    max-width: none !important; // Allow full width
+  }
+  
+  // Fix horizontal aisle label (prevent wrapping)
+  .central-aisle-horizontal .aisle-label {
+    white-space: nowrap !important; // Prevent text wrapping
+    width: max-content !important; // Ensure proper width for content
+  }
+  
+  // Fix bay labels (vertical axis letters - B, C, D, etc.)
+  .common-bay-axis .bay-label-container .bay-label {
+    white-space: nowrap !important; // Prevent text wrapping
+    width: max-content !important; // Ensure proper width for content
+  }
+  
+  // Fix row numbers (horizontal axis numbers)
+  .row-axis-top .row-number,
+  .row-axis-bottom .row-number {
+    white-space: nowrap !important; // Prevent text wrapping
+    width: max-content !important; // Ensure proper width for content
+  }
+  
+  // Fix part divider labels (if any)
+  .part-divider-stacked .part-label-stacked-center {
+    white-space: nowrap !important; // Prevent text wrapping
+    width: max-content !important; // Ensure proper width for content
+  }
+  
+  // Fix section header labels
+  .section-header-blueprint .section-name,
+  .section-header-blueprint .section-range {
+    white-space: nowrap !important; // Prevent text wrapping
+  }
+  
+  // Ensure container has proper width to accommodate vertical text
+  .factory-layout-two-column.blueprint-style {
+    overflow: visible !important; // Allow rotated text to extend beyond boundaries
+    padding: 6px !important; // Bay letters are embedded in sections; no extra padding needed
+  }
+  
+  // Ensure vertical aisle container has proper width
+  .central-aisle-vertical {
+    min-width: 16px !important; // Ensure minimum width
+    overflow: visible !important; // Allow text to extend if needed
+  }
+  
+  // Remove scroll limitation in export mode - show full content for PDF/PNG
+  .summary-card .card-body {
+    max-height: none !important; // Remove height restriction
+    overflow: visible !important; // Show all content
+    background: white !important; // Remove scroll shadows
   }
 }
 

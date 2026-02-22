@@ -1,0 +1,151 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="main-content">
+  <div class="page-header">
+    <div class="header-content">
+      <h1 class="page-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+          <path d="M3 9h18M9 21V9"/>
+        </svg>
+        Box Activity Templates
+      </h1>
+      <p class="page-subtitle">Manage reusable box activity workflows and schedules</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn-primary" (click)="navigateToCreate()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"/>
+          <line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        Create Template
+      </button>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-card">
+    <div class="filters-grid">
+      <div class="filter-group">
+        <label class="filter-label">Select Template</label>
+        <select 
+          class="filter-select" 
+          [(ngModel)]="selectedTemplateId"
+          (change)="onTemplateSelect()">
+          <option value="">All Templates</option>
+          <option *ngFor="let template of templates" [value]="template.activityTemplateId">
+            {{ template.templateName }} ({{ template.activityCount }} activities)
+          </option>
+        </select>
+      </div>
+      
+      <div class="filter-group">
+        <label class="filter-label">Status</label>
+        <div class="checkbox-wrapper">
+          <input 
+            type="checkbox" 
+            id="activeOnly" 
+            [(ngModel)]="showActiveOnly"
+            (change)="applyFilters()">
+          <label for="activeOnly">Active Only</label>
+        </div>
+      </div>
+      
+      <div class="filter-actions">
+        <button class="btn btn-ghost btn-sm" (click)="clearFilters()">Clear Selection</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading templates...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="error-state">
+    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/>
+      <line x1="12" y1="8" x2="12" y2="12"/>
+      <line x1="12" y1="16" x2="12.01" y2="16"/>
+    </svg>
+    <p>{{ error }}</p>
+    <button class="btn btn-primary" (click)="loadTemplates()">Retry</button>
+  </div>
+
+  <!-- Templates Table -->
+  <div *ngIf="!loading && !error" class="templates-table-card">
+    <div *ngIf="filteredTemplates.length === 0" class="empty-state">
+      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+      </svg>
+      <h3>No templates found</h3>
+      <p>Create your first activity template to get started</p>
+      <button class="btn btn-primary" (click)="navigateToCreate()">Create Template</button>
+    </div>
+
+    <table *ngIf="filteredTemplates.length > 0" class="templates-table">
+      <thead>
+        <tr>
+          <th>Template Name</th>
+          <th>Description</th>
+          <th>Activities</th>
+          <th>Status</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let template of filteredTemplates">
+          <td>
+            <span class="template-name">
+              {{ template.templateName }}
+            </span>
+          </td>
+          <td>
+            <span *ngIf="template.description">{{ template.description }}</span>
+            <span *ngIf="!template.description" class="text-muted">-</span>
+          </td>
+          <td>
+            <span class="badge badge-info">{{ template.activityCount }} activities</span>
+          </td>
+          <td>
+            <span class="status-badge" [ngClass]="getStatusClass(template.isActive)">
+              {{ getStatusText(template.isActive) }}
+            </span>
+          </td>
+          <td>
+            <div class="date-info">
+              {{ template.createdDate | date: 'MMM d, y' }}
+              <small *ngIf="template.createdBy">by {{ template.createdBy }}</small>
+            </div>
+          </td>
+          <td>
+            <div class="action-buttons">
+              <button 
+                class="btn-icon" 
+                (click)="viewTemplate(template.activityTemplateId)"
+                title="View Details">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              </button>
+              <button 
+                class="btn-icon btn-edit" 
+                (click)="navigateToEdit(template.activityTemplateId)"
+                title="Edit Template">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

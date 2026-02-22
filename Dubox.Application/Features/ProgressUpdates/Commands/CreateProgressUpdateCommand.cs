@@ -21,6 +21,7 @@ public record CreateProgressUpdateCommand(
     string? WirBay,
     string? WirRow,
     string? WirPosition,
+    Guid? WirFactorySectionId, // Section ID selected by user in UI
     List<string>? FileNames = null
 ) : IRequest<Result<ProgressUpdateDto>>;
 

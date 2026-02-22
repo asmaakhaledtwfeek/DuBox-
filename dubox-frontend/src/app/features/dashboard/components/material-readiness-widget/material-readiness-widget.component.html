@@ -1,0 +1,100 @@
+<div class="material-readiness-widget">
+  <div class="widget-header">
+    <h4>Material Readiness</h4>
+    <span class="completion-badge" [class.complete]="getCompletionPercentage() === 100">
+      {{ getCompletionPercentage() }}%
+    </span>
+  </div>
+
+  <div class="widget-content" *ngIf="!isLoading">
+    <!-- Overall Progress -->
+    <div class="progress-section">
+      <div class="progress-bar-container">
+        <div class="progress-bar">
+          <div class="progress-fill arrived" [style.width.%]="getCompletionPercentage()"></div>
+        </div>
+        <div class="progress-labels">
+          <span>{{ summary.arrivedMaterials }} / {{ summary.totalMaterials }} Materials Ready</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Status Summary -->
+    <div class="status-grid">
+      <div class="status-card complete">
+        <div class="status-icon">✓</div>
+        <div class="status-details">
+          <div class="status-value">{{ summary.boxesWithAllMaterials }}</div>
+          <div class="status-label">Boxes Ready</div>
+        </div>
+      </div>
+
+      <div class="status-card overdue" *ngIf="summary.boxesWithOverdueMaterials > 0">
+        <div class="status-icon">⚠</div>
+        <div class="status-details">
+          <div class="status-value">{{ summary.boxesWithOverdueMaterials }}</div>
+          <div class="status-label">Overdue</div>
+        </div>
+      </div>
+
+      <div class="status-card approaching" *ngIf="summary.boxesWithApproachingMaterials > 0">
+        <div class="status-icon">⏰</div>
+        <div class="status-details">
+          <div class="status-value">{{ summary.boxesWithApproachingMaterials }}</div>
+          <div class="status-label">Due Soon</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Critical Boxes Alert -->
+    <div class="critical-alert" *ngIf="criticalBoxes.length > 0">
+      <div class="alert-header">
+        <span class="alert-icon">⚠</span>
+        <span class="alert-title">Critical Attention Required</span>
+      </div>
+      <div class="critical-boxes-list">
+        <div *ngFor="let box of criticalBoxes" class="critical-box-item">
+          <a [routerLink]="['/boxes', box.boxId]" class="box-link">
+            {{ box.boxTag }}
+          </a>
+          <span class="overdue-count">{{ box.overdueCount }} overdue</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Material Breakdown -->
+    <div class="material-breakdown">
+      <div class="breakdown-row">
+        <span class="breakdown-label">Arrived</span>
+        <span class="breakdown-value arrived">{{ summary.arrivedMaterials }}</span>
+      </div>
+      <div class="breakdown-row" *ngIf="summary.approachingMaterials > 0">
+        <span class="breakdown-label">Approaching</span>
+        <span class="breakdown-value approaching">{{ summary.approachingMaterials }}</span>
+      </div>
+      <div class="breakdown-row" *ngIf="summary.overdueMaterials > 0">
+        <span class="breakdown-label">Overdue</span>
+        <span class="breakdown-value overdue">{{ summary.overdueMaterials }}</span>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="widget-actions">
+      <a [routerLink]="['/projects', projectId, 'materials']" class="btn btn-sm btn-outline-primary">
+        Manage Materials
+      </a>
+    </div>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-state">
+    <div class="spinner-border spinner-border-sm" role="status">
+      <span class="sr-only">Loading...</span>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+

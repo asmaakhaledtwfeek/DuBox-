@@ -1,0 +1,234 @@
+<div class="material-selection-container">
+  <div class="header">
+    <h3>Project Material Template Selection</h3>
+    <p class="subtitle">Select material templates for this project. Templates provide pre-configured material sets. Individual material selection is done at the box-type level.</p>
+  </div>
+
+  <!-- Material Templates Section -->
+  <div class="templates-section">
+    <div class="templates-header" (click)="toggleTemplatesSection()">
+      <div class="header-left">
+        <span class="expand-icon" [class.expanded]="showTemplatesSection">▶</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        <div>
+          <h4>Material Templates for Project</h4>
+          <p class="subtitle-small">Assign one template to define the material sets for this project. Templates can be customized per box-type later.</p>
+        </div>
+      </div>
+      <div class="selected-count" *ngIf="getSelectedTemplatesCount() > 0">
+        {{ getSelectedTemplatesCount() }} template{{ getSelectedTemplatesCount() !== 1 ? 's' : '' }} assigned
+      </div>
+    </div>
+
+    <div class="templates-content" *ngIf="showTemplatesSection">
+      <!-- Template Search -->
+      <div class="template-search-bar">
+        <input 
+          type="text" 
+          class="form-control search-input"
+          [(ngModel)]="templateSearchTerm"
+          (ngModelChange)="filterTemplates()"
+          placeholder="Search templates by name, code, or category..."
+        />
+        <button 
+          class="btn btn-outline-secondary"
+          (click)="clearTemplateSelections()"
+          *ngIf="getSelectedTemplatesCount() > 0"
+        >
+          Clear Assignment
+        </button>
+      </div>
+
+      <!-- Loading State -->
+      <div class="templates-loading" *ngIf="loadingTemplates">
+        <div class="spinner"></div>
+        <p>Loading templates...</p>
+      </div>
+
+      <!-- Empty State -->
+      <div class="templates-empty" *ngIf="!loadingTemplates && availableTemplates.length === 0">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        <p>No material templates available</p>
+      </div>
+
+      <!-- Template Cards Grid -->
+      <div class="templates-grid" *ngIf="!loadingTemplates && filteredTemplates.length > 0">
+        <div 
+          *ngFor="let template of filteredTemplates" 
+          class="template-card"
+          [class.selected]="isTemplateSelected(template.materialTemplateId)"
+          [class.assigned]="isTemplateAssigned(template.materialTemplateId)"
+          (click)="toggleTemplateSelection(template.materialTemplateId)"
+        >
+          <div class="template-card-header">
+            <input 
+              type="checkbox" 
+              class="template-checkbox"
+              [checked]="isTemplateSelected(template.materialTemplateId)"
+              (click)="$event.stopPropagation()"
+              (change)="toggleTemplateSelection(template.materialTemplateId)"
+            />
+            <div class="template-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+            </div>
+            <div class="assigned-badge" *ngIf="isTemplateAssigned(template.materialTemplateId)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              Assigned
+            </div>
+          </div>
+          <div class="template-card-body">
+            <h5 class="template-name">{{ template.templateName }}</h5>
+            <p class="template-code">{{ template.templateCode }}</p>
+            <div class="template-meta-info">
+              <span class="material-count">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M20 7h-9"/>
+                  <path d="M14 17H5"/>
+                  <circle cx="17" cy="17" r="3"/>
+                  <circle cx="7" cy="7" r="3"/>
+                </svg>
+                {{ template.itemCount }} materials
+              </span>
+              <span class="template-category" *ngIf="template.category">
+                {{ template.category }}
+              </span>
+            </div>
+            <p class="template-description" *ngIf="template.description">
+              {{ template.description }}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- No Results -->
+      <div class="templates-empty" *ngIf="!loadingTemplates && availableTemplates.length > 0 && filteredTemplates.length === 0">
+        <p>No templates match your search</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Box Type-Level Templates Section -->
+  <div class="box-type-templates-section" *ngIf="boxTypes && boxTypes.length > 0">
+    <div class="section-divider"></div>
+    
+    <div class="box-type-header-wrapper">
+      <div class="box-type-main-header">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"/>
+          <rect x="14" y="3" width="7" height="7"/>
+          <rect x="14" y="14" width="7" height="7"/>
+          <rect x="3" y="14" width="7" height="7"/>
+        </svg>
+        <div>
+          <h4>Box Type-Level Material Templates</h4>
+          <p class="subtitle-small">Override project-level materials for specific box types. Each box type can have its own template.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Box Types Grid -->
+    <div class="box-types-grid">
+      <div class="box-type-card" *ngFor="let boxType of boxTypes">
+        <div class="box-type-card-header">
+          <div class="box-type-title-section">
+            <div class="box-type-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+              </svg>
+            </div>
+            <div>
+              <h5 class="box-type-name">{{ boxType.typeName }}</h5>
+              <span class="box-type-abbr" *ngIf="boxType.abbreviation">{{ boxType.abbreviation }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Template Assigned -->
+        <div class="assigned-template-display" *ngIf="getBoxTypeTemplate(boxType.id!)">
+          <div class="template-preview">
+            <div class="template-preview-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+            </div>
+            <div class="template-preview-info">
+              <div class="template-preview-name">{{ getBoxTypeTemplate(boxType.id!)!.templateName }}</div>
+              <div class="template-preview-meta">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"/>
+                </svg>
+                {{ getBoxTypeTemplate(boxType.id!)!.itemCount }} materials
+              </div>
+            </div>
+          </div>
+          <div class="template-preview-actions">
+            <button type="button" class="btn-icon-action" (click)="onChangeBoxTypeTemplate(boxType)" title="Change template">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </button>
+            <button type="button" class="btn-icon-action danger" (click)="onRemoveBoxTypeTemplate(boxType)" title="Remove template">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- No Template Assigned -->
+        <div class="no-template-display" *ngIf="!getBoxTypeTemplate(boxType.id!)">
+          <div class="no-template-message">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="info-icon">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M12 16v-4"/>
+              <path d="M12 8h.01"/>
+            </svg>
+            <span>Using project-level template</span>
+          </div>
+          <button type="button" class="btn-assign-template" (click)="onAssignBoxTypeTemplate(boxType)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
+            </svg>
+            Assign Template
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info box explaining the template-only approach -->
+  <div class="info-section">
+    <div class="info-card">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <path d="M12 16v-4"/>
+        <path d="M12 8h.01"/>
+      </svg>
+      <div class="info-content">
+        <h4>Project Material Management</h4>
+        <p>Projects use material templates to define required materials. Individual materials are selected when creating or configuring box types. This ensures consistency and simplifies material management across the project.</p>
+        <ul>
+          <li><strong>Templates:</strong> Assign one material template to this project above</li>
+          <li><strong>Box Types:</strong> When creating boxes, materials will be available based on assigned templates</li>
+          <li><strong>Customization:</strong> Box-specific material templates can override project-level templates</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+

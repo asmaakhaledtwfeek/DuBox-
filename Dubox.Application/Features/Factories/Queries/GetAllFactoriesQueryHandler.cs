@@ -24,9 +24,11 @@ public class GetAllFactoriesQueryHandler : IRequestHandler<GetAllFactoriesQuery,
     public async Task<Result<List<FactoryDto>>> Handle(GetAllFactoriesQuery request, CancellationToken cancellationToken)
     {
         var factories = await _dbContext.Factories
+            .Include(f => f.Sections)
+                .ThenInclude(s => s.Parts) // Include Parts for each Section
             .Include(f => f.Boxes)
                 .ThenInclude(b => b.Project)
-            .ToListAsync(cancellationToken); ;
+            .ToListAsync(cancellationToken);
       
 
         var dtos = factories.Select(f =>

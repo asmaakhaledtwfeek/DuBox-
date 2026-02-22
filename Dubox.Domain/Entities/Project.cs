@@ -67,11 +67,20 @@ public class Project
     public DateTime? ArchivedDated { get; set; }
     [ForeignKey(nameof(ProjectManger))]
     public Guid? ProjectMangerId { get; set; }
+    
+    /// <summary>
+    /// Default Activity Template for the project
+    /// Used when no type-specific template is assigned
+    /// </summary>
+    [ForeignKey(nameof(ActivityTemplate))]
+    public Guid? ActivityTemplateId { get; set; }
+    
     // Navigation properties
     public ICollection<Box> Boxes { get; set; } = new List<Box>();
     
     // Project Configuration Collections
     public virtual User? ProjectManger {  get; set; }
+    public virtual ActivityTemplate? ActivityTemplate { get; set; }
     public ICollection<ProjectBuilding> ProjectBuildings { get; set; } = new List<ProjectBuilding>();
     public ICollection<ProjectLevel> ProjectLevels { get; set; } = new List<ProjectLevel>();
     public ICollection<ProjectBoxType> ProjectBoxTypes { get; set; } = new List<ProjectBoxType>();

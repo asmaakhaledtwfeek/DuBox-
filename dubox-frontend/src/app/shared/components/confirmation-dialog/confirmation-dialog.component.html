@@ -1,0 +1,43 @@
+<div class="dialog-backdrop" 
+     *ngIf="isOpen" 
+     @backdropAnimation
+     (click)="onBackdropClick($event)">
+  <div class="dialog-container" 
+       @dialogAnimation
+       [ngClass]="getTypeClass()"
+       (click)="$event.stopPropagation()">
+    <button class="dialog-close" (click)="onClose()" aria-label="Close">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+    
+    <div class="dialog-header">
+      <div class="dialog-icon-wrapper">
+        <div class="dialog-icon">{{ getIcon() }}</div>
+      </div>
+    </div>
+
+    <div class="dialog-content">
+      <h3 class="dialog-title">{{ title }}</h3>
+      <p class="dialog-message" [innerHTML]="message"></p>
+    </div>
+
+    <div class="dialog-actions">
+      <button 
+        *ngIf="showCancel"
+        class="btn btn-secondary" 
+        (click)="onCancel()">
+        {{ cancelText }}
+      </button>
+      <button 
+        class="btn btn-primary" 
+        [ngClass]="'btn-' + type"
+        (click)="onConfirm()">
+        {{ confirmText }}
+      </button>
+    </div>
+  </div>
+</div>
+

@@ -29,6 +29,7 @@ public record ProjectBoxTypeDto
     public bool HasSubTypes { get; init; }
     public int DisplayOrder { get; init; }
     public bool IsActive { get; init; }
+    public Guid? ActivityTemplateId { get; init; }
     public List<ProjectBoxSubTypeDto> SubTypes { get; init; } = new();
 }
 

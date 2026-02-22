@@ -258,6 +258,17 @@ export class ProjectPanelTypesComponent implements OnInit {
     this.applyFilter();
   }
 
+  parseEmbeds(embedsJson?: string): any[] {
+    if (!embedsJson) {
+      return [];
+    }
+    try {
+      return JSON.parse(embedsJson);
+    } catch {
+      return [];
+    }
+  }
+
   goBack(): void {
     this.router.navigate(['/projects', this.projectId, 'dashboard']);
   }

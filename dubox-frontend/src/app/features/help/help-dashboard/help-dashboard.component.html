@@ -2,37 +2,148 @@
 <app-sidebar></app-sidebar>
 
 <div class="page-container">
-  <div class="page-content">
-    
-    <!-- Page Header -->
-    <div class="page-header">
-      <div class="header-content">
-        <h1 class="page-title">📚 Help & Documentation</h1>
-        <p class="page-subtitle">Everything you need to know about using DuBox</p>
+  <!-- Left Documentation Navigation -->
+  <nav class="help-navigation">
+    <div class="nav-section">
+      <div class="nav-item nav-parent" (click)="toggleNavSection('about')">
+        <span class="nav-icon">{{ navSections['about'] ? '−' : '+' }}</span>
+        <span class="nav-label">About DuBox</span>
+      </div>
+      <div class="nav-children" *ngIf="navSections['about']">
+        <div class="nav-item nav-child" (click)="scrollToSection('overview')">Overview</div>
+        <div class="nav-item nav-child" (click)="scrollToSection('overview')">Getting Started</div>
       </div>
     </div>
 
-    <!-- User Manual Section -->
-    <div class="manual-section">
-      <div class="manual-card">
-        <div class="manual-icon">
-          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
-            <polyline points="10 9 9 9 8 9"/>
+    <div class="nav-section">
+      <div class="nav-item nav-parent active" (click)="toggleNavSection('system')">
+        <span class="nav-icon">{{ navSections['system'] ? '−' : '+' }}</span>
+        <span class="nav-label">System Requirements</span>
+      </div>
+      <div class="nav-children" *ngIf="navSections['system']">
+        <div class="nav-item nav-child" (click)="scrollToSection('supported-browsers')">Supported Browsers</div>
+        <div class="nav-item nav-child" (click)="scrollToSection('operating-systems')">Operating Systems</div>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-item nav-parent" (click)="toggleNavSection('modules')">
+        <span class="nav-icon">{{ navSections['modules'] ? '−' : '+' }}</span>
+        <span class="nav-label">Module Documentation</span>
+      </div>
+      <div class="nav-children" *ngIf="navSections['modules']">
+        <div class="nav-item nav-child" (click)="scrollToSection('modules')">Projects</div>
+        <div class="nav-item nav-child" (click)="scrollToSection('modules')">Quality Control</div>
+        <div class="nav-item nav-child" (click)="scrollToSection('modules')">Teams</div>
+        <div class="nav-item nav-child" (click)="scrollToSection('modules')">Materials</div>
+        <div class="nav-item nav-child" (click)="scrollToSection('modules')">Cost Management</div>
+        <div class="nav-item nav-child" (click)="scrollToSection('modules')">Schedule</div>
+        <div class="nav-item nav-child" (click)="scrollToSection('modules')">Reports</div>
+        <div class="nav-item nav-child" (click)="scrollToSection('modules')">Factories</div>
+        <div class="nav-item nav-child" (click)="scrollToSection('modules')">BIM</div>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-item" (click)="scrollToSection('user-manual')">User Manual</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-item" (click)="scrollToSection('modules')">Modules</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-item" (click)="scrollToSection('tutorials')">Tutorials</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-item" (click)="scrollToSection('faqs')">FAQs</div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-item" (click)="scrollToSection('contact-support')">Contact Support</div>
+    </div>
+  </nav>
+
+  <div class="page-content">
+    
+    <!-- Hero Section -->
+    <div class="hero-section">
+      <div class="hero-icon">📚</div>
+      <h1 class="hero-title">Help & Documentation</h1>
+      <p class="hero-subtitle">Everything you need to know about using DuBox</p>
+    </div>
+    
+    <!-- Page Header -->
+    <div class="page-header" id="overview">
+      <h1 class="page-title">System Requirements</h1>
+      <!-- <div class="header-actions">
+        <button class="btn-share" title="Share">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="18" cy="5" r="3"/>
+            <circle cx="6" cy="12" r="3"/>
+            <circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
           </svg>
+          SHARE
+        </button>
+      </div> -->
+    </div>
+
+    <!-- Introduction -->
+    <div class="content-section">
+      <p class="intro-text">
+        Review the supported browsers, operating systems, and data centers for DuBox products 
+        (Projects, Quality Control, Teams, Materials, Cost Management, Schedule, Reports, Factories, BIM, and Admin modules).
+      </p>
+
+      <div class="note-box">
+        <strong>Note:</strong> Since DuBox is a web-based product, there are no specific hardware requirements. 
+        A stand-alone video card is recommended when using the 3D Viewer, but RAM and CPU requirements depend on project size.
+      </div>
+    </div>
+
+    <!-- System Requirements Section -->
+    <div class="content-section" id="supported-browsers">
+      <h2 class="section-title">Supported Browsers</h2>
+      
+      <div class="important-note">
+        <strong>Important:</strong> 64-bit browsers are recommended for optimal viewing experience.
         </div>
-        <div class="manual-content">
-          <h2>📖 Complete User Manual</h2>
-          <p>Access the comprehensive PowerPoint guide covering all features and functionality of DuBox system</p>
-          <div class="manual-features">
-            <span class="feature-badge">✓ Step-by-step Guides</span>
-            <span class="feature-badge">✓ Screenshots & Examples</span>
-            <span class="feature-badge">✓ Best Practices</span>
-            <span class="feature-badge">✓ Tips & Tricks</span>
+
+      <p class="section-description">
+        The latest versions of the following browsers are recommended. Otherwise, browser versions that are 
+        no more than a year old are strongly advised for continued support.
+      </p>
+
+      <ul class="feature-list">
+        <li><strong>Chrome</strong> (Recommended)</li>
+        <li><strong>Firefox</strong></li>
+        <li><strong>Safari</strong></li>
+        <li><strong>Edge</strong></li>
+      </ul>
+
+      <div class="note-box">
+        <strong>Note:</strong> Internet Explorer 11 is not supported for use with DuBox products.
           </div>
+    </div>
+
+    <!-- Operating Systems -->
+    <div class="content-section" id="operating-systems">
+      <h2 class="section-title">Operating Systems</h2>
+      <p class="section-description">
+        There are no desktop operating system requirements for DuBox products since they are web-based.
+      </p>
+    </div>
+
+    <!-- User Manual Section -->
+    <div class="content-section" id="user-manual">
+      <h2 class="section-title">Complete User Manual</h2>
+      <p class="section-description">
+        Access the comprehensive PowerPoint guide covering all features and functionality of the DuBox system.
+      </p>
+      
           <button class="btn-manual" (click)="openManual()">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
@@ -41,134 +152,2172 @@
             </svg>
             Open User Manual (PowerPoint)
           </button>
-          <small class="manual-note">Opens in SharePoint - Requires Amana account access</small>
+      <p class="small-note">Opens in SharePoint - Requires Amana account access</p>
+        </div>
+
+    <!-- Module Features -->
+    <div class="content-section" id="modules">
+      <h2 class="section-title">DuBox Modules</h2>
+      <p class="section-description">
+        DuBox includes the following integrated modules for construction management:
+      </p>
+
+      <div class="module-grid">
+        <div class="module-item" *ngFor="let module of modules">
+          <div class="module-header">
+            <span class="module-icon">{{ module.icon }}</span>
+            <h3>{{ module.name }}</h3>
+          </div>
+          <p class="module-description">{{ module.description }}</p>
+          <div class="module-topics">
+            <span class="topic-tag" *ngFor="let topic of module.topics">{{ topic }}</span>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Search Bar -->
-    <div class="search-section">
-      <div class="search-box">
+    <!-- Step-by-Step Tutorials -->
+    <div class="content-section" id="tutorials">
+      <h2 class="section-title">📖 Step-by-Step Tutorials</h2>
+      <p class="section-description">
+        Detailed guides with screenshots to help you get started with DuBox features
+      </p>
+
+      <!-- Tutorial: Create a Project -->
+      <div class="tutorial-card">
+        <div class="tutorial-header">
+          <h3 class="tutorial-title">How to Create a New Project</h3>
+          <span class="tutorial-badge">Projects</span>
+        </div>
+        
+        <div class="tutorial-content">
+          <p class="tutorial-intro">
+            Follow these steps to create and configure a new construction project in DuBox.
+          </p>
+
+          <div class="tutorial-steps">
+            <div class="tutorial-step">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <h4 class="step-title">Navigate to Projects & Click "New Project"</h4>
+                <p class="step-description">
+                  From the main sidebar, click on <strong>Projects</strong> to access the projects dashboard. 
+                  You'll see all your existing projects with their status (Active, On Hold, Completed, etc.). 
+                  Click the <strong>"+ New Project"</strong> button in the top-right corner to start creating a new project.
+                </p>
+                <div class="step-screenshot">
+                  <img src="assets/help/create-project-step1.png" alt="Projects page with New Project button" class="screenshot-image" />
+                  <p class="screenshot-caption">Projects page showing all active projects and the "New Project" button</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="tutorial-step">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <h4 class="step-title">Fill in Project Information & Timeline</h4>
+                <p class="step-description">
+                  The Create New Project form opens with a step indicator showing <strong>Step 1: Project Details</strong>. 
+                  Fill in the following required information:
+                </p>
+                
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📋 Project Information</h5>
+                  <ul class="step-list">
+                    <li><strong>Project Name:</strong> e.g., "Dubai Marina Tower Construction"</li>
+                    <li><strong>Project Code:</strong> e.g., "DUB-2024-001" (unique identifier)</li>
+                    <li><strong>Client Name:</strong> e.g., "Amana Contracting"</li>
+                    <li><strong>Location:</strong> Select from dropdown (KSA, UAE, etc.)</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📅 Timeline & Schedule</h5>
+                  <ul class="step-list">
+                    <li><strong>Planned Start Date:</strong> Select start date (mm/dd/yyyy)</li>
+                    <li><strong>Duration (days):</strong> e.g., 180 days</li>
+                    <li><strong>Projected End Date:</strong> Auto-calculated based on duration</li>
+                    <li><strong>Project Value:</strong> e.g., 5000000 (total estimated value)</li>
+                    <li><strong>Project Manager:</strong> Select from dropdown</li>
+                  </ul>
+                </div>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/create-project-step2.png" alt="Project details form" class="screenshot-image" />
+                  <p class="screenshot-caption">Project Information and Timeline sections with all required fields</p>
+                </div>
+      </div>
+    </div>
+
+            <div class="tutorial-step">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <h4 class="step-title">Add Additional Details & Configuration</h4>
+                <p class="step-description">
+                  Scroll down to complete the optional but recommended additional information:
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📝 Additional Details</h5>
+                  <ul class="step-list">
+                    <li><strong>Project Description:</strong> Enter detailed description of project scope, objectives, and key deliverables</li>
+                    <li><strong>BIM Link:</strong> Add link to BIM model if available (e.g., https://example.com/bim-model)</li>
+                    <li><strong>Conditional Approval:</strong> Check the box if you want to "Allow project completion with conditional approval checkpoints"</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">⚙️ Project Configuration</h5>
+                  <p class="step-description">
+                    Optionally configure buildings, floors, zones, and units. You can add these items one at a time or multiple 
+                    comma-separated values (press Enter or click Add).
+                  </p>
+                </div>
+
+                <p class="step-description">
+                  Once all information is entered, review your details and click the <strong>"Create Project"</strong> button 
+                  at the bottom-right. You can also click <strong>"Cancel"</strong> to discard changes.
+                </p>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/create-project-step3.png" alt="Additional details and configuration" class="screenshot-image" />
+                  <p class="screenshot-caption">Additional Details section with Project Description, BIM Link, and Project Configuration</p>
+    </div>
+
+                <div class="step-success">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="11" cy="11" r="8"/>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
         </svg>
-        <input 
-          type="text" 
-          [(ngModel)]="searchTerm" 
-          placeholder="Search for help topics, features, or questions..."
-        />
+                  <strong>Success!</strong> Your project has been created and will appear in the Active projects list. 
+                  You can now add boxes, teams, activities, and start tracking progress.
+                </div>
+              </div>
+            </div>
+          </div>
       </div>
     </div>
 
-
-
-    <!-- FAQ Section -->
-    <div class="section-header">
-      <h2>❓ Frequently Asked Questions</h2>
-      <p>Find answers to common questions</p>
-    </div>
-
-    <div class="faq-filters">
-      <button 
-        class="filter-btn" 
-        [class.active]="selectedCategory === 'all'"
-        (click)="selectedCategory = 'all'"
-      >
-        All
-      </button>
-      <button 
-        *ngFor="let category of getFAQCategories()"
-        class="filter-btn" 
-        [class.active]="selectedCategory === category"
-        (click)="selectedCategory = category"
-      >
-        {{ category }}
-      </button>
-    </div>
-
-    <div class="faq-list">
-      <div *ngFor="let faq of getFilteredFAQs()" class="faq-item" [class.expanded]="faq.expanded">
-        <div class="faq-question" (click)="toggleFAQ(faq)">
-          <span class="faq-icon">{{ faq.expanded ? '−' : '+' }}</span>
-          <span class="faq-text">{{ faq.question }}</span>
-          <span class="faq-category">{{ faq.category }}</span>
+      <!-- Tutorial: Submit WIR -->
+      <div class="tutorial-card">
+        <div class="tutorial-header">
+          <h3 class="tutorial-title">How to Submit a Work Inspection Request (WIR)</h3>
+          <span class="tutorial-badge quality">Quality</span>
         </div>
-        <div class="faq-answer" *ngIf="faq.expanded">
-          <p>{{ faq.answer }}</p>
+        
+        <div class="tutorial-content">
+          <p class="tutorial-intro">
+            Follow this comprehensive guide to create and submit quality control inspection requests (WIR) for your construction activities.
+          </p>
+
+          <div class="tutorial-steps">
+            <!-- Step 1: Start Stage -->
+            <div class="tutorial-step">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <h4 class="step-title">Navigate to Box Activities & Start Stage</h4>
+                <p class="step-description">
+                  Go to your box details page and click on the <strong>Activities</strong> tab. You'll see all stages with their activities, 
+                  assigned teams, and status. Locate the stage you want to inspect (e.g., Stage-1 with QA/QC activities). 
+                  Click the green <strong>"QA/QC"</strong> button to open the inspection modal.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📋 QA/QC Inspection Modal</h5>
+                  <p class="step-description">
+                    A modal will appear showing:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Stage Code:</strong> e.g., WIR-1</li>
+                    <li><strong>Box Tag:</strong> e.g., 190-B02-GF-S2-2</li>
+                    <li><strong>Activity:</strong> e.g., Box Closure</li>
+                    <li><strong>Box Name:</strong> e.g., 002</li>
+                    <li><strong>Status:</strong> PENDING (orange badge)</li>
+                  </ul>
+                  <p class="step-description">
+                    You can add optional <strong>Inspection Notes</strong> in the text area. 
+                    Click <strong>"Start Stage"</strong> button to begin the inspection process, or <strong>"Reject"</strong> if there are issues.
+                  </p>
+    </div>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/wir-step1.png" alt="QA/QC Inspection modal with Start Stage button" class="screenshot-image" />
+                  <p class="screenshot-caption">QA/QC Inspection modal showing stage details with Start and Reject options</p>
+                </div>
+              </div>
+    </div>
+
+            <!-- Step 2: Add Checkpoint -->
+            <div class="tutorial-step">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <h4 class="step-title">View Activities & Add Stage Checkpoint</h4>
+                <p class="step-description">
+                  After starting the stage, you'll see the Activities page with a detailed table showing all activities for this box. 
+                  Each stage row (Stage-1, Stage-2, Stage-3) shows:
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📊 Stage Information Display</h5>
+                  <ul class="step-list">
+                    <li><strong>Stage Badge:</strong> Stage number with color coding</li>
+                    <li><strong>QA/QC Team:</strong> Assigned team (e.g., QA/QC)</li>
+                    <li><strong>Clearance/Stage:</strong> Stage type (CLEARANCE / STAGE)</li>
+                    <li><strong>Assigned to:</strong> Person responsible (e.g., Mamdouh Salem, QC Engineer)</li>
+                    <li><strong>Location Info:</strong> BAY: E, ROW: 10, POSITION: E-10</li>
+                    <li><strong>Stage Name:</strong> e.g., "Release from Assembly - Stage-1"</li>
+                    <li><strong>Status Badge:</strong> PENDING (yellow)</li>
+                    <li><strong>QA/QC Button:</strong> Green button with checkmark</li>
+                    <li><strong>Add Checkpoint:</strong> Orange "+ Add Checkpoint" button</li>
+                  </ul>
+        </div>
+
+                <p class="step-description">
+                  Click the orange <strong>"+ Add Checkpoint"</strong> button next to the QA/QC button to create a new inspection checkpoint for this stage.
+                </p>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/wir-step2.png" alt="Activities page with Add Checkpoint button" class="screenshot-image" />
+                  <p class="screenshot-caption">Activities table showing stages with Add Checkpoint button for quality control</p>
+                </div>
         </div>
       </div>
 
-      <div *ngIf="getFilteredFAQs().length === 0" class="no-results">
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <circle cx="12" cy="12" r="10"/>
-          <line x1="12" y1="8" x2="12" y2="12"/>
-          <line x1="12" y1="16" x2="12.01" y2="16"/>
+            <!-- Step 3: Create Stage Checkpoint -->
+            <div class="tutorial-step">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <h4 class="step-title">Create Stage Checkpoint - Define Inspection Scope</h4>
+                <p class="step-description">
+                  The <strong>QA/QC Activity Approval Checklist</strong> workflow begins. You'll see a progress indicator at the top 
+                  showing 4 steps. The first step is to <strong>Create Checkpoint</strong> to capture the WIR context.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📝 Step 1: Create Stage Checkpoint</h5>
+                  <p class="step-description">
+                    Fill in the checkpoint information:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>BOX TAG:</strong> Pre-filled (e.g., 190-B02-GF-S2-2)</li>
+                    <li><strong>STAGE NUMBER:</strong> Pre-filled (e.g., WIR-1)</li>
+                    <li><strong>ACTIVITIES INCLUDED:</strong> Shows (4 Activities) - Box Closure, Box Closure, Box Closure, Box Closure</li>
+                    <li><strong>Stage Name:</strong> Auto-generated (e.g., "WIR-1 - 4 Activities: Box Closure, Box Closure, Box Closure, Box Closure")</li>
+                    <li><strong>Stage Description:</strong> Text area for detailed description of the checkpoint</li>
+                    <li><strong>Inspector (Optional):</strong> Dropdown to select the inspector</li>
+                  </ul>
+                </div>
+
+                <p class="step-description">
+                  The form provides clear context about which activities will be inspected. After filling in the details, 
+                  proceed to the next step to add checklist items.
+                </p>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/wir-step3.png" alt="Create Stage Checkpoint form" class="screenshot-image" />
+                  <p class="screenshot-caption">Step 1: Create Stage Checkpoint showing checkpoint information and included activities</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 4: Add Checklist Items -->
+            <div class="tutorial-step">
+              <div class="step-number">4</div>
+              <div class="step-content">
+                <h4 class="step-title">Add Checklist Items - Define Inspection Scope</h4>
+                <p class="step-description">
+                  Now in <strong>Step 2: Add Checklist Items</strong>, you'll define what needs to be inspected for this stage checkpoint.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📋 Inspection Request Overview</h5>
+                  <p class="step-description">
+                    The page shows the inspection request summary:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>WIR-1 • 4 Activities</strong></li>
+                    <li><strong>BOX TAG:</strong> 190-B02-GF-S2-2</li>
+                    <li><strong>REQUESTED BY:</strong> Mamdouh Salem</li>
+                    <li><strong>REQUESTED DATE:</strong> Feb 16, 2026 12:57 PM</li>
+                    <li><strong>INSPECTOR:</strong> Pending assignment</li>
+                    <li><strong>Status:</strong> Pending (yellow badge)</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">✅ Checklist Designer</h5>
+                  <p class="step-description">
+                    The Checklist Designer section allows you to create or edit inspection checkpoints. You have two options:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>"+ Add Predefined Items"</strong> button (blue) - Select from pre-configured checklist templates</li>
+                    <li><strong>"Review"</strong> button (blue) - Review and finalize your checklist</li>
+                  </ul>
+                  <p class="step-description">
+                    Currently showing: <strong>0 existing item(s)</strong> - "No checklist items added yet"
+                  </p>
+                </div>
+
+                <p class="step-description">
+                  Click <strong>"+ Add Predefined Items"</strong> to select from the predefined checklist templates, 
+                  or you can manually create custom checklist items.
+                </p>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/wir-step4.png" alt="Add Checklist Items page" class="screenshot-image" />
+                  <p class="screenshot-caption">Step 2: Add Checklist Items showing inspection request details and checklist designer</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 5: Select Predefined Checklist Items -->
+            <div class="tutorial-step">
+              <div class="step-number">5</div>
+              <div class="step-content">
+                <h4 class="step-title">Add Predefined Checklist Items</h4>
+                <p class="step-description">
+                  The <strong>Add Predefined Checklist Items</strong> page displays organized checklists grouped by sections. 
+                  This allows you to quickly select standard inspection items relevant to your WIR checkpoint.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📚 Select Predefined Checklist Items</h5>
+                  <p class="step-description">
+                    At the top, you'll see:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Title:</strong> WIR-1 • WIR-1 - 4 Activities: Box Closure, Box Closure, Box Closure, Box Closure</li>
+                    <li><strong>Selected Counter:</strong> "3 item(s) selected" (turquoise badge)</li>
+                    <li><strong>Expand All / Collapse All:</strong> Buttons to expand/collapse all sections</li>
+                    <li><strong>Select All:</strong> Button to select all items</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📑 Checklist Sections</h5>
+                  <p class="step-description">
+                    The main checklist displayed is <strong>"Construction of Precast Concrete Modular at Factory Checklist"</strong> (Code: ASA-IMS-FRM-13-081) with expandable sections:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>A. General</strong> - 3 item(s)</li>
+                    <li><strong>B. Preparation & Setting Out</strong> - 3 item(s)</li>
+                    <li><strong>C. Erection / Assembling of Precast Element - External Walls</strong> - 3 item(s)</li>
+                    <li><strong>C. Erection / Assembling - Floor Slab(s)</strong> - 7 item(s)</li>
+                    <li><strong>C. Erection / Assembling - Internal Partition</strong> - 4 item(s)</li>
+                    <li><strong>C. Erection / Assembling - Top Slabs</strong> - 6 item(s)</li>
+                    <li><strong>Civil Works</strong> - 2 item(s)</li>
+                  </ul>
+                  <p class="step-description">
+                    Each section has a <strong>"Select Section"</strong> or <strong>"Deselect Section"</strong> link to quickly select/deselect all items in that section.
+                  </p>
+                </div>
+
+                <p class="step-description">
+                  Browse through the sections, select the relevant checklist items by clicking on sections or individual items, 
+                  then click <strong>"+ Add Selected Items (3)"</strong> at the bottom to add them to your inspection checklist. 
+                  Click <strong>"Cancel"</strong> to go back without adding items.
+                </p>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/wir-step5.png" alt="Add Predefined Checklist Items page" class="screenshot-image" />
+                  <p class="screenshot-caption">Predefined checklist items grouped by sections with selection options</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 6: Review & Validate Checklist -->
+            <div class="tutorial-step">
+              <div class="step-number">6</div>
+              <div class="step-content">
+                <h4 class="step-title">Review & Sign-off - Validate Checklist</h4>
+                <p class="step-description">
+                  Now in <strong>Step 3: Review & Sign-off</strong>, you can validate and approve the inspection checklist items. 
+                  This is the critical quality control validation step.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">ℹ️ Admin Override Notice</h5>
+                  <p class="step-description">
+                    A blue info banner appears if you're not the assigned inspector: 
+                    <em>"You are not the assigned inspector, but as a System Admin you have full access to review and modify this checkpoint."</em>
+                  </p>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📸 Inspection Photos</h5>
+                  <p class="step-description">
+                    Upload inspection evidence:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>URL:</strong> Add image links</li>
+                    <li><strong>Upload:</strong> Upload images (JPG, PNG - Max 5MB each)</li>
+                    <li><strong>Camera:</strong> Take photos directly</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">✅ Checklist Validation</h5>
+                  <p class="step-description">
+                    The checklist displays selected items from <strong>"CONSTRUCTION OF PRECAST CONCRETE MODULAR AT FACTORY CHECKLIST"</strong> 
+                    with 3 item(s). Each item shows:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>SEQ:</strong> Sequence number (1, 2, 3...)</li>
+                    <li><strong>CHECKPOINT DESCRIPTION:</strong> Description of what to inspect</li>
+                    <li><strong>STATUS:</strong> PENDING (yellow badge)</li>
+                    <li><strong>ACTIONS:</strong> "Review" button (green) for each item</li>
+                  </ul>
+                  <p class="step-description">
+                    Quick actions at the top:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>"Approve All (3)"</strong> - Approve all items at once</li>
+                    <li><strong>"Reject All (3)"</strong> - Reject all items at once</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">🎯 Inspector Notes & Final Decision</h5>
+                  <p class="step-description">
+                    On the right side panel:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Status Overview:</strong> Shows Requested date and Inspection/Approval status</li>
+                    <li><strong>Inspector Role:</strong> e.g., "QC Engineer - MEP" (optional, max 100 characters)</li>
+                    <li><strong>Comments:</strong> Text area for general inspection notes (0/1000 characters)</li>
+                    <li><strong>Final Decision:</strong> Choose Approved, Conditional Approval, or Rejected</li>
+                  </ul>
+                </div>
+
+                <p class="step-description">
+                  Review each checklist item by clicking <strong>"Review"</strong>, add photos if needed, fill in inspector notes, 
+                  select your final decision, then click <strong>"Submit Decision"</strong> to complete the inspection. 
+                  Click <strong>"Close"</strong> to exit without submitting.
+                </p>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/wir-step6.png" alt="Review & Sign-off checklist validation" class="screenshot-image" />
+                  <p class="screenshot-caption">Step 3: Review & Sign-off showing checklist validation, photos upload, and final decision panel</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 7: Quality Issues (Optional) -->
+            <div class="tutorial-step">
+              <div class="step-number">7</div>
+              <div class="step-content">
+                <h4 class="step-title">Quality Issues (Optional) - Log Defects & Observations</h4>
+                <p class="step-description">
+                  The final step, <strong>Step 4: Quality Issues (Optional)</strong>, allows you to log defects, non-conformances, 
+                  or observations that need follow-up outside of the main review workflow.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">⚠️ Quality Issues Tracking</h5>
+                  <p class="step-description">
+                    This section displays:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Status:</strong> Inspection Request shows "Approved" (green badge)</li>
+                    <li><strong>Inspection Request Info:</strong> WIR-1 • 4 Activities with all details (Box Tag, Requested By, Date, Inspector)</li>
+                    <li><strong>Quality Issues Panel:</strong> Warning icon with description "Track and manage inspection defects, non-conformances, and observations"</li>
+                    <li><strong>Issues Counter:</strong> "0 Issues" displayed</li>
+                    <li><strong>Action Buttons:</strong> "+ Add Quality Issue" (blue button) to add new issues</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📝 When to Add Quality Issues</h5>
+                  <p class="step-description">
+                    Use this section when you find:
+                  </p>
+                  <ul class="step-list">
+                    <li>Material defects or non-conformances</li>
+                    <li>Workmanship issues requiring correction</li>
+                    <li>Safety observations</li>
+                    <li>Items requiring follow-up inspections</li>
+                    <li>Conditional approval items that need tracking</li>
+                  </ul>
+                </div>
+
+                <p class="step-description">
+                  If there are no issues, the screen shows <strong>"No Quality Issues Logged"</strong> with a clock icon 
+                  and prompts to "Start by adding quality issues to track defects and observations" using the 
+                  <strong>"+ Add Your First Issue"</strong> button.
+                </p>
+
+                <p class="step-description">
+                  Once you've addressed any quality issues (or if there are none), click <strong>"Close"</strong> to complete 
+                  the WIR workflow. Your inspection is now submitted and will be tracked in the system.
+                </p>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/wir-step7.png" alt="Quality Issues optional step" class="screenshot-image" />
+                  <p class="screenshot-caption">Step 4: Quality Issues (Optional) for logging defects and observations outside the main review workflow</p>
+                </div>
+
+                <div class="step-success">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
         </svg>
-        <p>No FAQs found matching your search</p>
+                  <strong>Inspection Complete!</strong> Your Work Inspection Request (WIR) has been submitted successfully. 
+                  The inspection data is now recorded in the system and will be visible in the Quality Issues dashboard for tracking and reporting.
+                </div>
+              </div>
+            </div>
+          </div>
       </div>
     </div>
 
-    <!-- Video Tutorials Section (Placeholder) -->
-    <div class="section-header">
-      <h2>🎥 Video Tutorials</h2>
-      <p>Watch step-by-step video guides</p>
+      <!-- Tutorial: Assign Teams -->
+      <div class="tutorial-card">
+        <div class="tutorial-header">
+          <h3 class="tutorial-title">How to Create and Manage Crews</h3>
+          <span class="tutorial-badge schedule">Teams</span>
     </div>
 
-    <div class="videos-section">
-      <div class="video-placeholder">
-        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-          <polygon points="5 3 19 12 5 21 5 3"/>
+        <div class="tutorial-content">
+          <p class="tutorial-intro">
+            Learn how to create and manage construction crews for your projects. Crews are organized teams assigned to specific departments and trades.
+          </p>
+
+          <div class="tutorial-steps">
+            <!-- Step 1: View Crews Dashboard -->
+            <div class="tutorial-step">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <h4 class="step-title">Navigate to Crews Dashboard</h4>
+                <p class="step-description">
+                  Access the <strong>Crews Dashboard</strong> from the main sidebar. The dashboard displays a comprehensive overview of all your construction crews.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">🔍 Search and Filter Options</h5>
+                  <p class="step-description">
+                    Below the statistics, you'll find powerful search and filter tools:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Search Bar:</strong> Search by code, name, department, trade, or leader</li>
+                    <li><strong>All Departments:</strong> Dropdown filter to view crews by specific department</li>
+                    <li><strong>All Trades:</strong> Dropdown filter to view crews by specific trade</li>
+                    <li><strong>Show Active Only:</strong> Checkbox to display only active crews</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📋 Crews List Table</h5>
+                  <p class="step-description">
+                    The main table displays detailed information for each crew with the following columns:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>CODE:</strong> Unique crew identifier</li>
+                    <li><strong>NAME:</strong> Descriptive crew name</li>
+                    <li><strong>DEPARTMENT:</strong> Organizational unit</li>
+                    <li><strong>TRADE:</strong> Specialized trade</li>
+                    <li><strong>CREW LEADER:</strong> Assigned team leader</li>
+                    <li><strong>CREW SIZE:</strong> Number of members (shown as blue badges)</li>
+                    <li><strong>STATUS:</strong> Active or Inactive</li>
+                    <li><strong>CREATED DATE:</strong> When the crew was created</li>
+                    <li><strong>ACTIONS:</strong> View, Delete, and Edit buttons</li>
+                  </ul>
+                </div>
+
+                <p class="step-description">
+                  To create a new crew, click the green <strong>"+ Create Crew"</strong> button in the top-right corner of the dashboard.
+                </p>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/crews-step1.png" alt="Crews Dashboard overview" class="screenshot-image" />
+                  <p class="screenshot-caption">Crews Dashboard showing summary statistics, search filters, and crews list table</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2: Create New Crew -->
+            <div class="tutorial-step">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <h4 class="step-title">Create New Crew - Fill in Details</h4>
+                <p class="step-description">
+                  After clicking <strong>"+ Create Crew"</strong>, you'll be taken to the <strong>Create New Crew</strong> page. 
+                  The page features breadcrumb navigation (Crews > Create New Crew) and a clean form layout.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📄 Form Header</h5>
+                  <p class="step-description">
+                    The page header displays:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Icon:</strong> Green circular icon with crew/team symbol</li>
+                    <li><strong>Title:</strong> "Create New Crew"</li>
+                    <li><strong>Subtitle:</strong> "Add a new crew to manage your construction workforce"</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📝 Crew Information Form</h5>
+                  <p class="step-description">
+                    The form section titled <strong>"Crew Information"</strong> contains four fields in a two-column layout:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Crew Code *</strong> (Required)
+                      <ul>
+                        <li>Unique identifier for the crew</li>
+                        <li>Placeholder: "e.g., ASM-A"</li>
+                        <li>Character limit: 0/50</li>
+                      </ul>
+                    </li>
+                    <li><strong>Crew Name *</strong> (Required)
+                      <ul>
+                        <li>Full name of the crew</li>
+                        <li>Placeholder: "e.g., Assembly Crew A"</li>
+                        <li>Character limit: 0/200</li>
+                      </ul>
+                    </li>
+                    <li><strong>Department *</strong> (Required)
+                      <ul>
+                        <li>Organizational unit</li>
+                        <li>Dropdown: "Select Department"</li>
+                        <li>Options include: IT, Management, Engineering, Construction, Quality, Procurement, HSE, DuBox, DuPod</li>
+                      </ul>
+                    </li>
+                    <li><strong>Trade</strong> (Optional)
+                      <ul>
+                        <li>Specialized trade (optional)</li>
+                        <li>Dropdown: "Select Trade"</li>
+                        <li>Options include: Assembly, Mechanical, Electrical, Finishing, Structural, MEP, Other</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">✅ Completing the Form</h5>
+                  <p class="step-description">
+                    To create the crew:
+                  </p>
+                  <ul class="step-list">
+                    <li>Enter a unique <strong>Crew Code</strong> following your organization's naming convention</li>
+                    <li>Enter a descriptive <strong>Crew Name</strong> that clearly identifies the team's purpose</li>
+                    <li>Select the appropriate <strong>Department</strong> from the dropdown</li>
+                    <li>Optionally select a <strong>Trade</strong> to specify the crew's specialized area</li>
+                    <li>Click <strong>"Create Crew"</strong> (teal button) to save the new crew</li>
+                    <li>Click <strong>"Cancel"</strong> to discard changes and return to the dashboard</li>
+                  </ul>
+                </div>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/crews-step2.png" alt="Create New Crew form" class="screenshot-image" />
+                  <p class="screenshot-caption">Create New Crew form with all required and optional fields for crew creation</p>
+                </div>
+
+                <div class="step-success">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
         </svg>
-        <h3>Video tutorials coming soon!</h3>
-        <p>We're preparing comprehensive video guides for all modules</p>
+                  <strong>Crew Created Successfully!</strong> Your new crew has been added to the system and is now visible in the Crews Dashboard. 
+                  You can now add members to the crew, assign a leader, and assign the crew to project activities for effective workforce management.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
-    <!-- Support Contact Section -->
-    <div class="support-section">
-      <div class="support-card">
-        <div class="support-icon">💬</div>
-        <h3>Need More Help?</h3>
-        <p>Can't find what you're looking for? Our support team is here to help!</p>
-        <div class="support-options">
-          <a href="mailto:support@amanabuildings.com" class="support-btn">
+      <!-- Tutorial: Reports & Analytics -->
+      <div class="tutorial-card">
+        <div class="tutorial-header">
+          <h3 class="tutorial-title">How to Access Reports & Analytics</h3>
+          <span class="tutorial-badge">Reports</span>
+        </div>
+        
+        <div class="tutorial-content">
+          <p class="tutorial-intro">
+            Learn how to access and generate comprehensive reports for real-time tracking and analytics across all project activities. 
+            The Reports module provides instant insights into project performance, box production, team efficiency, and quality metrics.
+          </p>
+
+          <div class="tutorial-steps">
+            <!-- Step 1: Reports Dashboard -->
+            <div class="tutorial-step">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <h4 class="step-title">Navigate to Reports Dashboard</h4>
+                <p class="step-description">
+                  Access the <strong>Reports Dashboard</strong> from the main sidebar to view real-time statistics and access various analytical reports. 
+                  The dashboard provides both quick statistics and a catalog of available detailed reports.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📊 Quick Statistics Overview</h5>
+                  <p class="step-description">
+                    At the top of the dashboard, four key performance indicator cards provide instant insights:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Total Boxes:</strong> Total number of boxes across all projects
+                      <ul>
+                        <li>Icon: Circle/box indicator (light blue background)</li>
+                        <li>Large numeric display</li>
+                      </ul>
+                    </li>
+                    <li><strong>Average Progress:</strong> Average completion percentage across all active boxes
+                      <ul>
+                        <li>Icon: Activity/progress indicator (light green background)</li>
+                        <li>Displayed as percentage</li>
+                      </ul>
+                    </li>
+                    <li><strong>Pending Activities:</strong> Number of activities awaiting action
+                      <ul>
+                        <li>Icon: Clock/pending indicator (light orange background)</li>
+                        <li>Large numeric display</li>
+                      </ul>
+                    </li>
+                    <li><strong>Active Teams:</strong> Number of teams currently active
+                      <ul>
+                        <li>Icon: People/teams indicator (light purple background)</li>
+                        <li>Large numeric display</li>
+                      </ul>
+                    </li>
+                  </ul>
+                  <p class="step-description">
+                    These statistics update in real-time to reflect the current state of all projects in the system.
+                  </p>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📑 Available Reports Section</h5>
+                  <p class="step-description">
+                    The <strong>Available Reports</strong> section displays a grid of report cards, each providing access to specific analytical reports:
+                  </p>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📈 Projects Summary Report</h5>
+                  <ul class="step-list">
+                    <li><strong>Purpose:</strong> View aggregated information about all projects</li>
+                    <li><strong>Contents:</strong>
+                      <ul>
+                        <li>Project status distribution</li>
+                        <li>Project details and timelines</li>
+                      </ul>
+                    </li>
+                    <li><strong>Visual Indicator:</strong> Left border in teal/cyan color</li>
+                    <li><strong>Action:</strong> Click the card or arrow icon to open the report</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📦 Boxes Summary Report</h5>
+                  <ul class="step-list">
+                    <li><strong>Purpose:</strong> Comprehensive report with filtering, KPIs, charts, and detailed box information</li>
+                    <li><strong>Contents:</strong>
+                      <ul>
+                        <li>Box production statistics</li>
+                        <li>Status distribution charts</li>
+                        <li>Progress tracking</li>
+                        <li>Export capabilities</li>
+                      </ul>
+                    </li>
+                    <li><strong>Visual Indicator:</strong> Left border in blue color</li>
+                    <li><strong>Action:</strong> Click the card or arrow icon to access detailed box analytics</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📋 Activities Report</h5>
+                  <ul class="step-list">
+                    <li><strong>Purpose:</strong> Detailed activities report with filtering, pagination, KPIs, and export capabilities</li>
+                    <li><strong>Contents:</strong>
+                      <ul>
+                        <li>Activity status breakdown</li>
+                        <li>Timeline analysis</li>
+                        <li>Team assignments</li>
+                        <li>Progress metrics</li>
+                      </ul>
+                    </li>
+                    <li><strong>Visual Indicator:</strong> Left border in purple color</li>
+                    <li><strong>Action:</strong> Click the card or arrow icon to view activity analytics</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">👥 Teams Performance Report</h5>
+                  <ul class="step-list">
+                    <li><strong>Purpose:</strong> Analyze the performance of all teams across all projects</li>
+                    <li><strong>Contents:</strong>
+                      <ul>
+                        <li>Team productivity metrics</li>
+                        <li>Project assignments</li>
+                        <li>Detailed performance indicators</li>
+                        <li>Drill-down capabilities for team-specific analysis</li>
+                      </ul>
+                    </li>
+                    <li><strong>Visual Indicator:</strong> Left border in green color</li>
+                    <li><strong>Action:</strong> Click the card or arrow icon to access team performance analytics</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">✅ Panel Approvals Report</h5>
+                  <ul class="step-list">
+                    <li><strong>Purpose:</strong> Track panel second approval status across projects</li>
+                    <li><strong>Contents:</strong>
+                      <ul>
+                        <li>Approval status tracking</li>
+                        <li>Panel-level analysis</li>
+                        <li>Approval progress metrics</li>
+                        <li>Project-level panel type breakdown</li>
+                        <li>Excel export capability</li>
+                      </ul>
+                    </li>
+                    <li><strong>Visual Indicator:</strong> Left border in orange color</li>
+                    <li><strong>Action:</strong> Click the card or arrow icon to view approval analytics</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📄 Export & Documentation</h5>
+                  <p class="step-description">
+                    Additional features available in the reports dashboard:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Export Icon:</strong> Located in the top-right corner of the dashboard (document icon)</li>
+                    <li><strong>Export Capabilities:</strong> Most reports support exporting to PDF or Excel formats</li>
+                    <li><strong>Filtering Options:</strong> Each report includes comprehensive filtering to narrow down data by project, date range, status, and other relevant criteria</li>
+                    <li><strong>Real-time Updates:</strong> All reports reflect real-time data from the system</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">🎯 Using the Reports</h5>
+                  <p class="step-description">
+                    To effectively use the reports system:
+                  </p>
+                  <ul class="step-list">
+                    <li>Review Quick Statistics for an instant overview of system-wide performance</li>
+                    <li>Click on any report card to access detailed analytics</li>
+                    <li>Use filters within each report to focus on specific projects, time periods, or metrics</li>
+                    <li>Export reports for offline analysis, presentations, or stakeholder distribution</li>
+                    <li>Monitor trends over time by regularly accessing the same reports</li>
+                    <li>Compare team performance using the Teams Performance Report</li>
+                    <li>Track quality metrics through the Panel Approvals Report</li>
+                  </ul>
+                </div>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/reports-step1.png" alt="Reports Dashboard overview" class="screenshot-image" />
+                  <p class="screenshot-caption">Reports Dashboard showing Quick Statistics KPIs and Available Reports catalog with multiple analytical report options</p>
+                </div>
+
+                <div class="step-success">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                  <strong>Reports Dashboard Ready!</strong> You now have access to comprehensive real-time analytics and reporting capabilities. 
+                  Use the Quick Statistics for instant insights, and dive into detailed reports for in-depth analysis of projects, boxes, activities, teams, and quality approvals. 
+                  Each report provides filtering, visualization, and export options to support data-driven decision making and stakeholder communication. 
+                  Monitor performance trends, identify bottlenecks, and optimize your construction management processes with powerful analytics.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tutorial: Factories Management -->
+      <div class="tutorial-card">
+        <div class="tutorial-header">
+          <h3 class="tutorial-title">How to Manage Factories & Production Capacity</h3>
+          <span class="tutorial-badge">Factories</span>
+        </div>
+        
+        <div class="tutorial-content">
+          <p class="tutorial-intro">
+            Learn how to set up and manage factory locations for modular construction production. Track factory capacity, monitor box production, and configure factory layouts for optimal workflow management.
+          </p>
+
+          <div class="tutorial-steps">
+            <!-- Step 1: Factories Dashboard -->
+            <div class="tutorial-step">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <h4 class="step-title">Navigate to Factories Dashboard</h4>
+                <p class="step-description">
+                  Access the <strong>Factories Dashboard</strong> from the main sidebar to view and manage all your factory locations. 
+                  This dashboard provides a comprehensive overview of your production facilities and their current capacity status.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📊 Factory Statistics Overview</h5>
+                  <p class="step-description">
+                    At the top of the dashboard, summary statistics cards provide quick insights into your factory operations:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Total Factories:</strong> Total number of registered factory locations</li>
+                    <li><strong>Active Factories:</strong> Number of factories currently operational</li>
+                    <li><strong>Total Boxes:</strong> Total production capacity across all factories</li>
+                    <li><strong>Total Capacity:</strong> Combined capacity number of all factories</li>
+                    <li><strong>Full Factories:</strong> Number of factories at maximum capacity (red alert indicator)</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">🏷️ Factory Filter Tabs</h5>
+                  <p class="step-description">
+                    Quick filter tabs allow you to view factories by status:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Total Factories:</strong> View all registered factories</li>
+                    <li><strong>Active:</strong> Show only currently operational factories</li>
+                    <li><strong>Boxes:</strong> View factories sorted by box production capacity</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">🔍 Search Factories</h5>
+                  <p class="step-description">
+                    Use the search bar to quickly find specific factories:
+                  </p>
+                  <ul class="step-list">
+                    <li>Search by factory code</li>
+                    <li>Search by factory name</li>
+                    <li>Search by location</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">🏭 Factory Cards Grid</h5>
+                  <p class="step-description">
+                    Each factory is displayed as a card showing key information:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Factory Code:</strong> Unique factory identifier with availability badge</li>
+                    <li><strong>Factory Name:</strong> Full factory name (e.g., Dubox - KSA, Dubox - UAE)</li>
+                    <li><strong>Location Icon & Text:</strong> Geographic location indicator</li>
+                    <li><strong>Capacity Progress Bar:</strong> Visual indicator of current capacity utilization</li>
+                    <li><strong>Capacity Ratio:</strong> Current usage vs. total capacity display</li>
+                    <li><strong>Boxes Count:</strong> Number of boxes currently in production</li>
+                    <li><strong>Total Capacity:</strong> Maximum capacity number</li>
+                    <li><strong>View Details Link:</strong> Navigate to detailed factory layout and management</li>
+                  </ul>
+                  <p class="step-description">
+                    The progress bar uses color coding to indicate capacity levels: blue for normal capacity, 
+                    yellow for high utilization, and red for factories at or near maximum capacity.
+                  </p>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">➕ Adding New Factory</h5>
+                  <p class="step-description">
+                    Click the <strong>"+ Add Factory"</strong> button in the top-right corner to create a new factory location.
+                  </p>
+                </div>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/factories-step1.png" alt="Factories Dashboard overview" class="screenshot-image" />
+                  <p class="screenshot-caption">Factories Dashboard showing factory statistics, filter tabs, and factory cards with capacity indicators</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2: Add New Factory -->
+            <div class="tutorial-step">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <h4 class="step-title">Create New Factory Configuration</h4>
+                <p class="step-description">
+                  After clicking <strong>"+ Add Factory"</strong>, a modal dialog opens with the <strong>Add New Factory</strong> form. 
+                  This form allows you to create a new factory and configure its production capacity and layout.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📄 Factory Basic Information</h5>
+                  <p class="step-description">
+                    The form starts with essential factory identification fields:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Factory Code *</strong> (Required)
+                      <ul>
+                        <li>Unique identifier for the factory</li>
+                        <li>Placeholder example provided</li>
+                      </ul>
+                    </li>
+                    <li><strong>Factory Name *</strong> (Required)
+                      <ul>
+                        <li>Descriptive name for the factory</li>
+                        <li>Placeholder example provided</li>
+                      </ul>
+                    </li>
+                    <li><strong>Location *</strong> (Required)
+                      <ul>
+                        <li>Dropdown to select geographic location</li>
+                        <li>Pre-configured location options available</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📐 Capacity Configuration</h5>
+                  <p class="step-description">
+                    The <strong>Capacity (Auto-calculated)</strong> section shows:
+                  </p>
+                  <ul class="step-list">
+                    <li>Auto-calculated capacity based on rows and bays configuration</li>
+                    <li>Information note explaining the calculation formula: (Max Row - Min Row + 1) × (Max Bay - Min Bay + 1)</li>
+                    <li>Capacity is automatically computed from the layout configuration below</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">🏗️ Factory Layout Configuration</h5>
+                  <p class="step-description">
+                    The <strong>Factory Layout Configuration</strong> section provides two layout options:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Use Sections (Assembly & Finishing)</strong> - Checkbox option
+                      <ul>
+                        <li>Enable this to configure separate Assembly and Finishing sections</li>
+                        <li>When unchecked, factory uses a single unified layout</li>
+                        <li>Information note: "Factory will use a single unified layout"</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📏 Row and Bay Range Configuration</h5>
+                  <p class="step-description">
+                    An informational box appears with the note: "Define the row and bay ranges for organizing boxes within this factory"
+                  </p>
+                  <p class="step-description">
+                    Four input fields define the factory grid dimensions:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Min Row *</strong> (Required)
+                      <ul>
+                        <li>Starting row number</li>
+                        <li>Placeholder example provided</li>
+                      </ul>
+                    </li>
+                    <li><strong>Max Row *</strong> (Required)
+                      <ul>
+                        <li>Ending row number</li>
+                        <li>Placeholder example provided</li>
+                      </ul>
+                    </li>
+                    <li><strong>Min Bay *</strong> (Required)
+                      <ul>
+                        <li>Starting bay letter/identifier</li>
+                        <li>Placeholder example provided</li>
+                      </ul>
+                    </li>
+                    <li><strong>Max Bay *</strong> (Required)
+                      <ul>
+                        <li>Ending bay letter/identifier</li>
+                        <li>Placeholder example provided</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">💾 Form Actions</h5>
+                  <p class="step-description">
+                    At the bottom of the form, two action buttons are available:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Cancel</strong> button - Close the modal without saving changes</li>
+                    <li><strong>Create Factory</strong> button (teal/cyan) - Save the new factory configuration</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">✅ Completing Factory Setup</h5>
+                  <p class="step-description">
+                    To successfully create a factory:
+                  </p>
+                  <ul class="step-list">
+                    <li>Fill in all required fields (marked with *)</li>
+                    <li>Ensure the factory code is unique across all factories</li>
+                    <li>Select the appropriate location from the dropdown</li>
+                    <li>Configure the row and bay ranges to define the factory grid layout</li>
+                    <li>Optionally enable sections for separate Assembly and Finishing areas</li>
+                    <li>Review the auto-calculated capacity to ensure it meets your requirements</li>
+                    <li>Click <strong>"Create Factory"</strong> to save the configuration</li>
+                  </ul>
+                  <p class="step-description">
+                    Once created, the factory will appear in the Factories Dashboard and you can proceed to configure 
+                    detailed layouts, sections, and start assigning boxes for production.
+                  </p>
+                </div>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/factories-step2.png" alt="Add New Factory form" class="screenshot-image" />
+                  <p class="screenshot-caption">Add New Factory modal showing all configuration options including basic information, capacity calculation, and layout configuration</p>
+                </div>
+
+                <div class="step-success">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                  <strong>Factory Created Successfully!</strong> Your new factory has been added to the system. 
+                  You can now configure detailed section layouts (Assembly and Finishing areas if enabled), 
+                  manage production capacity, and start assigning boxes to production positions. 
+                  Use the factory layout view to visualize and manage box positions within the configured row and bay grid.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tutorial: Materials Management -->
+      <div class="tutorial-card">
+        <div class="tutorial-header">
+          <h3 class="tutorial-title">How to Manage Materials Inventory</h3>
+          <span class="tutorial-badge">Materials</span>
+        </div>
+        
+        <div class="tutorial-content">
+          <p class="tutorial-intro">
+            Learn how to track and manage construction materials inventory across your projects with real-time stock monitoring and reorder alerts.
+          </p>
+
+          <div class="tutorial-steps">
+            <!-- Step 1: Navigate to Materials Dashboard -->
+            <div class="tutorial-step">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <h4 class="step-title">Navigate to Materials Dashboard & Select Project</h4>
+                <p class="step-description">
+                  Access the <strong>Materials Dashboard</strong> from the main sidebar. The dashboard provides comprehensive inventory tracking and management for construction materials across all your projects.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📂 Project Selection</h5>
+                  <p class="step-description">
+                    At the top of the page, you'll find two dropdown menus for project selection:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Project Name:</strong> Dropdown to select the project by name</li>
+                    <li><strong>Project Number:</strong> Dropdown to select the project by its unique identifier</li>
+                  </ul>
+                  <p class="step-description">
+                    Select a project from either dropdown to view its materials inventory. Both dropdowns are synchronized - selecting from one will update the other.
+                  </p>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">ℹ️ Project Details Overview</h5>
+                  <p class="step-description">
+                    Once a project is selected, the <strong>Project Details</strong> section displays key project information:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Project:</strong> Full project name</li>
+                    <li><strong>Code:</strong> Unique project code</li>
+                    <li><strong>Client:</strong> Client name</li>
+                    <li><strong>Status:</strong> Current project status (displayed as a badge)</li>
+                    <li><strong>Total Materials:</strong> Number of materials associated with this project</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📊 Materials Statistics Cards</h5>
+                  <p class="step-description">
+                    Below the project details, four summary cards provide quick insights into material inventory status:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Total Materials:</strong> Total number of materials tracked for this project</li>
+                    <li><strong>Active Materials:</strong> Materials currently in use or available</li>
+                    <li><strong>Low Stock:</strong> Materials below minimum stock level (yellow warning indicator)</li>
+                    <li><strong>Needs Reorder:</strong> Materials that have reached reorder level (red alert indicator)</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">🔍 Search and Filter Options</h5>
+                  <p class="step-description">
+                    Use the search and filter tools to find specific materials:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Search Bar:</strong> Search by material code, name, category, or supplier</li>
+                    <li><strong>All Categories:</strong> Dropdown filter to view materials by specific category (e.g., Structural Materials, MEP, etc.)</li>
+                    <li><strong>Show Low Stock Only:</strong> Checkbox to display only materials with low stock levels for quick inventory attention</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📋 Materials List Table</h5>
+                  <p class="step-description">
+                    The main table displays detailed information for each material with the following columns:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>CODE:</strong> Unique material identifier code</li>
+                    <li><strong>NAME:</strong> Descriptive material name</li>
+                    <li><strong>CATEGORY:</strong> Material category (e.g., Structural Materials)</li>
+                    <li><strong>UNIT:</strong> Unit of measurement (e.g., m², ton, pcs, kg, tube, liter, m)</li>
+                    <li><strong>CURRENT STOCK:</strong> Current quantity available in inventory</li>
+                    <li><strong>MIN STOCK:</strong> Minimum stock threshold level</li>
+                    <li><strong>REORDER LEVEL:</strong> Threshold that triggers reorder alert</li>
+                    <li><strong>STATUS:</strong> Material status badge (e.g., CRITICAL for urgent attention)</li>
+                    <li><strong>SUPPLIER:</strong> Assigned supplier for the material</li>
+                    <li><strong>ACTIONS:</strong> View and Edit buttons for material management</li>
+                  </ul>
+                </div>
+
+                <p class="step-description">
+                  To add a new material to the project inventory, click the green <strong>"+ Create Material"</strong> button in the top-right corner of the dashboard.
+                </p>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/materials-step1.png" alt="Materials Dashboard overview" class="screenshot-image" />
+                  <p class="screenshot-caption">Materials Dashboard showing project selection, inventory statistics, search filters, and detailed materials list with stock levels</p>
+    </div>
+
+                <div class="step-success">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                  <strong>Materials Dashboard Ready!</strong> You now have a complete view of your project's material inventory. 
+                  Monitor stock levels, track critical materials, and ensure timely reordering to keep your construction project running smoothly. 
+                  Use the status indicators and alerts to proactively manage inventory before materials run out.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tutorial: Cost Management -->
+      <div class="tutorial-card">
+        <div class="tutorial-header">
+          <h3 class="tutorial-title">How to Manage Project Costs & Cost Codes</h3>
+          <span class="tutorial-badge">Cost Management</span>
+        </div>
+        
+        <div class="tutorial-content">
+          <p class="tutorial-intro">
+            Learn how to track and manage construction costs using the comprehensive Cost Management module. This includes managing cost code structures, project-specific costs, and human resource codes (HRC) for complete financial oversight.
+          </p>
+
+          <div class="tutorial-steps">
+            <!-- Step 1: Cost Codes Master -->
+            <div class="tutorial-step">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <h4 class="step-title">Navigate to Cost Codes Master</h4>
+                <p class="step-description">
+                  The <strong>Cost Codes Master</strong> provides a comprehensive catalog of standardized cost codes used across all projects. 
+                  Access this view by clicking the <strong>"Cost Codes Master"</strong> tab in the Cost Management module.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📑 Module Tabs</h5>
+                  <p class="step-description">
+                    The Cost Management module has three main tabs at the top:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Project Cost:</strong> View and manage costs for specific projects</li>
+                    <li><strong>Cost Codes Master:</strong> Master catalog of all cost codes with hierarchical structure (currently selected)</li>
+                    <li><strong>HRC Code:</strong> Human Resource Codes for labor cost tracking</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">🔍 Search & Filter Cost Codes</h5>
+                  <p class="step-description">
+                    The <strong>Search & Filter Cost Codes</strong> section provides powerful filtering capabilities:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Cost Code:</strong> Search by specific cost code identifier</li>
+                    <li><strong>Cost Level 1:</strong> Filter by first level of cost hierarchy (dropdown with "All Levels" option)</li>
+                    <li><strong>Cost Level 2:</strong> Filter by second level of cost hierarchy (dropdown with "All Levels" option)</li>
+                    <li><strong>Cost Level 3:</strong> Filter by third level of cost hierarchy (dropdown with "All Levels" option)</li>
+                    <li><strong>Level 1 Description:</strong> Search by description text for level 1</li>
+                    <li><strong>Level 2 Description:</strong> Search by description text for level 2</li>
+                    <li><strong>Level 3 Description:</strong> Search by description text for level 3</li>
+                    <li><strong>Status:</strong> Filter by active/inactive status (dropdown with "All Status" option)</li>
+                    <li><strong>Search Button:</strong> Apply all selected filters to the results</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📊 Cost Codes Hierarchy Table</h5>
+                  <p class="step-description">
+                    The main table displays the complete cost code structure with hierarchical levels. Each row represents a unique cost code combination:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>COST CODE:</strong> The complete cost code identifier</li>
+                    <li><strong>COST CODE LEVEL 1:</strong> First level code number</li>
+                    <li><strong>LEVEL 1 DESCRIPTION (= A):</strong> Description for level 1 category</li>
+                    <li><strong>COST CODE LEVEL 2:</strong> Second level code number</li>
+                    <li><strong>LEVEL 2 DESCRIPTION (= B):</strong> Description for level 2 subcategory</li>
+                    <li><strong>COST CODE LEVEL 3:</strong> Third level code number</li>
+                    <li><strong>LEVEL 1 DESCRIPTION (= A.B.A):</strong> Description for level 1 in context</li>
+                    <li><strong>LEVEL 2 DESCRIPTION (= B.B.B):</strong> Description for level 2 in context</li>
+                    <li><strong>LEVEL 3 DESCRIPTION (= ABABA):</strong> Detailed description for the specific level 3 cost item</li>
+                    <li><strong>STATUS:</strong> Active or inactive status badge</li>
+                  </ul>
+                  <p class="step-description">
+                    The hierarchical structure allows for detailed cost breakdown and categorization, from general procurement categories down to specific items like project documents, certifications, and schedules.
+                  </p>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">➕ Adding New Cost Codes</h5>
+                  <p class="step-description">
+                    Click the green <strong>"+ Add Cost Code"</strong> button in the top-right corner to create a new cost code in the master catalog.
+                  </p>
+                </div>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/cost-step1.png" alt="Cost Codes Master view" class="screenshot-image" />
+                  <p class="screenshot-caption">Cost Codes Master showing hierarchical cost structure with multi-level filtering and search capabilities</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2: Project Cost -->
+            <div class="tutorial-step">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <h4 class="step-title">View Project Cost Details</h4>
+                <p class="step-description">
+                  The <strong>Project Cost</strong> view displays actual costs incurred for a specific project. 
+                  Access this by clicking the <strong>"Project Cost"</strong> tab and selecting your project.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📂 Project Selection</h5>
+                  <p class="step-description">
+                    At the top of the page, select your project using two synchronized dropdowns:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Project Name:</strong> Dropdown to select project by its full name</li>
+                    <li><strong>Project Number:</strong> Dropdown to select project by its unique identifier</li>
+                  </ul>
+                  <p class="step-description">
+                    Both dropdowns are synchronized - selecting from one automatically updates the other.
+                  </p>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">ℹ️ Project Details Overview</h5>
+                  <p class="step-description">
+                    Once a project is selected, the <strong>Project Details</strong> panel displays key information:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>CLIENT:</strong> Client name for the project</li>
+                    <li><strong>LOCATION:</strong> Geographic location of the project</li>
+                    <li><strong>STATUS:</strong> Current project status (displayed as a badge)</li>
+                    <li><strong>TOTAL COST:</strong> Sum of all costs for this project (displayed prominently in project currency)</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">💰 Project Cost Table</h5>
+                  <p class="step-description">
+                    The main table displays all cost entries for the selected project with detailed breakdown:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>BOX TAG:</strong> Associated box identifier (if applicable)</li>
+                    <li><strong>COST CODE L1:</strong> First level of cost code</li>
+                    <li><strong>COST CODE L2:</strong> Second level of cost code</li>
+                    <li><strong>COST CODE L3:</strong> Third level of cost code</li>
+                    <li><strong>CHAPTER:</strong> Cost category chapter</li>
+                    <li><strong>SUB CHAPTER:</strong> Subcategory within the chapter</li>
+                    <li><strong>CLASSIFICATION:</strong> Material or resource classification</li>
+                    <li><strong>SUB CLASSIFICATION:</strong> Detailed classification</li>
+                    <li><strong>UNITS:</strong> Unit of measurement</li>
+                    <li><strong>TYPE:</strong> Cost type (e.g., Material, Labor) - displayed as a colored badge</li>
+                    <li><strong>AMOUNT:</strong> Total cost amount in project currency</li>
+                    <li><strong>CREATED DATE:</strong> When the cost entry was created</li>
+                    <li><strong>ACTIONS:</strong> View or edit cost entry</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📈 Cost Summary</h5>
+                  <p class="step-description">
+                    At the bottom of the page, two summary boxes provide quick totals:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>TOTAL COST:</strong> Aggregate cost for all displayed items</li>
+                    <li><strong>TOTAL ITEMS:</strong> Count of cost entries shown</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">➕ Adding Project Costs</h5>
+                  <p class="step-description">
+                    Click the <strong>"+ Add Project Cost"</strong> button in the top-right to add a new cost entry to the selected project.
+                  </p>
+                </div>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/cost-step2.png" alt="Project Cost view" class="screenshot-image" />
+                  <p class="screenshot-caption">Project Cost showing detailed cost breakdown by cost codes, classifications, and types with total cost summary</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 3: HRC Code -->
+            <div class="tutorial-step">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <h4 class="step-title">Manage Human Resource Codes (HRC)</h4>
+                <p class="step-description">
+                  The <strong>HRC Code</strong> view manages human resource cost codes for tracking labor expenses. 
+                  Access this by clicking the <strong>"HRC Code"</strong> tab in the Cost Management module.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">🔍 Search & Filter HRC Codes</h5>
+                  <p class="step-description">
+                    The <strong>Search & Filter HRC Codes</strong> section provides comprehensive filtering options:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>TYPE:</strong> Filter by HRC type (dropdown with "All Types" option)</li>
+                    <li><strong>CHAPTER:</strong> Filter by chapter category (dropdown with select first option)</li>
+                    <li><strong>SUB CHAPTER:</strong> Filter by sub chapter (dropdown with select first option)</li>
+                    <li><strong>CLASSIFICATION:</strong> Filter by classification category (dropdown with select first option)</li>
+                    <li><strong>SUB CLASSIFICATION:</strong> Filter by sub classification (dropdown with select first option)</li>
+                    <li><strong>UNITS:</strong> Filter by unit of measurement (dropdown with select first option)</li>
+                    <li><strong>STATUS:</strong> Filter by active/inactive status (dropdown)</li>
+                    <li><strong>NAME SEARCH:</strong> Text search by HRC code name</li>
+                    <li><strong>Search Button:</strong> Apply all filters</li>
+                    <li><strong>Clear Filters Button:</strong> Reset all filters to default</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📋 HRC Codes Table</h5>
+                  <p class="step-description">
+                    The main table displays all human resource codes with detailed information:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>CODE:</strong> Unique HRC code identifier</li>
+                    <li><strong>TYPE:</strong> HRC type classification (displayed as colored badge - e.g., SUBCONTRACT, MATERIAL)</li>
+                    <li><strong>CHAPTER:</strong> Primary category chapter</li>
+                    <li><strong>SUB CHAPTER:</strong> Subcategory within the chapter</li>
+                    <li><strong>CLASSIFICATION:</strong> Resource classification</li>
+                    <li><strong>SUB CLASSIFICATION:</strong> Detailed sub-classification</li>
+                    <li><strong>UNITS:</strong> Unit of measurement for the resource</li>
+                    <li><strong>NAME:</strong> Full descriptive name of the HRC code</li>
+                    <li><strong>BUDGET LEVEL:</strong> Budget level indicator</li>
+                    <li><strong>STATUS:</strong> Active or inactive status badge</li>
+                    <li><strong>JOB:</strong> Associated job code (if applicable)</li>
+                    <li><strong>OFFICE ACCOUNT:</strong> Office accounting code</li>
+                    <li><strong>JOB COST ACCOUNT:</strong> Job cost accounting code</li>
+                    <li><strong>SPECIAL ACCOUNT:</strong> Special accounting designation</li>
+                    <li><strong>IDL ACCOUNT:</strong> IDL accounting code</li>
+                  </ul>
+                  <p class="step-description">
+                    The HRC codes table provides comprehensive tracking of labor and subcontract resources with full accounting integration.
+                  </p>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">➕ Adding HRC Codes</h5>
+                  <p class="step-description">
+                    Click the green <strong>"+ Add HRC Cost"</strong> button in the top-right corner to create a new human resource code.
+                  </p>
+                </div>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/cost-step3.png" alt="HRC Code view" class="screenshot-image" />
+                  <p class="screenshot-caption">HRC Code management showing human resource codes with type classifications, chapters, and accounting integration</p>
+                </div>
+
+                <div class="step-success">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                  <strong>Cost Management Complete!</strong> You now have full control over your project's financial tracking. 
+                  Use the Cost Codes Master to maintain standardized cost structures, track actual Project Costs by box and classification, 
+                  and manage Human Resource Codes for comprehensive labor and subcontract cost management. All three views work together 
+                  to provide complete visibility into your construction project finances.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tutorial: Factories Management -->
+      <div class="tutorial-card">
+        <div class="tutorial-header">
+          <h3 class="tutorial-title">How to Manage Factories & Production Capacity</h3>
+          <span class="tutorial-badge">Factories</span>
+        </div>
+        
+        <div class="tutorial-content">
+          <p class="tutorial-intro">
+            Learn how to set up and manage factory locations for modular construction production. Track factory capacity, monitor box production, and configure factory layouts for optimal workflow management.
+          </p>
+
+          <div class="tutorial-steps">
+            <!-- Step 1: Factories Dashboard -->
+            <div class="tutorial-step">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <h4 class="step-title">Navigate to Factories Dashboard</h4>
+                <p class="step-description">
+                  Access the <strong>Factories Dashboard</strong> from the main sidebar to view and manage all your factory locations. 
+                  This dashboard provides a comprehensive overview of your production facilities and their current capacity status.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📊 Factory Statistics Overview</h5>
+                  <p class="step-description">
+                    At the top of the dashboard, summary statistics cards provide quick insights into your factory operations:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Total Factories:</strong> Total number of registered factory locations</li>
+                    <li><strong>Active Factories:</strong> Number of factories currently operational</li>
+                    <li><strong>Total Boxes:</strong> Total production capacity across all factories</li>
+                    <li><strong>Total Capacity:</strong> Combined capacity number of all factories</li>
+                    <li><strong>Full Factories:</strong> Number of factories at maximum capacity (red alert indicator)</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">🏷️ Factory Filter Tabs</h5>
+                  <p class="step-description">
+                    Quick filter tabs allow you to view factories by status:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Total Factories:</strong> View all registered factories</li>
+                    <li><strong>Active:</strong> Show only currently operational factories</li>
+                    <li><strong>Boxes:</strong> View factories sorted by box production capacity</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">🔍 Search Factories</h5>
+                  <p class="step-description">
+                    Use the search bar to quickly find specific factories:
+                  </p>
+                  <ul class="step-list">
+                    <li>Search by factory code</li>
+                    <li>Search by factory name</li>
+                    <li>Search by location</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">🏭 Factory Cards Grid</h5>
+                  <p class="step-description">
+                    Each factory is displayed as a card showing key information:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Factory Code:</strong> Unique factory identifier with availability badge</li>
+                    <li><strong>Factory Name:</strong> Full factory name (e.g., Dubox - KSA, Dubox - UAE)</li>
+                    <li><strong>Location Icon & Text:</strong> Geographic location indicator</li>
+                    <li><strong>Capacity Progress Bar:</strong> Visual indicator of current capacity utilization</li>
+                    <li><strong>Capacity Ratio:</strong> Current usage vs. total capacity display</li>
+                    <li><strong>Boxes Count:</strong> Number of boxes currently in production</li>
+                    <li><strong>Total Capacity:</strong> Maximum capacity number</li>
+                    <li><strong>View Details Link:</strong> Navigate to detailed factory layout and management</li>
+                  </ul>
+                  <p class="step-description">
+                    The progress bar uses color coding to indicate capacity levels: blue for normal capacity, 
+                    yellow for high utilization, and red for factories at or near maximum capacity.
+                  </p>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">➕ Adding New Factory</h5>
+                  <p class="step-description">
+                    Click the <strong>"+ Add Factory"</strong> button in the top-right corner to create a new factory location.
+                  </p>
+                </div>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/factories-step1.png" alt="Factories Dashboard overview" class="screenshot-image" />
+                  <p class="screenshot-caption">Factories Dashboard showing factory statistics, filter tabs, and factory cards with capacity indicators</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2: Add New Factory -->
+            <div class="tutorial-step">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <h4 class="step-title">Create New Factory Configuration</h4>
+                <p class="step-description">
+                  After clicking <strong>"+ Add Factory"</strong>, a modal dialog opens with the <strong>Add New Factory</strong> form. 
+                  This form allows you to create a new factory and configure its production capacity and layout.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📄 Factory Basic Information</h5>
+                  <p class="step-description">
+                    The form starts with essential factory identification fields:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Factory Code *</strong> (Required)
+                      <ul>
+                        <li>Unique identifier for the factory</li>
+                        <li>Placeholder example provided</li>
+                      </ul>
+                    </li>
+                    <li><strong>Factory Name *</strong> (Required)
+                      <ul>
+                        <li>Descriptive name for the factory</li>
+                        <li>Placeholder example provided</li>
+                      </ul>
+                    </li>
+                    <li><strong>Location *</strong> (Required)
+                      <ul>
+                        <li>Dropdown to select geographic location</li>
+                        <li>Pre-configured location options available</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📐 Capacity Configuration</h5>
+                  <p class="step-description">
+                    The <strong>Capacity (Auto-calculated)</strong> section shows:
+                  </p>
+                  <ul class="step-list">
+                    <li>Auto-calculated capacity based on rows and bays configuration</li>
+                    <li>Information note explaining the calculation formula: (Max Row - Min Row + 1) × (Max Bay - Min Bay + 1)</li>
+                    <li>Capacity is automatically computed from the layout configuration below</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">🏗️ Factory Layout Configuration</h5>
+                  <p class="step-description">
+                    The <strong>Factory Layout Configuration</strong> section provides two layout options:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Use Sections (Assembly & Finishing)</strong> - Checkbox option
+                      <ul>
+                        <li>Enable this to configure separate Assembly and Finishing sections</li>
+                        <li>When unchecked, factory uses a single unified layout</li>
+                        <li>Information note: "Factory will use a single unified layout"</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📏 Row and Bay Range Configuration</h5>
+                  <p class="step-description">
+                    An informational box appears with the note: "Define the row and bay ranges for organizing boxes within this factory"
+                  </p>
+                  <p class="step-description">
+                    Four input fields define the factory grid dimensions:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Min Row *</strong> (Required)
+                      <ul>
+                        <li>Starting row number</li>
+                        <li>Placeholder example provided</li>
+                      </ul>
+                    </li>
+                    <li><strong>Max Row *</strong> (Required)
+                      <ul>
+                        <li>Ending row number</li>
+                        <li>Placeholder example provided</li>
+                      </ul>
+                    </li>
+                    <li><strong>Min Bay *</strong> (Required)
+                      <ul>
+                        <li>Starting bay letter/identifier</li>
+                        <li>Placeholder example provided</li>
+                      </ul>
+                    </li>
+                    <li><strong>Max Bay *</strong> (Required)
+                      <ul>
+                        <li>Ending bay letter/identifier</li>
+                        <li>Placeholder example provided</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">💾 Form Actions</h5>
+                  <p class="step-description">
+                    At the bottom of the form, two action buttons are available:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Cancel</strong> button - Close the modal without saving changes</li>
+                    <li><strong>Create Factory</strong> button (teal/cyan) - Save the new factory configuration</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">✅ Completing Factory Setup</h5>
+                  <p class="step-description">
+                    To successfully create a factory:
+                  </p>
+                  <ul class="step-list">
+                    <li>Fill in all required fields (marked with *)</li>
+                    <li>Ensure the factory code is unique across all factories</li>
+                    <li>Select the appropriate location from the dropdown</li>
+                    <li>Configure the row and bay ranges to define the factory grid layout</li>
+                    <li>Optionally enable sections for separate Assembly and Finishing areas</li>
+                    <li>Review the auto-calculated capacity to ensure it meets your requirements</li>
+                    <li>Click <strong>"Create Factory"</strong> to save the configuration</li>
+                  </ul>
+                  <p class="step-description">
+                    Once created, the factory will appear in the Factories Dashboard and you can proceed to configure 
+                    detailed layouts, sections, and start assigning boxes for production.
+                  </p>
+                </div>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/factories-step2.png" alt="Add New Factory form" class="screenshot-image" />
+                  <p class="screenshot-caption">Add New Factory modal showing all configuration options including basic information, capacity calculation, and layout configuration</p>
+                </div>
+
+                <div class="step-success">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                  <strong>Factory Created Successfully!</strong> Your new factory has been added to the system. 
+                  You can now configure detailed section layouts (Assembly and Finishing areas if enabled), 
+                  manage production capacity, and start assigning boxes to production positions. 
+                  Use the factory layout view to visualize and manage box positions within the configured row and bay grid.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tutorial: Schedule Management -->
+      <div class="tutorial-card">
+        <div class="tutorial-header">
+          <h3 class="tutorial-title">How to Manage Schedule Templates & Activities</h3>
+          <span class="tutorial-badge schedule">Schedule</span>
+        </div>
+        
+        <div class="tutorial-content">
+          <p class="tutorial-intro">
+            Learn how to create and manage reusable activity templates and material checklists for streamlined box production scheduling. 
+            This module allows you to standardize workflows across projects and ensure consistent material requirements.
+          </p>
+
+          <div class="tutorial-steps">
+            <!-- Step 1: Schedule Overview -->
+            <div class="tutorial-step">
+              <div class="step-number">1</div>
+              <div class="step-content">
+                <h4 class="step-title">Navigate to Schedule Module Overview</h4>
+                <p class="step-description">
+                  Access the <strong>Schedule</strong> module from the main sidebar. The Schedule module provides two main template management options 
+                  and direct activity management capabilities for comprehensive production planning.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📋 Box Activity Templates</h5>
+                  <p class="step-description">
+                    The left panel provides access to <strong>Box Activity Templates</strong>:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Purpose:</strong> Create reusable activity workflows from ActivityMaster or custom activities</li>
+                    <li><strong>Features:</strong>
+                      <ul>
+                        <li>Clone activities from ActivityMaster</li>
+                        <li>Create custom activities</li>
+                        <li>Reuse templates across projects</li>
+                      </ul>
+                    </li>
+                    <li><strong>Action Button:</strong> "Manage Box Activity Templates" - Opens the activity templates management page</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📦 Box Material Templates</h5>
+                  <p class="step-description">
+                    The right panel provides access to <strong>Box Material Templates</strong>:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Purpose:</strong> Manage reusable material checklists with lead times and requirements</li>
+                    <li><strong>Features:</strong>
+                      <ul>
+                        <li>Define material requirements</li>
+                        <li>Set lead times</li>
+                        <li>Assign to projects and box types</li>
+                      </ul>
+                    </li>
+                    <li><strong>Action Button:</strong> "Manage Box Material Templates" - Opens the material templates management page</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">⚡ Direct Activity Management</h5>
+                  <p class="step-description">
+                    Below the template sections, the <strong>Direct Activity Management</strong> area allows you to:
+                  </p>
+                  <ul class="step-list">
+                    <li>Create and manage individual schedule activities without using templates</li>
+                    <li>Select projects using two synchronized dropdowns:
+                      <ul>
+                        <li><strong>Project Name:</strong> Select project by name</li>
+                        <li><strong>Project Number:</strong> Select project by unique identifier</li>
+                      </ul>
+                    </li>
+                    <li>View an empty state message: "Select a Project" with instruction to choose a project from the dropdown above to view and manage its schedule activities</li>
+                  </ul>
+                </div>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/schedule-step1.png" alt="Schedule module overview" class="screenshot-image" />
+                  <p class="screenshot-caption">Schedule module showing Box Activity Templates, Box Material Templates, and Direct Activity Management sections</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2: Box Activity Templates List -->
+            <div class="tutorial-step">
+              <div class="step-number">2</div>
+              <div class="step-content">
+                <h4 class="step-title">View Box Activity Templates List</h4>
+                <p class="step-description">
+                  After clicking <strong>"Manage Box Activity Templates"</strong>, you'll see the <strong>Box Activity Templates</strong> page 
+                  displaying all reusable activity template workflows.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">🔍 Template Filters</h5>
+                  <p class="step-description">
+                    Use the filter options to find specific templates:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Select Template:</strong> Dropdown to choose specific template (default: "All Templates")</li>
+                    <li><strong>Status:</strong> Filter by active/inactive status
+                      <ul>
+                        <li>Checkbox: "Active Only" to show only active templates</li>
+                        <li>"Clear Selection" link to reset filters</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📊 Activity Templates Table</h5>
+                  <p class="step-description">
+                    The main table displays all activity templates with the following columns:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Template Name:</strong> Name of the activity template</li>
+                    <li><strong>Description:</strong> Brief description of the template purpose</li>
+                    <li><strong>Activities:</strong> Number of activities included (displayed as colored badge)</li>
+                    <li><strong>Status:</strong> Active or inactive status badge</li>
+                    <li><strong>Created:</strong> Date when the template was created</li>
+                    <li><strong>Actions:</strong> View and Edit buttons for template management</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">➕ Creating New Template</h5>
+                  <p class="step-description">
+                    Click the green <strong>"+ Create Template"</strong> button in the top-right corner to create a new activity template.
+                  </p>
+                </div>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/schedule-step2.png" alt="Box Activity Templates list" class="screenshot-image" />
+                  <p class="screenshot-caption">Box Activity Templates page showing template filters and activity templates table with status indicators</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 3: Create Activity Template -->
+            <div class="tutorial-step">
+              <div class="step-number">3</div>
+              <div class="step-content">
+                <h4 class="step-title">Create Activity Template</h4>
+                <p class="step-description">
+                  The <strong>Create Activity Template</strong> page allows you to define a reusable activity template with stages and WIR checkpoints. 
+                  A colorful progress bar at the top indicates you're in the template creation workflow.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📝 Template Details Section</h5>
+                  <p class="step-description">
+                    The first section, <strong>Template Details</strong>, has a blue icon and the subtitle "Configure the basic information for your activity template".
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Template Name *</strong> (Required)
+                      <ul>
+                        <li>Input field with placeholder example</li>
+                        <li>Information note: "Provide a clear, descriptive name for this template"</li>
+                      </ul>
+                    </li>
+                    <li><strong>Description</strong> (Optional)
+                      <ul>
+                        <li>Multi-line text area with placeholder</li>
+                        <li>Information note: "Optional: Add additional context about when and how to use this template"</li>
+                      </ul>
+                    </li>
+                    <li><strong>Number of Stages *</strong> (Required)
+                      <ul>
+                        <li>Number input field with red asterisk indicator</li>
+                        <li>Information note: "Define how many stages this template will have (1-20)"</li>
+                        <li><strong>"Generate Stages"</strong> button (blue) - Click to generate stage structure based on the number entered</li>
+                        <li>Helper text: "Click to generate stage structure based on the number entered"</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">✅ Template Creation Workflow</h5>
+                  <p class="step-description">
+                    To create an activity template:
+                  </p>
+                  <ul class="step-list">
+                    <li>Enter a clear, descriptive template name</li>
+                    <li>Optionally add a description explaining the template's purpose</li>
+                    <li>Specify the number of stages (between 1 and 20)</li>
+                    <li>Click "Generate Stages" to create the stage structure</li>
+                    <li>Continue to configure each generated stage with activities and WIR checkpoints</li>
+                  </ul>
+                </div>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/schedule-step3.png" alt="Create Activity Template form" class="screenshot-image" />
+                  <p class="screenshot-caption">Create Activity Template page showing Template Details section with name, description, and stage generation options</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 4: Material Templates List -->
+            <div class="tutorial-step">
+              <div class="step-number">4</div>
+              <div class="step-content">
+                <h4 class="step-title">View Material Templates List</h4>
+                <p class="step-description">
+                  After clicking <strong>"Manage Box Material Templates"</strong> from the Schedule overview, you'll see the <strong>Material Templates</strong> page 
+                  for managing reusable material checklists with lead times.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">🔍 Search and Filter Options</h5>
+                  <p class="step-description">
+                    Use comprehensive filters to find specific material templates:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Search:</strong> Text input to search by name or code</li>
+                    <li><strong>Category:</strong> Dropdown filter with "All Categories" default option</li>
+                    <li><strong>Status:</strong> Checkbox for "Active Only" to show only active templates</li>
+                    <li><strong>Search Button:</strong> Apply search filters</li>
+                    <li><strong>Clear Button:</strong> Reset all filters to default</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📋 Material Templates Table</h5>
+                  <p class="step-description">
+                    The main table displays all material templates with detailed information:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>TEMPLATE CODE:</strong> Unique template identifier code</li>
+                    <li><strong>TEMPLATE NAME:</strong> Descriptive name of the material template with subtitle description</li>
+                    <li><strong>CATEGORY:</strong> Material category classification (displayed as colored badge)</li>
+                    <li><strong>MATERIALS:</strong> Number of materials in the template (displayed as colored badge)</li>
+                    <li><strong>STATUS:</strong> Active or inactive status badge</li>
+                    <li><strong>CREATED:</strong> Date when the template was created</li>
+                    <li><strong>ACTIONS:</strong> View and Edit buttons</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">➕ Creating New Material Template</h5>
+                  <p class="step-description">
+                    Click the blue <strong>"+ Create Template"</strong> button in the top-right corner to create a new material template.
+                  </p>
+                </div>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/schedule-step4.png" alt="Material Templates list" class="screenshot-image" />
+                  <p class="screenshot-caption">Material Templates page showing search filters, category selection, and material templates table with status badges</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 5: Create Material Template -->
+            <div class="tutorial-step">
+              <div class="step-number">5</div>
+              <div class="step-content">
+                <h4 class="step-title">Create Material Template</h4>
+                <p class="step-description">
+                  The <strong>Create Material Template</strong> page allows you to define a reusable material checklist with lead times. 
+                  This template can be assigned to projects and box types for consistent material planning.
+                </p>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📝 Template Details Section</h5>
+                  <p class="step-description">
+                    The <strong>Template Details</strong> section contains basic template information:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Template Name *</strong> (Required)
+                      <ul>
+                        <li>Input field with placeholder example</li>
+                      </ul>
+                    </li>
+                    <li><strong>Template Code *</strong> (Required)
+                      <ul>
+                        <li>Input field with placeholder example</li>
+                        <li>Must be unique identifier</li>
+                      </ul>
+                    </li>
+                    <li><strong>Category</strong> (Optional)
+                      <ul>
+                        <li>Text input with placeholder example</li>
+                      </ul>
+                    </li>
+                    <li><strong>Description</strong> (Optional)
+                      <ul>
+                        <li>Multi-line text area with placeholder</li>
+                      </ul>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">📦 Materials Section</h5>
+                  <p class="step-description">
+                    The collapsible <strong>Materials (0)</strong> section allows you to add materials to the template:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Section Header:</strong> Shows material count in parentheses</li>
+                    <li><strong>Empty State:</strong> Displays when no materials are added
+                      <ul>
+                        <li>Plus icon indicator</li>
+                        <li>Message: "No materials added yet"</li>
+                        <li><strong>"Add First Material"</strong> button (blue) - Add the first material to the template</li>
+                      </ul>
+                    </li>
+                    <li><strong>"+ Add Material"</strong> button (blue, top-right) - Add additional materials after the first one</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">💾 Form Actions</h5>
+                  <p class="step-description">
+                    At the bottom of the page:
+                  </p>
+                  <ul class="step-list">
+                    <li><strong>Cancel</strong> button - Discard changes and return to templates list</li>
+                    <li><strong>Create Template</strong> button (blue) - Save the new material template</li>
+                  </ul>
+                </div>
+
+                <div class="step-subsection">
+                  <h5 class="subsection-title">✅ Material Template Creation Workflow</h5>
+                  <p class="step-description">
+                    To create a material template:
+                  </p>
+                  <ul class="step-list">
+                    <li>Enter a descriptive template name</li>
+                    <li>Provide a unique template code</li>
+                    <li>Optionally assign a category for better organization</li>
+                    <li>Add a description explaining the template's purpose</li>
+                    <li>Click "Add First Material" to start adding materials</li>
+                    <li>For each material, specify:
+                      <ul>
+                        <li>Material item details</li>
+                        <li>Required quantities</li>
+                        <li>Lead times</li>
+                        <li>Any special requirements</li>
+                      </ul>
+                    </li>
+                    <li>Click "Create Template" to save</li>
+                  </ul>
+                </div>
+
+                <div class="step-screenshot">
+                  <img src="assets/help/schedule-step5.png" alt="Create Material Template form" class="screenshot-image" />
+                  <p class="screenshot-caption">Create Material Template page showing Template Details section and Materials section with empty state</p>
+                </div>
+
+                <div class="step-success">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                  <strong>Schedule Templates Ready!</strong> You've successfully learned how to manage both Activity and Material templates. 
+                  Use Activity Templates to standardize workflow stages across boxes and projects, ensuring consistent quality control and inspection processes. 
+                  Use Material Templates to define reusable material checklists with lead times, ensuring all required materials are accounted for in production planning. 
+                  Both template types can be reused across multiple projects for streamlined construction management.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+ 
+    <!-- Support Section -->
+    <div class="content-section" id="contact-support">
+      <h2 class="section-title">Contact Support</h2>
+      <p class="section-description">
+        Can't find what you're looking for? Our support team is here to help!
+      </p>
+      
+      <div class="contact-options">
+        <div class="contact-method">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
               <polyline points="22,6 12,13 2,6"/>
             </svg>
-            Email Support
-          </a>
-          <a href="tel:+966123456789" class="support-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <div>
+            <strong>Email Support</strong>
+            <p><a href="mailto:support@amanabuildings.com">support&#64;amanabuildings.com</a></p>
+      </div>
+    </div>
+
+        <div class="contact-method">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
             </svg>
-            Call Support
-          </a>
+          <div>
+            <strong>Phone Support</strong>
+            <p><a href="tel:+966123456789">+966 12 345 6789</a></p>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- System Info -->
-    <div class="system-info">
-      <div class="info-row">
-        <span class="info-label">Version:</span>
-        <span class="info-value">DuBox v1.0.0</span>
+    <!-- System Info Footer -->
+    <div class="system-info-footer">
+      <div class="info-item">
+        <span class="label">Version:</span>
+        <span class="value">DuBox v1.0.0</span>
       </div>
-      <div class="info-row">
-        <span class="info-label">Last Updated:</span>
-        <span class="info-value">January 2026</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Documentation:</span>
-        <span class="info-value">
-          <a href="javascript:void(0)" (click)="openManual()">View Full Manual</a>
-        </span>
+      <div class="info-item">
+        <span class="label">Last Updated:</span>
+        <span class="value">January 2026</span>
       </div>
     </div>
 
   </div>
 </div>
+
+
+
+
+
 
 
 

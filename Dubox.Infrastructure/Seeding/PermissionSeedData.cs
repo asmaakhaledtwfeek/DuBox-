@@ -45,6 +45,13 @@ public static class PermissionSeedData
     private static readonly Guid MaterialsImportId = new("10000000-0000-0000-0005-000000000006");
     private static readonly Guid MaterialsManageId = new("10000000-0000-0000-0005-000000000007");
 
+    private static readonly Guid MaterialTemplatesViewId = new("a833003b-b0cd-41a9-934e-86e9fe604890");
+    private static readonly Guid MaterialTemplatesCreateId = new("74a8cd42-32b1-434d-891c-dfe5e0a3fd62");
+    private static readonly Guid MaterialTemplatesEditId = new("1f7179dc-dab9-42a9-80c3-4f88bff776dc");
+    private static readonly Guid MaterialTemplatesDeleteId = new("150c9a72-2751-4402-a9ec-34918d631576");
+    private static readonly Guid MaterialTemplatesManageId = new("65f1415f-4fe7-4386-b99d-eba8b2585057");
+
+
     private static readonly Guid WirViewId = new("10000000-0000-0000-0006-000000000001");
     private static readonly Guid WirCreateId = new("10000000-0000-0000-0006-000000000002");
     private static readonly Guid WirApproveId = new("10000000-0000-0000-0006-000000000003");
@@ -179,6 +186,13 @@ public static class PermissionSeedData
             new() { PermissionId = MaterialsImportId, Module = "Materials", Action = "Import", PermissionKey = "materials.import", DisplayName = "Import Materials", Description = "Import materials from Excel", Category = "Materials", DisplayOrder = 45, CreatedDate = now },
             new() { PermissionId = MaterialsManageId, Module = "Materials", Action = "Manage", PermissionKey = "materials.manage", DisplayName = "Manage Materials", Description = "Full management of materials", Category = "Materials", DisplayOrder = 46, CreatedDate = now },
 
+            // Material Templates Module
+            new() { PermissionId = MaterialTemplatesViewId, Module = "MaterialTemplates", Action = "View", PermissionKey = "materialtemplates.view", DisplayName = "View Material Templates", Description = "View material template list and details", Category = "Materials", DisplayOrder = 47, CreatedDate = now },
+            new() { PermissionId = MaterialTemplatesCreateId, Module = "MaterialTemplates", Action = "Create", PermissionKey = "materialtemplates.create", DisplayName = "Create Material Templates", Description = "Create new material templates", Category = "Materials", DisplayOrder = 48, CreatedDate = now },
+            new() { PermissionId = MaterialTemplatesEditId, Module = "MaterialTemplates", Action = "Edit", PermissionKey = "materialtemplates.edit", DisplayName = "Edit Material Templates", Description = "Edit existing material templates", Category = "Materials", DisplayOrder = 49, CreatedDate = now },
+            new() { PermissionId = MaterialTemplatesDeleteId, Module = "MaterialTemplates", Action = "Delete", PermissionKey = "materialtemplates.delete", DisplayName = "Delete Material Templates", Description = "Delete material templates", Category = "Materials", DisplayOrder = 50, CreatedDate = now },
+            new() { PermissionId = MaterialTemplatesManageId, Module = "MaterialTemplates", Action = "Manage", PermissionKey = "materialtemplates.manage", DisplayName = "Manage Material Templates", Description = "Full management of material templates", Category = "Materials", DisplayOrder = 51, CreatedDate = now },
+
             // WIR Module
             new() { PermissionId = WirViewId, Module = "WIR", Action = "View", PermissionKey = "wir.view", DisplayName = "View WIR", Description = "View WIR records and checkpoints", Category = "Quality Control", DisplayOrder = 50, CreatedDate = now },
             new() { PermissionId = WirCreateId, Module = "WIR", Action = "Create", PermissionKey = "wir.create", DisplayName = "Create WIR", Description = "Create new WIR records", Category = "Quality Control", DisplayOrder = 51, CreatedDate = now },
@@ -296,6 +310,7 @@ public static class PermissionSeedData
             ActivitiesViewId, ActivitiesCreateId, ActivitiesEditId, ActivitiesDeleteId, ActivitiesAssignTeamId, ActivitiesUpdateProgressId, ActivitiesManageId,
             TeamsViewId, TeamsCreateId, TeamsEditId, TeamsDeleteId, TeamsManageMembersId, TeamsManageId,
             MaterialsViewId, MaterialsCreateId, MaterialsEditId, MaterialsDeleteId, MaterialsRestockId, MaterialsImportId, MaterialsManageId,
+            MaterialTemplatesViewId, MaterialTemplatesCreateId, MaterialTemplatesEditId, MaterialTemplatesDeleteId, MaterialTemplatesManageId,
             WirViewId, WirCreateId, WirApproveId, WirRejectId, WirReviewId, WirManageId,
             QualityIssuesViewId, QualityIssuesCreateId, QualityIssuesEditId, QualityIssuesResolveId, QualityIssuesManageId,
             ReportsViewId, ReportsExportId, ReportsManageId,
@@ -321,6 +336,7 @@ public static class PermissionSeedData
             ActivitiesViewId, ActivitiesCreateId, ActivitiesEditId, ActivitiesDeleteId, ActivitiesAssignTeamId, ActivitiesUpdateProgressId, ActivitiesManageId,
             TeamsViewId, TeamsCreateId, TeamsEditId, TeamsManageMembersId, TeamsManageId,
             MaterialsViewId, MaterialsCreateId, MaterialsEditId, MaterialsRestockId, MaterialsImportId,
+            MaterialTemplatesViewId, MaterialTemplatesCreateId, MaterialTemplatesEditId, MaterialTemplatesDeleteId, MaterialTemplatesManageId,
             WirViewId, WirCreateId, WirApproveId, WirRejectId, WirReviewId, WirManageId,
             QualityIssuesViewId, QualityIssuesCreateId, QualityIssuesEditId, QualityIssuesResolveId, QualityIssuesManageId,
             ReportsViewId, ReportsExportId, ReportsManageId,
@@ -411,6 +427,7 @@ public static class PermissionSeedData
             ActivitiesViewId,
             TeamsViewId,
             MaterialsViewId, MaterialsCreateId, MaterialsEditId, MaterialsRestockId, MaterialsImportId,
+            MaterialTemplatesViewId, MaterialTemplatesCreateId, MaterialTemplatesEditId,
             WirViewId,
             QualityIssuesViewId,
             ReportsViewId, ReportsExportId,

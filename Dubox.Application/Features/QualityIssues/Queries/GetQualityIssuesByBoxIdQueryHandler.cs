@@ -1,10 +1,10 @@
-﻿using Dubox.Application.DTOs;
+using Dubox.Application.DTOs;
+using Dubox.Application.Services;
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
-using Mapster;
 using MediatR;
 
 namespace Dubox.Application.Features.QualityIssues.Queries
@@ -13,11 +13,16 @@ namespace Dubox.Application.Features.QualityIssues.Queries
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IProjectTeamVisibilityService _visibilityService;
+        private readonly IQualityIssueMappingService _mappingService;
 
-        public GetQualityIssuesByBoxIdQueryHandler(IUnitOfWork unitOfWork, IProjectTeamVisibilityService visibilityService)
+        public GetQualityIssuesByBoxIdQueryHandler(
+            IUnitOfWork unitOfWork, 
+            IProjectTeamVisibilityService visibilityService,
+            IQualityIssueMappingService mappingService)
         {
             _unitOfWork = unitOfWork;
             _visibilityService = visibilityService;
+            _mappingService = mappingService;
         }
 
         public async Task<Result<List<QualityIssueDetailsDto>>> Handle(GetQualityIssuesByBoxIdQuery request, CancellationToken cancellationToken)
@@ -37,21 +42,8 @@ namespace Dubox.Application.Features.QualityIssues.Queries
                 .GetWithSpec(new GetQualityIssuesByBoxIdSpecification(request.BoxId));
             var issues = specificationResult.Data.ToList();
 
-            var dtos = issues.Select(issue =>
-            {
-                var dto = issue.Adapt<QualityIssueDetailsDto>();
-                dto.AssignedToUserName =!string.IsNullOrEmpty(issue.AssignedToMember?.EmployeeName)? issue.AssignedToMember?.EmployeeName: issue.AssignedToMember?.User.FullName;
-                dto.CCUserName = !string.IsNullOrEmpty(issue.CCUser?.FullName) ? issue.CCUser?.FullName :string.Empty;
-                // Map project information from Box.Project
-                if (issue.Box?.Project != null)
-                {
-                    dto.ProjectId = issue.Box.Project.ProjectId;
-                    dto.ProjectName = issue.Box.Project.ProjectName;
-                    dto.ProjectCode = issue.Box.Project.ProjectCode;
-                }
-                
-                return dto;
-            }).ToList();
+            // Use mapping service to convert issues to DTOs
+            var dtos = _mappingService.MapToDtoList(issues);
 
             return Result.Success(dtos);
         }

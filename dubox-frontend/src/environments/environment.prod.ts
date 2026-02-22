@@ -5,5 +5,5 @@ export const environment = {
   apiUrl: 'https://duboxapp-a0bpawc0g0acc7da.uaenorth-01.azurewebsites.net/api',
   apiVersion: 'v1',
   publicApiUrl: 'https://duboxapp-a0bpawc0g0acc7da.uaenorth-01.azurewebsites.net/api/public',
-  apiBaseUrl: 'https://duboxapp-a0bpawc0g0acc7da.uaenorth-01.azurewebsites.net/'
+  apiBaseUrl: 'https://duboxapp-a0bpawc0g0acc7da.uaenorth-01.azurewebsites.net'
 };

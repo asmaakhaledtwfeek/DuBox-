@@ -1,4 +1,5 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Specifications;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
 using Dubox.Domain.Abstraction;
@@ -18,11 +19,14 @@ public class GetMaterialsByProjectQueryHandler : IRequestHandler<GetMaterialsByP
 
     public async Task<Result<List<MaterialDto>>> Handle(GetMaterialsByProjectQuery request, CancellationToken cancellationToken)
     {
-        // Get materials that are either:
-        // 1. Specifically assigned to this project (ProjectId matches)
-        // 2. Global materials (ProjectId is null)
+        // Get materials that are selected for this project through ProjectMaterials
+        var projectMaterials = await _unitOfWork.Repository<ProjectMaterial>()
+            .FindAsync(pm => pm.ProjectId == request.ProjectId && pm.IsSelected, cancellationToken);
+
+        var materialIds = projectMaterials.Select(pm => pm.MaterialId).ToList();
+        
         var materials = await _unitOfWork.Repository<Material>()
-            .FindAsync(m => m.ProjectId == request.ProjectId || m.ProjectId == null, cancellationToken);
+            .FindAsync(m => materialIds.Contains(m.MaterialId) && m.IsActive, cancellationToken);
 
         var materialDtos = materials.Select(m => m.Adapt<MaterialDto>() with
         {
@@ -33,9 +37,3 @@ public class GetMaterialsByProjectQueryHandler : IRequestHandler<GetMaterialsByP
         return Result.Success(materialDtos);
     }
 }
-
-
-
-
-
-

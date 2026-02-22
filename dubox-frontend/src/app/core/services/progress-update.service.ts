@@ -72,6 +72,10 @@ export class ProgressUpdateService {
     if (request.wirPosition !== undefined) {
       formData.append('WirPosition', request.wirPosition ?? '');
     }
+    // Append section ID selected by user in UI (for accurate conflict validation)
+    if (request.wirFactorySectionId !== undefined && request.wirFactorySectionId !== null) {
+      formData.append('WirFactorySectionId', request.wirFactorySectionId);
+    }
     
     // Append multiple files if provided - ASP.NET Core expects Files parameter name
     if (files && files.length > 0) {

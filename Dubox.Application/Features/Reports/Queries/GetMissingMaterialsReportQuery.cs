@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Dubox.Application.Features.Reports.Queries;
 
 /// <summary>
-/// Query to get missing materials report - identifies material shortages
+/// Query to get missing materials report - identifies material shortages by project
 /// </summary>
 public record GetMissingMaterialsReportQuery(Guid? ProjectId = null) : IRequest<Result<List<MissingMaterialsReportDto>>>;
 
@@ -24,42 +24,41 @@ public class GetMissingMaterialsReportQueryHandler : IRequestHandler<GetMissingM
     {
         try
         {
-            // Get all box materials with their requirements and allocations
-            var boxMaterialsQuery = _dbContext.BoxMaterials
-                .Include(bm => bm.Material)
-                .Include(bm => bm.Box)
-                    .ThenInclude(b => b.Project)
+            // Get all project materials with their requirements and allocations
+            var projectMaterialsQuery = _dbContext.ProjectMaterials
+                .Include(pm => pm.Material)
+                .Include(pm => pm.Project)
                 .AsQueryable();
 
             if (request.ProjectId.HasValue && request.ProjectId.Value != Guid.Empty)
             {
-                boxMaterialsQuery = boxMaterialsQuery.Where(bm => bm.Box.ProjectId == request.ProjectId.Value);
+                projectMaterialsQuery = projectMaterialsQuery.Where(pm => pm.ProjectId == request.ProjectId.Value);
             }
 
-            var boxMaterials = await boxMaterialsQuery.ToListAsync(cancellationToken);
+            var projectMaterials = await projectMaterialsQuery.ToListAsync(cancellationToken);
 
-            if (!boxMaterials.Any())
+            if (!projectMaterials.Any())
             {
                 return Result.Success(new List<MissingMaterialsReportDto>());
             }
 
             // Group by material and calculate shortages
-            var materialGroups = boxMaterials
-                .GroupBy(bm => new
+            var materialGroups = projectMaterials
+                .GroupBy(pm => new
                 {
-                    MaterialId = bm.MaterialId,
-                    MaterialName = bm.Material.MaterialName,
-                    MaterialCode = bm.Material.MaterialCode,
-                    Unit = bm.Material.Unit
+                    MaterialId = pm.MaterialId,
+                    MaterialName = pm.Material.MaterialName,
+                    MaterialCode = pm.Material.MaterialCode,
+                    Unit = pm.Material.Unit
                 })
                 .Select(g => new
                 {
                     g.Key.MaterialName,
                     g.Key.MaterialCode,
                     g.Key.Unit,
-                    RequiredQuantity = g.Sum(bm => bm.RequiredQuantity),
-                    AllocatedQuantity = g.Sum(bm => bm.AllocatedQuantity),
-                    AffectedBoxes = g.Select(bm => bm.BoxId).Distinct().Count()
+                    RequiredQuantity = g.Sum(pm => pm.RequiredQuantity ?? 0),
+                    AllocatedQuantity = g.Sum(pm => pm.AllocatedQuantity ?? 0),
+                    AffectedProjects = g.Select(pm => pm.ProjectId).Distinct().Count()
                 })
                 .ToList();
 
@@ -73,9 +72,8 @@ public class GetMissingMaterialsReportQueryHandler : IRequestHandler<GetMissingM
                     RequiredQuantity = (int)m.RequiredQuantity,
                     AvailableQuantity = (int)m.AllocatedQuantity,
                     ShortageQuantity = (int)(m.RequiredQuantity - m.AllocatedQuantity),
-                    AffectedBoxes = m.AffectedBoxes,
-                    Unit = m.Unit,
-                    ExpectedDeliveryDate = null // Can be enhanced with purchase order data
+                    Unit = m.Unit ?? "units",
+                    AffectedBoxes = m.AffectedProjects // Changed to projects
                 })
                 .OrderByDescending(m => m.ShortageQuantity)
                 .ToList();
@@ -84,12 +82,7 @@ public class GetMissingMaterialsReportQueryHandler : IRequestHandler<GetMissingM
         }
         catch (Exception ex)
         {
-            return Result.Failure<List<MissingMaterialsReportDto>>($"Failed to generate missing materials report: {ex.Message}");
+            return Result.Failure<List<MissingMaterialsReportDto>>($"Error generating missing materials report: {ex.Message}");
         }
     }
 }
-
-
-
-
-

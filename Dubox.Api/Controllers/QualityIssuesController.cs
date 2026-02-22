@@ -48,6 +48,13 @@ namespace Dubox.Api.Controllers
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
+        [HttpGet("filters")]
+        public async Task<IActionResult> GetQualityIssueFilters(CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new GetQualityIssueFiltersQuery(), cancellationToken);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
         [HttpPost]
         [Consumes("multipart/form-data", "application/json")]
         [RequestSizeLimit(50_000_000)] 

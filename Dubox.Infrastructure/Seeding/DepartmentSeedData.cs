@@ -11,6 +11,7 @@ namespace Dubox.Infrastructure.Seeding
 
 
             var departmentData = new List<Department>
+
 {
 
     new Department { DepartmentId = Guid.Parse("D1000000-0000-0000-0000-000000000001"), DepartmentName = "IT", Code = "IT", IsActive = true, CreatedDate = seedDate },

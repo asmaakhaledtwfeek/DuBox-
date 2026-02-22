@@ -75,10 +75,10 @@ public class GetBoxesSummaryReportQueryHandler : IRequestHandler<GetBoxesSummary
 
             var qualityIssuesCounts = boxIds.Any()
                 ? await _dbContext.QualityIssues
-                    .Where(qi => boxIds.Contains(qi.BoxId) 
+                    .Where(qi => qi.BoxId!=null && boxIds.Contains(qi.BoxId.Value) 
                         && qi.Status != QualityIssueStatusEnum.Resolved 
                         && qi.Status != QualityIssueStatusEnum.Closed)
-                    .GroupBy(qi => qi.BoxId)
+                    .GroupBy(qi => qi.BoxId.Value)
                     .Select(g => new { BoxId = g.Key, Count = g.Count() })
                     .ToDictionaryAsync(x => x.BoxId, x => x.Count, cancellationToken)
                 : new Dictionary<Guid, int>();

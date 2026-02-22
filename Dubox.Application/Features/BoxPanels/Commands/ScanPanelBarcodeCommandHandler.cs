@@ -47,6 +47,19 @@ public class ScanPanelBarcodeCommandHandler : IRequestHandler<ScanPanelBarcodeCo
         if (panel.PanelStatus == PanelStatusEnum.FirstApprovalApproved && panel.SecondApprovalStatus == "Pending")
             return Result.Failure<BoxPanelDto>("Cannot scan panel. Second approval is pending. Please approve or reject the second approval before scanning again.");
 
+        // Check panel workflow status - cannot scan if workflow is not completed
+        if (!string.IsNullOrEmpty(panel.WorkflowStatus) && panel.WorkflowStatus != "Completed")
+        {
+            string workflowStatusDisplay = panel.WorkflowStatus switch
+            {
+                "InProgress" => "in progress",
+                "OnHold" => "on hold",
+                "NotStarted" => "not started",
+                _ => panel.WorkflowStatus.ToLower()
+            };
+            return Result.Failure<BoxPanelDto>($"Cannot scan panel. Panel workflow is {workflowStatusDisplay}. Please complete the workflow before scanning.");
+        }
+
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
         var scanTime = DateTime.UtcNow;
 

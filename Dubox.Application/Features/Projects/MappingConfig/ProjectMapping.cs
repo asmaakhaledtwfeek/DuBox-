@@ -17,7 +17,9 @@ namespace Dubox.Application.Features.Projects.MappingConfig
                 .Map(dest => dest.BimLink, src => src.BimLink)
                 .Map(dest => dest.ContractorImageUrl, src => src.ContractorImageUrl)
                 .Map(dest => dest.SubContractorImageUrl, src => src.SubContractorImageUrl)
-                .Map(dest => dest.ClientImageUrl, src => src.ClientImageUrl);
+                .Map(dest => dest.ClientImageUrl, src => src.ClientImageUrl)
+                .Map(dest => dest.ActivityTemplateId, src => src.ActivityTemplateId)
+                .Map(dest => dest.ActivityTemplateName, src => src.ActivityTemplate != null ? src.ActivityTemplate.TemplateName : null);
         }
     }
 }

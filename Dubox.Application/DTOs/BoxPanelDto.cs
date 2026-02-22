@@ -50,11 +50,14 @@ public record BoxPanelDto
     public string? Dimensions { get; init; }
     public string? Notes { get; init; }
     
-    // Pre-cast Location Workflow
+    // Pre-cast Location Workflow (7 stages)
     public int CurrentStage { get; init; }
     public bool MoldPreparationComplete { get; init; }
+    public bool InitialComplete { get; init; }
+    public bool MEPInsertsInstallationComplete { get; init; }
     public bool ReinforcementSetupComplete { get; init; }
     public bool ConcreteCastingComplete { get; init; }
+    public bool SurfaceFinishingComplete { get; init; }
     public bool CuringAndDemoldingComplete { get; init; }
     public string? WorkflowStatus { get; init; }
     public Guid? QualityIssueId { get; init; }

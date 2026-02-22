@@ -17,6 +17,7 @@ public record FactoryDto
     public int AvailableCapacity { get; init; }
     public bool IsFull { get; init; }
     public bool IsActive { get; init; }
+    public List<FactorySectionDto> Sections { get; init; } = new();
     public int DispatchedBoxesCount { get; init; } // Count of dispatched boxes in the factory
 }
 

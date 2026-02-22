@@ -4,6 +4,7 @@
     {
         Defect = 1,
         NonConformance,
-        Observation
+        Observation,
+        ExchangeRequest
     }
 }

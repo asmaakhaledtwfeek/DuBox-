@@ -27,6 +27,7 @@ public class GetWIRRecordByIdQueryHandler : IRequestHandler<GetWIRRecordByIdQuer
 
         if (wirRecord == null)
             return Result.Failure<WIRRecordDto>("WIR record not found");
+        string activityName = wirRecord.BoxActivity.ActivityMaster != null ? wirRecord.BoxActivity.ActivityMaster?.ActivityName : wirRecord.BoxActivity.ActivityTemplateActivity.ActivityName;
 
         // Get all activities up to this WIR checkpoint
         var activitiesUpToWIR = await _dbContext.BoxActivities
@@ -34,14 +35,14 @@ public class GetWIRRecordByIdQueryHandler : IRequestHandler<GetWIRRecordByIdQuer
             .Where(ba => ba.BoxId == wirRecord.BoxActivity.BoxId && 
                         ba.Sequence <= wirRecord.BoxActivity.Sequence)
             .OrderBy(ba => ba.Sequence)
-            .Select(ba => ba.ActivityMaster.ActivityName)
+            .Select(ba => activityName)
             .ToListAsync(cancellationToken);
 
         var dto = wirRecord.Adapt<WIRRecordDto>() with
         {
             BoxTag = wirRecord.BoxActivity.Box.BoxTag,
             BoxName = wirRecord.BoxActivity.Box.BoxName,
-            ActivityName = wirRecord.BoxActivity.ActivityMaster.ActivityName,
+            ActivityName = activityName,
             ActivityNames = activitiesUpToWIR,
             ActivityCount = activitiesUpToWIR.Count,
             RequestedByName = wirRecord.RequestedByUser.FullName ?? wirRecord.RequestedByUser.Email,

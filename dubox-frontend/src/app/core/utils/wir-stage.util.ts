@@ -37,9 +37,9 @@ export const WIR_STAGE_COLORS: Record<string, WIRStageInfo> = {
   },
   'WIR-4': {
     wirCode: 'WIR-4',
-    stageName: '3rd Fix',
+    stageName: '2nd Fix',
     colorClass: 'wir-stage-4',
-    displayName: '3rd Fix Installation - WIR-4'
+    displayName: '2nd Fix Installation - WIR-4'
   },
   'WIR-5': {
     wirCode: 'WIR-5',
@@ -206,28 +206,98 @@ export function getWIRStageInfo(wirCode: string): WIRStageInfo {
 
 /**
  * Extracts the numeric part from a WIR code
- * e.g., "WIR-1" -> 1, "WIR-2" -> 2
+ * Supports formats: WIR-1, WIR-01, WIR_1, WIR_01, etc.
+ * e.g., "WIR-1" -> 1, "WIR-01" -> 1, "WIR_2" -> 2
  * 
  * @param wirCode - The WIR code
  * @returns The numeric part, or 0 if not found
  */
 function extractWIRNumber(wirCode: string): number {
-  const match = wirCode.match(/\d+/);
-  return match ? parseInt(match[0], 10) : 0;
+  // Match patterns: WIR-1, WIR-01, WIR_1, WIR_01
+  const match = wirCode.match(/WIR[-_](\d+)/i);
+  return match ? parseInt(match[1], 10) : 0;
+}
+
+/**
+ * Formats WIR code into a readable display name
+ * e.g., "WIR-7" -> "Stage 7", "WIR-01" -> "Stage 1", "WIR_10" -> "Stage 10"
+ * 
+ * @param wirCode - The WIR code
+ * @returns Formatted display name
+ */
+function formatWIRDisplayName(wirCode: string): string {
+  const wirNumber = extractWIRNumber(wirCode);
+  if (wirNumber > 0) {
+    return `Stage ${wirNumber}`;
+  }
+  // Fallback: return cleaned code
+  return wirCode.replace(/WIR[-_]/i, 'Stage ');
+}
+
+/**
+ * Generates a consistent color index from a WIR code string
+ * Ensures WIR-1, WIR-01, WIR-001 get DIFFERENT colors (they are different codes)
+ * 
+ * @param wirCode - The full WIR code string
+ * @returns Color index for the extended palette
+ */
+function getColorIndexForWirCode(wirCode: string): number {
+  // Create a simple hash from the wirCode string
+  // This ensures different formats get different colors
+  let hash = 0;
+  for (let i = 0; i < wirCode.length; i++) {
+    const char = wirCode.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  
+  // Make sure hash is positive
+  return Math.abs(hash);
+}
+
+/**
+ * Gets the color class for a WIR code
+ * WIR-1 and WIR-01 will get DIFFERENT colors (treated as separate codes)
+ * Dynamic stages use colors 7-12 to avoid conflicts with predefined stages (1-6)
+ * 
+ * @param wirCode - The full WIR code
+ * @returns CSS color class name
+ */
+function getColorClassForWirCode(wirCode: string): string {
+  // Colors 7-12 are reserved for dynamic/unknown stages
+  // Colors 1-6 are reserved for predefined stages (WIR-1 through WIR-6)
+  const dynamicColorClasses = [
+    'wir-stage-7',  // Pink
+    'wir-stage-8',  // Blue
+    'wir-stage-9',  // Rose
+    'wir-stage-10', // Purple variant
+    'wir-stage-11', // Amber
+    'wir-stage-12'  // Teal variant
+  ];
+  
+  // Use hash-based index to ensure different codes get different colors
+  // Only cycle through colors 7-12 to avoid conflicts with predefined stages
+  const colorIndex = getColorIndexForWirCode(wirCode) % dynamicColorClasses.length;
+  return dynamicColorClasses[colorIndex];
 }
 
 /**
  * Creates a default stage info for unknown WIR codes
+ * Now with proper formatting and color assignment
+ * WIR-1 and WIR-01 are treated as DIFFERENT stages with DIFFERENT colors
  * 
- * @param wirCode - The WIR code
- * @returns A default WIR stage info
+ * @param wirCode - The WIR code (supports WIR-1, WIR-01, WIR_1, etc.)
+ * @returns A default WIR stage info with formatted display name and appropriate color
  */
 function createDefaultStageInfo(wirCode: string): WIRStageInfo {
+  const displayName = formatWIRDisplayName(wirCode);
+  const colorClass = getColorClassForWirCode(wirCode);
+  
   return {
     wirCode,
-    stageName: wirCode,
-    colorClass: `wir-stage-default`,
-    displayName: wirCode
+    stageName: displayName,
+    colorClass,
+    displayName
   };
 }
 

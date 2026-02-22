@@ -29,9 +29,32 @@ public class BoxesController : ControllerBase
     }
 
     [HttpGet("project/{projectId}")]
-    public async Task<IActionResult> GetBoxesByProject(Guid projectId, CancellationToken cancellationToken)
+    public async Task<IActionResult> GetBoxesByProject(
+        Guid projectId,
+        [FromQuery] int[]? statuses = null,
+        [FromQuery] string? boxType = null,
+        [FromQuery] string? boxSubType = null,
+        [FromQuery] string? buildingNumber = null,
+        [FromQuery] string? floor = null,
+        [FromQuery] string? zone = null,
+        [FromQuery] string? search = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        [FromQuery] bool countOnly = false,
+        CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetBoxesByProjectQuery(projectId), cancellationToken);
+        var result = await _mediator.Send(new GetBoxesByProjectQuery(
+            projectId,
+            statuses?.Length > 0 ? statuses : null,
+            boxType,
+            boxSubType,
+            buildingNumber,
+            floor,
+            zone,
+            search,
+            page,
+            pageSize,
+            countOnly), cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
@@ -51,6 +74,20 @@ public class BoxesController : ControllerBase
     public async Task<IActionResult> GetBoxTypeStatsByProject(Guid projectId, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new GetBoxTypeStatsByProjectQuery(projectId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("project/{projectId}/building-floor-breakdown")]
+    public async Task<IActionResult> GetBuildingFloorBreakdown(Guid projectId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetBuildingFloorBreakdownQuery(projectId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("project/{projectId}/filter-options")]
+    public async Task<IActionResult> GetBoxFilterOptions(Guid projectId, CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(new GetBoxFilterOptionsQuery(projectId), cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
@@ -132,7 +169,7 @@ public class BoxesController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
-   
+
     [HttpPost("{boxId}/check-and-update-status")]
     public async Task<IActionResult> UpdateBoxStatusBasedOnPanels(Guid boxId, CancellationToken cancellationToken)
     {
@@ -154,6 +191,48 @@ public class BoxesController : ControllerBase
     public async Task<IActionResult> DeleteBox(Guid boxId, CancellationToken cancellationToken)
     {
         var result = await _mediator.Send(new DeleteBoxCommand(boxId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("{boxId}/exchange-history")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetBoxExchangeHistory(
+        Guid boxId,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(new GetBoxExchangeHistoryQuery(boxId), cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpGet("project/{projectId}/boxes-for-exchange")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetBoxesForExchange(
+        Guid projectId,
+        [FromQuery] Guid boxId,
+        [FromQuery] string? buildingNumber = null,
+        [FromQuery] string? floor = null,
+        CancellationToken cancellationToken = default)
+    {
+        var result = await _mediator.Send(
+            new GetBoxesForExchangeQuery(projectId, boxId, buildingNumber, floor), 
+            cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpPost("{boxId}/exchange-request")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> CreateBoxExchangeRequest(
+        Guid boxId,
+        [FromBody] CreateBoxExchangeRequestCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        if (boxId != command.BoxId)
+            return BadRequest("Box ID mismatch");
+
+        var result = await _mediator.Send(command, cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
@@ -227,15 +306,15 @@ public class BoxesController : ControllerBase
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
 
- 
+
     [HttpPost("import-excel-with-panels")]
     [RequestSizeLimit(10_485_760)] // 10 MB
     [Consumes("multipart/form-data")]
     [ProducesResponseType(typeof(BoxWithPanelsImportResultDto), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> ImportFromExcelWithPanels(
-        [FromQuery] Guid projectId, 
-        [FromForm] IFormFile file, 
+        [FromQuery] Guid projectId,
+        [FromForm] IFormFile file,
         CancellationToken cancellationToken)
     {
         if (projectId == Guid.Empty)
@@ -248,13 +327,13 @@ public class BoxesController : ControllerBase
         using var memoryStream = new MemoryStream();
         await stream.CopyToAsync(memoryStream, cancellationToken);
         memoryStream.Position = 0;
-        
+
         var command = new ImportBoxesWithPanelsFromExcelCommand(projectId, memoryStream, file.FileName);
         var result = await _mediator.Send(command, cancellationToken);
 
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
-    
+
     [HttpGet("generate-qrcode/{boxId}")]
     public async Task<IActionResult> GenerateBoxQRCode(Guid boxId, CancellationToken cancellationToken)
     {

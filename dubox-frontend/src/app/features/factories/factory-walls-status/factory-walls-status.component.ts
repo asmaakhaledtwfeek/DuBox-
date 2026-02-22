@@ -162,7 +162,8 @@ export class FactoryWallsStatusComponent implements OnInit, OnDestroy {
 
     this.loading = true;
     this.error = '';
-
+    // Use getBoxesByProject for factory filtering as we need all boxes for this factory
+    // The backend doesn't currently support factoryId filtering in the paginated endpoint
     const boxesSub = this.boxService.getBoxesByProject(this.selectedProjectId).subscribe({
       next: (boxes: Box[]) => {
         // Keep only boxes that belong to this factory and have position data

@@ -143,44 +143,37 @@ export class ProjectsListComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Create observables to load boxes for each project
+    // Use paginated endpoint with countOnly to efficiently get status counts
     const boxObservables = projectsWithId.map(project => 
-      this.boxService.getBoxesByProject(project.id).pipe(
-        // Map to include project ID for reference
-        map(boxes => ({ projectId: project.id, boxes }))
+      this.boxService.getBoxesByProjectPaginated(project.id, { 
+        countOnly: true, 
+        page: 1, 
+        pageSize: 1 
+      }).pipe(
+        map(response => ({ projectId: project.id, response }))
       )
     );
 
-    // Load all boxes in parallel
+    // Load all box counts in parallel
     forkJoin(boxObservables).subscribe({
       next: (results) => {
-        console.log('✅ Loaded boxes for all projects');
+        console.log('✅ Loaded box counts for all projects');
         
-        // Calculate counts and progress for each project from boxes (like box progress is calculated from activities)
-        results.forEach(({ projectId, boxes }) => {
+        // Update project counts from status counts
+        results.forEach(({ projectId, response }) => {
           const project = this.projects.find(p => p.id === projectId);
           if (!project) {
             return;
           }
 
-          if (boxes.length > 0) {
-            const result = this.calculateBoxCounts(boxes);
-            project.totalBoxes = result.totalBoxes;
-            project.completedBoxes = result.completedBoxes;
-            project.inProgressBoxes = result.inProgressBoxes;
-            project.readyForDeliveryBoxes = result.readyForDelivery;
+          const statusCounts = response.statusCounts;
+          if (statusCounts) {
+            project.totalBoxes = response.totalCount;
+            project.completedBoxes = statusCounts.completed + statusCounts.dispatched;
+            project.inProgressBoxes = statusCounts.inProgress;
+            project.readyForDeliveryBoxes = 0; // Not directly available in status counts
             
-            // Keep ProgressPercentage from database response - don't override with calculated value
-            // project.progress is already set from ProgressPercentage in transformProject
-            
-            const earliestActualStart = boxes
-              .map(box => box.actualStartDate)
-              .filter((date): date is Date => !!date)
-              .sort((a, b) => a.getTime() - b.getTime())[0];
-            if (!project.actualStartDate && earliestActualStart) {
-              project.actualStartDate = earliestActualStart;
-            }
-            console.log(`📊 Using ProgressPercentage from database: ${project.progress}% for project ${project.name}`);
+            console.log(`📊 Project ${project.name || project.code}: ${project.totalBoxes} total, ${project.completedBoxes} completed, ${project.inProgressBoxes} in progress`);
           }
         });
 
@@ -190,7 +183,7 @@ export class ProjectsListComponent implements OnInit, OnDestroy {
         this.loading = false;
       },
       error: (err) => {
-        console.error('❌ Error loading boxes for projects:', err);
+        console.error('❌ Error loading box counts for projects:', err);
         // Continue with project data even if boxes fail to load
         this.applyFilters();
         this.loading = false;

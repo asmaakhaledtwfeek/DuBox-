@@ -21,12 +21,15 @@ import { BoxStatus } from '../../../core/models/box.model';
 import { ProjectService } from '../../../core/services/project.service';
 import { ProjectStatus } from '../../../core/models/project.model';
 import { WirExportService } from '../../../core/services/wir-export.service';
+import { ActivityChecklistService, ActivityReviewItem, ActivityChecklistReviewSummary } from '../../../core/services/activity-checklist.service';
+import { ActivityChecklistReviewModalComponent } from '../../activities/activity-checklist-review-modal/activity-checklist-review-modal.component';
 import { formatDateWithTime } from '../../../core/utils/date-format.util';
+import { forkJoin } from 'rxjs';
 import { map } from 'rxjs/operators';
 import * as ExcelJS from 'exceljs';
 import { environment } from '../../../../environments/environment';
 
-type QcTab = 'checkpoints' | 'quality-issues';
+type QcTab = 'checkpoints' | 'quality-issues' | 'activity-reviews';
 type ChecklistNavigationQuery = { step?: string; from?: string };
 type EnrichedCheckpoint = WIRCheckpoint & { projectCode?: string | null };
 type AggregatedQualityIssue = QualityIssueItem & {
@@ -43,18 +46,20 @@ type AggregatedQualityIssue = QualityIssueItem & {
   checkpointStatus?: WIRCheckpointStatus;
   issueStatus?: string;
   assignedTeamName?: string;
+  isReadOnly?: boolean;
 };
 
 @Component({
   selector: 'app-quality-control-dashboard',
   standalone: true,
-  imports: [HeaderComponent, CommonModule, RouterModule, SidebarComponent, ReactiveFormsModule, FormsModule, QualityIssueDetailsModalComponent, AssignToCrewModalComponent, IssueCommentsComponent],
+  imports: [HeaderComponent, CommonModule, RouterModule, SidebarComponent, ReactiveFormsModule, FormsModule, QualityIssueDetailsModalComponent, AssignToCrewModalComponent, IssueCommentsComponent, ActivityChecklistReviewModalComponent],
   templateUrl: './quality-control-dashboard.component.html',
   styleUrl: './quality-control-dashboard.component.scss'
 })
 export class QualityControlDashboardComponent implements OnInit, OnDestroy {
-  activeTab: QcTab = 'checkpoints';
+  activeTab: QcTab = 'activity-reviews';
   readonly statusOptions = Object.values(WIRCheckpointStatus);
+  readonly Math = Math; // Expose Math to template
   
   qualityIssueStatusMeta: Record<QualityIssueStatus, { label: string; class: string }> = {
     Open: { label: 'OPEN', class: 'status-open' },
@@ -80,6 +85,13 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     { label: 'Closed Issues', value: 0, tone: 'info' }
   ];
 
+  // Activity Reviews Summary Cards
+  activityReviewsSummaryCards = [
+    { label: 'Total Activities', value: 0, tone: 'info' },
+    { label: 'Pending Activity Reviews', value: 0, tone: 'warning' },
+    { label: 'Completed Activity Reviews', value: 0, tone: 'success' }
+  ];
+
   // Store original summary counts (these remain unchanged when filtering)
   private originalWirCheckpointSummary = [
     { label: 'All WIR Checkpoints', value: 0, tone: 'info' },
@@ -96,14 +108,24 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     { label: 'Closed Issues', value: 0, tone: 'info' }
   ];
 
+  private originalActivityReviewsSummary = [
+    { label: 'Total Activities', value: 0, tone: 'info' },
+    { label: 'Pending Activity Reviews', value: 0, tone: 'warning' },
+    { label: 'Completed Activity Reviews', value: 0, tone: 'success' }
+  ];
+
   // Track active KPI card for visual indication
   activeKpiCard: string | null = null;
 
   // Getter to return appropriate summary cards based on active tab
   get summaryCards() {
-    return this.activeTab === 'checkpoints' 
-      ? this.wirCheckpointSummaryCards 
-      : this.qualityIssueSummaryCards;
+    if (this.activeTab === 'checkpoints') {
+      return this.wirCheckpointSummaryCards;
+    } else if (this.activeTab === 'quality-issues') {
+      return this.qualityIssueSummaryCards;
+    } else {
+      return this.activityReviewsSummaryCards;
+    }
   }
 
   filterForm: FormGroup;
@@ -132,9 +154,33 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   qualityIssuesTotalCount = 0;
   qualityIssuesTotalPages = 0;
   
+  // Activity Reviews data and pagination
+  activityReviews: ActivityReviewItem[] = [];
+  activityReviewsLoading = false;
+  activityReviewsError = '';
+  activityReviewsCurrentPage = 1;
+  activityReviewsPageSize = 25;
+  activityReviewsTotalCount = 0;
+  activityReviewsTotalPages = 0;
+  activityReviewsFilterForm: FormGroup;
+  
+  // Activity Reviews filter options
+  activityReviewsBuildings: string[] = [];
+  activityReviewsLevels: string[] = [];
+  activityReviewsBoxTypes: Array<{ id: number; name: string; code: string }> = [];
+  activityReviewsUniqueReviewers: string[] = [];
+  
+  // Filtered Activity Reviews Summary (after applying filters)
+  filteredActivityReviewsSummary = {
+    total: 0,
+    pending: 0,
+    completed: 0
+  };
+  
   // Flag to prevent double API calls when resetting filters
   private isResettingFilters = false;
   private isResettingCheckpointFilters = false;
+  private isResettingActivityReviewsFilters = false;
 
   // System Admin flag
   isSystemAdmin = false;
@@ -156,6 +202,28 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   qualityIssueStatuses: QualityIssueStatus[] = ['Open', 'InProgress', 'Resolved', 'Closed'];
   uniqueProjects: Array<{ id: string; code: string; name: string }> = [];
   uniqueAssignedUsers: Array<{ id: string; name: string; teamName?: string }> = [];
+  private teamMembersLoaded = false;
+  
+  // Filter dropdown options from API
+  checkpointFilterOptions: {
+    stageNumbers: string[];
+    boxTags: string[];
+    projectCodes: string[];
+  } = { stageNumbers: [], boxTags: [], projectCodes: [] };
+  
+  // Store all box tags with their project codes for cascading filter
+  checkpointBoxTagsWithProjects: Array<{ boxTag: string; projectCode: string }> = [];
+  
+  qualityIssueFilterOptions: {
+    issueNumbers: string[];
+    boxTags: string[];
+    projectCodes: string[];
+  } = { issueNumbers: [], boxTags: [], projectCodes: [] };
+  
+  // Store quality issue box tags with their project codes for cascading filter
+  qualityIssueBoxTagsWithProjects: Array<{ boxTag: string; projectCode: string }> = [];
+  
+  filterOptionsLoading = false;
   
   // Multiple images state
   selectedImages: Array<{
@@ -186,6 +254,10 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   // Comments section state
   showComments = true;
 
+  // Activity Checklist Review modal state
+  isActivityReviewModalOpen = false;
+  selectedActivityForReview: ActivityReviewItem | null = null;
+
   // Cache for box statuses to avoid multiple API calls
   private boxStatusCache: Map<string, BoxStatus | null> = new Map();
   private boxStatusLoading: Set<string> = new Set();
@@ -204,7 +276,8 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     private teamService: TeamService,
     private boxService: BoxService,
     private projectService: ProjectService,
-    private wirExportService: WirExportService
+    private wirExportService: WirExportService,
+    private activityChecklistService: ActivityChecklistService
   ) {
     this.isSystemAdmin = this.authService.isSystemAdmin();
     this.filterForm = this.fb.group({
@@ -215,6 +288,58 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
       from: [''],
       to: ['']
     });
+    
+    this.activityReviewsFilterForm = this.fb.group({
+      projectId: [''],
+      boxId: [''],
+      buildingNumber: [''],
+      floor: [''],
+      boxTypeId: [''],
+      reviewStatus: [''],
+      reviewedBy: [''],
+      searchTerm: ['']
+    });
+    
+    // Watch for project change to load buildings, levels, and box types
+    this.activityReviewsFilterForm.get('projectId')?.valueChanges.subscribe(projectId => {
+      console.log('🔄 Activity Reviews Project changed to:', projectId);
+      // Reset dependent filters
+      this.activityReviewsFilterForm.patchValue({
+        buildingNumber: '',
+        floor: '',
+        boxTypeId: ''
+      }, { emitEvent: false });
+      
+      // Load project configuration if a project is selected
+      if (projectId) {
+        this.loadActivityReviewsProjectConfiguration(projectId);
+      } else {
+        // Clear options if no project selected
+        this.activityReviewsBuildings = [];
+        this.activityReviewsLevels = [];
+        this.activityReviewsBoxTypes = [];
+      }
+    });
+
+    // Watch for project code changes to filter box tags
+    this.filterForm.get('projectCode')?.valueChanges.subscribe(projectCode => {
+      console.log('🔄 Project Code changed to:', projectCode);
+      // Reset box tag when project changes
+      const currentBoxTag = this.filterForm.get('boxTag')?.value;
+      if (currentBoxTag) {
+        console.log('🔄 Resetting Box Tag from:', currentBoxTag);
+        this.filterForm.patchValue({ boxTag: '' }, { emitEvent: false });
+      }
+    });
+
+    // Auto-apply filters when any filter value changes (except during reset)
+    this.filterForm.valueChanges.subscribe(() => {
+      if (!this.isResettingCheckpointFilters) {
+        console.log('🔄 Filter changed, auto-applying filters...');
+        this.checkpointsCurrentPage = 1; // Reset to first page when filters change
+        this.fetchCheckpoints();
+      }
+    });
 
     this.qualityIssuesFilterForm = this.fb.group({
       issueNumber: [''],
@@ -224,6 +349,17 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
       issueType: [''],
       severity: [''],
       assignedUser: ['']
+    });
+
+    // Watch for project code changes to filter box tags
+    this.qualityIssuesFilterForm.get('projectCode')?.valueChanges.subscribe(projectCode => {
+      console.log('🔄 Quality Issue Project Code changed to:', projectCode);
+      // Reset box tag when project changes
+      const currentBoxTag = this.qualityIssuesFilterForm.get('boxTag')?.value;
+      if (currentBoxTag) {
+        console.log('🔄 Resetting Quality Issue Box Tag from:', currentBoxTag);
+        this.qualityIssuesFilterForm.patchValue({ boxTag: '' }, { emitEvent: false });
+      }
     });
 
     // Apply filters when form values change - trigger API call with backend pagination
@@ -250,7 +386,10 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    this.fetchCheckpoints();
+    // Load projects dropdown and summary counts for activity reviews (default tab)
+    this.loadProjectsForActivityReviews();
+    this.loadActivityReviewsSummary();
+    // Don't load actual activity reviews data until a project is selected
   }
 
   setTab(tab: QcTab): void {
@@ -259,9 +398,39 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     // Clear active KPI card when switching tabs
     this.activeKpiCard = null;
     
+    // Load data for activity reviews tab when selected
+    if (tab === 'activity-reviews') {
+      // Load projects if not already loaded
+      if (this.uniqueProjects.length === 0) {
+        this.loadProjectsForActivityReviews();
+      }
+      // Don't automatically load activity reviews - wait for project selection
+      // Load summary only if not already loaded
+      if (this.activityReviewsSummaryCards[0].value === 0) {
+        this.loadActivityReviewsSummary();
+      }
+    }
+    
+    // Load data for checkpoints tab when selected
+    if (tab === 'checkpoints') {
+      // Load checkpoints if not already loaded
+      if (this.checkpoints.length === 0) {
+        this.fetchCheckpoints();
+        this.loadCheckpointFilterOptions();
+      }
+    }
+    
     // Fetch quality issues when switching to that tab
     if (tab === 'quality-issues') {
       this.fetchAllQualityIssues();
+      // Load quality issue filter options if not already loaded
+      if (this.qualityIssueFilterOptions.issueNumbers.length === 0) {
+        this.loadQualityIssueFilterOptions();
+      }
+      // Load team members for assigned user filter if not already loaded
+      if (!this.teamMembersLoaded) {
+        this.loadAssignedUsersForFilter();
+      }
     }
   }
 
@@ -297,13 +466,82 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Filter activity reviews by status when clicking on KPI cards
+   */
+  filterActivityReviewsByStatus(status: 'All' | 'Pending' | 'Completed'): void {
+    if (status === 'All') {
+      // Show all reviewed activities (both partial and completed)
+      // This excludes pending activities by filtering for Partial or Completed
+      this.activityReviewsFilterForm.patchValue({ reviewStatus: '' });
+    } else if (status === 'Pending') {
+      // Set to Pending status
+      this.activityReviewsFilterForm.patchValue({ reviewStatus: 'Pending' });
+    } else if (status === 'Completed') {
+      // For "Completed Activity Reviews", filter by Completed status
+      this.activityReviewsFilterForm.patchValue({ reviewStatus: 'Completed' });
+    }
+    // Fetch activity reviews with the new filter
+    // When clicking KPI cards, fetch data even without project selection
+    this.activityReviewsCurrentPage = 1;
+    this.fetchActivityReviewsFromKpiCard();
+  }
+
+  /**
+   * Fetch activity reviews when triggered by KPI card click
+   * This allows fetching data without project selection
+   */
+  private fetchActivityReviewsFromKpiCard(): void {
+    this.activityReviewsLoading = true;
+    this.activityReviewsError = '';
+    
+    const filterValues = this.activityReviewsFilterForm.value;
+    
+    this.activityChecklistService.getActivityReviews({
+      page: this.activityReviewsCurrentPage,
+      pageSize: this.activityReviewsPageSize,
+      projectId: filterValues.projectId || undefined,
+      boxId: filterValues.boxId || undefined,
+      buildingNumber: filterValues.buildingNumber || undefined,
+      floor: filterValues.floor || undefined,
+      boxTypeId: filterValues.boxTypeId || undefined,
+      reviewStatus: filterValues.reviewStatus || undefined,
+      searchTerm: filterValues.searchTerm || undefined
+    }).subscribe({
+      next: (response) => {
+        console.log('📋 Activity Reviews Response:', response);
+        this.activityReviews = response.items;
+        this.activityReviewsTotalCount = response.totalCount;
+        this.activityReviewsTotalPages = response.totalPages;
+        this.activityReviewsCurrentPage = response.page;
+        this.activityReviewsLoading = false;
+      },
+      error: (err) => {
+        console.error('❌ Failed to load activity reviews:', err);
+        this.activityReviewsError = 'Failed to load activity reviews. Please try again.';
+        this.activityReviewsLoading = false;
+      }
+    });
+  }
+
+  /**
    * Handle KPI card click based on card label
    */
   onKpiCardClick(cardLabel: string): void {
+    // Check if clicking on already active card (for toggle behavior)
+    const isAlreadyActive = this.activeKpiCard === cardLabel;
+    
     // Update active card for visual indication
-    this.activeKpiCard = cardLabel;
+    this.activeKpiCard = isAlreadyActive ? null : cardLabel;
 
     if (this.activeTab === 'checkpoints') {
+      // If clicking on already active card, clear filter
+      if (isAlreadyActive) {
+        this.filterForm.patchValue({ status: '' });
+        this.checkpointsCurrentPage = 1;
+        this.fetchCheckpoints();
+        return;
+      }
+      
       // Map card labels to checkpoint statuses
       switch (cardLabel) {
         case 'All WIR Checkpoints':
@@ -323,6 +561,14 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
           break;
       }
     } else if (this.activeTab === 'quality-issues') {
+      // If clicking on already active card, clear filter
+      if (isAlreadyActive) {
+        this.qualityIssuesFilterForm.patchValue({ status: '' });
+        this.qualityIssuesCurrentPage = 1;
+        this.fetchAllQualityIssues();
+        return;
+      }
+      
       // Map card labels to quality issue statuses
       switch (cardLabel) {
         case 'Open Issues':
@@ -336,6 +582,33 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
           break;
         case 'Closed Issues':
           this.filterQualityIssuesByStatus('Closed');
+          break;
+      }
+    } else if (this.activeTab === 'activity-reviews') {
+      // Map card labels to activity review statuses
+      // Only Pending and Completed cards are clickable
+      
+      // Total Activities card is not clickable
+      if (cardLabel === 'Total Activities') {
+        this.activeKpiCard = null;
+        return;
+      }
+      
+      // If clicking on already active card, clear filter and data
+      if (isAlreadyActive) {
+        this.activityReviewsFilterForm.patchValue({ reviewStatus: '' });
+        this.activityReviews = [];
+        this.activityReviewsTotalCount = 0;
+        this.activityReviewsTotalPages = 0;
+        return;
+      }
+      
+      switch (cardLabel) {
+        case 'Pending Activity Reviews':
+          this.filterActivityReviewsByStatus('Pending');
+          break;
+        case 'Completed Activity Reviews':
+          this.filterActivityReviewsByStatus('Completed');
           break;
       }
     }
@@ -606,6 +879,9 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
    * Check if quality issue actions are allowed (box not dispatched/on hold, project not restricted)
    */
   canPerformQualityIssueActions(issue: AggregatedQualityIssue): boolean {
+    if (this.isIssueReadOnly(issue)) {
+      return false;
+    }
     if (!issue.boxId) {
       return true; // Allow if no boxId (shouldn't happen, but be safe)
     }
@@ -621,6 +897,29 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     }
     
     return true;
+  }
+
+  isIssueReadOnly(issue: AggregatedQualityIssue): boolean {
+    // Some endpoints may not include isReadOnly on list items; ExchangeRequest issues are treated as readonly.
+    return !!(issue as any)?.isReadOnly ;
+  }
+
+  isExchangeRequest(issue: any): boolean {
+    const issueType = issue?.issueType || '';
+    return (
+      issueType === 'ExchangeRequest' ||
+      issueType === 'exchangeRequest' ||
+      (typeof issueType === 'string' && issueType.toLowerCase() === 'exchangerequest')
+    );
+  }
+
+  formatIssueType(type: string | undefined | null): string {
+    if (!type) return '—';
+    switch (type) {
+      case 'NonConformance': return 'Non-Conformance';
+      case 'ExchangeRequest': return 'Exchange Request';
+      default: return type;
+    }
   }
 
   onAddChecklist(checkpoint: EnrichedCheckpoint): void {
@@ -989,6 +1288,18 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     if (filters.issueType && filters.issueType.trim()) {
       params.issueType = filters.issueType;
     }
+    if (filters.assignedUser && filters.assignedUser.trim()) {
+      params.assignedUser = filters.assignedUser.trim();
+    }
+    if (filters.issueNumber && filters.issueNumber.trim()) {
+      params.issueNumber = filters.issueNumber.trim();
+    }
+    if (filters.boxTag && filters.boxTag.trim()) {
+      params.boxTag = filters.boxTag.trim();
+    }
+    if (filters.projectCode && filters.projectCode.trim()) {
+      params.projectCode = filters.projectCode.trim();
+    }
 
 
     this.wirService.getAllQualityIssues(params).subscribe({
@@ -1071,6 +1382,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
           projectId: issue.projectId || undefined,
           checkpointStatus: issue.wirStatus as WIRCheckpointStatus | undefined,
           issueStatus: issue.status,
+          isReadOnly: issue.isReadOnly ?? issue.IsReadOnly ?? false,
         };
         console.log('📋 Mapped issue projectId:', mapped.projectId);
         console.log('📋 Mapped issue projectCode:', mapped.projectCode);
@@ -1078,6 +1390,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
         console.log('📋 Mapped issue issueNumber:', mapped.issueNumber);
         console.log('📋 Mapped issue ccUserName:', mapped.ccUserName);
         console.log('📋 Mapped issue assignedToUserName:', mapped.assignedToUserName);
+        console.log('📋 Mapped issue isReadOnly:', mapped.isReadOnly, '(from backend:', issue.isReadOnly ?? issue.IsReadOnly, ')');
         
         // Pre-fetch box status and project status for this issue
         if (mapped.boxId && !this.boxStatusCache.has(mapped.boxId) && !this.boxStatusLoading.has(mapped.boxId)) {
@@ -1138,18 +1451,19 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     );
     console.log('📋 Extracted unique projects:', this.uniqueProjects);
 
-    // Extract unique assigned users from the unfiltered list
-    const usersMap = new Map<string, { id: string; name: string; teamName?: string }>();
+    // Merge assigned users from current page into the existing list without overwriting it
+    const usersMap = new Map<string, { id: string; name: string }>();
+    this.uniqueAssignedUsers.forEach(u => usersMap.set(u.id, u));
     this.allQualityIssues.forEach(issue => {
-      if (issue.assignedToUserId && issue.assignedToUserName) {
-        usersMap.set(issue.assignedToUserId, {
-          id: issue.assignedToUserId,
-          name: issue.assignedToUserName,
-          teamName: issue.assignedTeamName
-        });
+      const userName: string = issue.assignedToUserName || '';
+      if (userName.trim()) {
+        const key = issue.assignedToUserId || userName;
+        if (!usersMap.has(key)) {
+          usersMap.set(key, { id: key, name: userName });
+        }
       }
     });
-    this.uniqueAssignedUsers = Array.from(usersMap.values()).sort((a, b) => 
+    this.uniqueAssignedUsers = Array.from(usersMap.values()).sort((a, b) =>
       a.name.localeCompare(b.name)
     );
     console.log('📋 Extracted unique assigned users:', this.uniqueAssignedUsers);
@@ -1191,12 +1505,7 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
       });
     }
 
-    // Filter by Assigned User (client-side only)
-    if (filters.assignedUser && filters.assignedUser.trim()) {
-      filtered = filtered.filter(issue => {
-        return issue.assignedToUserId === filters.assignedUser.trim();
-      });
-    }
+    // Note: assignedUser filter is handled by the backend (sent as a query param in fetchAllQualityIssues)
     
     // Update the displayed list (note: pagination counts are from backend)
     this.qualityIssues = filtered;
@@ -1974,7 +2283,8 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
       boxTag: issue.boxTag,
       wirId: undefined,
       wirNumber: issue.wirNumber,
-      wirName: issue.wirName
+      wirName: issue.wirName,
+      isReadOnly: issue.isReadOnly
     };
   }
 
@@ -2149,9 +2459,6 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     link.click();
     window.URL.revokeObjectURL(url);
   }
-  
-  // Expose Math for template
-  readonly Math = Math;
 
   /**
    * Group checkpoints by WIR number and BoxId, returning only the latest version for each group
@@ -2294,6 +2601,560 @@ export class QualityControlDashboardComponent implements OnInit, OnDestroy {
     // Direct PDF download with DuBox logo watermark (no print dialog)
     // Note: checkpoint.box is a partial object, so we pass null and let the service handle it
     await this.wirExportService.downloadWIRAsPDF(checkpoint, null, null);
+  }
+
+  /**
+   * Get filtered box tags based on selected project code (for Checkpoints)
+   */
+  getFilteredCheckpointBoxTags(): string[] {
+    const selectedProjectCode = this.filterForm.get('projectCode')?.value;
+    
+    console.log('🔍 getFilteredCheckpointBoxTags called');
+    console.log('   - Selected Project Code:', selectedProjectCode);
+    console.log('   - Total Box Tags:', this.checkpointFilterOptions.boxTags?.length || 0);
+    console.log('   - Box Tags with Projects:', this.checkpointBoxTagsWithProjects.length);
+    
+    // If no project selected, return all box tags (deduplicated)
+    if (!selectedProjectCode || selectedProjectCode.trim() === '') {
+      console.log('   → Returning ALL box tags (no project filter)');
+      return [...new Set(this.checkpointFilterOptions.boxTags || [])];
+    }
+    
+    // If we have detailed box tag info with projects, filter by project (deduplicated)
+    if (this.checkpointBoxTagsWithProjects.length > 0) {
+      const filteredTags = [...new Set(
+        this.checkpointBoxTagsWithProjects
+          .filter(item => item.projectCode === selectedProjectCode)
+          .map(item => item.boxTag)
+      )];
+      
+      console.log('   → Filtered to', filteredTags.length, 'box tags for project:', selectedProjectCode);
+      console.log('   → Filtered tags:', filteredTags);
+      return filteredTags;
+    }
+    
+    // Fallback: return all box tags if we don't have project mapping (deduplicated)
+    console.warn('   ⚠️ No project mapping available, returning all box tags');
+    return [...new Set(this.checkpointFilterOptions.boxTags || [])];
+  }
+
+  /**
+   * Get filtered box tags based on selected project code (for Quality Issues)
+   */
+  getFilteredQualityIssueBoxTags(): string[] {
+    const selectedProjectCode = this.qualityIssuesFilterForm.get('projectCode')?.value;
+    
+    console.log('🔍 getFilteredQualityIssueBoxTags called');
+    console.log('   - Selected Project Code:', selectedProjectCode);
+    console.log('   - Total Box Tags:', this.qualityIssueFilterOptions.boxTags?.length || 0);
+    console.log('   - Box Tags with Projects:', this.qualityIssueBoxTagsWithProjects.length);
+    
+    // If no project selected, return all box tags (deduplicated)
+    if (!selectedProjectCode || selectedProjectCode.trim() === '') {
+      console.log('   → Returning ALL box tags (no project filter)');
+      return [...new Set(this.qualityIssueFilterOptions.boxTags || [])];
+    }
+    
+    // If we have detailed box tag info with projects, filter by project (deduplicated)
+    if (this.qualityIssueBoxTagsWithProjects.length > 0) {
+      const filteredTags = [...new Set(
+        this.qualityIssueBoxTagsWithProjects
+          .filter(item => item.projectCode === selectedProjectCode)
+          .map(item => item.boxTag)
+      )];
+      
+      console.log('   → Filtered to', filteredTags.length, 'box tags for project:', selectedProjectCode);
+      console.log('   → Filtered tags:', filteredTags);
+      return filteredTags;
+    }
+    
+    // Fallback: return all box tags if we don't have project mapping (deduplicated)
+    console.warn('   ⚠️ No project mapping available, returning all box tags');
+    return [...new Set(this.qualityIssueFilterOptions.boxTags || [])];
+  }
+
+  /**
+   * Load filter options for WIR Checkpoints from API
+   */
+  private loadCheckpointFilterOptions(): void {
+    this.filterOptionsLoading = true;
+    console.log('🔄 Loading WIR checkpoint filter options...');
+    
+    this.wirService.getWIRCheckpointFilters().subscribe({
+      next: (response) => {
+        console.log('📥 WIR Checkpoint Filters Response:', response);
+        console.log('📥 Response.isSuccess:', response.isSuccess);
+        console.log('📥 Response.data:', response.data);
+        
+        if (response.isSuccess && response.data) {
+          this.checkpointFilterOptions = response.data;
+          
+          // Store box tags with project codes for cascading filter
+          if (response.data.boxTagsWithProjects && response.data.boxTagsWithProjects.length > 0) {
+            this.checkpointBoxTagsWithProjects = response.data.boxTagsWithProjects;
+            console.log('✅ Stored box tags with projects for cascading filter');
+          } else {
+            console.warn('⚠️ boxTagsWithProjects not available, cascading filter will show all box tags');
+          }
+          
+          console.log('✅ Loaded checkpoint filter options:');
+          console.log('   - Stage Numbers:', this.checkpointFilterOptions.stageNumbers?.length || 0, 'items');
+          console.log('   - Box Tags:', this.checkpointFilterOptions.boxTags?.length || 0, 'items');
+          console.log('   - Project Codes:', this.checkpointFilterOptions.projectCodes?.length || 0, 'items');
+          console.log('   - Box Tags with Projects:', this.checkpointBoxTagsWithProjects.length, 'items');
+          console.log('   - Full data:', this.checkpointFilterOptions);
+        } else {
+          console.warn('⚠️ Response received but isSuccess is false or data is missing');
+          console.warn('   - isSuccess:', response.isSuccess);
+          console.warn('   - data:', response.data);
+        }
+        this.filterOptionsLoading = false;
+      },
+      error: (err) => {
+        console.error('❌ Failed to load checkpoint filter options:', err);
+        console.error('   - Error details:', err.error);
+        console.error('   - Status:', err.status);
+        console.error('   - Message:', err.message);
+        this.filterOptionsLoading = false;
+      }
+    });
+  }
+
+  /**
+   * Load filter options for Quality Issues from API
+   */
+  private loadQualityIssueFilterOptions(): void {
+    this.filterOptionsLoading = true;
+    console.log('🔄 Loading quality issue filter options...');
+    
+    this.wirService.getQualityIssueFilters().subscribe({
+      next: (response) => {
+        console.log('📥 Quality Issue Filters Response:', response);
+        console.log('📥 Response.isSuccess:', response.isSuccess);
+        console.log('📥 Response.data:', response.data);
+        
+        if (response.isSuccess && response.data) {
+          this.qualityIssueFilterOptions = response.data;
+          
+          // Store box tags with project codes for cascading filter
+          if (response.data.boxTagsWithProjects && response.data.boxTagsWithProjects.length > 0) {
+            this.qualityIssueBoxTagsWithProjects = response.data.boxTagsWithProjects;
+            console.log('✅ Stored quality issue box tags with projects for cascading filter');
+          } else {
+            console.warn('⚠️ boxTagsWithProjects not available, cascading filter will show all box tags');
+          }
+          
+          console.log('✅ Loaded quality issue filter options:');
+          console.log('   - Issue Numbers:', this.qualityIssueFilterOptions.issueNumbers?.length || 0, 'items');
+          console.log('   - Box Tags:', this.qualityIssueFilterOptions.boxTags?.length || 0, 'items');
+          console.log('   - Project Codes:', this.qualityIssueFilterOptions.projectCodes?.length || 0, 'items');
+          console.log('   - Box Tags with Projects:', this.qualityIssueBoxTagsWithProjects.length, 'items');
+          console.log('   - Full data:', this.qualityIssueFilterOptions);
+        } else {
+          console.warn('⚠️ Response received but isSuccess is false or data is missing');
+          console.warn('   - isSuccess:', response.isSuccess);
+          console.warn('   - data:', response.data);
+        }
+        this.filterOptionsLoading = false;
+      },
+      error: (err) => {
+        console.error('❌ Failed to load quality issue filter options:', err);
+        console.error('   - Error details:', err.error);
+        console.error('   - Status:', err.status);
+        console.error('   - Message:', err.message);
+        this.filterOptionsLoading = false;
+      }
+    });
+  }
+
+  /**
+   * Fetch all quality issues (large page) once to extract unique assigned users
+   * for the filter dropdown. Only users actually assigned to issues are shown.
+   */
+  private loadAssignedUsersForFilter(): void {
+    this.wirService.getAllQualityIssues({ page: 1, pageSize: 1000 }).subscribe({
+      next: (response) => {
+        const usersMap = new Map<string, { id: string; name: string }>();
+        response.items.forEach((issue: any) => {
+          const userName: string = issue.assignedToUserName || '';
+          if (userName.trim()) {
+            // Use userId as key when available, otherwise fall back to name
+            const key = issue.assignedToUserId || userName;
+            if (!usersMap.has(key)) {
+              usersMap.set(key, { id: key, name: userName });
+            }
+          }
+        });
+        this.uniqueAssignedUsers = Array.from(usersMap.values()).sort((a, b) =>
+          a.name.localeCompare(b.name)
+        );
+        this.teamMembersLoaded = true;
+      },
+      error: (err) => {
+        console.error('❌ Failed to load assigned users for filter:', err);
+        this.teamMembersLoaded = true;
+      }
+    });
+  }
+
+  /**
+   * Load Activity Reviews Summary (counts for summary cards)
+   */
+  private loadActivityReviewsSummary(): void {
+    this.activityChecklistService.getActivityReviewSummary().subscribe({
+      next: (summary: any) => {
+        console.log('📊 Activity Reviews Summary:', summary);
+        
+        // Handle both camelCase and PascalCase (API may return result.data or raw DTO)
+        const totalReviewed = summary?.totalReviews ?? summary?.TotalReviews ?? 0;
+        const pending = summary?.pendingReviews ?? summary?.PendingReviews ?? 0;
+        const completed = summary?.passedReviews ?? summary?.PassedReviews ?? 0;
+        
+        this.activityReviewsSummaryCards[0].value = totalReviewed;   // Total Activities
+        this.activityReviewsSummaryCards[1].value = pending;         // Pending Activity Reviews
+        this.activityReviewsSummaryCards[2].value = completed;       // Completed Activity Reviews
+        
+        // Store original summary
+        this.originalActivityReviewsSummary = [...this.activityReviewsSummaryCards];
+      },
+      error: (err) => {
+        console.error('❌ Failed to load activity reviews summary:', err);
+      }
+    });
+  }
+
+  /**
+   * Fetch Activity Reviews with pagination and filters
+   */
+  fetchActivityReviews(): void {
+    const filterValues = this.activityReviewsFilterForm.value;
+    
+    // Don't load data if no project is selected
+    if (!filterValues.projectId) {
+      this.activityReviews = [];
+      this.activityReviewsTotalCount = 0;
+      this.activityReviewsTotalPages = 0;
+      this.activityReviewsLoading = false;
+      this.activityReviewsError = '';
+      this.filteredActivityReviewsSummary = { total: 0, pending: 0, completed: 0 };
+      return;
+    }
+    
+    this.activityReviewsLoading = true;
+    this.activityReviewsError = '';
+    
+    // If reviewedBy filter is applied, fetch all data for client-side filtering
+    const useClientSideFiltering = !!filterValues.reviewedBy;
+    const fetchPageSize = useClientSideFiltering ? 10000 : this.activityReviewsPageSize;
+    const fetchPage = useClientSideFiltering ? 1 : this.activityReviewsCurrentPage;
+
+    const baseParams = {
+      projectId: filterValues.projectId || undefined,
+      boxId: filterValues.boxId || undefined,
+      buildingNumber: filterValues.buildingNumber || undefined,
+      floor: filterValues.floor || undefined,
+      boxTypeId: filterValues.boxTypeId || undefined,
+      reviewStatus: filterValues.reviewStatus || undefined,
+      searchTerm: filterValues.searchTerm || undefined
+    };
+
+    // Main call: paginated data for the table
+    const main$ = this.activityChecklistService.getActivityReviews({
+      page: fetchPage,
+      pageSize: fetchPageSize,
+      ...baseParams
+    });
+
+    if (useClientSideFiltering) {
+      // Single call: already fetches all items, reuse it for both table and summary
+      main$.subscribe({
+        next: (response) => {
+          console.log('📋 Activity Reviews Response (client-side):', response);
+
+          const filteredItems = response.items.filter(item =>
+            item.lastReviewedBy === filterValues.reviewedBy
+          );
+          console.log(`🔍 Client-side filtering by reviewer: ${filterValues.reviewedBy}`);
+          console.log(`📊 Results: ${filteredItems.length} out of ${response.items.length} items`);
+
+          // Apply client-side pagination
+          const startIndex = (this.activityReviewsCurrentPage - 1) * this.activityReviewsPageSize;
+          const endIndex = startIndex + this.activityReviewsPageSize;
+          this.activityReviews = filteredItems.slice(startIndex, endIndex);
+          this.activityReviewsTotalCount = filteredItems.length;
+          this.activityReviewsTotalPages = Math.ceil(filteredItems.length / this.activityReviewsPageSize);
+
+          // Compute summary from the same filtered set — no extra call needed
+          this.filteredActivityReviewsSummary = {
+            total: filteredItems.length,
+            pending: filteredItems.filter(i => i.reviewStatus === 'Pending' || i.reviewStatus === 'Partial').length,
+            completed: filteredItems.filter(i => i.reviewStatus === 'Completed').length
+          };
+          console.log('📊 Activity Reviews Summary (client-side):', this.filteredActivityReviewsSummary);
+
+          this.extractUniqueReviewers(response.items);
+          this.activityReviewsLoading = false;
+        },
+        error: (err) => {
+          console.error('❌ Failed to load activity reviews:', err);
+          this.activityReviewsError = 'Failed to load activity reviews. Please try again.';
+          this.activityReviewsLoading = false;
+        }
+      });
+    } else {
+      // Two parallel calls: paginated table data + full-set summary count
+      // forkJoin keeps loading=true until BOTH complete, preventing any flicker
+      const summary$ = this.activityChecklistService.getActivityReviews({
+        page: 1,
+        pageSize: 10000,
+        ...baseParams
+      });
+
+      forkJoin({ main: main$, summary: summary$ }).subscribe({
+        next: ({ main: response, summary: summaryResponse }) => {
+          console.log('📋 Activity Reviews Response:', response);
+          console.log('📦 Summary Response:', summaryResponse);
+
+          // Server-side pagination for the table
+          this.activityReviews = response.items;
+          this.activityReviewsTotalCount = response.totalCount;
+          this.activityReviewsTotalPages = response.totalPages;
+          this.activityReviewsCurrentPage = response.page;
+
+          // Summary counts from the full-set response
+          const summaryItems = summaryResponse.items;
+          this.filteredActivityReviewsSummary = {
+            total: summaryResponse.totalCount,  // accurate server-side total
+            pending: summaryItems.filter(i => i.reviewStatus === 'Pending' || i.reviewStatus === 'Partial').length,
+            completed: summaryItems.filter(i => i.reviewStatus === 'Completed').length
+          };
+          console.log('📊 Activity Reviews Summary:', this.filteredActivityReviewsSummary);
+
+          this.extractUniqueReviewers(response.items);
+
+          // Both calls done — reveal the section with final, stable numbers
+          this.activityReviewsLoading = false;
+        },
+        error: (err) => {
+          console.error('❌ Failed to load activity reviews:', err);
+          this.activityReviewsError = 'Failed to load activity reviews. Please try again.';
+          this.activityReviewsLoading = false;
+        }
+      });
+    }
+  }
+  
+  /**
+   * Load projects that have activity reviews for filter dropdown
+   */
+  private loadProjectsForActivityReviews(): void {
+    console.log('🔄 Loading projects for activity reviews filter...');
+    
+    // Use project service to get all active projects instead of loading all activity reviews
+    this.projectService.getProjects().pipe(
+      map(projects => projects.filter(p => p.status === ProjectStatus.Active))
+    ).subscribe({
+      next: (projects) => {
+        this.uniqueProjects = projects.map(p => ({
+          id: p.id,
+          code: p.code,
+          name: p.name
+        })).sort((a, b) => a.code.localeCompare(b.code));
+        
+        console.log('✅ Loaded active projects:', this.uniqueProjects.length);
+      },
+      error: (err) => {
+        console.error('❌ Failed to load projects:', err);
+        this.uniqueProjects = [];
+      }
+    });
+  }
+  
+  /**
+   * Load project configuration (buildings, levels, box types) for Activity Reviews filters
+   */
+  private loadActivityReviewsProjectConfiguration(projectId: string): void {
+    console.log('🔄 Loading project configuration for Activity Reviews:', projectId);
+    
+    this.projectService.getProjectConfiguration(projectId).subscribe({
+      next: (config) => {
+        console.log('✅ Project configuration loaded:', config);
+        
+        // Extract unique buildings (use buildingCode as value)
+        this.activityReviewsBuildings = config.buildings
+          ?.filter(b => b.isActive !== false)
+          .map(b => b.buildingCode)
+          .filter((v, i, a) => v && a.indexOf(v) === i) || [];
+        
+        // Extract unique levels/floors (use levelCode as value)
+        this.activityReviewsLevels = config.levels
+          ?.filter(l => l.isActive !== false)
+          .map(l => l.levelCode)
+          .filter((v, i, a) => v && a.indexOf(v) === i) || [];
+        
+        // Extract box types with id, name, and code
+        this.activityReviewsBoxTypes = config.boxTypes
+          ?.filter(bt => bt.isActive !== false)
+          .map(bt => ({
+            id: bt.id || 0,
+            name: bt.typeName,
+            code: bt.abbreviation || ''
+          })) || [];
+        
+        console.log('📊 Loaded buildings:', this.activityReviewsBuildings);
+        console.log('📊 Loaded levels:', this.activityReviewsLevels);
+        console.log('📊 Loaded box types:', this.activityReviewsBoxTypes);
+      },
+      error: (err) => {
+        console.error('❌ Failed to load project configuration:', err);
+        // Clear options on error
+        this.activityReviewsBuildings = [];
+        this.activityReviewsLevels = [];
+        this.activityReviewsBoxTypes = [];
+      }
+    });
+  }
+
+  /**
+   * Handle activity reviews page change
+   */
+  onActivityReviewsPageChange(page: number): void {
+    this.activityReviewsCurrentPage = page;
+    this.fetchActivityReviews();
+  }
+
+  /**
+   * Handle activity review filter changes - reset to page 1
+   */
+  onActivityReviewFilterChange(): void {
+    this.activityReviewsCurrentPage = 1;
+    this.fetchActivityReviews();
+  }
+
+  /**
+   * Reset activity reviews filters
+   */
+  resetActivityReviewsFilters(): void {
+    this.isResettingActivityReviewsFilters = true;
+    this.activityReviewsFilterForm.reset({
+      projectId: '',
+      boxId: '',
+      buildingNumber: '',
+      floor: '',
+      boxTypeId: '',
+      reviewStatus: '',
+      reviewedBy: '',
+      searchTerm: ''
+    });
+    this.activityReviewsCurrentPage = 1;
+    
+    // Clear filter options
+    this.activityReviewsBuildings = [];
+    this.activityReviewsLevels = [];
+    this.activityReviewsBoxTypes = [];
+    this.activityReviewsUniqueReviewers = [];
+    
+    // Clear filtered summary
+    this.filteredActivityReviewsSummary = { total: 0, pending: 0, completed: 0 };
+    
+    // Clear active KPI card when resetting filters
+    this.activeKpiCard = null;
+    
+    this.isResettingActivityReviewsFilters = false;
+    this.fetchActivityReviews();
+  }
+
+  /**
+   * Navigate to activity details page
+   */
+  navigateToActivityDetails(review: ActivityReviewItem): void {
+    this.router.navigate(['/projects', review.projectId, 'boxes', review.boxId]);
+  }
+
+  /**
+   * Open activity checklist review modal
+   */
+  navigateToActivityReview(review: ActivityReviewItem): void {
+    this.selectedActivityForReview = review;
+    this.isActivityReviewModalOpen = true;
+  }
+
+  /**
+   * Close activity checklist review modal
+   */
+  closeActivityReviewModal(): void {
+    this.isActivityReviewModalOpen = false;
+    this.selectedActivityForReview = null;
+  }
+
+  /**
+   * Handle review submission - refresh data
+   */
+  onActivityReviewSubmitted(): void {
+    this.closeActivityReviewModal();
+    this.fetchActivityReviews();
+    this.loadActivityReviewsSummary();
+  }
+
+  /**
+   * Get status class for activity review
+   */
+  getActivityReviewStatusClass(status: string): string {
+    const statusMap: Record<string, string> = {
+      'Pending': 'status-pending',
+      'Completed': 'status-completed',
+      'Partial': 'status-partial'
+    };
+    return statusMap[status] || 'status-default';
+  }
+
+  /**
+   * Check if any filters are applied (excluding projectId as it's required)
+   */
+  hasAppliedFilters(): boolean {
+    const filterValues = this.activityReviewsFilterForm.value;
+    return !!(
+      filterValues.buildingNumber ||
+      filterValues.floor ||
+      filterValues.boxTypeId ||
+      filterValues.reviewStatus ||
+      filterValues.reviewedBy ||
+      filterValues.searchTerm
+    );
+  }
+
+  /**
+   * Extract unique reviewers from activity reviews data
+   */
+  private extractUniqueReviewers(items: ActivityReviewItem[]): void {
+    const reviewers = items
+      .map(item => item.lastReviewedBy)
+      .filter((reviewer): reviewer is string => 
+        reviewer !== null && 
+        reviewer !== undefined && 
+        reviewer.trim() !== ''
+      )
+      .filter((reviewer, index, self) => 
+        self.indexOf(reviewer) === index // Keep only unique values
+      );
+    
+    this.activityReviewsUniqueReviewers = reviewers.sort((a, b) => 
+      a.localeCompare(b, undefined, { sensitivity: 'base' })
+    );
+    
+    console.log('👥 Unique reviewers extracted:', this.activityReviewsUniqueReviewers);
+  }
+
+  /**
+   * Get status label for activity review
+   */
+  getActivityReviewStatusLabel(status: string): string {
+    const statusMap: Record<string, string> = {
+      'Pending': 'Pending Review',
+      'Completed': 'Completed',
+      'Partial': 'Partially Reviewed'
+    };
+    return statusMap[status] || status;
   }
 }
 

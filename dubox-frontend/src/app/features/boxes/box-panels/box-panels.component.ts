@@ -22,6 +22,7 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
   @Input() projectId!: string;
   @Input() panels: BoxPanel[] = [];
   @Output() refreshRequested = new EventEmitter<void>();
+  @Output() navigateToIssue = new EventEmitter<string>(); // Emit quality issue ID
 
   loading = false;
   error = '';
@@ -109,16 +110,6 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
   }
 
   openWorkflowModal(panel: BoxPanel): void {
-    console.log('📋 Opening workflow modal for panel:', panel.panelName);
-    console.log('📊 Panel stage completion status:', {
-      moldPreparationComplete: panel.moldPreparationComplete,
-      reinforcementSetupComplete: panel.reinforcementSetupComplete,
-      concreteCastingComplete: panel.concreteCastingComplete,
-      curingAndDemoldingComplete: panel.curingAndDemoldingComplete,
-      currentStage: panel.currentStage,
-      workflowStatus: panel.workflowStatus
-    });
-    
     this.selectedPanel = panel;
     this.showWorkflowModal = true;
   }
@@ -151,6 +142,12 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
 
   submitApproval(): void {
     if (!this.selectedPanel) return;
+
+    // Validate: Notes are required for rejection
+    if (this.approvalAction === 'reject' && (!this.approvalNotes || this.approvalNotes.trim() === '')) {
+      this.error = 'Notes are required when rejecting a panel';
+      return;
+    }
 
     this.submitting = true;
     this.error = '';
@@ -268,8 +265,8 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
     if (stage <= 0) {
       // Infer from completion flags when currentStage not set
       const count = this.getCompletedStagesCount(panel);
-      if (count > 0 && count < 4) stage = count; // Current stage = last completed when in progress
-      else if (count >= 4) stage = 4; // All complete
+      if (count > 0 && count < 7) stage = count; // Current stage = last completed when in progress
+      else if (count >= 7) stage = 7; // All complete
       else return null;
     }
     const stageInfo = PANEL_STAGES.find(s => s.stage === stage);
@@ -279,8 +276,11 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
   getCompletedStagesCount(panel: BoxPanel): number {
     let count = 0;
     if (panel.moldPreparationComplete) count++;
+    if (panel.initialComplete) count++;
+    if (panel.mepInsertsInstallationComplete) count++;
     if (panel.reinforcementSetupComplete) count++;
     if (panel.concreteCastingComplete) count++;
+    if (panel.surfaceFinishingComplete) count++;
     if (panel.curingAndDemoldingComplete) count++;
     return count;
   }
@@ -943,6 +943,26 @@ export class BoxPanelsComponent implements OnInit, OnDestroy, OnChanges {
         this.error = '';
       }, 3000);
     }
+  }
+
+  /**
+   * Check if panel has a quality issue
+   */
+  hasQualityIssue(panel: BoxPanel): boolean {
+    return !!panel.qualityIssueId;
+  }
+
+  /**
+   * Navigate to quality issues tab and highlight the specific issue
+   * This emits an event to the parent component (box-details) to switch tabs
+   */
+  navigateToQualityIssue(panel: BoxPanel): void {
+    if (!panel.qualityIssueId) {
+      return;
+    }
+    
+    // Emit event to parent component to switch to quality issues tab and highlight
+    this.navigateToIssue.emit(panel.qualityIssueId);
   }
 }
 

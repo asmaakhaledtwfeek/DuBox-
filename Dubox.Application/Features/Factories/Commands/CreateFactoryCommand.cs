@@ -13,6 +13,7 @@ public record CreateFactoryCommand(
     int MinRow,
     int MaxRow,
     string MinBay,
-    string MaxBay
+    string MaxBay,
+    List<CreateFactorySectionDto>? Sections
 ) : IRequest<Result<FactoryDto>>;
 

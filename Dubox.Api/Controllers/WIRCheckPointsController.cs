@@ -410,6 +410,13 @@ namespace Dubox.Api.Controllers
             return result.IsSuccess ? Ok(result) : BadRequest(result);
         }
 
+        [HttpGet("filters")]
+        public async Task<IActionResult> GetWIRCheckpointFilters(CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(new GetWIRCheckpointFiltersQuery(), cancellationToken);
+            return result.IsSuccess ? Ok(result) : BadRequest(result);
+        }
+
        
         //[HttpPost("generate-for-box/{boxId}")]
         //public async Task<IActionResult> GenerateWIRsForBox(Guid boxId, CancellationToken cancellationToken)

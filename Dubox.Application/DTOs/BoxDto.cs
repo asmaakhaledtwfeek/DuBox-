@@ -52,6 +52,7 @@ public record BoxDto
     public bool? PodDeliver { get; init; }
     public string? PodName { get; init; }
     public string? PodType { get; init; }
+    public Guid? SectionId { get; init; }
 }
 
 public record CreateBoxDto
@@ -148,5 +149,28 @@ public record PaginatedBoxesByFactoryResponseDto
     public int Page { get; init; }
     public int PageSize { get; init; }
     public int TotalPages { get; init; }
+}
+
+public record PaginatedBoxesResponseDto
+{
+    public List<BoxDto> Items { get; init; } = new();
+    public int TotalCount { get; init; }
+    public int Page { get; init; }
+    public int PageSize { get; init; }
+    public int TotalPages { get; init; }
+    public bool HasPreviousPage { get; init; }
+    public bool HasNextPage { get; init; }
+    public BoxStatusCounts? StatusCounts { get; init; }
+}
+
+public record BoxStatusCounts
+{
+    public int NotStarted { get; init; }
+    public int ReadyToStart { get; init; }
+    public int InProgress { get; init; }
+    public int Completed { get; init; }
+    public int OnHold { get; init; }
+    public int Delayed { get; init; }
+    public int Dispatched { get; init; }
 }
 

@@ -814,4 +814,81 @@
       }
     }
   }
+
+  // Read-Only Indicator in Header
+  .readonly-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: #f3f4f6;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    color: #6b7280;
+    font-size: 13px;
+    font-weight: 600;
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+
+  // Exchange Request Issue Type Badge - Red Color
+  .issue-type.exchange-request {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-weight: 600;
+  }
+
+  // Read-Only Notice Section
+  .readonly-notice {
+    display: flex;
+    gap: 16px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    border: 1px solid #d1d5db;
+    border-left: 4px solid #6b7280;
+    border-radius: 12px;
+    margin-bottom: 24px;
+
+    .notice-icon {
+      flex-shrink: 0;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      border-radius: 12px;
+      color: #6b7280;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+      svg {
+        width: 24px;
+        height: 24px;
+      }
+    }
+
+    .notice-content {
+      flex: 1;
+
+      h5 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #374151;
+      }
+
+      p {
+        margin: 0;
+        font-size: 14px;
+        color: #6b7280;
+        line-height: 1.6;
+      }
+    }
+  }
 }

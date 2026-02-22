@@ -23,5 +23,6 @@ public record CreateBoxCommand(
     int? BoxDuration,
     Guid? FactoryId,
     List<CreateBoxAssetDto>? Assets
+    // Activity template is now auto-resolved: box type template > project template > activity master
 ) : IRequest<Result<BoxDto>>;
 

@@ -1,12 +1,7 @@
 # Combined Azure Pipeline for DuBox (Frontend + Backend)
 # This pipeline builds and deploys both applications
 
-trigger:
-  branches:
-    include:
-      - main
-      - master
-      - develop
+trigger: none  # Disabled - using separate pipelines instead
 
 pool:
   vmImage: 'windows-latest'
@@ -79,6 +74,7 @@ stages:
   - job: BuildFrontendJob
     displayName: 'Build Angular App'
     pool:
+    
       vmImage: 'ubuntu-latest'
     steps:
     

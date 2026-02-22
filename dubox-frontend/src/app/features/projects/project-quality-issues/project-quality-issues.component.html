@@ -6,19 +6,36 @@
     <!-- Page Header -->
     <div class="page-header">
       <div class="header-left">
-        <button class="btn-back" (click)="goBack()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="15 18 9 12 15 6"/>
-          </svg>
-          Back to Dashboard
-        </button>
+        <!-- Project breadcrumb, matching Project Materials Management style -->
+        <div class="breadcrumb">
+          <button class="breadcrumb-link" [routerLink]="['/projects']">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Projects
+          </button>
+          <span class="breadcrumb-separator">/</span>
+          <button class="breadcrumb-link" [routerLink]="['/projects', projectId, 'dashboard']">
+            {{ projectName || projectCode || 'Project' }}
+          </button>
+          <span class="breadcrumb-separator">/</span>
+          <span class="breadcrumb-current">Quality Issues</span>
+        </div>
+
         <div class="title-section">
           <h1 class="page-title">Quality Issues</h1>
           <p class="page-subtitle" *ngIf="projectName">{{ projectName }}</p>
         </div>
       </div>
-      <div class="header-right" *ngIf="!loading && !error && filteredQualityIssues.length > 0">
-        <button class="btn btn-primary" (click)="exportToExcel()">
+      <div class="header-right">
+        <!-- Back to Dashboard button, same style as Project Materials Management -->
+        <button class="btn btn-back" [routerLink]="['/projects', projectId, 'dashboard']">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          Back to Dashboard
+        </button>
+        <button class="btn btn-primary" (click)="exportToExcel()" *ngIf="!loading && !error && filteredQualityIssues.length > 0">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
             <polyline points="7 10 12 15 17 10"/>
@@ -291,4 +308,12 @@
     </div>
   </div>
 </div>
+
+<!-- Quality Issue Details Modal -->
+<app-quality-issue-details-modal
+  [issue]="selectedIssue"
+  [isOpen]="isDetailsModalOpen"
+  (close)="closeDetailsModal()"
+  (statusUpdated)="onStatusUpdated()"
+></app-quality-issue-details-modal>
 

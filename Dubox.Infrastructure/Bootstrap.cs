@@ -1,12 +1,12 @@
 using Dubox.Application.Abstractions;
 using Dubox.Domain.Abstraction;
+using Dubox.Infrastructure.Services;
 using Dubox.Domain.Services;
 using Dubox.Domain.Services.ImageEntityConfig;
 using Dubox.Domain.Services.ImageEntityConfig.ImageEntityConfigFactory;
 using Dubox.Infrastructure.ApplicationContext;
 using Dubox.Infrastructure.Authentication;
 using Dubox.Infrastructure.Repositories;
-using Dubox.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Dubox.Infrastructure;
@@ -15,6 +15,7 @@ public static class Bootstrap
 {
     public static IServiceCollection AddInfrastructureStrapping(this IServiceCollection services)
     {
+        services.AddScoped<IDbQueryExecutor, DbQueryExecutor>();
         services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
         services.AddScoped(typeof(IUnitOfWork), typeof(UnitOfWork));
         services.AddScoped<IDbContext>(provider => provider.GetRequiredService<ApplicationDbContext>());
@@ -37,6 +38,15 @@ public static class Bootstrap
         services.AddScoped<IBlobStorageService, BlobStorageService>();
         services.AddScoped<INotificationHubService, NotificationHubService>();
         services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IPanelPdfExtractionService, PanelPdfExtractionService>();
+        
+        // Register WeatherService with HttpClient
+        services.AddHttpClient<IWeatherService, WeatherService>(client =>
+        {
+            client.BaseAddress = new Uri("https://api.openweathermap.org/data/2.5/");
+            client.Timeout = TimeSpan.FromSeconds(30);
+        });
+
 
         return services;
     }

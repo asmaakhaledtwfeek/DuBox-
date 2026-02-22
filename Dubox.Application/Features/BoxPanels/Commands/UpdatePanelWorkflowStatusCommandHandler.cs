@@ -29,6 +29,8 @@ public class UpdatePanelWorkflowStatusCommandHandler : IRequestHandler<UpdatePan
         _notificationService = notificationService;
     }
 
+  
+
     public async Task<Result<BoxPanelDto>> Handle(UpdatePanelWorkflowStatusCommand request, CancellationToken cancellationToken)
     {
         var panel = await _dbContext.BoxPanels
@@ -65,7 +67,7 @@ public class UpdatePanelWorkflowStatusCommandHandler : IRequestHandler<UpdatePan
         {
             panel.CurrentStage = request.CurrentStage.Value;
 
-            // Mark stages as complete based on current stage
+            // Mark stages as complete based on current stage (all 7 stages)
             switch (request.CurrentStage.Value)
             {
                 case PanelStageEnum.MoldPreparation:
@@ -73,35 +75,144 @@ public class UpdatePanelWorkflowStatusCommandHandler : IRequestHandler<UpdatePan
                     {
                         panel.MoldPreparationComplete = true;
                         panel.MoldPreparationDate = statusTime;
+                        
+                        // AUTO-UPDATE: Apply Mold Preparation completion to all panels with same type in project
+                        await ApplyMoldPreparationToSameTypePanels(panel, statusTime, currentUserId, cancellationToken);
                     }
                     break;
-                case PanelStageEnum.ReinforcementSetup:
+                    
+                case PanelStageEnum.Initial:
+                    // Check if Mold Preparation is being marked complete for the first time
+                    var moldPrepWasIncomplete = !panel.MoldPreparationComplete;
                     panel.MoldPreparationComplete = true;
                     if (!panel.MoldPreparationDate.HasValue) panel.MoldPreparationDate = statusTime;
+                    
+                    // AUTO-UPDATE: Apply Mold Preparation completion to all panels with same type in project
+                    if (moldPrepWasIncomplete)
+                    {
+                        await ApplyMoldPreparationToSameTypePanels(panel, statusTime, currentUserId, cancellationToken);
+                    }
+                    
+                    if (!panel.InitialComplete)
+                    {
+                        panel.InitialComplete = true;
+                        panel.InitialDate = statusTime;
+                    }
+                    break;
+                    
+                case PanelStageEnum.MEPInsertsInstallation:
+                    var moldPrepWasIncompleteMEP = !panel.MoldPreparationComplete;
+                    panel.MoldPreparationComplete = true;
+                    panel.InitialComplete = true;
+                    if (!panel.MoldPreparationDate.HasValue) panel.MoldPreparationDate = statusTime;
+                    if (!panel.InitialDate.HasValue) panel.InitialDate = statusTime;
+                    
+                    // AUTO-UPDATE: Apply Mold Preparation completion to all panels with same type in project
+                    if (moldPrepWasIncompleteMEP)
+                    {
+                        await ApplyMoldPreparationToSameTypePanels(panel, statusTime, currentUserId, cancellationToken);
+                    }
+                    
+                    if (!panel.MEPInsertsInstallationComplete)
+                    {
+                        panel.MEPInsertsInstallationComplete = true;
+                        panel.MEPInsertsInstallationDate = statusTime;
+                    }
+                    break;
+                    
+                case PanelStageEnum.ReinforcementSetup:
+                    var moldPrepWasIncompleteReinforcement = !panel.MoldPreparationComplete;
+                    panel.MoldPreparationComplete = true;
+                    panel.InitialComplete = true;
+                    panel.MEPInsertsInstallationComplete = true;
+                    if (!panel.MoldPreparationDate.HasValue) panel.MoldPreparationDate = statusTime;
+                    if (!panel.InitialDate.HasValue) panel.InitialDate = statusTime;
+                    if (!panel.MEPInsertsInstallationDate.HasValue) panel.MEPInsertsInstallationDate = statusTime;
+                    
+                    // AUTO-UPDATE: Apply Mold Preparation completion to all panels with same type in project
+                    if (moldPrepWasIncompleteReinforcement)
+                    {
+                        await ApplyMoldPreparationToSameTypePanels(panel, statusTime, currentUserId, cancellationToken);
+                    }
+                    
                     if (!panel.ReinforcementSetupComplete)
                     {
                         panel.ReinforcementSetupComplete = true;
                         panel.ReinforcementSetupDate = statusTime;
                     }
                     break;
+                    
                 case PanelStageEnum.ConcreteCasting:
+                    var moldPrepWasIncompleteCasting = !panel.MoldPreparationComplete;
                     panel.MoldPreparationComplete = true;
+                    panel.InitialComplete = true;
+                    panel.MEPInsertsInstallationComplete = true;
                     panel.ReinforcementSetupComplete = true;
                     if (!panel.MoldPreparationDate.HasValue) panel.MoldPreparationDate = statusTime;
+                    if (!panel.InitialDate.HasValue) panel.InitialDate = statusTime;
+                    if (!panel.MEPInsertsInstallationDate.HasValue) panel.MEPInsertsInstallationDate = statusTime;
                     if (!panel.ReinforcementSetupDate.HasValue) panel.ReinforcementSetupDate = statusTime;
+                    
+                    // AUTO-UPDATE: Apply Mold Preparation completion to all panels with same type in project
+                    if (moldPrepWasIncompleteCasting)
+                    {
+                        await ApplyMoldPreparationToSameTypePanels(panel, statusTime, currentUserId, cancellationToken);
+                    }
+                    
                     if (!panel.ConcreteCastingComplete)
                     {
                         panel.ConcreteCastingComplete = true;
                         panel.ConcreteCastingDate = statusTime;
                     }
                     break;
-                case PanelStageEnum.CuringAndDemolding:
+                    
+                case PanelStageEnum.SurfaceFinishing:
+                    var moldPrepWasIncompleteSurface = !panel.MoldPreparationComplete;
                     panel.MoldPreparationComplete = true;
+                    panel.InitialComplete = true;
+                    panel.MEPInsertsInstallationComplete = true;
                     panel.ReinforcementSetupComplete = true;
                     panel.ConcreteCastingComplete = true;
                     if (!panel.MoldPreparationDate.HasValue) panel.MoldPreparationDate = statusTime;
+                    if (!panel.InitialDate.HasValue) panel.InitialDate = statusTime;
+                    if (!panel.MEPInsertsInstallationDate.HasValue) panel.MEPInsertsInstallationDate = statusTime;
                     if (!panel.ReinforcementSetupDate.HasValue) panel.ReinforcementSetupDate = statusTime;
                     if (!panel.ConcreteCastingDate.HasValue) panel.ConcreteCastingDate = statusTime;
+                    
+                    // AUTO-UPDATE: Apply Mold Preparation completion to all panels with same type in project
+                    if (moldPrepWasIncompleteSurface)
+                    {
+                        await ApplyMoldPreparationToSameTypePanels(panel, statusTime, currentUserId, cancellationToken);
+                    }
+                    
+                    if (!panel.SurfaceFinishingComplete)
+                    {
+                        panel.SurfaceFinishingComplete = true;
+                        panel.SurfaceFinishingDate = statusTime;
+                    }
+                    break;
+                    
+                case PanelStageEnum.CuringAndDemolding:
+                    var moldPrepWasIncompleteCuring = !panel.MoldPreparationComplete;
+                    panel.MoldPreparationComplete = true;
+                    panel.InitialComplete = true;
+                    panel.MEPInsertsInstallationComplete = true;
+                    panel.ReinforcementSetupComplete = true;
+                    panel.ConcreteCastingComplete = true;
+                    panel.SurfaceFinishingComplete = true;
+                    if (!panel.MoldPreparationDate.HasValue) panel.MoldPreparationDate = statusTime;
+                    if (!panel.InitialDate.HasValue) panel.InitialDate = statusTime;
+                    if (!panel.MEPInsertsInstallationDate.HasValue) panel.MEPInsertsInstallationDate = statusTime;
+                    if (!panel.ReinforcementSetupDate.HasValue) panel.ReinforcementSetupDate = statusTime;
+                    if (!panel.ConcreteCastingDate.HasValue) panel.ConcreteCastingDate = statusTime;
+                    if (!panel.SurfaceFinishingDate.HasValue) panel.SurfaceFinishingDate = statusTime;
+                    
+                    // AUTO-UPDATE: Apply Mold Preparation completion to all panels with same type in project
+                    if (moldPrepWasIncompleteCuring)
+                    {
+                        await ApplyMoldPreparationToSameTypePanels(panel, statusTime, currentUserId, cancellationToken);
+                    }
+                    
                     if (!panel.CuringAndDemoldingComplete)
                     {
                         panel.CuringAndDemoldingComplete = true;
@@ -111,20 +222,35 @@ public class UpdatePanelWorkflowStatusCommandHandler : IRequestHandler<UpdatePan
             }
         }
 
-        // If status is Completed, mark all stages complete and prepare for approval
+        // If status is Completed, mark all 7 stages complete and prepare for approval
         if (request.WorkflowStatus == "Completed")
         {
-            // Ensure all stages are marked complete
+            // Check if Mold Preparation is being marked complete for the first time
+            var moldPrepWasIncompleteCompleted = !panel.MoldPreparationComplete;
+            
+            // Ensure all 7 stages are marked complete
             panel.MoldPreparationComplete = true;
+            panel.InitialComplete = true;
+            panel.MEPInsertsInstallationComplete = true;
             panel.ReinforcementSetupComplete = true;
             panel.ConcreteCastingComplete = true;
+            panel.SurfaceFinishingComplete = true;
             panel.CuringAndDemoldingComplete = true;
             panel.CurrentStage = PanelStageEnum.CuringAndDemolding;
             
             if (!panel.MoldPreparationDate.HasValue) panel.MoldPreparationDate = statusTime;
+            if (!panel.InitialDate.HasValue) panel.InitialDate = statusTime;
+            if (!panel.MEPInsertsInstallationDate.HasValue) panel.MEPInsertsInstallationDate = statusTime;
             if (!panel.ReinforcementSetupDate.HasValue) panel.ReinforcementSetupDate = statusTime;
             if (!panel.ConcreteCastingDate.HasValue) panel.ConcreteCastingDate = statusTime;
+            if (!panel.SurfaceFinishingDate.HasValue) panel.SurfaceFinishingDate = statusTime;
             if (!panel.CuringAndDemoldingDate.HasValue) panel.CuringAndDemoldingDate = statusTime;
+
+            // AUTO-UPDATE: Apply Mold Preparation completion to all panels with same type in project
+            if (moldPrepWasIncompleteCompleted)
+            {
+                await ApplyMoldPreparationToSameTypePanels(panel, statusTime, currentUserId, cancellationToken);
+            }
 
             panel.PanelStatus = PanelStatusEnum.Completed;
             panel.FirstApprovalStatus = "Pending";
@@ -157,7 +283,7 @@ public class UpdatePanelWorkflowStatusCommandHandler : IRequestHandler<UpdatePan
                 // Generate issue number
                 var issueCountInProject = _unitOfWork.Repository<QualityIssue>()
                     .GetWithSpec(new GetQualityIssuesSpecification()).Data
-                    .Count(qi => qi.Box.ProjectId == panel.ProjectId);
+                    .Count(qi => qi.Box.ProjectId == panel.ProjectId || qi.ProjectId == panel.ProjectId);
                 var issueNumber = (issueCountInProject + 1).ToString("D5");
                 
                 var description = $"Panel '{panel.PanelName}' put on hold at site (Pre-cast Location). {request.Notes}";
@@ -212,8 +338,11 @@ public class UpdatePanelWorkflowStatusCommandHandler : IRequestHandler<UpdatePan
             WorkflowStatus = panel.WorkflowStatus,
             CurrentStage = (int)panel.CurrentStage,
             MoldPreparationComplete = panel.MoldPreparationComplete,
+            InitialComplete = panel.InitialComplete,
+            MEPInsertsInstallationComplete = panel.MEPInsertsInstallationComplete,
             ReinforcementSetupComplete = panel.ReinforcementSetupComplete,
             ConcreteCastingComplete = panel.ConcreteCastingComplete,
+            SurfaceFinishingComplete = panel.SurfaceFinishingComplete,
             CuringAndDemoldingComplete = panel.CuringAndDemoldingComplete,
             QualityIssueId = panel.QualityIssueId,
             CreatedDate = panel.CreatedDate,
@@ -221,6 +350,54 @@ public class UpdatePanelWorkflowStatusCommandHandler : IRequestHandler<UpdatePan
         };
 
         return Result.Success(dto);
+    }
+
+
+    /// <summary>
+    /// Helper method to automatically apply Mold Preparation completion to all panels 
+    /// with the same type in the project
+    /// </summary>
+    private async Task ApplyMoldPreparationToSameTypePanels(
+        BoxPanel currentPanel,
+        DateTime statusTime,
+        Guid currentUserId,
+        CancellationToken cancellationToken)
+    {
+        if (!currentPanel.PanelTypeId.HasValue)
+            return;
+
+        var otherPanelsWithSameType = await _dbContext.BoxPanels
+            .Where(p => p.ProjectId == currentPanel.ProjectId
+                && p.PanelTypeId == currentPanel.PanelTypeId
+                && p.BoxPanelId != currentPanel.BoxPanelId
+                && !p.MoldPreparationComplete)
+            .ToListAsync(cancellationToken);
+
+        if (otherPanelsWithSameType.Any())
+        {
+            foreach (var otherPanel in otherPanelsWithSameType)
+            {
+                otherPanel.MoldPreparationComplete = true;
+                otherPanel.MoldPreparationDate = statusTime;
+                otherPanel.ModifiedDate = statusTime;
+                otherPanel.ModifiedBy = currentUserId;
+
+                // If panel was NotStarted, move to InProgress
+                if (otherPanel.PanelStatus == PanelStatusEnum.NotStarted)
+                {
+                    otherPanel.PanelStatus = PanelStatusEnum.InProgress;
+                    otherPanel.WorkflowStatus = "InProgress";
+                }
+
+                // Update current stage if not set or still at NotStarted
+                if (otherPanel.CurrentStage == PanelStageEnum.NotStarted)
+                {
+                    otherPanel.CurrentStage = PanelStageEnum.MoldPreparation;
+                }
+
+                _unitOfWork.Repository<BoxPanel>().Update(otherPanel);
+            }
+        }
     }
 }
 

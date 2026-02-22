@@ -19,6 +19,8 @@ public record CreateProjectCommand(
     decimal? ProjectValue,
     string? Description,
     string? BimLink,
-    bool AllowCompletionWithConditionalApproval = false
+    bool AllowCompletionWithConditionalApproval = false,
+    Guid? ActivityTemplateId = null,
+    Guid? MaterialTemplateId = null
 ) : IRequest<Result<ProjectDto>>;
 

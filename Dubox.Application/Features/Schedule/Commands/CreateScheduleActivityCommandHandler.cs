@@ -30,9 +30,20 @@ public class CreateScheduleActivityCommandHandler : IRequestHandler<CreateSchedu
 
         var activity = new ScheduleActivity
         {
-            ActivityName = request.ActivityName,
+            SourceActivityMasterId = request.SourceActivityMasterId,
+            IsCustomActivity = request.IsCustomActivity,
             ActivityCode = request.ActivityCode,
+            ActivityName = request.ActivityName,
+            Stage = request.Stage,
+            StageNumber = request.StageNumber,
+            SequenceInStage = request.SequenceInStage,
+            OverallSequence = request.OverallSequence,
             Description = request.Description,
+            EstimatedDurationDays = request.EstimatedDurationDays,
+            IsWIRCheckpoint = request.IsWIRCheckpoint,
+            WIRCode = request.WIRCode,
+            ApplicableBoxTypes = request.ApplicableBoxTypes,
+            DependsOnActivities = request.DependsOnActivities,
             PlannedStartDate = request.PlannedStartDate,
             PlannedFinishDate = request.PlannedFinishDate,
             ProjectId = request.ProjectId,
@@ -48,6 +59,11 @@ public class CreateScheduleActivityCommandHandler : IRequestHandler<CreateSchedu
         return Result.Success(activity.ScheduleActivityId);
     }
 }
+
+
+
+
+
 
 
 

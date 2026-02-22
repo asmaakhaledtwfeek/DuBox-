@@ -21,7 +21,17 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         _currentUserService = currentUserService;
     }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        // Suppress the pending model changes warning caused by DateTime.UtcNow in entity default values
+        optionsBuilder.ConfigureWarnings(warnings =>
+            warnings.Ignore(Microsoft.EntityFrameworkCore.Diagnostics.RelationalEventId.PendingModelChangesWarning));
+        
+        base.OnConfiguring(optionsBuilder);
+    }
+
     public DbSet<Project> Projects { get; set; } = null!;
+    public DbSet<WeatherDataCache> ProjectWeatherReports { get; set; } = null!;
     public DbSet<Box> Boxes { get; set; } = null!;
     public DbSet<BoxAsset> BoxAssets { get; set; } = null!;
     public DbSet<ActivityMaster> ActivityMasters { get; set; } = null!;
@@ -38,13 +48,25 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<QualityIssue> QualityIssues { get; set; } = null!;
     public DbSet<QualityIssueImage> QualityIssueImages { get; set; } = null!;
     public DbSet<IssueComment> IssueComments { get; set; } = null!;
+    public DbSet<BoxExchange> BoxExchanges { get; set; } = null!;
     public DbSet<Team> Teams { get; set; } = null!;
     public DbSet<TeamMember> TeamMembers { get; set; } = null!;
     public DbSet<TeamGroup> TeamGroups { get; set; } = null!;
     public DbSet<Material> Materials { get; set; } = null!;
+    public DbSet<ProjectMaterial> ProjectMaterials { get; set; } = null!;
     public DbSet<BoxMaterial> BoxMaterials { get; set; } = null!;
+    public DbSet<BoxTypeMaterial> BoxTypeMaterials { get; set; } = null!;
     public DbSet<MaterialTransaction> MaterialTransactions { get; set; } = null!;
+
+    // Material Templates
+    public DbSet<MaterialTemplate> MaterialTemplates { get; set; } = null!;
+    public DbSet<MaterialTemplateItem> MaterialTemplateItems { get; set; } = null!;
+    public DbSet<ProjectMaterialTemplate> ProjectMaterialTemplates { get; set; } = null!;
+    public DbSet<BoxTypeMaterialTemplate> BoxTypeMaterialTemplates { get; set; } = null!;
     public DbSet<Factory> Factories { get; set; } = null!;
+    public DbSet<FactorySection> FactorySections { get; set; } = null!;
+    public DbSet<FactorySectionPart> FactorySectionParts { get; set; } = null!;
+    public DbSet<FreezingCell> FreezingCells { get; set; } = null!;
     public DbSet<FactoryLocation> FactoryLocations { get; set; } = null!;
     public DbSet<BoxLocationHistory> BoxLocationHistory { get; set; } = null!;
     public DbSet<CostCategory> CostCategories { get; set; } = null!;
@@ -67,12 +89,12 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<Checklist> Checklists { get; set; } = null!;
     public DbSet<BoxDrawing> BoxDrawings { get; set; } = null!;
     public DbSet<BoxPanel> BoxPanels { get; set; } = null!;
-    
+
     // Panel Management
     public DbSet<PanelType> PanelTypes { get; set; } = null!;
     public DbSet<PanelDeliveryNote> PanelDeliveryNotes { get; set; } = null!;
     public DbSet<PanelScanLog> PanelScanLogs { get; set; } = null!;
-    
+
     // Project Configuration
     public DbSet<ProjectBuilding> ProjectBuildings { get; set; } = null!;
     public DbSet<ProjectLevel> ProjectLevels { get; set; } = null!;
@@ -92,8 +114,23 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
     public DbSet<ScheduleActivityTeam> ScheduleActivityTeams { get; set; } = null!;
     public DbSet<ScheduleActivityMaterial> ScheduleActivityMaterials { get; set; } = null!;
 
+    // Activity Templates
+    public DbSet<ActivityTemplate> ActivityTemplates { get; set; } = null!;
+    public DbSet<ActivityTemplateActivity> ActivityTemplateActivities { get; set; } = null!;
+    public DbSet<ActivityCheckListItem> ActivityCheckListItems { get; set; } = null!;
+    public DbSet<ActivityCheckListItemReview> ActivityCheckListItemReviews { get; set; } = null!;
+
     // BIM Models (New Module - Coming Soon)
     public DbSet<BIMModel> BIMModels { get; set; } = null!;
+
+    // Custom Reports (Dynamic Report Builder)
+    public DbSet<CustomReport> CustomReports { get; set; } = null!;
+
+    /// <summary>
+    /// Returns the underlying ADO.NET connection for raw SQL execution.
+    /// Delegates to EF Core's DatabaseFacade which lives in Infrastructure.
+    /// </summary>
+    public System.Data.Common.DbConnection GetDbConnection() => Database.GetDbConnection();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -104,10 +141,15 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         RoleAndUserSeedData.SeedRolesGroupsAndUsers(modelBuilder);
         DepartmentSeesData.SeedDepartmnts(modelBuilder);
         PredefinedChecklistItemSeedData.SeedPredefinedChecklistItems(modelBuilder); // WIR-2 and WIR-3
+       //ActivityCheckListItemSeedData.SeedActivityCheckListItems(modelBuilder); // Activity checklist items
+        CustomActivityChecklistItemsSeedData.SeedCustomActivityChecklistItems(modelBuilder); // Custom activity checklist items (Part 1)
+        CustomActivityChecklistItemsSeedData_Part2.SeedAdditionalActivityChecklistItems(modelBuilder); // Custom activity checklist items (Part 2)
         PermissionSeedData.SeedPermissions(modelBuilder);
         NavigationMenuSeedData.SeedNavigationMenuItems(modelBuilder);
-        ChecklistSeedData.SeedChecklists(modelBuilder);
-     //   BoxTypeSeedData.SeedBoxTypes(modelBuilder);
+        //ChecklistSeedData.SeedChecklists(modelBuilder); // Old manual seeding - Replaced by JSON seeding
+        ChecklistSeedDataFromJson.SeedChecklistsFromJson(modelBuilder); // New JSON-based seeding
+        //   BoxTypeSeedData.SeedBoxTypes(modelBuilder);
+        MaterialSeedData.SeedMaterials(modelBuilder);
         base.OnModelCreating(modelBuilder);
     }
 
@@ -309,6 +351,46 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
+        // BoxExchange relationships
+        modelBuilder.Entity<BoxExchange>()
+            .HasOne(be => be.Box)
+            .WithMany()
+            .HasForeignKey(be => be.BoxId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<BoxExchange>()
+            .HasOne(be => be.QualityIssue)
+            .WithMany()
+            .HasForeignKey(be => be.QualityIssueId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<BoxExchange>()
+            .HasOne(be => be.RequestedByUser)
+            .WithMany()
+            .HasForeignKey(be => be.RequestedBy)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        modelBuilder.Entity<BoxExchange>()
+            .HasOne(be => be.ApprovedByUser)
+            .WithMany()
+            .HasForeignKey(be => be.ApprovedBy)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        modelBuilder.Entity<BoxExchange>()
+            .HasOne(be => be.RejectedByUser)
+            .WithMany()
+            .HasForeignKey(be => be.RejectedBy)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        modelBuilder.Entity<BoxExchange>()
+            .HasOne(be => be.AppliedByUser)
+            .WithMany()
+            .HasForeignKey(be => be.AppliedBy)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.NoAction);
+
         // Notification relationships for comments
         // Using NoAction to prevent cascade cycles since QualityIssue already has cascade delete from Box
         modelBuilder.Entity<Notification>()
@@ -342,6 +424,14 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasOne(ba => ba.ActivityMaster)
             .WithMany(am => am.BoxActivities)
             .HasForeignKey(ba => ba.ActivityMasterId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<BoxActivity>()
+            .HasOne(ba => ba.ActivityTemplateActivity)
+            .WithMany()
+            .HasForeignKey(ba => ba.ActivityTemplateActivityId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
         modelBuilder.Entity<BoxActivity>()
@@ -365,13 +455,13 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         modelBuilder.Entity<Box>()
             .Property(b => b.ProjectBoxSubTypeId)
             .IsRequired(false);
-        
+
         // Ignore navigation properties to prevent foreign key creation
         // BoxTypeId references ProjectBoxTypes.Id, not BoxTypes.BoxTypeId
         // BoxSubTypeId references ProjectBoxSubTypes.Id, not BoxSubTypes.BoxSubTypeId
         modelBuilder.Entity<Box>()
             .Ignore(b => b.BoxType);
-            
+
         modelBuilder.Entity<Box>()
             .Ignore(b => b.BoxSubType);
 
@@ -428,6 +518,40 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasOne(t => t.PerformedBy)
             .WithMany()
             .HasForeignKey(t => t.PerformedById)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        // BoxMaterial relationships
+        modelBuilder.Entity<BoxMaterial>()
+            .HasOne(bm => bm.Box)
+            .WithMany()
+            .HasForeignKey(bm => bm.BoxId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<BoxMaterial>()
+            .HasOne(bm => bm.Material)
+            .WithMany()
+            .HasForeignKey(bm => bm.MaterialId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<BoxMaterial>()
+            .HasOne(bm => bm.ProjectMaterial)
+            .WithMany()
+            .HasForeignKey(bm => bm.ProjectMaterialId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        modelBuilder.Entity<BoxMaterial>()
+            .HasOne(bm => bm.QualityIssue)
+            .WithMany()
+            .HasForeignKey(bm => bm.QualityIssueId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.NoAction); // Changed to NoAction to avoid cascade cycle
+
+        modelBuilder.Entity<BoxMaterial>()
+            .HasOne(bm => bm.ArrivedByUser)
+            .WithMany()
+            .HasForeignKey(bm => bm.ArrivedBy)
             .IsRequired(false)
             .OnDelete(DeleteBehavior.SetNull);
 
@@ -513,6 +637,82 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasOne(pc => pc.Project)
             .WithMany()
             .HasForeignKey(pc => pc.ProjectId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Material Template relationships
+        modelBuilder.Entity<MaterialTemplateItem>()
+            .HasOne(mti => mti.MaterialTemplate)
+            .WithMany(mt => mt.Items)
+            .HasForeignKey(mti => mti.MaterialTemplateId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<MaterialTemplateItem>()
+            .HasOne(mti => mti.Material)
+            .WithMany()
+            .HasForeignKey(mti => mti.MaterialId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<ProjectMaterialTemplate>()
+            .HasOne(pmt => pmt.Project)
+            .WithMany()
+            .HasForeignKey(pmt => pmt.ProjectId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ProjectMaterialTemplate>()
+            .HasOne(pmt => pmt.MaterialTemplate)
+            .WithMany(mt => mt.ProjectAssignments)
+            .HasForeignKey(pmt => pmt.MaterialTemplateId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        modelBuilder.Entity<BoxTypeMaterialTemplate>()
+            .HasOne(btmt => btmt.ProjectBoxType)
+            .WithMany()
+            .HasForeignKey(btmt => btmt.ProjectBoxTypeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<BoxTypeMaterialTemplate>()
+            .HasOne(btmt => btmt.MaterialTemplate)
+            .WithMany(mt => mt.BoxTypeAssignments)
+            .HasForeignKey(btmt => btmt.MaterialTemplateId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Activity Template relationships
+        modelBuilder.Entity<ActivityTemplateActivity>()
+            .HasOne(ata => ata.ActivityTemplate)
+            .WithMany(at => at.TemplateActivities)
+            .HasForeignKey(ata => ata.ActivityTemplateId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Note: No FK relationship to ActivityMaster - all activities are custom
+        // Activity Master is used only as a template source to copy properties
+
+        // ActivityCheckListItem relationships
+        modelBuilder.Entity<ActivityCheckListItem>()
+            .HasOne(aci => aci.ActivityMaster)
+            .WithMany()
+            .HasForeignKey(aci => aci.ActivityMasterId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ActivityCheckListItem>()
+            .HasOne(aci => aci.ActivityTemplateActivity)
+            .WithMany(ata => ata.ChecklistItems)
+            .HasForeignKey(aci => aci.ActivityTemplateActivityId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ActivityCheckListItem>()
+            .HasOne(aci => aci.PredefinedChecklistItem)
+            .WithMany()
+            .HasForeignKey(aci => aci.PredefinedChecklistItemId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // ScheduleActivity self-referencing (Parent/Child hierarchy)
+        modelBuilder.Entity<ScheduleActivity>()
+            .HasOne(sa => sa.ParentActivity)
+            .WithMany(sa => sa.ChildActivities)
+            .HasForeignKey(sa => sa.ParentActivityId)
+            .IsRequired(false)
             .OnDelete(DeleteBehavior.Restrict);
 
     }
@@ -636,6 +836,74 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
         modelBuilder.Entity<TeamGroup>()
             .HasIndex(tg => new { tg.TeamId, tg.GroupTag })
             .IsUnique();
+
+        // Material Template indexes
+        modelBuilder.Entity<MaterialTemplate>()
+            .HasIndex(mt => mt.TemplateCode)
+            .IsUnique();
+
+        modelBuilder.Entity<MaterialTemplate>()
+            .HasIndex(mt => mt.IsActive);
+
+        modelBuilder.Entity<MaterialTemplateItem>()
+            .HasIndex(mti => new { mti.MaterialTemplateId, mti.DisplayOrder });
+
+        // Enforce one-to-one: a project may have at most ONE material template at any time.
+        modelBuilder.Entity<ProjectMaterialTemplate>()
+            .HasIndex(pmt => pmt.ProjectId)
+            .IsUnique()
+            .HasDatabaseName("IX_ProjectMaterialTemplates_ProjectId");
+
+        // Enforce one-to-one: a box type may have at most ONE material template at any time.
+        modelBuilder.Entity<BoxTypeMaterialTemplate>()
+            .HasIndex(btmt => btmt.ProjectBoxTypeId)
+            .IsUnique()
+            .HasDatabaseName("IX_BoxTypeMaterialTemplates_ProjectBoxTypeId");
+
+        // Project - ActivityTemplate relationship
+        modelBuilder.Entity<Project>()
+            .HasOne(p => p.ActivityTemplate)
+            .WithMany()
+            .HasForeignKey(p => p.ActivityTemplateId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // ProjectBoxType - ActivityTemplate relationship
+        modelBuilder.Entity<ProjectBoxType>()
+            .HasOne(pbt => pbt.ActivityTemplate)
+            .WithMany()
+            .HasForeignKey(pbt => pbt.ActivityTemplateId)
+            .IsRequired(false)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // Activity Template indexes
+        modelBuilder.Entity<ActivityTemplate>()
+            .HasIndex(at => at.TemplateName);
+
+        modelBuilder.Entity<ActivityTemplate>()
+            .HasIndex(at => at.IsActive);
+
+        modelBuilder.Entity<ActivityTemplateActivity>()
+            .HasIndex(ata => ata.ActivityTemplateId);
+
+        modelBuilder.Entity<ActivityTemplateActivity>()
+            .HasIndex(ata => new { ata.ActivityTemplateId, ata.OverallSequence });
+
+        // ActivityCheckListItem indexes
+        modelBuilder.Entity<ActivityCheckListItem>()
+            .HasIndex(aci => aci.ActivityMasterId);
+
+        modelBuilder.Entity<ActivityCheckListItem>()
+            .HasIndex(aci => aci.ActivityTemplateActivityId);
+
+        modelBuilder.Entity<ActivityCheckListItem>()
+            .HasIndex(aci => aci.PredefinedChecklistItemId);
+
+        modelBuilder.Entity<ActivityCheckListItem>()
+            .HasIndex(aci => new { aci.ActivityMasterId, aci.Sequence });
+
+        modelBuilder.Entity<ActivityCheckListItem>()
+            .HasIndex(aci => new { aci.ActivityTemplateActivityId, aci.Sequence });
     }
 
     private void ConfigureDefaultValues(ModelBuilder modelBuilder)
@@ -667,6 +935,9 @@ public sealed class ApplicationDbContext : DbContext, IDbContext
             .HasDefaultValueSql("GETUTCDATE()");
         modelBuilder.Entity<Department>()
             .Property(a => a.UpdatedDate)
+            .HasDefaultValueSql("GETUTCDATE()");
+        modelBuilder.Entity<FactorySectionPart>()
+            .Property(f => f.CreatedDate)
             .HasDefaultValueSql("GETUTCDATE()");
     }
 

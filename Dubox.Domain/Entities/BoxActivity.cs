@@ -1,4 +1,4 @@
-﻿using Dubox.Domain.Enums;
+using Dubox.Domain.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -14,10 +14,14 @@ public class BoxActivity
     public Guid BoxId { get; set; }
     public Box Box { get; set; } = null!;
 
-    public Guid ActivityMasterId { get; set; }
-    public ActivityMaster ActivityMaster { get; set; } = null!;
+    // Can be related to either ActivityMaster (standard) or ActivityTemplateActivity (template-based)
+    public Guid? ActivityMasterId { get; set; }
+    public ActivityMaster? ActivityMaster { get; set; }
 
-    public int Sequence { get; set; } // Copied from ActivityMaster
+    public Guid? ActivityTemplateActivityId { get; set; }
+    public ActivityTemplateActivity? ActivityTemplateActivity { get; set; }
+
+    public int Sequence { get; set; } // Copied from ActivityMaster or Template
 
     [Required]
     [MaxLength(50)]

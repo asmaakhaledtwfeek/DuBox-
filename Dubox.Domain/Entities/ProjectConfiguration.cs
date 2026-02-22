@@ -94,8 +94,16 @@ public class ProjectBoxType
 
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
+    /// <summary>
+    /// Activity Template assigned to this box type
+    /// Overrides the project-level default template
+    /// </summary>
+    [ForeignKey(nameof(ActivityTemplate))]
+    public Guid? ActivityTemplateId { get; set; }
+
     // Navigation
     public ICollection<ProjectBoxSubType> SubTypes { get; set; } = new List<ProjectBoxSubType>();
+    public virtual ActivityTemplate? ActivityTemplate { get; set; }
 }
 
 /// <summary>

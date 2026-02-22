@@ -69,6 +69,8 @@ export class ProjectService {
                 backendProject.Progress ?? 
                 0,
       allowCompletionWithConditionalApproval: backendProject.allowCompletionWithConditionalApproval ?? backendProject.AllowCompletionWithConditionalApproval ?? false,
+      activityTemplateId: backendProject.activityTemplateId || backendProject.ActivityTemplateId,
+      activityTemplateName: backendProject.activityTemplateName || backendProject.ActivityTemplateName,
       createdBy: backendProject.createdBy || backendProject.CreatedBy,
       updatedBy: backendProject.modifiedBy || backendProject.ModifiedBy || backendProject.updatedBy || backendProject.UpdatedBy,
       createdAt: (backendProject.createdDate || backendProject.CreatedDate) ? new Date(backendProject.createdDate || backendProject.CreatedDate) : undefined,
@@ -203,10 +205,28 @@ export class ProjectService {
   }
 
   /**
+   * Get project materials with optional filtering for selected materials only
+   */
+  getProjectMaterials(projectId: string, selectedOnly: boolean = true): Observable<any[]> {
+    return this.apiService.get<any>(`project-materials/${projectId}?selectedOnly=${selectedOnly}`).pipe(
+      map(response => response.data || response || [])
+    );
+  }
+
+  /**
    * Save project configuration (buildings, levels, types, zones, functions)
    */
   saveProjectConfiguration(projectId: string, configuration: ProjectConfiguration): Observable<ProjectConfiguration> {
     return this.apiService.post<any>(`${this.endpoint}/${projectId}/configuration`, configuration).pipe(
+      map(response => response.data || response)
+    );
+  }
+
+  /**
+   * Update a specific project box type
+   */
+  updateProjectBoxType(projectId: string, boxTypeId: number, updates: Partial<any>): Observable<any> {
+    return this.apiService.patch<any>(`${this.endpoint}/${projectId}/box-types/${boxTypeId}`, updates).pipe(
       map(response => response.data || response)
     );
   }

@@ -12,9 +12,9 @@
     <!-- Error State -->
     <div *ngIf="error && !loading" class="error-container">
       <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="15" y1="9" x2="9" y2="15"/>
-        <line x1="9" y1="9" x2="15" y2="15"/>
+        <circle cx="12" cy="12" r="10" />
+        <line x1="15" y1="9" x2="9" y2="15" />
+        <line x1="9" y1="9" x2="15" y2="15" />
       </svg>
       <h3>Error Loading Factory Layout</h3>
       <p>{{ error }}</p>
@@ -23,12 +23,12 @@
 
     <!-- Factory Layout Content -->
     <div *ngIf="!loading && !error && factory" class="factory-layout-container">
-      <!-- Page Header -->
+      <!-- Page Header (not captured in PDF) -->
       <div class="page-header">
         <div class="header-left">
           <button class="btn-back" (click)="goBack()" title="Back to Factory Details">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
+              <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
             Back
           </button>
@@ -36,8 +36,8 @@
             <h1>Factory Layout</h1>
             <div class="factory-name">
               <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
               </svg>
               {{ factory.factoryName }}
             </div>
@@ -57,14 +57,13 @@
 
       <!-- Filters Section -->
       <div class="filters-section">
-        <div class="filters-container">
-          
-
+        <!-- First Row: Filter Inputs + Action Buttons -->
+        <div class="filters-and-actions-container">
           <div class="filter-group">
             <label for="projectFilter" class="filter-label">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 3h18v18H3z"/>
-                <path d="M3 9h18M9 21V9"/>
+                <path d="M3 3h18v18H3z" />
+                <path d="M3 9h18M9 21V9" />
               </svg>
               Project:
             </label>
@@ -77,9 +76,9 @@
           <div class="filter-group">
             <label for="buildingFilter" class="filter-label">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <line x1="3" y1="9" x2="21" y2="9"/>
-                <line x1="9" y1="21" x2="9" y2="9"/>
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <line x1="3" y1="9" x2="21" y2="9" />
+                <line x1="9" y1="21" x2="9" y2="9" />
               </svg>
               Building:
             </label>
@@ -92,9 +91,9 @@
           <div class="filter-group">
             <label for="floorFilter" class="filter-label">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2"/>
-                <line x1="3" y1="9" x2="21" y2="9"/>
-                <line x1="9" y1="21" x2="9" y2="9"/>
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <line x1="3" y1="9" x2="21" y2="9" />
+                <line x1="9" y1="21" x2="9" y2="9" />
               </svg>
               Level:
             </label>
@@ -104,12 +103,11 @@
             </select>
           </div>
 
-
           <div class="filter-group">
             <label for="zoneFilter" class="filter-label">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                <circle cx="12" cy="12" r="10" />
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
               </svg>
               Zone:
             </label>
@@ -119,23 +117,165 @@
             </select>
           </div>
 
-          <button class="btn-clear-filters" (click)="clearFilters()" *ngIf="selectedProjectId || selectedStage || selectedBuilding || selectedFloor || selectedLevel || selectedZone">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"/>
-              <line x1="6" y1="6" x2="18" y2="18"/>
-            </svg>
-            Clear Filters
-          </button>
-
-          <!-- View Walls Status Button -->
+          <!-- Action Buttons in same row -->
           <button class="btn-view-walls" (click)="viewWallsStatus()">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
-              <line x1="3" y1="9" x2="21" y2="9"/>
-              <line x1="9" y1="21" x2="9" y2="9"/>
+              <rect x="3" y="3" width="18" height="18" rx="2" />
+              <line x1="3" y1="9" x2="21" y2="9" />
+              <line x1="9" y1="21" x2="9" y2="9" />
             </svg>
             View Panels Status
           </button>
+
+          <button class="btn-print" (click)="printFactoryLayout()" title="Export layout as PDF (A3 landscape)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="6 9 6 2 18 2 18 9"></polyline>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+              <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            Export PDF
+          </button>
+
+          <button class="btn-export" (click)="exportToExcel()" title="Export to Excel">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="12" y1="18" x2="12" y2="12"></line>
+              <line x1="9" y1="15" x2="15" y2="15"></line>
+            </svg>
+            Export Excel
+          </button>
+        </div>
+
+        <!-- Second Row: Clear Filters Button Only -->
+        <div class="clear-filters-row" *ngIf="selectedProjectId || selectedStage || selectedBuilding || selectedFloor || selectedLevel || selectedZone">
+          <button class="btn-clear-filters" (click)="clearFilters()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+            Clear Filters
+          </button>
+        </div>
+      </div>
+
+      <!-- PDF capture area: summary cards + business flow + layout grid only -->
+      <div #layoutPrintArea class="layout-print-area">
+      <!-- Summary Section - Clean Grid Style -->
+      <div class="summary-section" *ngIf="isTwoColumnLayout()">
+        <div class="summary-container">
+          <!-- Card 1: Total Boxes Overview -->
+          <div class="summary-card">
+            <div class="card-header">
+              <h3>Total Boxes Overview</h3>
+            </div>
+            <div class="card-body">
+              <table class="summary-table">
+                <tbody>
+                  <tr>
+                    <td class="label-cell">
+                      <span class="dot dot-assembly"></span>
+                      Assembly
+                    </td>
+                    <td class="value-cell">{{ getSummaryStats().assemblyCount }}</td>
+                  </tr>
+                  <tr>
+                    <td class="label-cell">
+                      <span class="dot dot-finishing"></span>
+                      Finishing
+                    </td>
+                    <td class="value-cell">{{ getSummaryStats().finishingCount }}</td>
+                  </tr>
+                  <tr>
+                    <td class="label-cell">
+                      <span class="dot dot-empty"></span>
+                      Empty Slots
+                    </td>
+                    <td class="value-cell">{{ getEmptySlotCount() }}</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="total-row">
+                    <td class="label-cell">Total Boxes</td>
+                    <td class="value-cell">{{ getTotalBoxesByBuilding() }}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+
+          <!-- Card 2: Dispatched Boxes -->
+          <div class="summary-card">
+            <div class="card-header">
+              <h3>Dispatched Boxes</h3>
+            </div>
+            <div class="card-body">
+              <table class="summary-table" *ngIf="getDispatchedByFloor().length > 0">
+                <thead>
+                  <tr>
+                    <th class="label-cell">Level / Floor</th>
+                    <th class="value-cell">Count</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of getDispatchedByFloor()">
+                    <td class="label-cell">{{ item.floor }}</td>
+                    <td class="value-cell">{{ item.count }}</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="total-row">
+                    <td class="label-cell">Total</td>
+                    <td class="value-cell">{{ getTotalDispatchedBoxes() }}</td>
+                  </tr>
+                </tfoot>
+              </table>
+              <div class="empty-state" *ngIf="getDispatchedByFloor().length === 0">
+                <p>No dispatched boxes</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Card 3: Boxes by Building -->
+          <div class="summary-card">
+            <div class="card-header">
+              <h3>Boxes by Building</h3>
+            </div>
+            <div class="card-body">
+              <table class="summary-table wide" *ngIf="getBoxesByBuilding().length > 0">
+                <thead>
+                  <tr>
+                    <th class="label-cell">Building</th>
+                    <th class="value-cell">Assembly</th>
+                    <th class="value-cell">Ready</th>
+                    <th class="value-cell">Finishing</th>
+                    <th class="value-cell total">Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of getBoxesByBuilding()">
+                    <td class="label-cell">{{ item.building }}</td>
+                    <td class="value-cell">{{ item.assemblyCount }}</td>
+                    <td class="value-cell">{{ item.readyForFinishing }}</td>
+                    <td class="value-cell">{{ item.finishingCount }}</td>
+                    <td class="value-cell total">{{ item.totalCount }}</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="total-row">
+                    <td class="label-cell">Total</td>
+                    <td class="value-cell">{{ getTotalAssemblyBoxes() }}</td>
+                    <td class="value-cell">{{ getTotalReadyForFinishing() }}</td>
+                    <td class="value-cell">{{ getTotalFinishingBoxes() }}</td>
+                    <td class="value-cell total">{{ getTotalBoxesByBuilding() }}</td>
+                  </tr>
+                </tfoot>
+              </table>
+              <div class="empty-state" *ngIf="getBoxesByBuilding().length === 0">
+                <p>No data available</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -144,200 +284,437 @@
         <div class="section-title">BUSINESS FLOW INDICATORS</div>
         <div class="flow-indicators-horizontal">
           <!-- Dynamic Stage Cards -->
-          <div 
-            class="flow-item clickable" 
-            *ngFor="let stage of availableStages"
-            [class.active]="selectedStage === stage.wirCode"
-            (click)="onStageCardClick(stage.wirCode)"
-            [title]="'Filter by ' + stage.displayName"
-            role="button"
-            tabindex="0"
-            (keydown.enter)="onStageCardClick(stage.wirCode)"
-            (keydown.space)="onStageCardClick(stage.wirCode); $event.preventDefault()"
-          >
+          <div class="flow-item clickable"
+               *ngFor="let stage of availableStages"
+               [class.active]="selectedStage === stage.wirCode"
+               (click)="onStageCardClick(stage.wirCode)"
+               [title]="'Filter by ' + stage.displayName"
+               role="button"
+               tabindex="0"
+               (keydown.enter)="onStageCardClick(stage.wirCode)"
+               (keydown.space)="onStageCardClick(stage.wirCode); $event.preventDefault()">
             <div class="flow-color" [ngClass]="stage.wirCode === 'COMPLETED' ? 'wir-completed' : getStageColorClass(stage.wirCode)"></div>
             <span>{{ stage.displayName }}</span>
           </div>
           <!-- Empty Location Card -->
-          <div 
-            class="flow-item clickable" 
-            [class.active]="selectedStage === 'EMPTY'"
-            (click)="onStageCardClick('EMPTY')"
-            title="Filter by empty locations"
-            role="button"
-            tabindex="0"
-            (keydown.enter)="onStageCardClick('EMPTY')"
-            (keydown.space)="onStageCardClick('EMPTY'); $event.preventDefault()"
-          >
+          <div class="flow-item clickable"
+               [class.active]="selectedStage === 'EMPTY'"
+               (click)="onStageCardClick('EMPTY')"
+               title="Filter by empty locations"
+               role="button"
+               tabindex="0"
+               (keydown.enter)="onStageCardClick('EMPTY')"
+               (keydown.space)="onStageCardClick('EMPTY'); $event.preventDefault()">
             <div class="flow-color empty-location"></div>
             <span>Empty</span>
           </div>
+
         </div>
       </div>
 
-      <!-- Factory Grid Content Area (Grid + Legend) -->
-      <div class="factory-grid-wrapper">
-        <div class="grid-content-area">
-          <!-- Scrollable Grid Container -->
-          <div class="warehouse-grid">
-            <div class="matrix-container" *ngIf="getGridLayout().matrix.length > 0">
-              <!-- Matrix Table -->
-              <div class="warehouse-matrix">
-                <!-- Column Headers (Aisles: A, B, C, D) -->
-                <div class="matrix-header">
-                  <div class="matrix-corner-cell">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <rect x="3" y="3" width="7" height="7"/>
-                      <rect x="14" y="3" width="7" height="7"/>
-                      <rect x="14" y="14" width="7" height="7"/>
-                      <rect x="3" y="14" width="7" height="7"/>
-                    </svg>
-                  </div>
-                  <div class="matrix-column-header" *ngFor="let column of getGridLayout().columns">
-                    <div class="aisle-indicator">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                      </svg>
+
+      <!-- Section Tabs (if factory has sections) -->
+      <div class="section-tabs" *ngIf="hasSections && factory && factory.sections && factory.sections.length > 0 && layoutMode === 'matrix'">
+        <button class="section-tab"
+                [class.active]="selectedSectionId === null"
+                (click)="selectSection(null)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <line x1="3" y1="9" x2="21" y2="9" />
+            <line x1="9" y1="21" x2="9" y2="9" />
+          </svg>
+          All Sections
+        </button>
+        <button *ngFor="let section of factory.sections"
+                class="section-tab"
+                [class.active]="selectedSectionId === section.sectionId"
+                [class.assembly]="section.sectionType === FactorySectionType.Assembly"
+                [class.finishing]="section.sectionType === FactorySectionType.Finishing"
+                (click)="selectSection(section.sectionId ?? null)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <line x1="3" y1="9" x2="21" y2="9" />
+            <line x1="9" y1="21" x2="9" y2="9" />
+          </svg>
+          {{ section.sectionName }}
+        </button>
+      </div>
+
+      <!-- Empty State: No Sections Configured -->
+      <div class="no-sections-message" *ngIf="isTwoColumnLayout() && factory && (!hasSections || !factory.sections || factory.sections.length === 0)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3" y="3" width="7" height="7" />
+          <rect x="14" y="3" width="7" height="7" />
+          <rect x="14" y="14" width="7" height="7" />
+          <rect x="3" y="14" width="7" height="7" />
+        </svg>
+        <h3>No Factory Sections Configured</h3>
+        <p>Factory: <strong>{{ factory.factoryName }} ({{ factory.factoryCode }})</strong></p>
+        <p>This factory doesn't have Assembly or Finishing sections set up yet.</p>
+        <p class="info-text">Sections loaded: {{ factory.sections?.length || 0 }}</p>
+        <p class="info-text">Please run the SQL script to add sections, then refresh the page.</p>
+        <button class="btn-switch-view" (click)="toggleLayoutMode()">
+          Switch to Matrix View
+        </button>
+      </div>
+
+      <!-- Two-Column Layout (Blueprint Style: Finishing LEFT, Assembly RIGHT) -->
+      <div class="factory-layout-two-column blueprint-style" *ngIf="isTwoColumnLayout() && hasSections && factory && factory.sections && factory.sections.length > 0">
+
+        <!-- Common Y-Axis (Bays) - hidden; bay letters are now embedded per section -->
+        <div class="common-bay-axis" style="display:none">
+          <!-- Top offset to align with first section grid -->
+          <div class="bay-axis-top-offset"></div>
+
+          <!-- Top section - show bay labels for each part -->
+          <ng-container *ngIf="getLayoutConfiguration().leftColumn.sections.length > 0 && getLayoutConfiguration().leftColumn.sections[0].parts && getLayoutConfiguration().leftColumn.sections[0].parts.length > 0">
+            <ng-container *ngFor="let part of getLayoutConfiguration().leftColumn.sections[0].parts; let partIdx = index">
+              <!-- Bay labels for this part -->
+              <div class="bay-label-container" *ngFor="let bay of part.grid.rows">
+                <span class="bay-label">{{ bay }}</span>
+              </div>
+              <!-- Small gap between parts (if not last part) -->
+              <div class="bay-axis-part-gap" *ngIf="partIdx < getLayoutConfiguration().leftColumn.sections[0].parts.length - 1"></div>
+            </ng-container>
+          </ng-container>
+
+          <!-- Fallback: If no parts, show section bays -->
+          <ng-container *ngIf="getLayoutConfiguration().leftColumn.sections.length > 0 && (!getLayoutConfiguration().leftColumn.sections[0].parts || getLayoutConfiguration().leftColumn.sections[0].parts.length === 0)">
+            <div class="bay-label-container" *ngFor="let bay of getLayoutConfiguration().leftColumn.sections[0].grid.rows">
+              <span class="bay-label">{{ bay }}</span>
+            </div>
+          </ng-container>
+
+          <!-- Gap between upper and lower sections -->
+          <div class="bay-axis-section-gap"></div>
+
+          <!-- Bottom section - show bay labels for each part -->
+          <ng-container *ngIf="getLayoutConfiguration().leftColumn.sections.length > 1 && getLayoutConfiguration().leftColumn.sections[1].parts && getLayoutConfiguration().leftColumn.sections[1].parts.length > 0">
+            <ng-container *ngFor="let part of getLayoutConfiguration().leftColumn.sections[1].parts; let partIdx = index">
+              <!-- Bay labels for this part -->
+              <div class="bay-label-container" *ngFor="let bay of part.grid.rows">
+                <span class="bay-label">{{ bay }}</span>
+              </div>
+              <!-- Small gap between parts (if not last part) -->
+              <div class="bay-axis-part-gap" *ngIf="partIdx < getLayoutConfiguration().leftColumn.sections[1].parts.length - 1"></div>
+            </ng-container>
+          </ng-container>
+
+          <!-- Fallback: If no parts, show section bays -->
+          <ng-container *ngIf="getLayoutConfiguration().leftColumn.sections.length > 1 && (!getLayoutConfiguration().leftColumn.sections[1].parts || getLayoutConfiguration().leftColumn.sections[1].parts.length === 0)">
+            <div class="bay-label-container" *ngFor="let bay of getLayoutConfiguration().leftColumn.sections[1].grid.rows">
+              <span class="bay-label">{{ bay }}</span>
+            </div>
+          </ng-container>
+        </div>
+
+        <!-- Sections Grid Container -->
+        <div class="sections-grid-container">
+
+          <!-- TOP ROW: First two sections by DisplayOrder -->
+          <div class="section-row-container top-row">
+            <!-- Left Section -->
+            <ng-container *ngIf="getLayoutConfiguration().leftColumn.sections.length > 0">
+              <ng-container *ngTemplateOutlet="sectionTemplate; context: {$implicit: getLayoutConfiguration().leftColumn.sections[0], type: getLayoutConfiguration().leftColumn.sections[0].section.sectionType === 1 ? 'assembly' : 'finishing', position: 'top'}"></ng-container>
+            </ng-container>
+
+            <!-- Vertical Central Aisle -->
+            <div class="central-aisle-vertical">
+              <span class="aisle-label-vertical">CENTRAL AISLE</span>
+            </div>
+
+            <!-- Right Section -->
+            <ng-container *ngIf="getLayoutConfiguration().rightColumn.sections.length > 0">
+              <ng-container *ngTemplateOutlet="sectionTemplate; context: {$implicit: getLayoutConfiguration().rightColumn.sections[0], type: getLayoutConfiguration().rightColumn.sections[0].section.sectionType === 1 ? 'assembly' : 'finishing', position: 'top'}"></ng-container>
+            </ng-container>
+          </div>
+
+          <!-- CENTRAL AISLE (if both columns have 2 sections) -->
+          <div class="central-aisle-horizontal" *ngIf="getLayoutConfiguration().leftColumn.sections.length > 1 || getLayoutConfiguration().rightColumn.sections.length > 1">
+            <span class="aisle-label">CENTRAL AISLE</span>
+          </div>
+
+          <!-- BOTTOM ROW: Next two sections by DisplayOrder -->
+          <div class="section-row-container bottom-row">
+            <!-- Left Section -->
+            <ng-container *ngIf="getLayoutConfiguration().leftColumn.sections.length > 1">
+              <ng-container *ngTemplateOutlet="sectionTemplate; context: {$implicit: getLayoutConfiguration().leftColumn.sections[1], type: getLayoutConfiguration().leftColumn.sections[1].section.sectionType === 1 ? 'assembly' : 'finishing', position: 'bottom'}"></ng-container>
+            </ng-container>
+
+            <!-- Vertical Central Aisle -->
+            <div class="central-aisle-vertical">
+              <span class="aisle-label-vertical">CENTRAL AISLE</span>
+            </div>
+
+            <!-- Right Section -->
+            <ng-container *ngIf="getLayoutConfiguration().rightColumn.sections.length > 1">
+              <ng-container *ngTemplateOutlet="sectionTemplate; context: {$implicit: getLayoutConfiguration().rightColumn.sections[1], type: getLayoutConfiguration().rightColumn.sections[1].section.sectionType === 1 ? 'assembly' : 'finishing', position: 'bottom'}"></ng-container>
+            </ng-container>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section Template for reuse -->
+      <ng-template #sectionTemplate let-sectionData let-type="type" let-position="position">
+        <div class="section-grid" [class.finishing-section]="type === 'finishing'" [class.assembly-section]="type === 'assembly'">
+          <!-- Section Header - Hidden (names removed per user request) -->
+          <!-- <div class="section-header-blueprint">
+            <span class="section-name">{{ sectionData.section.sectionName }}</span>
+            <span class="section-range">Rows {{ sectionData.section.minRow }}-{{ sectionData.section.maxRow }} | Bays {{ sectionData.section.minBay }}-{{ sectionData.section.maxBay }}</span>
+          </div> -->
+          <!-- Unified Row Axis Top (only for top sections) -->
+          <div class="row-axis-top" *ngIf="position === 'top' && sectionData.parts && sectionData.parts.length > 0 && sectionData.parts[0]">
+            <div class="row-number"
+                 *ngFor="let column of sectionData.parts[0].grid.columns"
+                 [class.frozen-col-header]="isSectionColumnFrozen(sectionData.parts, column)"
+                 [title]="isSectionColumnFrozen(sectionData.parts, column) ? 'Frozen Row ' + column : column">{{ column }}</div>
+          </div>
+
+          <!-- Section Parts Container (VERTICALLY STACKED PARTS) -->
+          <div class="section-parts-container-stacked">
+            <ng-container *ngIf="sectionData.parts && sectionData.parts.length > 0">
+              <!-- Render each part vertically stacked with horizontal red dividers -->
+              <ng-container *ngFor="let partData of sectionData.parts; let partIdx = index">
+                <div class="part-container-stacked" [attr.data-part]="partData.partNumber">
+                  <!-- Dual Part Labels Container -->
+                  <div class="part-labels-dual-container">
+                    <!-- Bay Letters Column — LEFT side (Finishing sections) -->
+                    <div class="part-bay-axis part-bay-axis-left" *ngIf="type === 'finishing'">
+                      <div class="part-bay-cell" *ngFor="let bay of partData.grid.rows">{{ bay }}</div>
                     </div>
-                    <span class="column-label">AISLE {{ column }}</span>
-                  </div>
-                </div>
 
-                <!-- Matrix Rows -->
-                <div class="matrix-row" *ngFor="let rowCells of getGridLayout().matrix; let rowIndex = index">
-                  <!-- Row Header (Row Number) -->
-                  <div class="matrix-row-header">
-                    <span class="row-number">{{ rowCells[0].row }}</span>
-                  </div>
-
-              <!-- Row Cells -->
-              <div class="matrix-cell"
-                   *ngFor="let cell of rowCells"
-                   [class.has-box]="cell.box"
-                   [class.empty]="!cell.box && !cell.hidden"
-                   [class.hidden]="cell.hidden"
-                   [ngClass]="cell.box ? getBoxColorClass(cell.box) : ''"
-                   (click)="cell.box && viewBox(cell.box.id)"
-                   [title]="getCellTooltip(cell)">
-                
-                <!-- Progress Percentage Badge (Top Right) -->
-                <div class="progress-badge" *ngIf="cell.box && cell.box.progress !== undefined">
-                  {{ cell.box.progress }}%
-                </div>
-
-                    <!-- Collision Badge (when multiple boxes share same position) -->
-                    <div class="collision-badge" *ngIf="cell.boxCount > 1" 
-                         [title]="'Multiple boxes at this position: ' + (cell.allBoxes | json)">
-                      +{{ cell.boxCount - 1 }}
+                    <!-- Part Name Label — LEFT side (Finishing sections), outside bay axis -->
+                    <div class="part-label-dual part-label-left" *ngIf="type === 'finishing'">
+                      <span>{{ partData.partName }}</span>
                     </div>
-                    
-                    <!-- Box Content -->
-                    <div class="cell-content" *ngIf="cell.box">
-                      <div class="box-icon-small">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-                          <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
-                          <line x1="12" y1="22.08" x2="12" y2="12"/>
-                        </svg>
+
+                    <!-- Part Grid with its specific bay range (3 bays) and row range (12 rows) -->
+                    <div class="part-grid-matrix-stacked">
+                      <div class="part-row-stacked" *ngFor="let rowCells of partData.grid.matrix">
+                        <div class="matrix-cell-blueprint"
+                             *ngFor="let cell of rowCells"
+                             [class.has-box]="cell.box && !isRowFrozen(partData.partId, cell.row)"
+                             [class.empty]="!cell.box && !cell.hidden && !isRowFrozen(partData.partId, cell.row)"
+                             [class.hidden]="cell.hidden"
+                             [class.frozen]="isRowFrozen(partData.partId, cell.row)"
+                             [ngClass]="cell.box && !isRowFrozen(partData.partId, cell.row) ? getBoxColorClass(cell.box) : ''"
+                             (click)="!isRowFrozen(partData.partId, cell.row) && cell.box && viewBox(cell.box.id)"
+                             [title]="getCellTooltip(cell, isRowFrozen(partData.partId, cell.row))"
+                             [attr.data-frozen]="isRowFrozen(partData.partId, cell.row) ? 'true' : null">
+
+                          <div class="location-code-blueprint" *ngIf="cell.box && !isRowFrozen(partData.partId, cell.row)">{{ cell.box.code }}</div>
+                          <div class="progress-badge-blueprint" *ngIf="cell.box && cell.box.progress !== undefined && !isRowFrozen(partData.partId, cell.row)">{{ cell.box.progress }}%</div>
+                        </div>
                       </div>
-                      <div class="box-code-small">{{ cell.box.code }}</div>
-                     
                     </div>
 
-                    <!-- Empty Cell -->
-                    <div class="empty-cell-content" *ngIf="!cell.box">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.2">
-                        <rect x="3" y="3" width="18" height="18" rx="2"/>
-                      </svg>
+                    <!-- Part Name Label — RIGHT side (Assembly sections), outside bay axis -->
+                    <div class="part-label-dual part-label-right" *ngIf="type === 'assembly'">
+                      <span>{{ partData.partName }}</span>
                     </div>
 
-                    <!-- Cell Coordinates -->
-                    <div class="cell-coordinates">
-                      {{ cell.column }}{{ cell.row }}
+                    <!-- Bay Letters Column — RIGHT side (Assembly sections) -->
+                    <div class="part-bay-axis part-bay-axis-right" *ngIf="type === 'assembly'">
+                      <div class="part-bay-cell" *ngFor="let bay of partData.grid.rows">{{ bay }}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Horizontal Divider between parts (vertically stacked) -->
+                <div class="part-divider-stacked" *ngIf="partIdx < sectionData.parts.length - 1"></div>
+              </ng-container>
+            </ng-container>
+
+            <!-- Fallback if no parts: show full section grid (no part-level freezing) -->
+            <ng-container *ngIf="!sectionData.parts || sectionData.parts.length === 0">
+              <div class="section-full-grid-stacked">
+                <div class="section-row-stacked" *ngFor="let rowCells of sectionData.grid.matrix">
+                  <div class="matrix-cell-blueprint"
+                       *ngFor="let cell of rowCells"
+                       [class.has-box]="cell.box"
+                       [class.empty]="!cell.box && !cell.hidden"
+                       [class.hidden]="cell.hidden"
+                       [ngClass]="cell.box ? getBoxColorClass(cell.box) : ''"
+                       (click)="cell.box && viewBox(cell.box.id)"
+                       [title]="getCellTooltip(cell)">
+
+                    <div class="location-code-blueprint" *ngIf="cell.box">{{ cell.box.code }}</div>
+                    <div class="progress-badge-blueprint" *ngIf="cell.box && cell.box.progress !== undefined">{{ cell.box.progress }}%</div>
+                  </div>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+
+          <!-- Unified Row Axis Bottom (only for bottom sections) -->
+          <div class="row-axis-bottom" *ngIf="position === 'bottom' && sectionData.parts && sectionData.parts.length > 0 && sectionData.parts[0]">
+            <div class="row-number"
+                 *ngFor="let column of sectionData.parts[0].grid.columns"
+                 [class.frozen-col-header]="isSectionColumnFrozen(sectionData.parts, column)"
+                 [title]="isSectionColumnFrozen(sectionData.parts, column) ? 'Frozen Row ' + column : column">{{ column }}</div>
+          </div>
+
+          <!-- Fallback Row Axes for sections without parts -->
+          <ng-container *ngIf="position === 'bottom' && (!sectionData.parts || sectionData.parts.length === 0)">
+            <div class="row-axis-bottom">
+              <div class="row-number" *ngFor="let column of sectionData.grid.columns">{{ column }}</div>
+            </div>
+          </ng-container>
+        </div>
+      </ng-template>
+
+      <!-- Factory Grid Content Area (Grid + Legend) - Original Matrix View -->
+      <div class="factory-grid-wrapper" *ngIf="!isTwoColumnLayout() || !hasSections">
+        <div class="grid-content-area">
+          <!-- Section-based Grids -->
+          <div *ngFor="let sectionGrid of getSectionGridLayouts()" class="section-grid-container">
+            <!-- Section Header (for multi-section view) - Compact version -->
+            <div class="section-header"
+                 *ngIf="sectionGrid.section && (!selectedSectionId || getSectionGridLayouts().length > 1)"
+                 [class.finishing-header]="sectionGrid.section.sectionType === FactorySectionType.Finishing">
+              <div class="section-left">
+                <div class="section-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <line x1="3" y1="9" x2="21" y2="9" />
+                    <line x1="9" y1="21" x2="9" y2="9" />
+                  </svg>
+                </div>
+                <h2 class="section-title">{{ sectionGrid.section.sectionName }}</h2>
+              </div>
+              <div class="section-info">
+                <span class="info-badge">
+                  Rows {{ sectionGrid.section.minRow }}-{{ sectionGrid.section.maxRow }}
+                </span>
+                <span class="info-badge">
+                  Bays {{ sectionGrid.section.minBay }}-{{ sectionGrid.section.maxBay }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Scrollable Grid Container -->
+            <div class="warehouse-grid">
+              <div class="matrix-container" *ngIf="sectionGrid.grid.matrix.length > 0">
+                <!-- Matrix Table -->
+                <div class="warehouse-matrix">
+                  <!-- Column Headers (Simple Numbers) -->
+                  <div class="matrix-header">
+                    <div class="matrix-corner-cell"></div>
+                    <div class="matrix-column-header" *ngFor="let column of sectionGrid.grid.columns">
+                      <span class="column-label">{{ column }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Matrix Rows -->
+                  <div class="matrix-row" *ngFor="let rowCells of sectionGrid.grid.matrix; let rowIndex = index">
+                    <!-- Row Header (Row Number) -->
+                    <div class="matrix-row-header">
+                      <span class="row-number">{{ rowCells[0].row }}</span>
+                    </div>
+
+                    <!-- Row Cells -->
+                    <div class="matrix-cell"
+                         *ngFor="let cell of rowCells"
+                         [class.has-box]="cell.box"
+                         [class.empty]="!cell.box && !cell.hidden"
+                         [class.hidden]="cell.hidden"
+                         [ngClass]="cell.box ? getBoxColorClass(cell.box) : ''"
+                         (click)="cell.box && viewBox(cell.box.id)"
+                         [title]="getCellTooltip(cell)">
+
+                      <!-- Location Code Display (Simple Text) -->
+                      <div class="location-code" *ngIf="cell.box">
+                        {{ cell.box.code }}
+                      </div>
+
+                      <!-- Progress Percentage (Top-Right Corner) -->
+                      <div class="progress-badge" *ngIf="cell.box && cell.box.progress !== undefined">
+                        {{ cell.box.progress }}%
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Empty state when no boxes have positions -->
-            <div class="grid-empty-state" *ngIf="getGridLayout().matrix.length === 0">
-              <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                <rect x="3" y="3" width="7" height="7"/>
-                <rect x="14" y="3" width="7" height="7"/>
-                <rect x="14" y="14" width="7" height="7"/>
-                <rect x="3" y="14" width="7" height="7"/>
-              </svg>
-              <h3>No Layout Data Available</h3>
-              <p>Boxes don't have bay, row, or position information yet.</p>
-            </div>
-          </div>
-
-          <!-- Matrix Info - Fixed outside scrolling area -->
-          <div class="matrix-info" *ngIf="getGridLayout().matrix.length > 0">
-            <div class="info-item">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="5" y1="12" x2="19" y2="12"/>
-                <polyline points="12 5 19 12 12 19"/>
-              </svg>
-              <span>{{ getGridLayout().columns.length }} Aisles</span>
-            </div>
-            <div class="info-item">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <line x1="12" y1="5" x2="12" y2="19"/>
-                <polyline points="19 12 12 19 5 12"/>
-              </svg>
-              <span>{{ getGridLayout().rows.length }} Levels</span>
-            </div>
-            <div class="info-item">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-              </svg>
-              <span>{{ getGridLayout().totalBoxes }} Boxes Positioned</span>
-            </div>
-            <div class="info-item warning" *ngIf="getGridLayout().totalBoxes !== getGridLayout().displayedBoxes">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-                <line x1="12" y1="9" x2="12" y2="13"/>
-                <line x1="12" y1="17" x2="12.01" y2="17"/>
-              </svg>
-              <span class="warning-text">{{ getGridLayout().totalBoxes - getGridLayout().displayedBoxes }} boxes share positions</span>
-            </div>
-          </div>
-      
-          <!-- Legend - Fixed outside scrolling area -->
-          <div class="grid-legend" *ngIf="getGridLayout().matrix.length > 0">
-            <div class="legend-title">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="16" x2="12" y2="12"/>
-                <line x1="12" y1="8" x2="12.01" y2="8"/>
-              </svg>
-              Factory Occupancy (Slots/Stations):
-            </div>
-            <div class="legend-items">
-              <!-- Dynamic Stage Legend Items - Color, Count and Percentage -->
-              <div class="legend-item compact" *ngFor="let stat of getWIRStageStats()" [title]="stat.stage?.displayName || 'Unknown'">
-                <div class="legend-box" [ngClass]="stat.stage?.colorClass || 'empty-box'"></div>
-                <span class="legend-text">{{ stat.percentage | number:'1.1-1' }}% ({{ stat.count }} boxes)</span>
+              <!-- Empty state when no boxes have positions -->
+              <div class="grid-empty-state" *ngIf="sectionGrid.grid.matrix.length === 0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <rect x="3" y="3" width="7" height="7" />
+                  <rect x="14" y="3" width="7" height="7" />
+                  <rect x="14" y="14" width="7" height="7" />
+                  <rect x="3" y="14" width="7" height="7" />
+                </svg>
+                <h3>No Layout Data Available</h3>
+                <p>Boxes don't have bay, row, or position information yet.</p>
               </div>
-              <!-- Empty Cells -->
-              <div class="legend-item compact" title="Empty">
-                <div class="legend-box empty-box"></div>
-                <span class="legend-text">{{ getEmptyPercentage() | number:'1.1-1' }}%</span>
+            </div>
+            <!-- End of section-grid-container -->
+            <!-- Matrix Info - Fixed outside scrolling area (shown for non-section layouts) -->
+            <div class="matrix-info" *ngIf="!hasSections && getGridLayout().matrix.length > 0">
+              <div class="info-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                  <polyline points="12 5 19 12 12 19" />
+                </svg>
+                <span>{{ getGridLayout().columns.length }} Aisles</span>
+              </div>
+              <div class="info-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <polyline points="19 12 12 19 5 12" />
+                </svg>
+                <span>{{ getGridLayout().rows.length }} Levels</span>
+              </div>
+              <div class="info-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                </svg>
+                <span>{{ getGridLayout().totalBoxes }} Boxes Positioned</span>
+              </div>
+              <div class="info-item warning" *ngIf="getGridLayout().totalBoxes !== getGridLayout().displayedBoxes">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                  <line x1="12" y1="9" x2="12" y2="13" />
+                  <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <span class="warning-text">{{ getGridLayout().totalBoxes - getGridLayout().displayedBoxes }} boxes share positions</span>
+              </div>
+            </div>
+
+            <!-- Legend - Fixed outside scrolling area -->
+            <div class="grid-legend" *ngIf="getGridLayout().matrix.length > 0">
+              <div class="legend-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
+                Factory Occupancy (Slots/Stations):
+              </div>
+              <div class="legend-items">
+                <!-- Dynamic Stage Legend Items - Color, Count and Percentage -->
+                <div class="legend-item compact" *ngFor="let stat of getWIRStageStats()" [title]="stat.stage?.displayName || 'Unknown'">
+                  <div class="legend-box" [ngClass]="stat.stage?.colorClass || 'empty-box'"></div>
+                  <span class="legend-text">{{ stat.percentage | number:'1.1-1' }}% ({{ stat.count }} boxes)</span>
+                </div>
+                <!-- Empty Cells -->
+                <div class="legend-item compact" title="Empty">
+                  <div class="legend-box empty-box"></div>
+                  <span class="legend-text">{{ getEmptyPercentage() | number:'1.1-1' }}%</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   </div>
-</div>
 
-<!-- Box Quick View Modal -->
-<app-box-quick-view-modal 
-  *ngIf="isBoxQuickViewModalOpen"
-  [boxId]="selectedBoxId"
-  [projectId]="selectedBoxProjectId"
-  (close)="closeBoxQuickViewModal()">
-</app-box-quick-view-modal>
+  <!-- Box Quick View Modal -->
+  <app-box-quick-view-modal *ngIf="isBoxQuickViewModalOpen"
+                            [boxId]="selectedBoxId"
+                            [projectId]="selectedBoxProjectId"
+                            (close)="closeBoxQuickViewModal()">
+  </app-box-quick-view-modal>
+

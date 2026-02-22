@@ -26,8 +26,9 @@ public class Box
 
     [MaxLength(200)]
     public string? BoxName { get; set; }
-
+    [ForeignKey(nameof(BoxType))]
     public int? ProjectBoxTypeId { get; set; }
+    [ForeignKey(nameof(BoxSubType))]
     public int? ProjectBoxSubTypeId { get; set; }
 
     [Required]
@@ -97,8 +98,11 @@ public class Box
     public bool? PodDeliver { get; set; }
     public string? PodName { get; set; }
     public string? PodType { get; set; }
+    [ForeignKey(nameof(FactorySection))]
+    public Guid? FactorySectionId { get; set; }
 
     // Navigation properties
+    public FactorySection? FactorySection { get; set; }
     public virtual ProjectBoxType? BoxType { get; set; }
     public virtual ProjectBoxSubType? BoxSubType { get; set; }
     public ICollection<BoxAsset> BoxAssets { get; set; } = new List<BoxAsset>();

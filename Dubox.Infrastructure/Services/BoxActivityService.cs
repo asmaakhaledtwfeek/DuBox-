@@ -1,4 +1,4 @@
-﻿using Dubox.Domain.Abstraction;
+using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Enums;
 using Dubox.Domain.Services;
@@ -52,6 +52,73 @@ namespace Dubox.Infrastructure.Services
             }).ToList();
 
             await _unitOfWork.Repository<BoxActivity>().AddRangeAsync(boxActivities, cancellationToken);
+        }
+
+        public async Task ResetBoxActivitiesFromTemplateAsync(Box box, Guid activityTemplateId, CancellationToken cancellationToken)
+        {
+            if (box.Status != BoxStatusEnum.NotStarted && box.Status != BoxStatusEnum.ReadyToStart)
+                return;
+
+            var existingActivities = await _dbContext.BoxActivities
+                .Where(ba => ba.BoxId == box.BoxId)
+                .ToListAsync(cancellationToken);
+
+            if (existingActivities.Any())
+            {
+                _dbContext.BoxActivities.RemoveRange(existingActivities);
+                await _unitOfWork.CompleteAsync(cancellationToken);
+            }
+
+            await CopyActivitiesFromTemplateToBox(box, activityTemplateId, cancellationToken);
+            await _unitOfWork.CompleteAsync(cancellationToken);
+        }
+
+        public async Task CopyActivitiesFromTemplateToBox(Box box, Guid activityTemplateId, CancellationToken cancellationToken)
+        {
+            // Get the activity template with its activities
+            var template = await _dbContext.ActivityTemplates
+                .Include(t => t.TemplateActivities)
+                .FirstOrDefaultAsync(t => t.ActivityTemplateId == activityTemplateId && t.IsActive, cancellationToken);
+
+            if (template == null)
+            {
+                throw new InvalidOperationException($"Activity template with ID {activityTemplateId} not found or is not active.");
+            }
+
+            // Get the highest existing sequence number for this box to avoid duplicates
+            var maxExistingSequence = await _dbContext.BoxActivities
+                .Where(ba => ba.BoxId == box.BoxId)
+                .MaxAsync(ba => (int?)ba.Sequence, cancellationToken) ?? 0;
+
+            // Create BoxActivities from template activities with unique sequential numbers
+            var boxActivities = new List<BoxActivity>();
+            int currentSequence = maxExistingSequence + 1;
+            
+            foreach (var templateActivity in template.TemplateActivities.OrderBy(a => a.OverallSequence))
+            {
+                var boxActivity = new BoxActivity
+                {
+                    BoxId = box.BoxId,
+                    // All template activities are custom (no link to ActivityMaster)
+                    ActivityMasterId = null,
+                    // Link to the template activity itself for traceability
+                    ActivityTemplateActivityId = templateActivity.ActivityTemplateActivityId,
+                    // Assign unique sequence number
+                    Sequence = currentSequence++,
+                    Status = BoxStatusEnum.NotStarted,
+                    ProgressPercentage = 0,
+                    MaterialsAvailable = true,
+                    IsActive = true,
+                    CreatedDate = DateTime.UtcNow
+                };
+
+                boxActivities.Add(boxActivity);
+            }
+
+            if (boxActivities.Any())
+            {
+                await _unitOfWork.Repository<BoxActivity>().AddRangeAsync(boxActivities, cancellationToken);
+            }
         }
     }
 

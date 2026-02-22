@@ -11,6 +11,7 @@ public class GetBoxesByFactoryIdSpecification : Specification<Box>
         AddCriteria(b => b.IsActive);
         AddCriteria(b => b.FactoryId == factoryId);
         AddCriteria(b => b.Project.IsActive);
+        AddCriteria(b => b.FactorySectionId != null);
         AddCriteria(b => !(b.Project.Status == ProjectStatusEnum.Archived && b.Status != BoxStatusEnum.Dispatched));
 
         if (includeDispatched)

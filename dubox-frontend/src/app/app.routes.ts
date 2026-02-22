@@ -74,6 +74,35 @@ export const routes: Routes = [
     loadComponent: () => import('./features/projects/project-panel-types/project-panel-types.component').then(m => m.ProjectPanelTypesComponent)
   },
   {
+    path: 'projects/:id/materials',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/projects/project-materials/project-materials.component').then(m => m.ProjectMaterialsComponent)
+  },
+  {
+    path: 'projects/:projectId/box-type-templates',
+    canActivate: [authGuard, permissionGuard],
+    data: { 
+      permission: { module: 'projects', action: 'read' }
+    },
+    loadComponent: () => import('./features/projects/box-type-template-management/box-type-template-management.component').then(m => m.BoxTypeTemplateManagementComponent)
+  },
+  {
+    path: 'projects/:projectId/box-type-materials',
+    canActivate: [authGuard, permissionGuard],
+    data: { 
+      permission: { module: 'projects', action: 'read' }
+    },
+    loadComponent: () => import('./features/projects/box-type-materials/box-type-materials.component').then(m => m.BoxTypeMaterialsComponent)
+  },
+  {
+    path: 'projects/:projectId/panels/extract',
+    canActivate: [authGuard, permissionGuard],
+    data: { 
+      permission: { module: 'panels', action: 'create' }
+    },
+    loadComponent: () => import('./features/panels/extract-panels-from-pdf/extract-panels-from-pdf.component').then(m => m.ExtractPanelsFromPdfComponent)
+  },
+  {
     path: 'boxes/create',
     canActivate: [authGuard, permissionGuard],
     data: { 
@@ -116,6 +145,11 @@ export const routes: Routes = [
     path: 'qc/predefined-checklists/:wirCode',
     canActivate: [authGuard],
     loadComponent: () => import('./features/qc/predefined-checklist-details/predefined-checklist-details.component').then(m => m.PredefinedChecklistDetailsComponent)
+  },
+  {
+    path: 'qc/activity-templates/:templateId/checklist',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/qc/activity-template-checklist/activity-template-checklist.component').then(m => m.ActivityTemplateChecklistComponent)
   },
   {
     path: 'projects/:projectId/boxes/:boxId/activities/:activityId/qa-qc',
@@ -287,6 +321,82 @@ export const routes: Routes = [
     loadComponent: () => import('./features/materials/edit-material/edit-material.component').then(m => m.EditMaterialComponent)
   },
   {
+    path: 'schedule/activity-templates',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/schedule/activity-templates/activity-templates-list.component').then(m => m.ActivityTemplatesListComponent)
+  },
+  {
+    path: 'schedule/activity-templates/create',
+    canActivate: [authGuard, permissionGuard],
+    data: { 
+      permission: { module: 'schedule', action: 'create' }
+    },
+    loadComponent: () => import('./features/schedule/activity-templates/create-activity-template.component').then(m => m.CreateActivityTemplateComponent)
+  },
+  {
+    path: 'schedule/activity-templates/create/add-custom-activity',
+    canActivate: [authGuard, permissionGuard],
+    data: { 
+      permission: { module: 'schedule', action: 'create' }
+    },
+    loadComponent: () => import('./features/schedule/activity-templates/add-custom-activity/add-custom-activity.component').then(m => m.AddCustomActivityComponent)
+  },
+  {
+    path: 'schedule/activity-templates/manage-wir-checklist',
+    canActivate: [authGuard, permissionGuard],
+    data: { 
+      permission: { module: 'schedule', action: 'create' }
+    },
+    loadComponent: () => import('./features/schedule/activity-templates/manage-wir-checklist.component').then(m => m.ManageWirChecklistComponent)
+  },
+  {
+    path: 'schedule/activity-templates/:id/manage-checklist',
+    canActivate: [authGuard, permissionGuard],
+    data: { 
+      permission: { module: 'schedule', action: 'create' }
+    },
+    loadComponent: () => import('./features/schedule/activity-templates/manage-template-checklist.component').then(m => m.ManageTemplateChecklistComponent)
+  },
+  {
+    path: 'schedule/activity-templates/:id',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/schedule/activity-templates/view-activity-template.component').then(m => m.ViewActivityTemplateComponent)
+  },
+  {
+    path: 'schedule/activity-templates/:id/edit',
+    canActivate: [authGuard, permissionGuard],
+    data: { 
+      permission: { module: 'schedule', action: 'update' }
+    },
+    loadComponent: () => import('./features/schedule/activity-templates/create-activity-template.component').then(m => m.CreateActivityTemplateComponent)
+  },
+  {
+    path: 'schedule/material-templates',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/schedule/material-templates/material-templates-list.component').then(m => m.MaterialTemplatesListComponent)
+  },
+  {
+    path: 'schedule/material-templates/create',
+    canActivate: [authGuard, permissionGuard],
+    data: { 
+      permission: { module: 'schedule', action: 'create' }
+    },
+    loadComponent: () => import('./features/schedule/material-templates/create-material-template.component').then(m => m.CreateMaterialTemplateComponent)
+  },
+  {
+    path: 'schedule/material-templates/:id',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/schedule/material-templates/view-material-template.component').then(m => m.ViewMaterialTemplateComponent)
+  },
+  {
+    path: 'schedule/material-templates/:id/edit',
+    canActivate: [authGuard, permissionGuard],
+    data: { 
+      permission: { module: 'schedule', action: 'update' }
+    },
+    loadComponent: () => import('./features/schedule/material-templates/create-material-template.component').then(m => m.CreateMaterialTemplateComponent)
+  },
+  {
     path: 'teams',
     canActivate: [authGuard],
     loadComponent: () => import('./features/teams/teams-dashboard/teams-dashboard.component').then(m => m.TeamsDashboardComponent)
@@ -390,6 +500,21 @@ export const routes: Routes = [
     path: 'reports/panel-approvals',
     canActivate: [authGuard],
     loadComponent: () => import('./features/reports/panel-approvals-report/panel-approvals-report.component').then(m => m.PanelApprovalsReportComponent)
+  },
+  {
+    path: 'reports/saved',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/reports/saved-reports/saved-reports.component').then(m => m.SavedReportsComponent)
+  },
+  {
+    path: 'reports/builder',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/reports/report-builder/report-builder.component').then(m => m.ReportBuilderComponent)
+  },
+  {
+    path: 'reports/builder/:id',
+    canActivate: [authGuard],
+    loadComponent: () => import('./features/reports/report-builder/report-builder.component').then(m => m.ReportBuilderComponent)
   },
   {
     path: 'unauthorized',

@@ -49,7 +49,7 @@ export class NotificationsCenterComponent implements OnInit {
     this.loadNotifications();
     
     // Subscribe to unread count updates
-    this.notificationService.unreadCount$.subscribe(count => {
+    this.notificationService.unreadCount$.subscribe((count: number) => {
       this.unreadCount = count;
     });
   }

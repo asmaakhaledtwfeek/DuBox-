@@ -1,0 +1,163 @@
+[
+  {
+    "checklistId": "98448459-61c2-4ab7-9e77-94cd67601168",
+    "name": "Check List for Pre-Loading of Completed Precast Modular (MEP)",
+    "code": "CHK-PC-032-MEP",
+    "discipline": "MEP",
+    "sections": [
+      {
+        "title": "General",
+        "order": 1,
+        "items": [
+          { "description": "Check Identification tag of the modular", "sequence": 1, "part": null },
+          { "description": "Visually inspect the MEP Services for any defects or damages", "sequence": 2, "part": null }
+        ]
+      },
+      {
+        "title": "Final Inspection - HVAC",
+        "order": 2,
+        "items": [
+          { "description": "Installation of Supply Duct", "sequence": 1, "part": null },
+          { "description": "Installation of Return Duct", "sequence": 2, "part": null },
+          { "description": "Installation of Fresh Air Duct", "sequence": 3, "part": null },
+          { "description": "Installation of Exhaust Air Duct", "sequence": 4, "part": null },
+          { "description": "Installation of Kitchen Hood and Flexible Duct", "sequence": 5, "part": null },
+          { "description": "Installation of VCD", "sequence": 6, "part": null },
+          { "description": "Installation of Fan Coil Unit", "sequence": 7, "part": null },
+          { "description": "Installation of Fire Damper and Back Draft Damper", "sequence": 8, "part": null },
+          { "description": "Installation of Grills/Diffuser", "sequence": 9, "part": 1 }
+        ]
+      },
+      {
+        "title": "Final Inspection - Chilled Water Pipes",
+        "order": 3,
+        "items": [
+          { "description": "Installation of Pipes and fittings", "sequence": 10, "part": null },
+          { "description": "Insulation of pipe", "sequence": 11, "part": null },
+          { "description": "Check Pipe Insulation and adhesive", "sequence": 12, "part": null },
+          { "description": "Pressure testing of the Piping", "sequence": 13, "part": null },
+          { "description": "PICV Installation with insulation box", "sequence": 14, "part": null }
+        ]
+      },
+      {
+        "title": "Final Inspection - Fire Fighting",
+        "order": 4,
+        "items": [
+          { "description": "Application of Primer paint", "sequence": 15, "part": null },
+          { "description": "Application of Paint final coating", "sequence": 16, "part": null },
+          { "description": "Installation of Sprinklers", "sequence": 17, "part": null },
+          { "description": "Pressure testing of the Piping", "sequence": 18, "part": null }
+        ]
+      },
+      {
+        "title": "Final Inspection - Water Supply",
+        "order": 5,
+        "items": [
+          { "description": "Installation of Pipes and fittings", "sequence": 19, "part": null },
+          { "description": "Water Hammer Arrestor installed in the approved location", "sequence": 20, "part": null },
+          { "description": "Pressure testing of the Piping", "sequence": 21, "part": null },
+          { "description": "Hot water pipes insulated", "sequence": 22, "part": null },
+          { "description": "Gate Valve installation", "sequence": 23, "part": null },
+          { "description": "Kitchen sink and accessories", "sequence": 24, "part": null }
+        ]
+      },
+      {
+        "title": "Final Inspection - Drainage",
+        "order": 6,
+        "items": [
+          { "description": "Installation of Floor Cleanout (FCO)", "sequence": 23, "part": null },
+          { "description": "Installation of Floor Drain", "sequence": 24, "part": null },
+          { "description": "Installation COP Pipes", "sequence": 25, "part": null },
+          { "description": "Piping Leak test", "sequence": 26, "part": null },
+          { "description": "Sleeves provided for drain pipes outlets", "sequence": 27, "part": null }
+        ]
+      },
+      {
+        "title": "Final Inspection - Risers",
+        "order": 7,
+        "items": [
+          { "description": "Soil Pipe", "sequence": 28, "part": null },
+          { "description": "Waste Pipe", "sequence": 29, "part": null },
+          { "description": "Vent Pipe", "sequence": 30, "part": null },
+          { "description": "Water Supply Pipe", "sequence": 31, "part": null },
+          { "description": "Chilled Water pipe", "sequence": 32, "part": null },
+          { "description": "Firefighting Pipe", "sequence": 33, "part": null },
+          { "description": "Duct Riser and connection", "sequence": 34, "part": null }
+        ]
+      }
+    ]
+  },
+  {
+    "checklistId": "98448459-61c2-4ab7-9e77-94cd67601169",
+    "name": "Check List for Pre-Loading of Completed Precast Modular (Electrical)",
+    "code": "CHK-PC-032-ELE",
+    "discipline": "Electrical",
+    "sections": [
+      {
+        "title": "Final Inspection - Electrical",
+        "order": 1,
+        "items": [
+          { "description": "Check Alignment of Wiring Devices", "sequence": 1, "part": null },
+          { "description": "Check For DB/ Panel Door", "sequence": 2, "part": null },
+          { "description": "Check For DB/ Panel Door", "sequence": 3, "part": null }
+        ]
+      },
+      {
+        "title": "Final Inspection - Wiring Devices",
+        "order": 2,
+        "items": [
+          { "description": "6A,1G, 1 Way switch", "sequence": 4, "part": 4 },
+          { "description": "6A,2G, 1 Way switch", "sequence": 5, "part": 4 },
+          { "description": "6A,3G, 1 Way switch", "sequence": 6, "part": 4 },
+          { "description": "6A,1G, 2 Way switch", "sequence": 7, "part": 4 },
+          { "description": "Wireless Switch Junior & Linen Room", "sequence": 8, "part": 4 },
+          { "description": "Doorbell Switch behind Room", "sequence": 9, "part": 4 },
+          { "description": "Two Gang Doorbell switch behind Room", "sequence": 10, "part": 4 },
+          { "description": "Single Data Outlet", "sequence": 11, "part": 4 },
+          { "description": "Twin Data Outlet", "sequence": 12, "part": 4 },
+          { "description": "13 A, 1G with Single Socket outlet with Neon indicator", "sequence": 13, "part": 4 },
+          { "description": "13 A, 2G with Double Socket outlet with Neon indicator", "sequence": 14, "part": 4 },
+          { "description": "13 A, 1G with Single (Unswitched) Socket outlet for Fridge", "sequence": 15, "part": 4 },
+          { "description": "45 A, D.P switch with Neon outlet", "sequence": 16, "part": 4 },
+          { "description": "Fire Alarm Control panel JL1/Y room", "sequence": 17, "part": 4 },
+          { "description": "13 A, Switched Flex outlet with Neon indicator for Hood", "sequence": 18, "part": 4 },
+          { "description": "13 A, Outlet for Washing Machine", "sequence": 19, "part": 4 },
+          { "description": "Door Bell, 230 V Electromechanical chime", "sequence": 20, "part": 4 },
+          { "description": "20 A, D.P, Smoke/ Solenoid Flex Outlet", "sequence": 21, "part": 4 }
+        ]
+      },
+      {
+        "title": "Final Inspection - Wire, Cables, Conduits and accessories",
+        "order": 3,
+        "items": [
+          { "description": "All wires pulled as per the approved Drawings.", "sequence": 22, "part": null },
+          { "description": "6/10 A Cable pulled", "sequence": 23, "part": null },
+          { "description": "Fire alarm Cable pulled", "sequence": 24, "part": null },
+          { "description": "Main Cable pulled", "sequence": 25, "part": null },
+          { "description": "Smoke detector", "sequence": 26, "part": 2 },
+          { "description": "Heat detector", "sequence": 27, "part": 2 },
+          { "description": "Sensors", "sequence": 28, "part": 6 },
+          { "description": "DB Panel Tag and Identification", "sequence": 29, "part": null },
+          { "description": "DB Panel Installation and termination", "sequence": 30, "part": null },
+          { "description": "DB Panel Insulation and termination", "sequence": 31, "part": null },
+          { "description": "Thermostat", "sequence": 32, "part": 5 },
+          { "description": "PMU", "sequence": 33, "part": null }
+        ]
+      },
+      {
+        "title": "Final Inspection - Light Fittings",
+        "order": 4,
+        "items": [
+          { "description": "DL Ceiling Mounted Light Living and Bed Room", "sequence": 34, "part": 3 },
+          { "description": "DL Ceiling Mounted Light Kitchen area", "sequence": 35, "part": 3 },
+          { "description": "DL Spot Ceiling Mounted light Corridor", "sequence": 36, "part": 3 },
+          { "description": "DL-1 Spot Ceiling Mounted light Toilet", "sequence": 37, "part": 3 },
+          { "description": "DL Led Strip Light Under Kitchen Cabinet", "sequence": 38, "part": 3 },
+          { "description": "DL Surface Mounted Linear light electrical Room & Garbage room", "sequence": 39, "part": 3 },
+          { "description": "WL-1 Wall mounted recessed balcony light", "sequence": 40, "part": 3 },
+          { "description": "WL-1 Wall mounted shelf light above Mirror", "sequence": 41, "part": 3 }
+        ]
+      }
+    ]
+  }
+]

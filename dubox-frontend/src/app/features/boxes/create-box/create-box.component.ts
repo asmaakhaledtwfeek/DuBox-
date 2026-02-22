@@ -470,6 +470,7 @@ export class CreateBoxComponent implements OnInit {
       boxPlannedStartDate: [''],
       boxDuration: [null, [Validators.min(1)]],
       assets: this.fb.array([])
+      // Activity template is auto-resolved: box type template > project template > activity master
     });
 
     // Subscribe to form changes to auto-update BoxTag
@@ -628,6 +629,17 @@ export class CreateBoxComponent implements OnInit {
   }
 
 
+  /**
+   * Handle activity source type change
+   */
+  /**
+   * Activity templates are now automatically resolved based on:
+   * 1. Box type template (if assigned)
+   * 2. Project template (if assigned)
+   * 3. Activity master (fallback)
+   */
+
+
   onSubmit(): void {
     if (this.isProjectArchived || this.isProjectClosed) {
       this.error = 'Cannot create box. This project is archived and read-only.';
@@ -679,6 +691,7 @@ export class CreateBoxComponent implements OnInit {
       boxPlannedStartDate: formValue.boxPlannedStartDate ? new Date(formValue.boxPlannedStartDate).toISOString() : undefined,
       boxDuration: formValue.boxDuration ? parseInt(formValue.boxDuration, 10) : undefined,
       assets: this.getAssetsPayload()
+      // Activity template is auto-resolved by backend: box type template > project template > activity master
     };
 
     console.log('🚀 Submitting box data:', boxData);

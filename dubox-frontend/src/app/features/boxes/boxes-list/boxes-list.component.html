@@ -6,38 +6,49 @@
     <!-- Page Header -->
     <div class="page-header">
       <div class="header-left">
+        <!-- Breadcrumb - Show different breadcrumbs based on view -->
+        <!-- Box Types View -->
         <div class="breadcrumb" *ngIf="showBoxTypes">
-          <button class="breadcrumb-link" (click)="backToProject()">
+          <button class="breadcrumb-link" [routerLink]="['/projects']">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="15 18 9 12 15 6"/>
+              <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
-            Project
+            Projects
           </button>
           <span class="breadcrumb-separator">/</span>
+          <button class="breadcrumb-link" [routerLink]="['/projects', projectId, 'dashboard']">
+            {{ projectName || projectCode || 'Project' }}
+          </button>
+          <span class="breadcrumb-separator">/</span>
+
           <span class="breadcrumb-current">Box Types</span>
         </div>
-        <div class="breadcrumb" *ngIf="!showBoxTypes && selectedBoxType">
-          <button class="breadcrumb-link" (click)="backToBoxTypes()">
+
+        <!-- Boxes View (from Box Types) -->
+        <div class="breadcrumb" *ngIf="!showBoxTypes">
+          <button class="breadcrumb-link" [routerLink]="['/projects']">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="15 18 9 12 15 6"/>
+              <polyline points="15 18 9 12 15 6"></polyline>
             </svg>
-            Box Types
+            Projects
           </button>
           <span class="breadcrumb-separator">/</span>
-          <span class="breadcrumb-current">{{ selectedBoxType }}</span>
-          <span *ngIf="selectedBoxSubType">
-            <span class="breadcrumb-separator">/</span>
-            <span class="breadcrumb-current">{{ selectedBoxSubType }}</span>
-          </span>
+          <button class="breadcrumb-link" [routerLink]="['/projects', projectId, 'dashboard']">
+            {{ projectName || projectCode || 'Project' }}
+          </button>
+          <span class="breadcrumb-separator">/</span>
+          <button class="breadcrumb-link" (click)="backToBoxTypes()">Box Types</button>
+          <span class="breadcrumb-separator">/</span>
+          <span class="breadcrumb-current">Boxes</span>
         </div>
         <h1 class="page-title">
           {{ showBoxTypes ? 'Box Types' : 'Boxes' }}
           <span class="box-count-badge" *ngIf="!showBoxTypes">
             <span *ngIf="hasActiveFilters() && filteredBoxes.length !== boxes.length">
-              {{ filteredBoxes.length }} of {{ boxes.length }}
+              {{ filteredBoxes.length }} of {{ displayTotalCount }}
             </span>
             <span *ngIf="!hasActiveFilters() || filteredBoxes.length === boxes.length">
-              {{ boxes.length }}
+              {{ displayTotalCount }}
             </span>
           </span>
         </h1>
@@ -49,8 +60,9 @@
           {{ showBoxTypes ? 'Select a box type to view boxes' : 'Manage boxes for ' + selectedBoxType + (selectedBoxSubType ? ' - ' + selectedBoxSubType : '') }}
         </p>
       </div>
-      <div class="header-right" *ngIf="canCreate">
-        <button class="btn btn-primary" (click)="createBox()">
+      <div class="header-right">
+      
+        <button class="btn btn-primary" (click)="createBox()" *ngIf="canCreate">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <line x1="12" y1="5" x2="12" y2="19"/>
             <line x1="5" y1="12" x2="19" y2="12"/>
@@ -230,7 +242,7 @@
             </svg>
             Sub Type:
           </label>
-          <select id="boxSubTypeFilter" [(ngModel)]="selectedBoxSubTypeFilter" (change)="applyFilters()" class="filter-select">
+          <select id="boxSubTypeFilter" [(ngModel)]="selectedBoxSubTypeFilter" (change)="onBackendFilterChange()" class="filter-select">
             <option value="">All Sub Types</option>
             <option *ngFor="let subType of availableBoxSubTypes" [value]="subType">{{ subType }}</option>
           </select>
@@ -244,7 +256,7 @@
             </svg>
             Building:
           </label>
-          <select id="boxBuildingFilter" [(ngModel)]="selectedBoxBuildingFilter" (change)="applyFilters()" class="filter-select">
+          <select id="boxBuildingFilter" [(ngModel)]="selectedBoxBuildingFilter" (change)="onBackendFilterChange()" class="filter-select">
             <option value="">All Buildings</option>
             <option *ngFor="let building of availableBoxBuildings" [value]="building">{{ building }}</option>
           </select>
@@ -260,7 +272,7 @@
             </svg>
             Floor:
           </label>
-          <select id="boxFloorFilter" [(ngModel)]="selectedBoxFloorFilter" (change)="applyFilters()" class="filter-select">
+          <select id="boxFloorFilter" [(ngModel)]="selectedBoxFloorFilter" (change)="onBackendFilterChange()" class="filter-select">
             <option value="">All Floors</option>
             <option *ngFor="let floor of availableBoxFloors" [value]="floor">{{ floor }}</option>
           </select>
@@ -275,7 +287,7 @@
             </svg>
             Zone:
           </label>
-          <select id="boxZoneFilter" [(ngModel)]="selectedBoxZoneFilter" (change)="applyFilters()" class="filter-select">
+          <select id="boxZoneFilter" [(ngModel)]="selectedBoxZoneFilter" (change)="onBackendFilterChange()" class="filter-select">
             <option value="">All Zones</option>
             <option *ngFor="let zone of availableBoxZones" [value]="zone">{{ zone }}</option>
           </select>
@@ -296,8 +308,11 @@
         </button>
       </div>
       
-      <div class="results-count" *ngIf="searchControl.value || hasActiveBoxFilters()">
-        <span class="count-badge">{{ filteredBoxes.length }} of {{ boxes.length }} boxes</span>
+      <div class="results-count" *ngIf="!showBoxTypes && displayTotalCount > 0">
+        <span class="count-badge">
+          {{ displayTotalCount }} {{ displayTotalCount === 1 ? 'box' : 'boxes' }} total
+          <span *ngIf="searchControl.value || hasActiveBoxFilters()"> (filtered)</span>
+        </span>
       </div>
     </div>
 
@@ -450,7 +465,6 @@
           <div class="box-info">
             <h3 class="box-name">
               {{ box.name || box.code }}
-              <span class="box-number" *ngIf="box.boxNumber">#{{ box.boxNumber }}</span>
             </h3>
             <span class="box-code">{{ box.code }}</span>
           </div>
@@ -537,6 +551,73 @@
             </button>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div class="pagination-container" *ngIf="!showBoxTypes && !loading && !error && totalPages > 1">
+      <div class="pagination-info">
+        <span>Showing {{ ((currentPage - 1) * pageSize) + 1 }} - {{ Math.min(currentPage * pageSize, displayTotalCount) }} of {{ displayTotalCount }} boxes</span>
+      </div>
+      <div class="pagination-controls">
+        <button 
+          class="pagination-btn" 
+          [disabled]="!hasPreviousPage || loading" 
+          (click)="goToFirstPage()"
+          title="First Page">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="11 17 6 12 11 7"/>
+            <polyline points="18 17 13 12 18 7"/>
+          </svg>
+        </button>
+        <button 
+          class="pagination-btn" 
+          [disabled]="!hasPreviousPage || loading" 
+          (click)="goToPreviousPage()"
+          title="Previous Page">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+        </button>
+        
+        <div class="pagination-pages">
+          <button 
+            *ngFor="let page of getVisiblePages()" 
+            class="pagination-page" 
+            [class.active]="page === currentPage"
+            [disabled]="loading"
+            (click)="goToPage(page)">
+            {{ page }}
+          </button>
+        </div>
+
+        <button 
+          class="pagination-btn" 
+          [disabled]="!hasNextPage || loading" 
+          (click)="goToNextPage()"
+          title="Next Page">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+        <button 
+          class="pagination-btn" 
+          [disabled]="!hasNextPage || loading" 
+          (click)="goToLastPage()"
+          title="Last Page">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="13 17 18 12 13 7"/>
+            <polyline points="6 17 11 12 6 7"/>
+          </svg>
+        </button>
+      </div>
+      <div class="pagination-page-size">
+        <label for="pageSize">Per page:</label>
+        <select id="pageSize" [(ngModel)]="pageSize" (change)="onPageSizeChange()" [disabled]="loading">
+          <option [value]="25">25</option>
+          <option [value]="50">50</option>
+          <option [value]="100">100</option>
+        </select>
       </div>
     </div>
   </div>

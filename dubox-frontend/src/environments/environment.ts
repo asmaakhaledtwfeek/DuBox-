@@ -5,3 +5,4 @@ export const environment = {
   apiBaseUrl: 'https://localhost:44333',
   publicApiUrl:'https://localhost:44333'
 };
+

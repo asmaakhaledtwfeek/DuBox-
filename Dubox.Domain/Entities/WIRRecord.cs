@@ -49,5 +49,10 @@ public class WIRRecord
 
     [MaxLength(50)]
     public string? Position { get; set; }
+    [ForeignKey(nameof(FactorySection))]
+    public Guid? FactorySectionId { get; set; }
+
+    // Navigation properties
+    public FactorySection? FactorySection { get; set; }
 }
 

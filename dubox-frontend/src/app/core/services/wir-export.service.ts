@@ -416,6 +416,7 @@ export class WirExportService {
             <td class="activity-value">${checkpoint.wirDescription || checkpoint.wirName || ''}</td>
             <td class="yn-header-cell">Y<br/><small>(Pass)</small></td>
             <td class="yn-header-cell">N<br/><small>(Fail)</small></td>
+            <td class="yn-header-cell">N/A</td>
             <td class="remarks-header-cell">Remarks</td>
           </tr>
         </table>
@@ -431,10 +432,10 @@ export class WirExportService {
   
   sectionsWithItems.forEach((section, sectionIndex) => {
     // Add section header row
-    // colspan="5" matches: number, description, Y, N, remarks
+    // colspan="6" matches: number, description, Y, N, N/A, remarks
     html += `
             <tr class="section-header-row">
-              <td colspan="5" class="section-header-cell">
+              <td colspan="6" class="section-header-cell">
                 <strong>${this.escapeHtml(section.sectionName)}</strong>
               </td>
             </tr>`;
@@ -443,7 +444,8 @@ export class WirExportService {
     section.items.forEach((item, itemIndex) => {
       const isPassed = item.status === 'Pass';
       const isFailed = item.status === 'Fail';
-      const statusClass = isPassed ? 'status-pass' : isFailed ? 'status-fail' : 'status-pending';
+      const isNA = item.status === 'NA';
+      const statusClass = isPassed ? 'status-pass' : isFailed ? 'status-fail' : isNA ? 'status-na' : 'status-pending';
       
       html += `
             <tr class="item-row ${statusClass}">
@@ -451,6 +453,7 @@ export class WirExportService {
               <td class="col-description">${this.escapeHtml(item.checkpointDescription || '')}</td>
               <td class="col-checkbox checkbox-y ${isPassed ? 'checked' : ''}">${isPassed ? '✓' : ''}</td>
               <td class="col-checkbox checkbox-n ${isFailed ? 'checked' : ''}">${isFailed ? '✗' : ''}</td>
+              <td class="col-checkbox checkbox-na ${isNA ? 'checked' : ''}">${isNA ? '−' : ''}</td>
               <td class="col-remarks">${item.remarks ? this.escapeHtml(item.remarks) : ''}</td>
             </tr>`;
       itemCounter++;
@@ -1159,7 +1162,7 @@ export class WirExportService {
        }
       
       .activity-table td.yn-header-cell {
-        width: 8%;
+        width: 6%;
         text-align: center;
         font-weight: bold;
         font-size: 10px;
@@ -1256,7 +1259,7 @@ export class WirExportService {
       }
       
       .checklist-items-table td.col-checkbox {
-        width: 8%;
+        width: 6%;
         text-align: center;
         font-weight: bold;
         font-size: 16px;

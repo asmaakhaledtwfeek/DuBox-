@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { BoxPanel } from '../../../core/models/box.model';
@@ -10,7 +10,8 @@ import { PANEL_STAGES, PanelStage, PanelStageInfo } from '../../../core/models/p
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './panel-workflow-modal.component.html',
-  styleUrls: ['./panel-workflow-modal.component.scss']
+  styleUrls: ['./panel-workflow-modal.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PanelWorkflowModalComponent implements OnInit, OnChanges {
   @Input() panel: BoxPanel | null = null;
@@ -23,6 +24,7 @@ export class PanelWorkflowModalComponent implements OnInit, OnChanges {
   error = '';
   successMessage = '';
   previousStatus = ''; // Track the status before opening modal
+  private cachedCompletedStagesCount: number = 0;
 
   workflowStatuses = [
     { value: 'InProgress', label: 'In Progress', color: 'blue' },
@@ -35,7 +37,8 @@ export class PanelWorkflowModalComponent implements OnInit, OnChanges {
 
   constructor(
     private fb: FormBuilder,
-    private panelService: PanelService
+    private panelService: PanelService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   readonly notesMinLength = 50;
@@ -44,7 +47,7 @@ export class PanelWorkflowModalComponent implements OnInit, OnChanges {
     this.workflowForm = this.fb.group({
       workflowStatus: ['', Validators.required],
       currentStage: [null],
-      notes: ['', [Validators.required, Validators.minLength(this.notesMinLength)]]
+      notes: [''] // Notes are now optional
     });
   }
 
@@ -53,14 +56,8 @@ export class PanelWorkflowModalComponent implements OnInit, OnChanges {
       // Store the previous status when modal opens
       this.previousStatus = this.panel.workflowStatus || 'NotStarted';
       
-      console.log('🔍 Panel data loaded:', {
-        workflowStatus: this.panel.workflowStatus,
-        currentStage: this.panel.currentStage,
-        moldPreparationComplete: this.panel.moldPreparationComplete,
-        reinforcementSetupComplete: this.panel.reinforcementSetupComplete,
-        concreteCastingComplete: this.panel.concreteCastingComplete,
-        curingAndDemoldingComplete: this.panel.curingAndDemoldingComplete
-      });
+      // Cache completed stages count to avoid recalculating in template
+      this.updateCachedStagesCount();
       
       // Pre-fill form with current status
       this.workflowForm.patchValue({
@@ -68,23 +65,37 @@ export class PanelWorkflowModalComponent implements OnInit, OnChanges {
         currentStage: this.panel.currentStage || null,
         notes: ''
       });
+      
+      // Disable form if panel has second approval
+      if (this.isSecondApprovalApproved()) {
+        this.workflowForm.disable();
+      } else {
+        this.workflowForm.enable();
+      }
     }
     
     // Also track when modal opens/closes
     if (changes['isOpen'] && changes['isOpen'].currentValue && this.panel) {
       this.previousStatus = this.panel.workflowStatus || 'NotStarted';
       
-      console.log('🔍 Modal opened with panel:', {
-        panelName: this.panel.panelName,
-        workflowStatus: this.panel.workflowStatus,
-        stageCompletion: {
-          mold: this.panel.moldPreparationComplete,
-          reinforcement: this.panel.reinforcementSetupComplete,
-          casting: this.panel.concreteCastingComplete,
-          curing: this.panel.curingAndDemoldingComplete
-        }
-      });
+      // Update cached stages count
+      this.updateCachedStagesCount();
+      
+      // Disable form if panel has second approval
+      if (this.isSecondApprovalApproved()) {
+        this.workflowForm.disable();
+      } else {
+        this.workflowForm.enable();
+      }
     }
+  }
+  
+  /**
+   * Check if panel has second approval approved
+   */
+  isSecondApprovalApproved(): boolean {
+    if (!this.panel) return false;
+    return this.panel.secondApprovalStatus?.toLowerCase() === 'approved';
   }
 
   get currentStatus() {
@@ -134,14 +145,18 @@ export class PanelWorkflowModalComponent implements OnInit, OnChanges {
         const isSuccess = response?.isSuccess ?? response?.IsSuccess ?? true;
         if (isSuccess) {
           this.successMessage = 'Panel workflow status updated successfully!';
+          this.cdr.markForCheck();
+          // Immediately emit update and close to trigger refresh
+          // This ensures panel data (including newly created quality issues) is refreshed
           setTimeout(() => {
             this.workflowUpdated.emit();
             this.close();
-          }, 1500);
+          }, 800); // Reduced delay for faster refresh
         } else {
           const errObj = response?.error ?? response?.Error;
           this.error = (typeof errObj === 'string' ? errObj : errObj?.description ?? errObj?.Description) 
             || response?.message || 'Failed to update workflow status';
+          this.cdr.markForCheck();
         }
       },
       error: (err) => {
@@ -152,8 +167,16 @@ export class PanelWorkflowModalComponent implements OnInit, OnChanges {
           ?? errBody?.title ?? err?.message 
           ?? 'An error occurred while updating workflow status';
         this.error = errMsg;
+        this.cdr.markForCheck();
       }
     });
+  }
+
+  /** Only close when clicking directly on the overlay (backdrop), not when event bubbles from inside */
+  onOverlayClick(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.close();
+    }
   }
 
   close(): void {
@@ -198,46 +221,88 @@ export class PanelWorkflowModalComponent implements OnInit, OnChanges {
 
   getStatusInfo(status: string): string {
     const infoMap: { [key: string]: string } = {
-      'InProgress': 'Panel is currently being worked on at site. Select current stage (1-4) as work progresses.',
-      'Completed': 'All 4 stages complete. Panel ready to move from site for First & Second Approval.',
+      'InProgress': 'Panel is currently being worked on at site. Select current stage (1-7) as work progresses.',
+      'Completed': 'All 7 stages complete. Panel ready to move from site for First & Second Approval.',
       'PutOnHold': 'Pause panel work. Automatically creates quality issue assigned to QC team for tracking.'
     };
     return infoMap[status] || '';
   }
 
+  /** Last stage number (7) - selecting it auto-sets status to Completed */
+  readonly lastStageNumber = PanelStage.CuringAndDemolding;
+
+  /**
+   * Check if stages are clickable (when form is enabled, i.e. not second-approved)
+   */
+  canSelectStage(): boolean {
+    return !!this.workflowForm?.enabled;
+  }
+
+  /**
+   * When user clicks a stage: set current stage and auto-set workflow status.
+   * Stages 1-6 → "In Progress", Stage 7 (last) → "Completed"
+   */
+  selectStage(stageInfo: PanelStageInfo): void {
+    if (!this.canSelectStage() || !this.workflowForm) return;
+    const isLastStage = stageInfo.stage === this.lastStageNumber;
+    this.workflowForm.patchValue({
+      currentStage: stageInfo.stage,
+      workflowStatus: isLastStage ? 'Completed' : 'InProgress'
+    });
+  }
+
   isStageComplete(stage: number): boolean {
     if (!this.panel) return false;
     
-    let isComplete = false;
     switch (stage) {
       case PanelStage.MoldPreparation:
-        isComplete = this.panel.moldPreparationComplete || false;
-        break;
+        return this.panel.moldPreparationComplete || false;
+      case PanelStage.Initial:
+        return this.panel.initialComplete || false;
+      case PanelStage.MEPInsertsInstallation:
+        return this.panel.mepInsertsInstallationComplete || false;
       case PanelStage.ReinforcementSetup:
-        isComplete = this.panel.reinforcementSetupComplete || false;
-        break;
+        return this.panel.reinforcementSetupComplete || false;
       case PanelStage.ConcreteCasting:
-        isComplete = this.panel.concreteCastingComplete || false;
-        break;
+        return this.panel.concreteCastingComplete || false;
+      case PanelStage.SurfaceFinishing:
+        return this.panel.surfaceFinishingComplete || false;
       case PanelStage.CuringAndDemolding:
-        isComplete = this.panel.curingAndDemoldingComplete || false;
-        break;
+        return this.panel.curingAndDemoldingComplete || false;
       default:
-        isComplete = false;
+        return false;
     }
-    
-    console.log(`🔍 Checking stage ${stage} completion:`, isComplete, this.panel);
-    return isComplete;
+  }
+
+  private updateCachedStagesCount(): void {
+    if (!this.panel) {
+      this.cachedCompletedStagesCount = 0;
+      return;
+    }
+    let count = 0;
+    if (this.panel.moldPreparationComplete) count++;
+    if (this.panel.initialComplete) count++;
+    if (this.panel.mepInsertsInstallationComplete) count++;
+    if (this.panel.reinforcementSetupComplete) count++;
+    if (this.panel.concreteCastingComplete) count++;
+    if (this.panel.surfaceFinishingComplete) count++;
+    if (this.panel.curingAndDemoldingComplete) count++;
+    this.cachedCompletedStagesCount = count;
   }
 
   getCompletedStagesCount(): number {
-    if (!this.panel) return 0;
-    let count = 0;
-    if (this.panel.moldPreparationComplete) count++;
-    if (this.panel.reinforcementSetupComplete) count++;
-    if (this.panel.concreteCastingComplete) count++;
-    if (this.panel.curingAndDemoldingComplete) count++;
-    return count;
+    return this.cachedCompletedStagesCount;
+  }
+
+  getTotalStagesCount(): number {
+    return 7; // Total number of stages
+  }
+
+  /**
+   * TrackBy function for stages loop to improve performance
+   */
+  trackByStage(index: number, stageInfo: PanelStageInfo): number {
+    return stageInfo.stage;
   }
 }
 

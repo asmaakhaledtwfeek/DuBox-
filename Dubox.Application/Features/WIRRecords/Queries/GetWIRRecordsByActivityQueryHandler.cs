@@ -34,20 +34,22 @@ public class GetWIRRecordsByActivityQueryHandler : IRequestHandler<GetWIRRecords
 
         foreach (var w in wirRecords)
         {
+            string activityName = w.BoxActivity.ActivityMaster != null ? w.BoxActivity.ActivityMaster?.ActivityName : w.BoxActivity.ActivityTemplateActivity.ActivityName;
             // Get all activities up to this WIR checkpoint (execute query separately)
             var activitiesUpToWIR = await _dbContext.BoxActivities
                 .Include(ba => ba.ActivityMaster)
+                .Include(ba => ba.ActivityTemplateActivity)
                 .Where(ba => ba.BoxId == w.BoxActivity.BoxId && 
                             ba.Sequence <= w.BoxActivity.Sequence)
                 .OrderBy(ba => ba.Sequence)
-                .Select(ba => ba.ActivityMaster.ActivityName)
+                .Select(ba =>activityName)
                 .ToListAsync(cancellationToken);
 
-            var dto = w.Adapt<WIRRecordDto>() with
-            {
+           var dto= w.Adapt<WIRRecordDto>() with
+           {
                 BoxTag = w.BoxActivity.Box.BoxTag,
                 BoxName = w.BoxActivity.Box.BoxName,
-                ActivityName = w.BoxActivity.ActivityMaster.ActivityName,
+                ActivityName =activityName,
                 ActivityNames = activitiesUpToWIR,
                 ActivityCount = activitiesUpToWIR.Count,
                 RequestedByName = w.RequestedByUser.FullName ?? w.RequestedByUser.Email,

@@ -1,24 +1,29 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { WIRService } from '../../../core/services/wir.service';
+import { ProjectService } from '../../../core/services/project.service';
 import { QualityIssueDetails } from '../../../core/models/wir.model';
+import { Project } from '../../../core/models/project.model';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
 import { IssueCommentsComponent } from '../../../shared/components/issue-comments/issue-comments.component';
+import { QualityIssueDetailsModalComponent } from '../../../shared/components/quality-issue-details-modal/quality-issue-details-modal.component';
 import { formatDateWithTime } from '../../../core/utils/date-format.util';
 import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-project-quality-issues',
   standalone: true,
-  imports: [CommonModule, HeaderComponent, SidebarComponent, FormsModule, IssueCommentsComponent],
+  imports: [CommonModule, RouterModule, HeaderComponent, SidebarComponent, FormsModule, IssueCommentsComponent, QualityIssueDetailsModalComponent],
   templateUrl: './project-quality-issues.component.html',
   styleUrl: './project-quality-issues.component.scss'
 })
 export class ProjectQualityIssuesComponent implements OnInit {
   projectId: string = '';
   projectName: string = '';
+  projectCode: string = '';
+  project: Project | null = null;
   qualityIssues: QualityIssueDetails[] = [];
   filteredQualityIssues: QualityIssueDetails[] = [];
   loading = true;
@@ -39,10 +44,15 @@ export class ProjectQualityIssuesComponent implements OnInit {
   isCommentsModalOpen = false;
   selectedIssueForComments: QualityIssueDetails | null = null;
 
+  // Details modal state
+  isDetailsModalOpen = false;
+  selectedIssue: QualityIssueDetails | null = null;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private wirService: WIRService
+    private wirService: WIRService,
+    private projectService: ProjectService
   ) {}
 
   ngOnInit(): void {
@@ -56,7 +66,26 @@ export class ProjectQualityIssuesComponent implements OnInit {
       return;
     }
     
+    this.loadProject();
     this.loadQualityIssues();
+  }
+
+  loadProject(): void {
+    if (!this.projectId) {
+      return;
+    }
+    
+    this.projectService.getProject(this.projectId).subscribe({
+      next: (project) => {
+        this.project = project;
+        this.projectName = project.name || '';
+        this.projectCode = project.code || '';
+      },
+      error: (err) => {
+        console.error('Error loading project:', err);
+        // Don't show error to user, just log it
+      }
+    });
   }
 
   loadQualityIssues(): void {
@@ -182,12 +211,19 @@ export class ProjectQualityIssuesComponent implements OnInit {
   }
 
   viewIssueDetails(issue: QualityIssueDetails): void {
-    // Navigate to box details with quality issue tab
-    if (issue.boxId) {
-      this.router.navigate(['/boxes', issue.boxId], {
-        queryParams: { tab: 'quality-issues' }
-      });
-    }
+    console.log('👁️ Opening quality issue details modal for issue:', issue.issueNumber);
+    this.selectedIssue = issue;
+    this.isDetailsModalOpen = true;
+  }
+
+  closeDetailsModal(): void {
+    this.isDetailsModalOpen = false;
+    this.selectedIssue = null;
+  }
+
+  onStatusUpdated(): void {
+    console.log('✅ Quality issue status updated, reloading issues...');
+    this.loadQualityIssues();
   }
 
   viewComments(issue: QualityIssueDetails): void {
@@ -201,7 +237,7 @@ export class ProjectQualityIssuesComponent implements OnInit {
   }
 
   goBack(): void {
-    this.router.navigate(['/projects', this.projectId]);
+    this.router.navigate(['/projects', this.projectId, 'dashboard']);
   }
 
   exportToExcel(): void {

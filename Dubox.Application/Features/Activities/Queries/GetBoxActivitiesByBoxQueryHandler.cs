@@ -23,7 +23,7 @@ public class GetBoxActivitiesByBoxQueryHandler : IRequestHandler<GetBoxActivitie
 
     public async Task<Result<List<BoxActivityDto>>> Handle(GetBoxActivitiesByBoxQuery request, CancellationToken cancellationToken)
     {
-        // Load box to verify project access
+        // Optimized: Load box only to verify it exists and get ProjectId (minimal data)
         var box = await _unitOfWork.Repository<Box>().GetByIdAsync(request.BoxId, cancellationToken);
         if (box == null)
             return Result.Failure<List<BoxActivityDto>>("Box not found");
@@ -35,13 +35,15 @@ public class GetBoxActivitiesByBoxQueryHandler : IRequestHandler<GetBoxActivitie
             return Result.Failure<List<BoxActivityDto>>("Access denied. You do not have permission to view activities for this box.");
         }
 
+        // Optimized: Use specification with single query strategy (removed split query)
         var specification = new GetBoxActivitiesByBoxSpecification(request.BoxId);
         var boxActivitiesResult = _unitOfWork.Repository<BoxActivity>().GetWithSpec(specification);
         
         // Use AsNoTracking for read-only query to improve performance
-        var boxActivities = boxActivitiesResult.Data
+        // Convert to list asynchronously to avoid blocking
+        var boxActivities = await boxActivitiesResult.Data
             .AsNoTracking()
-            .ToList();
+            .ToListAsync(cancellationToken);
 
         var boxActivityDtos = boxActivities.Adapt<List<BoxActivityDto>>();
 

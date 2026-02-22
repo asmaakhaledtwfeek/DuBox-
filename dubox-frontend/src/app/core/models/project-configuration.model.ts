@@ -25,6 +25,7 @@ export interface ProjectBoxType {
   displayOrder?: number;
   isActive?: boolean;
   subTypes?: ProjectBoxSubType[];
+  activityTemplateId?: string;
 }
 
 export interface ProjectBoxSubType {

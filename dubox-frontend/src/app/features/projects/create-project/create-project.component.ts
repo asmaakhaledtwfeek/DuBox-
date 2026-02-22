@@ -22,11 +22,19 @@ import {
 import { forkJoin } from 'rxjs';
 import { toTitleCase, toUpperCase } from '../../../core/utils/text-transform.util';
 import { environment } from '../../../../environments/environment';
+import { BoxMaterialService } from '../../../core/services/box-material.service';
+import { ProjectMaterialSelectionComponent } from '../../materials/components/project-material-selection/project-material-selection.component';
+import { ConfirmationDialogComponent } from '../../../shared/components/confirmation-dialog/confirmation-dialog.component';
+import { MaterialTemplateService } from '../../../core/services/material-template.service';
+import { MaterialTemplate, BoxTypeMaterialTemplate, ProjectMaterialTemplate } from '../../../core/models/material-template.model';
+import { AssignTemplateModalComponent, TemplateAssignment } from '../../../shared/components/assign-template-modal/assign-template-modal.component';
+import { ActivityTemplateService } from '../../../core/services/activity-template.service';
+import { ActivityTemplate } from '../../../core/models/activity-template.model';
 
 @Component({
   selector: 'app-create-project',
   standalone: true,
-  imports: [CommonModule, RouterModule, ReactiveFormsModule, FormsModule, HeaderComponent, SidebarComponent],
+  imports: [CommonModule, RouterModule, ReactiveFormsModule, FormsModule, HeaderComponent, SidebarComponent, ProjectMaterialSelectionComponent, ConfirmationDialogComponent, AssignTemplateModalComponent],
   templateUrl: './create-project.component.html',
   styleUrl: './create-project.component.scss'
 })
@@ -44,7 +52,7 @@ export class CreateProjectComponent implements OnInit {
   minStartDate: string = '';
   maxStartDate: string = '';
   
-  // Step management for create flow
+  // Step management for create flow (1: basic info, 2: logos, 3: materials)
   currentStep: number = 1;
   createdProjectId: string | null = null;
   
@@ -65,6 +73,13 @@ export class CreateProjectComponent implements OnInit {
   zones: ProjectZone[] = [];
   boxFunctions: ProjectBoxFunction[] = [];
   
+  // Collapse states
+  isProjectConfigCollapsed = true; // Collapsed by default
+  isBoxTypesCollapsed = true; // Collapsed by default
+  isActivityTemplatesCollapsed = true; // Collapsed by default
+  isMaterialTemplatesCollapsed = true; // Collapsed by default
+  isProjectLogosCollapsed = true; // Collapsed by default
+  
   // Temp forms for adding new items
   newBuilding = '';
   newLevel = '';
@@ -84,6 +99,32 @@ export class CreateProjectComponent implements OnInit {
   clientImage: File | null = null;
   clientImagePreview: string | null = null;
   clientImageUrl: string | null = null; // Existing logo URL from server
+  
+  // Material Lead Time Warning Dialog
+  showMaterialWarningDialog = false;
+  materialWarningDialogTitle = '';
+  materialWarningDialogMessage = '';
+
+  // Material Templates
+  availableTemplates: MaterialTemplate[] = [];
+  projectTemplates: MaterialTemplate[] = [];
+  boxTypeTemplates: Map<number, MaterialTemplate> = new Map();
+  loadingTemplates = false;
+  showTemplateModal = false;
+  templateAssignment: TemplateAssignment | null = null;
+
+  // Pending material template (selected in UI but not yet saved to DB)
+  pendingMaterialTemplateId: string | null = null;
+  /** The template ID currently persisted in the database for this project */
+  originalMaterialTemplateId: string | null = null;
+
+  // Activity Templates
+  availableActivityTemplates: any[] = [];
+  selectedProjectActivityTemplateId: string | null = null;
+  /** The activity template ID currently persisted in the database for this project */
+  originalActivityTemplateId: string | null = null;
+  boxTypeActivityTemplates: Map<number, string> = new Map(); // Map boxTypeId to activityTemplateId
+  loadingActivityTemplates = false;
 
   constructor(
     private fb: FormBuilder,
@@ -92,7 +133,10 @@ export class CreateProjectComponent implements OnInit {
     private authService: AuthService,
     private toastService: ToastService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private boxMaterialService: BoxMaterialService,
+    private materialTemplateService: MaterialTemplateService,
+    private activityTemplateService: ActivityTemplateService
   ) {}
 
   ngOnInit(): void {
@@ -101,12 +145,19 @@ export class CreateProjectComponent implements OnInit {
     this.loadProjectManagers();
     this.detectModeAndLoadProject();
     
-    // Check if we're in step 2 (from query param or state)
+    // Check if we're in step 2 or 3 (from query param or state)
     const step = this.route.snapshot.queryParamMap.get('step');
     const projectId = this.route.snapshot.queryParamMap.get('projectId');
-    if (step === '2' && projectId && !this.isEdit) {
-      this.currentStep = 2;
+    if (step && projectId && !this.isEdit) {
+      this.currentStep = parseInt(step, 10);
       this.createdProjectId = projectId;
+      
+      // Load templates and configuration if in step 3
+      if (this.currentStep === 3) {
+        this.loadProjectConfiguration(projectId); // Load box types for template assignment
+        this.loadMaterialTemplates();
+        this.loadActivityTemplates();
+      }
     }
   }
 
@@ -179,7 +230,8 @@ export class CreateProjectComponent implements OnInit {
       projectValue: [null, [Validators.min(0)]],
       description: ['', Validators.maxLength(500)],
       bimLink: ['', Validators.maxLength(500)],
-      allowCompletionWithConditionalApproval: [false]
+      allowCompletionWithConditionalApproval: [false],
+      activityTemplateId: [null]
     });
     
     // Add listeners for auto-calculation between duration and projectedEndDate
@@ -226,7 +278,35 @@ export class CreateProjectComponent implements OnInit {
           { emitEvent: false }
         );
       }
+      
+      // Check material lead time warning
+      if (startDate) {
+        this.checkMaterialLeadTimeWarning(startDate);
+      }
     });
+  }
+  
+  private checkMaterialLeadTimeWarning(plannedStartDate: string): void {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const plannedStart = new Date(plannedStartDate);
+    plannedStart.setHours(0, 0, 0, 0);
+    
+    // Calculate days difference
+    const daysDifference = Math.ceil((plannedStart.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    // Show warning if less than 7 days
+    if (daysDifference < 7 && daysDifference >= 0) {
+      const daysText = daysDifference === 1 ? '1 day' : `${daysDifference} days`;
+      this.materialWarningDialogTitle = 'Material Lead Time Warning';
+      this.materialWarningDialogMessage = `The planned start date is only <strong>${daysText}</strong> away. Please note that materials typically need at least <strong>7 days</strong> to arrive. Some materials may require up to <strong>1 month</strong> lead time.<br><br>This may affect your project timeline and material readiness.`;
+      this.showMaterialWarningDialog = true;
+    } else if (daysDifference < 0) {
+      this.materialWarningDialogTitle = 'Past Date Warning';
+      this.materialWarningDialogMessage = `The planned start date is in the past. Materials typically need at least <strong>7 days</strong> to arrive from today. Please consider selecting a future date that allows adequate time for material procurement.`;
+      this.showMaterialWarningDialog = true;
+    }
   }
 
  
@@ -257,7 +337,10 @@ export class CreateProjectComponent implements OnInit {
         this.originalProject = project;
         this.patchForm(project);
         this.loadProjectImages(project);
+        
+        // Load configuration first, then load templates after configuration is loaded
         this.loadProjectConfiguration(id);
+        
         this.initializing = false;
         this.projectForm.enable();
 
@@ -353,6 +436,8 @@ export class CreateProjectComponent implements OnInit {
   }
 
   private loadProjectConfiguration(id: string): void {
+    console.log('🔄 Loading project configuration for project:', id);
+    
     this.projectService.getProjectConfiguration(id).subscribe({
       next: (config) => {
         this.buildings = config.buildings || [];
@@ -362,10 +447,37 @@ export class CreateProjectComponent implements OnInit {
         this.boxFunctions = config.boxFunctions || [];
         // Initialize subtype inputs array for loaded box types
         this.newBoxSubTypes = new Array(this.boxTypes.length).fill('');
+        
+        console.log('✅ Project configuration loaded successfully:', {
+          projectId: id,
+          buildings: this.buildings.length,
+          levels: this.levels.length,
+          boxTypes: this.boxTypes.length,
+          zones: this.zones.length,
+          boxFunctions: this.boxFunctions.length,
+          boxTypesData: this.boxTypes.map(bt => ({
+            id: bt.id,
+            typeName: bt.typeName,
+            activityTemplateId: bt.activityTemplateId
+          }))
+        });
+        
+        // Load templates in edit mode
+        if (this.isEdit) {
+          console.log('📋 Loading templates after configuration...');
+          this.loadMaterialTemplates();
+          this.loadActivityTemplates();
+        }
       },
       error: (err) => {
-        console.log('No existing configuration or error loading:', err);
+        console.log('⚠️ No existing configuration or error loading:', err);
         // It's okay if there's no configuration yet
+        
+        // Still load templates in edit mode even if config fails
+        if (this.isEdit) {
+          this.loadMaterialTemplates();
+          this.loadActivityTemplates();
+        }
       }
     });
   }
@@ -438,6 +550,21 @@ export class CreateProjectComponent implements OnInit {
     // Handle step 2 (image upload)
     if (this.currentStep === 2 && !this.isEdit) {
       this.uploadImagesStep2();
+      return;
+    }
+
+    // Handle step 3 (material selection - optional)
+    if (this.currentStep === 3 && !this.isEdit) {
+      // Save template assignments (deferred from selection time), then navigate
+      if (!this.createdProjectId) {
+        this.router.navigate(['/projects']);
+        return;
+      }
+      this.loading = true;
+      this.saveAllTemplateAssignments(this.createdProjectId, () => {
+        this.loading = false;
+        this.router.navigate(['/projects', this.createdProjectId, 'dashboard']);
+      });
       return;
     }
 
@@ -564,10 +691,21 @@ export class CreateProjectComponent implements OnInit {
             projectData.projectValue = formValue.projectValue;
           }
         }
+        // Check if allowCompletionWithConditionalApproval has changed
+        if (compare(formValue.allowCompletionWithConditionalApproval, this.originalProject.allowCompletionWithConditionalApproval)) {
+          projectData.allowCompletionWithConditionalApproval = formValue.allowCompletionWithConditionalApproval ?? false;
+        }
       }
 
       if (this.projectId) {
         projectData.projectId = this.projectId;
+      }
+
+      // Include material template change in the same request so only ONE PUT /projects/{id}
+      // is sent. UpdateProjectCommandHandler propagates the change to box types internally.
+      const materialChangedInEdit = this.pendingMaterialTemplateId !== this.originalMaterialTemplateId;
+      if (materialChangedInEdit && this.pendingMaterialTemplateId) {
+        (projectData as any).materialTemplateId = this.pendingMaterialTemplateId;
       }
 
       // Edit mode - upload images if any are selected
@@ -582,20 +720,28 @@ export class CreateProjectComponent implements OnInit {
             return;
           }
 
-          // Upload images if any are selected
-          if (this.hasImagesToUpload()) {
-            this.uploadImages(projectId);
-          } else if (this.hasConfiguration()) {
-            this.saveConfiguration(projectId);
-          } else {
-            this.loading = false;
-            this.successMessage = 'Project updated successfully!';
-            console.log('✅ Project updated:', project);
-            
-            setTimeout(() => {
-              this.router.navigate(['/projects', projectId, 'dashboard']);
-            }, 1200);
+          // Material template was already sent in the request above — mark it as synced so
+          // saveAllTemplateAssignments does not fire a redundant second updateProject call.
+          if (materialChangedInEdit && this.pendingMaterialTemplateId) {
+            this.originalMaterialTemplateId = this.pendingMaterialTemplateId;
           }
+
+          // Save template assignments (deferred from selection), then handle images/config/navigate
+          this.saveAllTemplateAssignments(projectId, () => {
+            if (this.hasImagesToUpload()) {
+              this.uploadImages(projectId);
+            } else if (this.hasConfiguration()) {
+              this.saveConfiguration(projectId);
+            } else {
+              this.loading = false;
+              this.successMessage = 'Project updated successfully!';
+              console.log('✅ Project updated:', project);
+              
+              setTimeout(() => {
+                this.router.navigate(['/projects', projectId, 'dashboard']);
+              }, 1200);
+            }
+          });
         },
         error: (err) => {
           this.loading = false;
@@ -603,9 +749,252 @@ export class CreateProjectComponent implements OnInit {
           this.error = errorMessage;
           this.toastService.error(errorMessage);
           console.error('❌ Error updating project:', err);
+      }
+    });
+  }
+  }
+  /**
+   * Load available activity templates
+   */
+  loadActivityTemplates(): void {
+    this.loadingActivityTemplates = true;
+    this.activityTemplateService.getAllTemplates(true).subscribe({
+      next: (templates: ActivityTemplate[]) => {
+        this.availableActivityTemplates = templates.filter((t: ActivityTemplate) => t.isActive);
+        this.loadingActivityTemplates = false;
+        
+        // Load existing assignments if in edit mode or step 3
+        const projectId = this.isEdit ? this.projectId : this.createdProjectId;
+        if (projectId) {
+          this.loadProjectActivityTemplateAssignments(projectId);
+        }
+      },
+      error: (error) => {
+        console.error('Error loading activity templates:', error);
+        this.toastService.error('Failed to load activity templates');
+        this.loadingActivityTemplates = false;
+      }
+    });
+  }
+
+  /**
+   * Load existing activity template assignments for the project
+   */
+  loadProjectActivityTemplateAssignments(projectId: string): void {
+    console.log('🔄 Loading activity template assignments for project:', projectId);
+    
+    // Load project-level activity template
+    this.projectService.getProject(projectId).subscribe({
+      next: (project: Project) => {
+        this.selectedProjectActivityTemplateId = project.activityTemplateId || null;
+        // Store original so we can detect changes on save
+        this.originalActivityTemplateId = this.selectedProjectActivityTemplateId;
+        
+        console.log('✅ Project-level activity template loaded:', {
+          projectId: projectId,
+          activityTemplateId: project.activityTemplateId,
+          activityTemplateName: project.activityTemplateName
+        });
+        
+        // Update form value
+        this.projectForm.patchValue({
+          activityTemplateId: project.activityTemplateId
+        }, { emitEvent: false });
+      },
+      error: (error: any) => {
+        console.error('❌ Error loading project activity template:', error);
+      }
+    });
+
+    // Load box-type-level activity templates from already-loaded boxTypes
+    // (no need to make another API call since loadProjectConfiguration already loaded them)
+    this.boxTypeActivityTemplates.clear();
+    
+    console.log('📦 Processing box types for activity templates:', {
+      projectId: projectId,
+      boxTypesCount: this.boxTypes?.length || 0,
+      boxTypes: this.boxTypes
+    });
+    
+    if (this.boxTypes && this.boxTypes.length > 0) {
+      this.boxTypes.forEach((boxType: ProjectBoxType) => {
+        console.log('🔍 Processing box type:', {
+          id: boxType.id,
+          typeName: boxType.typeName,
+          activityTemplateId: boxType.activityTemplateId
+        });
+        
+        if (boxType.activityTemplateId && boxType.id !== undefined) {
+          this.boxTypeActivityTemplates.set(boxType.id!, boxType.activityTemplateId);
+          console.log('✅ Box type activity template assigned:', {
+            boxTypeId: boxType.id,
+            boxTypeName: boxType.typeName,
+            activityTemplateId: boxType.activityTemplateId
+          });
         }
       });
+      
+      console.log('📊 Final boxTypeActivityTemplates Map:', {
+        size: this.boxTypeActivityTemplates.size,
+        entries: Array.from(this.boxTypeActivityTemplates.entries())
+      });
+    } else {
+      console.warn('⚠️ No box types loaded yet. Will load when configuration is available.');
     }
+  }
+
+  /**
+   * Handle project-level activity template selection.
+   * The selection is stored locally and only saved to the database when the user
+   * clicks "Complete & Go to Dashboard" (create flow) or "Save Changes" (edit mode).
+   */
+  onProjectActivityTemplateChange(templateId: string | null): void {
+    this.selectedProjectActivityTemplateId = templateId;
+  }
+
+  /**
+   * Called when the project-material-selection child component emits a selection change.
+   * Stores the pending choice — actual API call is deferred to form submit.
+   */
+  onPendingMaterialTemplateChange(templateId: string | null): void {
+    this.pendingMaterialTemplateId = templateId;
+  }
+
+  /**
+   * Save both activity template and material template assignments for the given project.
+   * Only calls the API if the selections differ from what is already persisted.
+   * Invokes `onSuccess` when all saves complete (or when there is nothing to save).
+   */
+  saveAllTemplateAssignments(projectId: string, onSuccess: () => void): void {
+    const activityChanged = this.selectedProjectActivityTemplateId !== this.originalActivityTemplateId;
+    const materialChanged = this.pendingMaterialTemplateId !== this.originalMaterialTemplateId;
+
+    const saves: Array<() => void> = [];
+    let pending = 0;
+    let hasError = false;
+
+    const tryComplete = () => {
+      pending--;
+      if (pending === 0 && !hasError) {
+        onSuccess();
+      }
+    };
+
+    const handleError = (label: string, err: any) => {
+      hasError = true;
+      pending = 0; // stop waiting
+      console.error(`Error saving ${label}:`, err);
+      this.toastService.error(`Failed to save ${label}`);
+      this.loading = false;
+    };
+
+    if (activityChanged) {
+      pending++;
+      saves.push(() => {
+        this.projectService.updateProject(projectId, {
+          projectId: projectId,
+          activityTemplateId: this.selectedProjectActivityTemplateId
+        } as any).subscribe({
+          next: () => {
+            this.originalActivityTemplateId = this.selectedProjectActivityTemplateId;
+            tryComplete();
+          },
+          error: (err: any) => handleError('activity template', err)
+        });
+      });
+    }
+
+    if (materialChanged) {
+      if (this.pendingMaterialTemplateId) {
+        // Assign or change: include materialTemplateId in the UpdateProject request.
+        // UpdateProjectCommandHandler reads the old template from the DB internally
+        // and propagates the change to eligible box types — no separate API call needed.
+        pending++;
+        saves.push(() => {
+          this.projectService.updateProject(projectId, {
+            projectId,
+            materialTemplateId: this.pendingMaterialTemplateId
+          } as any).subscribe({
+            next: () => {
+              this.originalMaterialTemplateId = this.pendingMaterialTemplateId;
+              tryComplete();
+            },
+            error: (err: any) => handleError('material template', err)
+          });
+        });
+      } else if (this.originalMaterialTemplateId && !this.pendingMaterialTemplateId) {
+        // Clear / remove the existing assignment
+        pending++;
+        saves.push(() => {
+          this.materialTemplateService.removeFromProject(projectId, this.originalMaterialTemplateId!).subscribe({
+            next: () => {
+              this.originalMaterialTemplateId = null;
+              tryComplete();
+            },
+            error: (err: any) => handleError('material template removal', err)
+          });
+        });
+      }
+    }
+
+    if (pending === 0) {
+      // Nothing to save
+      onSuccess();
+      return;
+    }
+
+    saves.forEach(fn => fn());
+  }
+
+  /**
+   * Handle box type activity template selection
+   */
+  onBoxTypeActivityTemplateChange(boxTypeId: number, templateId: string | null): void {
+    const projectId = this.isEdit ? this.projectId : this.createdProjectId;
+    if (!projectId) {
+      this.toastService.error('Project must be created first');
+      return;
+    }
+
+    if (templateId) {
+      this.boxTypeActivityTemplates.set(boxTypeId, templateId);
+    } else {
+      this.boxTypeActivityTemplates.delete(boxTypeId);
+    }
+
+    // Update box type with activity template
+    // Note: Backend requires projectId and boxTypeId in body for validation
+    this.projectService.updateProjectBoxType(projectId, boxTypeId, {
+      projectId: projectId,
+      boxTypeId: boxTypeId,
+      activityTemplateId: templateId
+    } as any).subscribe({
+      next: () => {
+        this.toastService.success('Box type activity template updated');
+      },
+      error: (error: any) => {
+        console.error('Error updating box type activity template:', error);
+        this.toastService.error('Failed to update box type activity template');
+      }
+    });
+  }
+
+  /**
+   * Get activity template name by ID
+   */
+  getActivityTemplateName(templateId: string | null): string {
+    if (!templateId) return 'None';
+    const template = this.availableActivityTemplates.find(t => t.activityTemplateId === templateId);
+    return template ? template.templateName : 'Unknown';
+  }
+
+  /**
+   * Get activity template activity count by ID
+   */
+  getTemplateActivityCount(templateId: string | null): number {
+    if (!templateId) return 0;
+    const template = this.availableActivityTemplates.find(t => t.activityTemplateId === templateId);
+    return template ? template.activityCount : 0;
   }
   
   private saveConfigurationAndMoveToStep2(projectId: string): void {
@@ -620,14 +1009,43 @@ export class CreateProjectComponent implements OnInit {
 
     this.projectService.saveProjectConfiguration(projectId, configuration).subscribe({
       next: () => {
-        this.loading = false;
-        this.createdProjectId = projectId;
-        this.currentStep = 2;
-        this.successMessage = 'Project created successfully! Now you can optionally add logos.';
-        this.router.navigate([], {
-          relativeTo: this.route,
-          queryParams: { step: '2', projectId: projectId },
-          queryParamsHandling: 'merge'
+        // Reload configuration to get IDs assigned by backend
+        // This is crucial for template assignment to work
+        this.projectService.getProjectConfiguration(projectId).subscribe({
+          next: (config) => {
+            this.buildings = config.buildings || [];
+            this.levels = config.levels || [];
+            this.boxTypes = config.boxTypes || [];
+            this.zones = config.zones || [];
+            this.boxFunctions = config.boxFunctions || [];
+            
+            // Load material templates after configuration is loaded
+            this.loadMaterialTemplates();
+            this.loadActivityTemplates();
+            
+            this.loading = false;
+            this.createdProjectId = projectId;
+            this.currentStep = 2;
+            this.successMessage = 'Project created successfully! Now you can optionally add logos.';
+            this.router.navigate([], {
+              relativeTo: this.route,
+              queryParams: { step: '2', projectId: projectId },
+              queryParamsHandling: 'merge'
+            });
+          },
+          error: (err) => {
+            console.error('❌ Error reloading configuration:', err);
+            // Continue even if reload fails
+            this.loading = false;
+            this.createdProjectId = projectId;
+            this.currentStep = 2;
+            this.successMessage = 'Project created successfully! Now you can optionally add logos.';
+            this.router.navigate([], {
+              relativeTo: this.route,
+              queryParams: { step: '2', projectId: projectId },
+              queryParamsHandling: 'merge'
+            });
+          }
         });
       },
       error: (err) => {
@@ -654,8 +1072,8 @@ export class CreateProjectComponent implements OnInit {
     }
 
     if (!this.hasImagesToUpload()) {
-      // Skip images and go to dashboard
-      this.router.navigate(['/projects', this.createdProjectId, 'dashboard']);
+      // Skip images and go to step 3 (materials)
+      this.moveToStep3();
       return;
     }
 
@@ -672,11 +1090,12 @@ export class CreateProjectComponent implements OnInit {
       next: () => {
         this.loading = false;
         this.successMessage = 'Project logos uploaded successfully!';
-        this.toastService.success('Project and logos created successfully!');
+        this.toastService.success('Project and logos uploaded successfully!');
         
+        // Move to step 3 (materials)
         setTimeout(() => {
-          this.router.navigate(['/projects', this.createdProjectId, 'dashboard']);
-        }, 1200);
+          this.moveToStep3();
+        }, 800);
       },
       error: (err) => {
         this.loading = false;
@@ -689,6 +1108,30 @@ export class CreateProjectComponent implements OnInit {
   }
   
   skipImages(): void {
+    if (this.createdProjectId) {
+      this.moveToStep3();
+    }
+  }
+
+  private moveToStep3(): void {
+    this.currentStep = 3;
+    this.successMessage = 'Now assign material templates to this project (optional)';
+    
+    // Load project configuration to get box types
+    if (this.createdProjectId) {
+      this.loadProjectConfiguration(this.createdProjectId);
+    }
+    
+    this.loadMaterialTemplates(); // Load templates when entering step 3
+    this.loadActivityTemplates(); // Load activity templates when entering step 3
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { step: '3', projectId: this.createdProjectId },
+      queryParamsHandling: 'merge'
+    });
+  }
+
+  skipMaterials(): void {
     if (this.createdProjectId) {
       this.router.navigate(['/projects', this.createdProjectId, 'dashboard']);
     }
@@ -1471,6 +1914,241 @@ export class CreateProjectComponent implements OnInit {
     this.clientImagePreview = null;
     this.clientImageUrl = null; // Also clear existing URL when removing
   }
+
+  /**
+   * Load available material templates
+   */
+  loadMaterialTemplates(): void {
+    this.loadingTemplates = true;
+    this.materialTemplateService.getAllTemplates().subscribe({
+      next: (templates: MaterialTemplate[]) => {
+        this.availableTemplates = templates.filter((t: MaterialTemplate) => t.isActive);
+        this.loadingTemplates = false;
+        
+        // Load existing assignments if in edit mode or step 3
+        if (this.isEdit && this.projectId) {
+          this.loadProjectTemplateAssignments(this.projectId);
+        } else if (!this.isEdit && this.createdProjectId) {
+          this.loadProjectTemplateAssignments(this.createdProjectId);
+        }
+      },
+      error: (error) => {
+        console.error('Error loading templates:', error);
+        this.toastService.error('Failed to load material templates');
+        this.loadingTemplates = false;
+      }
+    });
+  }
+
+  /**
+   * Load existing template assignments for the project (single template per project)
+   */
+  loadProjectTemplateAssignments(projectId: string): void {
+    // Load project-level template (single)
+    this.materialTemplateService.getProjectTemplates(projectId).subscribe({
+      next: (assignments: ProjectMaterialTemplate[]) => {
+        // Single template per project
+        this.projectTemplates = assignments
+          .map((assignment: ProjectMaterialTemplate) => {
+            return this.availableTemplates.find((t: MaterialTemplate) => t.materialTemplateId === assignment.materialTemplateId);
+          })
+          .filter((t): t is MaterialTemplate => t !== undefined);
+
+        // Track the original and pending template IDs for deferred save
+        const firstAssignment = assignments.length > 0 ? assignments[0] : null;
+        this.originalMaterialTemplateId = firstAssignment?.materialTemplateId ?? null;
+        this.pendingMaterialTemplateId = this.originalMaterialTemplateId;
+      },
+      error: (error: any) => {
+        console.error('Error loading project template assignments:', error);
+      }
+    });
+
+    // Load all box-type-level templates for this project
+    this.materialTemplateService.getBoxTypeTemplates(projectId).subscribe({
+      next: (assignments: BoxTypeMaterialTemplate[]) => {
+        // Map box type templates by box type ID
+        this.boxTypeTemplates.clear();
+        assignments.forEach(assignment => {
+          const template = this.availableTemplates.find(t => t.materialTemplateId === assignment.materialTemplateId);
+          if (template) {
+            this.boxTypeTemplates.set(assignment.projectBoxTypeId, template);
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error loading box type templates:', error);
+      }
+    });
+  }
+
+  /**
+   * Open modal to assign project-level template
+   */
+  assignProjectTemplate(): void {
+    const projectId = this.isEdit ? this.projectId : this.createdProjectId;
+    if (!projectId) {
+      this.toastService.error('Project must be created first');
+      return;
+    }
+
+    this.templateAssignment = {
+      level: 'project',
+      projectId: projectId
+    };
+    this.showTemplateModal = true;
+  }
+
+  /**
+   * Open modal to assign box-type-level template
+   */
+  assignBoxTypeTemplate(boxType: ProjectBoxType): void {
+    const projectId = this.isEdit ? this.projectId : this.createdProjectId;
+    if (!projectId || !boxType.id) {
+      this.toastService.error('Project and box type must be created first');
+      return;
+    }
+
+    // Show all available templates for box type assignment
+    this.templateAssignment = {
+      level: 'boxType',
+      projectId: projectId,
+      boxTypeId: boxType.id,
+      boxTypeName: boxType.typeName
+    };
+    this.showTemplateModal = true;
+  }
   
+  /**
+   * Remove a project template
+   */
+  removeProjectTemplate(template: MaterialTemplate): void {
+    const projectId = this.isEdit ? this.projectId : this.createdProjectId;
+    if (!projectId) {
+      this.toastService.error('Project must be created first');
+      return;
+    }
+
+    this.materialTemplateService.removeFromProject(projectId, template.materialTemplateId).subscribe({
+      next: () => {
+        this.projectTemplates = this.projectTemplates.filter(t => t.materialTemplateId !== template.materialTemplateId);
+        this.toastService.success('Template removed from project');
+      },
+      error: (err) => {
+        console.error('Error removing template:', err);
+        this.toastService.error('Failed to remove template');
+      }
+    });
+  }
+
+  /**
+   * Handle template assignment completion
+   */
+  onTemplateAssigned(event: { templateId: string }): void {
+    const projectId = this.isEdit ? this.projectId : this.createdProjectId;
+    
+    if (event.templateId) {
+      // Find the assigned template
+      const template = this.availableTemplates.find(t => t.materialTemplateId === event.templateId);
+      
+      if (template && this.templateAssignment) {
+        if (this.templateAssignment.level === 'project') {
+          // Add to project templates array if not already present
+          if (!this.projectTemplates.find(t => t.materialTemplateId === template.materialTemplateId)) {
+            this.projectTemplates.push(template);
+          }
+          this.toastService.success('Project template assigned successfully');
+        } else if (this.templateAssignment.level === 'boxType' && this.templateAssignment.boxTypeId) {
+          this.boxTypeTemplates.set(this.templateAssignment.boxTypeId, template);
+          this.toastService.success('Box type template assigned successfully');
+        }
+      }
+    } else {
+      // Template was removed - reload all assignments to sync
+      if (this.templateAssignment && this.templateAssignment.level === 'project' && projectId) {
+        this.loadProjectTemplateAssignments(projectId);
+        this.toastService.success('Project template removed');
+      } else if (this.templateAssignment && this.templateAssignment.level === 'boxType' && this.templateAssignment.boxTypeId) {
+        this.boxTypeTemplates.delete(this.templateAssignment.boxTypeId);
+        this.toastService.success('Box type template removed');
+      }
+    }
+    
+    this.showTemplateModal = false;
+    this.templateAssignment = null;
+  }
+
+  /**
+   * Close template modal
+   */
+  closeTemplateModal(): void {
+    this.showTemplateModal = false;
+    this.templateAssignment = null;
+  }
+
+  /**
+   * Get template for a specific box type
+   */
+  getBoxTypeTemplate(boxTypeId: number): MaterialTemplate | null {
+    return this.boxTypeTemplates.get(boxTypeId) || null;
+  }
+
+  /**
+   * Remove template from box type
+   */
+  removeBoxTypeTemplate(boxType: ProjectBoxType): void {
+    const projectId = this.isEdit ? this.projectId : this.createdProjectId;
+    if (!projectId || !boxType.id) {
+      this.toastService.error('Project and box type must be created first');
+      return;
+    }
+
+    const template = this.getBoxTypeTemplate(boxType.id);
+    if (!template) {
+      return;
+    }
+
+    // Confirm removal
+    if (!confirm(`Are you sure you want to remove the template "${template.templateName}" from box type "${boxType.typeName}"?\n\nThis will remove the template assignment but will not remove materials that have already been added to this box type.`)) {
+      return;
+    }
+
+    // Call service to remove template from box type
+    this.loadingTemplates = true;
+    this.materialTemplateService.removeFromBoxType(boxType.id, template.materialTemplateId).subscribe({
+      next: () => {
+        // Remove from local state
+        this.boxTypeTemplates.delete(boxType.id!);
+        this.toastService.success(`Template "${template.templateName}" removed from box type "${boxType.typeName}"`);
+        this.loadingTemplates = false;
+      },
+      error: (error) => {
+        console.error('Error removing template from box type:', error);
+        this.toastService.error('Failed to remove template from box type');
+        this.loadingTemplates = false;
+      }
+    });
+  }
+
+  // Toggle methods for collapsible sections
+  toggleProjectConfig(): void {
+    this.isProjectConfigCollapsed = !this.isProjectConfigCollapsed;
+  }
+
+  toggleBoxTypes(): void {
+    this.isBoxTypesCollapsed = !this.isBoxTypesCollapsed;
+  }
+
+  toggleActivityTemplates(): void {
+    this.isActivityTemplatesCollapsed = !this.isActivityTemplatesCollapsed;
+  }
+
+  toggleMaterialTemplates(): void {
+    this.isMaterialTemplatesCollapsed = !this.isMaterialTemplatesCollapsed;
+  }
+
+  toggleProjectLogos(): void {
+    this.isProjectLogosCollapsed = !this.isProjectLogosCollapsed;
+  }
 }
 

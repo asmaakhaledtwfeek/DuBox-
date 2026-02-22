@@ -8,6 +8,7 @@ using Dubox.Domain.Helpers;
 using Mapster;
 using MapsterMapper;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.Projects.Commands;
 
@@ -17,17 +18,20 @@ public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand,
     private readonly IMapper _mapper;
     private readonly ICurrentUserService _currentUserService;
     private readonly IProjectTeamVisibilityService _visibilityService;
+    private readonly IDbContext _context;
 
     public CreateProjectCommandHandler(
         IUnitOfWork unitOfWork, 
         IMapper mapper, 
         ICurrentUserService currentUserService,
-        IProjectTeamVisibilityService visibilityService)
+        IProjectTeamVisibilityService visibilityService,
+        IDbContext context)
     {
         _unitOfWork = unitOfWork;
         _mapper = mapper;
         _currentUserService = currentUserService;
         _visibilityService = visibilityService;
+        _context = context;
     }
 
     public async Task<Result<ProjectDto>> Handle(CreateProjectCommand request, CancellationToken cancellationToken)
@@ -107,6 +111,29 @@ public class CreateProjectCommandHandler : IRequestHandler<CreateProjectCommand,
         };
         await _unitOfWork.Repository<AuditLog>().AddAsync(projectLog, cancellationToken);
         await _unitOfWork.CompleteAsync(cancellationToken);
+
+        // Assign initial material template to the project when provided.
+        // Box types will inherit this template automatically when they are created later
+        // via SaveProjectConfiguration → BoxTypeConfigurationProcessor →
+        // IBoxTypeTemplateAutoAssignmentService.AssignProjectTemplatesToNewBoxTypesAsync.
+        if (request.MaterialTemplateId.HasValue)
+        {
+            var materialTemplate = await _context.MaterialTemplates
+                .FirstOrDefaultAsync(mt => mt.MaterialTemplateId == request.MaterialTemplateId.Value, cancellationToken);
+
+            if (materialTemplate != null && materialTemplate.IsActive)
+            {
+                var projectMaterialTemplate = new ProjectMaterialTemplate
+                {
+                    ProjectId = project.ProjectId,
+                    MaterialTemplateId = request.MaterialTemplateId.Value,
+                    AssignedDate = DateTime.UtcNow,
+                    AssignedBy = _currentUserService.Username
+                };
+                await _unitOfWork.Repository<ProjectMaterialTemplate>().AddAsync(projectMaterialTemplate, cancellationToken);
+                await _unitOfWork.CompleteAsync(cancellationToken);
+            }
+        }
 
         return Result.Success(project.Adapt<ProjectDto>());
     }

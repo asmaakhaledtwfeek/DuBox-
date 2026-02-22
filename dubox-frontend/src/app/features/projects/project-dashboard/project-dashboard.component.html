@@ -17,6 +17,17 @@
 
     <!-- Dashboard Content -->
     <div *ngIf="!loading && !error && project">
+      <!-- Breadcrumb -->
+      <div class="breadcrumb">
+        <button class="breadcrumb-link" [routerLink]="['/projects']">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          Projects
+        </button>
+        <span class="breadcrumb-separator">/</span>
+        <span class="breadcrumb-current">{{ project.name || project.code || 'Project' }}</span>
+      </div>
       <div 
         class="inline-alert" 
         *ngIf="banner" 
@@ -55,8 +66,7 @@
                 <line x1="8" y1="2" x2="8" y2="6"/>
                 <line x1="3" y1="10" x2="21" y2="10"/>
               </svg>
-              {{ getPriorityStartDateLabel() }}
-              <span class="date-time-display">{{ getPriorityStartDate() | dateTimeDisplay:'Not Scheduled' }}</span>
+              {{ getPriorityStartDateLabel() }} {{ getPriorityStartDate() | dateTimeDisplay:'Not Scheduled' }}
             </span>
             <span class="meta-item" *ngIf="project.projectManagerName">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -211,6 +221,20 @@
           </div>
         </div>
 
+        <div class="kpi-card clickable-card materials-card" (click)="viewBoxTypeMaterials()" title="Manage material arrivals by box type">
+          <span class="materials-badge">Manage Box Type Materials</span>
+          <div class="kpi-icon" style="background: rgba(102, 126, 234, 0.1); color: #667eea;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+              <line x1="1" y1="10" x2="23" y2="10"/>
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ projectMaterialsCount }}</div>
+            <div class="kpi-label">Project Materials</div>
+          </div>
+        </div>
+
         <div class="kpi-card clickable-card panel-types-card" (click)="viewPanelTypes()">
           <span class="config-badge">Configuration</span>
           <div class="kpi-icon" style="background: rgba(245, 158, 11, 0.1); color: #f59e0b;">
@@ -225,6 +249,413 @@
             <div class="kpi-value">{{ panelTypesCount }}</div>
             <div class="kpi-label">Panel Types</div>
           </div>
+        </div>
+
+        <div class="kpi-card clickable-card" (click)="viewProjectMaterials()">
+          <div class="kpi-icon" style="background: rgba(99, 102, 241, 0.1); color: #6366f1;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 7h-9"/>
+              <path d="M14 17H5"/>
+              <circle cx="17" cy="17" r="3"/>
+              <circle cx="7" cy="7" r="3"/>
+              <path d="M14 7h-2a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/>
+            </svg>
+          </div>
+          <div class="kpi-content">
+            <div class="kpi-value">{{ materialStatistics.selectedMaterials }} </div>
+            <div class="kpi-label">Materials Selected</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weather Card - Comprehensive Display -->
+      <div class="weather-card-comprehensive card" *ngIf="!weatherLoading && weatherReport">
+        <!-- Header with Title and Status Badge -->
+        <div class="weather-header-comprehensive">
+          <div class="header-title">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"/>
+              <line x1="12" y1="1" x2="12" y2="3"/>
+              <line x1="12" y1="21" x2="12" y2="23"/>
+              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+              <line x1="1" y1="12" x2="3" y2="12"/>
+              <line x1="21" y1="12" x2="23" y2="12"/>
+              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+            <h3>Today's Weather</h3>
+          </div>
+          <div class="header-status">
+            <span class="favorable-badge" [class.unfavorable]="!weatherReport.isFavorable">
+              {{ weatherReport.isFavorable ? '✓ Favorable' : '⚠ Unfavorable' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Alert Message Display (if exists) -->
+        <div *ngIf="weatherReport.alertMessage" class="weather-alert-banner">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span>{{ weatherReport.alertMessage }}</span>
+          <button *ngIf="weatherReport.qualityIssueCreated" class="btn btn-sm btn-outline-alert" (click)="viewQualityIssues()">
+            View Issue
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Primary Weather Overview -->
+        <div class="weather-overview-section">
+          <div class="overview-main">
+            <div class="main-temp-display">
+              <span class="temp-value">{{ weatherReport.currentTemperature?.toFixed(1) || '0.0' }}°C</span>
+              <span class="temp-range-small">{{ weatherReport.minTemperature?.toFixed(1) || '0' }}° / {{ weatherReport.maxTemperature?.toFixed(1) || '0' }}°</span>
+            </div>
+            <div class="main-description">
+              <!-- Clear Sky Icon -->
+              <svg *ngIf="getWeatherIconSvg() === 'clear'" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#FFA500" stroke-width="2">
+                <circle cx="12" cy="12" r="5"/>
+                <line x1="12" y1="1" x2="12" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                <line x1="1" y1="12" x2="3" y2="12"/>
+                <line x1="21" y1="12" x2="23" y2="12"/>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+              </svg>
+              
+              <!-- Cloudy Icon -->
+              <svg *ngIf="getWeatherIconSvg() === 'cloudy'" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2">
+                <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
+              </svg>
+              
+              <!-- Rain Icon -->
+              <svg *ngIf="getWeatherIconSvg() === 'rain'" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2">
+                <line x1="8" y1="19" x2="8" y2="21"/>
+                <line x1="8" y1="13" x2="8" y2="15"/>
+                <line x1="16" y1="19" x2="16" y2="21"/>
+                <line x1="16" y1="13" x2="16" y2="15"/>
+                <line x1="12" y1="21" x2="12" y2="23"/>
+                <line x1="12" y1="15" x2="12" y2="17"/>
+                <path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/>
+              </svg>
+              
+              <!-- Storm Icon -->
+              <svg *ngIf="getWeatherIconSvg() === 'storm'" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2">
+                <path d="M19 16.9A5 5 0 0 0 18 7h-1.26a8 8 0 1 0-11.62 9"/>
+                <polyline points="13 11 9 17 15 17 11 23"/>
+              </svg>
+              
+              <!-- Snow Icon -->
+              <svg *ngIf="getWeatherIconSvg() === 'snow'" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2">
+                <path d="M20 17.58A5 5 0 0 0 18 8h-1.26A8 8 0 1 0 4 16.25"/>
+                <line x1="8" y1="16" x2="8.01" y2="16"/>
+                <line x1="8" y1="20" x2="8.01" y2="20"/>
+                <line x1="12" y1="18" x2="12.01" y2="18"/>
+                <line x1="12" y1="22" x2="12.01" y2="22"/>
+                <line x1="16" y1="16" x2="16.01" y2="16"/>
+                <line x1="16" y1="20" x2="16.01" y2="20"/>
+              </svg>
+              
+              <!-- Mist/Fog Icon -->
+              <svg *ngIf="getWeatherIconSvg() === 'mist'" xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2">
+                <path d="M5 5h14"/>
+                <path d="M3 8h18"/>
+                <path d="M7 11h10"/>
+                <path d="M5 14h14"/>
+                <path d="M3 17h18"/>
+                <path d="M7 20h10"/>
+              </svg>
+              
+              <span class="condition-text">{{ weatherReport.description || 'Clear Sky' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comprehensive Weather Data Grid -->
+        <div class="weather-comprehensive-grid">
+          
+          <!-- SECTION 1: Temperature & Humidity -->
+          <div class="weather-section-group temp-humidity-group">
+            <h4 class="section-group-title">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
+              </svg>
+              Temperature & Humidity
+            </h4>
+            <div class="section-group-grid">
+              <div class="weather-data-item">
+                <div class="data-icon temp-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/>
+                  </svg>
+                </div>
+                <div class="data-content">
+                  <span class="data-label">Current</span>
+                  <span class="data-value">{{ weatherReport.currentTemperature?.toFixed(1) || '0.0' }} <span class="unit">°C</span></span>
+                </div>
+              </div>
+              <div class="weather-data-item">
+                <div class="data-icon temp-min-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="7 13 12 18 17 13"/>
+                    <line x1="12" y1="18" x2="12" y2="6"/>
+                  </svg>
+                </div>
+                <div class="data-content">
+                  <span class="data-label">Min Temp</span>
+                  <span class="data-value">{{ weatherReport.minTemperature?.toFixed(1) || '0.0' }} <span class="unit">°C</span></span>
+                </div>
+              </div>
+              <div class="weather-data-item">
+                <div class="data-icon temp-max-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="17 11 12 6 7 11"/>
+                    <line x1="12" y1="6" x2="12" y2="18"/>
+                  </svg>
+                </div>
+                <div class="data-content">
+                  <span class="data-label">Max Temp</span>
+                  <span class="data-value">{{ weatherReport.maxTemperature?.toFixed(1) || '0.0' }} <span class="unit">°C</span></span>
+                </div>
+              </div>
+              <div class="weather-data-item">
+                <div class="data-icon humidity-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+                  </svg>
+                </div>
+                <div class="data-content">
+                  <span class="data-label">Humidity</span>
+                  <span class="data-value">{{ weatherReport.humidity?.toFixed(0) || '0' }} <span class="unit">%</span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 2: Precipitation -->
+          <div class="weather-section-group precipitation-group">
+            <h4 class="section-group-title">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+              </svg>
+              Precipitation
+            </h4>
+            <div class="section-group-grid">
+              <div class="weather-data-item">
+                <div class="data-icon precip-prob-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/>
+                  </svg>
+                </div>
+                <div class="data-content">
+                  <span class="data-label">Probability</span>
+                  <span class="data-value">{{ weatherReport.precipitationProbability?.toFixed(0) || '0' }} <span class="unit">%</span></span>
+                </div>
+              </div>
+              <div class="weather-data-item">
+                <div class="data-icon precip-amount-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <polyline points="5 12 12 19 19 12"/>
+                  </svg>
+                </div>
+                <div class="data-content">
+                  <span class="data-label">Amount</span>
+                  <span class="data-value">{{ weatherReport.precipitationAmount?.toFixed(1) || '0.0' }} <span class="unit">mm</span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 3: Wind Details -->
+          <div class="weather-section-group wind-group">
+            <h4 class="section-group-title">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/>
+              </svg>
+              Wind Information
+            </h4>
+            <div class="section-group-grid wind-grid">
+              <div class="weather-data-item">
+                <div class="data-icon wind-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2"/>
+                  </svg>
+                </div>
+                <div class="data-content">
+                  <span class="data-label">Wind Speed</span>
+                  <span class="data-value">{{ weatherReport.windSpeed?.toFixed(1) || '0.0' }} <span class="unit">km/h</span></span>
+                </div>
+              </div>
+              <div class="weather-data-item">
+                <div class="data-icon wind-gust-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2"/>
+                  </svg>
+                </div>
+                <div class="data-content">
+                  <span class="data-label">Wind Gust</span>
+                  <span class="data-value">{{ weatherReport.windGust?.toFixed(1) || '0.0' }} <span class="unit">km/h</span></span>
+                </div>
+              </div>
+              <div class="weather-data-item wind-compass-item">
+                <div class="wind-compass-visual">
+                  <div class="compass-circle-full">
+                    <div class="compass-needle" [style.transform]="'rotate(' + (weatherReport.windDirection || 0) + 'deg)'">
+                      <div class="needle-arrow"></div>
+                    </div>
+                    <span class="compass-n-marker">N</span>
+                    <span class="compass-center-dot"></span>
+                  </div>
+                </div>
+                <div class="data-content wind-direction-content">
+                  <span class="data-label">Wind Direction</span>
+                  <span class="data-value">{{ weatherReport.windDirection?.toFixed(0) || '0' }}° <span class="unit">({{ getWindDirectionText(weatherReport.windDirection) }})</span></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 4: Atmospheric & Solar -->
+          <div class="weather-section-group atmospheric-group">
+            <h4 class="section-group-title">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <polyline points="12 6 12 12 16 14"/>
+              </svg>
+              Atmospheric & Solar
+            </h4>
+            <div class="section-group-grid">
+              <div class="weather-data-item">
+                <div class="data-icon pressure-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                </div>
+                <div class="data-content">
+                  <span class="data-label">Pressure</span>
+                  <span class="data-value">{{ weatherReport.pressure?.toFixed(1) || '0.0' }} <span class="unit">hPa</span></span>
+                </div>
+              </div>
+              <div class="weather-data-item">
+                <div class="data-icon solar-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"/>
+                    <line x1="12" y1="1" x2="12" y2="3"/>
+                    <line x1="12" y1="21" x2="12" y2="23"/>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                  </svg>
+                </div>
+                <div class="data-content">
+                  <span class="data-label">Solar Radiation</span>
+                  <span class="data-value" [class.data-unavailable]="!weatherReport.solarRadiation || weatherReport.solarRadiation === 0">
+                    {{ weatherReport.solarRadiation?.toFixed(1) || '0.0' }} <span class="unit">W/m²</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- SECTION 5: Astronomy (Sun & Moon) -->
+          <div class="weather-section-group astronomy-group">
+            <h4 class="section-group-title">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="5"/>
+                <path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42m12.72-12.72l1.42-1.42"/>
+              </svg>
+              Astronomy
+            </h4>
+            <div class="section-group-grid astronomy-grid">
+              <div class="weather-data-item">
+                <div class="data-icon sunrise-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 18a5 5 0 0 0-10 0"/>
+                    <line x1="12" y1="2" x2="12" y2="9"/>
+                    <polyline points="8 5 12 9 16 5"/>
+                  </svg>
+                </div>
+                <div class="data-content">
+                  <span class="data-label">Sunrise</span>
+                  <span class="data-value">{{ formatTime(weatherReport.sunrise) }}</span>
+                </div>
+              </div>
+              <div class="weather-data-item">
+                <div class="data-icon sunset-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 18a5 5 0 0 0-10 0"/>
+                    <line x1="12" y1="9" x2="12" y2="2"/>
+                    <polyline points="16 5 12 9 8 5"/>
+                  </svg>
+                </div>
+                <div class="data-content">
+                  <span class="data-label">Sunset</span>
+                  <span class="data-value">{{ formatTime(weatherReport.sunset) }}</span>
+                </div>
+              </div>
+              <div class="weather-data-item">
+                <div class="data-icon moonrise-icon">
+                  <span class="moon-emoji">🌙</span>
+                </div>
+                <div class="data-content">
+                  <span class="data-label">Moonrise</span>
+                  <span class="data-value">{{ formatTime(weatherReport.moonrise) }}</span>
+                </div>
+              </div>
+              <div class="weather-data-item">
+                <div class="data-icon moonset-icon">
+                  <span class="moon-emoji">🌙</span>
+                </div>
+                <div class="data-content">
+                  <span class="data-label">Moonset</span>
+                  <span class="data-value">{{ formatTime(weatherReport.moonset) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Location Footer -->
+        <div class="weather-location-footer">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+            <circle cx="12" cy="10" r="3"/>
+          </svg>
+          <div class="location-details">
+            <span class="location-item"><strong>Latitude:</strong> {{ weatherReport.latitude?.toFixed(6) || '0.000000' }}°</span>
+            <span class="location-separator">|</span>
+            <span class="location-item"><strong>Longitude:</strong> {{ weatherReport.longitude?.toFixed(6) || '0.000000' }}°</span>
+            <span class="location-separator">|</span>
+            <span class="location-item"><strong>Elevation:</strong> {{ weatherReport.elevation?.toFixed(1) || '0.0' }} m</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- No Weather Data State -->
+      <div class="weather-card card" *ngIf="!weatherLoading && !weatherReport">
+        <div class="weather-no-data">
+          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity: 0.3;">
+            <circle cx="12" cy="12" r="5"/>
+            <line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+            <line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          <p>No weather data available for today</p>
+          <p class="sub-text">Weather information will be updated daily</p>
         </div>
       </div>
 
@@ -246,7 +677,25 @@
                 </svg>
                 <span class="building-name">{{ building.building }}</span>
               </div>
-              <span class="building-count">{{ building.totalBoxes }} {{ building.totalBoxes === 1 ? 'box' : 'boxes' }}</span>
+              <div class="building-stats">
+                <span class="building-count">{{ building.totalBoxes }} {{ building.totalBoxes === 1 ? 'box' : 'boxes' }}</span>
+                <div class="status-counts">
+                  <span class="status-badge status-inprogress" title="In Progress">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    {{ building.inProgressCount }}
+                  </span>
+                  <span class="status-badge status-completed" title="Completed">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                      <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                    {{ building.completedCount }}
+                  </span>
+                </div>
+              </div>
             </div>
             <div class="floors-list">
               <div class="floor-item clickable-card" *ngFor="let floor of building.floors" 
@@ -258,8 +707,71 @@
                   </svg>
                   <span class="floor-name">{{ floor.floor }}</span>
                 </div>
-                <span class="floor-count">{{ floor.boxCount }} {{ floor.boxCount === 1 ? 'box' : 'boxes' }}</span>
+                <div class="floor-stats">
+                  <span class="floor-count">{{ floor.boxCount }} {{ floor.boxCount === 1 ? 'box' : 'boxes' }}</span>
+                  <div class="status-counts">
+                    <span class="status-badge status-inprogress" title="In Progress">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                      </svg>
+                      {{ floor.inProgressCount }}
+                    </span>
+                    <span class="status-badge status-completed" title="Completed">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                        <polyline points="22 4 12 14.01 9 11.01"/>
+                      </svg>
+                      {{ floor.completedCount }}
+                    </span>
+                  </div>
+                </div>
               </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Project Logos Section -->
+      <div class="logos-section card" *ngIf="hasAnyLogo()">
+        <h2 class="card-title">Project Logos</h2>
+        <div class="logos-grid">
+          <!-- Contractor Logo -->
+          <div class="logo-item" *ngIf="getContractorLogoUrl()">
+            <div class="logo-label">Contractor</div>
+            <div class="logo-image-container">
+              <img 
+                [src]="getContractorLogoUrl()" 
+                alt="Contractor Logo" 
+                (error)="onLogoError('contractor')"
+                class="logo-image"
+              />
+            </div>
+          </div>
+
+          <!-- Sub-Contractor Logo -->
+          <div class="logo-item" *ngIf="getSubContractorLogoUrl()">
+            <div class="logo-label">Sub-Contractor</div>
+            <div class="logo-image-container">
+              <img 
+                [src]="getSubContractorLogoUrl()" 
+                alt="Sub-Contractor Logo" 
+                (error)="onLogoError('subContractor')"
+                class="logo-image"
+              />
+            </div>
+          </div>
+
+          <!-- Client Logo -->
+          <div class="logo-item" *ngIf="getClientLogoUrl()">
+            <div class="logo-label">Client</div>
+            <div class="logo-image-container">
+              <img 
+                [src]="getClientLogoUrl()" 
+                alt="Client Logo" 
+                (error)="onLogoError('client')"
+                class="logo-image"
+              />
             </div>
           </div>
         </div>
@@ -552,6 +1064,103 @@
                 </tr>
               </tbody>
             </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI PDF Panel Extraction Section -->
+      <div class="excel-import card" *ngIf="!isProjectArchived">
+        <div class="excel-header">
+          <div>
+            <h2 class="card-title">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle; margin-right: 8px;">
+                <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+                <path d="M2 17l10 5 10-5"/>
+                <path d="M2 12l10 5 10-5"/>
+              </svg>
+              AI Panel Extraction from PDF
+              <span class="badge badge-new" style="margin-left: 8px; background: #4CAF50; color: white; font-size: 11px; padding: 2px 8px; border-radius: 12px;">AI Powered</span>
+            </h2>
+            <p class="helper-text">Upload architectural PDF drawings and let AI extract panel specifications automatically. Review and confirm before saving.</p>
+          </div>
+        </div>
+
+        <div class="ai-extraction-content">
+          <div class="info-banner" style="background: #E3F2FD; border-left: 4px solid #2196F3; padding: 16px; margin-bottom: 24px; border-radius: 4px;">
+            <div style="display: flex; align-items: start; gap: 12px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2196F3" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 16v-4"></path>
+                <path d="M12 8h.01"></path>
+              </svg>
+              <div>
+                <p style="margin: 0 0 8px 0; font-weight: 600; color: #1976D2;">How it works:</p>
+                <ul style="margin: 0; padding-left: 20px; color: #1565C0;">
+                  <li>Upload a PDF drawing (e.g., MGMT-GF-B1 Submitted For Production.pdf)</li>
+                  <li>AI analyzes the Element Tag and Embeds tables</li>
+                  <li>Extracts panel codes, volume, weight, concrete grade, cover, and hardware</li>
+                  <li>You review and edit the extracted data before saving</li>
+                  <li>Panel types are reused automatically if they already exist</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <button 
+            class="btn btn-primary btn-large" 
+            type="button" 
+            (click)="navigateToAIPanelExtraction()"
+            [disabled]="isProjectOnHold || isProjectClosed || isProjectArchived"
+            style="width: 100%; padding: 16px 24px; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 12px;"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span *ngIf="!isProjectOnHold && !isProjectClosed && !isProjectArchived">
+              Upload PDF & Extract with AI
+            </span>
+            <span *ngIf="isProjectOnHold || isProjectClosed || isProjectArchived" style="color: #999;">
+              AI Extraction disabled for projects {{ isProjectArchived ? 'archived' : (isProjectClosed ? 'closed' : 'on hold') }}
+            </span>
+          </button>
+
+          <div class="feature-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-top: 24px;">
+            <div class="feature-item" style="padding: 16px; background: #F5F5F5; border-radius: 8px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2" style="margin-bottom: 8px;">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+              </svg>
+              <h4 style="margin: 0 0 4px 0; font-size: 14px; font-weight: 600;">Auto-Detection</h4>
+              <p style="margin: 0; font-size: 12px; color: #666;">Finds panels automatically</p>
+            </div>
+            <div class="feature-item" style="padding: 16px; background: #F5F5F5; border-radius: 8px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2196F3" stroke-width="2" style="margin-bottom: 8px;">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+              <h4 style="margin: 0 0 4px 0; font-size: 14px; font-weight: 600;">Review & Edit</h4>
+              <p style="margin: 0; font-size: 12px; color: #666;">Verify before saving</p>
+            </div>
+            <div class="feature-item" style="padding: 16px; background: #F5F5F5; border-radius: 8px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FF9800" stroke-width="2" style="margin-bottom: 8px;">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              <h4 style="margin: 0 0 4px 0; font-size: 14px; font-weight: 600;">Time Saver</h4>
+              <p style="margin: 0; font-size: 12px; color: #666;">No manual data entry</p>
+            </div>
+            <div class="feature-item" style="padding: 16px; background: #F5F5F5; border-radius: 8px;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#9C27B0" stroke-width="2" style="margin-bottom: 8px;">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                <circle cx="9" cy="7" r="4"></circle>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+              </svg>
+              <h4 style="margin: 0 0 4px 0; font-size: 14px; font-weight: 600;">Reusable Types</h4>
+              <p style="margin: 0; font-size: 12px; color: #666;">Smart panel type matching</p>
+            </div>
           </div>
         </div>
       </div>

@@ -13,6 +13,7 @@ namespace Dubox.Application.Specifications
         {
             AddCriteria(pbt => pbt.ProjectId == projectId);
             AddInclude(nameof(ProjectBoxType.SubTypes));
+            AddInclude(nameof(ProjectBoxType.ActivityTemplate));
             AddOrderBy(t => t.DisplayOrder);
         }
     }

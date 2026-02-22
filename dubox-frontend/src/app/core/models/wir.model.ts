@@ -231,7 +231,8 @@ export enum WIRCheckpointStatus {
 export enum CheckListItemStatus {
   Pending = 'Pending',
   Pass = 'Pass',
-  Fail = 'Fail'
+  Fail = 'Fail',
+  NA = 'NA'
 }
 
 export interface CreateWIRCheckpointRequest {
@@ -277,7 +278,7 @@ export interface ChecklistItemForReview {
   status: CheckListItemStatus;
 }
 
-export type IssueType = 'Defect' | 'NonConformance' | 'Observation';
+export type IssueType = 'Defect' | 'NonConformance' | 'Observation' | 'ExchangeRequest';
 export type SeverityType = 'Critical' | 'Major' | 'Minor';
 
 /** NCR (Non-Conformance Report) type: Internal (default) or External */
@@ -328,6 +329,7 @@ export interface QualityIssueDetails extends QualityIssueItem {
   issueId: string;
   issueNumber?: string;
   status?: QualityIssueStatus;
+  isReadOnly?: boolean;
   resolutionDate?: string | Date;
   resolutionDescription?: string;
   boxId?: string;
@@ -502,7 +504,7 @@ export const WIR_CHECKLIST_TEMPLATES: Record<string, WIRChecklistItem[]> = {
       remarks: ''
     }
   ],
-  'WIR-4': [ // 3rd Fix Installation
+  'WIR-4': [ // 2nd Fix Installation
     {
       sequence: 1,
       checkpointDescription: 'False ceiling installed',

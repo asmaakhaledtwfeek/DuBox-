@@ -44,6 +44,7 @@ export interface Box {
   factoryId?: string;
   factoryCode?: string;
   factoryName?: string;
+  factorySectionId?: string;
   bay?: string;
   row?: string;
   position?: string;
@@ -388,10 +389,41 @@ export interface BoxLog {
 export interface BoxFilters {
   projectId?: string;
   status?: BoxStatus[];
+  /** Sent to API as statuses (numbers) for server-side filtering */
+  statuses?: number[];
   assignedTo?: string;
   search?: string;
+  boxType?: string;
+  boxSubType?: string;
+  buildingNumber?: string;
+  floor?: string;
+  zone?: string;
   dateFrom?: Date;
   dateTo?: Date;
+  page?: number;
+  pageSize?: number;
+  countOnly?: boolean;
+}
+
+export interface PaginatedBoxesResponse {
+  items: Box[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+  statusCounts?: BoxStatusCounts;
+}
+
+export interface BoxStatusCounts {
+  notStarted: number;
+  readyToStart: number;
+  inProgress: number;
+  completed: number;
+  onHold: number;
+  delayed: number;
+  dispatched: number;
 }
 
 export interface BoxImportResult {
@@ -472,12 +504,15 @@ export interface BoxPanel {
   secondApprovalDate?: Date;
   secondApprovalNotes?: string;
   
-  // Pre-cast Location Workflow
+  // Pre-cast Location Workflow (7 stages)
   currentStage?: number; // PanelStageEnum
-  moldPreparationComplete?: boolean;
-  reinforcementSetupComplete?: boolean;
-  concreteCastingComplete?: boolean;
-  curingAndDemoldingComplete?: boolean;
+  moldPreparationComplete?: boolean;                // Stage 1: Mold Preparation
+  initialComplete?: boolean;                        // Stage 2: Initial
+  mepInsertsInstallationComplete?: boolean;         // Stage 3: MEP Inserts / Embedded Items Installation
+  reinforcementSetupComplete?: boolean;             // Stage 4: Reinforcement Setup
+  concreteCastingComplete?: boolean;                // Stage 5: Concrete Casting
+  surfaceFinishingComplete?: boolean;               // Stage 6: Surface Finishing
+  curingAndDemoldingComplete?: boolean;             // Stage 7: Curing & Demolding
   workflowStatus?: string; // InProgress, OnHold, Completed
   qualityIssueId?: string;
   
@@ -514,6 +549,11 @@ export interface PanelType {
   panelTypeName: string;
   panelTypeCode: string;
   description?: string;
+  volumeM3?: number;
+  weightTon?: number;
+  concreteGrade?: string;
+  coverMm?: number;
+  embedsJson?: string;
   isActive: boolean;
   displayOrder: number;
   createdDate: Date;

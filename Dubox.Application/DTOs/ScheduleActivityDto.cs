@@ -2,15 +2,27 @@ namespace Dubox.Application.DTOs;
 
 public record ScheduleActivityDto(
     Guid ScheduleActivityId,
-    string ActivityName,
+    Guid? SourceActivityMasterId,
+    bool IsCustomActivity,
     string ActivityCode,
+    string ActivityName,
+    string Stage,
+    int StageNumber,
+    int SequenceInStage,
+    int OverallSequence,
     string? Description,
+    int EstimatedDurationDays,
+    bool IsWIRCheckpoint,
+    string? WIRCode,
+    string? ApplicableBoxTypes,
+    string? DependsOnActivities,
     DateTime PlannedStartDate,
     DateTime PlannedFinishDate,
     DateTime? ActualStartDate,
     DateTime? ActualFinishDate,
     string Status,
     decimal PercentComplete,
+    decimal Weight,
     Guid? ProjectId,
     string? ProjectName,
     List<AssignedTeamDto> AssignedTeams,
@@ -19,23 +31,44 @@ public record ScheduleActivityDto(
 
 public record ScheduleActivityListDto(
     Guid ScheduleActivityId,
-    string ActivityName,
     string ActivityCode,
+    string ActivityName,
+    string Stage,
+    int StageNumber,
+    bool IsCustomActivity,
     DateTime PlannedStartDate,
     DateTime PlannedFinishDate,
+    DateTime? ActualStartDate,
+    DateTime? ActualFinishDate,
     string Status,
     decimal PercentComplete,
+    decimal Weight,
     int TeamCount,
-    int MaterialCount
+    int MaterialCount,
+    Guid? ParentActivityId,
+    List<ScheduleActivityListDto> Children
 );
 
 public record CreateScheduleActivityCommand(
-    string ActivityName,
+    Guid? SourceActivityMasterId,
+    bool IsCustomActivity,
     string ActivityCode,
+    string ActivityName,
+    string Stage,
+    int StageNumber,
+    int SequenceInStage,
+    int OverallSequence,
     string? Description,
+    int EstimatedDurationDays,
+    bool IsWIRCheckpoint,
+    string? WIRCode,
+    string? ApplicableBoxTypes,
+    string? DependsOnActivities,
     DateTime PlannedStartDate,
     DateTime PlannedFinishDate,
-    Guid? ProjectId
+    Guid? ProjectId,
+     DateTime ActualFinishDate,
+    DateTime ActualStartDate
 );
 
 public record AssignedTeamDto(
@@ -69,6 +102,11 @@ public record AssignMaterialCommand(
     string? Unit,
     string? Notes
 );
+
+
+
+
+
 
 
 

@@ -11,6 +11,7 @@ namespace Dubox.Application.Services
     public interface IBoxMapper
     {
         BoxDto Map(Box box);
+        BoxDto Map(Box box, Dictionary<int, string>? boxTypes, Dictionary<int, string>? boxSubTypes);
     }
     public class BoxMapper : IBoxMapper
     {
@@ -20,6 +21,11 @@ namespace Dubox.Application.Services
             _unitOfWork = unitOfWork;
         }
         public BoxDto Map(Box box)
+        {
+            return Map(box, null, null);
+        }
+
+        public BoxDto Map(Box box, Dictionary<int, string>? boxTypes, Dictionary<int, string>? boxSubTypes)
         {
             try
             {
@@ -31,18 +37,29 @@ namespace Dubox.Application.Services
                 string boxType = string.Empty;
                 string? boxSubTypeName = null;
 
-                // Fetch BoxType name from ProjectBoxTypes
-                if (boxTypeId.HasValue)
+                // Use dictionary lookup if provided (performance optimization)
+                if (boxTypeId.HasValue && boxTypes != null)
                 {
+                    boxTypes.TryGetValue(boxTypeId.Value, out boxType);
+                    boxType ??= string.Empty;
+                }
+                else if (boxTypeId.HasValue)
+                {
+                    // Fallback to database query for backward compatibility
                     var projectBoxType = _unitOfWork.Repository<ProjectBoxType>()
                         .Get()
                         .FirstOrDefault(pbt => pbt.Id == boxTypeId.Value && pbt.ProjectId == box.ProjectId);
                     boxType = projectBoxType?.TypeName ?? string.Empty;
                 }
 
-                // Fetch BoxSubType name from ProjectBoxSubTypes
-                if (boxSubTypeId.HasValue)
+                // Use dictionary lookup if provided (performance optimization)
+                if (boxSubTypeId.HasValue && boxSubTypes != null)
                 {
+                    boxSubTypes.TryGetValue(boxSubTypeId.Value, out boxSubTypeName);
+                }
+                else if (boxSubTypeId.HasValue)
+                {
+                    // Fallback to database query for backward compatibility
                     var projectBoxSubType = _unitOfWork.Repository<ProjectBoxSubType>()
                         .Get()
                         .FirstOrDefault(pbst => pbst.Id == boxSubTypeId.Value);
@@ -94,10 +111,13 @@ namespace Dubox.Application.Services
                     WorkflowStatus = p.WorkflowStatus,
                     CurrentStage = (int)p.CurrentStage,
                     QualityIssueId = p.QualityIssueId,
-                    // Stage completion flags
+                    // Stage completion flags (7 stages)
                     MoldPreparationComplete = p.MoldPreparationComplete,
+                    InitialComplete = p.InitialComplete,
+                    MEPInsertsInstallationComplete = p.MEPInsertsInstallationComplete,
                     ReinforcementSetupComplete = p.ReinforcementSetupComplete,
                     ConcreteCastingComplete = p.ConcreteCastingComplete,
+                    SurfaceFinishingComplete = p.SurfaceFinishingComplete,
                     CuringAndDemoldingComplete = p.CuringAndDemoldingComplete,
                     // First Approval
                     FirstApprovalStatus = p.FirstApprovalStatus,
@@ -111,7 +131,8 @@ namespace Dubox.Application.Services
                     SecondApprovalNotes = p.SecondApprovalNotes,
                     CreatedDate = p.CreatedDate,
                     ModifiedDate = p.ModifiedDate,
-                    Notes = p.Notes
+                    Notes = p.Notes,
+                   
                 }).ToList() ?? new List<BoxPanelDto>();
 
                 return new BoxDto
@@ -160,7 +181,8 @@ namespace Dubox.Application.Services
                     PodDeliver = box.PodDeliver,
                     PodName = box.PodName,
                     PodType = box.PodType, 
-                    BoxNumber=box.BoxNumber
+                    BoxNumber=box.BoxNumber,
+                    SectionId=box.FactorySectionId
                 };
             }
             catch (Exception ex)

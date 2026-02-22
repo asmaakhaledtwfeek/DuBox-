@@ -49,19 +49,35 @@ public class BoxPanel
     [MaxLength(500)]
     public string? DeliveryNoteUrl { get; set; }
 
-    // Pre-cast Location Stage Progress
+    // Pre-cast Location Stage Progress (7 stages)
     public PanelStageEnum CurrentStage { get; set; } = PanelStageEnum.NotStarted;
 
-    // Stage completion tracking
+    // Stage completion tracking (7 stages)
+    // Stage 1: Mold Preparation
     public bool MoldPreparationComplete { get; set; } = false;
     public DateTime? MoldPreparationDate { get; set; }
 
+    // Stage 2: Initial
+    public bool InitialComplete { get; set; } = false;
+    public DateTime? InitialDate { get; set; }
+
+    // Stage 3: MEP Inserts / Embedded Items Installation
+    public bool MEPInsertsInstallationComplete { get; set; } = false;
+    public DateTime? MEPInsertsInstallationDate { get; set; }
+
+    // Stage 4: Reinforcement Setup
     public bool ReinforcementSetupComplete { get; set; } = false;
     public DateTime? ReinforcementSetupDate { get; set; }
 
+    // Stage 5: Concrete Casting
     public bool ConcreteCastingComplete { get; set; } = false;
     public DateTime? ConcreteCastingDate { get; set; }
 
+    // Stage 6: Surface Finishing
+    public bool SurfaceFinishingComplete { get; set; } = false;
+    public DateTime? SurfaceFinishingDate { get; set; }
+
+    // Stage 7: Curing & Demolding
     public bool CuringAndDemoldingComplete { get; set; } = false;
     public DateTime? CuringAndDemoldingDate { get; set; }
 

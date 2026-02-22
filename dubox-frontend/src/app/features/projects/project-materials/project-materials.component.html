@@ -1,0 +1,79 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="page-content">
+    <!-- Loading State -->
+    <div class="loading-container" *ngIf="loading">
+      <div class="spinner"></div>
+      <p>Loading project materials...</p>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-container" *ngIf="error && !loading">
+      <p class="error-message">{{ error }}</p>
+      <button class="btn btn-primary" (click)="loadProject()">Retry</button>
+    </div>
+
+    <!-- Materials Management -->
+    <div *ngIf="project && !loading && !error">
+      <!-- Page Header (match Project Materials Management layout) -->
+      <div class="page-header">
+        <div class="header-left">
+          <div class="breadcrumb">
+            <button class="breadcrumb-link" [routerLink]="['/projects']">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="15 18 9 12 15 6"></polyline>
+              </svg>
+              Projects
+            </button>
+            <span class="breadcrumb-separator">/</span>
+            <button class="breadcrumb-link" [routerLink]="['/projects', projectId, 'dashboard']">
+              {{ project.name || project.code || 'Project' }}
+            </button>
+            <span class="breadcrumb-separator">/</span>
+            <span class="breadcrumb-current">Materials Management</span>
+          </div>
+
+          <!-- Page Title / Description -->
+          <div class="header-content">
+            <div class="header-info">
+              <h1 class="page-title">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="title-icon">
+                  <path d="M20 7h-9"></path>
+                  <path d="M14 17H5"></path>
+                  <circle cx="17" cy="17" r="3"></circle>
+                  <circle cx="7" cy="7" r="3"></circle>
+                  <path d="M14 7h-2a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"></path>
+                </svg>
+                Materials Management
+              </h1>
+              <p class="page-subtitle">
+                Manage materials for <strong>{{ project.name || project.code }}</strong>
+              </p>
+              <p class="page-description">
+                Select the materials required for this project. Selected materials will be automatically added to new boxes as a checklist.
+              </p>
+            </div>
+          </div>
+        </div>
+        <div class="header-content">
+        
+        </div>
+      </div>
+
+      <!-- Materials Selection Component -->
+      <div class="materials-content">
+        <app-project-material-selection 
+          [projectId]="projectId">
+        </app-project-material-selection>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+

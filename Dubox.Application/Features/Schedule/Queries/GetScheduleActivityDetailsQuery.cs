@@ -15,3 +15,8 @@ public record GetScheduleActivityDetailsQuery(Guid ScheduleActivityId) : IReques
 
 
 
+
+
+
+
+

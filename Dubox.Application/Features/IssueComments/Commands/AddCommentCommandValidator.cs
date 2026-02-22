@@ -12,7 +12,7 @@ namespace Dubox.Application.Features.IssueComments.Commands
 
             RuleFor(x => x.CommentText)
                 .NotEmpty().WithMessage("Comment text is required.")
-                .MustBeMeaningfulText();
+                ;
         }
     }
 }

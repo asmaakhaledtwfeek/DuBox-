@@ -1,10 +1,10 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Services;
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
-using Mapster;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,17 +16,20 @@ namespace Dubox.Application.Features.QualityIssues.Queries
         private readonly IDbContext _dbContext;
         private readonly IProjectTeamVisibilityService _visibilityService;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IQualityIssueMappingService _mappingService;
         
         public GetQualityIssuesQueryHandler(
             IUnitOfWork unitOfWork, 
             IDbContext dbContext,
             IProjectTeamVisibilityService visibilityService,
-            ICurrentUserService currentUserService)
+            ICurrentUserService currentUserService,
+            IQualityIssueMappingService mappingService)
         {
             _unitOfWork = unitOfWork;
             _dbContext = dbContext;
             _visibilityService = visibilityService;
             _currentUserService = currentUserService;
+            _mappingService = mappingService;
         }
 
         public async Task<Result<PaginatedQualityIssuesResponseDto>> Handle(GetQualityIssuesQuery request, CancellationToken cancellationToken)
@@ -58,21 +61,8 @@ namespace Dubox.Application.Features.QualityIssues.Queries
             
             var totalCount = qualityIssuesResult.Count;
 
-            var dtos = qualityIssues.Select(issue =>
-            {
-                var dto = issue.Adapt<QualityIssueDetailsDto>();
-                dto.AssignedToUserName =!string.IsNullOrEmpty(issue.AssignedToMember?.EmployeeName)? issue.AssignedToMember?.EmployeeName: issue.AssignedToMember?.User.FullName;
-                
-                // Map project information from Box.Project
-                if (issue.Box?.Project != null)
-                {
-                    dto.ProjectId = issue.Box.Project.ProjectId;
-                    dto.ProjectName = issue.Box.Project.ProjectName;
-                    dto.ProjectCode = issue.Box.Project.ProjectCode;
-                }
-                
-                return dto;
-            }).ToList();
+            // Use mapping service to convert issues to DTOs
+            var dtos = _mappingService.MapToDtoList(qualityIssues);
             
 
             var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);

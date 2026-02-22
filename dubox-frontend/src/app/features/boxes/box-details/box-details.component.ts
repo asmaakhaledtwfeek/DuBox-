@@ -59,10 +59,12 @@ type BoxDrawing = {
   drawingUrl?: string; // URL for drawing
 };
 
+import { BoxMaterialChecklistComponent } from '../components/box-material-checklist/box-material-checklist.component';
+
 @Component({
   selector: 'app-box-details',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent, HeaderComponent, BoxLogDetailsModalComponent, UploadDrawingModalComponent, QualityIssueDetailsModalComponent, AssignToCrewModalComponent, IssueCommentsComponent, BoxPanelsComponent, DateTimeDisplayPipe],
+  imports: [CommonModule, RouterModule, FormsModule, ReactiveFormsModule, SidebarComponent, ActivityTableComponent, ProgressUpdatesTableComponent, HeaderComponent, BoxLogDetailsModalComponent, UploadDrawingModalComponent, QualityIssueDetailsModalComponent, AssignToCrewModalComponent, IssueCommentsComponent, BoxPanelsComponent, DateTimeDisplayPipe, BoxMaterialChecklistComponent],
   providers: [LocationService],
   animations: [
     trigger('slideDown', [
@@ -87,7 +89,7 @@ type BoxDrawing = {
     ])
   ],
   templateUrl: './box-details.component.html',
-  styleUrls: ['./box-details.component.scss', './box-details-attachments.scss']
+  styleUrls: ['./box-details.component.scss', './box-details-attachments.scss', './box-details-exchanges.scss']
 })
 export class BoxDetailsComponent implements OnInit, OnDestroy {
   box: Box | null = null;
@@ -100,7 +102,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   showDeleteConfirm = false;
   deleteSuccess = false;
   
-  activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'drawings' | 'progress-updates' | 'attachments' | 'panels' = 'overview';
+  activeTab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'drawings' | 'progress-updates' | 'attachments' | 'panels' | 'materials' | 'exchanges' = 'overview';
   
   canEdit = false;
   canDelete = false;
@@ -123,6 +125,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   qualityIssues: QualityIssueDetails[] = [];
   qualityIssuesLoading = false;
   qualityIssuesError = '';
+  highlightedIssueId: string | null = null; // For highlighting specific issue from navigation
   qualityIssueStatuses: QualityIssueStatus[] = ['Open', 'InProgress', 'Resolved', 'Closed'];
   qualityIssueStatusMeta: Record<QualityIssueStatus, { label: string; class: string }> = {
     Open: { label: 'Open', class: 'status-open' },
@@ -175,7 +178,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   isCreateQualityIssueModalOpen = false;
   createQualityIssueLoading = false;
   createQualityIssueError = '';
-  issueTypes: IssueType[] = ['Defect', 'NonConformance', 'Observation'];
+  issueTypes: IssueType[] = ['Defect', 'NonConformance', 'Observation', 'ExchangeRequest'];
   severityLevels: SeverityType[] = ['Critical', 'Major', 'Minor'];
   ncrTypes: NCRType[] = ['Internal', 'External'];
   newQualityIssueForm: {
@@ -323,6 +326,15 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   factory: Factory | null = null;
   isLoadingFactoryLayout = false;
   
+  // Factory layout modal
+  showFactoryLayoutModal = false;
+  isLoadingModalLayout = false;
+  factoryBoxes: Box[] = [];
+  factorySections: any[] = [];
+  modalLayoutConfig: any = null; // Cached configuration for modal
+  FactorySectionType = {Assembly: 1, Finishing: 2}; // Expose enum to template (must match backend enum values)
+  modalFreezingCellsMap: Map<string, Set<number>> = new Map();
+  
   // Track original pod delivery values to detect changes
   private originalPodDeliver = false;
   private originalPodName = '';
@@ -330,6 +342,28 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   hasPodDeliveryChanges = false;
   
   private destroy$ = new Subject<void>();
+
+  // Exchange request properties
+  exchangeHistory: any[] = [];
+  exchangeHistoryLoading = false;
+  exchangeHistoryError = '';
+  exchangeLoading = false;
+  exchangeError = '';
+  exchangeSuccess = '';
+
+  // Inline exchange form
+  exchangeForm = {
+    newBuildingNumber: null as string | null,
+    newFloor: null as string | null,
+    requestReason: '',
+    targetBoxId: null as string | null
+  };
+  projectBuildings: any[] = [];
+  projectLevels: any[] = [];
+  availableBoxesForExchange: Box[] = [];
+  loadingBoxesForExchange = false;
+  noBoxesFoundForExchange = false;
+  boxesForExchangeError = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -349,12 +383,38 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.boxId = this.route.snapshot.params['boxId'];
-    this.projectId = this.route.snapshot.params['projectId'];
+    // Subscribe to route parameter changes to handle navigation between different boxes
+    this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
+      const newBoxId = params.get('boxId');
+      const newProjectId = params.get('projectId');
+      
+      if (newBoxId && newProjectId) {
+        const boxIdChanged = this.boxId && this.boxId !== newBoxId;
+        const projectIdChanged = this.projectId && this.projectId !== newProjectId;
+        
+        this.boxId = newBoxId;
+        this.projectId = newProjectId;
+        
+        console.log('📦 Route params changed:', { 
+          boxId: newBoxId, 
+          projectId: newProjectId, 
+          boxIdChanged, 
+          projectIdChanged 
+        });
+        
+        // If boxId or projectId changed, reinitialize the component
+        if (boxIdChanged || projectIdChanged) {
+          this.reinitializeComponent();
+        } else {
+          // First load
+          this.initializeComponent();
+        }
+      }
+    });
     
     // Check for tab query parameter to set active tab
     const tabParam = this.route.snapshot.queryParams['tab'];
-    if (tabParam && ['overview', 'activities', 'wir', 'quality-issues', 'logs', 'drawings', 'progress-updates', 'attachments'].includes(tabParam)) {
+    if (tabParam && ['overview', 'activities', 'wir', 'quality-issues', 'logs', 'drawings', 'progress-updates', 'attachments', 'exchanges', 'panels'].includes(tabParam)) {
       this.activeTab = tabParam as any;
     }
     
@@ -372,9 +432,6 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       }, 500);
     }
     
-    // Check permissions immediately
-    this.checkPermissions();
-    
     // Subscribe to permission changes to update UI when permissions are loaded
     this.permissionService.permissions$
       .pipe(
@@ -385,10 +442,150 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         console.log('🔄 Permissions updated, re-checking box permissions');
         this.checkPermissions();
       });
-    
+
+    // When navigating back with ?tab=attachments (e.g. from activity details), load attachments if component is reused
+    this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe(params => {
+      const tab = params.get('tab');
+      if (tab === 'attachments') {
+        this.activeTab = 'attachments';
+        if (this.box && !this.boxAttachments && !this.loadingBoxAttachments) {
+          this.loadAllBoxAttachments();
+        }
+      }
+    });
+  }
+
+  /**
+   * Initialize component on first load
+   */
+  private initializeComponent(): void {
+    console.log('🎬 Initializing component for box:', this.boxId);
+    this.checkPermissions();
     this.setupBoxLogsSearch();
     this.loadBox();
     this.loadProjectDetails();
+  }
+
+  /**
+   * Reinitialize component when navigating to a different box
+   */
+  private reinitializeComponent(): void {
+    console.log('🔄 Reinitializing component for new box:', this.boxId);
+    
+    // Reset component state
+    this.resetComponentState();
+    
+    // Reload data for the new box
+    this.checkPermissions();
+    this.loadBox();
+    this.loadProjectDetails();
+    
+    // Reload data for the active tab
+    this.loadActiveTabData();
+  }
+
+  /**
+   * Reset component state when navigating to a different box
+   */
+  private resetComponentState(): void {
+    // Reset box data
+    this.box = null;
+    this.project = null;
+    this.loading = true;
+    this.error = '';
+    
+    // Reset quality issues
+    this.qualityIssues = [];
+    this.qualityIssuesLoading = false;
+    
+    // Reset exchange history
+    this.exchangeHistory = [];
+    this.exchangeHistoryLoading = false;
+    this.availableBoxesForExchange = [];
+    this.noBoxesFoundForExchange = false;
+    this.exchangeForm = {
+      newBuildingNumber: null,
+      newFloor: null,
+      requestReason: '',
+      targetBoxId: null
+    };
+    
+    // Reset logs
+    this.boxLogs = [];
+    this.boxLogsLoading = false;
+    
+    // Reset drawings
+    this.boxDrawings = [];
+    this.loadingBoxDrawings = false;
+    
+    // Reset attachments
+    this.boxAttachments = null;
+    this.loadingBoxAttachments = false;
+    
+    // Reset progress updates
+    this.progressUpdates = [];
+    this.progressUpdatesLoading = false;
+    
+    // Reset panels
+    this.boxPanels = [];
+    
+    // Reset modals
+    this.selectedBoxLog = null;
+    this.isBoxLogDetailsModalOpen = false;
+    this.selectedIssueDetails = null;
+    this.isDetailsModalOpen = false;
+    this.selectedIssueForAssign = null;
+    this.isAssignModalOpen = false;
+    this.selectedIssueForStatus = null;
+    this.isStatusModalOpen = false;
+    
+    // Reset WIR checkpoints
+    this.wirCheckpoints = [];
+    this.wirLoading = false;
+    
+    // Keep the active tab but reset tab-specific data
+    console.log('✅ Component state reset for tab:', this.activeTab);
+  }
+
+  /**
+   * Load data for the currently active tab
+   */
+  private loadActiveTabData(): void {
+    console.log('📂 Loading data for active tab:', this.activeTab);
+    
+    switch (this.activeTab) {
+      case 'activities':
+        this.loadActivities();
+        break;
+      case 'quality-issues':
+        this.loadQualityIssues();
+        break;
+      case 'exchanges':
+        this.loadExchangeHistory();
+        this.loadProjectConfiguration();
+        break;
+      case 'logs':
+        this.loadBoxLogs();
+        break;
+      case 'drawings':
+        this.loadBoxDrawings();
+        break;
+      case 'progress-updates':
+        this.loadProgressUpdates();
+        break;
+      case 'attachments':
+        this.loadAllBoxAttachments();
+        break;
+      case 'panels':
+        // Panels are loaded automatically via the child component
+        break;
+      case 'wir':
+        // WIR data is loaded on demand
+        break;
+      default:
+        // Overview tab - data is already loaded in loadBox()
+        break;
+    }
   }
   
   private loadProjectDetails(): void {
@@ -449,6 +646,7 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
   }
 
   loadBox(): void {
+    console.log('📦 Loading box data...');
     this.loading = true;
     this.error = '';
     
@@ -483,14 +681,16 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         
         this.loading = false;
         
-        // After box is loaded, if we have a tab query parameter, trigger data loading for that tab
-        const tabParam = this.route.snapshot.queryParams['tab'];
-        if (tabParam && ['activities', 'wir', 'quality-issues', 'logs', 'drawings', 'progress-updates', 'attachments'].includes(tabParam)) {
-          // Use setTimeout to ensure the component is fully initialized
-          setTimeout(() => {
-            this.setActiveTab(tabParam as any);
-          }, 0);
+        // Refresh quality issues if we're on quality-issues or panels tab (to show newly created issues)
+        if (this.activeTab === 'quality-issues' || this.activeTab === 'panels') {
+          console.log('🔄 Refreshing quality issues after box reload (active tab:', this.activeTab, ')');
+          this.loadQualityIssues();
         }
+        // Load attachments when landing on or returning to box details with tab=attachments (e.g. back from activity)
+        if (this.activeTab === 'attachments' && !this.boxAttachments && !this.loadingBoxAttachments) {
+          this.loadAllBoxAttachments();
+        }
+        this.loadExchangeHistory();
       },
       error: (err) => {
         this.error = err.message || 'Failed to load box details';
@@ -569,9 +769,422 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     return { columns, rows, matrix };
   }
 
+  /**
+   * Open factory layout modal with full sectioned layout
+   */
+  openFactoryLayoutModal(): void {
+    this.showFactoryLayoutModal = true;
+    this.loadFullFactoryLayoutForModal();
+  }
+
+  /**
+   * Close factory layout modal
+   */
+  closeFactoryLayoutModal(): void {
+    this.showFactoryLayoutModal = false;
+  }
+
+  /**
+   * Load factory data with only the current box for the modal
+   */
+  private loadFullFactoryLayoutForModal(): void {
+    if (!this.box?.factoryId) {
+      return;
+    }
+
+    // Show only the current box in the factory layout
+    this.factoryBoxes = [this.box];
+    console.log('✅ Showing only current box for modal:', this.box.code);
+
+    // Check if factory and sections are already loaded
+    if (this.factory && this.factory.factoryId === this.box.factoryId && 
+        this.factorySections && this.factorySections.length > 0) {
+      console.log('✅ Using cached factory data with', this.factorySections.length, 'sections');
+      // Build the modal layout configuration immediately from cached data
+      this.buildModalFreezingCellsMap();
+      this.modalLayoutConfig = this.buildModalLayoutConfiguration();
+      console.log('✅ Modal layout config built from cache:', this.modalLayoutConfig);
+      return;
+    }
+
+    // Only load factory if we don't have it cached
+    this.isLoadingModalLayout = true;
+    console.log('🔄 Loading factory data from API...');
+
+    this.factoryService.getFactoryById(this.box.factoryId).subscribe({
+      next: (factory) => {
+        this.factory = factory;
+        this.factorySections = factory.sections || [];
+        console.log('✅ Loaded factory with', this.factorySections.length, 'sections');
+        
+        // Build freezing cells map and modal layout configuration after sections are loaded
+        this.buildModalFreezingCellsMap();
+        this.modalLayoutConfig = this.buildModalLayoutConfiguration();
+        this.isLoadingModalLayout = false;
+      },
+      error: (err) => {
+        console.error('❌ Error loading factory for modal:', err);
+        this.factorySections = [];
+        this.modalLayoutConfig = null;
+        this.isLoadingModalLayout = false;
+      }
+    });
+  }
+
+  /**
+   * Get cached layout configuration (used by template)
+   */
+  getModalLayoutConfiguration(): any {
+    return this.modalLayoutConfig || {
+      leftColumn: { sections: [] },
+      rightColumn: { sections: [] },
+      hasSections: false
+    };
+  }
+
+  /**
+   * Build layout configuration with sections ordered by DisplayOrder from backend
+   * Sections are rendered in natural grid order (left-to-right, top-to-bottom) based on DisplayOrder
+   * 
+   * Expected DisplayOrder example:
+   * 1 → Finishing-2 (Top-Left)
+   * 2 → Assembly-2 (Top-Right)
+   * 3 → Finishing-1 (Bottom-Left)
+   * 4 → Assembly-1 (Bottom-Right)
+   */
+  private buildModalLayoutConfiguration(): any {
+    if (!this.factory || !this.factorySections || this.factorySections.length === 0) {
+      console.warn('⚠️ No factory or sections available for modal layout');
+      return {
+        leftColumn: { sections: [] },
+        rightColumn: { sections: [] },
+        hasSections: false
+      };
+    }
+
+    const startTime = performance.now();
+    console.log(`🔍 Building modal layout for ${this.factorySections.length} sections`);
+    console.log('Sections order:', this.factorySections.map(s => 
+      `${s.sectionName} (DisplayOrder: ${s.displayOrder}, Type: ${s.sectionType})`
+    ));
+
+    // Backend already ordered sections by DisplayOrder ASC
+    // Split sections into rows based on DisplayOrder
+    // Top row: first 2 sections (indices 0, 1)
+    // Bottom row: next 2 sections (indices 2, 3)
+    const topRowSections = this.factorySections.slice(0, 2);
+    const bottomRowSections = this.factorySections.slice(2, 4);
+
+    // Map sections to include their grid data and sort parts by minBay
+    const mapSectionToData = (section: any) => {
+      // Sort parts by minBay to ensure they appear in the correct bay order (B-D, E-G, etc.)
+      const sortedParts = (section.parts || []).sort((a: any, b: any) => {
+        if (!a.minBay || !b.minBay) return 0;
+        return a.minBay.localeCompare(b.minBay);
+      });
+
+      return {
+        section: section,
+        grid: this.getModalGridLayoutForSection(section),
+        parts: sortedParts.map((part: any) => ({
+          ...part,
+          grid: this.getModalGridLayoutForPart(part, section)
+        }))
+      };
+    };
+
+    const buildTime = performance.now() - startTime;
+    console.log(`✅ Modal layout built in ${buildTime.toFixed(2)}ms`);
+
+    return {
+      leftColumn: {
+        // LEFT COLUMN: sections at indices 0 (top) and 2 (bottom)
+        sections: [
+          topRowSections[0] ? mapSectionToData(topRowSections[0]) : null,
+          bottomRowSections[0] ? mapSectionToData(bottomRowSections[0]) : null
+        ].filter(s => s !== null)
+      },
+      rightColumn: {
+        // RIGHT COLUMN: sections at indices 1 (top) and 3 (bottom)
+        sections: [
+          topRowSections[1] ? mapSectionToData(topRowSections[1]) : null,
+          bottomRowSections[1] ? mapSectionToData(bottomRowSections[1]) : null
+        ].filter(s => s !== null)
+      },
+      hasSections: true
+    };
+  }
+
+  /**
+   * Get grid layout for a specific section (transposed: rows as columns, bays as rows)
+   */
+  private getModalGridLayoutForSection(section: any): any {
+    if (!this.factory) {
+      return { rows: [], columns: [], matrix: [], totalBoxes: 0, sectionId: section.sectionId, sectionName: section.sectionName };
+    }
+
+    const minRow = section.minRow ?? 1;
+    const maxRow = section.maxRow ?? 20;
+    const minBay = section.minBay ?? 'A';
+    const maxBay = section.maxBay ?? 'Z';
+
+    // Generate all bays from min to max for this section
+    const allBays: string[] = [];
+    if (minBay && maxBay) {
+      const startCharCode = minBay.toUpperCase().charCodeAt(0);
+      const endCharCode = maxBay.toUpperCase().charCodeAt(0);
+      for (let i = startCharCode; i <= endCharCode; i++) {
+        allBays.push(String.fromCharCode(i));
+      }
+    }
+
+    // Generate all rows from min to max for this section
+    const allRows: number[] = [];
+    for (let i = minRow; i <= maxRow; i++) {
+      allRows.push(i);
+    }
+
+    // TRANSPOSED: Rows go across (columns), Bays go down (rows)
+    let columns = allRows.map(r => r.toString()); // Row numbers across the top
+    const rows = allBays; // Bay letters down the side
+
+    // Reverse columns for Finishing sections (right-to-left)
+    if (section.sectionType === this.FactorySectionType.Finishing) {
+      columns = [...columns].reverse();
+    }
+
+    // Create matrix structure: Each matrix row represents a BAY, each cell represents a ROW
+    const matrix: any[][] = [];
+    
+    rows.forEach(bay => {
+      const rowCells: any[] = [];
+      columns.forEach(column => {
+        const rowNumber = column; // column IS the row number
+        
+        // Find box at this position (within this section's ranges)
+        // Filter by bay, row, and sectionId
+        const box = this.factoryBoxes.find(b => {
+          const bayMatch = b.bay === bay;
+          const rowMatch = b.row === rowNumber;
+          // If section has an ID, box MUST have a matching factorySectionId
+          // If section doesn't have an ID, show boxes from all sections (backward compatibility)
+          const sectionMatch = section.sectionId 
+            ? (b.factorySectionId && b.factorySectionId === section.sectionId)
+            : true;
+          return bayMatch && rowMatch && sectionMatch;
+        });
+        
+        rowCells.push({
+          row: rowNumber,
+          column: rowNumber,
+          bay: bay,
+          box: box || null,
+          position: box?.position || null,
+          isCurrentBox: box?.id === this.box?.id,
+          hidden: false,
+          sectionId: section.sectionId
+        });
+      });
+      matrix.push(rowCells);
+    });
+
+    // Count boxes in this section (filter by bay, row, and sectionId)
+    const sectionBoxCount = this.factoryBoxes.filter(b => {
+      const bayInRange = b.bay && allBays.includes(b.bay);
+      const rowInRange = b.row && allRows.includes(parseInt(b.row));
+      // If section has an ID, box MUST have a matching factorySectionId
+      const sectionMatch = section.sectionId 
+        ? (b.factorySectionId && b.factorySectionId === section.sectionId)
+        : true;
+      return bayInRange && rowInRange && sectionMatch;
+    }).length;
+
+    return {
+      rows,
+      columns,
+      matrix,
+      totalBoxes: sectionBoxCount,
+      sectionId: section.sectionId,
+      sectionName: section.sectionName
+    };
+  }
+
+  /**
+   * Get grid layout for a specific part within a section
+   * Uses the part's specific bay range and row range
+   */
+  private getModalGridLayoutForPart(part: any, section: any): any {
+    if (!this.factory) {
+      return { rows: [], columns: [], matrix: [], totalBoxes: 0, partId: part.partId, partName: part.partName };
+    }
+
+    // Use part's bay range (3 bays each typically: B-D or E-G)
+    const minBay = part.minBay ?? 'A';
+    const maxBay = part.maxBay ?? 'Z';
+    
+    // Use PART's row range (12 rows each: 1-12 or 13-24)
+    const minRow = part.minRow ?? 1;
+    const maxRow = part.maxRow ?? 12;
+
+    // Generate all bays from min to max for this part
+    const allBays: string[] = [];
+    if (minBay && maxBay) {
+      const startCharCode = minBay.toUpperCase().charCodeAt(0);
+      const endCharCode = maxBay.toUpperCase().charCodeAt(0);
+      for (let i = startCharCode; i <= endCharCode; i++) {
+        allBays.push(String.fromCharCode(i));
+      }
+    }
+
+    // Generate all rows from min to max for this part
+    const allRows: number[] = [];
+    for (let i = minRow; i <= maxRow; i++) {
+      allRows.push(i);
+    }
+
+    // TRANSPOSED: Rows go across (columns), Bays go down (rows)
+    // Always reverse for consistent right-to-left flow
+    let columns = allRows.map(r => r.toString()).reverse(); // Row numbers across the top
+    const rows = allBays; // Bay letters down the side
+
+    // Create matrix structure: Each matrix row represents a BAY, each cell represents a ROW
+    const matrix: any[][] = [];
+    
+    rows.forEach(bay => {
+      const rowCells: any[] = [];
+      columns.forEach(column => {
+        const rowNumber = column; // column IS the row number
+        
+        // Find box at this position (within this part's ranges)
+        // Filter by bay, row, and sectionId
+        const box = this.factoryBoxes.find(b => {
+          const bayMatch = b.bay === bay;
+          const rowMatch = b.row === rowNumber;
+          // CRITICAL: If box has factorySectionId set, it MUST match the requested section
+          // This ensures boxes display in the correct section they're assigned to
+          const sectionMatch = section.sectionId 
+            ? (b.factorySectionId === section.sectionId) // Strict: box must be assigned to this section
+            : (!b.factorySectionId); // Only show orphan boxes when no section specified
+          return bayMatch && rowMatch && sectionMatch;
+        });
+        
+        rowCells.push({
+          row: rowNumber,
+          column: rowNumber,
+          bay: bay,
+          box: box || null,
+          position: box?.position || null,
+          isCurrentBox: box?.id === this.box?.id,
+          hidden: false,
+          partId: part.partId
+        });
+      });
+      matrix.push(rowCells);
+    });
+
+    // Count boxes in this part (filter by bay, row, and sectionId)
+    const partBoxCount = this.factoryBoxes.filter(b => {
+      const bayInRange = b.bay && allBays.includes(b.bay);
+      const rowInRange = b.row && allRows.map(r => r.toString()).includes(b.row || '');
+      // CRITICAL: If box has factorySectionId set, it MUST match the requested section
+      const sectionMatch = section.sectionId 
+        ? (b.factorySectionId === section.sectionId) // Strict: box must be assigned to this section
+        : (!b.factorySectionId); // Only count orphan boxes when no section specified
+      return bayInRange && rowInRange && sectionMatch;
+    }).length;
+
+    return {
+      rows,
+      columns,
+      matrix,
+      totalBoxes: partBoxCount,
+      partId: part.partId,
+      partName: part.partName
+    };
+  }
+
+  /**
+   * Get tooltip for grid cell in modal
+   */
+  getModalCellTooltip(cell: any): string {
+    if (this.isModalRowFrozen(cell.partId, cell.row)) {
+      return `Frozen Row ${cell.row} — Not Available\nBay: ${cell.bay}`;
+    }
+    if (cell.box) {
+      const isCurrent = cell.isCurrentBox ? ' (Current Box)' : '';
+      return `${cell.box.code}${isCurrent}\nBay: ${cell.bay}, Row: ${cell.row}\nPosition: ${cell.position || '-'}`;
+    }
+    return `Bay: ${cell.bay}, Row: ${cell.row}`;
+  }
+
+  /**
+   * TrackBy functions for better Angular performance
+   */
+  trackBySectionId(index: number, item: any): any {
+    return item.section?.sectionId || index;
+  }
+
+  trackByIndex(index: number): number {
+    return index;
+  }
+
+  /**
+   * Build a map of partId → Set<rowNumber> from the factory's section parts' freezingCells.
+   * Called once after factory data is loaded so the template can query O(1).
+   */
+  private buildModalFreezingCellsMap(): void {
+    this.modalFreezingCellsMap.clear();
+    if (!this.factory?.sections) return;
+    for (const section of this.factory.sections) {
+      for (const part of (section.parts || [])) {
+        if (part.partId) {
+          this.modalFreezingCellsMap.set(
+            part.partId,
+            new Set<number>((part.freezingCells || []).map((c: any) => c.rowNumber))
+          );
+        }
+      }
+    }
+  }
+
+  /**
+   * Returns true when the given row (string) is frozen for the given partId.
+   * Used in the Factory Layout modal template.
+   */
+  isModalRowFrozen(partId: string | undefined, rowStr: string): boolean {
+    if (!partId) return false;
+    const frozen = this.modalFreezingCellsMap.get(partId);
+    return frozen ? frozen.has(parseInt(rowStr, 10)) : false;
+  }
+
+  /** True when the given column string is frozen for ANY part in the given section parts array.
+   *  Used for the unified row-axis header so that frozen columns are shown correctly
+   *  regardless of which part owns the frozen data. */
+  isModalSectionColumnFrozen(sectionParts: any[], column: string): boolean {
+    const rowNum = parseInt(column, 10);
+    return sectionParts.some((part: any) => {
+      const frozen = this.modalFreezingCellsMap.get(part.partId);
+      return frozen?.has(rowNum) ?? false;
+    });
+  }
+
+  /**
+   * Get CSS class for box based on its properties
+   */
+  getBoxColorClass(box: any): string {
+    // You can customize this based on box status, progress, etc.
+    if (box.status === 'Completed') {
+      return 'box-completed';
+    } else if (box.status === 'InProgress') {
+      return 'box-in-progress';
+    }
+    return '';
+  }
+
   private initializeDeliveryInfo(box: Box): void {
     // Initialize panels from box.boxPanels
     this.boxPanels = box.boxPanels ? [...box.boxPanels] : [];
+    console.log('🔄 Box panels updated:', this.boxPanels.length, 'panels loaded');
     
     // Initialize pod delivery
     this.podDeliverChecked = box.podDeliver ?? false;
@@ -993,18 +1606,25 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Navigate to the box types grid (project boxes page with no type filter). */
+  goToBoxTypes(): void {
+    this.router.navigate(['/projects', this.projectId, 'boxes']);
+  }
+
+  /** Navigate back to boxes list filtered by current box type (so the list shows boxes of the same type). */
   goBack(): void {
-    // Navigate back to boxes filtered by current box type
-    const queryParams: any = {};
-    
-    if (this.box?.boxTypeName) {
-      queryParams.boxType = this.box.boxTypeName;
-      
-      if (this.box.boxSubTypeName) {
-        queryParams.boxSubType = this.box.boxSubTypeName;
+    // Boxes list filters by type/subtype from box code (e.g. LE from 0215-B01-FF-LE), not display names.
+    const queryParams: any = { view: 'boxes' };
+    const code = this.box?.code || '';
+    const parts = code.split('-');
+    const boxTypeFromCode = parts.length >= 4 ? parts[3] : (this.box?.type ?? this.box?.boxTypeName ?? '');
+    const boxSubTypeFromCode = parts.length >= 5 ? parts[4] : (this.box?.subType ?? this.box?.boxSubTypeName ?? '');
+    if (boxTypeFromCode) {
+      queryParams.boxType = boxTypeFromCode;
+      if (boxSubTypeFromCode) {
+        queryParams.boxSubType = boxSubTypeFromCode;
       }
     }
-    
     this.router.navigate(['/projects', this.projectId, 'boxes'], { queryParams });
   }
 
@@ -1077,6 +1697,11 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.router.navigate(['/projects', this.projectId, 'boxes', this.boxId, 'edit']);
   }
 
+  /** Navigate to Box Type Materials Management page */
+  navigateToProjectMaterials(): void {
+    this.router.navigate(['/projects', this.projectId, 'box-type-materials']);
+  }
+
   openDeleteConfirm(): void {
     this.showDeleteConfirm = true;
     this.error = '';
@@ -1104,13 +1729,15 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
         // Show success message and navigate after a delay
         setTimeout(() => {
           this.showDeleteConfirm = false;
-          // Navigate back to boxes filtered by the deleted box's type
-          const queryParams: any = {};
-          if (this.box?.boxTypeName) {
-            queryParams.boxType = this.box.boxTypeName;
-            if (this.box.boxSubTypeName) {
-              queryParams.boxSubType = this.box.boxSubTypeName;
-            }
+          // Navigate back to boxes list filtered by the deleted box's type (use code parts, not display names)
+          const queryParams: any = { view: 'boxes' };
+          const code = this.box?.code || '';
+          const parts = code.split('-');
+          const boxTypeFromCode = parts.length >= 4 ? parts[3] : (this.box?.type ?? this.box?.boxTypeName ?? '');
+          const boxSubTypeFromCode = parts.length >= 5 ? parts[4] : (this.box?.subType ?? this.box?.boxSubTypeName ?? '');
+          if (boxTypeFromCode) {
+            queryParams.boxType = boxTypeFromCode;
+            if (boxSubTypeFromCode) queryParams.boxSubType = boxSubTypeFromCode;
           }
           this.router.navigate(['/projects', this.projectId, 'boxes'], { queryParams });
         }, 1500);
@@ -1202,6 +1829,179 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     if (this.copyTimeout) {
       clearTimeout(this.copyTimeout);
     }
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // ===== Exchange Request Methods =====
+
+  loadExchangeHistory(): void {
+    if (!this.boxId || this.exchangeHistoryLoading) return;
+    
+    this.exchangeHistoryLoading = true;
+    this.exchangeHistoryError = '';
+    
+    this.boxService.getBoxExchangeHistory(this.boxId).subscribe({
+      next: (history) => {
+        console.log('📦 Received exchange history:', history);
+        this.exchangeHistory = history || [];
+        
+        // Log each exchange status for debugging
+        this.exchangeHistory.forEach((exchange, index) => {
+          console.log(`Exchange ${index}:`, {
+            status: exchange.status,
+            statusType: typeof exchange.status,
+            statusLabel: this.getExchangeStatusLabel(exchange.status),
+            issueId: exchange.qualityIssueId,
+            issueNumber: exchange.issueNumber,
+            exchangedWithBoxId: exchange.exchangedWithBoxId,
+            exchangedWithBoxProjectId: exchange.exchangedWithBoxProjectId,
+            exchangedWithBoxTag: exchange.exchangedWithBoxTag
+          });
+        });
+        
+        this.exchangeHistoryLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading exchange history:', error);
+        this.exchangeHistoryError = 'Failed to load exchange history';
+        this.exchangeHistoryLoading = false;
+      }
+    });
+  }
+
+
+  getExchangeStatusClass(status: number | string): string {
+    // Map both numeric and string enum values
+    const numericStatusMap: Record<number, string> = {
+      1: 'pending',
+      2: 'approved',
+      3: 'rejected',
+      4: 'applied'
+    };
+    
+    const stringStatusMap: Record<string, string> = {
+      'Pending': 'pending',
+      'Approved': 'approved',
+      'Rejected': 'rejected',
+      'Applied': 'applied',
+      'pending': 'pending',
+      'approved': 'approved',
+      'rejected': 'rejected',
+      'applied': 'applied'
+    };
+    
+    // Handle null/undefined
+    if (status === null || status === undefined) {
+      console.warn('Exchange status is null or undefined');
+      return 'pending';
+    }
+    
+    // Handle string enum values from backend
+    if (typeof status === 'string') {
+      const result = stringStatusMap[status];
+      if (result) {
+        return result;
+      }
+      console.warn('Unknown string status value:', status);
+      return 'pending';
+    }
+    
+    // Handle numeric enum values
+    return numericStatusMap[status as number] || 'pending';
+  }
+
+  getExchangeStatusLabel(status: number | string): string {
+    // Map both numeric and string enum values
+    const numericStatusMap: Record<number, string> = {
+      1: 'Pending',
+      2: 'Approved',
+      3: 'Rejected',
+      4: 'Applied'
+    };
+    
+    const stringStatusMap: Record<string, string> = {
+      'Pending': 'Pending',
+      'Approved': 'Approved',
+      'Rejected': 'Rejected',
+      'Applied': 'Applied',
+      'pending': 'Pending',
+      'approved': 'Approved',
+      'rejected': 'Rejected',
+      'applied': 'Applied'
+    };
+    
+    // Handle null/undefined
+    if (status === null || status === undefined) {
+      console.warn('Exchange status is null or undefined, received:', status);
+      return 'Pending';
+    }
+    
+    // Handle string enum values from backend
+    if (typeof status === 'string') {
+      const result = stringStatusMap[status];
+      if (result) {
+        return result;
+      }
+      console.warn('Unknown string status value:', status);
+      return 'Pending';
+    }
+    
+    // Handle numeric enum values
+    const label = numericStatusMap[status as number];
+    if (!label) {
+      console.warn('Unknown numeric status value:', status);
+      return 'Pending';
+    }
+    
+    return label;
+  }
+
+  /**
+   * Navigate to quality issue from exchange card
+   */
+  navigateToQualityIssueFromExchange(issueId: string): void {
+    if (!issueId) return;
+    console.log('📍 Navigating to quality issue from exchange:', issueId);
+    this.handleNavigateToIssue(issueId);
+  }
+
+  /**
+   * Navigate to another box (typically the switched/exchanged box)
+   * @param boxId - The ID of the box to navigate to
+   * @param targetProjectId - The project ID where the target box belongs (optional, defaults to current project)
+   */
+  navigateToBox(boxId: string | undefined, targetProjectId?: string | undefined): void {
+    if (!boxId) {
+      console.warn('⚠️ Cannot navigate: boxId is undefined');
+      return;
+    }
+    
+    // Use the provided targetProjectId or fall back to current projectId
+    const projectIdToUse = targetProjectId || this.projectId;
+    
+    if (!projectIdToUse) {
+      console.warn('⚠️ Cannot navigate: projectId is undefined');
+      return;
+    }
+    
+    console.log('📦 Navigating to box:', boxId, 'in project:', projectIdToUse);
+    
+    // Navigate to the box details page with full path including projectId
+    // The route pattern is: projects/:projectId/boxes/:boxId
+    // The component will automatically reinitialize via the route.paramMap subscription
+    this.router.navigate(['/projects', projectIdToUse, 'boxes', boxId], {
+      queryParams: { tab: 'overview' }
+    }).then(success => {
+      if (success) {
+        console.log('✅ Navigation to box successful - component will reinitialize automatically');
+      } else {
+        console.error('❌ Navigation to box failed');
+        console.error('Attempted route:', `/projects/${projectIdToUse}/boxes/${boxId}`);
+      }
+    }).catch(error => {
+      console.error('❌ Navigation error:', error);
+    });
   }
 
   downloadQRCode(): void {
@@ -1213,7 +2013,147 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-  setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'drawings' | 'progress-updates' | 'attachments' | 'panels'): void {
+  /**
+   * Check if exchange form has changes
+   */
+  hasExchangeChanges(): boolean {
+    return !!(this.exchangeForm.newBuildingNumber || this.exchangeForm.newFloor);
+  }
+
+  /**
+   * Called when building or floor selection changes
+   */
+  onExchangeFormChange(): void {
+    // Reset box selection and available boxes when inputs change
+    this.exchangeForm.targetBoxId = null;
+    this.availableBoxesForExchange = [];
+    this.noBoxesFoundForExchange = false;
+    this.boxesForExchangeError = '';
+    this.exchangeError = '';
+    this.exchangeSuccess = '';
+  }
+
+  /**
+   * Load eligible boxes for exchange from backend
+   */
+  loadBoxesForExchange(): void {
+    if (!this.hasExchangeChanges() || !this.projectId || !this.boxId) return;
+
+    this.loadingBoxesForExchange = true;
+    this.noBoxesFoundForExchange = false;
+    this.boxesForExchangeError = '';
+    this.exchangeError = '';
+
+    const targetBuilding = this.exchangeForm.newBuildingNumber || this.box?.buildingNumber;
+    const targetFloor = this.exchangeForm.newFloor || this.box?.floor;
+
+    this.boxService.getBoxesForExchange(
+      this.projectId,
+      this.boxId,
+      targetBuilding,
+      targetFloor
+    ).subscribe({
+      next: (boxes) => {
+        this.availableBoxesForExchange = boxes;
+        this.loadingBoxesForExchange = false;
+        
+        if (boxes.length === 0) {
+          this.noBoxesFoundForExchange = true;
+          this.boxesForExchangeError = `No boxes with the same box type found in ${targetBuilding || 'the selected building'} - ${targetFloor || 'the selected floor'}.`;
+        }
+      },
+      error: (error) => {
+        console.error('Error loading boxes for exchange:', error);
+        this.loadingBoxesForExchange = false;
+        this.noBoxesFoundForExchange = true;
+        this.boxesForExchangeError = error?.error?.error || 'Failed to load boxes. Please try again.';
+      }
+    });
+  }
+
+  /**
+   * Check if exchange request can be submitted
+   */
+  canSubmitExchange(): boolean {
+    return this.hasExchangeChanges() 
+      && !!this.exchangeForm.targetBoxId 
+      && !!this.exchangeForm.requestReason?.trim();
+  }
+
+  /**
+   * Submit exchange request
+   */
+  submitExchangeRequest(): void {
+    if (!this.canSubmitExchange() || !this.boxId) return;
+
+    this.exchangeLoading = true;
+    this.exchangeError = '';
+    this.exchangeSuccess = '';
+
+    const payload = {
+      boxId: this.boxId,
+      newBuildingNumber: this.exchangeForm.newBuildingNumber,
+      newFloor: this.exchangeForm.newFloor,
+      requestReason: this.exchangeForm.requestReason,
+      targetBoxId: this.exchangeForm.targetBoxId
+    };
+
+    this.boxService.createBoxExchangeRequest(this.boxId, payload).subscribe({
+      next: (response) => {
+        console.log('Exchange request created:', response);
+        this.exchangeLoading = false;
+        const successMessage = this.exchangeForm.targetBoxId
+          ? `Exchange request created successfully! Quality Issues have been created for both boxes and assigned to the project creator for approval.`
+          : `Exchange request created successfully! Quality Issue ${response.issueNumber || ''} has been assigned to the project creator for approval.`;
+        this.exchangeSuccess = successMessage;
+        
+        // Reset form
+        this.exchangeForm = {
+          newBuildingNumber: null,
+          newFloor: null,
+          requestReason: '',
+          targetBoxId: null
+        };
+        this.availableBoxesForExchange = [];
+        this.noBoxesFoundForExchange = false;
+        
+        // Reload exchange history
+        this.loadExchangeHistory();
+        
+        // Reload box to get updated data
+        this.loadBox();
+        this.loadQualityIssues();
+        // Clear success mess(age after 5 seconds
+        setTimeout(() => {
+          this.exchangeSuccess = '';
+        }, 5000);
+      },
+      error: (error) => {
+        console.error('Error creating exchange request:', error);
+        this.exchangeLoading = false;
+        this.exchangeError = error?.error?.message || error?.message || 'Failed to create exchange request. Please try again.';
+      }
+    });
+  }
+
+  /**
+   * Load project configuration (buildings and levels)
+   */
+  private loadProjectConfiguration(): void {
+    if (!this.projectId) return;
+
+    this.projectService.getProjectConfiguration(this.projectId).subscribe({
+      next: (config) => {
+        this.projectBuildings = config.buildings || [];
+        this.projectLevels = config.levels || [];
+      },
+      error: (error) => {
+        console.error('Error loading project configuration:', error);
+      }
+    });
+  }
+
+  setActiveTab(tab: 'overview' | 'activities' | 'wir' | 'quality-issues' | 'logs' | 'drawings' | 'progress-updates' | 'attachments' | 'panels' | 'materials' | 'exchanges'): void {
     this.activeTab = tab;
     
     // Scroll to top of page for better UX when switching tabs
@@ -1224,6 +2164,16 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       // Load activities when Activities tab is clicked
       if (!this.box?.activities || this.box.activities.length === 0) {
         this.loadActivities();
+      }
+    }
+    if (tab === 'exchanges') {
+      // Load exchange history when Exchanges tab is clicked
+      if (this.exchangeHistory.length === 0 && !this.exchangeHistoryLoading) {
+        this.loadExchangeHistory();
+      }
+      // Load project configuration for buildings and levels
+      if (this.projectBuildings.length === 0) {
+        this.loadProjectConfiguration();
       }
     }
     if (tab === 'wir') {
@@ -1569,6 +2519,49 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
   refreshQualityIssues(): void {
     this.loadQualityIssues();
+  }
+
+  /**
+   * Scroll to a specific quality issue in the table and highlight it
+   */
+  scrollToIssue(issueId: string): void {
+    console.log('📍 Scrolling to issue:', issueId);
+    const element = document.getElementById(`issue-${issueId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // Clear highlight after 3 seconds
+      setTimeout(() => {
+        this.highlightedIssueId = null;
+      }, 3000);
+    } else {
+      console.warn('⚠️ Issue element not found in DOM:', issueId);
+    }
+  }
+
+  /**
+   * Check if an issue should be highlighted
+   */
+  isIssueHighlighted(issueId: string): boolean {
+    return this.highlightedIssueId === issueId;
+  }
+
+  /**
+   * Handle navigation to quality issue from child components (e.g., box-panels)
+   * Switches to quality issues tab and highlights the specific issue
+   */
+  handleNavigateToIssue(issueId: string): void {
+    console.log('📍 Handling navigate to issue event:', issueId);
+    
+    // Set highlighted issue ID
+    this.highlightedIssueId = issueId;
+    
+    // Switch to quality issues tab
+    this.setActiveTab('quality-issues');
+    
+    // Wait for tab to load and DOM to render, then scroll to issue
+    setTimeout(() => {
+      this.scrollToIssue(issueId);
+    }, 500);
   }
 
   loadQualityIssuesAndOpenIssue(issueId: string, commentId?: string): void {
@@ -2505,6 +3498,25 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     return this.qualityIssueStatusMeta[normalized]?.class || 'status-open';
   }
 
+  /**
+   * Check if quality issue is an exchange request
+   */
+  isExchangeRequest(issue: any): boolean {
+    const issueType = issue?.issueType || '';
+    const result = issueType === 'ExchangeRequest' || issueType === 'exchangeRequest' || issueType.toLowerCase() === 'exchangerequest';
+    console.log('🔍 isExchangeRequest check:', issueType, '→', result, 'isReadOnly:', issue?.isReadOnly);
+    return result;
+  }
+
+  formatIssueType(type: string | undefined | null): string {
+    if (!type) return '—';
+    switch (type) {
+      case 'NonConformance': return 'Non-Conformance';
+      case 'ExchangeRequest': return 'Exchange Request';
+      default: return type;
+    }
+  }
+
   formatDate(date?: string | Date): string {
     if (!date) {
       return '—';
@@ -2538,6 +3550,44 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
     this.isDetailsModalOpen = false;
     this.selectedIssueDetails = null;
     this.selectedCommentId = undefined; // Clear comment ID
+  }
+
+  /**
+   * Handle quality issue status update - refresh related data
+   */
+  onQualityIssueStatusUpdated(): void {
+    console.log('🔄 Quality issue status updated - refreshing box details page');
+    
+    // Store the current issue ID if modal is open
+    const currentIssueId = this.selectedIssueDetails?.issueId;
+    
+    // Add a small delay to ensure backend has completed all updates
+    setTimeout(() => {
+      // Refresh the entire box details (building, floor, tag may have changed due to exchange)
+      this.loadBox();
+      
+      // Refresh quality issues list to show updated status
+      this.loadQualityIssues();
+      
+      // Refresh exchange history to show updated exchange status
+     
+      
+      // Refresh box logs to show the new audit entries
+      this.loadBoxLogs(this.boxLogsCurrentPage, this.boxLogsPageSize);
+      
+      // If a specific issue is currently being viewed, refresh its details
+      if (currentIssueId && this.isDetailsModalOpen) {
+        this.wirService.getQualityIssueById(currentIssueId).subscribe({
+          next: (updatedIssue) => {
+            console.log('🔄 Updated issue details:', updatedIssue);
+            this.selectedIssueDetails = updatedIssue;
+          },
+          error: (err) => {
+            console.error('Failed to refresh issue details:', err);
+          }
+        });
+      }
+    }, 500); // Wait 500ms for backend to complete all updates
   }
 
   /**
@@ -3318,7 +4368,8 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       });
   }
 
-  // Group WIR checkpoint images by filename with version history
+  // Group WIR checkpoint images by filename AND wirId with version history
+  // Images are versions of each other ONLY if they have the same filename AND same wirId
   getGroupedWirImages(): { fileName: string; versions: any[] }[] {
     if (!this.boxAttachments.wirCheckpointImages || this.boxAttachments.wirCheckpointImages.length === 0) {
       return [];
@@ -3326,21 +4377,29 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
     const grouped = new Map<string, any[]>();
 
-    // Group by filename
+    // Group by composite key: filename + wirId
+    // This ensures versions are only grouped if they have the same filename AND same WIR
     this.boxAttachments.wirCheckpointImages.forEach((image: any) => {
       const fileName = image.originalName || 'Stage_Image';
-      if (!grouped.has(fileName)) {
-        grouped.set(fileName, []);
+      const wirId = image.wirId || 'unknown';
+      const groupKey = `${fileName}:::${wirId}`; // Composite key
+      
+      if (!grouped.has(groupKey)) {
+        grouped.set(groupKey, []);
       }
-      grouped.get(fileName)!.push(image);
+      grouped.get(groupKey)!.push(image);
     });
 
     // Convert to array and sort versions (newest first)
     return Array.from(grouped.entries())
-      .map(([fileName, versions]) => ({
-        fileName,
-        versions: versions.sort((a, b) => (b.version || 1) - (a.version || 1))
-      }))
+      .map(([groupKey, versions]) => {
+        // Extract filename from composite key
+        const fileName = groupKey.split(':::')[0];
+        return {
+          fileName,
+          versions: versions.sort((a, b) => (b.version || 1) - (a.version || 1))
+        };
+      })
       .sort((a, b) => {
         const aLatestDate = Math.max(...a.versions.map(v => new Date(v.createdDate || 0).getTime()));
         const bLatestDate = Math.max(...b.versions.map(v => new Date(v.createdDate || 0).getTime()));
@@ -3348,7 +4407,8 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       });
   }
 
-  // Group progress update images by filename with version history
+  // Group progress update images by filename AND boxActivityId with version history
+  // Images are versions of each other ONLY if they have the same filename AND same activity
   getGroupedProgressImages(): { fileName: string; versions: any[] }[] {
     if (!this.boxAttachments.progressUpdateImages || this.boxAttachments.progressUpdateImages.length === 0) {
       return [];
@@ -3356,21 +4416,29 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
     const grouped = new Map<string, any[]>();
 
-    // Group by filename
+    // Group by composite key: filename + boxActivityId
+    // This ensures versions are only grouped if they have the same filename AND same activity
     this.boxAttachments.progressUpdateImages.forEach((image: any) => {
       const fileName = image.originalName || 'Progress_Image';
-      if (!grouped.has(fileName)) {
-        grouped.set(fileName, []);
+      const activityId = image.boxActivityId || 'unknown';
+      const groupKey = `${fileName}:::${activityId}`; // Composite key
+      
+      if (!grouped.has(groupKey)) {
+        grouped.set(groupKey, []);
       }
-      grouped.get(fileName)!.push(image);
+      grouped.get(groupKey)!.push(image);
     });
 
     // Convert to array and sort versions (newest first)
     return Array.from(grouped.entries())
-      .map(([fileName, versions]) => ({
-        fileName,
-        versions: versions.sort((a, b) => (b.version || 1) - (a.version || 1))
-      }))
+      .map(([groupKey, versions]) => {
+        // Extract filename from composite key
+        const fileName = groupKey.split(':::')[0];
+        return {
+          fileName,
+          versions: versions.sort((a, b) => (b.version || 1) - (a.version || 1))
+        };
+      })
       .sort((a, b) => {
         const aLatestDate = Math.max(...a.versions.map(v => new Date(v.createdDate || 0).getTime()));
         const bLatestDate = Math.max(...b.versions.map(v => new Date(v.createdDate || 0).getTime()));
@@ -3378,7 +4446,8 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
       });
   }
 
-  // Group quality issue images by filename with version history
+  // Group quality issue images by filename AND issueId with version history
+  // Images are versions of each other ONLY if they have the same filename AND same quality issue
   getGroupedQualityImages(): { fileName: string; versions: any[] }[] {
     if (!this.boxAttachments.qualityIssueImages || this.boxAttachments.qualityIssueImages.length === 0) {
       return [];
@@ -3386,21 +4455,29 @@ export class BoxDetailsComponent implements OnInit, OnDestroy {
 
     const grouped = new Map<string, any[]>();
 
-    // Group by filename
+    // Group by composite key: filename + issueId
+    // This ensures versions are only grouped if they have the same filename AND same quality issue
     this.boxAttachments.qualityIssueImages.forEach((image: any) => {
       const fileName = image.originalName || 'Quality_Image';
-      if (!grouped.has(fileName)) {
-        grouped.set(fileName, []);
+      const issueId = image.issueId || 'unknown';
+      const groupKey = `${fileName}:::${issueId}`; // Composite key
+      
+      if (!grouped.has(groupKey)) {
+        grouped.set(groupKey, []);
       }
-      grouped.get(fileName)!.push(image);
+      grouped.get(groupKey)!.push(image);
     });
 
     // Convert to array and sort versions (newest first)
     return Array.from(grouped.entries())
-      .map(([fileName, versions]) => ({
-        fileName,
-        versions: versions.sort((a, b) => (b.version || 1) - (a.version || 1))
-      }))
+      .map(([groupKey, versions]) => {
+        // Extract filename from composite key
+        const fileName = groupKey.split(':::')[0];
+        return {
+          fileName,
+          versions: versions.sort((a, b) => (b.version || 1) - (a.version || 1))
+        };
+      })
       .sort((a, b) => {
         const aLatestDate = Math.max(...a.versions.map(v => new Date(v.createdDate || 0).getTime()));
         const bLatestDate = Math.max(...b.versions.map(v => new Date(v.createdDate || 0).getTime()));
@@ -4914,6 +5991,9 @@ downloadFileDrawing(drawing: any): void {
     );
     const count = this.qualityIssues.length;
     this.qualityIssueCount = count;
+    
+    // Reload box data to refresh panel info (e.g., if quality issue was resolved, update panel's qualityIssueId link)
+    this.loadBox();
   }
 
   trackByLogId(index: number, log: BoxLog): string {
@@ -5029,13 +6109,23 @@ downloadFileDrawing(drawing: any): void {
   areAllPanelsSecondApproved(): boolean {
     // If no panels, consider it approved (no blocking condition)
     if (!this.boxPanels || this.boxPanels.length === 0) {
+      console.log('✅ No panels - returning true for areAllPanelsSecondApproved');
       return true;
     }
     
     // Check if all panels have second approval
-    return this.boxPanels.every(panel => 
-      panel.secondApprovalStatus?.toLowerCase() === 'approved'
-    );
+    const allApproved = this.boxPanels.every(panel => {
+      const isApproved = panel.secondApprovalStatus?.toLowerCase() === 'approved';
+      if (!isApproved) {
+        console.log(`❌ Panel ${panel.panelName} secondApprovalStatus:`, panel.secondApprovalStatus);
+      }
+      return isApproved;
+    });
+    
+    console.log(`Panel approval check: ${allApproved} (${this.boxPanels.length} panels)`, 
+      this.boxPanels.map(p => ({ name: p.panelName, secondApprovalStatus: p.secondApprovalStatus })));
+    
+    return allApproved;
   }
 
   /**
@@ -5047,9 +6137,17 @@ downloadFileDrawing(drawing: any): void {
       return 0;
     }
     
-    return this.boxPanels.filter(panel => 
+    const count = this.boxPanels.filter(panel => 
       panel.secondApprovalStatus?.toLowerCase() !== 'approved'
     ).length;
+    
+    if (count > 0) {
+      console.log(`⚠️ ${count} panels need second approval:`, 
+        this.boxPanels.filter(p => p.secondApprovalStatus?.toLowerCase() !== 'approved')
+          .map(p => ({ name: p.panelName, status: p.secondApprovalStatus })));
+    }
+    
+    return count;
   }
 
   /**

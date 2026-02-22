@@ -1,0 +1,3771 @@
+{
+  "checklists": [
+   {
+  "id": 1,
+  "title": "Construction of Precast Concrete Modular at Factory",
+  "sections": [
+    {
+      "id": "A",
+      "name": "General",
+      "items": [
+        {
+          "number": 1,
+          "description": "Ensure method statement, materials and shop drawings are approved.",
+          "part": 1
+        },
+        {
+          "number": 2,
+          "description": "Ensure materials are stored under dry, clean, shaded area, away from sunlight and other sources of heat.",
+          "part": 1
+        },
+        {
+          "number": 3,
+          "description": "Check the expiry date of the material prior to applications.",
+          "part": 1
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Preparation & Setting Out",
+      "items": [
+        {
+          "number": 4,
+          "description": "Ensure Drawing Stamp, Signature, Element Tags are correct",
+          "part": 1
+        },
+        {
+          "number": 5,
+          "description": "Floor Setting Out/Layout as per drawing",
+          "part": 1
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Erection / Assembling of Precast Element - External Walls",
+      "items": [
+        {
+          "number": 6,
+          "description": "Erection of external walls by Temporary Support (props and brackets) Outer",
+          "part": 2
+        },
+        {
+          "number": 7,
+          "description": "Dimensions, alignment and level are as per drawing.",
+          "part": 2
+        },
+        {
+          "number": 8,
+          "description": "Sides and corners of boxes aligned with floor layout.",
+          "part": 2
+        },
+        {
+          "number": 9,
+          "description": "Check if wall plumb of all sides are within the allowable tolerance",
+          "part": 2
+        },
+        {
+          "number": 10,
+          "description": "Check height of the box at different location as per drawing",
+          "part": 2
+        },
+        {
+          "number": 11,
+          "description": "Check If all wet & mechanical connection done & repaired and has no wavy or bulge surface",
+          "part": 2
+        },
+        {
+          "number": 12,
+          "description": "Check if panels are aligned to each other at joints.",
+          "part": 2
+        },
+        {
+          "number": 13,
+          "description": "All joints on paint-able surfaces filled with sealant properly",
+          "part": 2
+        },
+        {
+          "number": 14,
+          "description": "Check if external surface of the box is leveled and free from damages",
+          "part": 2
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Erection / Assembling of Precast Element - Internal Sides",
+      "items": [
+        {
+          "number": 15,
+          "description": "Level Line to be marked at walls on 1000mm from FFL.",
+          "part": 3
+        },
+        {
+          "number": 16,
+          "description": "Erection & Connections of Floor Slab",
+          "part": 3
+        },
+        {
+          "number": 17,
+          "description": "Bottom slab shall read 1020mm at 1000m FFL line or as per drawing",
+          "part": 3
+        },
+        {
+          "number": 18,
+          "description": "Erection of partition walls by Temporary Support",
+          "part": 3
+        },
+        {
+          "number": 16,
+          "description": "Panel to Panel Connections are as per drawing",
+          "part": 3
+        },
+        {
+          "number": 17,
+          "description": "Dimensions (outer, inner and diagonal), Line and Level Grouting",
+          "part": 3
+        },
+        {
+          "number": 18,
+          "description": "Pod installed as per drawing - Level and alignment without any damages",
+          "part": 3
+        },
+        {
+          "number": 19,
+          "description": "Erection & Connection of Roof Slab as per approved drawing and ensure box clear height",
+          "part": 3
+        },
+        {
+          "number": 20,
+          "description": "Check If wet connections are proper and have no wavy, depressed or bulge surface.",
+          "part": 3
+        },
+        {
+          "number": 21,
+          "description": "All joints on paint able surfaces filled with sealant properly.",
+          "part": 3
+        },
+        {
+          "number": 22,
+          "description": "All internal cracks are repaired (if any)",
+          "part": 3
+        },
+        {
+          "number": 23,
+          "description": "Internal and External Dimension of Box",
+          "part": 3
+        },
+        {
+          "number": 24,
+          "description": "Check for edges + Angles + grooves + chamfer + Pin holes + Cracks before moving to finishing area.",
+          "part": 3
+        }
+      ]
+    }
+  ]
+},
+    {
+      "id": 2,
+      "title": "Installation of Fan Coil Unit (FCU)",
+      "sections": [
+        {
+          "id": "general",
+          "name": "General Inspection",
+          "items": [
+            {
+              "number": 1,
+              "description": "The materials/type/model/capacity as per approved material submittal."
+            },
+            {
+              "number": 2,
+              "description": "No visible damage on the materials."
+            },
+            {
+              "number": 3,
+              "description": "Check the indoor unit location/height as per approved shop darwing."
+            },
+            {
+              "number": 4,
+              "description": "Check the unit slope toward the condensate tray oulet."
+            },
+            {
+              "number": 5,
+              "description": "Check the approved type/capacity vibration isolator installed."
+            },
+            {
+              "number": 6,
+              "description": "Check the fans are freely rotating."
+            },
+            {
+              "number": 7,
+              "description": "Check the filters are installed, clean and accessible for maintenanace."
+            },
+            {
+              "number": 8,
+              "description": "Check the motors are accessible for the maintenance."
+            },
+            {
+              "number": 9,
+              "description": "Check the dielectric unions/flexible connector are connected."
+            },
+            {
+              "number": 10,
+              "description": "Check the chilled water/refrigerant piping are connectred with appropriate fittings"
+            },
+            {
+              "number": 11,
+              "description": "Check the valve package to the indoor unit as per approved."
+            },
+            {
+              "number": 12,
+              "description": "Check the outdoor unit space around as per manufacturer recommendations."
+            },
+            {
+              "number": 13,
+              "description": "Pipe sizes are as per approved shop drawing."
+            },
+            {
+              "number": 14,
+              "description": "Pipe layout/routing as per approved shop drawing."
+            },
+            {
+              "number": 15,
+              "description": "Sleeves are provided for the pipes passing through the walls/slabs."
+            },
+            {
+              "number": 16,
+              "description": "Check the pipes are supported well with approved clamps."
+            },
+            {
+              "number": 17,
+              "description": "Check the insulation is properly done"
+            },
+            {
+              "number": 18,
+              "description": "Installed pipes are free of sag & bend."
+            },
+            {
+              "number": 19,
+              "description": "Check the condensate drain pipes are connected with flexible hose & p trap with proper slope."
+            },
+            {
+              "number": 20,
+              "description": "Check the duct connection to the unit, there is no deformity in the connector."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Installation of Conduits & Boxes",
+      "sections": [
+        {
+          "id": "general",
+          "name": "General Inspection",
+          "items": [
+            {
+              "number": 1,
+              "description": "Check the material used are as per the Approved material submittal."
+            },
+            {
+              "number": 2,
+              "description": "Check conduit type and size as per approved shop drawings."
+            },
+            {
+              "number": 3,
+              "description": "Check the drawing used for the installation are current and approved"
+            },
+            {
+              "number": 4,
+              "description": "Conduits installed in exposed areas subject to mechanical damage shall be IMC or RSC, and those exposed but not subject to mechanical damages shall be EMT. The conduits embedded in walls or encased in concrete and structural slabs shall be PVC conduits."
+            },
+            {
+              "number": 5,
+              "description": "Installation of boxes, pull and Junction boxes, Outlet boxes shall be accommodate orientation of wiring devices as indicated on drawings."
+            },
+            {
+              "number": 6,
+              "description": "The fittings used with embedded conduit shall be concrete tight and water tight."
+            },
+            {
+              "number": 7,
+              "description": "Locknuts shall be provided to protect the wire from abrasion unles in the design."
+            },
+            {
+              "number": 8,
+              "description": "Check that grounding has been done according to the project Specification"
+            },
+            {
+              "number": 9,
+              "description": "The conduits shall be securely fastened at intervals not exceeding 2m for 20 and 25mm rigid metal conduits and 3 meter for all larger sizes."
+            },
+            {
+              "number": 10,
+              "description": "Interior boxes shall be cleaned to remove dust, derbis and other material. Exposed surfaces shall also be cleaned and finish restored."
+            },
+            {
+              "number": 11,
+              "description": "Verify that all conduit covers installed properly after the cable pulling activity."
+            }
+          ]
+        }
+      ]
+    },
+   {
+  "id": 4,
+  "title": "Painting Checklist",
+  "sections": [
+    {
+      "id": "A",
+      "name": "General",
+      "items": [
+        {
+          "number": 1,
+          "description": "Ensure method statement, materials and drawings are approved.",
+          "part": "Part 1"
+        },
+        {
+          "number": 2,
+          "description": "Ensure materials are stored as per manufacturers recommendations.",
+          "part": "Part 1"
+        },
+        {
+          "number": 3,
+          "description": "Verify the expiry date and number of coats of the material prior to applications.",
+          "part": "Part 1"
+        },
+        {
+          "number": 4,
+          "description": "Check the Location, Colour, Type of Painting as per the approved shop drawings / material submittal.",
+          "part": "Part 1"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Surface Preparation",
+      "items": [
+        {
+          "number": 5,
+          "description": "Check substrate is clean, free from contaminants like dust, traces of curing compound, oil and greese.",
+          "part": "Part 2"
+        },
+        {
+          "number": 6,
+          "description": "Check for repair of surface imperfection and protrusions (if any).",
+          "part": "Part 2"
+        },
+        {
+          "number": 7,
+          "description": "Moisture content for the substrate and environmental conditions as per manufacturer recommendations.",
+          "part": "Part 2"
+        },
+        {
+          "number": 8,
+          "description": "Undulations or irregular corners are repaired and grinded as required.",
+          "part": "Part 2"
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Application of Internal Paint",
+      "items": [
+        {
+          "number": 9,
+          "description": "Ensure application of Primer as per manufacturers recommendation",
+          "part": "Part 3"
+        },
+        {
+          "number": 10,
+          "description": "Ensure application of Stuccoo as per manufecturers recommendation",
+          "part": "Part 3"
+        },
+        {
+          "number": 11,
+          "description": "Touchup, grinding, undulations, corner repairs and pinholes are filled properly.",
+          "part": "Part 4"
+        },
+        {
+          "number": 12,
+          "description": "Application of final coat of Paint as per manufacturers recommendation.",
+          "part": "Part 4"
+        },
+        {
+          "number": 13,
+          "description": "Line between two color shades is straight, no Brush marks should be visible.",
+          "part": "Part 4"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Application of External Paint",
+      "items": [
+        {
+          "number": 14,
+          "description": "Ensure application of Primer as per manufacturers recommendation",
+          "part": "Part 5"
+        },
+        {
+          "number": 15,
+          "description": "Touchup, grinding, undulations, corner repairs and pinholes are filled properly.",
+          "part": "Part 6"
+        },
+        {
+          "number": 16,
+          "description": "Ensure application of Texturer Coat as per manufacturers recommendation",
+          "part": "Part 6"
+        },
+        {
+          "number": 17,
+          "description": "Application of final coat of Paint as per manufacturers recommendation.",
+          "part": "Part 7"
+        }
+      ]
+    }
+  ]
+},
+    {
+      "id": 5,
+      "title": "Installation of Above Ground Drainage Pipes",
+      "sections": [
+        {
+          "id": "general",
+          "name": "General Inspection",
+          "items": [
+            {
+              "number": 1,
+              "description": "Approved shop drawings should be followed"
+            },
+            {
+              "number": 2,
+              "description": "The materials are approved"
+            },
+            {
+              "number": 3,
+              "description": "No visible damage on the materials"
+            },
+            {
+              "number": 4,
+              "description": "Pipe sizes are as per approved shop drawing"
+            },
+            {
+              "number": 5,
+              "description": "Pipe layout/routing as per approved shop drawing"
+            },
+            {
+              "number": 6,
+              "description": "Slope should be maintained for all pipes"
+            },
+            {
+              "number": 7,
+              "description": "Installation as per approved method statement"
+            },
+            {
+              "number": 8,
+              "description": "Sleeves are provided for the pipes passing the structural memebers"
+            },
+            {
+              "number": 9,
+              "description": "Drainage pipes are not passing above electrical services"
+            },
+            {
+              "number": 10,
+              "description": "Installed pipes are free of sag & bend"
+            },
+            {
+              "number": 11,
+              "description": "Vent pipes are provided to the manhole as per approved drawing"
+            },
+            {
+              "number": 12,
+              "description": "Pipe joints are properly made and are tight/secure"
+            },
+            {
+              "number": 13,
+              "description": "Pipes are supported properly vertically&horizontally"
+            }
+          ]
+        }
+      ]
+    },
+    {
+  "id": 6,
+  "title": "Ceramic Tiling Checklist",
+  "sections": [
+    {
+      "id": "A",
+      "name": "General",
+      "items": [
+        {
+          "number": 1,
+          "description": "Ensure method statement, materials and drawings (finishing schedule) are approved.",
+          "part": 1
+        },
+        {
+          "number": 2,
+          "description": "Ensure materials are stored as per manufacturers recommendations.",
+          "part": 1
+        },
+        {
+          "number": 3,
+          "description": "Verify the expiry date of the material prior to applications.",
+          "part": 1
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Surface Preparation",
+      "items": [
+        {
+          "number": 4,
+          "description": "Check substrate is clean, free from contaminants like dust, traces of curing compound, oil and greese.",
+          "part": 1
+        },
+        {
+          "number": 5,
+          "description": "Check surface is levelled and sloped as per the approved drawings.",
+          "part": 1
+        },
+        {
+          "number": 6,
+          "description": "Check the surface roughness is appropriate as per the tile and tile adhesive manufacturer recommendations.",
+          "part": 1
+        },
+        {
+          "number": 7,
+          "description": "Verify the application of wet area water proofing and leak test.",
+          "part": 1
+        },
+        {
+          "number": 8,
+          "description": "Verify the location and level of floor drain as per the approved drawings.",
+          "part": 1
+        },
+        {
+          "number": 9,
+          "description": "Check the MEP clearance prior to start Painting works.",
+          "part": 1
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Installation of Tile",
+      "items": [
+        {
+          "number": 10,
+          "description": "Ensure proper mixing of material as per the manufacturer recommendations.",
+          "part": 2
+        },
+        {
+          "number": 11,
+          "description": "Check the Location, Colour & Type of tile as per the approved shop drawings / material submittal.",
+          "part": 2
+        },
+        {
+          "number": 12,
+          "description": "Check the application of tile adhesive using notch trowel on the backside of tile and over the substrate.",
+          "part": 2
+        },
+        {
+          "number": 13,
+          "description": "Verify the tile spacers width is uniform and aligned as per the appoved drawings.",
+          "part": 2
+        },
+        {
+          "number": 14,
+          "description": "Check the setting out / pattern of wall and floor tiles as per the approved drawings.",
+          "part": 2
+        },
+        {
+          "number": 15,
+          "description": "Verify the slope and level of the tiles as per the approved drawings.",
+          "part": 3
+        },
+        {
+          "number": 16,
+          "description": "Check the laying of tiles above the false ceiling as per the approved drawings.",
+          "part": 3
+        },
+        {
+          "number": 17,
+          "description": "Check the pull off / adhesion test for the paint application as per the project specifications / manufacturer recommendations (if required).",
+          "part": 3
+        },
+        {
+          "number": 18,
+          "description": "Approval to proceed with further works obtained from consultant / Client.",
+          "part": 3
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Grouting of Tile",
+      "items": [
+        {
+          "number": 19,
+          "description": "Check the tile joints are clean and free from contaminants like dust etc.",
+          "part": 4
+        },
+        {
+          "number": 20,
+          "description": "Ensure proper mixing of material as per the manufacturer recommendations.",
+          "part": 4
+        },
+        {
+          "number": 21,
+          "description": "Check the Location, Colour & Type of grout as per the approved shop drawings / material submittal.",
+          "part": 4
+        },
+        {
+          "number": 22,
+          "description": "Check the width of tile grout is proper and uniform.",
+          "part": 4
+        },
+        {
+          "number": 23,
+          "description": "Check the application of tile grout as per the manufacturer recommendations.",
+          "part": 4
+        },
+        {
+          "number": 24,
+          "description": "Approval to proceed with further works obtained from consultant / Client.",
+          "part": 4
+        }
+      ]
+    }
+  ]
+},
+    {
+      "id": 7,
+      "title": "Above Ground Water Supply Network (PPR Pipes & Fittings)",
+      "sections": [
+        {
+          "id": "general",
+          "name": "General Inspection",
+          "items": [
+            {
+              "number": 1,
+              "description": "Check the material used are as per the Approved Material Submittal."
+            },
+            {
+              "number": 2,
+              "description": "Pipe sizes are as per approved shop drawing."
+            },
+            {
+              "number": 3,
+              "description": "Check the drawing used for the installation are current and approved."
+            },
+            {
+              "number": 4,
+              "description": "Check the Horizontal pipes are supported well and with approved clamps."
+            },
+            {
+              "number": 5,
+              "description": "Ensure the sleeves are provided on structural elements where the pipes are penetrating to & from the Building /Partician/ Walls / Slabs"
+            },
+            {
+              "number": 6,
+              "description": "Pipe Joints are properly made tight & secure, Check the vertical riser of the pipes are supported well with approved clamp."
+            },
+            {
+              "number": 7,
+              "description": "Water pipes are not passing above electrical services and minimum clearance provided as per project Spec's."
+            },
+            {
+              "number": 8,
+              "description": "Check location / size of valves are provided as per approved shop drawing and specification"
+            },
+            {
+              "number": 9,
+              "description": "Shut off Valves shall be arranged closed, when rotating in clock wise direction and provided as per approved Shop drawings"
+            },
+            {
+              "number": 10,
+              "description": "Hydrotest of piping shall included the valves, valves shall be in open position at the tome of testing. Hydrotest pressure shall be equivalent to piping test pressure (i.e) 1.5 Times the operating pressure."
+             ,"part": 1
+            },
+            {
+              "number": 11,
+              "description": "After Hydrotest Valves shall be fully wrapped with corrossion resistant adhesive tape up to spindle of the valve."
+            },
+            {
+              "number": 12,
+              "description": "Water Hammer arrestor installed in upright position"
+            },
+            {
+              "number": 13,
+              "description": "Insulation shall only be applied to piping after all testing has been completed."
+            },
+            {
+              "number": 14,
+              "description": "All open pipe ends or fitting openings shall be plugged or capped immediately during construction."
+            },
+            {
+              "number": 15,
+              "description": "All surface to be insulated shall be dry and free from loose scale, dirt, oil or water when insulation is applied."
+            },
+            {
+              "number": 16,
+              "description": "Check hot water pipes and fittings are insulated and damaged insulation is replaced & Masking Tape is provided on every joints of insulation."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "title": "Installation of Above Ground Fire Fighting System",
+      "sections": [
+        {
+          "id": "general",
+          "name": "General Inspection",
+          "items": [
+            {
+              "number": 1,
+              "description": "Check the all materials used have approved submittals."
+            },
+            {
+              "number": 2,
+              "description": "Ensure drawings used for installation are current and approved."
+            },
+            {
+              "number": 3,
+              "description": "Inspect all the accessories used are new and undamaged."
+            },
+            {
+              "number": 4,
+              "description": "Ensure the routing and layout is as per approved construction drawings."
+            },
+            {
+              "number": 5,
+              "description": "Check the sleeves are installed for piping passing through walls / penetrations as required."
+            },
+            {
+              "number": 6,
+              "description": "Check the Pipe levels as per the approved shop / coordination drawing."
+            },
+            {
+              "number": 7,
+              "description": "Check the pipe alignment."
+            },
+            {
+              "number": 8,
+              "description": "Check the marking, supports and pipes installation done as per approved shop drawings."
+            },
+            {
+              "number": 9,
+              "description": "Check the pipe painting as per approved method statement."
+            },
+            {
+              "number": 10,
+              "description": "Check that the identification labels are provided for the installed piping."
+            },
+            {
+              "number": 11,
+              "description": "Check the locations of zone control valve as per the approved drawing."
+            },
+            {
+              "number": 12,
+              "description": "Check the Drain points are provided with approved valves. (Test & Drain system)."
+            },
+            {
+              "number": 13,
+              "description": "Checks the location of Fire hose cabinet, Fire Hose reel, Pressure Reducing Landing valves, Fire hoses with Nozzles are as per the approved drawing."
+            },
+            {
+              "number": 14,
+              "description": "Check the location of sprinkler heads as per the approved drawing.",
+               "part": 1
+            },
+            {
+              "number": 15,
+              "description": "Check the fire extinguisher location as per approved drawing"
+            },
+            {
+              "number": 16,
+              "description": "Check the Fire Blankets location as per approved drawing"
+            },
+            {
+              "number": 17,
+              "description": "Check the location of O,S & Y Gate Valve, NRV, pressure reducing valve, pressure relief valve and pressure gauge as per the approved drawing and accessible for maintenance."
+            },
+            {
+              "number": 18,
+              "description": "Check Automatic Air Release valves are provided on the highest pipe points on Risers."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "title": "Installation of Chilled Water Pipes & Fittings",
+      "sections": [
+        {
+          "id": "general",
+          "name": "General Inspection",
+          "items": [
+            {
+              "number": 1,
+              "description": "The materials are approved."
+            },
+            {
+              "number": 2,
+              "description": "No visible damage on the materials."
+            },
+            {
+              "number": 3,
+              "description": "Pipe sizes are as per approved shop drawing."
+            },
+            {
+              "number": 4,
+              "description": "Pipe layout/routing as per approved shop drawing."
+            },
+            {
+              "number": 5,
+              "description": "Alignment of the pipes as per approved shop drawing."
+            },
+            {
+              "number": 6,
+              "description": "Installation as per approved method statement."
+            },
+            {
+              "number": 7,
+              "description": "Sleeves are provided for the pipes passing through the walls/slabs."
+            },
+            {
+              "number": 8,
+              "description": "Check the pipes are supported well with approved clamps."
+            },
+            {
+              "number": 9,
+              "description": "Pipes are not passing above electrical services."
+            },
+            {
+              "number": 10,
+              "description": "Installed pipes are free of sag & bend."
+            },
+            {
+              "number": 11,
+              "description": "Valves & accessories are intalled as per approved layout"
+            },
+            {
+              "number": 12,
+              "description": "Pipe joints are properly made and are tight/secure."
+            },
+            {
+              "number": 13,
+              "description": "Check the distance between the support as per specification."
+            },
+            {
+              "number": 14,
+              "description": "Check the pipe routing are coordinated with other services."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "title": "Installation of Refrigerant Pipes & Accessories",
+      "sections": [
+        {
+          "id": "general",
+          "name": "General Inspection",
+          "items": [
+            {
+              "number": 1,
+              "description": "Ensure that all pipes installation shall be as per manufacturer recommendation and project specs."
+            },
+            {
+              "number": 2,
+              "description": "Ensure that the piping accessories installed as per approved project specs."
+            },
+            {
+              "number": 3,
+              "description": "Ensure that Pipe work to properly fixed and supported using a recognised and approved Manufacturer's support system."
+            },
+            {
+              "number": 4,
+              "description": "Ensure that the gauges installed as per approved shop drawings."
+            },
+            {
+              "number": 5,
+              "description": "Ensure that the valves installed as per approved shop drawings, approved specs and as per manufacturer recommendation."
+            },
+            {
+              "number": 6,
+              "description": "Ensure that pipe work shall be suitably identified and labeled where specified."
+            },
+            {
+              "number": 7,
+              "description": "Ensure that Leakage test done as per approved specs."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "title": "Bitumen Paint Application",
+      "sections": [
+        {
+          "id": "A",
+          "name": "General",
+          "items": [
+            {
+              "number": 1,
+              "description": "Ensure method statement and materials are approved."
+            },
+            {
+              "number": 2,
+              "description": "Ensure materials are stored under dry, clean, shaded area, away from sunlight and other sources of heat."
+            },
+            {
+              "number": 3,
+              "description": "Check the expiry date of the material prior to applications."
+            }
+          ]
+        },
+        {
+          "id": "B",
+          "name": "Surface Preparation",
+          "items": [
+            {
+              "number": 4,
+              "description": "Check substrate is clean, free from contaminants like dust, traces of curing compound, oil and greese."
+            },
+            {
+              "number": 5,
+              "description": "Check for repair of surface imperfection and protrusions (if any)."
+            },
+            {
+              "number": 6,
+              "description": "Check the angle fillets and chamfering of all sharp edges (if required)."
+            },
+            {
+              "number": 7,
+              "description": "Check the MEP clearance are obtained prior to start bitumen application."
+            }
+          ]
+        },
+        {
+          "id": "C",
+          "name": "Application of Bitumen Paint",
+          "items": [
+            {
+              "number": 8,
+              "description": "Ensure proper mixing as per the manufacturer recommandations."
+            },
+            {
+              "number": 9,
+              "description": "Check the application of primer coat (if required)."
+            },
+            {
+              "number": 10,
+              "description": "Check the rate of application as per the manufacturer recommendation and method statement."
+            },
+            {
+              "number": 11,
+              "description": "Check the application of coats as per project requirements / manufacturer recommandations."
+            },
+            {
+              "number": 12,
+              "description": "Check the application of subsequent coats are carried out at right angle to the previous coat."
+            },
+            {
+              "number": 13,
+              "description": "Check the WFT as per the project specifications / manufacturer recommandations."
+            },
+            {
+              "number": 14,
+              "description": "Check the curing of application as per manufacturer recommendation."
+            },
+            {
+              "number": 15,
+              "description": "Approval obtained from Consultant/Client to proceed with further activities."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "title": "Installation of HVAC Duct & Accessories",
+      "sections": [
+        {
+          "id": "general",
+          "name": "General Inspection",
+          "items": [
+            {
+              "number": 1,
+              "description": "Ensure the materials are as per approved material submitted."
+            },
+            {
+              "number": 2,
+              "description": "Ensure drawings are used for installation are current and approved."
+            },
+            {
+              "number": 3,
+              "description": "Check that only in properly fabricated fittings are used for changes in directions, shapes,sizes and connections."
+            },
+            {
+              "number": 4,
+              "description": "The joints and flanges are correctly made, jointed and sealed."
+            },
+            {
+              "number": 5,
+              "description": "Check that duct joints are sealed externally before applying insulation with approved sealant."
+            },
+            {
+              "number": 6,
+              "description": "Check fixing of supports and spacing as approved drawings & submittal."
+            },
+            {
+              "number": 7,
+              "description": "Check acoustic lining is properly fastened and un damaged."
+            },
+            {
+              "number": 8,
+              "description": "Insulation is applied as per manufacturer's instructions anf finished smooth and straight without any damages."
+            },
+            {
+              "number": 9,
+              "description": "Check nuts, bolts, screws, brackets drop rods etc. are tight and aligned properly."
+            },
+            {
+              "number": 10,
+              "description": "All the access doors, fire dampers,VCDs etc are installed as per approved drawings, specification and manufacturer instructions as applicable."
+            },
+            {
+              "number": 11,
+              "description": "Flexible duct connectors are provided at building expansion joints."
+            },
+            {
+              "number": 12,
+              "description": "Ensure that the identification & labeling are provided for duct works."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "title": "Electrical Cable & Wire Pulling",
+      "sections": [
+        {
+          "id": "general",
+          "name": "General Inspection",
+          "items": [
+            {
+              "number": 1,
+              "description": "Check the cables and accessories are as per approved material submittal"
+            },
+            {
+              "number": 2,
+              "description": "Check and ensure the drawings used for installation are current and approved."
+            },
+            {
+              "number": 3,
+              "description": "Ensure containment has been completed prior to start cable or wire pulling"
+            },
+            {
+              "number": 4,
+              "description": "Ensure containment has been cleaned prior to start pulling"
+            },
+            {
+              "number": 5,
+              "description": "Check the cable and other associated material are new and undamaged."
+            },
+            {
+              "number": 6,
+              "description": "Check insulation resistance test prior to start the cable pulling."
+            },
+            {
+              "number": 7,
+              "description": "Check that the cables are securely fixed."
+            },
+            {
+              "number": 8,
+              "description": "Check and ensure that the cable sizes are as approved drawing."
+            },
+            {
+              "number": 9,
+              "description": "Give a temporary tagging before cable pulling to track the circuits during termination"
+            },
+            {
+              "number": 10,
+              "description": "Protect the edges of the cable after it has pulled."
+            },
+            {
+              "number": 11,
+              "description": "Check the installation of cables is co-ordinated with other cables"
+            },
+            {
+              "number": 12,
+              "description": "Check the installation of cables as per approved drawings."
+            }
+          ]
+        }
+      ]
+    },
+    {
+  "id": 14,
+  "title": "Gypsum Partition Installation",
+  "sections": [
+    {
+      "id": "A",
+      "name": "General",
+      "items": [
+        {
+          "number": 1,
+          "description": "Ensure method statement, material submittal and drawings are approved.",
+          "part": 1
+        },
+        {
+          "number": 2,
+          "description": "Ensure materials (Gypsum board, cement board, insulation material, supporting system, etc.) are stored under dry, clean, shaded area, away from sunlight and other sources of heat.",
+          "part": 1
+        },
+        {
+          "number": 3,
+          "description": "Check the color, type, material, fire rating and thickness are as per approved material approval and project requirements.",
+          "part": 1
+        },
+        {
+          "number": 4,
+          "description": "Verify and record the DCL product confirmity certificate for the insulation materials.",
+          "part": 1
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Setting Out",
+      "items": [
+        {
+          "number": 5,
+          "description": "Verify the marking and setting out of the partition walls as per the approved drawings.",
+          "part": 1
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Installation Activity",
+      "items": [
+        {
+          "number": 6,
+          "description": "Verify the completion of the required finishes of the adjacent substrates.",
+          "part": 1
+        },
+        {
+          "number": 7,
+          "description": "Verify the location, spacing and fixation of the supporting grid (vertical and horizontal channel, wall angle, etc.) as per the approved drawings.",
+          "part": 1
+        },
+        {
+          "number": 8,
+          "description": "Verify the fixation of the board (on one side of the supports) as per the approved drawings.",
+          "part": 2
+        },
+        {
+          "number": 9,
+          "description": "Ensure the completion of all embedded MEP and other dicipline works prior to closure as per the approved drawings.",
+          "part": 2
+        },
+        {
+          "number": 10,
+          "description": "Ensure additional supports are provided for the wall mounted fixtures as applicable.",
+          "part": 2
+        },
+        {
+          "number": 11,
+          "description": "Verify the installation of insulation works (if applicable) as per the approved drawings.",
+          "part": 2
+        },
+        {
+          "number": 12,
+          "description": "Obtain approval (Civil / MEP) from consultant / Client to proceed with further works.",
+          "part": 2
+        },
+        {
+          "number": 13,
+          "description": "Verify the fixation of the board as per the approved drawings.",
+          "part": 2
+        },
+        {
+          "number": 14,
+          "description": "Ensure the completion of MEP and other dicipline works above the false ceiling level and obtain clearance to proceed for futher works.",
+          "part": 2
+        },
+        {
+          "number": 15,
+          "description": "Verify the marking, position and alignment of MEP & wall mounted fixtures in the wall as per the approved drawings.",
+          "part": 2
+        },
+        {
+          "number": 16,
+          "description": "Ensure the cutting of gypsum board on the marked locations as per the project requirements.",
+          "part": 2
+        },
+        {
+          "number": 17,
+          "description": "Verify the jointing & taping as per the manufacturer recommendations.",
+          "part": 2
+        },
+        {
+          "number": 18,
+          "description": "Approval obtain from Consultant/Client to proceed with further activities.",
+          "part": 2
+        }
+      ]
+    }
+  ]
+},
+    {
+      "id": 15,
+      "title": "Installation of Fire Alarm",
+      "sections": [
+        {
+          "id": "general",
+          "name": "General Inspection",
+          "items": [
+            {
+              "number": 1,
+              "description": "Check cable & accessories, used for installation have approved submittals"
+            },
+            {
+              "number": 2,
+              "description": "Check the drawings used for installation are current & approved."
+            },
+            {
+              "number": 3,
+              "description": "Check the cables/Wires & accessories and materials are new & undamaged."
+            },
+            {
+              "number": 4,
+              "description": "Check the cables/Wires & accessories pulled/dressed and adequate spaced within as per approved drawings."
+            },
+            {
+              "number": 5,
+              "description": "Check the laying of the cable & accessories configuration is as per approved drawing"
+            },
+            {
+              "number": 6,
+              "description": "Check the connections are done correctly (as per approved methods)"
+            },
+            {
+              "number": 7,
+              "description": "Check the proper mounting & fitting of lugs & accessories"
+            },
+            {
+              "number": 8,
+              "description": "Check that a proper tags/identifications are provided"
+            },
+            {
+              "number": 9,
+              "description": "Check for system is checked for Insulation resistance and continuity"
+            },
+            {
+              "number": 10,
+              "description": "Check tidiness of system installations."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "title": "Installation of ONU/Data",
+      "sections": [
+        {
+          "id": "general",
+          "name": "General Inspection",
+          "items": [
+            {
+              "number": 1,
+              "description": "The materials are approved.",
+               "part": 1
+            },
+            {
+              "number": 2,
+              "description": "No visible damage on the materials.",
+               "part": 1
+            },
+            {
+              "number": 3,
+              "description": "Cable containment and accessories as per approved drawings.",
+               "part": 1
+            },
+            {
+              "number": 4,
+              "description": "Cable indentification as per the approved drawings.",
+               "part": 1
+            },
+            {
+              "number": 5,
+              "description": "Is the cable properly dressed and labelled.",
+               "part": 1
+            },
+            {
+              "number": 6,
+              "description": "Check and verify location, orientation, and mounting heights of data and telephone oulets as per approved drawing"
+            },
+            {
+              "number": 7,
+              "description": "Check the IDF rack is cleaned without any unwanted materials"
+            },
+            {
+              "number": 8,
+              "description": "Check Power Distribution Unit is available and power supply is provided"
+            },
+            {
+              "number": 9,
+              "description": "Check RJ 45conector and modules are fixed properly on data and telephone outlets"
+            },
+            {
+              "number": 10,
+              "description": "Termination tools are properly managed."
+            },
+            {
+              "number": 11,
+              "description": "Termination materials as per the approved MAR."
+            },
+            {
+              "number": 12,
+              "description": "Type of the cable as per approved drawings."
+            },
+            {
+              "number": 13,
+              "description": "Location of the data socket as per approved drawings."
+            },
+            {
+              "number": 14,
+              "description": "Idetification on the data socket and IDF patch panel are same."
+            },
+            {
+              "number": 15,
+              "description": "Patch panel installation as per the approved rack schedule"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "title": "Fire Sealing Works",
+      "sections": [
+        {
+          "id": "A",
+          "name": "General",
+          "items": [
+            {
+              "number": 1,
+              "description": "Ensure relevant shop drawing is approved."
+            },
+            {
+              "number": 2,
+              "description": "Ensure H&S method statement is submitted"
+            },
+            {
+              "number": 3,
+              "description": "Check all the materials are approved by consultant."
+            },
+            {
+              "number": 4,
+              "description": "Check the availablity mockup approval for the fire sealing works (around penetrations, partitions, etc.)."
+            }
+          ]
+        },
+        {
+          "id": "B",
+          "name": "Preparation Works",
+          "items": [
+            {
+              "number": 5,
+              "description": "Check the MEP penetrations are installed, inspected and approved."
+            },
+            {
+              "number": 6,
+              "description": "Check the surface for any latiance, dirt, loose materials around the penetrations."
+            },
+            {
+              "number": 7,
+              "description": "Check the dampness of the substrate prior to application (if required as per manufaturer recommendations)"
+            },
+            {
+              "number": 8,
+              "description": "Check the mixing of materials as per the manufacturer recommandations"
+            }
+          ]
+        },
+        {
+          "id": "C",
+          "name": "Application",
+          "items": [
+            {
+              "number": 9,
+              "description": "Check the application covers the whole penetrations without any gap."
+            },
+            {
+              "number": 10,
+              "description": "Finishing of the openings shall be as per the approved mockup."
+            },
+            {
+              "number": 11,
+              "description": "Check the final cleaning and sealant (if required) applied as per the approved mockup."
+            }
+          ]
+        }
+      ]
+    },
+   {
+  "id": 18,
+  "title": "False Ceiling Installation",
+  "sections": [
+    {
+      "id": "A",
+      "name": "General",
+      "items": [
+        {
+          "number": 1,
+          "description": "Ensure method statement, material submittal and drawings are approved.",
+          "part": 1
+        },
+        {
+          "number": 2,
+          "description": "Ensure materials (Gypsum board, tiles, suspension systems, etc.,) are stored under dry, clean, shaded area, away from sunlight and other sources of heat.",
+          "part": 1
+        },
+        {
+          "number": 3,
+          "description": "Check the color, type, material, pattern and thickness are as per approved material approval and project requirements.",
+          "part": 1
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Setting Out",
+      "items": [
+        {
+          "number": 4,
+          "description": "Verify the marking of the false ceiling level on the walls as per the approved drawings.",
+          "part": 1
+        },
+        {
+          "number": 5,
+          "description": "Verify the marking / location of suspension system supports at ceiling as per the approved drawings.",
+          "part": 1
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Pre-Installation Activity",
+      "items": [
+        {
+          "number": 6,
+          "description": "Verify the completion of the required finishes above the false ceiling level.",
+          "part": 1
+        },
+        {
+          "number": 7,
+          "description": "Verify the closing of shaft openings, MEP penetrations and other openings as per project requirements.",
+          "part": 1
+        },
+        {
+          "number": 8,
+          "description": "Verify the application of fire sealant / fire protection works are carried out as per the project requirements (if applicable).",
+          "part": 1
+        },
+        {
+          "number": 9,
+          "description": "Verify the location, spacing and fixation of the grid (main channel, Furing channel, wall angle, hanging wire with adjustable clip, main tee, cross tee, etc.,) as per the approved drawings.",
+          "part": 1
+        },
+        {
+          "number": 10,
+          "description": "Ensure the suspension system supports are not in contact with the adjacent MEP services.",
+          "part": 1
+        },
+        {
+          "number": 11,
+          "description": "Ensure the completion of MEP and other dicipline works above the false ceiling level and obtain clearance to proceed for futher works.",
+          "part": 1
+        },
+        {
+          "number": 12,
+          "description": "Ensure additional supports are provided for the ceiling mounted fixtures as applicable.",
+          "part": 1
+        },
+        {
+          "number": 13,
+          "description": "Obtain approval from consultant / Client to proceed with further works.",
+          "part": 1
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Installation of False Ceiling",
+      "items": [
+        {
+          "number": 14,
+          "description": "Verify the type, fixation, level and alignment of the false ceiling board / tiles as per the approved drawings.",
+          "part": 2
+        },
+        {
+          "number": 15,
+          "description": "Verify the marking, position and alignment of MEP & ceiling mounted fixtures (light, access panel, sprinklers, signages etc.) in the ceiling as per the approved drawings.",
+          "part": 2
+        },
+        {
+          "number": 16,
+          "description": "Ensure the cutting of gypsum board / tiles on the marked locations as per the project requirements.",
+          "part": 2
+        },
+        {
+          "number": 17,
+          "description": "Verify the jointing & taping as per the manufacturer recommendations.",
+          "part": 2
+        },
+        {
+          "number": 18,
+          "description": "Approval obtained from Consultant/Client to proceed with further activites.",
+          "part": 2
+        }
+      ]
+    }
+  ]
+},
+   {
+  "id": 19,
+  "title": "Wet Area Waterproofing",
+  "sections": [
+    {
+      "id": "A",
+      "name": "General",
+      "items": [
+        {
+          "number": 1,
+          "description": "Ensure method statement and materials are approved.",
+          "part": 1
+        },
+        {
+          "number": 2,
+          "description": "Ensure materials are stored under dry, clean, shaded area, away from sunlight and other sources of heat.",
+          "part": 1
+        },
+        {
+          "number": 3,
+          "description": "Check the expiry date of the material prior to applications.",
+          "part": 1
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Surface Preparation",
+      "items": [
+        {
+          "number": 4,
+          "description": "Check substrate is clean, free from contaminants like dust, traces of curing compound, oil and greese.",
+          "part": 1
+        },
+        {
+          "number": 5,
+          "description": "Ensure grouting, angle fillet provided all around the penetrations and the projected MEP services are neat and clean from any latiance.",
+          "part": 1
+        },
+        {
+          "number": 6,
+          "description": "Ensure the angle fillets are provided at the floor and wall junctions of the area that to be treated.",
+          "part": 1
+        },
+        {
+          "number": 7,
+          "description": "Obtain MEP clearance prior to start the wet area water proofing.",
+          "part": 1
+        },
+        {
+          "number": 8,
+          "description": "Ensure check dam constructed at the entrance of the room for the stagnation of water for water leakage testing after the completion of the wet area water proofing.",
+          "part": 1
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Application of Waterproofing",
+      "items": [
+        {
+          "number": 9,
+          "description": "Ensure proper mixing of the material as per the manufacturer recommendations",
+          "part": 2
+        },
+        {
+          "number": 10,
+          "description": "Check the application of primer coat (if required).",
+          "part": 2
+        },
+        {
+          "number": 11,
+          "description": "Check the rate of application as per the manufacturer recommendation and method statement.",
+          "part": 2
+        },
+        {
+          "number": 12,
+          "description": "Check the application of coats as per project requirements / manufacturer recommandations.",
+          "part": 2
+        },
+        {
+          "number": 13,
+          "description": "Check the application of subsequent coats are carried out at right angle to the previous coat.",
+          "part": 2
+        },
+        {
+          "number": 14,
+          "description": "Ensure the application of waterproofing on the vertical face extended upto 300mm from FFL or as per approved drawing / project requirements.",
+          "part": 2
+        },
+        {
+          "number": 15,
+          "description": "Check the WFT as per the project specifications / manufacturer recommendations.",
+          "part": 2
+        },
+        {
+          "number": 16,
+          "description": "Check the curing of application as per manufacturer recommendation.",
+          "part": 2
+        },
+        {
+          "number": 17,
+          "description": "Obtain approval for the application of waterproofing to proceed water leakage test.",
+          "part": 2
+        },
+        {
+          "number": 18,
+          "description": "Check the filling of water and monitor the level of filled water during the leakage test.",
+          "part": 2
+        },
+        {
+          "number": 19,
+          "description": "Check for any water seepage / leakage after 24 hours or as per the project requirements.",
+          "part": 2
+        },
+        {
+          "number": 20,
+          "description": "Approval obtained from Consultant/Client to proceed with further activities.",
+          "part": 2
+        }
+      ]
+    }
+  ]
+},
+    {
+      "id": 20,
+      "title": "Installation of LV Distribution Panels",
+      "sections": [
+        {
+          "id": "general",
+          "name": "General Inspection",
+          "items": [
+            {
+              "number": 1,
+              "description": "Verify the installed Distribution Boards have approved submittals."
+            },
+            {
+              "number": 2,
+              "description": "Ensure the drawings used for installation are correct and approved."
+            },
+            {
+              "number": 3,
+              "description": "Check the name plate and identification labels as per load schedule and approved submittals."
+            },
+            {
+              "number": 4,
+              "description": "Check the mounting channels are even and free from any damage"
+            },
+            {
+              "number": 5,
+              "description": "Check all meters, circuit breakers, indication lamp, handles and locks are correct and undamaged.",
+               "part": 1
+            },
+            {
+              "number": 6,
+              "description": "Ensure adequate clearance available around panel as required and as per drawings."
+            },
+            {
+              "number": 7,
+              "description": "Check the alignment of installed panels."
+            },
+            {
+              "number": 8,
+              "description": "All cables and wires including grounding are terminated and identified."
+            },
+            {
+              "number": 9,
+              "description": "Ensure panel interiors are cleaned and free from dust and small metallic particles."
+            },
+            {
+              "number": 10,
+              "description": "Check the grounding has been provided as per approved drawing including the body and door of the panel."
+            }
+          ]
+        }
+      ]
+    },
+   {
+  "id": 21,
+  "title": "Epoxy Flooring",
+  "sections": [
+    {
+      "id": "A",
+      "name": "General",
+      "items": [
+        {
+          "number": 1,
+          "description": "Ensure method statement, materials and drawings (finishing schedule) are approved.",
+          "part": 1
+        },
+        {
+          "number": 2,
+          "description": "Ensure materials are stored as per manufacturers recommendations.",
+          "part": 1
+        },
+        {
+          "number": 3,
+          "description": "Verify the expiry date of the material prior to applications.",
+          "part": 1
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Surface Preparation",
+      "items": [
+        {
+          "number": 4,
+          "description": "Check substrate is clean, free from contaminants like dust, traces of curing compound, oil and greese.",
+          "part": 1
+        },
+        {
+          "number": 5,
+          "description": "Check for repair of surface imperfection and protrusions (if any).",
+          "part": 1
+        },
+        {
+          "number": 6,
+          "description": "Moisture content for the substrate and environmental conditions as per manufacturer recommendations.",
+          "part": 1
+        },
+        {
+          "number": 7,
+          "description": "Undulations or irregular corners are repaired and grinded as required.",
+          "part": 1
+        },
+        {
+          "number": 8,
+          "description": "Check the MEP clearance prior to start epoxy flooring works.",
+          "part": 1
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Application of Epoxy",
+      "items": [
+        {
+          "number": 9,
+          "description": "Ensure application of primer as per manufecturers recommendation",
+          "part": 2
+        },
+        {
+          "number": 10,
+          "description": "Ensure application of Hardner as per manufecturers recommendation",
+          "part": 2
+        },
+        {
+          "number": 11,
+          "description": "Ensure Application of uniform base as per manufecturers recommendations.",
+          "part": 2
+        },
+        {
+          "number": 12,
+          "description": "Tuchup, grinding, undulations, corner repairs and pinholes are filled properly.",
+          "part": 2
+        },
+        {
+          "number": 13,
+          "description": "Ensure proper mixing of material as per the manufacturer recommendations.",
+          "part": 2
+        },
+        {
+          "number": 14,
+          "description": "Check the Location, Colour, Type of Painting as per the approved shop drawings / material submittal.",
+          "part": 2
+        },
+        {
+          "number": 15,
+          "description": "Check the application of coats as per project requirements / manufacturer recommendations.",
+          "part": 2
+        },
+        {
+          "number": 16,
+          "description": "Check the rate of application as per the manufacturer recommendation and method statement.",
+          "part": 2
+        },
+        {
+          "number": 17,
+          "description": "Check the curing at every stages of application as per manufacturer recommendation.",
+          "part": 2
+        }
+      ]
+    }
+  ]
+},
+    {
+      "id": 22,
+      "title": "Continuity and Insulation Resistance Test for Cables",
+      "sections": [
+        {
+          "id": "general",
+          "name": "Test Information",
+          "items": [
+            {
+              "number": 1,
+              "description": "Cable ID"
+            },
+            {
+              "number": 2,
+              "description": "Cable Size"
+            },
+            {
+              "number": 3,
+              "description": "Circuit Number"
+            },
+            {
+              "number": 4,
+              "description": "Continuity Test"
+            },
+            {
+              "number": 5,
+              "description": "Insulation Resistance in Mega Ohms (R-Y, Y-B, B-R, R-N, Y-N, B-N, R-E, Y-E, B-E, N-E)"
+            },
+            {
+              "number": 6,
+              "description": "Test Instrument Details"
+            },
+            {
+              "number": 7,
+              "description": "Calibration Date"
+            },
+            {
+              "number": 8,
+              "description": "Calibration Due Date"
+            },
+            {
+              "number": 9,
+              "description": "Test Voltage"
+            },
+            {
+              "number": 10,
+              "description": "Remarks"
+            }
+          ]
+        }
+      ]
+    },
+   {
+  "id": 23,
+  "title": "Kitchen Cabinets Installation",
+  "sections": [
+    {
+      "id": "A",
+      "name": "General",
+      "items": [
+        {
+          "number": 1,
+          "description": "Ensure method statement, materials and drawings are approved.",
+          "part": 1
+        },
+        {
+          "number": 2,
+          "description": "Ensure materials are stored as per manufacturers recommendations.",
+          "part": 1
+        },
+        {
+          "number": 3,
+          "description": "Ensure method of statement is being followed.",
+          "part": 1
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Surface Preparation",
+      "items": [
+        {
+          "number": 4,
+          "description": "Check location,Size,Color and Thickness of the Cabinets",
+          "part": 1
+        },
+        {
+          "number": 5,
+          "description": "Check Height,Level and Alignment of cabinets",
+          "part": 1
+        },
+        {
+          "number": 6,
+          "description": "Check Opening Size and Direction of cabinets",
+          "part": 1
+        },
+        {
+          "number": 7,
+          "description": "Check Shelf Supports (Brackets or Pins)",
+          "part": 1
+        },
+        {
+          "number": 8,
+          "description": "Check Joints of the Cabinets",
+          "part": 1
+        },
+        {
+          "number": 9,
+          "description": "Check wethere Drawer and Shelf functioning properly",
+          "part": 1
+        },
+        {
+          "number": 10,
+          "description": "Fixing of supports for the countertop is as per approved drawings",
+          "part": 1
+        },
+        {
+          "number": 11,
+          "description": "Check Ironmongery is installed as per drawing and free from damanges",
+          "part": 1
+        },
+        {
+          "number": 12,
+          "description": "Check Sink installed Properly and as per location on dwg.",
+          "part": 1
+        },
+        {
+          "number": 13,
+          "description": "Check Stove installed Properly",
+          "part": 1
+        },
+        {
+          "number": 14,
+          "description": "Completion of Nearby Finishes",
+          "part": 1
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Cabinet Counter Top",
+      "items": [
+        {
+          "number": 15,
+          "description": "Check location,Size,Color and Thickness",
+          "part": 2
+        },
+        {
+          "number": 16,
+          "description": "Check Opening Size and location for kitchen Accessories",
+          "part": 2
+        },
+        {
+          "number": 17,
+          "description": "Check Level of the surface",
+          "part": 2
+        },
+        {
+          "number": 18,
+          "description": "Check Applied Sealant and its Color",
+          "part": 2
+        },
+        {
+          "number": 19,
+          "description": "Check for any Surface joints visibility",
+          "part": 2
+        }
+      ]
+    }
+  ]
+},
+    {
+      "id": 24,
+      "title": "Wardrobe Installation",
+      "sections": [
+        {
+          "id": "A",
+          "name": "General",
+          "items": [
+            {
+              "number": 1,
+              "description": "Ensure method statement, material submittal and drawings are approved."
+            },
+            {
+              "number": 2,
+              "description": "Ensure materials (wardrobe, leaf, drawers , iron mongeries and accessories, etc.) are stored under dry, clean, shaded area, away from sunlight and other sources of heat."
+            },
+            {
+              "number": 3,
+              "description": "Check the color, type, material, coating of leaf, materials are as per approved material approval and project requirements."
+            },
+            {
+              "number": 4,
+              "description": "Verify and record the DCL product conformity certificate for the sealants to be used."
+            },
+            {
+              "number": 5,
+              "description": "Ensure the fire rating of the wardrobe are as per the project requirements."
+            }
+          ]
+        },
+        {
+          "id": "B",
+          "name": "Setting Out",
+          "items": [
+            {
+              "number": 6,
+              "description": "Verify the level and alignment of the wardrobe frame leaf opening with reference to the surrounding wall / cladding elevations."
+            },
+            {
+              "number": 7,
+              "description": "Verify the location and clear opening of leafs and drawers are as per the approved drawings."
+            },
+            {
+              "number": 8,
+              "description": "Verify the wardrobe jamb area are solid and rigid."
+            }
+          ]
+        },
+        {
+          "id": "C",
+          "name": "Installation of Wardrobe",
+          "items": [
+            {
+              "number": 9,
+              "description": "Verify the fixation of subframe with applicable moisture resistant coating.(if required)."
+            },
+            {
+              "number": 10,
+              "description": "Verity the fixation, level and alignment of the wardrobe is as per the approved details / drawings."
+            },
+            {
+              "number": 11,
+              "description": "Ensure the wardrobe consolidated."
+            },
+            {
+              "number": 12,
+              "description": "Ensure the location and No. of leaf hinges provided as per the approved drawings."
+            },
+            {
+              "number": 13,
+              "description": "Ensure required Iron mongery sets are provided as per drawings."
+            },
+            {
+              "number": 14,
+              "description": "Ensure the level, orientation and position of the iron mongery fixed as per the approved drawings."
+            },
+            {
+              "number": 15,
+              "description": "Ensure location/dimensions of drawers are per drawing"
+            },
+            {
+              "number": 16,
+              "description": "Ensure the roller slides/drawer runners as per the approved drawings."
+            },
+            {
+              "number": 17,
+              "description": "Verify Cloth Hangers/Tie Holders are installed as per the approved drawings."
+            },
+            {
+              "number": 18,
+              "description": "Ensure the alignment, plumbness and protection of wardrobe to avoid any damages during activities."
+            },
+            {
+              "number": 19,
+              "description": "Ensure wardrobe hanging rail set is installed."
+            },
+            {
+              "number": 20,
+              "description": "Approval obtained from Consultant/Client to proceed with further activities."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "title": "Doors & Windows Installation",
+      "sections": [
+        {
+          "id": "A",
+          "name": "General",
+          "items": [
+            {
+              "number": 1,
+              "description": "Ensure method statement, material submittal and drawings are approved."
+            },
+            {
+              "number": 2,
+              "description": "Ensure materials (Door frame, leaf, window frame, window leaf, iron mongeries and accessories, etc.) are stored under dry, clean, shaded area, away from sunlight and other sources of heat."
+            },
+            {
+              "number": 3,
+              "description": "Check the color, type, material, coating of door and window materials are as per approved material approval and project requirements."
+            },
+            {
+              "number": 4,
+              "description": "Verify and record the DCL product confirmity certificate for the sealants to be used."
+            },
+            {
+              "number": 5,
+              "description": "Ensure the fire rating of the doors are as per the project requirements."
+            }
+          ]
+        },
+        {
+          "id": "B",
+          "name": "Setting Out",
+          "items": [
+            {
+              "number": 6,
+              "description": "Verify the location and clear opening of doors / windows are as per the approved drawings."
+            },
+            {
+              "number": 7,
+              "description": "Verify the level and alignment of the door / window frame opening with reference to the surrounding wall / cladding elevations."
+            },
+            {
+              "number": 8,
+              "description": "Verify the door / window jamb area are solid and rigid."
+            }
+          ]
+        },
+        {
+          "id": "C",
+          "name": "Installation of Doors",
+          "items": [
+            {
+              "number": 9,
+              "description": "Verify the fixation of subframe with applicable moisture resistant coating.(if required)."
+            },
+            {
+              "number": 10,
+              "description": "Verity the fixation, level and alignment of the door frame as per the approved details / drawings."
+            },
+            {
+              "number": 11,
+              "description": "Ensure the door frames are consolidated using foam as per the material approval and project requirements."
+            },
+            {
+              "number": 12,
+              "description": "Ensure the location and No. of Door hinges provided as per the approved drawings."
+            },
+            {
+              "number": 13,
+              "description": "Ensure required Iron mongery sets are provided as per the door schedule drawings."
+            },
+            {
+              "number": 14,
+              "description": "Ensure the level, orientation and position of the iron mongery fixed as per the approved drawings."
+            },
+            {
+              "number": 15,
+              "description": "Ensure the door stopper / door coordinator provided as per the approved door schedule."
+            },
+            {
+              "number": 16,
+              "description": "Ensure the fire rated doors are provided with fire rated sealant & fire rating tags as per the project requirements."
+            },
+            {
+              "number": 17,
+              "description": "Ensure the rubber gaskets are provided at the door jamb as per the approved drawings."
+            },
+            {
+              "number": 18,
+              "description": "Verify the undercut for the door leaves as per the approved drawings."
+            },
+            {
+              "number": 19,
+              "description": "Ensure the alignment, plumbness and protection of door leafs to avoid any damages during construction activities."
+            },
+            {
+              "number": 20,
+              "description": "Ensure the door architrave are fixed as per the approved drawings."
+            },
+            {
+              "number": 21,
+              "description": "Approval obtained from Consultant/Client to proceed with further activities."
+            }
+          ]
+        },
+        {
+          "id": "D",
+          "name": "Installation of Windows",
+          "items": [
+            {
+              "number": 22,
+              "description": "Ensure the completion of finishes around the jamb area prior to installation."
+            },
+            {
+              "number": 23,
+              "description": "Ensure the drip flashings are provided properly around the frame as per the approved drawings"
+            },
+            {
+              "number": 24,
+              "description": "Ensure the overlapping of the flashings around the frame are as per the approved drawings."
+            },
+            {
+              "number": 25,
+              "description": "Verity the fixation, level and alignment of the door frame as per the approved details / drawings."
+            },
+            {
+              "number": 26,
+              "description": "Ensure the location and No. of hinges, iron mongeries provided as per the approved drawings."
+            },
+            {
+              "number": 27,
+              "description": "Ensure the alignment, plumbness, opening direction and protection of window shutters to avoid any damages during construction activities."
+            },
+            {
+              "number": 28,
+              "description": "Verify the uniform thickness, colour and application of the sealant all around the window frame."
+            },
+            {
+              "number": 29,
+              "description": "Approval obtained from Consultant/Client to proceed with further activities."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "title": "Installation of Sanitary Wares & Accessories",
+      "sections": [
+        {
+          "id": "general",
+          "name": "General Inspection",
+          "items": [
+            {
+              "number": 1,
+              "description": "Check the model of sanitary wares are as per approved material submittal"
+            },
+            {
+              "number": 2,
+              "description": "Check the mounting dimensions as per approved typical installation/approved architectural drawings/manufacturer recommendations."
+            },
+            {
+              "number": 3,
+              "description": "Ensure the fixtures are correctly levelled and bolted"
+            },
+            {
+              "number": 4,
+              "description": "Water supply line connected to the fixtures"
+            },
+            {
+              "number": 5,
+              "description": "Drainage pipe line connected to the sytem"
+            },
+            {
+              "number": 6,
+              "description": "Check adequate space is available to operate the fixtures"
+            },
+            {
+              "number": 7,
+              "description": "Check bracket/screws/angle valves/P-traps are properly installed"
+            },
+            {
+              "number": 8,
+              "description": "Check adequate protection is available for all fixtures during construction period"
+            },
+            {
+              "number": 9,
+              "description": "Check the sealant are provided around the gaps of the fixtures"
+            },
+            {
+              "number": 10,
+              "description": "Ensure all the fixtures are clean"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "title": "Installation of Access Control System",
+      "sections": [
+        {
+          "id": "general",
+          "name": "General Inspection",
+          "items": [
+            {
+              "number": 1,
+              "description": "Material used as per the approved MAR."
+            },
+            {
+              "number": 2,
+              "description": "Material used damage free."
+            },
+            {
+              "number": 3,
+              "description": "Confirm the mounting heights and location of card readers, Touch Screen Access Terminals, push buttons"
+            },
+            {
+              "number": 4,
+              "description": "Confirm installation and Cables are as per approved system schematic diagram"
+            },
+            {
+              "number": 5,
+              "description": "Ensure equipment grounding connection is provided"
+            },
+            {
+              "number": 6,
+              "description": "Identify panel Using machine printed labels"
+            },
+            {
+              "number": 7,
+              "description": "Ensure proper cable tagging/identification are provided"
+            },
+            {
+              "number": 8,
+              "description": "Confirm Cable are tested"
+            },
+            {
+              "number": 9,
+              "description": "Confirm the Devices are tested for operation and are to perform as intended at full load without any signs of heating"
+            },
+            {
+              "number": 10,
+              "description": "Confirm the Devices are tested and working in the event of power outage"
+            },
+            {
+              "number": 11,
+              "description": "Ensure that door lock open during the emergency"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "title": "Aluminium & Glazing",
+      "sections": [
+        {
+          "id": "A",
+          "name": "General",
+          "items": [
+            {
+              "number": 1,
+              "description": "Ensure method statement, materials and drawings (finishing schedule) are approved."
+            },
+            {
+              "number": 2,
+              "description": "Ensure materials are stored as per manufacturers recommendations."
+            },
+            {
+              "number": 3,
+              "description": "Verify the expiry date of the material prior to applications."
+            }
+          ]
+        },
+        {
+          "id": "B",
+          "name": "Surface Preparation",
+          "items": [
+            {
+              "number": 4,
+              "description": "Check substrate is clean, free from contaminants like dust, traces of curing compound, oil and greese."
+            },
+            {
+              "number": 5,
+              "description": "Check for repair of surface imperfection and protrusions (if any)."
+            },
+            {
+              "number": 6,
+              "description": "Ensure the protection of nearby finishes / MEP services."
+            },
+            {
+              "number": 7,
+              "description": "Check the MEP clearance prior to start of aluminium works."
+            }
+          ]
+        },
+        {
+          "id": "C",
+          "name": "Installation of Aluminium and glazing",
+          "items": [
+            {
+              "number": 8,
+              "description": "Profile and glass country of origin / Manufacturer"
+            },
+            {
+              "number": 9,
+              "description": "Type, Size, Colour, Thickness and Opening Direction"
+            },
+            {
+              "number": 10,
+              "description": "Varify Size of opening as per drawing"
+            },
+            {
+              "number": 11,
+              "description": "Varify Location of opening for curtain wall, door and windows as per drawing"
+            },
+            {
+              "number": 12,
+              "description": "Ironmongery is installed and free from damages"
+            },
+            {
+              "number": 13,
+              "description": "Sealant is applied properly"
+            },
+            {
+              "number": 14,
+              "description": "water leak test is performed and no leakage is found"
+            },
+            {
+              "number": 15,
+              "description": "varify Functioning/movement of panels is as free as required"
+            },
+            {
+              "number": 16,
+              "description": "Varify the Rigidity of frame and moveable panels"
+            },
+            {
+              "number": 17,
+              "description": "Varify Line and Level"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "title": "Installation of DX Split Unit",
+      "sections": [
+        {
+          "id": "general",
+          "name": "General Inspection",
+          "items": [
+            {
+              "number": 1,
+              "description": "The materials/type/model/capacity as per approved material submittal."
+            },
+            {
+              "number": 2,
+              "description": "No visible damage on the materials."
+            },
+            {
+              "number": 3,
+              "description": "Check the indoor unit location/height as per approved shop drawing."
+            },
+            {
+              "number": 4,
+              "description": "Check the approved type/capacity vibration isolator installed."
+            },
+            {
+              "number": 5,
+              "description": "Check the fans are freely rotating."
+            },
+            {
+              "number": 6,
+              "description": "Check the filters are installed, clean."
+            },
+            {
+              "number": 7,
+              "description": "Check the refrigerant piping are connected with appropriate fittings."
+            },
+            {
+              "number": 8,
+              "description": "Check the outdoor unit space around as per manufacturer recommendations."
+            },
+            {
+              "number": 9,
+              "description": "Pipe sizes are as per approved shop drawing."
+            },
+            {
+              "number": 10,
+              "description": "Pipe layout/routing as per approved shop drawing."
+            },
+            {
+              "number": 11,
+              "description": "Sleeves are provided for the pipes passing through the walls/slabs."
+            },
+            {
+              "number": 12,
+              "description": "Check the pipes are supported well with approved clamps."
+            },
+            {
+              "number": 13,
+              "description": "Check the insulation is properly done."
+            },
+            {
+              "number": 14,
+              "description": "Installed pipes are free of sag & bend."
+            },
+            {
+              "number": 15,
+              "description": "Check the condensate drain pipes are connected with proper slope."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 31,
+      "title": "Leak Test/Pressure Test Report",
+      "sections": [
+        {
+          "id": "general",
+          "name": "Test Information",
+          "items": [
+            {
+              "number": 1,
+              "description": "IR Ref. No."
+            },
+            {
+              "number": 2,
+              "description": "Reference Documents"
+            },
+            {
+              "number": 3,
+              "description": "Area/Location"
+            },
+            {
+              "number": 4,
+              "description": "Date"
+            },
+            {
+              "number": 5,
+              "description": "Discipline"
+            },
+            {
+              "number": 6,
+              "description": "Element"
+            },
+            {
+              "number": 7,
+              "description": "System Description"
+            },
+            {
+              "number": 8,
+              "description": "Piping System"
+            },
+            {
+              "number": 9,
+              "description": "Testing Fluid"
+            },
+            {
+              "number": 10,
+              "description": "Duration of Test"
+            },
+            {
+              "number": 11,
+              "description": "Start Time of Test"
+            },
+            {
+              "number": 12,
+              "description": "Finish Time of Test"
+            },
+            {
+              "number": 13,
+              "description": "Pressure(bar)"
+            },
+            {
+              "number": 14,
+              "description": "Test Result (Satisfactory/Not Satisfactory)"
+            },
+            {
+              "number": 15,
+              "description": "Remarks If Any"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "title": "Pre-Loading of Completed Precast Modular (MEP)",
+      "sections": [
+        {
+          "id": "general",
+          "name": "General",
+          "items": [
+            {
+              "number": 1,
+              "description": "Check identification tag of the modular"
+            },
+            {
+              "number": 2,
+              "description": "Visually inspect the MEP Services for any defects or damages"
+            }
+          ]
+        },
+        {
+          "id": "hvac",
+          "name": "Final Inspection - HVAC",
+          "items": [
+            {
+              "number": 1,
+              "description": "Installation of Supply Duct"
+            },
+            {
+              "number": 2,
+              "description": "Installation of Return Duct"
+            },
+            {
+              "number": 3,
+              "description": "Installation of Fresh Air Duct"
+            },
+            {
+              "number": 4,
+              "description": "Installation of Exhaust Air Duct"
+            },
+            {
+              "number": 5,
+              "description": "Installation of Kitchen Hood and Flexible Duct"
+            },
+            {
+              "number": 6,
+              "description": "Installation of VCD"
+            }
+          ]
+        },
+        {
+          "id": "mechanical",
+          "name": "Final Inspection - Mechanical",
+          "items": [
+            {
+              "number": 7,
+              "description": "Installation of Fan Coil Unit"
+            },
+            {
+              "number": 8,
+              "description": "Installation of Fire Damper and Back Draft Damper"
+            },
+            {
+              "number": 9,
+              "description": "Installation of Grills/Diffuser",
+               "part": 1
+            }
+          ]
+        },
+        {
+          "id": "chilled_water",
+          "name": "Final Inspection - Chilled Water Pipes",
+          "items": [
+            {
+              "number": 10,
+              "description": "Installation of Pipes and fittings"
+            },
+            {
+              "number": 11,
+              "description": "Insulation of pipe"
+            },
+            {
+              "number": 12,
+              "description": "Check Pipe Insulation and adhesive."
+            },
+            {
+              "number": 13,
+              "description": "Pressure testing of the Piping"
+            },
+            {
+              "number": 14,
+              "description": "PICV Installation with insulation box"
+            }
+          ]
+        },
+        {
+          "id": "painting",
+          "name": "Final Inspection - Painting",
+          "items": [
+            {
+              "number": 15,
+              "description": "Application of Primer paint"
+            },
+            {
+              "number": 16,
+              "description": "Application of Paint final coating"
+            }
+          ]
+        },
+        {
+          "id": "firefighting",
+          "name": "Final Inspection - Firefighting",
+          "items": [
+            {
+              "number": 17,
+              "description": "Installation of Sprinklers"
+            },
+            {
+              "number": 18,
+              "description": "Pressure testing of the Piping"
+            }
+          ]
+        },
+        {
+          "id": "water_supply",
+          "name": "Final Inspection - Water Supply",
+          "items": [
+            {
+              "number": 19,
+              "description": "Installation of Pipes and fittings"
+            },
+            {
+              "number": 20,
+              "description": "Water Hammer Arrestor installed in the approved location."
+            },
+            {
+              "number": 21,
+              "description": "Pressure testing of the Piping"
+            },
+            {
+              "number": 22,
+              "description": "Hot water pipes insulated."
+            },
+            {
+              "number": 23,
+              "description": "Gate Valve Installation"
+            },
+            {
+              "number": 24,
+              "description": "Kitchen sink and accessories"
+            }
+          ]
+        },
+        {
+          "id": "drainage",
+          "name": "Final Inspection - Drainage",
+          "items": [
+            {
+              "number": 23,
+              "description": "Installation of Floor Cleanout (FCO)"
+            },
+            {
+              "number": 24,
+              "description": "Installation of Floor Drain"
+            },
+            {
+              "number": 25,
+              "description": "Installation CDP Pipes"
+            },
+            {
+              "number": 26,
+              "description": "Piping Leak test"
+            },
+            {
+              "number": 27,
+              "description": "Sleeves provided for drain pipes outlets."
+            }
+          ]
+        },
+        {
+          "id": "risers",
+          "name": "Final Inspection - Risers",
+          "items": [
+            {
+              "number": 28,
+              "description": "Soil Pipe"
+            },
+            {
+              "number": 29,
+              "description": "Waste Pipe"
+            },
+            {
+              "number": 30,
+              "description": "Vent Pipe"
+            },
+            {
+              "number": 31,
+              "description": "Water Supply Pipe"
+            },
+            {
+              "number": 32,
+              "description": "Chilled Water pipe"
+            },
+            {
+              "number": 33,
+              "description": "Firefighting Pipe"
+            },
+            {
+              "number": 34,
+              "description": "Duct Riser and connection"
+            }
+          ]
+        },
+        {
+          "id": "electrical",
+          "name": "Final Inspection - Electrical",
+          "items": [
+            {
+              "number": 1,
+              "description": "Check Alignment of Wiring Devices"
+            },
+            {
+              "number": 2,
+              "description": "Check For ONU Panel Door"
+            },
+            {
+              "number": 3,
+              "description": "Check For DB Panel Door"
+            }
+          ]
+        },
+        {
+          "id": "wiring_devices",
+          "name": "Final Inspection - Wiring Devices",
+          "items": [
+            {
+              "number": 4,
+              "description": "10A 1G, 1 Way switch"
+            },
+            {
+              "number": 5,
+              "description": "10A 2G, 1 Way switch"
+            },
+            {
+              "number": 6,
+              "description": "10A 3G, 1 Way switch"
+            },
+            {
+              "number": 7,
+              "description": "10A 1G, 2 Way switch"
+            },
+            {
+              "number": 8,
+              "description": "Wireless Switch Janitor & Linen Room"
+            },
+            {
+              "number": 9,
+              "description": "Override Switch Electrical Room"
+            },
+            {
+              "number": 10,
+              "description": "Three Gang Override Switch Electrical Room"
+            },
+            {
+              "number": 11,
+              "description": "Single Data Outlet -Euro face plate single keystone adaptor"
+            },
+            {
+              "number": 12,
+              "description": "Twin Data Outlet -Euro face plate Duplex keystone adaptor"
+            },
+            {
+              "number": 13,
+              "description": "13 A ,Switch Single Socket outlet with Neon Indicator"
+            },
+            {
+              "number": 14,
+              "description": "13 A ,Switch Double Socket outlet with Neon Indicator"
+            },
+            {
+              "number": 15,
+              "description": "13 A ,Switch Single/ Double Socket outlet with USB port with Neon Indicator"
+            },
+            {
+              "number": 16,
+              "description": "45 A, DP switch with flex outlet for cooker and appliances"
+            },
+            {
+              "number": 17,
+              "description": "Fire Alarm Control panel -ELV room"
+            },
+            {
+              "number": 18,
+              "description": "13 A ,Switched Flex outlet with Neon Indicator- Hood"
+            },
+            {
+              "number": 19,
+              "description": "20 A, Cable/Flex outlet Washing Machine"
+            },
+            {
+              "number": 20,
+              "description": "Door Bell -230V Electromechanical chime"
+            },
+            {
+              "number": 21,
+              "description": "13A, DP, Simplex Switched Spur Outlet for FCUs with Neon Indicator"
+            }
+          ]
+        },
+        {
+          "id": "wire_cables",
+          "name": "Final Inspection - Wire, Cables, Conduits and accessories",
+          "items": [
+            {
+              "number": 22,
+              "description": "All Wires pulled as per the approved Drawings."
+            },
+            {
+              "number": 23,
+              "description": "CAT-6 Cable pulled"
+            },
+            {
+              "number": 24,
+              "description": "Fire alram Cable pulled"
+            },
+            {
+              "number": 25,
+              "description": "Main Cable pulled"
+            },
+            {
+              "number": 26,
+              "description": "Smoke detector"
+            },
+            {
+              "number": 27,
+              "description": "Heat detector"
+            },
+            {
+              "number": 28,
+              "description": "Sensors"
+            },
+            {
+              "number": 29,
+              "description": "DB Panel Tags and identification."
+            },
+            {
+              "number": 30,
+              "description": "ONU Panel installation and termination"
+            },
+            {
+              "number": 31,
+              "description": "DB Panel installation and termination"
+            },
+            {
+              "number": 32,
+              "description": "Thermostat"
+            },
+            {
+              "number": 33,
+              "description": "PMU"
+            }
+          ]
+        },
+        {
+          "id": "light_fittings",
+          "name": "Final Inspection - Light Fittings",
+          "items": [
+            {
+              "number": 34,
+              "description": "D1-Ceiling Mounted Light Living and Bed Room"
+            },
+            {
+              "number": 35,
+              "description": "D2-Ceiling Mounted Light Kitchen area"
+            },
+            {
+              "number": 36,
+              "description": "D3-Spot Ceiling Mounted light Coridoor"
+            },
+            {
+              "number": 37,
+              "description": "D4-1 Spot Ceiling Mounted light Toilet"
+            },
+            {
+              "number": 38,
+              "description": "L1-Led Strip Light Under Kitchen Cabinet"
+            },
+            {
+              "number": 39,
+              "description": "L2-Surface Mounted linear light electrical Room & Garbage room"
+            },
+            {
+              "number": 40,
+              "description": "W1-Wall mounted recessed balcony light"
+            },
+            {
+              "number": 41,
+              "description": "W2- Wall mounted toilet light above Mirror"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 33,
+      "title": "Pre-Loading of Completed Precast Modular",
+      "sections": [
+        {
+          "id": "general",
+          "name": "1. General",
+          "items": [
+            {
+              "number": 1.1,
+              "description": "Ensure method statement, ITP, materials and shop drawings are approved"
+            },
+            {
+              "number": 1.2,
+              "description": "Check identification tag of the modular"
+            },
+            {
+              "number": 1.3,
+              "description": "Visually inspect the modular for any defects or damages"
+            },
+            {
+              "number": 1.4,
+              "description": "Verify the method of loading as per the project / design requirements"
+            }
+          ]
+        },
+        {
+          "id": "structural",
+          "name": "2. Final Inspection - Structural",
+          "items": [
+            {
+              "number": 2.1,
+              "description": "Internal and External Dimensions of the modular"
+            }
+          ]
+        },
+        {
+          "id": "painting",
+          "name": "3. Internal and External Painting",
+          "items": [
+            {
+              "number": 3.1,
+              "description": "Location and color of Painting as per the App Drawing"
+            },
+            {
+              "number": 3.2,
+              "description": "Internal Paint (Application of Primer, Stucco and 2nd Coat of Paint)"
+            },
+            {
+              "number": 3.3,
+              "description": "External Paint(Application of Primer, Texture)"
+            },
+            {
+              "number": 3.4,
+              "description": "Ensure Paint touch ups are completed around installed items."
+            },
+            {
+              "number": 3.5,
+              "description": "Bitumin Applied at required Areas"
+            },
+            {
+              "number": 3.6,
+              "description": "Damages, If any"
+            }
+          ]
+        },
+        {
+          "id": "tiling",
+          "name": "4. Floor and Wall Tiling",
+          "items": [
+            {
+              "number": 4.1,
+              "description": "Layout and Fixing of Tiles as per App Drawing"
+            },
+            {
+              "number": 4.2,
+              "description": "Line, Level and Spacer for the Installed Tiles"
+            },
+            {
+              "number": 4.3,
+              "description": "Skirting is installed/fixed properly and truly vertical"
+            },
+            {
+              "number": 4.4,
+              "description": "Grouting of all Joints is done properly"
+            },
+            {
+              "number": 4.5,
+              "description": "Elastomeric sealant under skirting is provided properly"
+            },
+            {
+              "number": 4.6,
+              "description": "Cleaning of corners and edges removing exccessive paint on skirting"
+            },
+            {
+              "number": 4.7,
+              "description": "Ensure Drainhole are free from any debris and properly closed (if applicable)"
+            },
+            {
+              "number": 4.8,
+              "description": "Damages, if any"
+            }
+          ]
+        },
+        {
+          "id": "drywall",
+          "name": "5. Dry wall",
+          "items": [
+            {
+              "number": 5.1,
+              "description": "Layout, location and position of dry wall is as per App Drawing"
+            },
+            {
+              "number": 5.2,
+              "description": "Thickness of Dry wall is as per App Drawing"
+            },
+            {
+              "number": 5.3,
+              "description": "Opening for MEP services are cut properly."
+            },
+            {
+              "number": 5.4,
+              "description": "Ensure Gypsum surface are Crackfree at joints."
+            },
+            {
+              "number": 5.5,
+              "description": "Damages, if any"
+            }
+          ]
+        },
+        {
+          "id": "false_ceiling",
+          "name": "6. False Ceiling Work",
+          "items": [
+            {
+              "number": 6.1,
+              "description": "Layout of False Ceiling tiles and bulk head as per App Drawing"
+            },
+            {
+              "number": 6.2,
+              "description": "Height of the False Ceiling as per App Drawing"
+            },
+            {
+              "number": 6.3,
+              "description": "Access panels/ Ceiling acoustic tiles are Fixed Properly"
+            },
+            {
+              "number": 6.4,
+              "description": "Ensure Gypsum surface are Crackfree at joints."
+            },
+            {
+              "number": 6.5,
+              "description": "Damages, if any"
+            }
+          ]
+        },
+        {
+          "id": "aluminium_glazing",
+          "name": "7. Aluminium and Glazing Works",
+          "items": [
+            {
+              "number": 7.1,
+              "description": "Location of Window/Sliding Door as per App Drawing"
+            },
+            {
+              "number": 7.2,
+              "description": "Fixing of Glass/panels"
+            },
+            {
+              "number": 7.3,
+              "description": "Fixing of Iron-Mongery and Accessories"
+            },
+            {
+              "number": 7.4,
+              "description": "Fixing of Silicone Sealant"
+            },
+            {
+              "number": 7.5,
+              "description": "Water leak test performed and passed."
+            },
+            {
+              "number": 7.6,
+              "description": "Paint touch completed around the frame."
+            },
+            {
+              "number": 7.7,
+              "description": "Damages, if any"
+            }
+          ]
+        },
+        {
+          "id": "doors_woodwork",
+          "name": "8. Wooden/Metal Doors and Wood Works",
+          "items": [
+            {
+              "number": 8.1,
+              "description": "Location of Doors as per App Drawing"
+            },
+            {
+              "number": 8.2,
+              "description": "Direction of doors swing as per App Drawing"
+            },
+            {
+              "number": 8.3,
+              "description": "Main Entrance Door / Bedroom Door as per App Drawing"
+            },
+            {
+              "number": 8.4,
+              "description": "Lock/Hardware of Main Entrance Door / Bedroom Door is installed"
+            },
+            {
+              "number": 8.5,
+              "description": "Architraves are fixed as per Drawing around Main Entrance Door / Bedroom Door"
+            },
+            {
+              "number": 8.6,
+              "description": "Pod door is installed as per App Drawing"
+            },
+            {
+              "number": 8.7,
+              "description": "Lock/Hardware of Pod door is installed"
+            },
+            {
+              "number": 8.8,
+              "description": "Architraves are fixed as per Drawing around Pod door"
+            },
+            {
+              "number": 8.9,
+              "description": "Locking of Doors and Shutters securely to avoid movement during transportation"
+            },
+            {
+              "number": 8.10,
+              "description": "Kitchen cabinets, counter top installed as per app drawing"
+            },
+            {
+              "number": 8.11,
+              "description": "Kitchen cabinets accessories installed as per app drawing"
+            },
+            {
+              "number": 8.12,
+              "description": "Kitchen sink and sink mixer installed"
+            },
+            {
+              "number": 8.13,
+              "description": "Wardrobe installed as per approved drawings"
+            },
+            {
+              "number": 8.14,
+              "description": "Wardrobe accessories as per approved drawings"
+            },
+            {
+              "number": 8.14,
+              "description": "Wardrobe doors and drawers funtioning smoothly and free from scratches"
+            },
+            {
+              "number": 8.15,
+              "description": "Damages, if any"
+            }
+          ]
+        },
+        {
+          "id": "other_finishes",
+          "name": "9. Other Finishes",
+          "items": [
+            {
+              "number": 9.1,
+              "description": "Gypsum curtain pelmet installed and free from damages/cracks"
+            },
+            {
+              "number": 9.2,
+              "description": "Kitchen Backsplash installed, grouted and free from damages"
+            },
+            {
+              "number": 9.3,
+              "description": "Threshold installed and free from damage"
+            },
+            {
+              "number": 9.4,
+              "description": "Pod Mirror installed and free from damage"
+            },
+            {
+              "number": 9.5,
+              "description": "Pod Glass Partition installed and free from damage"
+            },
+            {
+              "number": 9.6,
+              "description": "Floor drain and covers installed and free from damages"
+            },
+            {
+              "number": 9.7,
+              "description": "Pod Vanity installed and free from damage"
+            },
+            {
+              "number": 9.8,
+              "description": "Pod WC and cover installed and free from damage"
+            },
+            {
+              "number": 9.9,
+              "description": "Pod Shower installted and free from damage"
+            },
+            {
+              "number": 9.10,
+              "description": "Pod Gypsum board are free from pealing off and Crack Free"
+            },
+            {
+              "number": 9.11,
+              "description": "Pod Painted walls are clean and free from stains."
+            },
+            {
+              "number": 9.12,
+              "description": "Pod Tiles are fixed with grouting properly and free from damage"
+            },
+            {
+              "number": 9.13,
+              "description": "Balcony floor drain installed as per approved drawing"
+            },
+            {
+              "number": 9.14,
+              "description": "Toilet accessories installed and free from damage"
+            },
+            {
+              "number": 9.15,
+              "description": "Firestop sealant, fire rated sealant & General sealant applied around penetration pipes & MEP fittings."
+            }
+          ]
+        },
+        {
+          "id": "others",
+          "name": "10. Others",
+          "items": [
+            {
+              "number": 10.1,
+              "description": "Check Final Condition of outside of the room and ensure its damage free"
+            },
+            {
+              "number": 10.2,
+              "description": "Sign the delivery note for accepting the loading of precast modular in good condition"
+            }
+          ]
+        }
+      ]
+    },
+    {
+  "id": 32,
+  "title": "Checklist for Pre-loading of Completed Precast Modular (MEP)",
+  "sections": [
+    {
+      "id": "A",
+      "name": "Final Inspection - Electrical",
+      "items": [
+        {
+          "number": 1,
+          "description": "Check Identification tag of the modular"
+        },
+        {
+          "number": 2,
+          "description": "Verify with complete test Services for any defects or damages"
+        }
+      ]
+    },
+    {
+      "id": "B",
+      "name": "Final Inspection - Mechanical",
+      "items": [
+        {
+          "number": 1,
+          "description": "Installation of Supply Duct"
+        },
+        {
+          "number": 2,
+          "description": "Installation of Return Duct",
+          "part": 1
+        },
+        {
+          "number": 3,
+          "description": "Installation of Chilled Pipe"
+        },
+        {
+          "number": 4,
+          "description": "Installation of Exhaust Air Duct"
+        },
+        {
+          "number": 5,
+          "description": "Installation of Kitchen hood and Flexible Duct"
+        },
+        {
+          "number": 6,
+          "description": "Installation of VCD"
+        },
+        {
+          "number": 7,
+          "description": "Installation of Fire Call out"
+        },
+        {
+          "number": 8,
+          "description": "Installation of Fire Damper and Back Draft Damper"
+        },
+        {
+          "number": 9,
+          "description": "Installation of Grille/Defuser",
+          "part": 1
+        }
+      ]
+    },
+    {
+      "id": "C",
+      "name": "Final Inspection - Chilled Water Pipes",
+      "items": [
+        {
+          "number": 10,
+          "description": "Installation of Pipes and fittings"
+        },
+        {
+          "number": 11,
+          "description": "Insulation of pipe"
+        },
+        {
+          "number": 12,
+          "description": "Check Pipe Insulation and adhesive"  
+        },
+        {
+          "number": 13,
+          "description": "Pressure testing of the Piping"
+        },
+        {
+          "number": 14,
+          "description": "RCU Installation with Insulation box"
+        }
+      ]
+    },
+    {
+      "id": "D",
+      "name": "Final Inspection - Firefighting",
+      "items": [
+        {
+          "number": 15,
+          "description": "Application of Primer paint"
+        },
+        {
+          "number": 16,
+          "description": "Application of Red Paint/coating"
+        },
+        {
+          "number": 17,
+          "description": "Installation of Hose Reel"
+        },
+        {
+          "number": 18,
+          "description": "Pressure testing of the Piping"
+        }
+      ]
+    },
+    {
+      "id": "E",
+      "name": "Final Inspection - Water Supply",
+      "items": [
+        {
+          "number": 19,
+          "description": "Installation of Pipes and fittings",
+          "part": 1
+        },
+        {
+          "number": 20,
+          "description": "Water Hammer Arrestor installed in the approved location.",
+          "part": 1
+        },
+         {
+          "number": 21,
+          "description": "Pressure testing of the Piping",
+          "part": 1
+        },
+        {
+          "number": 22,
+          "description": "Hot water pipes Insulated",
+          "part": 1
+        },
+        {
+          "number": 23,
+          "description": "Get Value Installation",
+          "part": 1
+        },
+        {
+          "number": 24,
+          "description": "Kitchen sink and accessories",
+          "part": 1
+        }
+      ]
+    },
+   {
+  "id": "F",
+  "name": "Final Inspection - Drainage",
+  "items": [
+    {
+      "number": 23,
+      "description": "Installation of Floor Cleanout (FCO)" 
+    },
+    {
+      "number": 24,
+      "description": "Installation of Floor Drain"
+    },
+    {
+      "number": 25,
+      "description": "Installation CDP Pipes"
+    },
+    {
+      "number": 26,
+      "description": "Piping Leak test"
+    },
+    {
+      "number": 27,
+      "description": "Sleeves provided for drain pipes outlets"
+    }
+  ]
+},
+{
+  "id": "G",
+  "name": "Final Inspection - Risers",
+  "items": [
+    {
+      "number": 28,
+      "description": "Soil Pipe"
+    },
+    {
+      "number": 29,
+      "description": "Waste Pipe"
+    },
+    {
+      "number": 30,
+      "description": "Vent Pipe"
+    },
+    {
+      "number": 31,
+      "description": "Water Supply Pipe"
+    },
+    {
+      "number": 32,
+      "description": "Chilled Water pipe"
+    },
+    {
+      "number": 33,
+      "description": "Firefighting Pipe"
+    },
+    {
+      "number": 34,
+      "description": "Duct Riser and connection"
+    }
+  ]
+},
+{
+  "id": "H",
+  "name": "Final Inspection - Electrical",
+  "items": [
+    {
+      "number": 1,
+      "description": "Check Alignment of Wiring Devices"
+    },
+    {
+      "number": 2,
+      "description": "Check For ONU Panel Door"
+    },
+    {
+      "number": 3,
+      "description": "Check For DB Panel Door"
+    }
+  ]
+},
+{
+  "id": "I",
+  "name": "Final Inspection - Wiring Devices",
+  "items": [
+    {
+      "number": 4,
+      "description": "10A 1G, 1 Way switch",
+      "part": 4
+    },
+    {
+      "number": 5,
+      "description": "10A 2G, 1 Way switch",
+      "part": 4
+    },
+    {
+      "number": 6,
+      "description": "10A 3G, 1 Way switch",
+      "part": 4
+    },
+    {
+      "number": 7,
+      "description": "10A 1G, 2 Way switch",
+      "part": 4
+    },
+    {
+      "number": 8,
+      "description": "Wireless Switch Janitor & Linen Room",
+      "part": 4
+    },
+    {
+      "number": 9,
+      "description": "Override Switch Electrical Room",
+      "part": 4
+    },
+    {
+      "number": 10,
+      "description": "Three Gang Override Switch Electrical Room",
+      "part": 4
+    },
+    {
+      "number": 11,
+      "description": "Single Data Outlet -Euro face plate single keystone adaptor",
+      "part": 4
+    },
+    {
+      "number": 12,
+      "description": "Twin Data Outlet -Euro face plate Duplex keystone adaptor",
+      "part": 4
+    },
+    {
+      "number": 13,
+      "description": "13 A ,Switch Single Socket outlet with Neon Indicator",
+      "part": 4
+    },
+    {
+      "number": 14,
+      "description": "13 A ,Switch Double Socket outlet with Neon Indicator",
+      "part": 4
+    },
+    {
+      "number": 15,
+      "description": "13 A ,Switch Single/ Double Socket outlet with USB port with Neon Indicator",
+      "part": 4
+    },
+    {
+      "number": 16,
+      "description": "45 A, DP switch with flex outlet for cooker and appliances",
+      "part": 4
+    },
+    {
+      "number": 17,
+      "description": "Fire Alarm Control panel -ELV room",
+      "part": 4
+    },
+    {
+      "number": 18,
+      "description": "13 A ,Switched Flex outlet with Neon Indicator- Hood",
+      "part": 4
+    },
+    {
+      "number": 19,
+      "description": "20 A, Cable/Flex outlet Washing Machine",
+      "part": 4
+    },
+    {
+      "number": 20,
+      "description": "Door Bell -230V Electromechanical chime",
+      "part": 4
+    },
+    {
+      "number": 21,
+      "description": "13A, DP, Simplex Switched Spur Outlet for FCUs with Neon Indicator",
+      "part": 4
+    }
+  ]
+},
+{
+  "id": "J",
+  "name": "Final Inspection - Wire, Cables, Conduits and accessories",
+  "items": [
+    {
+      "number": 22,
+      "description": "All Wires pulled as per the approved Drawings."
+    },
+    {
+      "number": 23,
+      "description": "CAT-6 Cable pulled"
+    },
+    {
+      "number": 24,
+      "description": "Fire alram Cable pulled"
+    },
+    {
+      "number": 25,
+      "description": "Main Cable pulled"
+    },
+    {
+      "number": 26,
+      "description": "Smoke detector",
+      "part": 2
+    },
+    {
+      "number": 27,
+      "description": "Heat detector",
+      "part": 2
+    },
+    {
+      "number": 28,
+      "description": "Sensors",
+      "part": 6
+    },
+    {
+      "number": 29,
+      "description": "DB Panel Tags and identification."
+    },
+    {
+      "number": 30,
+      "description": "ONU Panel installation and termination"
+    },
+    {
+      "number": 31,
+      "description": "DB Panel installation and termination"
+    },
+    {
+      "number": 32,
+      "description": "Thermostat",
+      "part": 5
+    },
+    {
+      "number": 33,
+      "description": "PMU"
+    }
+  ]
+},
+{
+  "id": "K",
+  "name": "Final Inspection - Light Fittings",
+  "items": [
+    {
+      "number": 34,
+      "description": "D1-Ceiling Mounted Light Living and Bed Room",
+      "part": 3
+    },
+    {
+      "number": 35,
+      "description": "D2-Ceiling Mounted Light Kitchen area",
+      "part": 3
+    },
+    {
+      "number": 36,
+      "description": "D3-Spot Ceiling Mounted light Corridor",
+      "part": 3
+    },
+    {
+      "number": 37,
+      "description": "D4-1 Spot Ceiling Mounted light Toilet",
+      "part": 3
+    },
+    {
+      "number": 38,
+      "description": "L1-Led Strip Light Under Kitchen Cabinet",
+      "part": 3
+    },
+    {
+      "number": 39,
+      "description": "L2-Surface Mounted linear light electrical Room & Garbage room",
+      "part": 3
+    },
+    {
+      "number": 40,
+      "description": "W1-Wall mounted recessed balcony light",
+      "part": 3
+    },
+    {
+      "number": 41,
+      "description": "W2- Wall mounted toilet light above Mirror",
+      "part": 3
+    }
+  ]
+}
+  ]
+}
+  ]
+}

@@ -6,12 +6,14 @@ import { filter } from 'rxjs/operators';
 import { BoxActivity, canPerformActivityActions, canPerformActivityActionsByStatus } from '../../../core/models/box.model';
 import { UpdateProgressModalComponent } from '../update-progress-modal/update-progress-modal.component';
 import { WIRApprovalModalComponent } from '../wir-approval-modal/wir-approval-modal.component';
+import { ActivityChecklistReviewModalComponent } from '../activity-checklist-review-modal/activity-checklist-review-modal.component';
 import { ProgressUpdateService } from '../../../core/services/progress-update.service';
 import { BoxActivityDetail, ActivityProgressStatus } from '../../../core/models/progress-update.model';
 import { WIRService } from '../../../core/services/wir.service';
 import { WIRRecord, WIRStatus, WIRCheckpoint } from '../../../core/models/wir.model';
 import { PermissionService } from '../../../core/services/permission.service';
 import { WirExportService } from '../../../core/services/wir-export.service';
+import { ActivityChecklistService, GetActivityChecklistByBoxActivity } from '../../../core/services/activity-checklist.service';
 import { formatDateWithTime } from '../../../core/utils/date-format.util';
 import { calculateAndFormatDuration, calculateDurationInDays } from '../../../core/utils/duration.util';
 
@@ -28,8 +30,8 @@ export interface TableRow {
 @Component({
   selector: 'app-activity-table',
   standalone: true,
-  imports: [CommonModule, RouterModule, UpdateProgressModalComponent, WIRApprovalModalComponent],
-  providers: [ProgressUpdateService, WIRService],
+  imports: [CommonModule, RouterModule, UpdateProgressModalComponent, WIRApprovalModalComponent, ActivityChecklistReviewModalComponent],
+  providers: [ProgressUpdateService, WIRService, ActivityChecklistService],
   templateUrl: './activity-table.component.html',
   styleUrls: ['./activity-table.component.scss']
 })
@@ -56,8 +58,13 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
   selectedActivity: BoxActivityDetail | null = null;
   isWIRModalOpen = false;
   selectedWIR: WIRRecord | null = null;
+  isChecklistReviewModalOpen = false;
+  selectedActivityForChecklist: BoxActivityDetail | null = null;
   isLoading = false;
   private routerSubscription?: Subscription;
+  
+  // Track checklist review status for activities
+  checklistReviewStatus: Map<string, boolean> = new Map();
 
   // Permission flags
   canUpdateProgress: boolean = false;
@@ -71,7 +78,8 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
     private router: Router,
     private cdr: ChangeDetectorRef,
     private permissionService: PermissionService,
-    private wirExportService: WirExportService
+    private wirExportService: WirExportService,
+    private activityChecklistService: ActivityChecklistService
   ) {
     this.updatePermissions();
   }
@@ -94,8 +102,27 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
       ? canPerformActivityActions(this.boxStatus as any)
       : true;
     
-    // Disable all actions if project is archived, on hold, or closed, or if box status doesn't allow activity actions
-    this.canUpdateProgress = baseCanUpdateProgress && !this.isProjectArchived && !this.isProjectOnHold && !this.isProjectClosed && canPerformActivityActionsBasedOnBoxStatus;
+    console.log('🔐 Permission Check for Update Progress:');
+    console.log('   - baseCanUpdateProgress:', baseCanUpdateProgress);
+    console.log('   - isProjectArchived:', this.isProjectArchived);
+    console.log('   - isProjectOnHold:', this.isProjectOnHold);
+    console.log('   - isProjectClosed:', this.isProjectClosed);
+    console.log('   - boxStatus:', this.boxStatus);
+    console.log('   - canPerformActivityActionsBasedOnBoxStatus:', canPerformActivityActionsBasedOnBoxStatus);
+    console.log('   - allPanelsSecondApproved:', this.allPanelsSecondApproved);
+    
+    // Disable all actions if project is archived, on hold, or closed
+    // SPECIAL CASE: Allow if all panels are second approved, even if box status is ReadyToStart
+    const allowDueToApprovedPanels = this.allPanelsSecondApproved && this.boxStatus === 'ReadyToStart';
+    this.canUpdateProgress = baseCanUpdateProgress && 
+                            !this.isProjectArchived && 
+                            !this.isProjectOnHold && 
+                            !this.isProjectClosed && 
+                            (canPerformActivityActionsBasedOnBoxStatus || allowDueToApprovedPanels);
+    
+    console.log('   - allowDueToApprovedPanels (ReadyToStart + all panels approved):', allowDueToApprovedPanels);
+    console.log('   ➡️ Final canUpdateProgress:', this.canUpdateProgress);
+    
     this.canViewWIR = baseCanViewWIR && !this.isProjectArchived && !this.isProjectOnHold && !this.isProjectClosed && canPerformActivityActionsBasedOnBoxStatus;
     this.canReviewWIR = baseCanReviewWIR && !this.isProjectArchived && !this.isProjectOnHold && !this.isProjectClosed && canPerformActivityActionsBasedOnBoxStatus;
     this.canManageCheckpoint = baseCanManageCheckpoint && !this.isProjectArchived && !this.isProjectOnHold && !this.isProjectClosed && canPerformActivityActionsBasedOnBoxStatus;
@@ -124,6 +151,22 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
     // Update permissions when project status or box status changes
     if (changes['isProjectOnHold'] || changes['isProjectArchived'] || changes['isProjectClosed'] || changes['boxStatus']) {
       this.updatePermissions();
+    }
+    
+    // Log panel approval status changes
+    if (changes['allPanelsSecondApproved']) {
+      console.log('📊 allPanelsSecondApproved changed:', {
+        previous: changes['allPanelsSecondApproved'].previousValue,
+        current: changes['allPanelsSecondApproved'].currentValue,
+        firstChange: changes['allPanelsSecondApproved'].firstChange
+      });
+    }
+    
+    if (changes['panelsNeedingApproval']) {
+      console.log('📊 panelsNeedingApproval changed:', {
+        previous: changes['panelsNeedingApproval'].previousValue,
+        current: changes['panelsNeedingApproval'].currentValue
+      });
     }
   }
 
@@ -184,12 +227,41 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
         console.log('📊 Mapped activities:', this.activitiesWithDetails.length);
         console.log('📊 Activity sequences:', this.activitiesWithDetails.map(a => ({ seq: a.sequence, name: a.activityName, id: a.boxActivityId })));
         this.loadWIRRecords();
+        this.loadChecklistReviewStatuses();
       },
       error: (error) => {
         console.error('Error loading activities:', error);
         this.isLoading = false;
       }
     });
+  }
+  
+  /**
+   * Load checklist review statuses for all activities
+   */
+  loadChecklistReviewStatuses(): void {
+    // Clear existing statuses
+    this.checklistReviewStatus.clear();
+    
+    // Load status for activities that have checklists and are at 100%
+    this.activitiesWithDetails
+      .filter(activity => this.hasChecklistItems(activity) && activity.progressPercentage === 100)
+      .forEach(activity => {
+        this.activityChecklistService.getActivityChecklistByBoxActivity(activity.boxActivityId).subscribe({
+          next: (response: any) => {
+            if (response.isSuccess && response.data) {
+              // Check if all checklist items have been reviewed (not Pending)
+              const allReviewed = response.data.checklistItems.every(
+                (item: any) => item.reviewStatus && item.reviewStatus !== 'Pending'
+              );
+              this.checklistReviewStatus.set(activity.boxActivityId, allReviewed);
+            }
+          },
+          error: (err: any) => {
+            console.error(`Error loading checklist status for activity ${activity.boxActivityId}:`, err);
+          }
+        });
+      });
   }
 
   loadWIRRecords(): void {
@@ -589,7 +661,7 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
       'WIR-1': 'Release from Assembly - Stage-1',
       'WIR-2': 'Mechanical Clearance - Stage-2',
       'WIR-3': 'Ceiling Closure - Stage-3',
-      'WIR-4': '3rd Fix Installation - Stage-4',
+      'WIR-4': '2nd Fix Installation - Stage-4',
       'WIR-5': '3rd Fix Installation - Stage-5',
       'WIR-6': 'Readiness for Dispatch - Stage-6'
     };
@@ -1105,21 +1177,29 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
    */
   shouldDisableUpdateProgress(activity: BoxActivityDetail): boolean {
     if (!activity) {
+      console.log('❌ No activity - returning false');
       return false;
     }
 
+    console.log(`🔍 Checking shouldDisableUpdateProgress for activity: ${activity.activityName}`);
+    console.log(`   - allPanelsSecondApproved input: ${this.allPanelsSecondApproved}`);
+    console.log(`   - activity status: ${activity.status}`);
+
     // Disable if not all panels have Second Approval Approved
     if (!this.allPanelsSecondApproved) {
+      console.log(`❌ DISABLED: allPanelsSecondApproved is false`);
       return true;
     }
 
     // Disable if activity is on hold
     if (activity.status === ActivityProgressStatus.OnHold) {
+      console.log(`❌ DISABLED: Activity is on hold`);
       return true;
     }
 
     // Only check WIR position logic if activity is completed or delayed
     if (activity.status !== ActivityProgressStatus.Completed && activity.status !== ActivityProgressStatus.Delayed) {
+      console.log(`✅ ENABLED: Activity is not completed/delayed (status: ${activity.status})`);
       return false;
     }
 
@@ -1129,13 +1209,23 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
 
     if (!nextWIR) {
       // No next WIR found - allow update
+      console.log(`✅ ENABLED: No next WIR found`);
       return false;
     }
 
     // Check if the next WIR has position values set (which means position is disabled/locked)
     const hasPositionValues = this.hasWIRPositionValues(nextWIR);
     
+    console.log(`   - Next WIR: ${nextWIR.wirCode}`);
+    console.log(`   - Next WIR has position values: ${hasPositionValues}`);
+    
     // Disable button if next WIR has position values set
+    if (hasPositionValues) {
+      console.log(`❌ DISABLED: Next WIR has position values set`);
+    } else {
+      console.log(`✅ ENABLED: Next WIR position not locked`);
+    }
+    
     return hasPositionValues;
   }
 
@@ -1239,5 +1329,88 @@ export class ActivityTableComponent implements OnInit, OnChanges, OnDestroy {
     // Direct PDF download with DuBox logo watermark (no print dialog)
     // Note: checkpoint.box is a partial object, so we pass null and let the service handle it
     await this.wirExportService.downloadWIRAsPDF(checkpoint, null, null);
+  }
+
+  /**
+   * Check if activity has checklist items
+   * For now, we assume activities linked to ActivityMaster or ActivityTemplateActivity have checklists
+   */
+  hasChecklistItems(activity: BoxActivityDetail): boolean {
+    // Return true if activity has ActivityMasterId or ActivityTemplateActivityId
+    return !!(activity.activityMasterId || activity.activityMaster);
+  }
+
+  /**
+   * Open checklist review modal for an activity
+   */
+  openChecklistReviewModal(activity: BoxActivityDetail): void {
+    if (activity.progressPercentage < 100) {
+      console.warn('Cannot review checklist - activity progress is not 100%');
+      return;
+    }
+
+    this.selectedActivityForChecklist = activity;
+    this.isChecklistReviewModalOpen = true;
+  }
+
+  /**
+   * Close checklist review modal
+   */
+  closeChecklistReviewModal(): void {
+    this.isChecklistReviewModalOpen = false;
+    this.selectedActivityForChecklist = null;
+  }
+
+  /**
+   * Handle checklist review submission
+   */
+  onChecklistReviewSubmitted(): void {
+    console.log('✅ Checklist review submitted successfully');
+    
+    // Mark the activity as reviewed
+    if (this.selectedActivityForChecklist) {
+      this.checklistReviewStatus.set(this.selectedActivityForChecklist.boxActivityId, true);
+    }
+    
+    this.closeChecklistReviewModal();
+    // Optionally reload activities to show updated review status
+    this.loadActivitiesWithDetails();
+  }
+  
+  /**
+   * Check if activity checklist has been reviewed
+   */
+  isChecklistReviewed(activity: BoxActivityDetail): boolean {
+    // Check if we have loaded the status for this activity
+    if (this.checklistReviewStatus.has(activity.boxActivityId)) {
+      return this.checklistReviewStatus.get(activity.boxActivityId) || false;
+    }
+    
+    // If not in cache, assume not reviewed (status will be loaded asynchronously)
+    return false;
+  }
+  
+  /**
+   * Get tooltip text for checklist status badge
+   */
+  getChecklistStatusTooltip(activity: BoxActivityDetail): string {
+    if (activity.progressPercentage < 100) {
+      return 'Complete activity to 100% to unlock checklist review';
+    }
+    
+    if (this.isChecklistReviewed(activity)) {
+      return 'Checklist has been reviewed';
+    }
+    
+    return 'Click Review Checklist button to review items';
+  }
+  
+  /**
+   * Get activity code from activity
+   */
+  getActivityCode(activity: BoxActivityDetail): string {
+    return activity.activityCode || 
+           activity.activityMaster?.activityCode || 
+           'N/A';
   }
 }

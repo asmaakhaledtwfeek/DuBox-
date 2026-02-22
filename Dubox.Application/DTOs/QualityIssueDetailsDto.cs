@@ -21,6 +21,7 @@ namespace Dubox.Application.DTOs
         public DateTime? DueDate { get; set; }
         public QualityIssueStatusEnum Status { get; set; }
         public NCRTypeEnum NCR { get; set; } = NCRTypeEnum.Internal;
+        public bool IsReadOnly { get; set; }
         public DateTime? ResolutionDate { get; set; }
         public string? ResolutionDescription { get; set; }
         [Obsolete("Use Images list instead. Kept for backward compatibility.")]
@@ -30,7 +31,7 @@ namespace Dubox.Application.DTOs
         public bool IsOverdue { get; set; }
         public int OverdueDays { get; set; }
 
-        public Guid BoxId { get; set; }
+        public Guid? BoxId { get; set; }
         public string BoxName { get; set; } = string.Empty;
         public string BoxTag { get; set; } = string.Empty;
         public Guid? ProjectId { get; set; }

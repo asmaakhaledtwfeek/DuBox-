@@ -1,0 +1,121 @@
+<div class="modal-backdrop" *ngIf="isOpen" (click)="onClose()"></div>
+
+<div class="modal" *ngIf="isOpen" role="dialog" aria-modal="true">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <!-- Header -->
+    <div class="modal-header">
+      <h2>{{ modalTitle }}</h2>
+      <button class="close-button" (click)="onClose()" aria-label="Close modal">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="modal-body">
+      <!-- Error Message -->
+      <div class="error-message" *ngIf="error">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"/>
+        </svg>
+        <span>{{ error }}</span>
+      </div>
+
+      <!-- Current Assignment -->
+      <div class="current-assignment" *ngIf="hasCurrentAssignment && currentTemplate">
+        <h3>Current Assignment</h3>
+        <div class="template-card assigned">
+          <div class="template-info">
+            <div class="template-name">{{ currentTemplate.templateName }}</div>
+            <div class="template-code">{{ currentTemplate.templateCode }}</div>
+            <div class="template-meta">
+              <span class="item-count">{{ currentTemplate.itemCount }} materials</span>
+              <span class="category" *ngIf="currentTemplate.category">{{ currentTemplate.category }}</span>
+            </div>
+            <div class="template-description" *ngIf="currentTemplate.description">
+              {{ currentTemplate.description }}
+            </div>
+          </div>
+          <button 
+            class="remove-button" 
+            (click)="onRemoveAssignment()"
+            [disabled]="submitting"
+            type="button">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"/>
+            </svg>
+            Remove
+          </button>
+        </div>
+      </div>
+
+      <!-- Template Selection -->
+      <div class="template-selection">
+        <h3>{{ hasCurrentAssignment ? 'Change Template' : 'Select Template' }}</h3>
+        
+        <!-- Loading State -->
+        <div class="loading-state" *ngIf="loadingTemplates">
+          <div class="spinner"></div>
+          <p>Loading templates...</p>
+        </div>
+
+        <!-- Template List -->
+        <div class="templates-list" *ngIf="!loadingTemplates">
+          <div 
+            class="template-card selectable"
+            *ngFor="let template of filteredTemplates"
+            [class.selected]="selectedTemplateId === template.materialTemplateId"
+            (click)="selectedTemplateId = template.materialTemplateId">
+            <div class="radio-button">
+              <input 
+                type="radio" 
+                [id]="'template-' + template.materialTemplateId"
+                name="template"
+                [value]="template.materialTemplateId"
+                [(ngModel)]="selectedTemplateId">
+              <label [for]="'template-' + template.materialTemplateId"></label>
+            </div>
+            <div class="template-info">
+              <div class="template-name">{{ template.templateName }}</div>
+              <div class="template-code">{{ template.templateCode }}</div>
+              <div class="template-meta">
+                <span class="item-count">{{ template.itemCount }} materials</span>
+                <span class="category" *ngIf="template.category">{{ template.category }}</span>
+              </div>
+              <div class="template-description" *ngIf="template.description">
+                {{ template.description }}
+              </div>
+            </div>
+          </div>
+
+          <div class="empty-state" *ngIf="filteredTemplates.length === 0">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="8" y="8" width="32" height="32" rx="2"/>
+              <path d="M16 20h16M16 28h16"/>
+            </svg>
+            <p>{{ assignment?.level === 'boxType' ? 'No project templates available' : 'No templates available' }}</p>
+            <span>{{ assignment?.level === 'boxType' ? 'Assign a template to the project first' : 'Create a template first to assign it' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="onClose()" [disabled]="submitting" type="button">
+        Cancel
+      </button>
+      <button 
+        class="btn-primary" 
+        (click)="onAssignTemplate()"
+        [disabled]="!selectedTemplateId || submitting || loadingTemplates"
+        type="button">
+        <span class="spinner-small" *ngIf="submitting"></span>
+        <span *ngIf="!submitting">Assign Template</span>
+        <span *ngIf="submitting">Assigning...</span>
+      </button>
+    </div>
+  </div>
+</div>
+

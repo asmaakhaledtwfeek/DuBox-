@@ -29,6 +29,9 @@ export interface Project {
   readyForDeliveryBoxes: number;
   progress: number;
   allowCompletionWithConditionalApproval?: boolean;
+  activityTemplateId?: string;
+  activityTemplateName?: string;
+  materialTemplateId?: string;
   createdBy?: string;
   updatedBy?: string;
   createdAt?: Date;

@@ -6,12 +6,22 @@
     <!-- Page Header -->
     <div class="page-header">
       <div class="header-left">
-        <button class="btn-back" (click)="goBack()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
-          </svg>
-          Back
-        </button>
+        <!-- Project breadcrumb, matching Project Materials Management style -->
+        <div class="breadcrumb">
+          <button class="breadcrumb-link" [routerLink]="['/projects']">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Projects
+          </button>
+          <span class="breadcrumb-separator">/</span>
+          <button class="breadcrumb-link" [routerLink]="['/projects', projectId, 'dashboard']">
+            {{ project?.name || project?.code || ('Project ' + projectId) }}
+          </button>
+          <span class="breadcrumb-separator">/</span>
+          <span class="breadcrumb-current">Panel Types</span>
+        </div>
+
         <div class="header-title-section">
           <h1>Panel Types Configuration</h1>
           <p class="header-subtitle" *ngIf="project">
@@ -31,6 +41,13 @@
         </div>
       </div>
       <div class="header-actions">
+        <!-- Back to Dashboard button, same style as Project Materials Management -->
+        <button class="btn btn-back" [routerLink]="['/projects', projectId, 'dashboard']">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"></polyline>
+          </svg>
+          Back to Dashboard
+        </button>
         <button class="btn-toggle" (click)="toggleActiveFilter()" [class.active]="includeInactive">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <polyline points="3 6 5 6 21 6"></polyline>
@@ -70,6 +87,11 @@
               <th>Name</th>
               <th>Code</th>
               <th>Description</th>
+              <th>Volume (m³)</th>
+              <th>Weight (ton)</th>
+              <th>Concrete Grade</th>
+              <th>Cover (mm)</th>
+              <th>Embeds</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -84,6 +106,30 @@
                 <code>{{ panelType.panelTypeCode }}</code>
               </td>
               <td>{{ panelType.description || '-' }}</td>
+              <td>{{ panelType.volumeM3 !== null && panelType.volumeM3 !== undefined ? panelType.volumeM3 : '-' }}</td>
+              <td>{{ panelType.weightTon !== null && panelType.weightTon !== undefined ? panelType.weightTon : '-' }}</td>
+              <td>{{ panelType.concreteGrade || '-' }}</td>
+              <td>{{ panelType.coverMm !== null && panelType.coverMm !== undefined ? panelType.coverMm : '-' }}</td>
+              <td class="embeds-cell">
+                <div *ngIf="panelType.embedsJson && parseEmbeds(panelType.embedsJson).length > 0" style="min-width: 150px;">
+                  <details style="cursor: pointer;">
+                    <summary style="display: flex; align-items: center; gap: 6px; color: #3498db; font-weight: 500; font-size: 13px;">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                      </svg>
+                      {{ parseEmbeds(panelType.embedsJson).length }}
+                    </summary>
+                    <div style="margin-top: 6px; padding: 6px; background: #f8f9fa; border-radius: 4px; font-size: 11px;">
+                      <div *ngFor="let embed of parseEmbeds(panelType.embedsJson)" style="padding: 3px 0; border-bottom: 1px solid #e9ecef;">
+                        <strong>{{ embed.symbol }}</strong>: {{ embed.description }} <span style="color: #666;">({{ embed.qty }})</span>
+                      </div>
+                    </div>
+                  </details>
+                </div>
+                <span *ngIf="!panelType.embedsJson || parseEmbeds(panelType.embedsJson).length === 0" class="text-muted">-</span>
+              </td>
               <td>
                 <span class="badge" [class.badge-success]="panelType.isActive" [class.badge-inactive]="!panelType.isActive">
                   {{ panelType.isActive ? 'Active' : 'Inactive' }}

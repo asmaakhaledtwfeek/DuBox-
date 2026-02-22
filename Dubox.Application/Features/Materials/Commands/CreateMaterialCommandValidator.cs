@@ -19,8 +19,9 @@ namespace Dubox.Application.Features.Materials.Commands
                 .When(x => !string.IsNullOrEmpty(x.MaterialCategory));
 
             RuleFor(x => x.Unit)
-                .MaximumLength(20).WithMessage("Unit must not exceed 20 characters.")
-                .When(x => !string.IsNullOrEmpty(x.Unit));
+                .NotEmpty().WithMessage("Material Unit is required.")
+                .MaximumLength(20).WithMessage("Unit must not exceed 20 characters.");
+                
 
             RuleFor(x => x.SupplierName)
                 .MaximumLength(100).WithMessage("Supplier Name must not exceed 100 characters.")

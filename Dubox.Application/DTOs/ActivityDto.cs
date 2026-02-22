@@ -22,7 +22,11 @@ public record BoxActivityDto
     public Guid BoxActivityId { get; init; }
     public Guid BoxId { get; init; }
     public string BoxTag { get; init; } = string.Empty;
-    public Guid ActivityMasterId { get; init; }
+    
+    // Source tracking - can be from ActivityMaster, ActivityTemplate, or both
+    public Guid? ActivityMasterId { get; init; }  // Nullable - may not have a master source
+    public Guid? ActivityTemplateActivityId { get; init; }  // Links to template activity if created from template
+    
     public string ActivityCode { get; init; } = string.Empty;
     public string ActivityName { get; init; } = string.Empty;
     public string Stage { get; init; } = string.Empty;

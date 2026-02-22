@@ -22,9 +22,9 @@ namespace Dubox.Domain.Entities
 
         [MaxLength(100)]
         public string? MaterialCategory { get; set; } // Precast, MEP, Finishing, etc.
-
+        [Required]
         [MaxLength(50)]
-        public string? Unit { get; set; }
+        public string Unit { get; set; } = string.Empty;
 
         [Column(TypeName = "decimal(18,2)")]
         public decimal? UnitCost { get; set; }
@@ -44,17 +44,18 @@ namespace Dubox.Domain.Entities
         [MaxLength(200)]
         public string? SupplierName { get; set; }
 
-        // Project association - optional (null means global material available to all projects)
-        [ForeignKey(nameof(Project))]
-        public Guid? ProjectId { get; set; }
+        /// <summary>
+        /// Default number of days before box start date that this material must arrive
+        /// Common values: 7 (one week) or 30 (one month)
+        /// </summary>
+        public int DefaultRequiredBeforeDays { get; set; } = 7;
 
         public bool IsActive { get; set; } = true;
-
+        public int QuantityPerBox { get; set; } = 1;
         // Navigation properties
-        public virtual Project? Project { get; set; }
-        public virtual ICollection<ActivityMaterial> ActivityMaterials { get; set; } = new List<ActivityMaterial>();
-        public virtual ICollection<BoxMaterial> BoxMaterials { get; set; } = new List<BoxMaterial>();
+        public virtual ICollection<Project>? Projects { get; set; }
         public virtual ICollection<MaterialTransaction> Transactions { get; set; } = new List<MaterialTransaction>();
+        public virtual ICollection<ActivityMaterial>? ActivityMaterials { get; set; }
 
         // Calculated properties
         [NotMapped]

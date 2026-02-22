@@ -6,7 +6,7 @@ import { debounceTime, distinctUntilChanged, map, catchError, skip } from 'rxjs/
 import { forkJoin, of, Subscription } from 'rxjs';
 import { BoxService } from '../../../core/services/box.service';
 import { PermissionService } from '../../../core/services/permission.service';
-import { Box, BoxStatus, BoxTypeStat, PanelStatus } from '../../../core/models/box.model';
+import { Box, BoxStatus, BoxTypeStat, PanelStatus, BoxFilters } from '../../../core/models/box.model';
 import { ProjectService } from '../../../core/services/project.service';
 import { HeaderComponent } from '../../../shared/components/header/header.component';
 import { SidebarComponent } from '../../../shared/components/sidebar/sidebar.component';
@@ -58,6 +58,25 @@ export class BoxesListComponent implements OnInit, OnDestroy {
   availableBuildings: string[] = [];
   availableFloors: string[] = [];
   availableZones: string[] = [];
+
+  // Permanent list of all buildings loaded from endpoint (never reduced by cascading)
+  private allAvailableBuildings: string[] = [];
+
+  // Box types view – permanent box-type list derived from stats (never reduced)
+  private allAvailableBoxTypesBaseline: string[] = [];
+
+  // Box types view – permanent endpoint baselines (restored when no parent filter is active)
+  private allAvailableSubTypesFromEndpoint: string[] = [];
+  private allAvailableFloorsFromEndpoint: string[] = [];
+  private allAvailableZonesFromEndpoint: string[] = [];
+
+  // Box types view – accumulated options per active parent-filter context
+  private allAvailableSubTypesForBoxTypes: string[] = [];
+  private subTypeBoxTypeCtx: string = '';
+  private allAvailableFloorsForBoxTypes: string[] = [];
+  private floorsBoxBuildingCtx: string = '';
+  private allAvailableZonesForBoxTypes: string[] = [];
+  private zonesCtxKey: string = '';
   
   // Counts for each filter option
   boxTypeCounts: Map<string, number> = new Map();
@@ -86,9 +105,31 @@ export class BoxesListComponent implements OnInit, OnDestroy {
   boxBuildingCounts: Map<string, number> = new Map();
   boxFloorCounts: Map<string, number> = new Map();
   boxZoneCounts: Map<string, number> = new Map();
+
+  // Boxes list view – accumulated options per active parent-filter context
+  private allAvailableBoxBuildings: string[] = [];
+  private allAvailableBoxSubTypes: string[] = [];
+  private allAvailableBoxFloors: string[] = [];
+  private boxFloorsBuildingCtx: string = '';
+  private allAvailableBoxZones: string[] = [];
+  private boxZonesCtxKey: string = '';
   
   /** When set, filter boxes by "ready to start" (all panels SecondApprovalApproved). 'true' = ready only, 'false' = not ready only. */
   readyToStartFilter: 'true' | 'false' | null = null;
+  
+  // Pagination properties
+  currentPage = 1;
+  pageSize = 50;
+  totalCount = 0;
+  totalPages = 0;
+  hasPreviousPage = false;
+  hasNextPage = false;
+  Math = Math; // Expose Math to template
+
+  /** Always use API totalCount since backend now handles all filtering */
+  get displayTotalCount(): number {
+    return this.totalCount > 0 ? this.totalCount : this.boxes.length;
+  }
   
   private subscriptions: Subscription[] = [];
 
@@ -120,14 +161,6 @@ export class BoxesListComponent implements OnInit, OnDestroy {
       this.readyToStartFilter = readyToStart;
     }
     
-    // Set building/floor filters if provided in query params
-    if (building) {
-      this.selectedFilterBuilding = building;
-    }
-    if (floor) {
-      this.selectedFilterFloor = floor;
-    }
-    
     // Check permissions immediately
     this.checkPermissions();
     
@@ -142,6 +175,27 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     );
     
     this.loadProjectDetails();
+    
+    // Determine which view we're showing based on query params
+    const willShowBoxTypes = !(boxType || status || view === 'boxes' || this.readyToStartFilter);
+    
+    // Set building/floor filters to the appropriate variables based on the view
+    if (building) {
+      if (willShowBoxTypes) {
+        this.selectedFilterBuilding = building;
+      } else {
+        // When showing boxes list, use the boxes list filter variables
+        this.selectedBoxBuildingFilter = building;
+      }
+    }
+    if (floor) {
+      if (willShowBoxTypes) {
+        this.selectedFilterFloor = floor;
+      } else {
+        // When showing boxes list, use the boxes list filter variables
+        this.selectedBoxFloorFilter = floor;
+      }
+    }
     
     if (boxType || status || view === 'boxes' || this.readyToStartFilter) {
       // If status, view=boxes, or readyToStart is provided without boxType, load all boxes (boxes list, not box types)
@@ -202,7 +256,7 @@ export class BoxesListComponent implements OnInit, OnDestroy {
         distinctUntilChanged()
       )
       .subscribe(() => {
-        this.applyFilters();
+        this.onBackendFilterChange();
       });
 
     // Setup box type search
@@ -222,18 +276,26 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     this.showBoxTypes = true;
     this.selectedBoxType = null;
     
-    // Load both box types and boxes in parallel for faster loading
+    // Load box types and filter options in parallel (efficient - no box data loaded)
     forkJoin({
       boxTypes: this.boxService.getBoxTypeStatsByProject(this.projectId),
-      boxes: this.boxService.getBoxesByProject(this.projectId)
+      filterOptions: this.boxService.getBoxFilterOptions(this.projectId)
     }).subscribe({
       next: (result) => {
         this.boxTypes = result.boxTypes.boxTypeStats || [];
         this.filteredBoxTypes = [...this.boxTypes];
         
-        // Store all boxes and calculate filter options immediately
-        this.allProjectBoxes = result.boxes;
-        this.recalculateFilterCounts(result.boxes);
+        // Populate Box Type dropdown from the stats data (the filter options endpoint
+        // does not include box types, so we derive them from the fetched stats).
+        this.availableBoxTypes = this.boxTypes
+          .map(bt => bt.boxType)
+          .filter(bt => !!bt)
+          .sort();
+        // Store as permanent baseline so recalculateFilterCounts never empties the list
+        this.allAvailableBoxTypesBaseline = [...this.availableBoxTypes];
+
+        // Populate filter options from efficient endpoint
+        this.loadFilterOptionsFromEndpoint(result.filterOptions);
         
         this.applyBoxTypeFilters();
         this.loading = false;
@@ -243,6 +305,48 @@ export class BoxesListComponent implements OnInit, OnDestroy {
         this.loading = false;
         console.error('Error loading box types:', err);
       }
+    });
+  }
+  
+  /**
+   * Load filter options from efficient endpoint (no box data loaded)
+   */
+  private loadFilterOptionsFromEndpoint(filterOptions: {
+    subTypes: Array<{ value: string; count: number }>;
+    buildings: Array<{ value: string; count: number }>;
+    floors: Array<{ value: string; count: number }>;
+    zones: Array<{ value: string; count: number }>;
+  }): void {
+    // Clear existing counts
+    this.subTypeCounts.clear();
+    this.buildingCounts.clear();
+    this.floorCounts.clear();
+    this.zoneCounts.clear();
+    
+    // Populate from endpoint data
+    filterOptions.subTypes.forEach(st => this.subTypeCounts.set(st.value, st.count));
+    filterOptions.buildings.forEach(b => this.buildingCounts.set(b.value, b.count));
+    filterOptions.floors.forEach(f => this.floorCounts.set(f.value, f.count));
+    filterOptions.zones.forEach(z => this.zoneCounts.set(z.value, z.count));
+    
+    // Set available options
+    this.availableSubTypes = filterOptions.subTypes.map(st => st.value).sort();
+    this.availableBuildings = filterOptions.buildings.map(b => b.value).sort();
+    this.availableFloors = filterOptions.floors.map(f => f.value).sort();
+    this.availableZones = filterOptions.zones.map(z => z.value).sort();
+
+    // Preserve the full lists from the endpoint as permanent baselines.
+    // These are restored whenever the corresponding parent filter is cleared.
+    this.allAvailableBuildings = [...this.availableBuildings];
+    this.allAvailableSubTypesFromEndpoint = [...this.availableSubTypes];
+    this.allAvailableFloorsFromEndpoint = [...this.availableFloors];
+    this.allAvailableZonesFromEndpoint = [...this.availableZones];
+    
+    console.log('📊 Filter options loaded from endpoint:', {
+      subTypes: filterOptions.subTypes.length,
+      buildings: filterOptions.buildings.length,
+      floors: filterOptions.floors.length,
+      zones: filterOptions.zones.length
     });
   }
   
@@ -277,9 +381,17 @@ export class BoxesListComponent implements OnInit, OnDestroy {
         boxTypeMap.set(boxType, (boxTypeMap.get(boxType) || 0) + 1);
       }
       
-      // Always show all buildings
+      // Count buildings from boxes for counts display only
       if (box.buildingNumber) {
         buildingMap.set(box.buildingNumber, (buildingMap.get(box.buildingNumber) || 0) + 1);
+      }
+    });
+
+    // Ensure all buildings from the original endpoint data are always present in the map
+    // (allProjectBoxes may be paginated/partial, so some buildings could be missing)
+    this.allAvailableBuildings.forEach(b => {
+      if (!buildingMap.has(b)) {
+        buildingMap.set(b, 0);
       }
     });
     
@@ -335,12 +447,71 @@ export class BoxesListComponent implements OnInit, OnDestroy {
       }
     });
     
-    // Only show options that exist in the filtered data (count > 0)
-    this.availableBoxTypes = Array.from(boxTypeMap.keys()).filter(k => boxTypeMap.get(k)! > 0).sort();
-    this.availableSubTypes = Array.from(subTypeMap.keys()).filter(k => subTypeMap.get(k)! > 0).sort();
-    this.availableBuildings = Array.from(buildingMap.keys()).filter(k => buildingMap.get(k)! > 0).sort();
-    this.availableFloors = Array.from(floorMap.keys()).filter(k => floorMap.get(k)! > 0).sort();
-    this.availableZones = Array.from(zoneMap.keys()).filter(k => zoneMap.get(k)! > 0).sort();
+    // Box Types: always show all box types from the permanent baseline so selecting a box
+    // type (or any other filter) never empties the dropdown.
+    this.availableBoxTypes = this.allAvailableBoxTypesBaseline.length > 0
+      ? [...this.allAvailableBoxTypesBaseline]
+      : Array.from(boxTypeMap.keys()).filter(k => boxTypeMap.get(k)! > 0).sort();
+
+    // SubTypes: when no box-type filter is active, restore the full endpoint list.
+    // When a box-type IS selected, accumulate subtypes for that context so selecting one
+    // subtype never removes the others from the dropdown.
+    if (!this.selectedFilterBoxType) {
+      this.availableSubTypes = [...this.allAvailableSubTypesFromEndpoint];
+    } else {
+      if (this.subTypeBoxTypeCtx !== this.selectedFilterBoxType) {
+        this.allAvailableSubTypesForBoxTypes = [];
+        this.subTypeBoxTypeCtx = this.selectedFilterBoxType;
+      }
+      Array.from(subTypeMap.keys()).filter(k => subTypeMap.get(k)! > 0).forEach(st => {
+        if (!this.allAvailableSubTypesForBoxTypes.includes(st)) {
+          this.allAvailableSubTypesForBoxTypes.push(st);
+        }
+      });
+      this.availableSubTypes = [...this.allAvailableSubTypesForBoxTypes].sort();
+    }
+
+    // Buildings: always show the full endpoint list so selecting a building never hides others.
+    this.availableBuildings = this.allAvailableBuildings.length > 0
+      ? [...this.allAvailableBuildings]
+      : Array.from(buildingMap.keys()).sort();
+
+    // Floors: when no building is selected, restore the full endpoint list.
+    // When a building IS selected, accumulate floors for that building so selecting a floor
+    // never removes the other floors from the dropdown.
+    if (!this.selectedFilterBuilding) {
+      this.availableFloors = [...this.allAvailableFloorsFromEndpoint];
+    } else {
+      if (this.floorsBoxBuildingCtx !== this.selectedFilterBuilding) {
+        this.allAvailableFloorsForBoxTypes = [];
+        this.floorsBoxBuildingCtx = this.selectedFilterBuilding;
+      }
+      Array.from(floorMap.keys()).filter(k => floorMap.get(k)! > 0).forEach(f => {
+        if (!this.allAvailableFloorsForBoxTypes.includes(f)) {
+          this.allAvailableFloorsForBoxTypes.push(f);
+        }
+      });
+      this.availableFloors = [...this.allAvailableFloorsForBoxTypes].sort();
+    }
+
+    // Zones: when no parent filters are active, restore the full endpoint list.
+    // When a building/floor IS selected, accumulate zones for that context so selecting
+    // a zone never removes the other zones from the dropdown.
+    const currentZonesCtx = `${this.selectedFilterBuilding}|${this.selectedFilterFloor}`;
+    if (!this.selectedFilterBuilding && !this.selectedFilterFloor) {
+      this.availableZones = [...this.allAvailableZonesFromEndpoint];
+    } else {
+      if (this.zonesCtxKey !== currentZonesCtx) {
+        this.allAvailableZonesForBoxTypes = [];
+        this.zonesCtxKey = currentZonesCtx;
+      }
+      Array.from(zoneMap.keys()).filter(k => zoneMap.get(k)! > 0).forEach(z => {
+        if (!this.allAvailableZonesForBoxTypes.includes(z)) {
+          this.allAvailableZonesForBoxTypes.push(z);
+        }
+      });
+      this.availableZones = [...this.allAvailableZonesForBoxTypes].sort();
+    }
     
     // Store counts
     this.boxTypeCounts = boxTypeMap;
@@ -361,36 +532,42 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Build filters for backend so the API returns only matching boxes (faster, less data). */
+  private getBackendFilters(): BoxFilters | undefined {
+    const status = this.selectedStatus !== 'All' ? [this.selectedStatus] : undefined;
+    const boxType = this.selectedBoxType?.trim() || undefined;
+    // Use selectedBoxSubTypeFilter from dropdown if set, otherwise use selectedBoxSubType from navigation
+    const boxSubType = this.selectedBoxSubTypeFilter?.trim() || this.selectedBoxSubType?.trim() || undefined;
+    const buildingNumber = this.selectedBoxBuildingFilter?.trim() || undefined;
+    const floor = this.selectedBoxFloorFilter?.trim() || undefined;
+    const zone = this.selectedBoxZoneFilter?.trim() || undefined;
+    const search = this.searchControl.value?.trim() || undefined;
+    if (!status && !boxType && !boxSubType && !buildingNumber && !floor && !zone && !search) return undefined;
+    return { status, boxType, boxSubType, buildingNumber, floor, zone, search };
+  }
+
   loadBoxes(): void {
     this.loading = true;
     this.error = '';
+    const filters = this.getBackendFilters() || {};
     
-    this.boxService.getBoxesByProject(this.projectId).subscribe({
-      next: (boxes) => {
-        // Filter boxes by selected type if a type is selected
-        if (this.selectedBoxType) {
-          // Parse BoxTag to extract type and subtype abbreviations
-          // BoxTag format: ProjectNumber-Building-Floor-Type-SubType
-          this.boxes = boxes.filter(box => {
-            const parts = (box.code || '').split('-');
-            // Type is at position 3 (index 3), SubType is at position 4 (index 4)
-            const boxType = parts.length >= 4 ? parts[3] : '';
-            const boxSubType = parts.length >= 5 ? parts[4] : '';
-            
-            // Filter by type and subtype (if subtype is selected)
-            const typeMatches = boxType === this.selectedBoxType;
-            const subTypeMatches = !this.selectedBoxSubType || boxSubType === this.selectedBoxSubType;
-            
-            return typeMatches && subTypeMatches;
-          });
-          console.log(`🔍 Filtering boxes by type "${this.selectedBoxType}"${this.selectedBoxSubType ? ' and subtype "' + this.selectedBoxSubType + '"' : ''}:`, {
-            totalBoxes: boxes.length,
-            filteredBoxes: this.boxes.length,
-            sampleBoxTag: boxes[0]?.code
-          });
-        } else {
-          this.boxes = boxes;
-        }
+    // Add pagination to filters
+    filters.page = this.currentPage;
+    filters.pageSize = this.pageSize;
+    
+    this.boxService.getBoxesByProjectPaginated(this.projectId, filters).subscribe({
+      next: (response) => {
+        console.log('📦 Pagination response:', response);
+        
+        // Update pagination metadata
+        this.totalCount = response.totalCount;
+        this.totalPages = response.totalPages;
+        this.hasPreviousPage = response.hasPreviousPage;
+        this.hasNextPage = response.hasNextPage;
+        
+        // Backend now filters by box type, so use the response items directly
+        this.boxes = response.items;
+        console.log('📦 Received boxes from backend (already filtered):', this.boxes.length);
         
         // Load activities for all boxes in parallel for efficient search
         this.loadActivitiesForBoxes(this.boxes);
@@ -401,6 +578,12 @@ export class BoxesListComponent implements OnInit, OnDestroy {
         console.error('Error loading boxes:', err);
       }
     });
+  }
+
+  /** Called when status/building/floor/zone/search/subtype change – refetch from backend so filtering happens on server. */
+  onBackendFilterChange(): void {
+    this.currentPage = 1; // Reset to first page when filters change
+    this.loadBoxes();
   }
 
   private loadActivitiesForBoxes(boxes: Box[]): void {
@@ -492,9 +675,24 @@ export class BoxesListComponent implements OnInit, OnDestroy {
         subTypeMap.set(subType, (subTypeMap.get(subType) || 0) + 1);
       }
       
-      // Always show all buildings
+      // Count buildings from current page boxes
       if (box.buildingNumber) {
         buildingMap.set(box.buildingNumber, (buildingMap.get(box.buildingNumber) || 0) + 1);
+      }
+    });
+
+    // Merge previously seen buildings so the dropdown never loses options when filters are applied.
+    // (When a building filter is active the backend only returns boxes for that building,
+    // so buildingMap would otherwise be missing the other buildings.)
+    this.allAvailableBoxBuildings.forEach(b => {
+      if (!buildingMap.has(b)) {
+        buildingMap.set(b, 0);
+      }
+    });
+    // Accumulate any newly discovered buildings
+    Array.from(buildingMap.keys()).forEach(b => {
+      if (!this.allAvailableBoxBuildings.includes(b)) {
+        this.allAvailableBoxBuildings.push(b);
       }
     });
       
@@ -531,11 +729,44 @@ export class BoxesListComponent implements OnInit, OnDestroy {
       }
     });
     
-    // Only show options that exist in the filtered data (count > 0)
-    this.availableBoxSubTypes = Array.from(subTypeMap.keys()).filter(k => subTypeMap.get(k)! > 0).sort();
-    this.availableBoxBuildings = Array.from(buildingMap.keys()).filter(k => buildingMap.get(k)! > 0).sort();
-    this.availableBoxFloors = Array.from(floorMap.keys()).filter(k => floorMap.get(k)! > 0).sort();
-    this.availableBoxZones = Array.from(zoneMap.keys()).filter(k => zoneMap.get(k)! > 0).sort();
+    // SubTypes: accumulate all subtypes seen for the current box type context so selecting
+    // one subtype never removes the others from the dropdown.
+    Array.from(subTypeMap.keys()).filter(k => subTypeMap.get(k)! > 0).forEach(st => {
+      if (!this.allAvailableBoxSubTypes.includes(st)) {
+        this.allAvailableBoxSubTypes.push(st);
+      }
+    });
+    this.availableBoxSubTypes = [...this.allAvailableBoxSubTypes].sort();
+
+    // Buildings: always show all accumulated buildings so selecting one never hides others.
+    this.availableBoxBuildings = [...this.allAvailableBoxBuildings].sort();
+
+    // Floors: cascade from building only. Accumulate floors for the current building context
+    // so selecting a floor never removes the other floors from the dropdown.
+    if (this.boxFloorsBuildingCtx !== this.selectedBoxBuildingFilter) {
+      this.allAvailableBoxFloors = [];
+      this.boxFloorsBuildingCtx = this.selectedBoxBuildingFilter;
+    }
+    Array.from(floorMap.keys()).filter(k => floorMap.get(k)! > 0).forEach(f => {
+      if (!this.allAvailableBoxFloors.includes(f)) {
+        this.allAvailableBoxFloors.push(f);
+      }
+    });
+    this.availableBoxFloors = [...this.allAvailableBoxFloors].sort();
+
+    // Zones: cascade from building + floor. Accumulate zones for the current context so
+    // selecting a zone never removes the other zones from the dropdown.
+    const currentBoxZonesCtx = `${this.selectedBoxBuildingFilter}|${this.selectedBoxFloorFilter}`;
+    if (this.boxZonesCtxKey !== currentBoxZonesCtx) {
+      this.allAvailableBoxZones = [];
+      this.boxZonesCtxKey = currentBoxZonesCtx;
+    }
+    Array.from(zoneMap.keys()).filter(k => zoneMap.get(k)! > 0).forEach(z => {
+      if (!this.allAvailableBoxZones.includes(z)) {
+        this.allAvailableBoxZones.push(z);
+      }
+    });
+    this.availableBoxZones = [...this.allAvailableBoxZones].sort();
     
     // Store counts
     this.boxSubTypeCounts = subTypeMap;
@@ -559,6 +790,17 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     this.selectedBoxSubType = null; // Reset subtype when viewing all types
     this.showBoxTypes = false;
     this.boxTypeSearchControl.setValue('');
+    this.currentPage = 1; // Reset to first page
+    this.resetBoxListAccumulatedFilters();
+    
+    // Transfer building/floor filters from box types view to boxes list view
+    if (this.selectedFilterBuilding) {
+      this.selectedBoxBuildingFilter = this.selectedFilterBuilding;
+    }
+    if (this.selectedFilterFloor) {
+      this.selectedBoxFloorFilter = this.selectedFilterFloor;
+    }
+    
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { boxType: boxType, boxSubType: null },
@@ -567,12 +809,39 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     this.loadBoxes();
   }
 
+  /**
+   * Navigate to box type materials management page
+   */
+  manageBoxTypeMaterials(boxType: BoxTypeStat): void {
+    // Find the project box type ID from the boxType object
+    // The boxType.boxType is the TypeName, we need to get the ID
+    // We'll navigate using the project ID and let the backend query filter by TypeName
+    // Or we can pass the TypeName as a query parameter
+    
+    // For now, navigate to the box type materials page for the project
+    // The page will show all box types and user can filter
+    this.router.navigate(['/projects', this.projectId, 'box-type-materials'], {
+      queryParams: { boxType: boxType.boxType }
+    });
+  }
+
   viewBoxSubType(boxType: string, subType: string, event: Event): void {
     event.stopPropagation(); // Prevent card click
     this.selectedBoxType = boxType;
     this.selectedBoxSubType = subType;
     this.showBoxTypes = false;
     this.boxTypeSearchControl.setValue('');
+    this.currentPage = 1; // Reset to first page
+    this.resetBoxListAccumulatedFilters();
+    
+    // Transfer building/floor filters from box types view to boxes list view
+    if (this.selectedFilterBuilding) {
+      this.selectedBoxBuildingFilter = this.selectedFilterBuilding;
+    }
+    if (this.selectedFilterFloor) {
+      this.selectedBoxFloorFilter = this.selectedFilterFloor;
+    }
+    
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { boxType: boxType, boxSubType: subType },
@@ -589,6 +858,14 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     this.filteredBoxes = [];
     this.searchControl.setValue('');
     this.selectedStatus = BoxStatus.InProgress;
+    
+    // Transfer building/floor filters from boxes list view back to box types view
+    if (this.selectedBoxBuildingFilter) {
+      this.selectedFilterBuilding = this.selectedBoxBuildingFilter;
+    }
+    if (this.selectedBoxFloorFilter) {
+      this.selectedFilterFloor = this.selectedBoxFloorFilter;
+    }
     
     // Reset box filters
     this.selectedBoxSubTypeFilter = '';
@@ -610,7 +887,7 @@ export class BoxesListComponent implements OnInit, OnDestroy {
 
   filterByStatus(status: BoxStatus | 'All'): void {
     this.selectedStatus = status;
-    this.applyFilters();
+    this.onBackendFilterChange();
   }
 
   /**
@@ -622,108 +899,17 @@ export class BoxesListComponent implements OnInit, OnDestroy {
   }
 
   applyFilters(): void {
+    // Most filters are now handled by backend (status, subtype, building, floor, zone, search)
+    // This method now only handles special client-side filters if needed
+    
     let filtered = [...this.boxes];
-    let countsSource = [...this.boxes]; // Track boxes for count calculation
 
     // Apply ready-to-start filter (from project dashboard card clicks)
+    // This is a special filter not sent to backend
     if (this.readyToStartFilter === 'true') {
       filtered = filtered.filter(box => this.isBoxReadyToStart(box));
-      countsSource = countsSource.filter(box => this.isBoxReadyToStart(box));
     } else if (this.readyToStartFilter === 'false') {
       filtered = filtered.filter(box => !this.isBoxReadyToStart(box));
-      countsSource = countsSource.filter(box => !this.isBoxReadyToStart(box));
-    }
-
-    // Apply status filter
-    if (this.selectedStatus !== 'All') {
-      filtered = filtered.filter(box => box.status === this.selectedStatus);
-      countsSource = countsSource.filter(box => box.status === this.selectedStatus);
-    }
-
-    // Apply subtype filter
-    if (this.selectedBoxSubTypeFilter) {
-      filtered = filtered.filter(box => {
-        const parts = (box.code || '').split('-');
-        const boxSubType = parts.length >= 5 ? parts[4] : '';
-        return boxSubType === this.selectedBoxSubTypeFilter;
-      });
-      countsSource = countsSource.filter(box => {
-        const parts = (box.code || '').split('-');
-        const boxSubType = parts.length >= 5 ? parts[4] : '';
-        return boxSubType === this.selectedBoxSubTypeFilter;
-      });
-    }
-
-    // Apply building filter
-    if (this.selectedBoxBuildingFilter) {
-      filtered = filtered.filter(box => box.buildingNumber === this.selectedBoxBuildingFilter);
-      countsSource = countsSource.filter(box => box.buildingNumber === this.selectedBoxBuildingFilter);
-    }
-
-    // Apply floor filter
-    if (this.selectedBoxFloorFilter) {
-      filtered = filtered.filter(box => box.floor === this.selectedBoxFloorFilter);
-      countsSource = countsSource.filter(box => box.floor === this.selectedBoxFloorFilter);
-    }
-
-    // Apply zone filter
-    if (this.selectedBoxZoneFilter) {
-      filtered = filtered.filter(box => box.zone === this.selectedBoxZoneFilter);
-      countsSource = countsSource.filter(box => box.zone === this.selectedBoxZoneFilter);
-    }
-
-    // Recalculate counts based on filtered boxes (cascading effect)
-    // Only recalculate if we have filters applied (excluding search and status)
-    if (this.selectedBoxSubTypeFilter || this.selectedBoxBuildingFilter || 
-        this.selectedBoxFloorFilter || this.selectedBoxZoneFilter) {
-      this.recalculateBoxFilterCounts(countsSource);
-    }
-
-    // Apply search filter (includes box properties and activity properties)
-    const searchTerm = this.searchControl.value?.toLowerCase() || '';
-    if (searchTerm) {
-      filtered = filtered.filter(box => {
-        // Search in box properties
-        const matchesBoxProperties = 
-          box.name?.toLowerCase().includes(searchTerm) ||
-          box.code?.toLowerCase().includes(searchTerm) ||
-          box.serialNumber?.toLowerCase().includes(searchTerm) ||
-          box.type?.toLowerCase().includes(searchTerm) ||
-          box.floor?.toLowerCase().includes(searchTerm) ||
-          box.buildingNumber?.toLowerCase().includes(searchTerm) ||
-          box.zone?.toLowerCase().includes(searchTerm) ||
-          box.assignedTeam?.toLowerCase().includes(searchTerm) ||
-          box.assignedTo?.toLowerCase().includes(searchTerm);
-
-        // Search in activity properties
-        const matchesActivityProperties = box.activities?.some(activity => {
-          // Get activity name from multiple possible property names (handles both transformed and raw data)
-          const activityName = (
-            activity.name?.toLowerCase() || 
-            (activity as any).activityName?.toLowerCase() || 
-            (activity as any).ActivityName?.toLowerCase() || 
-            ''
-          );
-          
-          const activityStatus = activity.status?.toLowerCase() || '';
-          const assignedTo = activity.assignedTo?.toLowerCase() || '';
-          const description = activity.description?.toLowerCase() || '';
-          
-          // Check if search term matches activity properties
-          // Priority: Activity name search is explicitly checked first
-          return activityName.includes(searchTerm) ||
-                 activityStatus.includes(searchTerm) ||
-                 assignedTo.includes(searchTerm) ||
-                 description.includes(searchTerm) ||
-                 // Check date fields (format dates as strings for search)
-                 this.formatDateForSearch(activity.plannedStartDate)?.includes(searchTerm) ||
-                 this.formatDateForSearch(activity.plannedEndDate)?.includes(searchTerm) ||
-                 this.formatDateForSearch(activity.actualStartDate)?.includes(searchTerm) ||
-                 this.formatDateForSearch(activity.actualEndDate)?.includes(searchTerm);
-        }) || false;
-
-        return matchesBoxProperties || matchesActivityProperties;
-      });
     }
 
     this.filteredBoxes = filtered;
@@ -738,8 +924,10 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     this.selectedBoxFloorFilter = '';
     this.selectedBoxZoneFilter = '';
     this.searchControl.setValue('');
-    this.selectedStatus = BoxStatus.InProgress;
+    this.selectedStatus = 'All';
     this.readyToStartFilter = null;
+    // Reset accumulated lists so the next unfiltered load rebuilds them cleanly
+    this.resetBoxListAccumulatedFilters();
     
     // Update URL to remove readyToStart and other query params when clearing
     this.router.navigate([], {
@@ -748,12 +936,8 @@ export class BoxesListComponent implements OnInit, OnDestroy {
       queryParamsHandling: 'merge'
     });
     
-    // Recalculate counts from all boxes when filters are cleared
-    if (this.boxes.length > 0) {
-      this.recalculateBoxFilterCounts(this.boxes);
-    }
-    
-    this.applyFilters();
+    // Refetch from backend with no filters so we get all boxes
+    this.loadBoxes();
   }
   
   /**
@@ -776,7 +960,16 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     
     let filtered = [...this.boxTypes];
     
-    // Start with all boxes for cascading filter calculation
+    // Check if any filters are applied that require box data for cascading
+    const hasLocationFilters = this.selectedFilterBuilding || this.selectedFilterFloor || this.selectedFilterZone;
+    
+    // If filters are applied and we don't have box data yet, load it for cascading
+    if (hasLocationFilters && this.allProjectBoxes.length === 0) {
+      this.loadAllBoxesForCascading();
+      return; // Will reapply filters after boxes are loaded
+    }
+    
+    // Start with all boxes for cascading filter calculation (if loaded)
     let filteredBoxes = [...this.allProjectBoxes];
     
     // Apply box type filter
@@ -785,22 +978,26 @@ export class BoxesListComponent implements OnInit, OnDestroy {
         boxType.boxType === this.selectedFilterBoxType
       );
       
-      // Filter boxes by selected box type
-      filteredBoxes = filteredBoxes.filter(box => {
-        const parts = (box.code || '').split('-');
-        const boxType = parts.length >= 4 ? parts[3] : '';
-        return boxType === this.selectedFilterBoxType;
-      });
+      // Filter boxes by selected box type (if boxes are loaded)
+      if (this.allProjectBoxes.length > 0) {
+        filteredBoxes = filteredBoxes.filter(box => {
+          const parts = (box.code || '').split('-');
+          const boxType = parts.length >= 4 ? parts[3] : '';
+          return boxType === this.selectedFilterBoxType;
+        });
+      }
     }
     
     // Apply subtype filter - filter within the selected box type only
     if (this.selectedFilterSubType) {
-      // Filter boxes by selected subtype
-      filteredBoxes = filteredBoxes.filter(box => {
-        const parts = (box.code || '').split('-');
-        const subType = parts.length >= 5 ? parts[4] : '';
-        return subType === this.selectedFilterSubType;
-      });
+      // Filter boxes by selected subtype (if boxes are loaded)
+      if (this.allProjectBoxes.length > 0) {
+        filteredBoxes = filteredBoxes.filter(box => {
+          const parts = (box.code || '').split('-');
+          const subType = parts.length >= 5 ? parts[4] : '';
+          return subType === this.selectedFilterSubType;
+        });
+      }
       
       // Don't filter out box types - subtype filter works within the selected box type
       // Only filter box types if no box type is selected
@@ -814,32 +1011,32 @@ export class BoxesListComponent implements OnInit, OnDestroy {
       }
     }
     
-    // Apply building filter
-    if (this.selectedFilterBuilding) {
-      filteredBoxes = filteredBoxes.filter(box => 
-        box.buildingNumber === this.selectedFilterBuilding
-      );
+    // Apply location filters (if boxes are loaded)
+    if (this.allProjectBoxes.length > 0) {
+      if (this.selectedFilterBuilding) {
+        filteredBoxes = filteredBoxes.filter(box => 
+          box.buildingNumber === this.selectedFilterBuilding
+        );
+      }
+      
+      if (this.selectedFilterFloor) {
+        filteredBoxes = filteredBoxes.filter(box => 
+          box.floor === this.selectedFilterFloor
+        );
+      }
+      
+      if (this.selectedFilterZone) {
+        filteredBoxes = filteredBoxes.filter(box => 
+          box.zone === this.selectedFilterZone
+        );
+      }
+      
+      // Recalculate counts with proper one-way cascading (uses this.allProjectBoxes internally)
+      this.recalculateFilterCounts(this.allProjectBoxes);
+      
+      // Update card counts based on filtered boxes
+      this.updateBoxTypeCardCounts(filtered, filteredBoxes);
     }
-    
-    // Apply floor filter
-    if (this.selectedFilterFloor) {
-      filteredBoxes = filteredBoxes.filter(box => 
-        box.floor === this.selectedFilterFloor
-      );
-    }
-    
-    // Apply zone filter
-    if (this.selectedFilterZone) {
-      filteredBoxes = filteredBoxes.filter(box => 
-        box.zone === this.selectedFilterZone
-      );
-    }
-    
-    // Recalculate counts with proper one-way cascading (uses this.allProjectBoxes internally)
-    this.recalculateFilterCounts(this.allProjectBoxes);
-    
-    // Update card counts based on filtered boxes
-    this.updateBoxTypeCardCounts(filtered, filteredBoxes);
     
     // Apply search filter to box types (after recalculating counts)
     if (searchTerm) {
@@ -848,8 +1045,8 @@ export class BoxesListComponent implements OnInit, OnDestroy {
       );
     }
     
-    // Filter box types based on location filters
-    if (this.selectedFilterBuilding || this.selectedFilterFloor || this.selectedFilterZone) {
+    // Filter box types based on location filters (if boxes are loaded)
+    if (hasLocationFilters && this.allProjectBoxes.length > 0) {
       // Get unique box types from filtered boxes
       const validBoxTypes = new Set(
         filteredBoxes.map(box => {
@@ -864,6 +1061,26 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     }
     
     this.filteredBoxTypes = filtered;
+  }
+  
+  /**
+   * Load all boxes for cascading filter calculations (only when needed)
+   */
+  private loadAllBoxesForCascading(): void {
+    console.log('📦 Loading all boxes for cascading filter calculations...');
+    this.boxService.getBoxesByProject(this.projectId).subscribe({
+      next: (boxes) => {
+        this.allProjectBoxes = boxes;
+        console.log('✅ Boxes loaded for cascading:', boxes.length);
+        // Reapply filters now that boxes are loaded
+        this.applyBoxTypeFilters();
+      },
+      error: (err) => {
+        console.error('❌ Error loading boxes for cascading:', err);
+        this.allProjectBoxes = [];
+        this.applyBoxTypeFilters();
+      }
+    });
   }
   
   /**
@@ -942,12 +1159,34 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     this.selectedFilterFloor = '';
     this.selectedFilterZone = '';
     this.boxTypeSearchControl.setValue('');
+    // Reset accumulated filter lists so endpoint baselines are restored immediately
+    this.resetBoxTypesAccumulatedFilters();
     
     // Recalculate counts from all boxes when filters are cleared
     if (this.allProjectBoxes.length > 0) {
       this.recalculateFilterCounts(this.allProjectBoxes);
     }
     this.applyBoxTypeFilters();
+  }
+
+  /** Reset accumulated context-aware filter lists for the box types view. */
+  private resetBoxTypesAccumulatedFilters(): void {
+    this.allAvailableSubTypesForBoxTypes = [];
+    this.subTypeBoxTypeCtx = '';
+    this.allAvailableFloorsForBoxTypes = [];
+    this.floorsBoxBuildingCtx = '';
+    this.allAvailableZonesForBoxTypes = [];
+    this.zonesCtxKey = '';
+  }
+
+  /** Reset accumulated context-aware filter lists for the boxes list view. */
+  private resetBoxListAccumulatedFilters(): void {
+    this.allAvailableBoxBuildings = [];
+    this.allAvailableBoxSubTypes = [];
+    this.allAvailableBoxFloors = [];
+    this.boxFloorsBuildingCtx = '';
+    this.allAvailableBoxZones = [];
+    this.boxZonesCtxKey = '';
   }
   
   /**
@@ -1222,9 +1461,6 @@ export class BoxesListComponent implements OnInit, OnDestroy {
     return parts.length >= 5 ? parts[4] : '';
   }
 
-  // Expose Math to template
-  Math = Math;
-
   /**
    * Rounds a number to one decimal place
    * @param value The number to round
@@ -1235,5 +1471,67 @@ export class BoxesListComponent implements OnInit, OnDestroy {
       return 0;
     }
     return Math.round(value * 10) / 10;
+  }
+
+  // Pagination methods
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages && page !== this.currentPage) {
+      this.currentPage = page;
+      this.loadBoxes();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+  goToFirstPage(): void {
+    this.goToPage(1);
+  }
+
+  goToLastPage(): void {
+    this.goToPage(this.totalPages);
+  }
+
+  goToNextPage(): void {
+    if (this.hasNextPage) {
+      this.goToPage(this.currentPage + 1);
+    }
+  }
+
+  goToPreviousPage(): void {
+    if (this.hasPreviousPage) {
+      this.goToPage(this.currentPage - 1);
+    }
+  }
+
+  onPageSizeChange(): void {
+    this.currentPage = 1; // Reset to first page when changing page size
+    this.loadBoxes();
+  }
+
+  getVisiblePages(): number[] {
+    const pages: number[] = [];
+    const maxVisiblePages = 7;
+    
+    if (this.totalPages <= maxVisiblePages) {
+      // Show all pages if total pages is less than max visible
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Show pages around current page
+      const halfVisible = Math.floor(maxVisiblePages / 2);
+      let startPage = Math.max(1, this.currentPage - halfVisible);
+      let endPage = Math.min(this.totalPages, startPage + maxVisiblePages - 1);
+      
+      // Adjust start page if we're near the end
+      if (endPage - startPage < maxVisiblePages - 1) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        pages.push(i);
+      }
+    }
+    
+    return pages;
   }
 }

@@ -31,6 +31,8 @@ public record ProjectDto
     public bool AllowCompletionWithConditionalApproval { get; init; }
     public DateTime CreatedDate { get; init; }
     public string? CreatedBy { get; init; }
+    public Guid? ActivityTemplateId { get; init; }
+    public string? ActivityTemplateName { get; init; }
 }
 
 public record CreateProjectDto

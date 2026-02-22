@@ -7,6 +7,14 @@ namespace Dubox.Application.Specifications
 
     public class GetWIRCheckpointsSpecification : Specification<WIRCheckpoint>
     {
+           public GetWIRCheckpointsSpecification(List<Guid>? accessibleProjectIds)
+        
+        {
+            if(accessibleProjectIds != null && accessibleProjectIds.Any())
+                AddCriteria(w => w.Box.ProjectId != null && accessibleProjectIds.Contains(w.Box.ProjectId));
+            AddInclude(nameof(WIRCheckpoint.Box));
+            AddInclude($"{nameof(WIRCheckpoint.Box)}.{nameof(Box.Project)}");
+        }
         public GetWIRCheckpointsSpecification(GetWIRCheckpointsQuery query, List<Guid>? accessibleProjectIds = null)
         {
             AddInclude(nameof(WIRCheckpoint.Box));

@@ -1,14 +1,14 @@
-﻿using Dubox.Domain.Entities;
+using Dubox.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Infrastructure.Seeding;
 
 public static class ActivityMasterSeedData
 {
+    private static readonly DateTime SeedDate = new DateTime(2024, 11, 1, 0, 0, 0, DateTimeKind.Utc);
+    
     public static void SeedActivityMaster(ModelBuilder modelBuilder)
     {
-        var seedDate = new DateTime(2024, 11, 1, 0, 0, 0, DateTimeKind.Utc);
-
         var activities = new List<ActivityMaster>
         {
             // ID 1 - Assembly & joints
@@ -25,7 +25,7 @@ public static class ActivityMasterSeedData
                 EstimatedDurationDays = 1,
                 IsWIRCheckpoint = false,
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 2 - PODS
@@ -42,7 +42,7 @@ public static class ActivityMasterSeedData
                 EstimatedDurationDays = 1,
                 IsWIRCheckpoint = false,
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 3 - M/C Units (MEP Cage)
@@ -59,7 +59,7 @@ public static class ActivityMasterSeedData
                 EstimatedDurationDays = 1,
                 IsWIRCheckpoint = false,
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 4 - Box Closure (TRIGGERS WIR-1)
@@ -77,7 +77,7 @@ public static class ActivityMasterSeedData
                 IsWIRCheckpoint = true,
                 WIRCode = "WIR-1",
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
 
             // ID 5 - Ducts & Insulation
@@ -94,7 +94,7 @@ public static class ActivityMasterSeedData
                 EstimatedDurationDays = 2,
                 IsWIRCheckpoint = false,
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 6 - Drainage piping
@@ -111,7 +111,7 @@ public static class ActivityMasterSeedData
                 EstimatedDurationDays = 2,
                 IsWIRCheckpoint = false,
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 7 - Water Piping
@@ -128,7 +128,7 @@ public static class ActivityMasterSeedData
                 EstimatedDurationDays = 2,
                 IsWIRCheckpoint = false,
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 8 - Fire Fighting Piping (TRIGGERS WIR-2)
@@ -146,7 +146,7 @@ public static class ActivityMasterSeedData
                 IsWIRCheckpoint = true,
                 WIRCode = "WIR-2",
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
 
             // ID 9 - Electrical Containment
@@ -163,7 +163,7 @@ public static class ActivityMasterSeedData
                 EstimatedDurationDays = 2,
                 IsWIRCheckpoint = false,
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 10 - Electrical Wiring
@@ -180,7 +180,7 @@ public static class ActivityMasterSeedData
                 EstimatedDurationDays = 2,
                 IsWIRCheckpoint = false,
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 11 - Dry Wall Framing
@@ -197,7 +197,7 @@ public static class ActivityMasterSeedData
                 EstimatedDurationDays = 2,
                 IsWIRCheckpoint = false,
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 12 - DB and ONU Panel (TRIGGERS WIR-3)
@@ -215,7 +215,7 @@ public static class ActivityMasterSeedData
                 IsWIRCheckpoint = true,
                 WIRCode = "WIR-3",
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
 
             // ID 13 - False Ceiling
@@ -232,7 +232,7 @@ public static class ActivityMasterSeedData
                 EstimatedDurationDays = 1,
                 IsWIRCheckpoint = false,
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 14 - Tile Fixing
@@ -249,7 +249,7 @@ public static class ActivityMasterSeedData
                 EstimatedDurationDays = 2,
                 IsWIRCheckpoint = false,
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 15 - Painting (Internal & External)
@@ -266,7 +266,7 @@ public static class ActivityMasterSeedData
                 EstimatedDurationDays = 2,
                 IsWIRCheckpoint = false,
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 16 - Kitchenette and Counters
@@ -284,7 +284,7 @@ public static class ActivityMasterSeedData
                 IsWIRCheckpoint = false,
                 ApplicableBoxTypes = "Kitchen,Living Room",
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 17 - Doors
@@ -301,7 +301,7 @@ public static class ActivityMasterSeedData
                 EstimatedDurationDays = 1,
                 IsWIRCheckpoint = false,
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 18 - Windows (TRIGGERS WIR-4)
@@ -319,7 +319,7 @@ public static class ActivityMasterSeedData
                 IsWIRCheckpoint = true,
                 WIRCode = "WIR-4",
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
 
             // ID 19 - Switches & Sockets
@@ -336,7 +336,7 @@ public static class ActivityMasterSeedData
                 EstimatedDurationDays = 2,
                 IsWIRCheckpoint = false,
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 20 - Light Fittings
@@ -353,7 +353,7 @@ public static class ActivityMasterSeedData
                 EstimatedDurationDays = 2,
                 IsWIRCheckpoint = false,
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 21 - Copper Piping
@@ -370,7 +370,7 @@ public static class ActivityMasterSeedData
                 EstimatedDurationDays = 2,
                 IsWIRCheckpoint = false,
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 22 - Sanitary Fittings - Kitchen
@@ -387,7 +387,7 @@ public static class ActivityMasterSeedData
                 EstimatedDurationDays = 2,
                 IsWIRCheckpoint = false,
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 23 - Thermostats
@@ -404,7 +404,7 @@ public static class ActivityMasterSeedData
                 EstimatedDurationDays = 2,
                 IsWIRCheckpoint = false,
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 24 - Air Outlet
@@ -421,7 +421,7 @@ public static class ActivityMasterSeedData
                 EstimatedDurationDays = 2,
                 IsWIRCheckpoint = false,
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 25 - Sprinkler
@@ -438,7 +438,7 @@ public static class ActivityMasterSeedData
                 EstimatedDurationDays = 2,
                 IsWIRCheckpoint = false,
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 26 - Smoke Detector (TRIGGERS WIR-5)
@@ -456,7 +456,7 @@ public static class ActivityMasterSeedData
                 IsWIRCheckpoint = true,
                 WIRCode = "WIR-5",
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
 
             // ID 27 - Iron Mongeries
@@ -473,7 +473,7 @@ public static class ActivityMasterSeedData
                 EstimatedDurationDays = 1,
                 IsWIRCheckpoint = false,
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             },
             
             // ID 28 - Inspection & Wrapping (TRIGGERS WIR-6)
@@ -491,7 +491,7 @@ public static class ActivityMasterSeedData
                 IsWIRCheckpoint = true,
                 WIRCode = "WIR-6",
                 IsActive = true,
-                CreatedDate = seedDate
+                CreatedDate = SeedDate
             }
         };
 

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
@@ -15,6 +15,11 @@
     <Folder Include="Features\AuditLogs\MappingConfig\" />
     <Folder Include="Features\ProgressUpdates\MappingConfig\" />
     <Folder Include="Helpers\" />
+  </ItemGroup>
+
+  <!-- Embed every .sql file in the project so SqlLoader can read them at runtime -->
+  <ItemGroup>
+    <EmbeddedResource Include="**\*.sql" />
   </ItemGroup>
 
   <ItemGroup>

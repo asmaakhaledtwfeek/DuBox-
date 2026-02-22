@@ -98,7 +98,7 @@ public class DuplicateBoxCommandHandler : IRequestHandler<DuplicateBoxCommand, R
         newBox.Position = null;
         newBox.ModifiedBy = null;
         newBox.ModifiedDate = null;
-        var boxDto= await _boxCreationService.CreateAsync(newBox, project, currentUserId, "Dublication", $"New Box '{originalBox.BoxTag}' duplicated successfully under Project '{project.ProjectCode}'.", cancellationToken);
+        var boxDto= await _boxCreationService.CreateAsync(newBox, project, currentUserId, "Dublication", $"New Box '{originalBox.BoxTag}' duplicated successfully under Project '{project.ProjectCode}'.", null, cancellationToken);
 
         return Result.Success(boxDto);
     }

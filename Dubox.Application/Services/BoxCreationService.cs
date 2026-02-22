@@ -20,6 +20,7 @@ namespace Dubox.Application.Services
             Guid currentUserId,
             string auditAction,
             string auditDescription,
+            Guid? activityTemplateId,
             CancellationToken cancellationToken);
     }
 
@@ -29,17 +30,20 @@ namespace Dubox.Application.Services
         private readonly IBoxActivityService _boxActivityService;
         private readonly IProjectProgressService _projectProgressService;
         private readonly ISerialNumberService _serialNumberService;
+        private readonly IMaterialTemplateApplicationService _templateService;
 
         public BoxCreationService(
             IUnitOfWork unitOfWork,
             IBoxActivityService boxActivityService,
             IProjectProgressService projectProgressService,
-            ISerialNumberService serialNumberService)
+            ISerialNumberService serialNumberService,
+            IMaterialTemplateApplicationService templateService)
         {
             _unitOfWork = unitOfWork;
             _boxActivityService = boxActivityService;
             _projectProgressService = projectProgressService;
             _serialNumberService = serialNumberService;
+            _templateService = templateService;
         }
 
         public async Task<BoxDto> CreateAsync(
@@ -48,6 +52,7 @@ namespace Dubox.Application.Services
             Guid currentUserId,
             string auditAction,
             string auditDescription,
+            Guid? activityTemplateId,
             CancellationToken cancellationToken)
         {
             // Generate BoxNumber - unique within project type/subtype
@@ -76,7 +81,45 @@ namespace Dubox.Application.Services
             box = _unitOfWork.Repository<Box>()
                 .GetEntityWithSpec(new GetBoxWithIncludesSpecification(box.BoxId));
 
-            await _boxActivityService.CopyActivitiesToBox(box, cancellationToken);
+            // Resolve activity template priority: box type template > project template > activity master
+            Guid? resolvedTemplateId = null;
+            
+            // Priority 1: Check if box type has an assigned activity template
+            if (box.ProjectBoxTypeId.HasValue)
+            {
+                var boxType = _unitOfWork.Repository<ProjectBoxType>().Get()
+                    .Where(bt => bt.Id == box.ProjectBoxTypeId.Value)
+                    .FirstOrDefault();
+                
+                if (boxType?.ActivityTemplateId.HasValue == true)
+                {
+                    resolvedTemplateId = boxType.ActivityTemplateId;
+                }
+            }
+            
+            // Priority 2: If no box type template, check project-level template
+            if (!resolvedTemplateId.HasValue)
+            {
+                resolvedTemplateId = project.ActivityTemplateId;
+            }
+
+            // Assign activities based on resolved template
+            if (resolvedTemplateId.HasValue)
+            {
+                // Use activity template (from box type or project)
+                await _boxActivityService.CopyActivitiesFromTemplateToBox(box, resolvedTemplateId.Value, cancellationToken);
+            }
+            else
+            {
+                // Priority 3: Use activity master (standard approach based on box type)
+                await _boxActivityService.CopyActivitiesToBox(box, cancellationToken);
+            }
+
+            // Apply material templates (box type template overrides project template)
+            await _templateService.ApplyTemplatesToNewBox(box, cancellationToken);
+
+            // Create BoxMaterial records for selected project materials (only if no templates applied)
+            await CreateBoxMaterialsAsync(box, cancellationToken);
 
             // Update project total
             var oldTotalBoxes = project.TotalBoxes;
@@ -157,6 +200,60 @@ namespace Dubox.Application.Services
             int nextNumber = maxNumber + 1;
 
             return nextNumber.ToString("000");
+        }
+
+        private async Task CreateBoxMaterialsAsync(Box box, CancellationToken cancellationToken)
+        {
+            // If no box type is assigned, we cannot determine which materials to assign
+            if (!box.ProjectBoxTypeId.HasValue)
+                return;
+
+            // Get materials assigned to this specific box type
+            var boxTypeMaterials = await _unitOfWork.Repository<BoxTypeMaterial>()
+                .FindAsync(btm => btm.ProjectBoxTypeId == box.ProjectBoxTypeId.Value, cancellationToken);
+
+            if (!boxTypeMaterials.Any())
+                return; // No materials assigned to this box type
+
+            // Get material details
+            var materialIds = boxTypeMaterials.Select(btm => btm.MaterialId).ToList();
+            var materials = await _unitOfWork.Repository<Material>()
+                .FindAsync(m => materialIds.Contains(m.MaterialId), cancellationToken);
+
+            var boxMaterials = new List<BoxMaterial>();
+
+            foreach (var boxTypeMaterial in boxTypeMaterials)
+            {
+                var material = materials.FirstOrDefault(m => m.MaterialId == boxTypeMaterial.MaterialId);
+                if (material == null) continue;
+
+                // Use RequiredBeforeDays from BoxTypeMaterial (which may come from material template or default)
+                var requiredBeforeDays = boxTypeMaterial.RequiredBeforeDays;
+
+                // Calculate required by date based on box planned start date
+                var requiredByDate = box.PlannedStartDate.HasValue
+                    ? box.PlannedStartDate.Value.AddDays(-requiredBeforeDays)
+                    : DateTime.UtcNow.AddDays(requiredBeforeDays);
+
+                var boxMaterial = new BoxMaterial
+                {
+                    BoxId = box.BoxId,
+                    MaterialId = material.MaterialId,
+                    ProjectMaterialId = null, // Not linked to project material anymore
+                    RequiredBeforeDays = requiredBeforeDays,
+                    RequiredByDate = requiredByDate,
+                    IsArrived = false,
+                    CreatedDate = DateTime.UtcNow
+                };
+
+                boxMaterials.Add(boxMaterial);
+            }
+
+            if (boxMaterials.Any())
+            {
+                await _unitOfWork.Repository<BoxMaterial>().AddRangeAsync(boxMaterials, cancellationToken);
+                await _unitOfWork.CompleteAsync(cancellationToken);
+            }
         }
     }
 

@@ -265,14 +265,17 @@
       <p>Loading checklist...</p>
     </div>
 
-    <!-- Error State -->
-    <div class="error-container" *ngIf="error && !loading">
+    <!-- Error State (system errors or when not on create-checkpoint step) -->
+    <div class="error-container" *ngIf="error && !loading && (currentStep !== 'create-checkpoint' || !hasValidationErrors())">
       <p class="error-message">{{ error }}</p>
       <button class="btn btn-primary" (click)="loadWIRRecord()">Retry</button>
     </div>
 
+    <!-- Debug: Show why form isn't displaying -->
+ 
+
     <!-- Step 1: Create Stage Checkpoint -->
-    <div *ngIf="currentStep === 'create-checkpoint' && wirRecord && (!wirCheckpoint || wirCheckpoint.status === 'Pending') && !loading && !error" class="step-container">
+    <div *ngIf="currentStep === 'create-checkpoint' && wirRecord && (!wirCheckpoint || wirCheckpoint.status === 'Pending') && !loading" class="step-container">
       <div class="step-header">
         <h2>Step 1: {{ wirCheckpoint ? 'Update' : 'Create' }} Stage Checkpoint</h2>
         <p class="step-description" *ngIf="!wirCheckpoint">Create a new Stage checkpoint for this activity</p>
@@ -281,13 +284,27 @@
       
       <form [formGroup]="createCheckpointForm" (ngSubmit)="onCreateCheckpoint()">
         <div class="form-card">
-          <div *ngIf="error" class="alert alert-error">
+          <!-- General error alert (only for non-validation errors) -->
+          <div *ngIf="error && !hasValidationErrors()" class="alert alert-error">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <circle cx="12" cy="12" r="10"/>
               <line x1="12" y1="8" x2="12" y2="12"/>
               <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
             <span>{{ error }}</span>
+          </div>
+          
+          <!-- Validation errors summary -->
+          <div *ngIf="hasValidationErrors()" class="alert alert-warning">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <div>
+              <strong>Please correct the following errors:</strong>
+              <p style="margin: 4px 0 0 0;">Review the highlighted fields below and update them with valid values.</p>
+            </div>
           </div>
 
           <!-- Auto-filled information (read-only) -->
@@ -322,10 +339,18 @@
               type="text" 
               formControlName="wirName" 
               class="form-control"
-              [class.invalid]="createCheckpointForm.get('wirName')?.invalid && createCheckpointForm.get('wirName')?.touched"
+              [class.invalid]="(createCheckpointForm.get('wirName')?.invalid && createCheckpointForm.get('wirName')?.touched) || validationErrors['wirName']"
               placeholder="e.g., Release from Assembly - Stage-1"
             >
-            <div *ngIf="createCheckpointForm.get('wirName')?.invalid && createCheckpointForm.get('wirName')?.touched" class="error-text">
+            <div *ngIf="validationErrors['wirName']" class="error-text server-error">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; margin-right: 4px;">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              {{ validationErrors['wirName'] }}
+            </div>
+            <div *ngIf="!validationErrors['wirName'] && createCheckpointForm.get('wirName')?.invalid && createCheckpointForm.get('wirName')?.touched" class="error-text">
               Stage Name max 200 characters.
             </div>
           </div>
@@ -336,11 +361,19 @@
               id="wirDescription" 
               formControlName="wirDescription" 
               class="form-control"
-              [class.invalid]="createCheckpointForm.get('wirDescription')?.invalid && createCheckpointForm.get('wirDescription')?.touched"
+              [class.invalid]="(createCheckpointForm.get('wirDescription')?.invalid && createCheckpointForm.get('wirDescription')?.touched) || validationErrors['wirDescription']"
               rows="3"
               placeholder="Description of the Stage checkpoint"
             ></textarea>
-            <div *ngIf="createCheckpointForm.get('wirDescription')?.invalid && createCheckpointForm.get('wirDescription')?.touched" class="error-text">
+            <div *ngIf="validationErrors['wirDescription']" class="error-text server-error">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline; margin-right: 4px;">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              {{ validationErrors['wirDescription'] }}
+            </div>
+            <div *ngIf="!validationErrors['wirDescription'] && createCheckpointForm.get('wirDescription')?.invalid && createCheckpointForm.get('wirDescription')?.touched" class="error-text">
               Stage Description max 500 characters.
             </div>
           </div>
@@ -2096,6 +2129,20 @@
                 <line x1="6" y1="6" x2="18" y2="18"/>
               </svg>
               Fail
+            </button>
+            <button
+              type="button"
+              class="status-option"
+              [class.active]="itemReviewForm.get('status')?.value === CheckListItemStatus.NA"
+              [class.na]="itemReviewForm.get('status')?.value === CheckListItemStatus.NA"
+              (click)="itemReviewForm.get('status')?.setValue(CheckListItemStatus.NA)"
+              [disabled]="savingItemReview"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="8" y1="12" x2="16" y2="12"/>
+              </svg>
+              N/A
             </button>
           </div>
         </div>

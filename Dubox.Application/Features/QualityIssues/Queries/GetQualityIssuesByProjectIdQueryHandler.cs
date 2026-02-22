@@ -1,11 +1,12 @@
 using Dubox.Application.DTOs;
+using Dubox.Application.Services;
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
 using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
-using Mapster;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.QualityIssues.Queries
 {
@@ -13,11 +14,16 @@ namespace Dubox.Application.Features.QualityIssues.Queries
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IProjectTeamVisibilityService _visibilityService;
+        private readonly IQualityIssueMappingService _mappingService;
 
-        public GetQualityIssuesByProjectIdQueryHandler(IUnitOfWork unitOfWork, IProjectTeamVisibilityService visibilityService)
+        public GetQualityIssuesByProjectIdQueryHandler(
+            IUnitOfWork unitOfWork, 
+            IProjectTeamVisibilityService visibilityService,
+            IQualityIssueMappingService mappingService)
         {
             _unitOfWork = unitOfWork;
             _visibilityService = visibilityService;
+            _mappingService = mappingService;
         }
 
         public async Task<Result<List<QualityIssueDetailsDto>>> Handle(GetQualityIssuesByProjectIdQuery request, CancellationToken cancellationToken)
@@ -33,31 +39,26 @@ namespace Dubox.Application.Features.QualityIssues.Queries
                 return Result.Failure<List<QualityIssueDetailsDto>>("Access denied. You do not have permission to view quality issues for this project.");
             }
 
+            // Optimized: Use AsNoTracking and async ToList for better performance
             var specificationResult = _unitOfWork.Repository<QualityIssue>()
                 .GetWithSpec(new GetQualityIssuesByProjectIdSpecification(request.ProjectId));
-            var issues = specificationResult.Data.ToList();
+            
+            var issues = await specificationResult.Data
+                .AsNoTracking()
+                .ToListAsync(cancellationToken);
 
-            var dtos = issues.Select(issue =>
-            {
-                var dto = issue.Adapt<QualityIssueDetailsDto>();
-                dto.AssignedToUserName = !string.IsNullOrEmpty(issue.AssignedToMember?.EmployeeName) ? issue.AssignedToMember?.EmployeeName : issue.AssignedToMember?.User.FullName;
-                dto.CCUserName = !string.IsNullOrEmpty(issue.CCUser?.FullName) ? issue.CCUser?.FullName : string.Empty;
-                
-                // Map project information from Box.Project
-                if (issue.Box?.Project != null)
-                {
-                    dto.ProjectId = issue.Box.Project.ProjectId;
-                    dto.ProjectName = issue.Box.Project.ProjectName;
-                    dto.ProjectCode = issue.Box.Project.ProjectCode;
-                }
-                
-                return dto;
-            }).ToList();
+            // Use mapping service to convert issues to DTOs
+            var dtos = _mappingService.MapToDtoList(issues);
 
             return Result.Success(dtos);
         }
     }
 }
+
+
+
+
+
 
 
 

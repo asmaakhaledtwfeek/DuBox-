@@ -14,10 +14,12 @@ public record MaterialDto
     public decimal? MinimumStock { get; init; }
     public decimal? ReorderLevel { get; init; }
     public string? SupplierName { get; init; }
+    public int DefaultRequiredBeforeDays { get; init; }
     public Guid? ProjectId { get; init; }
     public bool IsActive { get; init; }
     public bool IsLowStock { get; init; }
     public bool NeedsReorder { get; init; }
+    public int QuantityPerBox { get; set; }
 }
 
 public record CreateMaterialDto
@@ -26,6 +28,7 @@ public record CreateMaterialDto
     public string MaterialName { get; init; } = string.Empty;
     public string? MaterialCategory { get; init; }
     public string? Unit { get; init; }
+    public int? QuantityPerBox { get; init; }
     public decimal? UnitCost { get; init; }
     public decimal? CurrentStock { get; init; }
     public decimal? MinimumStock { get; init; }

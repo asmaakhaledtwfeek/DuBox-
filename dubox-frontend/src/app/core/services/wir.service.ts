@@ -520,6 +520,10 @@ export class WIRService {
     status?: string;
     severity?: string;
     issueType?: string;
+    assignedUser?: string;
+    issueNumber?: string;
+    boxTag?: string;
+    projectCode?: string;
     page?: number;
     pageSize?: number;
   }): Observable<PaginatedQualityIssuesResponse> {
@@ -879,6 +883,150 @@ export class WIRService {
     };
   }
 
+  /**
+   * Get filter options for WIR Checkpoints (stage numbers, box tags, project codes)
+   */
+  getWIRCheckpointFilters(): Observable<{ isSuccess: boolean; data: { stageNumbers: string[]; boxTags: string[]; projectCodes: string[]; boxTagsWithProjects?: Array<{ boxTag: string; projectCode: string }> } }> {
+    return this.apiService.get<any>('wircheckpoints/filters').pipe(
+      map(response => {
+        console.log('🔍 Raw WIR Checkpoint Filters Response:', response);
+        console.log('🔍 Response type:', typeof response);
+        console.log('🔍 Response keys:', response ? Object.keys(response) : 'null');
+        
+        // Extract the data from various response structures
+        let rawData: any = null;
+        
+        // Case 1: Response.data.data (double wrapped)
+        if (response?.data?.data) {
+          console.log('✅ Response format: response.data.data');
+          rawData = response.data.data;
+        }
+        // Case 2: Response.data
+        else if (response?.data) {
+          console.log('✅ Response format: response.data');
+          rawData = response.data;
+        }
+        // Case 3: Response is the data directly
+        else if (response) {
+          console.log('✅ Response format: direct response');
+          rawData = response;
+        }
+        
+        console.log('🔍 Extracted rawData:', rawData);
+        console.log('🔍 RawData keys:', rawData ? Object.keys(rawData) : 'null');
+        
+        // Normalize property names (handle both camelCase and PascalCase from C# backend)
+        const boxTagsWithProjectsRaw = rawData?.boxTagsWithProjects || rawData?.BoxTagsWithProjects || [];
+        
+        // Normalize each item in boxTagsWithProjects array
+        const normalizedBoxTagsWithProjects = Array.isArray(boxTagsWithProjectsRaw) 
+          ? boxTagsWithProjectsRaw.map((item: any) => ({
+              boxTag: item?.boxTag || item?.BoxTag || '',
+              projectCode: item?.projectCode || item?.ProjectCode || ''
+            }))
+          : [];
+        
+        const normalizedData = {
+          stageNumbers: rawData?.stageNumbers || rawData?.StageNumbers || [],
+          boxTags: rawData?.boxTags || rawData?.BoxTags || [],
+          projectCodes: rawData?.projectCodes || rawData?.ProjectCodes || [],
+          boxTagsWithProjects: normalizedBoxTagsWithProjects
+        };
+        
+        console.log('✅ Normalized filter data:');
+        console.log('   - stageNumbers:', normalizedData.stageNumbers);
+        console.log('   - boxTags:', normalizedData.boxTags);
+        console.log('   - projectCodes:', normalizedData.projectCodes);
+        console.log('   - boxTagsWithProjects:', normalizedData.boxTagsWithProjects);
+        console.log('   - boxTagsWithProjects count:', normalizedData.boxTagsWithProjects.length);
+        
+        return {
+          isSuccess: true,
+          data: normalizedData
+        };
+      }),
+      catchError(error => {
+        console.error('❌ Error in getWIRCheckpointFilters:', error);
+        return of({
+          isSuccess: false,
+          data: { stageNumbers: [], boxTags: [], projectCodes: [] }
+        });
+      })
+    );
+  }
+
+  /**
+   * Get filter options for Quality Issues (issue numbers, box tags)
+   */
+  getQualityIssueFilters(): Observable<{ isSuccess: boolean; data: { issueNumbers: string[]; boxTags: string[]; projectCodes: string[]; boxTagsWithProjects?: Array<{ boxTag: string; projectCode: string }> } }> {
+    return this.apiService.get<any>('qualityissues/filters').pipe(
+      map(response => {
+        console.log('🔍 Raw Quality Issue Filters Response:', response);
+        console.log('🔍 Response type:', typeof response);
+        console.log('🔍 Response keys:', response ? Object.keys(response) : 'null');
+        
+        // Extract the data from various response structures
+        let rawData: any = null;
+        
+        // Case 1: Response.data.data (double wrapped)
+        if (response?.data?.data) {
+          console.log('✅ Response format: response.data.data');
+          rawData = response.data.data;
+        }
+        // Case 2: Response.data
+        else if (response?.data) {
+          console.log('✅ Response format: response.data');
+          rawData = response.data;
+        }
+        // Case 3: Response is the data directly
+        else if (response) {
+          console.log('✅ Response format: direct response');
+          rawData = response;
+        }
+        
+        console.log('🔍 Extracted rawData:', rawData);
+        console.log('🔍 RawData keys:', rawData ? Object.keys(rawData) : 'null');
+        
+        // Normalize boxTagsWithProjects array and each item's properties
+        const boxTagsWithProjectsRaw = rawData?.boxTagsWithProjects || rawData?.BoxTagsWithProjects || [];
+        
+        const normalizedBoxTagsWithProjects = Array.isArray(boxTagsWithProjectsRaw) 
+          ? boxTagsWithProjectsRaw.map((item: any) => ({
+              boxTag: item?.boxTag || item?.BoxTag || '',
+              projectCode: item?.projectCode || item?.ProjectCode || ''
+            }))
+          : [];
+        
+        // Normalize property names (handle both camelCase and PascalCase from C# backend)
+        const normalizedData = {
+          issueNumbers: rawData?.issueNumbers || rawData?.IssueNumbers || [],
+          boxTags: rawData?.boxTags || rawData?.BoxTags || [],
+          projectCodes: rawData?.projectCodes || rawData?.ProjectCodes || [],
+          boxTagsWithProjects: normalizedBoxTagsWithProjects
+        };
+        
+        console.log('✅ Normalized filter data:');
+        console.log('   - issueNumbers:', normalizedData.issueNumbers);
+        console.log('   - boxTags:', normalizedData.boxTags);
+        console.log('   - projectCodes:', normalizedData.projectCodes);
+        console.log('   - boxTagsWithProjects:', normalizedData.boxTagsWithProjects);
+        console.log('   - boxTagsWithProjects count:', normalizedData.boxTagsWithProjects.length);
+        
+        return {
+          isSuccess: true,
+          data: normalizedData
+        };
+      }),
+      catchError(error => {
+        console.error('❌ Error in getQualityIssueFilters:', error);
+        return of({
+          isSuccess: false,
+          data: { issueNumbers: [], boxTags: [], projectCodes: [], boxTagsWithProjects: [] }
+        });
+      })
+    );
+  }
+
   private transformQualityIssueDetails(issue: any): QualityIssueDetails {
     // Debug: Log raw backend response for quality issue
     console.log('🔍 transformQualityIssueDetails - Raw issue data:', issue);
@@ -925,6 +1073,7 @@ export class WIRService {
       photoPath: issue.photoPath || issue.PhotoPath,
       issueDate: issue.issueDate ? new Date(issue.issueDate) : undefined,
       status: issue.status || issue.Status,
+      isReadOnly: issue.isReadOnly ?? issue.IsReadOnly ?? false,
       resolutionDate: issue.resolutionDate ? new Date(issue.resolutionDate) : undefined,
       resolutionDescription: issue.resolutionDescription || issue.ResolutionDescription,
       boxId: issue.boxId || issue.BoxId,
@@ -949,6 +1098,8 @@ export class WIRService {
     console.log('✅ Final AssignedTeamName:', transformed.assignedTeamName);
     console.log('✅ Final AssignedToUserName:', transformed.assignedToUserName);
     console.log('✅ Final CCUserName:', transformed.ccUserName);
+    console.log('✅ Final IsReadOnly:', transformed.isReadOnly, '(raw:', issue.isReadOnly, issue.IsReadOnly, ')');
+    console.log('✅ Final IssueType:', transformed.issueType);
     
     return transformed;
   }

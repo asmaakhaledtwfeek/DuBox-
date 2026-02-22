@@ -13,26 +13,114 @@
       </button>
       <div class="header-content">
         <h1 class="page-title">Manage Predefined Checklists</h1>
-        <p class="page-subtitle">Select a WIR type to view and manage its predefined checklist items</p>
+        <p class="page-subtitle">Select a WIR type or Activity Template to view and manage checklists</p>
       </div>
     </div>
 
-    <!-- WIR Options Grid -->
-    <div class="wir-options-grid">
-      <div 
-        *ngFor="let option of wirOptions" 
-        class="wir-card"
-        (click)="selectWIR(option.code)"
-      >
-        <div class="wir-icon">{{ option.icon }}</div>
-        <div class="wir-info">
-          <h3 class="wir-code">{{ option.code }}</h3>
-          <p class="wir-description">{{ option.description }}</p>
+    <!-- WIR Types Section -->
+    <div class="section-container">
+      <div class="section-header">
+        <h2 class="section-title">WIR Types</h2>
+        <p class="section-subtitle">Manage predefined checklist items for each WIR type</p>
+      </div>
+      <div class="wir-options-grid">
+        <div 
+          *ngFor="let option of wirOptions" 
+          class="wir-card"
+          (click)="selectWIR(option.code)"
+        >
+          <div class="wir-icon">{{ option.icon }}</div>
+          <div class="wir-info">
+            <h3 class="wir-code">{{ option.code }}</h3>
+            <p class="wir-description">{{ option.description }}</p>
+          </div>
+          <div class="wir-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </div>
         </div>
-        <div class="wir-arrow">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M9 18l6-6-6-6"/>
+      </div>
+    </div>
+
+    <!-- Activity Templates Section -->
+    <div class="section-container">
+      <div class="section-header">
+        <h2 class="section-title">Activity Templates</h2>
+        <p class="section-subtitle">View all activity templates with their stages and activities</p>
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="loadingTemplates" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading activity templates...</p>
+      </div>
+
+      <!-- Error State -->
+      <div *ngIf="templatesError && !loadingTemplates" class="error-state">
+        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+        <p>{{ templatesError }}</p>
+        <button class="btn-retry" (click)="loadActivityTemplates()">Try Again</button>
+      </div>
+
+      <!-- Templates Grid -->
+      <div *ngIf="!loadingTemplates && !templatesError" class="templates-grid">
+        <div *ngIf="activityTemplates.length === 0" class="empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="9" y1="9" x2="15" y2="9"></line>
+            <line x1="9" y1="15" x2="15" y2="15"></line>
           </svg>
+          <h3>No Activity Templates Found</h3>
+          <p>There are no active activity templates available.</p>
+        </div>
+
+        <div 
+          *ngFor="let template of activityTemplates" 
+          class="template-card"
+          (click)="selectActivityTemplate(template.activityTemplateId)"
+        >
+          <div class="template-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 11l3 3L22 4"></path>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+          </div>
+          <div class="template-info">
+            <h3 class="template-name">{{ template.templateName }}</h3>
+            <p class="template-description" *ngIf="template.description">{{ template.description }}</p>
+            <div class="template-meta">
+              <span class="meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="8" y1="6" x2="21" y2="6"></line>
+                  <line x1="8" y1="12" x2="21" y2="12"></line>
+                  <line x1="8" y1="18" x2="21" y2="18"></line>
+                  <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                  <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                  <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+                {{ template.stageCount }} stages
+              </span>
+              <span class="meta-item">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="9" cy="7" r="4"></circle>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                </svg>
+                {{ template.activityCount }} activities
+              </span>
+            </div>
+          </div>
+          <div class="template-arrow">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9 18l6-6-6-6"/>
+            </svg>
+          </div>
         </div>
       </div>
     </div>

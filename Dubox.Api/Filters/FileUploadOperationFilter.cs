@@ -5,11 +5,13 @@ namespace Dubox.Api.Filters
 {
     public class FileUploadOperationFilter : IOperationFilter
     {
+
         public void Apply(OpenApiOperation operation, OperationFilterContext context)
         {
             var fileParams = context.MethodInfo.GetParameters()
                 .Where(p => p.ParameterType == typeof(IFormFile))
                 .ToList();
+
 
             if (!fileParams.Any()) return;
 

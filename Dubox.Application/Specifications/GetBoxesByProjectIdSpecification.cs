@@ -17,6 +17,8 @@ namespace Dubox.Application.Specifications
             AddInclude(nameof(Box.CurrentLocation));
             AddInclude(nameof(Box.BoxDrawings));
             AddInclude(nameof(Box.BoxPanels));
+            // Include PanelType to avoid lazy loading N+1 queries
+            AddInclude($"{nameof(Box.BoxPanels)}.{nameof(BoxPanel.PanelType)}");
             // Enable split query to avoid Cartesian explosion with BoxActivities collection
             EnableSplitQuery();
         }

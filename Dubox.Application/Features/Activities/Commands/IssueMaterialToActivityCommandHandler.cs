@@ -58,21 +58,21 @@ public class IssueMaterialToActivityCommandHandler : IRequestHandler<IssueMateri
             return Result.Failure<MaterialTransactionDto>(
                  $"Insufficient stock. Only {oldCurrentStock} units of {material.MaterialName} are available.");
 
-        var boxMaterial = _unitOfWork.Repository<BoxMaterial>()
-            .GetEntityWithSpec(new BoxMaterialByBoxIdAndMaterialIdSpecification(activity.BoxId, request.MaterialId));
+        // Get project material allocation for this box's project
+        var projectMaterial = _unitOfWork.Repository<ProjectMaterial>()
+            .GetEntityWithSpec(new ProjectMaterialByProjectAndMaterialIdSpecification(box.ProjectId, request.MaterialId));
 
-        if (boxMaterial == null)
+        if (projectMaterial == null)
             return Result.Failure<MaterialTransactionDto>(
-                 $"Cannot issue material. Material {material.MaterialName} has no budget allocated (BoxMaterial entry) for Box.");
+                 $"Cannot issue material. Material {material.MaterialName} is not allocated to this project.");
 
-        var oldConsumedQuantity = boxMaterial.ConsumedQuantity ?? 0;
-        var oldBoxMaterialStatus = boxMaterial.Status;
+        var oldConsumedQuantity = projectMaterial.ConsumedQuantity ?? 0;
 
-        var allocatedRemaining = (boxMaterial.AllocatedQuantity ?? 0) - oldConsumedQuantity;
+        var allocatedRemaining = (projectMaterial.AllocatedQuantity ?? 0) - oldConsumedQuantity;
 
         if (request.Quantity > allocatedRemaining)
             return Result.Failure<MaterialTransactionDto>(
-                 $"Issue quantity ({request.Quantity}) exceeds the remaining allocated quantity for this Box ({allocatedRemaining}).");
+                 $"Issue quantity ({request.Quantity}) exceeds the remaining allocated quantity for this project ({allocatedRemaining}).");
 
         var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
 
@@ -85,30 +85,23 @@ public class IssueMaterialToActivityCommandHandler : IRequestHandler<IssueMateri
         material.AllocatedStock = oldAllocatedStock - request.Quantity;
         _unitOfWork.Repository<Material>().Update(material);
 
-        boxMaterial.ConsumedQuantity = oldConsumedQuantity + request.Quantity;
+        projectMaterial.ConsumedQuantity = oldConsumedQuantity + request.Quantity;
+        _unitOfWork.Repository<ProjectMaterial>().Update(projectMaterial);
 
-        var newBoxMaterialStatus = oldBoxMaterialStatus;
-        if (boxMaterial.ConsumedQuantity >= boxMaterial.AllocatedQuantity)
+
+
+        var projectMaterialLog = new AuditLog
         {
-            newBoxMaterialStatus = BoxMaterialStatusEnum.Consumed;
-            boxMaterial.Status = newBoxMaterialStatus;
-        }
-        _unitOfWork.Repository<BoxMaterial>().Update(boxMaterial);
-
-
-
-        var boxMaterialLog = new AuditLog
-        {
-            TableName = nameof(BoxMaterial),
-            RecordId = boxMaterial.BoxMaterialId,
+            TableName = nameof(ProjectMaterial),
+            RecordId = projectMaterial.ProjectMaterialId,
             Action = "ConsumptionUpdate",
-            OldValues = $"ConsumedQuantity: {oldConsumedQuantity}, Status: {oldBoxMaterialStatus.ToString()}",
-            NewValues = $"ConsumedQuantity: {boxMaterial.ConsumedQuantity}, Status: {newBoxMaterialStatus.ToString()}",
+            OldValues = $"ConsumedQuantity: {oldConsumedQuantity}",
+            NewValues = $"ConsumedQuantity: {projectMaterial.ConsumedQuantity}",
             ChangedBy = currentUserId,
             ChangedDate = DateTime.UtcNow,
             Description = $"Consumed quantity for Material in Box {activity.BoxId} increased by {request.Quantity}."
         };
-        await _unitOfWork.Repository<AuditLog>().AddAsync(boxMaterialLog, cancellationToken);
+        await _unitOfWork.Repository<AuditLog>().AddAsync(projectMaterialLog, cancellationToken);
 
 
         await _unitOfWork.CompleteAsync(cancellationToken);

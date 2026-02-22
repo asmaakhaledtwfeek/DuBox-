@@ -2,7 +2,6 @@
 using Dubox.Application.Specifications;
 using Dubox.Domain.Abstraction;
 using Dubox.Domain.Entities;
-using Dubox.Domain.Enums;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
@@ -19,10 +18,10 @@ namespace Dubox.Application.Features.Boxes.Commands
             _unitOfWork = unitOfWork;
             _currentUserService = currentUserService;
         }
+        
         public async Task<Result<List<BoxMaterialDto>>> Handle(DefineBoxMaterialRequirementCommand request, CancellationToken cancellationToken)
         {
             var currentUserId = Guid.Parse(_currentUserService.UserId ?? Guid.Empty.ToString());
-            const string dateFormat = "yyyy-MM-dd HH:mm:ss";
 
             var box = await _unitOfWork.Repository<Box>().GetByIdAsync(request.BoxId);
 
@@ -39,10 +38,10 @@ namespace Dubox.Application.Features.Boxes.Commands
 
             var oldRequirements = _unitOfWork.Repository<BoxMaterial>()
            .Get()
-           .Where(am => am.BoxId == request.BoxId)
+           .Where(bm => bm.BoxId == request.BoxId)
            .ToList();
 
-            var oldRequirementsDetails = string.Join(" | ", oldRequirements.Select(r => $"ID:{r.MaterialId}, Qty:{r.RequiredQuantity}"));
+            var oldRequirementsDetails = string.Join(" | ", oldRequirements.Select(r => $"ID:{r.MaterialId}, Required:{r.RequiredByDate}"));
             if (oldRequirements.Any())
             {
                 _unitOfWork.Repository<BoxMaterial>().DeleteRange(oldRequirements);
@@ -59,36 +58,48 @@ namespace Dubox.Application.Features.Boxes.Commands
                 };
                 await _unitOfWork.Repository<AuditLog>().AddAsync(deleteLog, cancellationToken);
             }
-            var newRequirements = request.Requirements.Select(r => new BoxMaterial
+
+            var newRequirements = new List<BoxMaterial>();
+            foreach (var req in request.Requirements)
             {
-                BoxId = request.BoxId,
-                MaterialId = r.MaterialId,
-                RequiredQuantity = r.RequiredQuantity,
-                Status = BoxMaterialStatusEnum.Pending
-            }).ToList();
+                var material = await _unitOfWork.Repository<Material>().GetByIdAsync(req.MaterialId);
+                if (material == null) continue;
+
+                var requiredByDate = box.PlannedStartDate.HasValue 
+                    ? box.PlannedStartDate.Value.AddDays(-material.DefaultRequiredBeforeDays)
+                    : DateTime.UtcNow.AddDays(material.DefaultRequiredBeforeDays);
+
+                newRequirements.Add(new BoxMaterial
+                {
+                    BoxId = request.BoxId,
+                    MaterialId = req.MaterialId,
+                    RequiredBeforeDays = material.DefaultRequiredBeforeDays,
+                    RequiredByDate = requiredByDate,
+                    IsArrived = false,
+                    CreatedDate = DateTime.UtcNow
+                });
+            }
 
             await _unitOfWork.Repository<BoxMaterial>().AddRangeAsync(newRequirements, cancellationToken);
-            var newRequirementsDetails = string.Join(" | ", newRequirements.Select(r => $"ID:{r.MaterialId}, Qty:{r.RequiredQuantity}"));
 
+            var newRequirementsDetails = string.Join(" | ", newRequirements.Select(r => $"ID:{r.MaterialId}, RequiredBy:{r.RequiredByDate:yyyy-MM-dd}"));
             var createLog = new AuditLog
             {
                 TableName = nameof(BoxMaterial),
                 RecordId = request.BoxId,
                 Action = "BulkCreation",
-                OldValues = "N/A (Previous requirements cleared)",
+                OldValues = "N/A",
                 NewValues = newRequirementsDetails,
                 ChangedBy = currentUserId,
                 ChangedDate = DateTime.UtcNow,
-                Description = $"Defined {newRequirements.Count} new material requirements for Box {request.BoxId}."
+                Description = $"Defined {newRequirements.Count} material requirements for Box {request.BoxId}."
             };
             await _unitOfWork.Repository<AuditLog>().AddAsync(createLog, cancellationToken);
+
             await _unitOfWork.CompleteAsync(cancellationToken);
 
-            var boxMaterialsavedRequirements = _unitOfWork.Repository<BoxMaterial>()
-            .GetWithSpec(new BoxMaterialByBoxIdSpecification(request.BoxId)).Data.ToList();
-
-            var dto = boxMaterialsavedRequirements.Adapt<List<BoxMaterialDto>>();
-            return Result.Success(dto);
+            var dtos = newRequirements.Adapt<List<BoxMaterialDto>>();
+            return Result.Success(dtos);
         }
     }
 }

@@ -49,6 +49,7 @@ export interface CreateProgressUpdateRequest {
   wirBay?: string;
   wirRow?: string;
   wirPosition?: string;
+  wirFactorySectionId?: string; // Section ID selected by user in factory layout UI
 }
 
 export interface ProgressUpdateResponse {

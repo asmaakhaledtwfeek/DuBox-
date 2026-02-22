@@ -172,6 +172,14 @@ export class QualityIssueDetailsModalComponent implements OnInit, OnChanges {
     return this.qualityIssueStatusMeta[normalized]?.class || 'status-open';
   }
 
+  /**
+   * Check if quality issue is an exchange request
+   */
+  isExchangeRequest(issue: any): boolean {
+    const issueType = issue?.issueType || '';
+    return issueType === 'ExchangeRequest' || issueType === 'exchangeRequest' || issueType.toLowerCase() === 'exchangerequest';
+  }
+
   getWIRCheckpointStatusLabel(status?: WIRCheckpointStatus | string): string {
     const normalized = (status || WIRCheckpointStatus.Pending).toString();
     const labelMap: Record<string, string> = {

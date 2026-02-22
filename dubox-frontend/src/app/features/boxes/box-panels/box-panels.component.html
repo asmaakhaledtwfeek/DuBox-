@@ -68,7 +68,20 @@
       <tbody>
         <tr *ngFor="let panel of panels">
           <td>
-            <strong>{{ panel.panelName }}</strong>
+            <div class="panel-name-cell">
+              <strong>{{ panel.panelName }}</strong>
+              <button 
+                *ngIf="hasQualityIssue(panel)"
+                class="quality-issue-warning"
+                (click)="navigateToQualityIssue(panel)"
+                title="Panel has a quality issue - Click to view details">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                  <line x1="12" y1="9" x2="12" y2="13"></line>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+              </button>
+            </div>
           </td>
           <td>
             <div class="barcode-container" *ngIf="panel.qrCode && getQRCodeImage(panel)">
@@ -107,9 +120,12 @@
           </td>
           <td>
             <span class="panel-type-badge" *ngIf="panel.typeName">
-              {{ panel.typeCode }} - {{ panel.typeName }}
+              {{ panel.typeName }}
             </span>
-            <span class="panel-type-badge gray" *ngIf="!panel.typeName">
+            <span class="panel-type-badge gray" *ngIf="!panel.typeName && panel.typeCode">
+              {{ panel.typeCode }}
+            </span>
+            <span class="panel-type-badge gray" *ngIf="!panel.typeName && !panel.typeCode">
               No Type
             </span>
           </td>
@@ -120,7 +136,7 @@
               </span>
               <div class="current-stage" *ngIf="shouldShowStageInfo(panel)">
                 <span class="stage-label" *ngIf="getCurrentStageLabel(panel)">{{ getCurrentStageLabel(panel) }} — </span>
-                <span class="stage-progress">{{ getCompletedStagesCount(panel) }}/4 stages</span>
+                <span class="stage-progress">{{ getCompletedStagesCount(panel) }}/7 stages</span>
               </div>
             </div>
           </td>
@@ -148,8 +164,9 @@
             <div class="action-buttons">
               <!-- Workflow Status Update (Pre-cast Location) -->
               <button 
+                type="button"
                 class="btn btn-sm btn-workflow"
-                (click)="openWorkflowModal(panel)"
+                (click)="openWorkflowModal(panel); $event.stopPropagation()"
                 title="Update panel workflow status at pre-cast location">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M12 2v6m0 0L9 5m3 3 3-3M2 12h6m0 0L5 9m3 3-3 3m14-3h6m0 0-3-3m3 3-3 3M12 16v6m0 0-3-3m3 3 3-3"/>
@@ -233,14 +250,20 @@
         </div>
 
         <div class="form-group">
-          <label for="approvalNotes">Notes (Optional)</label>
+          <label for="approvalNotes">
+            Notes {{ approvalAction === 'reject' ? '(Required)' : '(Optional)' }}
+          </label>
           <textarea 
             id="approvalNotes"
             [(ngModel)]="approvalNotes"
             rows="4"
-            placeholder="Add notes about this approval decision..."
-            [disabled]="submitting">
+            [placeholder]="approvalAction === 'reject' ? 'Please provide a reason for rejection...' : 'Add notes about this approval decision...'"
+            [disabled]="submitting"
+            [required]="approvalAction === 'reject'">
           </textarea>
+          <small class="error-text" *ngIf="approvalAction === 'reject' && (!approvalNotes || approvalNotes.trim() === '')">
+            Notes are required when rejecting
+          </small>
         </div>
 
         <div class="error-message" *ngIf="error">
@@ -286,7 +309,6 @@
 
   <!-- Panel Workflow Modal -->
   <app-panel-workflow-modal
-    *ngIf="showWorkflowModal"
     [panel]="selectedPanel"
     [isOpen]="showWorkflowModal"
     (closeModal)="closeWorkflowModal()"

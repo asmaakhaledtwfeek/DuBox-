@@ -81,7 +81,7 @@ public class ApprovePanelSecondApprovalCommandHandler : IRequestHandler<ApproveP
             // Generate issue number
             var issueCountInProject = _unitOfWork.Repository<QualityIssue>()
                 .GetWithSpec(new GetQualityIssuesSpecification()).Data
-                .Count(qi => qi.Box.ProjectId == panel.ProjectId);
+                .Count(qi => qi.Box.ProjectId == panel.ProjectId || qi.ProjectId == panel.ProjectId);
             var issueNumber = (issueCountInProject + 1).ToString("D5");
             
             var description = $"Panel '{panel.PanelName}' rejected at Second Approval (Dubox Delivery). {request.Notes}";

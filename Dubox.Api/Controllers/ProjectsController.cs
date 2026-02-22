@@ -1,3 +1,6 @@
+using Dubox.Api.Models;
+using Dubox.Application.DTOs;
+using Dubox.Application.Features.Panels.Commands;
 using Dubox.Application.Features.Projects.Commands;
 using Dubox.Application.Features.Projects.Queries;
 using MediatR;
@@ -88,6 +91,18 @@ public class ProjectsController : ControllerBase
     {
         if (projectId != command.ProjectId)
             return BadRequest("Project ID mismatch");
+
+        var result = await _mediator.Send(command, cancellationToken);
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    [HttpPatch("{projectId}/box-types/{boxTypeId}")]
+    public async Task<IActionResult> UpdateProjectBoxType(Guid projectId, int boxTypeId, [FromBody] UpdateProjectBoxTypeCommand command, CancellationToken cancellationToken)
+    {
+        if (projectId != command.ProjectId)
+            return BadRequest("Project ID mismatch");
+        if (boxTypeId != command.BoxTypeId)
+            return BadRequest("Box Type ID mismatch");
 
         var result = await _mediator.Send(command, cancellationToken);
         return result.IsSuccess ? Ok(result) : BadRequest(result);
@@ -197,6 +212,97 @@ public class ProjectsController : ControllerBase
 
         return result.IsSuccess ? Ok(result) : BadRequest(result);
     }
+
+    /// <summary>
+    /// Extract panel data from PDF using AI
+    /// Returns data for user review before saving
+    /// </summary>
+    [HttpPost("{projectId}/panels/extract-from-pdf")]
+    [RequestSizeLimit(10_485_760)] // 10 MB
+    [Consumes("multipart/form-data")]
+    public async Task<IActionResult> ExtractPanelsFromPdf(
+        Guid projectId,
+        [FromForm] ExtractPanelsFromPdfRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (projectId == Guid.Empty)
+            return BadRequest("Project ID is required");
+
+        if (request.File == null || request.File.Length == 0)
+            return BadRequest("No PDF file uploaded");
+
+        // Validate main file type
+        var extension = Path.GetExtension(request.File.FileName).ToLowerInvariant();
+        if (extension != ".pdf")
+            return BadRequest("Only PDF files are supported");
+
+        using var stream = request.File.OpenReadStream();
+        using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream, cancellationToken);
+        memoryStream.Position = 0;
+
+        // Process second file if provided
+        MemoryStream? boxTagsMemoryStream = null;
+        string? boxTagsFileName = null;
+        
+        if (request.BoxTagsFile != null && request.BoxTagsFile.Length > 0)
+        {
+            var boxTagsExtension = Path.GetExtension(request.BoxTagsFile.FileName).ToLowerInvariant();
+            if (boxTagsExtension != ".pdf")
+                return BadRequest("Box tags file must be a PDF");
+
+            using var boxTagsStream = request.BoxTagsFile.OpenReadStream();
+            boxTagsMemoryStream = new MemoryStream();
+            await boxTagsStream.CopyToAsync(boxTagsMemoryStream, cancellationToken);
+            boxTagsMemoryStream.Position = 0;
+            boxTagsFileName = request.BoxTagsFile.FileName;
+        }
+
+        var command = new ExtractPanelsFromPdfCommand(
+            projectId,
+            request.BoxId,
+            memoryStream,
+            request.File.FileName,
+            boxTagsMemoryStream,
+            boxTagsFileName
+        );
+
+        var result = await _mediator.Send(command, cancellationToken);
+
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
+
+    /// <summary>
+    /// Confirm and save reviewed panel extraction data
+    /// </summary>
+    [HttpPost("{projectId}/panels/confirm-extraction")]
+    public async Task<IActionResult> ConfirmPanelExtraction(
+        Guid projectId,
+        [FromBody] ConfirmPanelExtractionRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (projectId == Guid.Empty)
+            return BadRequest("Project ID is required");
+
+        if (request == null)
+            return BadRequest("Request body is required");
+
+        var boxTagMappings = request.BoxTagMappings
+            .Select(m => new BoxTagMappingDto(m.BoxTag, m.BoxId, m.NewBoxName))
+            .ToList();
+
+        var command = new ConfirmPanelExtractionCommand(
+            projectId,
+            request.BoxId,
+            request.PanelTypes,
+            request.BoxPanels,
+            boxTagMappings
+        );
+
+        var result = await _mediator.Send(command, cancellationToken);
+
+        return result.IsSuccess ? Ok(result) : BadRequest(result);
+    }
 }
 
 public class UploadProjectImagesRequest
@@ -206,3 +312,17 @@ public class UploadProjectImagesRequest
     public IFormFile? ClientImage { get; set; }
 }
 
+public class ConfirmPanelExtractionRequest
+{
+    public Guid? BoxId { get; set; }
+    public List<ReviewPanelTypeDto> PanelTypes { get; set; } = new();
+    public List<ReviewBoxPanelDto> BoxPanels { get; set; } = new();
+    public List<BoxTagMapping> BoxTagMappings { get; set; } = new();
+}
+
+public class BoxTagMapping
+{
+    public string BoxTag { get; set; } = string.Empty;
+    public Guid? BoxId { get; set; } // null if creating new box
+    public string? NewBoxName { get; set; } // only if creating new box
+}

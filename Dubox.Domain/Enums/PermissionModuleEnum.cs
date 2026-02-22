@@ -15,6 +15,7 @@ namespace Dubox.Domain.Enums
         Groups,
         Locations,
         Materials,
+        MaterialTemplates,
         Permissions,
         ProgressUpdates,
         Projects,

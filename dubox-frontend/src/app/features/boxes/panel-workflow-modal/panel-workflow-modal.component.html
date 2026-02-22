@@ -1,4 +1,4 @@
-<div *ngIf="isOpen" class="modal-overlay" (click)="close()">
+<div *ngIf="isOpen" class="modal-overlay" (click)="onOverlayClick($event)">
   <div class="modal-container" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2>Update Panel Workflow Status</h2>
@@ -35,12 +35,20 @@
         
         <div class="progress-row">
           <span class="label">Stages Complete:</span>
-          <span class="progress-value">{{ getCompletedStagesCount() }} / 4</span>
+          <span class="progress-value">{{ getCompletedStagesCount() }} / {{ getTotalStagesCount() }}</span>
         </div>
         <div class="issue-row" *ngIf="hasLinkedIssue">
           <span class="label">⚠️ Linked Quality Issue:</span>
           <span class="issue-id">{{ panel?.qualityIssueId }}</span>
         </div>
+      </div>
+
+      <!-- Read-Only Notice for Approved Panels -->
+      <div *ngIf="isSecondApprovalApproved()" class="alert alert-info">
+        <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+        </svg>
+        <strong>Read-Only Mode:</strong> This panel has received second approval. Workflow cannot be edited after approval to maintain data integrity and audit trail.
       </div>
 
       <!-- Success/Error Messages -->
@@ -81,15 +89,66 @@
           </div>
         </div>
 
-        <!-- Current Stage Selection -->
-        <div class="form-group" *ngIf="workflowForm.get('workflowStatus')?.value === 'InProgress'">
+        <!-- Current Stage Selection (Always Shown) -->
+        <div class="form-group">
           <label for="currentStage" class="form-label">Current Stage</label>
+          <div class="stage-instructions locked" *ngIf="!canSelectStage()">
+            <div class="instruction-header">
+              <svg class="header-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+              <span class="instruction-title">Read-Only Mode</span>
+            </div>
+            <p class="instruction-text">This panel has received second approval. Stages cannot be modified to maintain data integrity and audit trail.</p>
+          </div>
+          <div class="stage-instructions" *ngIf="canSelectStage()">
+            <div class="instruction-header">
+              <svg class="header-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+              <span class="instruction-title">How to Update Progress</span>
+            </div>
+            <p class="instruction-text">Click any stage below to mark current progress. Workflow status updates automatically:</p>
+            <div class="status-mapping">
+              <div class="status-map-item stages-1-6">
+                <div class="status-badge-mini badge-blue">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  In Progress
+                </div>
+                <span class="arrow">→</span>
+                <span class="stage-range">Stages 1–6</span>
+              </div>
+              <div class="status-map-item stage-7">
+                <div class="status-badge-mini badge-green">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                  </svg>
+                  Completed
+                </div>
+                <span class="arrow">→</span>
+                <span class="stage-range">Stage 7</span>
+              </div>
+            </div>
+          </div>
           <div class="stages-container">
-            <div *ngFor="let stageInfo of panelStages" 
+            <div *ngFor="let stageInfo of panelStages; trackBy: trackByStage" 
                  class="stage-item"
                  [class.active]="workflowForm.get('currentStage')?.value === stageInfo.stage"
                  [class.completed]="isStageComplete(stageInfo.stage)"
-                 (click)="workflowForm.patchValue({currentStage: stageInfo.stage})">
+                 [class.disabled]="!canSelectStage()"
+                 (click)="canSelectStage() && selectStage(stageInfo)"
+                 role="button"
+                 [attr.aria-pressed]="workflowForm.get('currentStage')?.value === stageInfo.stage"
+                 tabindex="0"
+                 (keydown.enter)="canSelectStage() && selectStage(stageInfo)"
+                 (keydown.space)="canSelectStage() && selectStage(stageInfo); $event.preventDefault()">
               <div class="stage-number">{{ stageInfo.emoji }}</div>
               <div class="stage-content">
                 <div class="stage-label">{{ stageInfo.label }}</div>
@@ -107,27 +166,22 @@
         <!-- Stage Progress Visualization -->
         <div class="stage-progress-bar" *ngIf="panel">
           <div class="progress-track">
-            <div class="progress-fill" [style.width.%]="(getCompletedStagesCount() / 4) * 100"></div>
+            <div class="progress-fill" [style.width.%]="(getCompletedStagesCount() / getTotalStagesCount()) * 100"></div>
           </div>
-          <div class="progress-label">{{ getCompletedStagesCount() }} of 4 stages complete</div>
+          <div class="progress-label">{{ getCompletedStagesCount() }} of {{ getTotalStagesCount() }} stages complete</div>
         </div>
 
         <!-- Notes -->
         <div class="form-group">
-          <label for="notes" class="form-label">Notes <span class="required">*</span></label>
+          <label for="notes" class="form-label">Notes (Optional)</label>
           <textarea 
             id="notes" 
             formControlName="notes" 
             rows="4"
             placeholder="Describe the status update, any issues found, or actions taken..."
-            class="form-textarea"
-            [class.is-invalid]="workflowForm.get('notes')?.invalid && workflowForm.get('notes')?.touched">
+            class="form-textarea">
           </textarea>
-          <small class="form-text">Required for all status updates. Minimum {{ notesMinLength }} characters.</small>
-          <div *ngIf="workflowForm.get('notes')?.invalid && workflowForm.get('notes')?.touched" class="invalid-feedback">
-            <span *ngIf="workflowForm.get('notes')?.errors?.['required']">Notes are required.</span>
-            <span *ngIf="workflowForm.get('notes')?.errors?.['minlength']">Notes must be at least {{ notesMinLength }} characters (current: {{ workflowForm.get('notes')?.value?.length || 0 }}).</span>
-          </div>
+          <small class="form-text">Optional: Add any relevant notes about this workflow update.</small>
         </div>
 
         <!-- Form Actions -->
@@ -137,9 +191,10 @@
             class="btn btn-secondary" 
             (click)="close()"
             [disabled]="processing">
-            Cancel
+            {{ isSecondApprovalApproved() ? 'Close' : 'Cancel' }}
           </button>
           <button 
+            *ngIf="!isSecondApprovalApproved()"
             type="submit" 
             class="btn btn-primary"
             [disabled]="workflowForm.invalid || processing">

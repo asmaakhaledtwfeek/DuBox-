@@ -79,7 +79,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     });
     
     // Subscribe to notification service count updates (for manual refresh)
-    this.notificationCountSubscription = this.notificationService.unreadCount$.subscribe(count => {
+    this.notificationCountSubscription = this.notificationService.unreadCount$.subscribe((count: number) => {
       this.unreadNotifications = count;
     });
     

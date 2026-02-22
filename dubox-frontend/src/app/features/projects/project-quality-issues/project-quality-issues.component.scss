@@ -46,32 +46,98 @@
 .header-left {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
+
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 0;
+    font-size: 14px;
+    flex-wrap: wrap;
+
+    .breadcrumb-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      color: #64748b;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+
+      svg {
+        transition: transform 0.3s ease;
+      }
+
+      &:hover {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-color: #667eea;
+        transform: translateX(-2px);
+
+        svg {
+          transform: translateX(-3px);
+        }
+      }
+    }
+
+    .breadcrumb-separator {
+      color: #cbd5e1;
+      font-weight: 600;
+    }
+
+    .breadcrumb-current {
+      color: #1e293b;
+      font-weight: 600;
+      padding: 6px 12px;
+      background: rgba(102, 126, 234, 0.1);
+      border-radius: 8px;
+    }
+  }
 }
 
 .btn-back {
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: transparent;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  color: var(--gray-700);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  width: fit-content;
-
-  &:hover {
-    background: rgba(0, 0, 0, 0.05);
-    border-color: rgba(0, 0, 0, 0.2);
-  }
+  gap: 6px;
 
   svg {
+    transition: transform 0.3s ease;
     width: 18px;
     height: 18px;
+  }
+
+  &:hover:not(:disabled) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+
+    svg {
+      transform: translateX(-3px);
+    }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 }
 

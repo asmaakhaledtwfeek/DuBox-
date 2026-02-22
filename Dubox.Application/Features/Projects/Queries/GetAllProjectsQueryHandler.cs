@@ -6,6 +6,7 @@ using Dubox.Domain.Services;
 using Dubox.Domain.Shared;
 using Mapster;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 
 namespace Dubox.Application.Features.Projects.Queries;
 
@@ -25,8 +26,13 @@ public class GetAllProjectsQueryHandler : IRequestHandler<GetAllProjectsQuery, R
         // Get accessible project IDs based on user role
         var accessibleProjectIds = await _visibilityService.GetAccessibleProjectIdsAsync(cancellationToken);
 
-        var projects = _unitOfWork.Repository<Project>()
-            .GetWithSpec(new GetProjectsSpecification(request, accessibleProjectIds)).Data.ToList();
+        // Optimized: Use AsNoTracking and async for better performance
+        var specification = new GetProjectsSpecification(request, accessibleProjectIds);
+        var projectsQuery = _unitOfWork.Repository<Project>().GetWithSpec(specification);
+        
+        var projects = await projectsQuery.Data
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
 
         var projectDtos = projects.Adapt<List<ProjectDto>>();
 

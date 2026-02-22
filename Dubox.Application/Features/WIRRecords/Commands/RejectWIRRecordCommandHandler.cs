@@ -59,11 +59,12 @@ public class RejectWIRRecordCommandHandler : IRequestHandler<RejectWIRRecordComm
         _unitOfWork.Repository<BoxActivity>().Update(boxActivity);
 
         await _unitOfWork.CompleteAsync(cancellationToken);
+        string activityName = wirRecord.BoxActivity.ActivityMaster != null ? wirRecord.BoxActivity.ActivityMaster?.ActivityName : wirRecord.BoxActivity.ActivityTemplateActivity.ActivityName;
 
         var dto = wirRecord.Adapt<WIRRecordDto>() with
         {
             BoxTag = wirRecord.BoxActivity.Box.BoxTag,
-            ActivityName = wirRecord.BoxActivity.ActivityMaster.ActivityName,
+            ActivityName =activityName,
             RequestedByName = wirRecord.RequestedByUser.FullName ?? wirRecord.RequestedByUser.Email,
             InspectedByName = inspector.FullName ?? inspector.Email
         };

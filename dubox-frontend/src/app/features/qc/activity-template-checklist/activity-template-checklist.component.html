@@ -1,0 +1,203 @@
+<app-header></app-header>
+<app-sidebar></app-sidebar>
+
+<div class="page-container">
+  <div class="page-content">
+    <!-- Page Header -->
+    <div class="page-header">
+      <button class="btn-back" (click)="goBack()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+        Back to Predefined Checklists
+      </button>
+      <div class="header-content">
+        <h1 class="page-title">Activity Template Checklist</h1>
+        <p class="page-subtitle" *ngIf="template">{{ template.templateName }}</p>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading template details...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error && !loading" class="error-container">
+      <div class="error-icon">⚠️</div>
+      <h3>Error Loading Template</h3>
+      <p>{{ error }}</p>
+      <button class="btn-primary" (click)="loadTemplateDetails()">Try Again</button>
+    </div>
+
+    <!-- Content -->
+    <div *ngIf="!loading && !error && template" class="content-container">
+      <!-- Template Info Card -->
+      <div class="template-info-card">
+        <div class="info-header">
+          <h2>Template Information</h2>
+        </div>
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Template Name</label>
+            <div class="info-value">{{ template.templateName }}</div>
+          </div>
+          <div class="info-item" *ngIf="template.description">
+            <label>Description</label>
+            <div class="info-value">{{ template.description }}</div>
+          </div>
+          <div class="info-item">
+            <label>Total Stages</label>
+            <div class="info-value">{{ template.stageCount }}</div>
+          </div>
+          <div class="info-item">
+            <label>Total Activities</label>
+            <div class="info-value">{{ getTotalActivities() }}</div>
+          </div>
+          <div class="info-item">
+            <label>WIR Checkpoints</label>
+            <div class="info-value">{{ getTotalWIRActivities() }}</div>
+          </div>
+          <div class="info-item">
+            <label>Status</label>
+            <div class="info-value">
+              <span [class]="template.isActive ? 'badge-active' : 'badge-inactive'">
+                {{ template.isActive ? 'Active' : 'Inactive' }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions Bar -->
+      <div class="actions-bar">
+        <div class="actions-left">
+          <h3>Stages & Activities</h3>
+          <span class="item-count">{{ stages.length }} stages, {{ getTotalActivities() }} activities</span>
+        </div>
+        <div class="actions-right">
+          <button class="btn-secondary" (click)="expandAll()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="7 13 12 18 17 13"></polyline>
+              <polyline points="7 6 12 11 17 6"></polyline>
+            </svg>
+            Expand All
+          </button>
+          <button class="btn-secondary" (click)="collapseAll()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="17 11 12 6 7 11"></polyline>
+              <polyline points="17 18 12 13 7 18"></polyline>
+            </svg>
+            Collapse All
+          </button>
+        </div>
+      </div>
+
+      <!-- Stages List -->
+      <div class="stages-container">
+        <div *ngFor="let stage of stages" class="stage-card">
+          <div class="stage-header">
+            <div class="stage-header-left" (click)="toggleStage(stage)">
+              <div class="stage-number">Stage {{ stage.stageNumber }}</div>
+              <h3 class="stage-name">{{ stage.stageName }}</h3>
+              <span class="activity-count">{{ stage.activities.length }} activities</span>
+            </div>
+            <div class="stage-header-actions">
+              <button class="btn-manage-checklist" (click)="manageStageChecklist(stage)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 11l3 3L22 4"></path>
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                </svg>
+                Manage Checklist
+              </button>
+              <div class="stage-toggle" (click)="toggleStage(stage)">
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  width="20" 
+                  height="20" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  stroke-width="2"
+                  [class.rotated]="!stage.isExpanded"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="stage-content" [class.collapsed]="!stage.isExpanded">
+            <div class="activities-list">
+              <div *ngFor="let activity of stage.activities; let i = index" class="activity-item">
+                <div class="activity-sequence">{{ activity.sequenceInStage }}</div>
+                <div class="activity-details">
+                  <div class="activity-header">
+                    <div class="activity-header-left">
+                      <h4 class="activity-name">{{ activity.activityName }}</h4>
+                      <div class="activity-badges">
+                        <span class="badge" *ngIf="activity.isWIRCheckpoint" title="WIR Checkpoint">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 11l3 3L22 4"></path>
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                          </svg>
+                          {{ activity.wirCode }}
+                        </span>
+                        <span class="badge badge-custom" *ngIf="activity.isCustomActivity" title="Custom Activity">
+                          Custom
+                        </span>
+                      </div>
+                    </div>
+                    <button 
+                      class="btn-manage-items" 
+                      (click)="openManageChecklistModal(activity)"
+                      title="Manage Checklist Items">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 11l3 3L22 4"></path>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                      </svg>
+                      Manage Checklist Items
+                    </button>
+                  </div>
+                  <div class="activity-meta">
+                    <span class="activity-code">{{ activity.activityCode }}</span>
+                    <span class="activity-duration">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                      </svg>
+                      {{ activity.estimatedDurationDays }} days
+                    </span>
+                  </div>
+                  <p class="activity-description" *ngIf="activity.description">
+                    {{ activity.description }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Manage Checklist Items Modal -->
+<app-checklist-items-modal
+  [show]="showManageChecklistModal"
+  [activityName]="selectedActivity?.activityName || ''"
+  [activityId]="selectedActivity?.activityTemplateActivityId || ''"
+  [existingSelectedItems]="existingChecklistItems"
+  (close)="closeManageChecklistModal()"
+  (save)="onSaveChecklistItems($event)">
+</app-checklist-items-modal>
+
+<!-- Modern Alert -->
+<app-modern-alert
+  [show]="showAlert"
+  [type]="alertType"
+  [title]="alertTitle"
+  [message]="alertMessage"
+  (close)="closeAlert()">
+</app-modern-alert>

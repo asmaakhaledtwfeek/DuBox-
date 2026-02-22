@@ -1,5 +1,6 @@
 using Dubox.Application.DTOs;
 using Dubox.Domain.Abstraction;
+using Dubox.Domain.Entities;
 using Dubox.Domain.Shared;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -17,26 +18,33 @@ public class GetScheduleActivitiesQueryHandler : IRequestHandler<GetScheduleActi
 
     public async Task<Result<List<ScheduleActivityListDto>>> Handle(GetScheduleActivitiesQuery request, CancellationToken cancellationToken)
     {
-        var activities = await _context.ScheduleActivities
+        // Load ALL activities (all levels at once)
+        var allActivities = await _context.ScheduleActivities
             .Include(a => a.AssignedTeams)
             .Include(a => a.AssignedMaterials)
-            .OrderByDescending(a => a.CreatedDate)
-            .Select(a => new ScheduleActivityListDto(
-                a.ScheduleActivityId,
-                a.ActivityName,
-                a.ActivityCode,
-                a.PlannedStartDate,
-                a.PlannedFinishDate,
-                a.Status,
-                a.PercentComplete,
-                a.AssignedTeams.Count,
-                a.AssignedMaterials.Count
-            ))
+            .OrderBy(a => a.ActivityCode)
             .ToListAsync(cancellationToken);
 
-        return Result.Success(activities);
+        if (!allActivities.Any())
+        {
+            return Result.Success(new List<ScheduleActivityListDto>());
+        }
+
+        Console.WriteLine($"[ScheduleQuery] Loaded {allActivities.Count} total activities");
+
+        // Build the complete hierarchy tree using shared builder
+        var hierarchy = ScheduleActivityHierarchyBuilder.BuildHierarchy(allActivities);
+
+        Console.WriteLine($"[ScheduleQuery] Built hierarchy with {hierarchy.Count} root activities");
+
+        return Result.Success(hierarchy);
     }
 }
+
+
+
+
+
 
 
 

@@ -14,9 +14,11 @@ namespace Dubox.Domain.Entities
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public Guid IssueId { get; set; }
 
-        [Required]
+        [ForeignKey(nameof(Project))]
+        public Guid? ProjectId { get; set; }
+
         [ForeignKey(nameof(Box))]
-        public Guid BoxId { get; set; }
+        public Guid? BoxId { get; set; }
 
         [Required]
         [MaxLength(20)]
@@ -46,12 +48,21 @@ namespace Dubox.Domain.Entities
 
         [ForeignKey(nameof(CCUser))]
         public Guid? CCUserId { get; set; }
-        
+
+        [ForeignKey(nameof(AssignedUser))]
+        public Guid? AssignedUserId { get; set; }
+
         public DateTime? DueDate { get; set; }
 
         public QualityIssueStatusEnum Status { get; set; } = QualityIssueStatusEnum.Open; // Open, In Progress, Resolved, Closed
 
         public NCRTypeEnum NCR { get; set; } = NCRTypeEnum.Internal;
+
+        /// <summary>
+        /// Indicates if this quality issue is read-only (cannot be modified by users).
+        /// Used for secondary issues in box exchanges that are automatically updated.
+        /// </summary>
+        public bool IsReadOnly { get; set; } = false;
 
         public DateTime? ResolutionDate { get; set; }
 
@@ -63,8 +74,12 @@ namespace Dubox.Domain.Entities
         public Guid? UpdatedBy { get; set; }
         // Navigation properties
         public virtual Box Box { get; set; } = null!;
+        public virtual Project Project { get; set; } = null!;
+
         public virtual Team? AssignedToTeam { get; set; }
         public virtual TeamMember? AssignedToMember { get; set; }
+
+        public virtual User? AssignedUser { get; set; }
         public virtual User? CCUser { get; set; }
         public virtual WIRCheckpoint? WIRCheckpoint { get; set; }
 

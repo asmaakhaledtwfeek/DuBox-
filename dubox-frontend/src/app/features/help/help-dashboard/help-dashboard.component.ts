@@ -35,6 +35,13 @@ export class HelpDashboardComponent implements OnInit {
   searchTerm = '';
   selectedCategory = 'all';
 
+  // Navigation sections state (expanded/collapsed)
+  navSections: { [key: string]: boolean } = {
+    'about': false,
+    'system': true, // Current page, expanded by default
+    'modules': false
+  };
+
   modules: HelpModule[] = [
     {
       id: 'projects',
@@ -166,6 +173,42 @@ export class HelpDashboardComponent implements OnInit {
       answer: 'Currently, DuBox requires an internet connection for most features. We are working on offline capabilities for mobile inspections.',
       category: 'General',
       expanded: false
+    },
+    {
+      question: 'How do I edit project details?',
+      answer: 'Navigate to Projects > Select the project > Click "Edit Details" > Update required fields > Click "Save" to apply changes.',
+      category: 'Projects',
+      expanded: false
+    },
+    {
+      question: 'How do I create teams?',
+      answer: 'Go to Teams module > Click "Create Team" > Enter team name and details > Add team members > Assign team leader > Click "Save Team".',
+      category: 'Schedule',
+      expanded: false
+    },
+    {
+      question: 'How do I manage material inventory?',
+      answer: 'Navigate to Materials > Select material catalog > Add or update materials > Set stock levels and unit prices > Track consumption and orders.',
+      category: 'Cost',
+      expanded: false
+    },
+    {
+      question: 'What BIM formats are supported?',
+      answer: 'DuBox supports Revit families and models. You can upload BIM 5D data for quantities and BIM 4D data for scheduling information.',
+      category: 'BIM',
+      expanded: false
+    },
+    {
+      question: 'How do I export reports?',
+      answer: 'After generating a report, click the "Export" button > Choose format (PDF or Excel) > Select export options > Click "Download" to save the report.',
+      category: 'Reports',
+      expanded: false
+    },
+    {
+      question: 'How do I reset user passwords?',
+      answer: 'Go to Admin > Users > Select the user > Click "Reset Password" > Send reset link via email or set a temporary password.',
+      category: 'Admin',
+      expanded: false
     }
   ];
 
@@ -221,6 +264,17 @@ export class HelpDashboardComponent implements OnInit {
   getFAQCategories(): string[] {
     const categories = new Set(this.faqs.map(f => f.category));
     return Array.from(categories);
+  }
+
+  toggleNavSection(section: string): void {
+    this.navSections[section] = !this.navSections[section];
+  }
+
+  scrollToSection(sectionId: string): void {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 }
 

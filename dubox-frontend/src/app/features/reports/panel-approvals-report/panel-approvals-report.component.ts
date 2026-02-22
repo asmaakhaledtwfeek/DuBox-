@@ -263,6 +263,8 @@ export class PanelApprovalsReportComponent implements OnInit {
   
   loadBoxesForOtherReports(): void {
     // Load boxes for the other two report types (boxes and project-panel-types)
+    // Note: Using getBoxesByProject() to get all boxes for report generation
+    // Reports require full dataset for complex calculations and aggregations
     if (this.selectedProjectId) {
       this.boxService.getBoxesByProject(this.selectedProjectId).subscribe({
         next: (boxes) => {

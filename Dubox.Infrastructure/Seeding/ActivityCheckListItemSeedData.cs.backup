@@ -1,0 +1,702 @@
+using Dubox.Domain.Entities;
+using Microsoft.EntityFrameworkCore;
+
+namespace Dubox.Infrastructure.Seeding;
+
+/// <summary>
+/// Seeds ActivityCheckListItem data linking predefined checklist items to activities
+/// Based on Platform ID mapping from client inspection sequence data
+/// </summary>
+public static class ActivityCheckListItemSeedData
+{
+    public static void SeedActivityCheckListItems(ModelBuilder modelBuilder)
+    {
+        var seedDate = new DateTime(2024, 11, 1, 0, 0, 0, DateTimeKind.Utc);
+        
+        // First, seed the PredefinedChecklistItems
+        SeedPredefinedChecklistItemsForActivities(modelBuilder, seedDate);
+        
+        // Then, seed the ActivityCheckListItems that link to activities
+        var checklistItems = new List<ActivityCheckListItem>();
+        
+        // Note: Platform IDs from Excel map to OverallSequence in ActivityMaster
+        // ActivityMaster only has 28 activities (sequence 1-28)
+        // The Excel data shows Platform IDs that need to be mapped to these activities
+        
+        // Platform ID 1: Assembly & joints (Activity 1)
+        // Sr.N 1: Installation of Precast Wall Elements - Checklist 1, Part 1
+        // Sr.N 2: Floor Slab Erection - Checklist 1, Part 2
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000001-0000-0000-0000-000000000001"), // Assembly & joints
+            checklistNumber: 1, 
+            partNumber: 1,
+            sequence: 1,
+            description: "Installation of Precast Wall Elements for Modular Box");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000001-0000-0000-0000-000000000001"),
+            checklistNumber: 1, 
+            partNumber: 2,
+            sequence: 2,
+            description: "Floor Slab Erection and Mechanical & Wet Connections of Precast Elements");
+        
+        // Platform ID 2: PODS installation (Activity 2)
+        // Sr.N 3: Toilet Pod Installation - Checklist 1, Part 3
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000001-0000-0000-0000-000000000002"), // PODS
+            checklistNumber: 1, 
+            partNumber: 3,
+            sequence: 1,
+            description: "Toilet Pod Installation during Assembly");
+        
+        // Platform ID 3: MEP Cage installation (Activity 3)
+        // Sr.N 4: MEP modular installation - Checklist 2
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000001-0000-0000-0000-000000000003"), // MEP Cage
+            checklistNumber: 2, 
+            partNumber: null,
+            sequence: 1,
+            description: "MEP modular installation consisting FCU and HVAC Ducting accessories");
+        
+        // Platform ID 4: Box Closure (Activity 4)
+        // Sr.N 5: Final Inspection (Assembly) - Checklist 1, Full
+        // Sr.N 6: Connection of Electrical Conduits - Checklist 3
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000001-0000-0000-0000-000000000004"), // Box Closure
+            checklistNumber: 1, 
+            partNumber: null, // "Full"
+            sequence: 1,
+            description: "Construction of Precast Concrete Modular Final Inspection (Assembly)");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000001-0000-0000-0000-000000000004"),
+            checklistNumber: 3, 
+            partNumber: null,
+            sequence: 2,
+            description: "Connection of Electrical Conduits between Precast Walls & Slab");
+        
+        // Platform ID 5: Ducts & Insulation (Activity 5)
+        // Sr.N 18: Installation of HVAC Duct - Checklist 12
+        // Sr.N 52: Installation of HVAC Duct Risers - Checklist 32
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000002-0000-0000-0000-000000000001"), // Ducts & Insulation
+            checklistNumber: 12, 
+            partNumber: null,
+            sequence: 1,
+            description: "Installation of HVAC Duct with Flexible & Plenum Box");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000002-0000-0000-0000-000000000001"),
+            checklistNumber: 32, 
+            partNumber: null,
+            sequence: 2,
+            description: "Installation of HVAC Duct Risers");
+        
+        // Platform ID 6: Drainage piping (Activity 6)
+        // Sr.N 9: Installation & Leak Test of Drainage pipes - Checklist 5 & 31
+        // Sr.N 56: Installation of Drainage pipe riser - Checklist 32
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000002-0000-0000-0000-000000000002"), // Drainage piping
+            checklistNumber: 5, 
+            partNumber: null,
+            sequence: 1,
+            description: "Installation & Leak Test of Drainage pipes");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000002-0000-0000-0000-000000000002"),
+            checklistNumber: 31, 
+            partNumber: null,
+            sequence: 2,
+            description: "Installation & Leak Test of Drainage pipes (Part 2)");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000002-0000-0000-0000-000000000002"),
+            checklistNumber: 32, 
+            partNumber: null,
+            sequence: 3,
+            description: "Installation of Drainage pipe riser");
+        
+        // Platform ID 7: Water Piping (Activity 7)
+        // Sr.N 11: Installation & Pressure Test of water Supply pipes - Checklist 7
+        // Sr.N 12: Insulation of hot water pipe - Checklist 7, Part 1
+        // Sr.N 50: Re-pressure test - Checklist 31
+        // Sr.N 51: Water supply pipes Riser - Checklist 32
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000002-0000-0000-0000-000000000003"), // Water Piping
+            checklistNumber: 7, 
+            partNumber: null,
+            sequence: 1,
+            description: "Installation & Pressure Test of water Supply pipes with gate valves, Water hammer arrestor, pex pipe connection");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000002-0000-0000-0000-000000000003"),
+            checklistNumber: 7, 
+            partNumber: 1,
+            sequence: 2,
+            description: "Insulation of hot water pipe");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000002-0000-0000-0000-000000000003"),
+            checklistNumber: 31, 
+            partNumber: null,
+            sequence: 3,
+            description: "Re-pressure test of water supply pipes inside the box");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000002-0000-0000-0000-000000000003"),
+            checklistNumber: 32, 
+            partNumber: null,
+            sequence: 4,
+            description: "Installation of Water supply pipes Riser");
+        
+        // Platform ID 8: Fire Fighting Piping (Activity 8)
+        // Sr.N 13: Installation & Pressure Test of fire fighting pipe - Checklist 8
+        // Sr.N 53: Fire fighting pipe riser - Checklist 32
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000002-0000-0000-0000-000000000004"), // Fire Fighting
+            checklistNumber: 8, 
+            partNumber: null,
+            sequence: 1,
+            description: "Installation & Pressure Test of fire fighting pipe");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000002-0000-0000-0000-000000000004"),
+            checklistNumber: 32, 
+            partNumber: null,
+            sequence: 2,
+            description: "Installation of Fire fighting pipe riser");
+        
+        // Platform ID 9: Electrical Containment (Activity 9)
+        // Sr.N 24: ONU installation - Checklist 16
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000003-0000-0000-0000-000000000001"), // Electrical Containment
+            checklistNumber: 16, 
+            partNumber: null,
+            sequence: 1,
+            description: "ONU installation along with conduit connection");
+        
+        // Platform ID 10: Electrical Wiring (Activity 10)
+        // Sr.N 19: Pulling of wires and cables - Checklist 13
+        // Sr.N 20: Pulling of Fire Alarm Cables - Checklist 15
+        // Sr.N 21: Pulling of Data Cables - Checklist 16, Part 1
+        // Sr.N 29: Megger and Continuity test - Checklist 22
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000003-0000-0000-0000-000000000002"), // Electrical Wiring
+            checklistNumber: 13, 
+            partNumber: null,
+            sequence: 1,
+            description: "Pulling of wires and cables through embedded pipes");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000003-0000-0000-0000-000000000002"),
+            checklistNumber: 15, 
+            partNumber: null,
+            sequence: 2,
+            description: "Pulling of Fire Alarm Cables");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000003-0000-0000-0000-000000000002"),
+            checklistNumber: 16, 
+            partNumber: 1,
+            sequence: 3,
+            description: "Pulling of Data Cables");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000003-0000-0000-0000-000000000002"),
+            checklistNumber: 22, 
+            partNumber: null,
+            sequence: 4,
+            description: "Megger and Continuity test of Wires & Cables");
+        
+        // Platform ID 11: Dry Wall Framing (Activity 11)
+        // Sr.N 22: Installation of Dry Wall Framing - Checklist 14, Part 1
+        // Sr.N 26: Final inspection of Dry Wall - Checklist 14, Part 2
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000003-0000-0000-0000-000000000003"), // Dry Wall Framing
+            checklistNumber: 14, 
+            partNumber: 1,
+            sequence: 1,
+            description: "Installation of Dry Wall Framing");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000003-0000-0000-0000-000000000003"),
+            checklistNumber: 14, 
+            partNumber: 2,
+            sequence: 2,
+            description: "Final inspection of Dry Wall Installation");
+        
+        // Platform ID 12: DB and ONU Panel (Activity 12)
+        // Sr.N 23: DB installation - Checklist 20
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000003-0000-0000-0000-000000000004"), // DB and ONU Panel
+            checklistNumber: 20, 
+            partNumber: null,
+            sequence: 1,
+            description: "DB installation along with conduit connection");
+        
+        // Platform ID 13: False Ceiling (Activity 13)
+        // Sr.N 27: Inspection of Fire Sealing Work - Checklist 17
+        // Sr.N 28: Installation of Suspension System - Checklist 18, Part 1
+        // Sr.N 30: Installation & closing of False Ceiling - Checklist 18, Part 2
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000004-0000-0000-0000-000000000001"), // False Ceiling
+            checklistNumber: 17, 
+            partNumber: null,
+            sequence: 1,
+            description: "Inspection of Fire Sealing Work");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000004-0000-0000-0000-000000000001"),
+            checklistNumber: 18, 
+            partNumber: 1,
+            sequence: 2,
+            description: "Installation of Suspension System of False Ceiling");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000004-0000-0000-0000-000000000001"),
+            checklistNumber: 18, 
+            partNumber: 2,
+            sequence: 3,
+            description: "Installation & closing of False Ceiling Gypsum Board/Tiles");
+        
+        // Platform ID 14: Tile Fixing (Activity 14)
+        // Sr.N 10: Surface Preparation for Floor Tiles - Checklist 6, Part 1
+        // Sr.N 33: Installation of Floor/Wall Tile Layout - Checklist 6, Part 2
+        // Sr.N 34: Installation & Grouting - Checklist 6, Part 3
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000004-0000-0000-0000-000000000002"), // Tile Fixing
+            checklistNumber: 6, 
+            partNumber: 1,
+            sequence: 1,
+            description: "Surface Preparation for Floor Tiles");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000004-0000-0000-0000-000000000002"),
+            checklistNumber: 6, 
+            partNumber: 2,
+            sequence: 2,
+            description: "Installation of Floor/Wall Tile Layout");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000004-0000-0000-0000-000000000002"),
+            checklistNumber: 6, 
+            partNumber: 3,
+            sequence: 3,
+            description: "Installation & Grouting of Floor/Wall Tiles");
+        
+        // Platform ID 15: Painting (Activity 15)
+        // Sr.N 7: Surface Preparation for Internal Paint - Checklist 4, Part 1
+        // Sr.N 8: Surface Preparation for External Paint - Checklist 4, Part 1
+        // Sr.N 15: Application of Damproofing - Checklist 11
+        // Sr.N 16: Application of Primer for external Paint - Checklist 4, Part 5
+        // Sr.N 17: Application of Primer for Internal Paint - Checklist 4, Part 2
+        // Sr.N 25: Application of Filler Coat for external Paint - Checklist 4, Part 6
+        // Sr.N 35: Application of Stucco for Internal Paint - Checklist 4, Part 3
+        // Sr.N 59: Application of Internal paint Final Coat - Checklist 4, Part 4
+        // Sr.N 60: Application of External Final Coat Paint - Checklist 4, Part 7
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000004-0000-0000-0000-000000000003"), // Painting
+            checklistNumber: 4, 
+            partNumber: 1,
+            sequence: 1,
+            description: "Surface Preparation for Internal Paint");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000004-0000-0000-0000-000000000003"),
+            checklistNumber: 4, 
+            partNumber: 1,
+            sequence: 2,
+            description: "Surface Preparation for External Paint");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000004-0000-0000-0000-000000000003"),
+            checklistNumber: 11, 
+            partNumber: null,
+            sequence: 3,
+            description: "Application of Damproofing");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000004-0000-0000-0000-000000000003"),
+            checklistNumber: 4, 
+            partNumber: 2,
+            sequence: 4,
+            description: "Application of Primer for Internal Paint");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000004-0000-0000-0000-000000000003"),
+            checklistNumber: 4, 
+            partNumber: 5,
+            sequence: 5,
+            description: "Application of Primer for external Paint");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000004-0000-0000-0000-000000000003"),
+            checklistNumber: 4, 
+            partNumber: 3,
+            sequence: 6,
+            description: "Application of Stucco for Internal Paint");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000004-0000-0000-0000-000000000003"),
+            checklistNumber: 4, 
+            partNumber: 4,
+            sequence: 7,
+            description: "Application of Internal paint Final Coat");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000004-0000-0000-0000-000000000003"),
+            checklistNumber: 4, 
+            partNumber: 6,
+            sequence: 8,
+            description: "Application of Filler Coat for external Paint");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000004-0000-0000-0000-000000000003"),
+            checklistNumber: 4, 
+            partNumber: 7,
+            sequence: 9,
+            description: "Application of External Final Coat Paint");
+        
+        // Platform ID 17: Doors (Activity 17)
+        // Sr.N 47: Installation of Wooden Doors/Metal Door - Checklist 25
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000004-0000-0000-0000-000000000005"), // Doors
+            checklistNumber: 25, 
+            partNumber: null,
+            sequence: 1,
+            description: "Installation of Wooden Doors/Metal Door");
+        
+        // Platform ID 18: Windows (Activity 18)
+        // Sr.N 58: Installation of Aluminum Windows/Curtain Wall - Checklist 29
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000004-0000-0000-0000-000000000006"), // Windows
+            checklistNumber: 29, 
+            partNumber: null,
+            sequence: 1,
+            description: "Installation of Aluminum Windows/Curtain Wall");
+        
+        // Platform ID 19: Switches & Sockets (Activity 19)
+        // Sr.N 42: Installation of wiring devices and accessories - Checklist 32, Part 4
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000005-0000-0000-0000-000000000001"), // Switches & Sockets
+            checklistNumber: 32, 
+            partNumber: 4,
+            sequence: 1,
+            description: "Installation of wiring devices and accessories");
+        
+        // Platform ID 20: Light Fittings (Activity 20)
+        // Sr.N 41: Installation of light fittings and accessories - Checklist 32, Part 3
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000005-0000-0000-0000-000000000002"), // Light Fittings
+            checklistNumber: 32, 
+            partNumber: 3,
+            sequence: 1,
+            description: "Installation of light fittings and accessories");
+        
+        // Platform ID 21: Copper Piping (Activity 21)
+        // Sr.N 14: Installation & Pressure Test of Chilled Water Pipes - Checklist 9 & 10
+        // Sr.N 54: Chilled Water Pipe Riser - Checklist 32
+        // Sr.N 55: Refrigerant Riser - Checklist 32
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000005-0000-0000-0000-000000000003"), // Copper Piping
+            checklistNumber: 9, 
+            partNumber: null,
+            sequence: 1,
+            description: "Installation & Pressure Test of Chilled Water Pipes/refrigeration pipes (Copper)");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000005-0000-0000-0000-000000000003"),
+            checklistNumber: 10, 
+            partNumber: null,
+            sequence: 2,
+            description: "Installation & Pressure Test of Chilled Water Pipes/refrigeration pipes (Copper) - Part 2");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000005-0000-0000-0000-000000000003"),
+            checklistNumber: 32, 
+            partNumber: null,
+            sequence: 3,
+            description: "Installation of Chilled Water Pipe Riser");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000005-0000-0000-0000-000000000003"),
+            checklistNumber: 32, 
+            partNumber: null,
+            sequence: 4,
+            description: "Installation of Refrigerant Riser");
+        
+        // Platform ID 22: Sanitary Fittings - Kitchen (Activity 22)
+        // Sr.N 49: Installation of kitchen sink and accessories - Checklist 27
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000005-0000-0000-0000-000000000004"), // Sanitary Fittings
+            checklistNumber: 27, 
+            partNumber: null,
+            sequence: 1,
+            description: "Installation of kitchen sink and accessories");
+        
+        // Platform ID 23: Thermostats (Activity 23)
+        // Sr.N 43: Installation of thermostat - Checklist 32, Part 5
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000005-0000-0000-0000-000000000005"), // Thermostats
+            checklistNumber: 32, 
+            partNumber: 5,
+            sequence: 1,
+            description: "Installation of thermostat");
+        
+        // Platform ID 24: Air Outlet (Activity 24)
+        // Sr.N 39: Installation of grills and diffusers - Checklist 32, Part 1
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000005-0000-0000-0000-000000000006"), // Air Outlet
+            checklistNumber: 32, 
+            partNumber: 1,
+            sequence: 1,
+            description: "Installation of grills and diffusers");
+        
+        // Platform ID 25: Sprinkler (Activity 25)
+        // Sr.N 38: Installation of sprinklers - Checklist 32, Part 1
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000005-0000-0000-0000-000000000007"), // Sprinkler
+            checklistNumber: 32, 
+            partNumber: 1,
+            sequence: 1,
+            description: "Installation of sprinklers");
+        
+        // Platform ID 26: Smoke Detector (Activity 26)
+        // Sr.N 40: Installation of smoke detectors and heat detectors - Checklist 32, Part 2
+        // Sr.N 44: Installation of occupancy sensor - Checklist 32, Part 6
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000005-0000-0000-0000-000000000008"), // Smoke Detector
+            checklistNumber: 32, 
+            partNumber: 2,
+            sequence: 1,
+            description: "Installation of smoke detectors and heat detectors");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000005-0000-0000-0000-000000000008"),
+            checklistNumber: 32, 
+            partNumber: 6,
+            sequence: 2,
+            description: "Installation of occupancy sensor");
+        
+        // Platform ID 28: Inspection & Wrapping (Activity 28)
+        // Sr.N 61: Final MEP Inspection - Checklist 32
+        // Sr.N 62: Final Civil/Architectural Inspection - Checklist 33
+        // Sr.N 63: Final Inspection of MEP Roof & Corridor - Checklist 32
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000006-0000-0000-0000-000000000002"), // Inspection & Wrapping
+            checklistNumber: 32, 
+            partNumber: null,
+            sequence: 1,
+            description: "Final MEP Inspection of Modular Box Prior to dispatch");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000006-0000-0000-0000-000000000002"),
+            checklistNumber: 33, 
+            partNumber: null,
+            sequence: 2,
+            description: "Final Civil/Architectural Inspection of Modular Box Prior to dispatch");
+        
+        AddChecklistItemForActivity(checklistItems, 
+            activityMasterId: Guid.Parse("10000006-0000-0000-0000-000000000002"),
+            checklistNumber: 32, 
+            partNumber: null,
+            sequence: 3,
+            description: "Final Inspection of MEP Roof & Corridor Modular (Outside Box)");
+        
+        // Note: Some Platform IDs in the Excel (like "Not Covered") don't map to standard activities
+        // Those would need to be added to ActivityMaster first or handled separately
+        
+        modelBuilder.Entity<ActivityCheckListItem>().HasData(checklistItems);
+    }
+    
+    private static void AddChecklistItemForActivity(
+        List<ActivityCheckListItem> items,
+        Guid activityMasterId,
+        int checklistNumber,
+        int? partNumber,
+        int sequence,
+        string description)
+    {
+        // Generate a deterministic GUID based on activity and sequence
+        var guidString = $"{activityMasterId:N}{sequence:D3}";
+        var guidBytes = System.Text.Encoding.UTF8.GetBytes(guidString);
+        var hash = System.Security.Cryptography.MD5.HashData(guidBytes);
+        var itemId = new Guid(hash);
+        
+        // For now, we'll create a predefined checklist item ID based on checklist number and part
+        // In reality, these should match actual PredefinedChecklistItem records
+        var predefinedId = GeneratePredefinedChecklistItemId(checklistNumber, partNumber);
+        
+        items.Add(new ActivityCheckListItem
+        {
+            ActivityCheckListItemId = itemId,
+            ActivityMasterId = activityMasterId,
+            ActivityTemplateActivityId = null,
+            PredefinedChecklistItemId = predefinedId,
+            Sequence = sequence,
+            IsMandatory = true, // All items from client data appear to be mandatory
+            IsActive = true,
+            CreatedDate = new DateTime(2024, 11, 1, 0, 0, 0, DateTimeKind.Utc),
+            CreatedBy = "System"
+        });
+    }
+    
+    private static Guid GeneratePredefinedChecklistItemId(int checklistNumber, int? partNumber)
+    {
+        // Generate deterministic GUID for predefined checklist item
+        // Format: Checklist number (2 digits) + Part number (3 digits, 000 if null)
+        var key = $"CHK{checklistNumber:D2}P{partNumber?.ToString("D3") ?? "000"}";
+        var guidBytes = System.Text.Encoding.UTF8.GetBytes(key);
+        var hash = System.Security.Cryptography.MD5.HashData(guidBytes);
+        return new Guid(hash);
+    }
+    
+    /// <summary>
+    /// Seeds PredefinedChecklistItems for activity inspections
+    /// These are the base checklist items that will be referenced by ActivityCheckListItem
+    /// </summary>
+    private static void SeedPredefinedChecklistItemsForActivities(ModelBuilder modelBuilder, DateTime seedDate)
+    {
+        var predefinedItems = new List<PredefinedChecklistItem>();
+        
+        // Create PredefinedChecklistItem for each unique checklist number and part combination
+        var checklistDefinitions = new Dictionary<(int checklistNumber, int? partNumber), string>
+        {
+            // Checklist 1 - Precast Assembly Inspections
+            {(1, 1), "Installation of Precast Wall Elements for Modular Box"},
+            {(1, 2), "Floor Slab Erection and Mechanical & Wet Connections of Precast Elements"},
+            {(1, 3), "Toilet Pod Installation during Assembly"},
+            {(1, null), "Construction of Precast Concrete Modular Final Inspection (Assembly)"},
+            
+            // Checklist 2 - MEP Cage
+            {(2, null), "MEP modular installation consisting FCU and HVAC Ducting accessories"},
+            
+            // Checklist 3 - Electrical Conduits
+            {(3, null), "Connection of Electrical Conduits between Precast Walls & Slab"},
+            
+            // Checklist 4 - Painting (Multiple parts)
+            {(4, 1), "Surface Preparation for Paint"},
+            {(4, 2), "Application of Primer for Internal Paint"},
+            {(4, 3), "Application of Stucco for Internal Paint"},
+            {(4, 4), "Application of Internal paint Final Coat"},
+            {(4, 5), "Application of Primer for external Paint"},
+            {(4, 6), "Application of Filler Coat for external Paint"},
+            {(4, 7), "Application of External Final Coat Paint"},
+            
+            // Checklist 5 - Drainage
+            {(5, null), "Installation & Leak Test of Drainage pipes"},
+            
+            // Checklist 6 - Tile Work
+            {(6, 1), "Surface Preparation for Floor Tiles"},
+            {(6, 2), "Installation of Floor/Wall Tile Layout"},
+            {(6, 3), "Installation & Grouting of Floor/Wall Tiles"},
+            
+            // Checklist 7 - Water Supply
+            {(7, null), "Installation & Pressure Test of water Supply pipes"},
+            {(7, 1), "Insulation of hot water pipe"},
+            
+            // Checklist 8 - Fire Fighting
+            {(8, null), "Installation & Pressure Test of fire fighting pipe"},
+            
+            // Checklist 9 & 10 - Chilled Water/Copper
+            {(9, null), "Installation & Pressure Test of Chilled Water Pipes (Copper)"},
+            {(10, null), "Installation & Pressure Test of refrigeration pipes (Copper)"},
+            
+            // Checklist 11 - Damproofing
+            {(11, null), "Application of Damproofing"},
+            
+            // Checklist 12 - HVAC Duct
+            {(12, null), "Installation of HVAC Duct with Flexible & Plenum Box"},
+            
+            // Checklist 13 - Electrical Wiring
+            {(13, null), "Pulling of wires and cables through embedded pipes"},
+            
+            // Checklist 14 - Dry Wall
+            {(14, 1), "Installation of Dry Wall Framing"},
+            {(14, 2), "Final inspection of Dry Wall Installation"},
+            
+            // Checklist 15 - Fire Alarm
+            {(15, null), "Pulling of Fire Alarm Cables"},
+            
+            // Checklist 16 - Data/ONU
+            {(16, null), "ONU installation along with conduit connection"},
+            {(16, 1), "Pulling of Data Cables"},
+            
+            // Checklist 17 - Fire Sealing
+            {(17, null), "Inspection of Fire Sealing Work"},
+            
+            // Checklist 18 - False Ceiling
+            {(18, 1), "Installation of Suspension System of False Ceiling"},
+            {(18, 2), "Installation & closing of False Ceiling Gypsum Board/Tiles"},
+            
+            // Checklist 19 - Waterproofing
+            {(19, 1), "Surface Preparation for Wet Area Waterproofing"},
+            {(19, 2), "Application & Leak test of Wet Area Waterproofing"},
+            
+            // Checklist 20 - DB Panel
+            {(20, null), "DB installation along with conduit connection"},
+            
+            // Checklist 21 - Epoxy Flooring
+            {(21, 1), "Surface preparation of Epoxy Flooring"},
+            {(21, 2), "Application of Epoxy Flooring"},
+            
+            // Checklist 22 - Electrical Testing
+            {(22, null), "Megger and Continuity test of Wires & Cables"},
+            
+            // Checklist 23 - Kitchen Cabinets
+            {(23, 1), "Installation of Kitchen Cabinets & Kitchen Counter Top"},
+            
+            // Checklist 24 - Wardrobes
+            {(24, null), "Installation of Wardrobes"},
+            
+            // Checklist 25 - Doors
+            {(25, null), "Installation of Wooden Doors/Metal Door"},
+            
+            // Checklist 27 - Sanitary Kitchen
+            {(27, null), "Installation of kitchen sink and accessories"},
+            
+            // Checklist 28 - Access Control
+            {(28, null), "Installation of Access Control System"},
+            
+            // Checklist 29 - Windows
+            {(29, null), "Installation of Aluminum Windows/Curtain Wall"},
+            
+            // Checklist 30 - DX Split Unit
+            {(30, null), "Installation DX Split Unit"},
+            
+            // Checklist 31 - Re-pressure Test
+            {(31, null), "Re-pressure test of water supply pipes inside the box"},
+            
+            // Checklist 32 - Final Inspections (Multiple parts for various MEP items)
+            {(32, null), "Final MEP Inspection / Riser Installation"},
+            {(32, 1), "Installation of sprinklers / grills and diffusers"},
+            {(32, 2), "Installation of smoke detectors and heat detectors"},
+            {(32, 3), "Installation of light fittings and accessories"},
+            {(32, 4), "Installation of wiring devices and accessories"},
+            {(32, 5), "Installation of thermostat"},
+            {(32, 6), "Installation of occupancy sensor"},
+            
+            // Checklist 33 - Final Civil Inspection
+            {(33, null), "Final Civil/Architectural Inspection of Modular Box Prior to dispatch"}
+        };
+        
+        foreach (var (key, description) in checklistDefinitions)
+        {
+            var (checklistNumber, partNumber) = key;
+            var itemId = GeneratePredefinedChecklistItemId(checklistNumber, partNumber);
+            
+            predefinedItems.Add(new PredefinedChecklistItem
+            {
+                PredefinedItemId = itemId,
+                Description = description,
+                Reference = $"Checklist {checklistNumber}" + (partNumber.HasValue ? $" Part {partNumber}" : ""),
+                Sequence = checklistNumber * 100 + (partNumber ?? 0),
+                IsActive = true,
+                CreatedDate = seedDate
+            });
+        }
+        
+        modelBuilder.Entity<PredefinedChecklistItem>().HasData(predefinedItems);
+    }
+}
+

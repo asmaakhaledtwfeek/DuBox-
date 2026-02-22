@@ -37,6 +37,7 @@ public class ProgressUpdatesController : ControllerBase
     [FromForm] string? WirBay,
     [FromForm] string? WirRow,
     [FromForm] string? WirPosition,
+    [FromForm] Guid? WirFactorySectionId, // Section ID from UI selection
     CancellationToken cancellationToken)
     {
         List<string>? fileNames = null;
@@ -77,6 +78,7 @@ public class ProgressUpdatesController : ControllerBase
          WirBay,
          WirRow,
          WirPosition,
+         WirFactorySectionId, // Pass section ID to command
          fileNames
      );
 

@@ -96,7 +96,9 @@ public class CreateBoxCommandHandler : IRequestHandler<CreateBoxCommand, Result<
         box.BoxAssets = request.Assets?.Adapt<List<BoxAsset>>() ?? new List<BoxAsset>();
         foreach (var asset in box.BoxAssets)
             asset.Box = box;
-       var boxDto= await _boxCreationService.CreateAsync(box, project, currentUserId, "Creation", $"New Box '{box.BoxTag}' created successfully under Project '{project.ProjectCode}'.", cancellationToken);
+        
+        // Use automatic activity template resolution: box type template > project template > activity master
+        var boxDto = await _boxCreationService.CreateAsync(box, project, currentUserId, "Creation", $"New Box '{box.BoxTag}' created successfully under Project '{project.ProjectCode}'.", null, cancellationToken);
 
         return Result.Success(boxDto);
 

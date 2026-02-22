@@ -1,0 +1,214 @@
+<div class="modal-overlay" *ngIf="isOpen" (click)="onBackdropClick($event)" [@fadeIn]>
+  <div class="modal-container" [@slideIn]>
+    <div class="modal-header">
+      <div class="modal-title-section">
+        <h2 class="modal-title">Request Box Exchange</h2>
+        <p class="modal-subtitle">Request to change building or level assignment</p>
+      </div>
+      <button class="modal-close-btn" (click)="onClose()" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/>
+          <line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <!-- Current Values -->
+      <div class="current-values-section">
+        <h4>Current Values</h4>
+        <div class="values-grid">
+          <div class="value-item">
+            <label>Building</label>
+            <div class="current-value">{{ currentBuilding || 'Not assigned' }}</div>
+          </div>
+          <div class="value-item">
+            <label>Level/Floor</label>
+            <div class="current-value">{{ currentFloor || 'Not assigned' }}</div>
+          </div>
+          <div class="value-item">
+            <label>Box Tag</label>
+            <div class="current-value">{{ currentBoxTag || 'Not assigned' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Request New Values -->
+      <div class="form-section">
+        <h4>Request New Values</h4>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="newBuilding">New Building</label>
+            <select 
+              id="newBuilding" 
+              class="form-control"
+              [(ngModel)]="exchangeForm.newBuildingNumber"
+              (change)="onBuildingOrFloorChange()"
+              [disabled]="loadingProjectConfig"
+            >
+              <option [ngValue]="null">-- Keep Current --</option>
+              <option *ngFor="let building of availableBuildings" [ngValue]="building.buildingCode">
+                {{ getBuildingDisplay(building) }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="newFloor">New Level/Floor</label>
+            <select 
+              id="newFloor" 
+              class="form-control"
+              [(ngModel)]="exchangeForm.newFloor"
+              (change)="onBuildingOrFloorChange()"
+              [disabled]="loadingProjectConfig"
+            >
+              <option [ngValue]="null">-- Keep Current --</option>
+              <option *ngFor="let level of availableLevels" [ngValue]="level.levelCode">
+                {{ getLevelDisplay(level) }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group view-boxes-group">
+            <button 
+              class="btn btn-view-boxes" 
+              (click)="loadBoxesForExchange()"
+              [disabled]="!hasExchangeChanges() || loadingProjectConfig"
+              type="button"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                <circle cx="12" cy="12" r="3"/>
+              </svg>
+              View Boxes
+            </button>
+          </div>
+        </div>
+
+        <!-- Box Selection Section -->
+        <div class="box-selection-section" *ngIf="hasExchangeChanges()">
+          <h5>Select Box to Exchange With <span class="required">*</span></h5>
+          <p class="help-text">Choose a box from the selected location that has the same box type</p>
+
+          <!-- Loading State -->
+          <div class="loading-boxes" *ngIf="loadingBoxes">
+            <div class="spinner"></div>
+            <span>Loading available boxes...</span>
+          </div>
+
+          <!-- No Boxes Found Alert -->
+          <div class="alert alert-warning" *ngIf="noBoxesFound && !loadingBoxes">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <div>
+              <strong>No Eligible Boxes Found</strong>
+              <p>{{ boxesErrorMessage }}</p>
+              <p>You cannot proceed with this exchange. Please select a different building or floor that has boxes with the same box type.</p>
+            </div>
+          </div>
+
+          <!-- Box Selection Grid -->
+          <div class="boxes-grid" *ngIf="!loadingBoxes && !noBoxesFound && availableBoxes.length > 0">
+            <div 
+              class="box-card" 
+              *ngFor="let box of availableBoxes"
+              [class.selected]="exchangeForm.targetBoxId === box.id"
+              (click)="exchangeForm.targetBoxId = box.id"
+            >
+              <div class="box-card-header">
+                <input 
+                  type="radio" 
+                  [value]="box.id" 
+                  [(ngModel)]="exchangeForm.targetBoxId" 
+                  [id]="'box-' + box.id"
+                  name="targetBox"
+                />
+                <label [for]="'box-' + box.id" class="box-tag">{{ box.code }}</label>
+              </div>
+              <div class="box-card-body">
+                <div class="box-detail" *ngIf="box.name">
+                  <span class="label">Name:</span>
+                  <span class="value">{{ box.name }}</span>
+                </div>
+                <div class="box-detail">
+                  <span class="label">Building:</span>
+                  <span class="value">{{ box.buildingNumber || 'N/A' }}</span>
+                </div>
+                <div class="box-detail">
+                  <span class="label">Floor:</span>
+                  <span class="value">{{ box.floor || 'N/A' }}</span>
+                </div>
+                <div class="box-detail" *ngIf="box.zone">
+                  <span class="label">Zone:</span>
+                  <span class="value">{{ box.zone }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="requestReason">Reason for Change <span class="required">*</span></label>
+          <textarea 
+            id="requestReason"
+            class="form-control"
+            rows="3"
+            placeholder="Please explain why this exchange is needed..."
+            [(ngModel)]="exchangeForm.requestReason"
+          ></textarea>
+        </div>
+
+        <!-- Preview of Changes -->
+        <div class="exchange-preview" *ngIf="hasExchangeChanges()">
+          <h5>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+            Preview Changes
+          </h5>
+          <div class="preview-item" *ngIf="exchangeForm.newBuildingNumber">
+            <div class="preview-label">Building:</div>
+            <div class="preview-values">
+              <span class="old-value">{{ currentBuilding || 'None' }}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="arrow-icon">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+              <span class="new-value">{{ getSelectedBuildingDisplay() }}</span>
+            </div>
+          </div>
+          <div class="preview-item" *ngIf="exchangeForm.newFloor">
+            <div class="preview-label">Level/Floor:</div>
+            <div class="preview-values">
+              <span class="old-value">{{ currentFloor || 'None' }}</span>
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="arrow-icon">
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+              <span class="new-value">{{ getSelectedLevelDisplay() }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="onClose()" type="button">
+        Cancel
+      </button>
+      <button 
+        class="btn btn-primary" 
+        (click)="onSubmit()" 
+        [disabled]="!canSubmit()"
+        type="button"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        Submit Exchange Request
+      </button>
+    </div>
+  </div>
+</div>

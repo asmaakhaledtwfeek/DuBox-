@@ -57,12 +57,13 @@ public class ApproveWIRRecordCommandHandler : IRequestHandler<ApproveWIRRecordCo
 
         _unitOfWork.Repository<WIRRecord>().Update(wirRecord);
         await _unitOfWork.CompleteAsync(cancellationToken);
+        string activityName =wirRecord.BoxActivity.ActivityMaster != null ? wirRecord.BoxActivity.ActivityMaster?.ActivityName : wirRecord.BoxActivity.ActivityTemplateActivity.ActivityName;
 
         var dto = wirRecord.Adapt<WIRRecordDto>() with
         {
             BoxId = wirRecord.BoxActivity.Box.BoxId,
             BoxTag = wirRecord.BoxActivity.Box.BoxTag,
-            ActivityName = wirRecord.BoxActivity.ActivityMaster.ActivityName,
+            ActivityName =activityName,
             RequestedByName = wirRecord.RequestedByUser.FullName ?? wirRecord.RequestedByUser.Email,
             InspectedByName = inspector.FullName ?? inspector.Email
         };

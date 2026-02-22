@@ -28,5 +28,7 @@ public class PredefinedChecklistItem
     public bool IsActive { get; set; } = true;
 
     public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+    public int? Part {  get; set; }
+    public int? ChecklistNumber {  get; set; }
 }
 
